@@ -143,7 +143,7 @@ public static class EntityEndpoints
 
         if (sort is not (null or "updated" or "name" or "created"))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["sort"] = ["Sort by updated, name or created."] });
+            return Problems.Field("sort", "Sort by updated, name or created.");
         }
 
         // Custom-field filters, all checked before anything is read: one that does not resolve is refused, never dropped.
@@ -652,10 +652,9 @@ public static class EntityEndpoints
 
         return typeExists
             ? null
-            : Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["entityTypeId"] = [projectId is null ? "Choose a type from this universe." : "Choose a type from this project."],
-            });
+            : Problems.Field(
+                "entityTypeId",
+                projectId is null ? "Choose a type from this universe." : "Choose a type from this project.");
     }
 
     /// <summary>
@@ -666,11 +665,9 @@ public static class EntityEndpoints
     /// </summary>
     internal static IResult? RefusedLegacyArticle(EntityRequest request) =>
         request.CarriesLegacyArticle
-            ? Results.ValidationProblem(
-                new Dictionary<string, string[]>
-                {
-                    ["content"] = ["An entry's article is saved on its own now. Reload LorEvolve, then save the article again."],
-                },
+            ? Problems.Field(
+                "content",
+                "An entry's article is saved on its own now. Reload LorEvolve, then save the article again.",
                 detail: "This request sent the entry's article with the entry. An article is saved on its own route, "
                     + ".../entities/{entityId}/article, so nothing was saved - neither the entry nor its article. "
                     + "Reload LorEvolve to use the current editor.",
@@ -1069,7 +1066,7 @@ public static class EntityEndpoints
     }
 
     private static IResult EntityIdsProblem(string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { ["entityIds"] = [message] });
+        Problems.Field("entityIds", message);
 
     /// <summary>
     /// Marks one live entry as trashed. An entry already in the Trash answers 404 rather than

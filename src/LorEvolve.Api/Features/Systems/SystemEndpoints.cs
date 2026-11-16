@@ -114,8 +114,8 @@ public static class SystemEndpoints
                 row.ProjectId,
                 row.RuleCount,
                 row.Version,
-                WorldLogicAccess.Utc(row.CreatedAt),
-                WorldLogicAccess.Utc(row.UpdatedAt));
+                Utc(row.CreatedAt),
+                Utc(row.UpdatedAt));
         }).ToList();
 
         return Results.Ok(new WorldLogicPage<SystemSummary>(
@@ -173,10 +173,7 @@ public static class SystemEndpoints
         if (request.ProjectId is { } projectId
             && !await WorldLogicAccess.IsProjectOfUniverseAsync(db, universeId, projectId, cancellationToken))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["projectId"] = ["This universe has no such project."],
-            });
+            return Problems.Field("projectId", "This universe has no such project.");
         }
 
         var name = request.Name!.Trim();
@@ -271,10 +268,7 @@ public static class SystemEndpoints
 
         if (request.ProjectId != system.ProjectId)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["projectId"] = ["A System stays in the scope it was created in."],
-            });
+            return Problems.Field("projectId", "A System stays in the scope it was created in.");
         }
 
         var name = request.Name!.Trim();
@@ -376,7 +370,7 @@ public static class SystemEndpoints
 
         return Results.Ok(rows
             .Select(row => new WorldLogicRevisionRow(
-                row.Version, WorldLogicAccess.Utc(row.SavedAt), row.Name, row.Summary, HasCondition: false))
+                row.Version, Utc(row.SavedAt), row.Name, row.Summary, HasCondition: false))
             .ToList());
     }
 
@@ -433,10 +427,7 @@ public static class SystemEndpoints
         // depend on a sibling an author did not open.
         if (system.ProjectId is { } systemProject && rule.ProjectId is { } ruleProject && ruleProject != systemProject)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["ruleId"] = ["A project's System cannot reference another project's rule."],
-            });
+            return Problems.Field("ruleId", "A project's System cannot reference another project's rule.");
         }
 
         var link = await db.LoreSystemRules
@@ -447,13 +438,9 @@ public static class SystemEndpoints
             var count = await db.LoreSystemRules.CountAsync(candidate => candidate.SystemId == id, cancellationToken);
             if (count >= WorldLogicLimits.MaxRulesPerSystem)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["ruleId"] =
-                    [
-                        $"A System references at most {WorldLogicAccess.Number(WorldLogicLimits.MaxRulesPerSystem)} rules.",
-                    ],
-                });
+                return Problems.Field(
+                    "ruleId",
+                    $"A System references at most {WorldLogicAccess.Number(WorldLogicLimits.MaxRulesPerSystem)} rules.");
             }
 
             db.LoreSystemRules.Add(new LoreSystemRule
@@ -562,8 +549,8 @@ public static class SystemEndpoints
             system.Scope,
             system.ProjectId,
             system.Version,
-            WorldLogicAccess.Utc(system.CreatedAt),
-            WorldLogicAccess.Utc(system.UpdatedAt),
+            Utc(system.CreatedAt),
+            Utc(system.UpdatedAt),
             rules);
     }
 

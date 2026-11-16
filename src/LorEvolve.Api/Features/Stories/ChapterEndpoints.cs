@@ -500,7 +500,7 @@ public static class ChapterEndpoints
         return Results.Ok(await LoadChaptersAsync(db, storyId, cancellationToken));
 
         static IResult Refused(string message) =>
-            Results.ValidationProblem(new Dictionary<string, string[]> { ["chapterIds"] = [message] });
+            Problems.Field("chapterIds", message);
     }
 
     // ---------- Shared ----------

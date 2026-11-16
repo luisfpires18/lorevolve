@@ -159,7 +159,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                     hasCondition = rule.HasCondition,
                     scope = rule.Scope == WorldLogicScope.Project ? "project" : "universe",
                     projectId = rule.ProjectId,
-                    updatedAt = WorldLogicAccess.Utc(rule.UpdatedAt),
+                    updatedAt = Utc(rule.UpdatedAt),
                 };
             }),
         });
@@ -227,7 +227,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 system.ruleCount,
                 scope = system.scope == WorldLogicScope.Project ? "project" : "universe",
                 system.projectId,
-                updatedAt = WorldLogicAccess.Utc(system.updatedAt),
+                updatedAt = Utc(system.updatedAt),
             }),
         });
     }
@@ -291,7 +291,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 dependsOn = definition.DependsOn,
                 systems,
                 version = definition.Version,
-                updatedAt = WorldLogicAccess.Utc(definition.UpdatedAt),
+                updatedAt = Utc(definition.UpdatedAt),
                 hasCondition = definition.ConditionJson is not null,
             });
         }
@@ -311,7 +311,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 title = worded.Title,
                 description = worded.Description,
                 scope = "universe",
-                updatedAt = WorldLogicAccess.Utc(worded.UpdatedAt),
+                updatedAt = Utc(worded.UpdatedAt),
                 // A world rule is words and its own counting check (ADR 0034); it carries no typed condition, so
                 // there is nothing here for evaluate_world_logic_rule to run.
                 hasCondition = false,
@@ -575,8 +575,8 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 finding.ruleVersion,
                 finding.schemaVersion,
                 finding.evidenceCount,
-                createdAt = WorldLogicAccess.Utc(finding.createdAt),
-                updatedAt = WorldLogicAccess.Utc(finding.updatedAt),
+                createdAt = Utc(finding.createdAt),
+                updatedAt = Utc(finding.updatedAt),
             }),
         });
     }
@@ -643,8 +643,8 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             schemaVersion = finding.SchemaVersion,
             evidence,
             rationale = WorldLogicRationale.Read(finding.Rationale),
-            createdAt = WorldLogicAccess.Utc(finding.CreatedAt),
-            updatedAt = WorldLogicAccess.Utc(finding.UpdatedAt),
+            createdAt = Utc(finding.CreatedAt),
+            updatedAt = Utc(finding.UpdatedAt),
         });
     }
 

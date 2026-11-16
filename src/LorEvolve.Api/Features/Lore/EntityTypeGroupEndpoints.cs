@@ -90,10 +90,7 @@ public static class EntityTypeGroupEndpoints
         var groups = await db.EntityTypeGroups.Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, cancellationToken);
         if (request.GroupIds is not { } ids || ids.Distinct().Count() != ids.Count || ids.Count != groups.Count || ids.Any(id => !groups.ContainsKey(id)))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["groupIds"] = ["List every group of this universe exactly once."],
-            });
+            return Problems.Field("groupIds", "List every group of this universe exactly once.");
         }
 
         var now = DateTime.UtcNow;
@@ -262,10 +259,7 @@ public static class EntityTypeGroupEndpoints
 
         if (request.Enabled is not { } enabled)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["enabled"] = ["Say whether the group is enabled for Family Tree."],
-            });
+            return Problems.Field("enabled", "Say whether the group is enabled for Family Tree.");
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -391,10 +385,7 @@ public static class EntityTypeGroupEndpoints
         // One answer for a group that does not exist and one of another universe, so neither can be told apart.
         if (existing.Count != wantedIds.Count)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["groups"] = ["Choose a group from this universe."],
-            });
+            return Problems.Field("groups", "Choose a group from this universe.");
         }
 
         if (newNames.Count > 0
@@ -528,8 +519,5 @@ public static class EntityTypeGroupEndpoints
         (await db.EntityTypeGroups.Where(group => group.UniverseId == universeId).MaxAsync(group => (int?)group.SortOrder, cancellationToken) ?? -1) + 1;
 
     private static IResult NameTaken(string key, string name) =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            [key] = [$"This universe already has a group called {name}. Choose it from the list instead."],
-        });
+        Problems.Field(key, $"This universe already has a group called {name}. Choose it from the list instead.");
 }

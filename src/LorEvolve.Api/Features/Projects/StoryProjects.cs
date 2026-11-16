@@ -81,12 +81,4 @@ public static class StoryProjects
             Utc(story.UpdatedAt),
             story.Version,
             story.Id);
-
-    /// <summary>SQLite hands a stored moment back with no kind, so every timestamp is stamped UTC on the way out.</summary>
-    private static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
 }

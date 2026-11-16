@@ -385,10 +385,7 @@ public static class SceneEndpoints
 
         if (position < 0 || position > target.Count)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["position"] = [$"Choose a position from 0 to {target.Count}."],
-            });
+            return Problems.Field("position", $"Choose a position from 0 to {target.Count}.");
         }
 
         target.Insert(position, scene);
@@ -577,7 +574,7 @@ public static class SceneEndpoints
             cancellationToken));
 
         static IResult Refused(string message) =>
-            Results.ValidationProblem(new Dictionary<string, string[]> { ["sceneIds"] = [message] });
+            Problems.Field("sceneIds", message);
     }
 
     // ---------- Writing ----------

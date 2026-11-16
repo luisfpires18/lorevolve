@@ -116,12 +116,12 @@ public static partial class AppearanceImageEndpoints
 
         if (target.Count >= ProgressionLimits.MaxImagesPerAppearance)
         {
-            return Invalid(ImagePreparation.FileField, $"An appearance can hold at most {ProgressionLimits.MaxImagesPerAppearance} pictures.");
+            return Problems.Field(ImagePreparation.FileField, $"An appearance can hold at most {ProgressionLimits.MaxImagesPerAppearance} pictures.");
         }
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose an image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -132,7 +132,7 @@ public static partial class AppearanceImageEndpoints
         var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, ImagePreparation.DisplaySide, cancellationToken);
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -466,8 +466,6 @@ public static partial class AppearanceImageEndpoints
         Message = "Image storage failed during {Operation} for appearance {AppearanceId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid appearanceId, Exception exception);
 
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     private static IResult Unavailable(MediaStorageException exception) =>
         MediaProblem.Unavailable(exception);

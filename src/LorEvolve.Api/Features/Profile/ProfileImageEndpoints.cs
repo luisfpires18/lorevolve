@@ -135,7 +135,7 @@ public static partial class ProfileImageEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a photo to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a photo to upload.");
         }
 
         ImageCrop? requestedCrop = null;
@@ -145,7 +145,7 @@ public static partial class ProfileImageEndpoints
 
             if (requestedCrop is null)
             {
-                return Invalid(ImagePreparation.CropField, "The photo selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The photo selection could not be read.");
             }
         }
 
@@ -163,7 +163,7 @@ public static partial class ProfileImageEndpoints
 
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -296,12 +296,12 @@ public static partial class ProfileImageEndpoints
 
         if (request.Crop is null)
         {
-            return Invalid(ImagePreparation.CropField, "Choose the part of the photo the avatar shows.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the photo the avatar shows.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop) is { } badCrop)
         {
-            return Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != image.AssetId)
@@ -355,7 +355,7 @@ public static partial class ProfileImageEndpoints
             // A crop that is not square on this picture is the caller's to fix. Anything else
             // means the stored original itself no longer passes, which is not.
             return rejection!.Field == ImagePreparation.CropField
-                ? Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : OriginalUnavailable();
         }
 
@@ -603,8 +603,6 @@ public static partial class ProfileImageEndpoints
         }
     }
 
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     /// <summary>
     /// 503, whatever the store's reason. The detail is the exception's own message, which is
