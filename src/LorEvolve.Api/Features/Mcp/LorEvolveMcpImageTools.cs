@@ -276,7 +276,7 @@ public sealed partial class LorEvolveMcpImageTools(
         {
             return Error(
                 "image_too_large",
-                $"The original is {Megabytes(found.Picture.ByteSize)} MB, over the {Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. "
+                $"The original is {ImagePreparation.Megabytes(found.Picture.ByteSize)} MB, over the {ImagePreparation.Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. "
                 + $"Ask for the {PreviewVariant} instead.",
                 new { bytes = found.Picture.ByteSize, limit = McpLimits.ImageOriginalBytes });
         }
@@ -303,7 +303,7 @@ public sealed partial class LorEvolveMcpImageTools(
                 return which == OriginalVariant
                     ? Error(
                         "image_too_large",
-                        $"The original is over the {Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. Ask for the {PreviewVariant} instead.",
+                        $"The original is over the {ImagePreparation.Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. Ask for the {PreviewVariant} instead.",
                         new { limit = McpLimits.ImageOriginalBytes })
                     : Error("image_too_large", "This picture is larger than LorEvolve stores.");
             }
@@ -563,8 +563,6 @@ public sealed partial class LorEvolveMcpImageTools(
     private string EntryUrl(Guid entryId) => $"{site.Base}/app/universes/{caller.UniverseId:D}/lore/{entryId:D}";
 
     private string ProgressionUrl(Guid entryId) => $"{EntryUrl(entryId)}/progression";
-
-    private static string Megabytes(long bytes) => (bytes / (1024.0 * 1024.0)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Image storage failed reading a picture of entry {EntityId} for an MCP client.")]

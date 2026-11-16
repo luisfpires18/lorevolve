@@ -360,7 +360,7 @@ public static partial class MapEndpoints
                 OriginalKey = originalKey,
                 DisplayKey = displayKey,
                 ContentType = prepared.ContentType,
-                FileName = FileNameLabel(file.FileName),
+                FileName = ImagePreparation.TrimFileName(file.FileName),
                 Width = prepared.Width,
                 Height = prepared.Height,
                 ByteSize = bytes.Length,
@@ -398,18 +398,18 @@ public static partial class MapEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 throw;
             }
 
             if (refused is not null)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return refused;
             }
 
@@ -601,7 +601,7 @@ public static partial class MapEndpoints
                     map.OriginalKey = originalKey;
                     map.DisplayKey = displayKey;
                     map.ContentType = prepared.ContentType;
-                    map.FileName = FileNameLabel(file.FileName);
+                    map.FileName = ImagePreparation.TrimFileName(file.FileName);
                     map.Width = prepared.Width;
                     map.Height = prepared.Height;
                     map.ByteSize = bytes.Length;
@@ -623,23 +623,23 @@ public static partial class MapEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 throw;
             }
 
             if (refused is not null)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return refused;
             }
 
             // Past the commit: the new picture is the map's whatever happens next.
-            await SweepAsync(store, logger, supersededOriginal!, supersededDisplay!);
+            await MediaObjectWrites.SweepAsync(store, logger, supersededOriginal!, supersededDisplay!);
 
             return Results.Ok(await LoadDetailAsync(db, universeId, mapId, cancellationToken));
         }
@@ -684,7 +684,7 @@ public static partial class MapEndpoints
         db.Set<UniverseMap>().Remove(map);
         await db.SaveChangesAsync(cancellationToken);
 
-        await SweepAsync(store, loggerFactory.CreateLogger(LoggerName), keys);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), keys);
         return Results.NoContent();
     }
 
@@ -729,7 +729,7 @@ public static partial class MapEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger(LoggerName), "read", mapId, exception);
             }
 
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -1003,17 +1003,17 @@ public static partial class MapEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, operation, mapId, exception);
-            await SweepAsync(store, logger, originalKey, displayKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, originalKey, displayKey);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
             throw;
         }
     }
@@ -1044,22 +1044,11 @@ public static partial class MapEndpoints
         return clean;
     }
 
-    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, keys);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
-    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
-
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Image storage failed during {Operation} for map {MapId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid mapId, Exception exception);
 
-
-    private static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
 
     private static IResult ReplacedMeanwhile() =>
         Results.Problem(
@@ -1067,20 +1056,4 @@ public static partial class MapEndpoints
             detail: "Its picture was replaced somewhere else, so this one was not kept. Open the map again and choose the picture.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = ImageChangedCode });
-
-    private static string? FileNameLabel(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(fileName.Trim());
-        return name.Length switch
-        {
-            0 => null,
-            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
-            _ => name,
-        };
-    }
 }

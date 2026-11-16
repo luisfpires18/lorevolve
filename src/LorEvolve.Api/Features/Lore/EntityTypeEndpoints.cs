@@ -1331,7 +1331,7 @@ public static class EntityTypeEndpoints
         db.EntityFieldDefinitions.Remove(definition);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(EntityFieldImageEndpoints.LoggerName), [.. pictureKeys]);
 
         return Results.NoContent();
     }

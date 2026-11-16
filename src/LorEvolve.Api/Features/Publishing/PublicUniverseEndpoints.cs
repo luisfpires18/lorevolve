@@ -297,7 +297,7 @@ public static partial class PublicUniverseEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger("LorEvolve.PublicPortal"), exception);
             }
 
-            return UniverseArtworkEndpoints.Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)

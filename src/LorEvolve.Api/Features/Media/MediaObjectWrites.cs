@@ -25,7 +25,7 @@ internal sealed record PendingMediaObject(string Key, Stream Content, string Con
 /// that way. If even one write failed for another reason, the caller is told it was a failure
 /// rather than an absence, so it sweeps.</para>
 /// </summary>
-internal static class MediaObjectWrites
+internal static partial class MediaObjectWrites
 {
     /// <summary>
     /// Writes every object at once. Throws the way one <see cref="IMediaObjectStore.PutAsync"/>
@@ -94,4 +94,13 @@ internal static class MediaObjectWrites
                 onOrphan(logger, key, exception);
             }
         });
+
+    /// <summary>Deletes objects nothing points at any more, together, logging each failure as an orphan. Null keys are skipped.</summary>
+    public static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string?[] keys) =>
+        SweepAsync(store, logger, LogOrphanedObject, [.. keys.OfType<string>()]);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
+    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
 }
