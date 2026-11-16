@@ -112,6 +112,8 @@ test.describe('on a phone', () => {
 
     await toggle.click()
     await expect(page.locator('nav.sidebar')).toHaveCount(1)
+    // Each destination is drawn once on the page: the bar holds only the toggle, no second list of sections.
+    await expect(page.getByTestId('workspace-lore')).toHaveCount(1)
     await expect(page.locator('.sidebar')).toBeVisible()
     await expect(page.locator('.workspace__column')).toHaveAttribute('inert', '')
     await expect(page.getByTestId('sidebar-world-building')).toBeVisible()
