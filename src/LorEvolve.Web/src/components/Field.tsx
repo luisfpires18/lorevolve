@@ -1,12 +1,12 @@
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
 
 interface FieldBase {
-  label: string
+  label: ReactNode
   /** Read with the control, drawn between the label and the control. */
   hint?: ReactNode
   /** Drawn under the control and named by it. */
   error?: ReactNode
-  /** Extra classes on the `div.field`. */
+  /** Extra classes on the `.field` wrapper. */
   className?: string
 }
 
@@ -41,16 +41,26 @@ interface GroupField extends FieldBase {
   }) => ReactNode
 }
 
-type FieldProps = InputField | SlotField | GroupField
+/** Fieldset form: a set of controls under a native legend; keeps the fieldset's group name and `disabled`. */
+interface FieldsetField extends FieldBase {
+  id?: string
+  'data-testid'?: string
+  group: 'fieldset'
+  disabled?: boolean
+  children: ReactNode
+}
+
+type FieldProps = InputField | SlotField | GroupField | FieldsetField
 
 /** A field: label, hint, control, error, in that order. Overloads give each form its own `children` type. */
 export function Field(props: InputField): ReactNode
 export function Field(props: SlotField): ReactNode
 export function Field(props: GroupField): ReactNode
+export function Field(props: FieldsetField): ReactNode
 export function Field(props: FieldProps) {
   const auto = useId()
   const { label, hint, error } = props
-  const id = props.children === undefined ? props.name : (props.id ?? auto)
+  const id = 'name' in props ? props.name : (props.id ?? auto)
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const labelId = `${id}-label`
@@ -59,7 +69,9 @@ export function Field(props: FieldProps) {
   let control: ReactNode
   let testId: string | undefined
   let labelNode: ReactNode
-  if (props.children === undefined) {
+  let Wrapper: 'div' | 'fieldset' = 'div'
+  let disabled: boolean | undefined
+  if ('name' in props) {
     const { label: _l, hint: _h, error: _e, className: _c, children: _k, ...input } = props
     labelNode = (
       <label className="field__label" htmlFor={id}>
@@ -76,6 +88,12 @@ export function Field(props: FieldProps) {
         aria-describedby={describedBy || undefined}
       />
     )
+  } else if (props.group === 'fieldset') {
+    testId = props['data-testid']
+    Wrapper = 'fieldset'
+    disabled = props.disabled
+    labelNode = <legend className="field__label">{label}</legend>
+    control = props.children
   } else if (props.group) {
     testId = props['data-testid']
     labelNode = (
@@ -103,7 +121,12 @@ export function Field(props: FieldProps) {
   }
 
   return (
-    <div className={props.className ? `field ${props.className}` : 'field'} data-testid={testId}>
+    <Wrapper
+      className={props.className ? `field ${props.className}` : 'field'}
+      data-testid={testId}
+      disabled={disabled}
+      aria-describedby={Wrapper === 'fieldset' ? describedBy || undefined : undefined}
+    >
       {labelNode}
       {hint ? (
         <p className="field__hint" id={hintId}>
@@ -116,6 +139,6 @@ export function Field(props: FieldProps) {
           {error}
         </p>
       ) : null}
-    </div>
+    </Wrapper>
   )
 }

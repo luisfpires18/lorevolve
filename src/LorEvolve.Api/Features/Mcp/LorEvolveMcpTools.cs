@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Search;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -58,13 +59,6 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     /// <summary>Characters shown either side of a match.</summary>
     public const int ManuscriptFindContext = 240;
 
-    /// <summary>How tool results are written: plain JSON, enums by name, nothing empty.</summary>
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     [McpServerTool(Name = "search_universe", Title = "Search the universe", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Search this universe's lore entries, stories, arcs, chapters and scenes, and scene prose by keywords. "
         + "Every word must appear, so search for one or two distinctive words such as a name, not a whole question. "
@@ -73,7 +67,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         [Description("One or two distinctive words.")] string query,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -105,7 +99,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     [Description("An overview of the connected universe: its name and description, its stories, how many lore entries of each type "
         + "it holds with a few examples, and the size of its timeline. A good first call.")]
     public async Task<CallToolResult> GetUniverseOverviewAsync(CancellationToken cancellationToken) =>
-        Guard() ?? Found(await UniverseReader.GetOverviewAsync(db, caller.UniverseId, cancellationToken));
+        Guard(caller) ?? Found(await UniverseReader.GetOverviewAsync(db, caller.UniverseId, cancellationToken));
 
     [McpServerTool(Name = "get_lore_entry", Title = "Read a lore entry", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Read one lore entry: its type, Canon status, summary, aliases, tags, recorded custom fields, the start of its "
@@ -115,7 +109,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         [Description("The lore entry's id, exactly as a result gave it.")] string loreId,
         [Description("Optional words to find in the entry's article.")] string? find = null,
         CancellationToken cancellationToken = default) =>
-        Guard() ?? (Guid.TryParse(loreId, out var id)
+        Guard(caller) ?? (Guid.TryParse(loreId, out var id)
             ? Found(await UniverseReader.GetLoreAsync(db, caller.UniverseId, id, cancellationToken, Words(find)))
             : NotFound());
 
@@ -125,7 +119,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     public async Task<CallToolResult> GetLoreRelationshipsAsync(
         [Description("The lore entry's id, exactly as a result gave it.")] string loreId,
         CancellationToken cancellationToken) =>
-        Guard() ?? (Guid.TryParse(loreId, out var id)
+        Guard(caller) ?? (Guid.TryParse(loreId, out var id)
             ? Found(await UniverseReader.GetRelationshipsAsync(db, caller.UniverseId, id, cancellationToken))
             : NotFound());
 
@@ -135,7 +129,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     public async Task<CallToolResult> GetStoryAsync(
         [Description("The story's id, exactly as a result gave it.")] string storyId,
         CancellationToken cancellationToken) =>
-        Guard() ?? (Guid.TryParse(storyId, out var id)
+        Guard(caller) ?? (Guid.TryParse(storyId, out var id)
             ? Found(await UniverseReader.GetStoryAsync(db, caller.UniverseId, id, cancellationToken))
             : NotFound());
 
@@ -145,7 +139,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     public async Task<CallToolResult> GetArcAsync(
         [Description("The arc's id, exactly as a result gave it.")] string arcId,
         CancellationToken cancellationToken) =>
-        Guard() ?? (Guid.TryParse(arcId, out var id)
+        Guard(caller) ?? (Guid.TryParse(arcId, out var id)
             ? Found(await UniverseReader.GetArcAsync(db, caller.UniverseId, id, cancellationToken))
             : NotFound());
 
@@ -157,7 +151,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         [Description("The scene's id, exactly as a result gave it.")] string sceneId,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -191,7 +185,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         [Description("The word or short phrase to find.")] string text,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -246,7 +240,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         [Description("The manuscriptVersion from an earlier chunk, so a manuscript changed in between is noticed.")] int? manuscriptVersion = null,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -292,7 +286,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     public async Task<CallToolResult> GetTimelineMomentAsync(
         [Description("The moment's id, exactly as a result gave it.")] string momentId,
         CancellationToken cancellationToken) =>
-        Guard() ?? (Guid.TryParse(momentId, out var id)
+        Guard(caller) ?? (Guid.TryParse(momentId, out var id)
             ? Found(await UniverseReader.GetTimelineItemAsync(db, caller.UniverseId, id, cancellationToken))
             : NotFound());
 
@@ -306,7 +300,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         [Description("The page, from 1. Default 1.")] int? page = null,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -345,27 +339,6 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
     }
 
     // ---------- Shaping ----------
-
-    /// <summary>
-    /// The gate sets the caller before any tool can run. A tool reached without one - which the gate makes impossible -
-    /// still reads nothing.
-    /// </summary>
-    private CallToolResult? Guard() => caller.IsAllowed ? null : Error("not_allowed", "This connection cannot read a universe.");
-
-    private static CallToolResult Found<T>(T? reading) where T : class => reading is null ? NotFound() : Result(reading);
-
-    private static CallToolResult NotFound() => Error("not_found", "Nothing with that id is in this universe.");
-
-    private static CallToolResult Result<T>(T value) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }],
-    };
-
-    private static CallToolResult Error(string code, string message) => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new { error = code, message }, Json) }],
-    };
 
     private static string? Words(string? text) => string.IsNullOrWhiteSpace(text) ? null : ReadingText.Cut(text, ManuscriptFindLength);
 

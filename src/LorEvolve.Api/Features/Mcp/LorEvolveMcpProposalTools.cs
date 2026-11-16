@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -72,13 +73,13 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
         [Description("Optional: a lore entry's id, to include its progression's ids and version.")] string? loreId = null,
         CancellationToken cancellationToken = default)
     {
-        if (await RoleAsync(cancellationToken) is not { } role)
+        if (await RoleAsync(db, caller, cancellationToken) is not { } role)
         {
             return NotAllowed();
         }
 
         return Result(await AiChangeCatalog.ReadAsync(
-            db, caller.UniverseId, role, cancellationToken, caller.CanProposeSchema, Guid.TryParse(loreId, out var entityId) ? entityId : null));
+            db, caller.UniverseId, role, cancellationToken, caller.CanProposeSchema, Guid.TryParse(loreId, out var entityId) ? entityId : null), Json);
     }
 
     [McpServerTool(Name = ProposeTool, Title = "Propose changes for review", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
@@ -108,7 +109,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
         [Description("The changes, in order.")] IReadOnlyList<AiChangeOperationInput>? operations,
         CancellationToken cancellationToken)
     {
-        if (await RoleAsync(cancellationToken) is null)
+        if (await RoleAsync(db, caller, cancellationToken) is null)
         {
             return NotAllowed();
         }
@@ -145,7 +146,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
                 ? "Staged for review. Nothing in the universe has changed. This proposal asks for pictures: no file came through this connection, so tell the person to open the review page, upload each picture there, and approve or reject it. Don't say the picture was added."
                 : "Staged for review. Nothing in the universe has changed: tell the person their changes are waiting in LorEvolve's Pending AI Changes, where they can approve or reject each one.",
             changes = proposal.Operations.OrderBy(operation => operation.Sequence).Select(operation => new { id = operation.Key, action = operation.Action, resource = operation.Resource }),
-        });
+        }, Json);
     }
 
     [McpServerTool(Name = ReadTool, Title = "Read a proposal's status", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
@@ -155,7 +156,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
         [Description("The proposal's id, as propose_changes returned it.")] string proposalId,
         CancellationToken cancellationToken)
     {
-        if (await RoleAsync(cancellationToken) is not { } role)
+        if (await RoleAsync(db, caller, cancellationToken) is not { } role)
         {
             return NotAllowed();
         }
@@ -181,19 +182,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
                 resultId = operation.ResultId,
                 problems = operation.Issues.Select(issue => issue.Message),
             }),
-        });
-    }
-
-    /// <summary>The person's role now, when it lets them propose anything; null otherwise.</summary>
-    private async Task<UniverseRole?> RoleAsync(CancellationToken cancellationToken)
-    {
-        if (!caller.IsAllowed || !caller.CanPropose)
-        {
-            return null;
-        }
-
-        var role = await UniverseAccess.RoleAsync(db, caller.UniverseId, caller.UserId, cancellationToken);
-        return role is { } effective && AiChangePermissions.MayStageAnything(effective) ? effective : null;
+        }, Json);
     }
 
     private string ReviewUrl(Guid proposalId) => $"{site.Base}/app/universes/{caller.UniverseId:D}/ai-changes/{proposalId:D}";
@@ -201,14 +190,4 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
     private static CallToolResult NotAllowed() =>
         Error("not_allowed", "Your role in this universe can only read, or this connection can't propose changes. Nothing was staged.");
 
-    private static CallToolResult Result<T>(T value) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }],
-    };
-
-    private static CallToolResult Error(string code, string message) => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new { error = code, message }, Json) }],
-    };
 }

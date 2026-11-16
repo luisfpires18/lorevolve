@@ -17,6 +17,7 @@ import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import type { Change } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { suggestionsPath } from '../suggestions/api'
@@ -288,27 +289,21 @@ function CommentsDrawer<T>({
               void postReply(thread.id)
             }}
           >
-            <label className="field__label" htmlFor={replyId}>
-              {t('review.comments.reply')}
-            </label>
-            <textarea
-              id={replyId}
-              className="field__input field__input--area"
-              rows={3}
-              dir="auto"
-              maxLength={COMMENT_MAX_LENGTH}
-              value={reply}
-              onChange={(event) => setReply(event.target.value)}
-              aria-invalid={replyError ? true : undefined}
-              aria-describedby={replyError ? `${replyId}-error` : undefined}
-              autoFocus
-              data-testid="comment-reply-text"
-            />
-            {replyError ? (
-              <p className="field__error" id={`${replyId}-error`}>
-                {replyError}
-              </p>
-            ) : null}
+            <Field id={replyId} label={t('review.comments.reply')} error={replyError}>
+              {(control) => (
+                <textarea
+                  {...control}
+                  className="field__input field__input--area"
+                  rows={3}
+                  dir="auto"
+                  maxLength={COMMENT_MAX_LENGTH}
+                  value={reply}
+                  onChange={(event) => setReply(event.target.value)}
+                  autoFocus
+                  data-testid="comment-reply-text"
+                />
+              )}
+            </Field>
             <div className="reviewthread__tools">
               <button
                 className="button button--sm"
@@ -425,26 +420,20 @@ function CommentsDrawer<T>({
               void post()
             }}
           >
-            <label className="field__label" htmlFor={newId}>
-              {t('review.comments.newComment')}
-            </label>
-            <textarea
-              id={newId}
-              className="field__input field__input--area"
-              rows={3}
-              dir="auto"
-              maxLength={COMMENT_MAX_LENGTH}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              aria-invalid={draftError ? true : undefined}
-              aria-describedby={draftError ? `${newId}-error` : undefined}
-              data-testid="comment-new-text"
-            />
-            {draftError ? (
-              <p className="field__error" id={`${newId}-error`}>
-                {draftError}
-              </p>
-            ) : null}
+            <Field id={newId} label={t('review.comments.newComment')} error={draftError}>
+              {(control) => (
+                <textarea
+                  {...control}
+                  className="field__input field__input--area"
+                  rows={3}
+                  dir="auto"
+                  maxLength={COMMENT_MAX_LENGTH}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  data-testid="comment-new-text"
+                />
+              )}
+            </Field>
             <div>
               <button
                 className="button button--sm"

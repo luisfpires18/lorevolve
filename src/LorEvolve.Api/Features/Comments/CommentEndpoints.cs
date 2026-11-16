@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -42,11 +43,11 @@ public static class CommentEndpoints
 
     private static Task<IResult> ListEntryAsync(
         Guid universeId, Guid entityId, ClaimsPrincipal principal, LorEvolveDbContext db, CancellationToken cancellationToken) =>
-        ListAsync(db, universeId, principal, () => EntryIsLiveAsync(db, universeId, entityId, cancellationToken), thread => thread.EntityId == entityId, cancellationToken);
+        ListAsync(db, universeId, principal, () => LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken), thread => thread.EntityId == entityId, cancellationToken);
 
     private static Task<IResult> StartEntryAsync(
         Guid universeId, Guid entityId, [FromBody] CommentRequest request, ClaimsPrincipal principal, LorEvolveDbContext db, CancellationToken cancellationToken) =>
-        StartAsync(db, universeId, principal, request, () => EntryIsLiveAsync(db, universeId, entityId, cancellationToken), thread => thread.EntityId = entityId, cancellationToken);
+        StartAsync(db, universeId, principal, request, () => LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken), thread => thread.EntityId = entityId, cancellationToken);
 
     private static Task<IResult> ListStoryAsync(
         Guid universeId, Guid storyId, ClaimsPrincipal principal, LorEvolveDbContext db, CancellationToken cancellationToken) =>
@@ -63,9 +64,6 @@ public static class CommentEndpoints
     private static Task<IResult> StartSceneAsync(
         Guid universeId, Guid storyId, Guid sceneId, [FromBody] CommentRequest request, ClaimsPrincipal principal, LorEvolveDbContext db, CancellationToken cancellationToken) =>
         StartAsync(db, universeId, principal, request, () => SceneIsLiveAsync(db, universeId, storyId, sceneId, cancellationToken), thread => thread.SceneId = sceneId, cancellationToken);
-
-    internal static Task<bool> EntryIsLiveAsync(LorEvolveDbContext db, Guid universeId, Guid entityId, CancellationToken cancellationToken) =>
-        db.Entities.AnyAsync(entity => entity.Id == entityId && entity.UniverseId == universeId && entity.DeletedAt == null, cancellationToken);
 
     internal static Task<bool> StoryIsLiveAsync(LorEvolveDbContext db, Guid universeId, Guid storyId, CancellationToken cancellationToken) =>
         db.Stories.AnyAsync(story => story.Id == storyId && story.UniverseId == universeId && story.DeletedAt == null, cancellationToken);

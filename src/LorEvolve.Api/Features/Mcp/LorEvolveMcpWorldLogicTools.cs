@@ -9,6 +9,7 @@ using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -89,7 +90,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("How many rows, up to 100.")] int pageSize = SemanticFindingLimits.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -162,7 +163,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                     updatedAt = Utc(rule.UpdatedAt),
                 };
             }),
-        });
+        }, Json);
     }
 
     [McpServerTool(Name = ListSystemsTool, Title = "List the universe's Systems", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
@@ -175,7 +176,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("How many rows, up to 100.")] int pageSize = SemanticFindingLimits.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -229,7 +230,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 system.projectId,
                 updatedAt = Utc(system.updatedAt),
             }),
-        });
+        }, Json);
     }
 
     [McpServerTool(Name = GetRuleTool, Title = "Read a World Logic rule", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
@@ -241,7 +242,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("The rule's id, exactly as list_world_logic_rules gave it.")] string ruleId,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -293,7 +294,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 version = definition.Version,
                 updatedAt = Utc(definition.UpdatedAt),
                 hasCondition = definition.ConditionJson is not null,
-            });
+            }, Json);
         }
 
         // A trashed world rule reads as not found, the same answer as one that was never there (ADR 0015).
@@ -315,7 +316,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 // A world rule is words and its own counting check (ADR 0034); it carries no typed condition, so
                 // there is nothing here for evaluate_world_logic_rule to run.
                 hasCondition = false,
-            });
+            }, Json);
     }
 
     // ---------- Evaluating ----------
@@ -334,7 +335,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("Optional: the project this evaluation is scoped to, which decides which exceptions apply.")] string? projectId = null,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -381,14 +382,14 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             ruleId = id,
             ruleVersion = result.RuleVersion,
             schemaVersion = result.SchemaVersion,
-            outcome = Outcome(result.Outcome),
+            outcome = ConditionOutcomeText.Of(result.Outcome),
             errorCode = result.ErrorCode,
             exemptionId = result.ExemptionId,
             evidence = result.Evidence.Select(item => new { source = item.Source, id = item.Id, role = item.Role }),
             rationale = result.Rationale,
             recorded = false,
             note = "Computed from the stored rules and lore. Nothing was recorded: the author's own sweep is what records a finding.",
-        });
+        }, Json);
     }
 
     [McpServerTool(Name = ImpactTool, Title = "What a rule change would touch", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
@@ -400,7 +401,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("The rule's id, exactly as list_world_logic_rules gave it.")] string ruleId,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -470,7 +471,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             note = dependents.Count > 0
                 ? "Changing this rule changes what the rules under dependents answer, because each of them declared a dependency on it."
                 : "No other rule declared a dependency on this one, so a change to it is local.",
-        });
+        }, Json);
     }
 
     // ---------- The author's recorded findings ----------
@@ -489,7 +490,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("How many rows, up to 100.")] int pageSize = WorldLogicFindingLimits.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -578,7 +579,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 createdAt = Utc(finding.createdAt),
                 updatedAt = Utc(finding.updatedAt),
             }),
-        });
+        }, Json);
     }
 
     [McpServerTool(Name = GetFindingTool, Title = "Read a recorded finding's evidence", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
@@ -589,7 +590,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("The finding's id, exactly as list_world_logic_findings gave it.")] string findingId,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -645,7 +646,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             rationale = WorldLogicRationale.Read(finding.Rationale),
             createdAt = Utc(finding.CreatedAt),
             updatedAt = Utc(finding.UpdatedAt),
-        });
+        }, Json);
     }
 
     // ---------- Submitting a claim of your own ----------
@@ -670,7 +671,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         [Description("Optional: the project this claim is scoped to.")] string? projectId = null,
         CancellationToken cancellationToken = default)
     {
-        if (await RoleAsync(cancellationToken) is null)
+        if (await RoleAsync(db, caller, cancellationToken) is null)
         {
             return NotAllowed();
         }
@@ -720,7 +721,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             message = "Submitted as an unverified observation. Nothing in the universe has changed and no violation was recorded: "
                 + "tell the person their observation is waiting for them in LorEvolve's World Logic, where they can accept or dismiss "
                 + "it. Do not describe it as a confirmed problem.",
-        });
+        }, Json);
     }
 
     // ---------- Shared ----------
@@ -751,31 +752,6 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             : (null, Error("not_found", "No project with that id is in this universe."));
     }
 
-    /// <summary>
-    /// The person's role now, when it lets them submit anything, exactly as a proposal checks it: the token's scope,
-    /// the connection's own permission and the role, read again on every call (ADR 0047).
-    /// </summary>
-    private async Task<UniverseRole?> RoleAsync(CancellationToken cancellationToken)
-    {
-        if (!caller.IsAllowed || !caller.CanPropose)
-        {
-            return null;
-        }
-
-        var role = await UniverseAccess.RoleAsync(db, caller.UniverseId, caller.UserId, cancellationToken);
-        return role is { } effective && AiChangePermissions.MayStageAnything(effective) ? effective : null;
-    }
-
-    /// <summary>The outcome as the specification writes it. Text, so a new outcome never shifts an existing one.</summary>
-    private static string Outcome(ConditionOutcome outcome) => outcome switch
-    {
-        ConditionOutcome.True => "true",
-        ConditionOutcome.False => "false",
-        ConditionOutcome.Unknown => "unknown",
-        ConditionOutcome.Exempt => "exempt",
-        _ => "error",
-    };
-
     private static WorldLogicFindingOutcome? OutcomeOf(string? wire) => wire?.Trim().ToLowerInvariant() switch
     {
         "violation" => WorldLogicFindingOutcome.Violation,
@@ -797,21 +773,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
     private static JsonElement? Raw(string? json) =>
         json is null ? null : JsonSerializer.Deserialize<JsonElement>(json);
 
-    private CallToolResult? Guard() => caller.IsAllowed ? null : Error("not_allowed", "This connection cannot read a universe.");
-
-    private static CallToolResult NotFound() => Error("not_found", "Nothing with that id is in this universe.");
-
     private static CallToolResult NotAllowed() =>
         Error("not_allowed", "Your role in this universe can only read, or this connection can't submit observations. Nothing was submitted.");
 
-    private static CallToolResult Result<T>(T value) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }],
-    };
-
-    private static CallToolResult Error(string code, string message) => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new { error = code, message }, Json) }],
-    };
 }

@@ -200,6 +200,58 @@ test('no field is written as label > span.field__label', () => {
   )
 })
 
+// Files that still write their own field__label. Only shrinks: move a file to Field, then delete its line.
+const FIELD_LABEL_FILES = [
+  'src/components/CollaboratorsPanel.tsx',
+  'src/components/ConnectToAi.tsx',
+  'src/components/EntityPicker.tsx',
+  'src/components/FamilyDiscovery.tsx',
+  'src/components/FamilyKindDialog.tsx',
+  'src/components/FamilyLinkForm.tsx',
+  'src/components/FeedbackButton.tsx',
+  'src/components/IdeaBoardEditor.tsx',
+  'src/components/IdeaBoardPicker.tsx',
+  'src/components/IdeaBoardsBrowser.tsx',
+  'src/components/IdeaEditor.tsx',
+  'src/components/IdeasBrowser.tsx',
+  'src/components/ImageCropDialog.tsx',
+  'src/components/KnowledgeView.tsx',
+  'src/components/MomentPick.tsx',
+  'src/components/PrivateNotes.tsx',
+  'src/components/ProgressionItemForm.tsx',
+  'src/components/ProjectEntries.tsx',
+  'src/components/PublicDetailsForm.tsx',
+  'src/components/PublicNameForm.tsx',
+  'src/components/RelationshipPeriodsField.tsx',
+  'src/components/RelationshipTypeManager.tsx',
+  'src/components/RestoreBackup.tsx',
+  'src/components/ScenePicks.tsx',
+  'src/components/TokenInput.tsx',
+  'src/components/TypeDialog.tsx',
+  'src/components/TypeGroupsField.tsx',
+  'src/components/TypeGroupsPanel.tsx',
+  'src/components/TypeIconPicker.tsx',
+  'src/components/UniverseForm.tsx',
+  'src/components/ValidationTermManager.tsx',
+  'src/components/ValidationTermSelect.tsx',
+  'src/components/WorldRuleCheckSection.tsx',
+  'src/components/WorldRuleEditor.tsx',
+  'src/pages/AdminWorkspace.tsx',
+  'src/pages/AiChangePage.tsx',
+  'src/pages/CanonPage.tsx',
+  'src/pages/MassCreatePage.tsx',
+  'src/pages/SystemEditorPage.tsx',
+  'src/pages/UniversesPage.tsx',
+]
+
+test('field__label is written only by Field.tsx', () => {
+  assert.deepEqual(
+    filesWith(/field__label/).filter((file) => file !== 'src/components/Field.tsx'),
+    FIELD_LABEL_FILES,
+    'Use Field (label, hint, control, error); a fixed file leaves FIELD_LABEL_FILES',
+  )
+})
+
 test('Field renders label, hint, control, error in that order', () => {
   const source = readFileSync(join(webRoot, 'src/components/Field.tsx'), 'utf8')
   const render = source.slice(source.lastIndexOf('return ('))

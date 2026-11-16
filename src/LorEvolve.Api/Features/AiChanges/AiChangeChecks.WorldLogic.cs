@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Systems;
 using Microsoft.EntityFrameworkCore;
 
@@ -90,7 +91,7 @@ internal sealed partial class AiChangeChecker
         }
         else
         {
-            var normalized = WorldLogicAccess.Normalize(system.Name);
+            var normalized = ValidationTerm.Normalize(system.Name);
             if (await db.LoreSystems.AsNoTracking().AnyAsync(
                     candidate => candidate.UniverseId == universeId
                                  && candidate.ProjectId == system.ProjectId
