@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
@@ -81,9 +82,7 @@ export function PublicDetailsForm({
   const genresHintId = useId()
   const creatorId = useId()
   const creatorHintId = useId()
-  const creatorErrorId = useId()
   const workId = useId()
-  const workErrorId = useId()
 
   const [summary, setSummary] = useState(state.publicSummary ?? '')
   const [category, setCategory] = useState(state.category === null ? '' : String(state.category))
@@ -185,71 +184,77 @@ export function PublicDetailsForm({
         </p>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor={summaryId}>
-          {t('universe.publicDetails.summary')}
-        </label>
-        <textarea
-          id={summaryId}
-          className="field__input field__input--area"
-          rows={3}
-          maxLength={PUBLIC_SUMMARY_MAX}
-          value={summary}
-          aria-describedby={summaryHintId}
-          aria-invalid={fieldErrors.publicsummary ? true : undefined}
-          onChange={(event) => {
-            setSavedMessage(false)
-            setSummary(event.target.value)
-          }}
-          data-testid="public-summary"
-        />
-        <p className="field__hint" id={summaryHintId}>
-          {t('universe.publicDetails.summaryHint', {
-            max: PUBLIC_SUMMARY_MAX,
-            length: summary.trim().length,
-          })}
-        </p>
-        {fieldErrors.publicsummary ? (
-          <p className="field__error" role="alert">
-            {fieldErrors.publicsummary}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        label={t('universe.publicDetails.summary')}
+        id={summaryId}
+        error={
+          fieldErrors.publicsummary ? (
+            <span role="alert">{fieldErrors.publicsummary}</span>
+          ) : undefined
+        }
+      >
+        {(control) => (
+          <>
+            <textarea
+              id={control.id}
+              className="field__input field__input--area"
+              rows={3}
+              maxLength={PUBLIC_SUMMARY_MAX}
+              value={summary}
+              aria-describedby={`${summaryHintId} ${control['aria-describedby'] ?? ''}`.trim()}
+              aria-invalid={control['aria-invalid']}
+              onChange={(event) => {
+                setSavedMessage(false)
+                setSummary(event.target.value)
+              }}
+              data-testid="public-summary"
+            />
+            <p className="field__hint" id={summaryHintId}>
+              {t('universe.publicDetails.summaryHint', {
+                max: PUBLIC_SUMMARY_MAX,
+                length: summary.trim().length,
+              })}
+            </p>
+          </>
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor={categoryId}>
-          {t('universe.publicDetails.category')}
-        </label>
-        <select
-          id={categoryId}
-          className="field__input field__input--select"
-          value={category}
-          aria-invalid={fieldErrors.category ? true : undefined}
-          onChange={(event) => {
-            setSavedMessage(false)
-            setCategory(event.target.value)
-          }}
-          data-testid="public-category"
-        >
-          <option value="">{t('universe.publicDetails.categoryChoose')}</option>
-          {CATEGORIES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {categoryLabel(option.value)}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.category ? (
-          <p className="field__error" role="alert">
-            {fieldErrors.category}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        label={t('universe.publicDetails.category')}
+        id={categoryId}
+        error={fieldErrors.category ? <span role="alert">{fieldErrors.category}</span> : undefined}
+      >
+        {(control) => (
+          <select
+            id={control.id}
+            className="field__input field__input--select"
+            value={category}
+            aria-describedby={control['aria-describedby']}
+            aria-invalid={control['aria-invalid']}
+            onChange={(event) => {
+              setSavedMessage(false)
+              setCategory(event.target.value)
+            }}
+            data-testid="public-category"
+          >
+            <option value="">{t('universe.publicDetails.categoryChoose')}</option>
+            {CATEGORIES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {categoryLabel(option.value)}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
 
-      <fieldset className="publication__genres" aria-describedby={genresHintId}>
-        <legend className="field__label">{t('universe.publicDetails.genres')}</legend>
-        <p className="field__hint" id={genresHintId}>
-          {t('universe.publicDetails.genresHint', { max: MAX_GENRES, count: genres.length })}
-        </p>
+      <Field
+        label={t('universe.publicDetails.genres')}
+        group="fieldset"
+        id={genresHintId}
+        className="publication__genres"
+        hint={t('universe.publicDetails.genresHint', { max: MAX_GENRES, count: genres.length })}
+        error={fieldErrors.genres ? <span role="alert">{fieldErrors.genres}</span> : undefined}
+      >
         <div className="publication__genrelist" data-testid="public-genres">
           {GENRES.map((genre) => {
             const chosen = genres.includes(genre.value)
@@ -266,15 +271,14 @@ export function PublicDetailsForm({
             )
           })}
         </div>
-        {fieldErrors.genres ? (
-          <p className="field__error" role="alert">
-            {fieldErrors.genres}
-          </p>
-        ) : null}
-      </fieldset>
+      </Field>
 
-      <fieldset className="publication__attribution" data-testid="public-attribution">
-        <legend className="field__label">{t('universe.publicDetails.attribution')}</legend>
+      <Field
+        label={t('universe.publicDetails.attribution')}
+        group="fieldset"
+        className="publication__attribution"
+        data-testid="public-attribution"
+      >
         <label className="check">
           <input
             type="checkbox"
@@ -287,55 +291,59 @@ export function PublicDetailsForm({
         </label>
         {attribution.based ? (
           <div className="publication__attributionfields">
-            <div className="field">
-              <label className="field__label" htmlFor={creatorId}>
-                {t('universe.publicDetails.creator')}
-              </label>
-              <input
-                id={creatorId}
-                className="field__input"
-                maxLength={ORIGINAL_CREATOR_MAX}
-                value={attribution.creator}
-                aria-required="true"
-                aria-describedby={
-                  fieldErrors.originalcreator ? `${creatorHintId} ${creatorErrorId}` : creatorHintId
-                }
-                aria-invalid={fieldErrors.originalcreator ? true : undefined}
-                onChange={(event) => attribute({ creator: event.target.value })}
-                data-testid="original-creator"
-              />
-              <p className="field__hint" id={creatorHintId}>
-                {t('universe.publicDetails.creatorHint')}
-              </p>
-              {fieldErrors.originalcreator ? (
-                <p className="field__error" id={creatorErrorId} role="alert">
-                  {fieldErrors.originalcreator}
-                </p>
-              ) : null}
-            </div>
-            <div className="field">
-              <label className="field__label" htmlFor={workId}>
-                {t('universe.publicDetails.work')}
-              </label>
-              <input
-                id={workId}
-                className="field__input"
-                maxLength={ORIGINAL_WORK_MAX}
-                value={attribution.work}
-                aria-describedby={fieldErrors.originalwork ? workErrorId : undefined}
-                aria-invalid={fieldErrors.originalwork ? true : undefined}
-                onChange={(event) => attribute({ work: event.target.value })}
-                data-testid="original-work"
-              />
-              {fieldErrors.originalwork ? (
-                <p className="field__error" id={workErrorId} role="alert">
-                  {fieldErrors.originalwork}
-                </p>
-              ) : null}
-            </div>
+            <Field
+              label={t('universe.publicDetails.creator')}
+              id={creatorId}
+              error={
+                fieldErrors.originalcreator ? (
+                  <span role="alert">{fieldErrors.originalcreator}</span>
+                ) : undefined
+              }
+            >
+              {(control) => (
+                <>
+                  <input
+                    id={control.id}
+                    className="field__input"
+                    maxLength={ORIGINAL_CREATOR_MAX}
+                    value={attribution.creator}
+                    aria-required="true"
+                    aria-describedby={`${creatorHintId} ${control['aria-describedby'] ?? ''}`.trim()}
+                    aria-invalid={control['aria-invalid']}
+                    onChange={(event) => attribute({ creator: event.target.value })}
+                    data-testid="original-creator"
+                  />
+                  <p className="field__hint" id={creatorHintId}>
+                    {t('universe.publicDetails.creatorHint')}
+                  </p>
+                </>
+              )}
+            </Field>
+            <Field
+              label={t('universe.publicDetails.work')}
+              id={workId}
+              error={
+                fieldErrors.originalwork ? (
+                  <span role="alert">{fieldErrors.originalwork}</span>
+                ) : undefined
+              }
+            >
+              {(control) => (
+                <input
+                  id={control.id}
+                  className="field__input"
+                  maxLength={ORIGINAL_WORK_MAX}
+                  value={attribution.work}
+                  aria-describedby={control['aria-describedby']}
+                  aria-invalid={control['aria-invalid']}
+                  onChange={(event) => attribute({ work: event.target.value })}
+                  data-testid="original-work"
+                />
+              )}
+            </Field>
           </div>
         ) : null}
-      </fieldset>
+      </Field>
 
       <div className="form__actions">
         <button

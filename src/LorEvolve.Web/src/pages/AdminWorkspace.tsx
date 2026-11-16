@@ -538,28 +538,31 @@ function UsersScreen() {
       <SignUpLink />
 
       <div className="controls">
-        <div className="controls__search">
-          <label className="field__label" htmlFor="admin-user-search">
-            {t('admin.users.search.label')}
-          </label>
-          <span className="controls__searchfield">
-            <Search
-              className="controls__searchicon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            <input
-              id="admin-user-search"
-              className="field__input"
-              type="search"
-              placeholder={t('admin.users.search.placeholder')}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              data-testid="admin-user-search"
-            />
-          </span>
-        </div>
+        <Field
+          className="controls__search"
+          id="admin-user-search"
+          label={t('admin.users.search.label')}
+        >
+          {(control) => (
+            <span className="controls__searchfield">
+              <Search
+                className="controls__searchicon"
+                aria-hidden="true"
+                focusable="false"
+                strokeWidth={1.75}
+              />
+              <input
+                {...control}
+                className="field__input"
+                type="search"
+                placeholder={t('admin.users.search.placeholder')}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                data-testid="admin-user-search"
+              />
+            </span>
+          )}
+        </Field>
       </div>
 
       {state.kind === 'loading' ? (
@@ -1148,27 +1151,25 @@ function BlockSection({
           void submit()
         }}
       >
-        <div className="field">
-          <label className="field__label" htmlFor="admin-reason">
-            {t('admin.block.reasonLabel')}
-          </label>
-          <textarea
-            id="admin-reason"
-            className="field__input field__input--area"
-            rows={3}
-            maxLength={500}
-            value={reason}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? 'admin-reason-error' : undefined}
-            onChange={(event) => setReason(event.target.value)}
-            data-testid="admin-reason"
-          />
-          {error ? (
-            <p className="field__error" id="admin-reason-error" data-testid="admin-reason-error">
-              {error}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          label={t('admin.block.reasonLabel')}
+          id="admin-reason"
+          error={error ? <span data-testid="admin-reason-error">{error}</span> : undefined}
+        >
+          {(control) => (
+            <textarea
+              id={control.id}
+              className="field__input field__input--area"
+              rows={3}
+              maxLength={500}
+              value={reason}
+              aria-invalid={control['aria-invalid']}
+              aria-describedby={control['aria-describedby']}
+              onChange={(event) => setReason(event.target.value)}
+              data-testid="admin-reason"
+            />
+          )}
+        </Field>
         <button
           className={block ? 'button button--secondary button--danger-quiet' : 'button'}
           type="submit"

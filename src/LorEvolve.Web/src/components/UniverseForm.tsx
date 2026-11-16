@@ -164,24 +164,25 @@ export function UniverseForm({
             onChange={(event) => setName(event.target.value)}
           />
 
-          <div className="field">
-            <label className="field__label" htmlFor="description">
-              {t('universe.form.description')}
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              className="field__input field__input--area"
-              rows={3}
-              maxLength={2000}
-              value={description}
-              aria-invalid={fieldErrors.description ? true : undefined}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-            {fieldErrors.description ? (
-              <p className="field__error">{fieldErrors.description}</p>
-            ) : null}
-          </div>
+          <Field
+            label={t('universe.form.description')}
+            id="description"
+            error={fieldErrors.description}
+          >
+            {(control) => (
+              <textarea
+                id={control.id}
+                name="description"
+                className="field__input field__input--area"
+                rows={3}
+                maxLength={2000}
+                value={description}
+                aria-describedby={control['aria-describedby']}
+                aria-invalid={control['aria-invalid']}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            )}
+          </Field>
 
           <div className="field">
             <label className="check">
@@ -214,72 +215,76 @@ export function UniverseForm({
       ) : null}
 
       {showColour ? (
-        <div className="field colourfield">
-          <label className="field__label" htmlFor={`${colourId}-hex`}>
-            {t('universe.form.colour')}
-          </label>
-          <div className="colourfield__row">
-            <input
-              className="colourfield__picker"
-              type="color"
-              aria-label={t('universe.form.colourPick')}
-              value={HEX.test(accentColor) ? accentColor : PICKER_IDLE}
-              onChange={(event) => {
-                setAccentColor(event.target.value)
-                setColourText(event.target.value)
-              }}
-              data-testid="universe-colour-picker"
-            />
-            <input
-              id={`${colourId}-hex`}
-              className="field__input colourfield__hex"
-              type="text"
-              inputMode="text"
-              spellCheck={false}
-              autoComplete="off"
-              maxLength={7}
-              placeholder={t('universe.form.colourNone')}
-              value={colourText}
-              aria-invalid={colourInvalid || fieldErrors.accentcolor ? true : undefined}
-              aria-describedby={`${colourId}-hint`}
-              onChange={(event) => {
-                setColourText(event.target.value)
-                const next = normalizeHex(event.target.value)
-                // The saved value follows the text only while the text is a colour, or empty for none.
-                if (next === '' || HEX.test(next)) setAccentColor(next)
-              }}
-              onBlur={() => setColourText(normalizeHex(colourText))}
-              data-testid="universe-colour-hex"
-            />
-            {accentColor ? (
-              <button
-                className="button button--text button--sm"
-                type="button"
-                onClick={() => {
-                  setAccentColor('')
-                  setColourText('')
-                }}
-                data-testid="universe-colour-clear"
-              >
-                <ActionIcon icon={X} />
-                {t('universe.form.colourClear')}
-              </button>
-            ) : null}
-          </div>
-          <p className="field__hint" id={`${colourId}-hint`}>
-            {accentColor ? t('universe.form.colourHintSet') : t('universe.form.colourHintUnset')}
-          </p>
-          {colourInvalid && !fieldErrors.accentcolor ? (
-            <p className="field__error" role="alert">
-              {t('universe.form.colourInvalid')}
-            </p>
-          ) : null}
-          {fieldErrors.accentcolor ? (
-            <p className="field__error" role="alert">
-              {fieldErrors.accentcolor}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          label={t('universe.form.colour')}
+          id={`${colourId}-hex`}
+          className="colourfield"
+          error={
+            fieldErrors.accentcolor ? (
+              <span role="alert">{fieldErrors.accentcolor}</span>
+            ) : colourInvalid ? (
+              <span role="alert">{t('universe.form.colourInvalid')}</span>
+            ) : undefined
+          }
+        >
+          {(control) => (
+            <>
+              <div className="colourfield__row">
+                <input
+                  className="colourfield__picker"
+                  type="color"
+                  aria-label={t('universe.form.colourPick')}
+                  value={HEX.test(accentColor) ? accentColor : PICKER_IDLE}
+                  onChange={(event) => {
+                    setAccentColor(event.target.value)
+                    setColourText(event.target.value)
+                  }}
+                  data-testid="universe-colour-picker"
+                />
+                <input
+                  id={control.id}
+                  className="field__input colourfield__hex"
+                  type="text"
+                  inputMode="text"
+                  spellCheck={false}
+                  autoComplete="off"
+                  maxLength={7}
+                  placeholder={t('universe.form.colourNone')}
+                  value={colourText}
+                  aria-invalid={control['aria-invalid']}
+                  aria-describedby={`${colourId}-hint ${control['aria-describedby'] ?? ''}`.trim()}
+                  onChange={(event) => {
+                    setColourText(event.target.value)
+                    const next = normalizeHex(event.target.value)
+                    // The saved value follows the text only while the text is a colour, or empty for none.
+                    if (next === '' || HEX.test(next)) setAccentColor(next)
+                  }}
+                  onBlur={() => setColourText(normalizeHex(colourText))}
+                  data-testid="universe-colour-hex"
+                />
+                {accentColor ? (
+                  <button
+                    className="button button--text button--sm"
+                    type="button"
+                    onClick={() => {
+                      setAccentColor('')
+                      setColourText('')
+                    }}
+                    data-testid="universe-colour-clear"
+                  >
+                    <ActionIcon icon={X} />
+                    {t('universe.form.colourClear')}
+                  </button>
+                ) : null}
+              </div>
+              <p className="field__hint" id={`${colourId}-hint`}>
+                {accentColor
+                  ? t('universe.form.colourHintSet')
+                  : t('universe.form.colourHintUnset')}
+              </p>
+            </>
+          )}
+        </Field>
       ) : null}
 
       <div className="form__actions">

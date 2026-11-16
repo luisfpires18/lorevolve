@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
@@ -247,48 +248,54 @@ function SystemEditor({
           void save()
         }}
       >
-        <div className="field">
-          <label className="field__label" htmlFor={nameId}>
-            {t('canon.worldLogic.systems.editor.name')}
-          </label>
-          <input
-            id={nameId}
-            className="field__input field__input--title"
-            type="text"
-            dir="auto"
-            value={name}
-            maxLength={SYSTEM_NAME_MAX_LENGTH}
-            placeholder={t('canon.worldLogic.systems.editor.namePlaceholder')}
-            onChange={(event) => setName(event.target.value)}
-            aria-invalid={fieldErrors.name ? true : undefined}
-            aria-required="true"
-            data-testid="system-editor-name"
-          />
-          {fieldErrors.name ? (
-            <p className="field__error" data-testid="system-editor-name-error">
-              {fieldErrors.name}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          label={t('canon.worldLogic.systems.editor.name')}
+          id={nameId}
+          error={
+            fieldErrors.name ? (
+              <span data-testid="system-editor-name-error">{fieldErrors.name}</span>
+            ) : undefined
+          }
+        >
+          {(control) => (
+            <input
+              id={control.id}
+              className="field__input field__input--title"
+              type="text"
+              dir="auto"
+              value={name}
+              maxLength={SYSTEM_NAME_MAX_LENGTH}
+              placeholder={t('canon.worldLogic.systems.editor.namePlaceholder')}
+              onChange={(event) => setName(event.target.value)}
+              aria-invalid={control['aria-invalid']}
+              aria-describedby={control['aria-describedby']}
+              aria-required="true"
+              data-testid="system-editor-name"
+            />
+          )}
+        </Field>
 
-        <div className="field">
-          <label className="field__label" htmlFor={summaryId}>
-            {t('canon.worldLogic.systems.editor.summary')}
-          </label>
-          <textarea
-            id={summaryId}
-            className="field__input field__input--area"
-            rows={8}
-            dir="auto"
-            value={summary}
-            maxLength={SYSTEM_SUMMARY_MAX_LENGTH}
-            placeholder={t('canon.worldLogic.systems.editor.summaryPlaceholder')}
-            onChange={(event) => setSummary(event.target.value)}
-            aria-invalid={fieldErrors.summary ? true : undefined}
-            data-testid="system-editor-summary"
-          />
-          {fieldErrors.summary ? <p className="field__error">{fieldErrors.summary}</p> : null}
-        </div>
+        <Field
+          label={t('canon.worldLogic.systems.editor.summary')}
+          id={summaryId}
+          error={fieldErrors.summary}
+        >
+          {(control) => (
+            <textarea
+              id={control.id}
+              className="field__input field__input--area"
+              rows={8}
+              dir="auto"
+              value={summary}
+              maxLength={SYSTEM_SUMMARY_MAX_LENGTH}
+              placeholder={t('canon.worldLogic.systems.editor.summaryPlaceholder')}
+              onChange={(event) => setSummary(event.target.value)}
+              aria-invalid={control['aria-invalid']}
+              aria-describedby={control['aria-describedby']}
+              data-testid="system-editor-summary"
+            />
+          )}
+        </Field>
 
         <div className="form__actions">
           <button

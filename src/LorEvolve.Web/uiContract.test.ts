@@ -202,28 +202,7 @@ test('no field is written as label > span.field__label', () => {
 
 // Files that still write their own field__label. Only shrinks: move a file to Field, then delete its line.
 const FIELD_LABEL_FILES = [
-  'src/components/CollaboratorsPanel.tsx',
-  'src/components/ConnectToAi.tsx',
-  'src/components/FeedbackButton.tsx',
-  'src/components/IdeaBoardEditor.tsx',
-  'src/components/IdeaBoardPicker.tsx',
-  'src/components/IdeaBoardsBrowser.tsx',
-  'src/components/IdeaEditor.tsx',
-  'src/components/IdeasBrowser.tsx',
   'src/components/ProjectEntries.tsx',
-  'src/components/PublicDetailsForm.tsx',
-  'src/components/PublicNameForm.tsx',
-  'src/components/RestoreBackup.tsx',
-  'src/components/UniverseForm.tsx',
-  'src/components/ValidationTermManager.tsx',
-  'src/components/ValidationTermSelect.tsx',
-  'src/components/WorldRuleCheckSection.tsx',
-  'src/components/WorldRuleEditor.tsx',
-  'src/pages/AdminWorkspace.tsx',
-  'src/pages/AiChangePage.tsx',
-  'src/pages/CanonPage.tsx',
-  'src/pages/SystemEditorPage.tsx',
-  'src/pages/UniversesPage.tsx',
 ]
 
 test('field__label is written only by Field.tsx', () => {

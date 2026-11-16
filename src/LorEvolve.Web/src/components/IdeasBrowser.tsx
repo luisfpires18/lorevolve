@@ -11,6 +11,7 @@ import {
 import { Plus } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyState } from './EmptyState'
+import { Field } from './Field'
 import { IdeasTabs } from './IdeasTabs'
 import { ActionIcon } from './ActionIcon'
 import { PageHeader } from './PageHeader'
@@ -296,47 +297,47 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       ) : null}
 
       <div className="controls ideas__controls">
-        <div className="controls__search">
-          <label className="field__label" htmlFor={searchId}>
-            {t('ideas.browser.filter')}
-          </label>
-          <input
-            id={searchId}
-            className="field__input"
-            type="search"
-            placeholder={t('ideas.browser.searchPlaceholder')}
-            value={typed}
-            onChange={(event) => setTyped(event.target.value)}
-            data-testid="ideas-search"
-          />
-        </div>
+        <Field id={searchId} className="controls__search" label={t('ideas.browser.filter')}>
+          {(control) => (
+            <input
+              {...control}
+              className="field__input"
+              type="search"
+              placeholder={t('ideas.browser.searchPlaceholder')}
+              value={typed}
+              onChange={(event) => setTyped(event.target.value)}
+              data-testid="ideas-search"
+            />
+          )}
+        </Field>
 
         {universe ? null : (
-          <div className="ideas__show">
-            <label className="field__label" htmlFor={showId}>
-              {t('ideas.browser.show')}
-            </label>
-            <select
-              id={showId}
-              className="field__input field__input--select"
-              value={show}
-              onChange={(event) => update({ show: event.target.value })}
-              data-testid="ideas-show"
-            >
-              <option value="">{t('ideas.browser.allIdeas')}</option>
-              <option value={UNASSIGNED}>{t('ideas.browser.noUniverse')}</option>
-              {show !== '' && show !== UNASSIGNED && !universes?.some((one) => one.id === show) ? (
-                <option value={show}>{t('ideas.browser.aUniverse')}</option>
-              ) : null}
-              {(universes ?? []).map((one) => (
-                <option key={one.id} value={one.id}>
-                  {one.isArchived
-                    ? t('ideas.browser.archivedUniverse', { name: one.name })
-                    : one.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Field id={showId} className="ideas__show" label={t('ideas.browser.show')}>
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={show}
+                onChange={(event) => update({ show: event.target.value })}
+                data-testid="ideas-show"
+              >
+                <option value="">{t('ideas.browser.allIdeas')}</option>
+                <option value={UNASSIGNED}>{t('ideas.browser.noUniverse')}</option>
+                {show !== '' &&
+                show !== UNASSIGNED &&
+                !universes?.some((one) => one.id === show) ? (
+                  <option value={show}>{t('ideas.browser.aUniverse')}</option>
+                ) : null}
+                {(universes ?? []).map((one) => (
+                  <option key={one.id} value={one.id}>
+                    {one.isArchived
+                      ? t('ideas.browser.archivedUniverse', { name: one.name })
+                      : one.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
         )}
 
         <div className="segmented" role="group" aria-label={t('ideas.browser.which')}>
@@ -562,7 +563,6 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
 function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: () => void }) {
   const { t } = useI18n()
   const inputId = useId()
-  const errorId = useId()
   const [text, setText] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -619,46 +619,50 @@ function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptured: ()
       noValidate
       data-testid="idea-capture"
     >
-      <label className="field__label" htmlFor={inputId}>
-        {t('ideas.capture.label')}
-      </label>
-      <div className="ideacapture__row">
-        <input
-          ref={inputRef}
-          id={inputId}
-          className="field__input ideacapture__input"
-          name="title"
-          type="text"
-          autoComplete="off"
-          enterKeyHint="done"
-          maxLength={IDEA_TITLE_MAX_LENGTH}
-          placeholder={t('ideas.capture.placeholder')}
-          value={text}
-          readOnly={saving}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
-          onChange={(event) => {
-            setText(event.target.value)
-            if (error) setError(null)
-          }}
-          onKeyDown={keyDown}
-          data-testid="idea-capture-input"
-        />
-        <button
-          className="button button--secondary ideacapture__submit"
-          type="submit"
-          disabled={saving}
-          data-testid="idea-capture-submit"
-        >
-          <ActionIcon icon={Plus} />
-          {saving ? t('ideas.capture.capturing') : t('ideas.capture.submit')}
-        </button>
-      </div>
-      {error ? (
-        <p className="field__error" id={errorId} role="alert" data-testid="idea-capture-error">
-          {error}
-        </p>
-      ) : null}
+      <Field
+        id={inputId}
+        label={t('ideas.capture.label')}
+        error={
+          error ? (
+            <span role="alert" data-testid="idea-capture-error">
+              {error}
+            </span>
+          ) : undefined
+        }
+      >
+        {(control) => (
+          <div className="ideacapture__row">
+            <input
+              {...control}
+              ref={inputRef}
+              className="field__input ideacapture__input"
+              name="title"
+              type="text"
+              autoComplete="off"
+              enterKeyHint="done"
+              maxLength={IDEA_TITLE_MAX_LENGTH}
+              placeholder={t('ideas.capture.placeholder')}
+              value={text}
+              readOnly={saving}
+              onChange={(event) => {
+                setText(event.target.value)
+                if (error) setError(null)
+              }}
+              onKeyDown={keyDown}
+              data-testid="idea-capture-input"
+            />
+            <button
+              className="button button--secondary ideacapture__submit"
+              type="submit"
+              disabled={saving}
+              data-testid="idea-capture-submit"
+            >
+              <ActionIcon icon={Plus} />
+              {saving ? t('ideas.capture.capturing') : t('ideas.capture.submit')}
+            </button>
+          </div>
+        )}
+      </Field>
       {/* Always in the page, so what is said into it is announced. */}
       <p className="ideacapture__status" role="status" data-testid="idea-capture-status">
         {said}
