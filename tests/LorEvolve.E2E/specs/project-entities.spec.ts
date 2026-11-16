@@ -225,7 +225,7 @@ test.describe('Project entities', () => {
     await expect(page.locator('main')).not.toContainText('Unit')
   })
 
-  test('a game overview says what is in the project, what was touched last, and the way into the rest', async ({
+  test('a game overview says what is in the project and nothing more, with the rest a tab or the sidebar away', async ({
     page,
   }) => {
     await signUp(page)
@@ -287,14 +287,14 @@ test.describe('Project entities', () => {
     await expect(page).toHaveURL(/\/lore$/)
   })
 
-  test('a game, a series and a film open a type as Lore does, edit types, and move between views at both widths', async ({
+  test('a game, a series, a film and a comic open a type as Lore does, edit types, and move between views at both widths', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
 
-    // 1 is Game, 2 Series and 3 Film. Series and Film have five views, whose tab bar used to widen a phone's page.
-    for (const kind of [1, 2, 3]) {
+    // 1 is Game, 2 Series, 3 Film and 4 Comic (#278 checks the shared overview on each). Series and Film have five views, whose tab bar used to widen a phone's page.
+    for (const kind of [1, 2, 3, 4]) {
       const project = await api<{ id: string }>(page, 'POST', '/api/projects', {
         name: unique('Low Tide '),
         kind,
@@ -335,6 +335,9 @@ test.describe('Project entities', () => {
       await expect(page.getByTestId('project-tabs')).toBeVisible()
       await page.getByTestId('projecttab-overview').click()
       await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
+      // Every kind shares the one overview: counts only, no recent list and no ways-out section (#278).
+      await expect(page.getByTestId('project-overview-recent')).toHaveCount(0)
+      await expect(page.getByTestId('project-overview-links')).toHaveCount(0)
       await page.getByTestId('projecttab-entities').click()
       await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
 
