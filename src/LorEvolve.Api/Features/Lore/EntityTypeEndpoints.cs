@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.FamilyTrees;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -1260,6 +1261,8 @@ public static class EntityTypeEndpoints
         Guid fieldId,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
@@ -1290,10 +1293,6 @@ public static class EntityTypeEndpoints
             .Concat(db.EntityEraFieldValues.AsNoTracking()
                 .Where(value => value.FieldDefinitionId == fieldId)
                 .Select(value => new { value.EntityEra!.EntityId, Trashed = value.EntityEra.Entity!.DeletedAt != null }))
-            // An image field's picture is its value (Issue #238): never cascaded away with objects left in the bucket.
-            .Concat(db.EntityFieldImages.AsNoTracking()
-                .Where(image => image.FieldDefinitionId == fieldId)
-                .Select(image => new { image.EntityId, Trashed = image.Entity!.DeletedAt != null }))
             .ToListAsync(cancellationToken))
             .Distinct()
             .ToList();
@@ -1333,9 +1332,13 @@ public static class EntityTypeEndpoints
                 });
         }
 
+        // An image field's pictures go with it (Issue #238): the rows inside the transaction, the objects once it committed.
+        var pictureKeys = await EntityFieldImageEndpoints.DropFieldAsync(db, fieldId, cancellationToken);
+
         db.EntityFieldDefinitions.Remove(definition);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
 
         return Results.NoContent();
     }
@@ -1949,9 +1952,6 @@ public static class EntityTypeEndpoints
                     value.EntityEra!.EntityId,
                     Trashed = value.EntityEra.Entity!.DeletedAt != null,
                 }))
-            .Union(db.EntityFieldImages
-                .Where(image => image.Entity!.UniverseId == universeId)
-                .Select(image => new { image.FieldDefinitionId, image.EntityId, Trashed = image.Entity!.DeletedAt != null }))
             .GroupBy(holder => holder.FieldDefinitionId)
             .Select(group => new { FieldId = group.Key, All = group.Count(), Trashed = group.Count(holder => holder.Trashed) })
             .ToDictionaryAsync(row => row.FieldId, cancellationToken);

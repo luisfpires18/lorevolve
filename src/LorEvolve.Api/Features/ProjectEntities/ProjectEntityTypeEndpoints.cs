@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -623,6 +624,8 @@ public static class ProjectEntityTypeEndpoints
         Guid fieldId,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
@@ -648,9 +651,7 @@ public static class ProjectEntityTypeEndpoints
 
         // Deleting a field that holds values would destroy what an author wrote, with nothing to undo it from. The
         // values are cleared first, entry by entry, which is a decision the author makes and sees.
-        // A picture in an image field is its value (Issue #238), so it holds the field the same way.
-        if (await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
-            || await db.EntityFieldImages.AnyAsync(image => image.FieldDefinitionId == fieldId, cancellationToken))
+        if (await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken))
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status409Conflict,
@@ -659,8 +660,13 @@ public static class ProjectEntityTypeEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = FieldInUseCode });
         }
 
+        // An image field's pictures go with it (Issue #238): the rows with the field, the objects once that is saved.
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+        var pictureKeys = await EntityFieldImageEndpoints.DropFieldAsync(db, fieldId, cancellationToken);
         db.EntityFieldDefinitions.Remove(field);
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
 
         return Results.NoContent();
     }

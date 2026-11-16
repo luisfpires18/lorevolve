@@ -292,23 +292,86 @@ public sealed class EntityFieldImageTests(LorEvolveApiFactory factory) : IClassF
     }
 
     [Fact]
-    public async Task A_field_holding_a_picture_cannot_be_deleted_until_it_is_removed()
+    public async Task Deleting_a_Lore_field_removes_its_pictures_and_sweeps_their_keys()
     {
         var (client, u, character) = await World("fimgfield");
         var portrait = await LoreField(client, u, character, "Portrait", FieldImageShape.Square);
         var entry = await LoreEntry(client, u, character, "Alenna Vance");
-        await Uploaded(client, u, entry, portrait.Id, Png(300, 300), null, "portrait.png");
+        var stored = await Uploaded(client, u, entry, portrait.Id, Png(300, 300), null, "portrait.png");
 
+        // A picture is not a value: it does not hold the field the way a value does.
         var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!;
-        Assert.Equal(1, types.SelectMany(type => type.Fields).Single(field => field.Id == portrait.Id).EntryCount);
+        Assert.Equal(0, types.SelectMany(type => type.Fields).Single(field => field.Id == portrait.Id).EntryCount);
 
-        var refused = await client.DeleteAsync($"/api/universes/{u}/entity-types/{character}/fields/{portrait.Id}");
-        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
-
-        (await client.DeleteAsync(Route(u, entry, portrait.Id))).EnsureSuccessStatusCode();
         Assert.Equal(
             HttpStatusCode.NoContent,
             (await client.DeleteAsync($"/api/universes/{u}/entity-types/{character}/fields/{portrait.Id}")).StatusCode);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+        Assert.Empty((await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.FieldImages!);
+    }
+
+    [Fact]
+    public async Task A_Lore_field_that_still_holds_a_value_is_not_deleted()
+    {
+        var (client, u, character) = await World("fimgfieldvalue");
+        var notes = await AddLoreField(client, u, character, new FieldDefinitionRequest("Notes", EntityFieldKind.ShortText, false, null, null, null));
+        var created = await client.PostAsJsonAsync(
+            $"/api/universes/{u}/entities",
+            new EntityRequest(character, "Alenna Vance", null, CanonStatus.Idea, null, null,
+                [new FieldValueInput(notes.Id, "kept", null, null, null, null, null)]));
+        created.EnsureSuccessStatusCode();
+
+        Assert.Equal(
+            HttpStatusCode.Conflict,
+            (await client.DeleteAsync($"/api/universes/{u}/entity-types/{character}/fields/{notes.Id}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_Lore_entry_moved_to_a_type_without_the_field_loses_the_picture_and_still_backs_up()
+    {
+        var (client, u, character) = await World("fimgretype");
+        var portrait = await LoreField(client, u, character, "Portrait", FieldImageShape.Square);
+        var entry = await LoreEntry(client, u, character, "Alenna Vance");
+        var stored = await Uploaded(client, u, entry, portrait.Id, Png(300, 300), null, "portrait.png");
+
+        var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!;
+        var other = types.First(type => type.Id != character && type.ParentId is null).Id;
+        var version = (await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.Version;
+
+        var moved = await client.PutAsJsonAsync(
+            $"/api/universes/{u}/entities/{entry}",
+            new EntityRequest(other, "Alenna Vance", null, CanonStatus.Idea, null, null, null, version));
+        Assert.True(moved.IsSuccessStatusCode, await moved.Content.ReadAsStringAsync());
+
+        Assert.Empty((await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.FieldImages!);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+
+        var restored = await RestoreTestClient.RestoreArchive(client, await PlotTestClient.RawArchive(client, u), "Moved world restored");
+        Assert.NotEqual(Guid.Empty, restored.Id);
+    }
+
+    [Fact]
+    public async Task A_project_entry_moved_to_a_type_without_the_field_loses_the_picture_and_still_backs_up()
+    {
+        var (client, u, _) = await World("fimgprojretype");
+        var (project, _, entry, art) = await ProjectWithImageField(client, u);
+        var stored = await Uploaded(client, u, entry, art, Png(400, 300), null, "unit.png");
+        var plain = await NewProjectType(client, project, "Terrain");
+        var version = (await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project}/entities/{entry}"))!.Version;
+
+        var moved = await client.PutAsJsonAsync(
+            $"/api/projects/{project}/entities/{entry}",
+            new ProjectEntityRequest(plain, "Scout", null, ExpectedVersion: version));
+        Assert.True(moved.IsSuccessStatusCode, await moved.Content.ReadAsStringAsync());
+
+        Assert.Empty((await moved.Content.ReadFromJsonAsync<EntityDetail>())!.FieldImages!);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+
+        var restored = await RestoreTestClient.RestoreArchive(client, await PlotTestClient.RawArchive(client, u), "Moved project restored");
+        Assert.NotEqual(Guid.Empty, restored.Id);
     }
 
     [Fact]
@@ -366,12 +429,15 @@ public sealed class EntityFieldImageTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal(600, cut.Height);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(OriginalUrl(u, entry, stored))).StatusCode);
 
-        // A project field holding a picture is not deleted under it.
+        // Deleting the project field removes its picture and sweeps its keys.
         var types = (await client.GetFromJsonAsync<List<ProjectEntityTypeResponse>>($"/api/projects/{project}/entity-types"))!;
         var typeId = types.Single(type => type.Fields.Any(field => field.Id == art)).Id;
         Assert.Equal(
-            HttpStatusCode.Conflict,
+            HttpStatusCode.NoContent,
             (await client.DeleteAsync($"/api/projects/{project}/entity-types/{typeId}/fields/{art}")).StatusCode);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+        Assert.Empty((await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project}/entities/{entry}"))!.FieldImages!);
     }
 
     // ---------- Helpers ----------

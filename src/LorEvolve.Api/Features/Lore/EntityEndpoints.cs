@@ -4,6 +4,7 @@ using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.FamilyTrees;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -589,6 +590,8 @@ public static class EntityEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CanonPromotionGate gate,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
@@ -601,10 +604,22 @@ public static class EntityEndpoints
             return refused;
         }
 
-        return await gate.RunAsync(
+        // A change of type drops the pictures of fields the new type lacks (Issue #238); their objects go once the save has
+        // committed, which the gate has done by the time it answers.
+        var held = await EntityFieldImageEndpoints.HeldKeysAsync(db, entityId, cancellationToken);
+
+        var result = await gate.RunAsync(
             universeId,
             token => UpdateCoreAsync(universeId, entityId, request, principal.RequireUserId(), db, token),
             cancellationToken);
+
+        if (held.Length > 0)
+        {
+            var kept = await EntityFieldImageEndpoints.HeldKeysAsync(db, entityId, cancellationToken);
+            await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, held.Except(kept));
+        }
+
+        return result;
     }
 
     /// <summary>The 409 for an entry save written over a version that is no longer current (ADR 0043).</summary>
@@ -728,6 +743,7 @@ public static class EntityEndpoints
             return overridden;
         }
 
+        var retyped = entity.EntityTypeId != request.EntityTypeId;
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -753,6 +769,13 @@ public static class EntityEndpoints
         await db.EntityFieldValues
             .Where(value => value.EntityId == entityId && value.FieldDefinition!.ArchivedAt == null)
             .ExecuteDeleteAsync(cancellationToken);
+
+        // A picture in a field the new type lacks goes with the retype (Issue #238). The route sweeps its objects after the
+        // commit; another writer of a retype (an approved change, a restored version) leaves them as unreferenced litter.
+        if (retyped)
+        {
+            await EntityFieldImageEndpoints.DropInapplicableAsync(db, universeId, entityId, request.EntityTypeId, projectId: null, cancellationToken);
+        }
 
         if (await ApplyAliasesTagsAndFieldsAsync(db, universeId, entity, request, cancellationToken)
             is { } problem)

@@ -62,6 +62,59 @@ public static partial class EntityFieldImageEndpoints
         _ => ImageFrame.FieldFree,
     };
 
+    /// <summary>
+    /// When an entry changes type, the pictures in fields its new type does not have (by the same lineage values use,
+    /// inherited fields included) are deleted with the rest of the save, and their keys are answered for the caller to sweep
+    /// once that save has committed. Archived fields of the new lineage keep their pictures, as they keep their values.
+    /// </summary>
+    internal static async Task<string[]> DropInapplicableAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid entityId,
+        Guid typeId,
+        Guid? projectId,
+        CancellationToken cancellationToken)
+    {
+        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, typeId, cancellationToken, projectId);
+        var gone = db.EntityFieldImages
+            .Where(image => image.EntityId == entityId && !lineage.Contains(image.FieldDefinition!.EntityTypeId));
+
+        var keys = await gone.Select(image => new { image.OriginalKey, image.CropKey }).ToListAsync(cancellationToken);
+        if (keys.Count == 0)
+        {
+            return [];
+        }
+
+        await gone.ExecuteDeleteAsync(cancellationToken);
+        return [.. keys.SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
+    }
+
+    /// <summary>Deletes every picture of a field that is being deleted and answers their keys, to sweep after the commit.</summary>
+    internal static async Task<string[]> DropFieldAsync(LorEvolveDbContext db, Guid fieldId, CancellationToken cancellationToken)
+    {
+        var pictures = db.EntityFieldImages.Where(image => image.FieldDefinitionId == fieldId);
+        var keys = await pictures.Select(image => new { image.OriginalKey, image.CropKey }).ToListAsync(cancellationToken);
+        if (keys.Count == 0)
+        {
+            return [];
+        }
+
+        await pictures.ExecuteDeleteAsync(cancellationToken);
+        return [.. keys.SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
+    }
+
+    /// <summary>Every object key the entry's field pictures name now: read before and after a save, the difference is litter.</summary>
+    internal static async Task<string[]> HeldKeysAsync(LorEvolveDbContext db, Guid entityId, CancellationToken cancellationToken) =>
+        [.. (await db.EntityFieldImages.AsNoTracking()
+                .Where(image => image.EntityId == entityId)
+                .Select(image => new { image.OriginalKey, image.CropKey })
+                .ToListAsync(cancellationToken))
+            .SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
+
+    /// <summary>Best-effort sweep of objects nothing names any more (ADR 0019), always after the commit that stopped naming them.</summary>
+    internal static Task SweepAsync(IMediaObjectStore store, ILoggerFactory loggerFactory, IEnumerable<string> keys) =>
+        EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), [.. keys]);
+
     /// <summary>A live entry of this universe (Lore or project) and an unarchived Image field that applies to its type.</summary>
     private sealed record Target(string OwnerId, ImageFrame Frame);
 
