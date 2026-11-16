@@ -61,14 +61,15 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
   )
 
   function apply() {
-    if (address.trim() === '') {
+    const entered = address.trim()
+    if (entered === '') {
       editor.chain().extendMarkRange('link').unsetLink().run()
-    } else if (!isSafeHref(address)) {
+    } else if (!isSafeHref(entered)) {
       setError(t('lore.editor.linkUnsafe'))
       input.current?.focus()
       return
     } else {
-      editor.chain().extendMarkRange('link').setLink({ href: address.trim() }).run()
+      editor.chain().extendMarkRange('link').setLink({ href: entered }).run()
     }
     onClose()
   }

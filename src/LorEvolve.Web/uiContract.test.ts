@@ -202,6 +202,7 @@ test('no new hand-written <dialog>', () => {
 test('no native prompt, alert or confirm', () => {
   const files = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
     .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.test.ts'))
+    .sort()
     .map((file) => 'src/' + file.replaceAll('\\', '/'))
   assert.deepEqual(
     files.filter((file) => /\bwindow\.(prompt|alert|confirm)\s*\(/.test(read(file))),

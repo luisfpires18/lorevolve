@@ -275,7 +275,7 @@ test.describe('lore article', () => {
 
     // An unsafe address stays in the dialog as the field's error and puts the focus back on the field.
     await page.keyboard.press('ControlOrMeta+a')
-    await page.keyboard.type('javascript:alert(1)')
+    await page.keyboard.type('  javascript:alert(1)')
     await page.keyboard.press('Enter')
     await expect(drawer).toBeVisible()
     await expect(drawer.getByText('Links must be http, https or mailto addresses.')).toBeVisible()
@@ -286,7 +286,7 @@ test.describe('lore article', () => {
     // A safe address is applied, the dialog closes and the writing has the focus again; it saves to the API.
     const href = `https://${unique('link')}.example.test/`
     await page.keyboard.press('ControlOrMeta+a')
-    await page.keyboard.type(href)
+    await page.keyboard.type(`  ${href}  `)
     await page.keyboard.press('Enter')
     await expect(drawer).toHaveCount(0)
     await expect(editor).toBeFocused()
@@ -298,6 +298,13 @@ test.describe('lore article', () => {
     await openFromKeyboard()
     await expect(address).toHaveValue(href)
     await page.keyboard.press('Escape')
+    await expect(drawer).toHaveCount(0)
+    await expect(editor).toBeFocused()
+    await expect(editor.locator(`a[href="${href}"]`)).toHaveCount(1)
+
+    // A press on the backdrop does the same.
+    await openFromKeyboard()
+    await page.mouse.click(2, 2)
     await expect(drawer).toHaveCount(0)
     await expect(editor).toBeFocused()
     await expect(editor.locator(`a[href="${href}"]`)).toHaveCount(1)
