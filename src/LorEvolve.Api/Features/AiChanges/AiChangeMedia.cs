@@ -170,7 +170,7 @@ public static partial class AiChangeMediaEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid("Choose an image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -181,13 +181,13 @@ public static partial class AiChangeMediaEndpoints
         var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, cancellationToken);
         if (prepared is null)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { [rejection!.Field] = [rejection.Message] });
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var held = await db.AiChangeMedia.Where(row => row.UploadedByUserId == userId && row.OperationId != operationId).SumAsync(row => (long?)row.ByteSize, cancellationToken) ?? 0;
         if (held + bytes.Length > MaxStagedBytesPerAccount)
         {
-            return Invalid($"You have {Megabytes(held)} MB of pictures waiting for review, and at most {Megabytes(MaxStagedBytesPerAccount)} MB can wait at once. Approve or reject some first.");
+            return Problems.Field(ImagePreparation.FileField, $"You have {ImagePreparation.Megabytes(held)} MB of pictures waiting for review, and at most {ImagePreparation.Megabytes(MaxStagedBytesPerAccount)} MB can wait at once. Approve or reject some first.");
         }
 
         var assetId = Guid.NewGuid();
@@ -209,12 +209,12 @@ public static partial class AiChangeMediaEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             await SweepAsync(store, logger, originalKey, thumbnailKey);
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
@@ -254,7 +254,7 @@ public static partial class AiChangeMediaEndpoints
                 OriginalKey = originalKey,
                 ThumbnailKey = thumbnailKey,
                 ContentType = prepared.ContentType,
-                FileName = EntityImageEndpoints.TrimFileName(file.FileName),
+                FileName = ImagePreparation.TrimFileName(file.FileName),
                 Width = prepared.Width,
                 Height = prepared.Height,
                 ByteSize = bytes.Length,
@@ -330,7 +330,7 @@ public static partial class AiChangeMediaEndpoints
         }
         catch (MediaStorageException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
     }
 
@@ -364,13 +364,6 @@ public static partial class AiChangeMediaEndpoints
     [LoggerMessage(Level = LogLevel.Warning, Message = "A quarantined AI change picture object could not be deleted and is left in storage: {Key}.")]
     private static partial void LogOrphan(ILogger logger, string key, Exception exception);
 
-    private static IResult Invalid(string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [ImagePreparation.FileField] = [message] });
-
-    private static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
-
-    private static string Megabytes(long bytes) => (bytes / (1024.0 * 1024.0)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
 }
 
 /// <summary>

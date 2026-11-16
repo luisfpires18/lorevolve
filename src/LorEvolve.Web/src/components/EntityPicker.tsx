@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject 
 import type { Chronology } from '../chronology/types'
 import { listEntities } from '../lore/api'
 import type { EntitySummary } from '../lore/types'
+import { Field } from './Field'
 import { QuickCreateDialog } from './QuickCreateDialog'
 import { useI18n } from '../i18n'
 
@@ -284,166 +285,169 @@ export function EntityPicker({
   const note = created && value?.id === created.id ? created : null
 
   return (
-    <div className="field picker" ref={wrapper}>
-      <label className="field__label" htmlFor={inputId}>
-        {label}
-      </label>
-
-      {value ? (
-        <p className="picker__chosen">
-          <span className="picker__chosenname">
-            <bdi>{value.name}</bdi>
-          </span>
-          <button
-            ref={change}
-            className="button button--secondary button--sm"
-            type="button"
-            aria-describedby={note ? noteId : undefined}
-            onClick={() => {
-              focusInput.current = true
-              onChange(null)
-              setIsOpen(true)
-            }}
-            data-testid="picker-clear"
-          >
-            {t('entity.picker.change')}
-          </button>
-        </p>
-      ) : (
-        <>
-          <input
-            id={inputId}
-            ref={input}
-            className="field__input"
-            type="text"
-            role="combobox"
-            autoComplete="off"
-            aria-expanded={isOpen}
-            aria-controls={listId}
-            aria-autocomplete="list"
-            aria-invalid={error ? true : undefined}
-            aria-activedescendant={
-              isOpen && results[active]
-                ? `${listId}-${results[active].id}`
-                : isOpen && startCreate && active === results.length
-                  ? `${listId}-create`
-                  : undefined
-            }
-            placeholder={placeholder}
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setIsOpen(true)
-            }}
-            onFocus={() => setIsOpen(true)}
-            onKeyDown={(event) =>
-              listKeyDown(event, {
-                isOpen,
-                open: () => setIsOpen(true),
-                close: () => setIsOpen(false),
-                results,
-                active,
-                setActive,
-                choose,
-                extra: startCreate,
-              })
-            }
-            data-testid="picker-input"
-          />
-
-          {isOpen ? (
-            <ul className="picker__list" id={listId} role="listbox" aria-label={label} ref={list}>
-              {results.map((item, index) => (
-                <li key={item.id}>
-                  <button
-                    id={`${listId}-${item.id}`}
-                    className="picker__option"
-                    type="button"
-                    role="option"
-                    aria-selected={index === active}
-                    onMouseEnter={() => setActive(() => index)}
-                    onClick={() => choose(item)}
-                    data-testid={`picker-option-${item.name}`}
-                  >
-                    <span className="picker__name">
-                      <bdi>{item.name}</bdi>
-                    </span>
-                    <span className="picker__kind">
-                      <bdi>{item.entityTypeName}</bdi>
-                    </span>
-                  </button>
-                </li>
-              ))}
-
-              {results.length === 0 ? (
-                <li className="picker__none">
-                  {isSearching ? t('entity.picker.looking') : t('entity.picker.none')}
-                </li>
-              ) : null}
-
-              {startCreate ? (
-                <li>
-                  <button
-                    id={`${listId}-create`}
-                    className="picker__option picker__create"
-                    type="button"
-                    role="option"
-                    aria-selected={active === results.length}
-                    onMouseEnter={() => setActive(() => results.length)}
-                    onClick={startCreate}
-                    data-testid="picker-create"
-                  >
-                    <span className="picker__name">
-                      {tx('entity.picker.create', { name: <bdi>{createName}</bdi> })}
-                    </span>
-                    <span className="picker__kind">{t('entity.picker.newEntry')}</span>
-                  </button>
-                </li>
-              ) : null}
-            </ul>
-          ) : null}
-        </>
-      )}
-
-      {quickCreate ? (
-        // Announced as it appears: the entry exists now, the choice does not until the form it sits in is saved.
-        <p className="picker__created" id={noteId} role="status" data-testid="picker-created">
-          {note ? (
+    <Field label={label} id={inputId} className="picker" error={error}>
+      {(control) => (
+        <div ref={wrapper}>
+          {value ? (
+            <p className="picker__chosen">
+              <span className="picker__chosenname">
+                <bdi>{value.name}</bdi>
+              </span>
+              <button
+                ref={change}
+                className="button button--secondary button--sm"
+                type="button"
+                aria-describedby={note ? noteId : undefined}
+                onClick={() => {
+                  focusInput.current = true
+                  onChange(null)
+                  setIsOpen(true)
+                }}
+                data-testid="picker-clear"
+              >
+                {t('entity.picker.change')}
+              </button>
+            </p>
+          ) : (
             <>
-              {tx('entity.picker.created', {
-                name: <bdi>{note.name}</bdi>,
-                hint: quickCreate.keepHint,
-                link: (
-                  <a
-                    href={`/app/universes/${universeId}/lore/${note.id}`}
-                    target="_blank"
-                    rel="noopener"
-                    data-testid="picker-created-open"
-                  >
-                    {t('entity.picker.openFull')}
-                  </a>
-                ),
-              })}
+              <input
+                {...control}
+                ref={input}
+                className="field__input"
+                type="text"
+                role="combobox"
+                autoComplete="off"
+                aria-expanded={isOpen}
+                aria-controls={listId}
+                aria-autocomplete="list"
+                aria-activedescendant={
+                  isOpen && results[active]
+                    ? `${listId}-${results[active].id}`
+                    : isOpen && startCreate && active === results.length
+                      ? `${listId}-create`
+                      : undefined
+                }
+                placeholder={placeholder}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setIsOpen(true)
+                }}
+                onFocus={() => setIsOpen(true)}
+                onKeyDown={(event) =>
+                  listKeyDown(event, {
+                    isOpen,
+                    open: () => setIsOpen(true),
+                    close: () => setIsOpen(false),
+                    results,
+                    active,
+                    setActive,
+                    choose,
+                    extra: startCreate,
+                  })
+                }
+                data-testid="picker-input"
+              />
+
+              {isOpen ? (
+                <ul
+                  className="picker__list"
+                  id={listId}
+                  role="listbox"
+                  aria-label={label}
+                  ref={list}
+                >
+                  {results.map((item, index) => (
+                    <li key={item.id}>
+                      <button
+                        id={`${listId}-${item.id}`}
+                        className="picker__option"
+                        type="button"
+                        role="option"
+                        aria-selected={index === active}
+                        onMouseEnter={() => setActive(() => index)}
+                        onClick={() => choose(item)}
+                        data-testid={`picker-option-${item.name}`}
+                      >
+                        <span className="picker__name">
+                          <bdi>{item.name}</bdi>
+                        </span>
+                        <span className="picker__kind">
+                          <bdi>{item.entityTypeName}</bdi>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+
+                  {results.length === 0 ? (
+                    <li className="picker__none">
+                      {isSearching ? t('entity.picker.looking') : t('entity.picker.none')}
+                    </li>
+                  ) : null}
+
+                  {startCreate ? (
+                    <li>
+                      <button
+                        id={`${listId}-create`}
+                        className="picker__option picker__create"
+                        type="button"
+                        role="option"
+                        aria-selected={active === results.length}
+                        onMouseEnter={() => setActive(() => results.length)}
+                        onClick={startCreate}
+                        data-testid="picker-create"
+                      >
+                        <span className="picker__name">
+                          {tx('entity.picker.create', { name: <bdi>{createName}</bdi> })}
+                        </span>
+                        <span className="picker__kind">{t('entity.picker.newEntry')}</span>
+                      </button>
+                    </li>
+                  ) : null}
+                </ul>
+              ) : null}
             </>
+          )}
+
+          {quickCreate ? (
+            // Announced as it appears: the entry exists now, the choice does not until the form it sits in is saved.
+            <p className="picker__created" id={noteId} role="status" data-testid="picker-created">
+              {note ? (
+                <>
+                  {tx('entity.picker.created', {
+                    name: <bdi>{note.name}</bdi>,
+                    hint: quickCreate.keepHint,
+                    link: (
+                      <a
+                        href={`/app/universes/${universeId}/lore/${note.id}`}
+                        target="_blank"
+                        rel="noopener"
+                        data-testid="picker-created-open"
+                      >
+                        {t('entity.picker.openFull')}
+                      </a>
+                    ),
+                  })}
+                </>
+              ) : null}
+            </p>
           ) : null}
-        </p>
-      ) : null}
 
-      {error ? <p className="field__error">{error}</p> : null}
-
-      {creating !== null && quickCreate ? (
-        <QuickCreateDialog
-          universeId={universeId}
-          initialName={creating}
-          entityTypeId={entityTypeId}
-          entityTypeGroupId={entityTypeGroupId}
-          chronology={quickCreate.chronology}
-          onCreated={(choice) => finishCreate(choice, true)}
-          onChooseExisting={(choice) => finishCreate(choice, false)}
-          onCancel={() => finishCreate(null, false)}
-        />
-      ) : null}
-    </div>
+          {creating !== null && quickCreate ? (
+            <QuickCreateDialog
+              universeId={universeId}
+              initialName={creating}
+              entityTypeId={entityTypeId}
+              entityTypeGroupId={entityTypeGroupId}
+              chronology={quickCreate.chronology}
+              onCreated={(choice) => finishCreate(choice, true)}
+              onChooseExisting={(choice) => finishCreate(choice, false)}
+              onCancel={() => finishCreate(null, false)}
+            />
+          ) : null}
+        </div>
+      )}
+    </Field>
   )
 }
 
@@ -475,7 +479,6 @@ export function EntityMultiPicker({
   const placeholder = customPlaceholder ?? t('entity.multiPicker.placeholder')
   const inputId = useId()
   const listId = useId()
-  const hintId = useId()
 
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -516,90 +519,81 @@ export function EntityMultiPicker({
   }
 
   return (
-    <div className="field picker" ref={wrapper}>
-      <label className="field__label" htmlFor={inputId}>
-        {label}
-      </label>
-      {hint ? (
-        <p className="field__hint" id={hintId}>
-          {hint}
-        </p>
-      ) : null}
+    <Field label={label} id={inputId} className="picker" hint={hint} error={error}>
+      {(control) => (
+        <div ref={wrapper}>
+          <div className="tokens" data-testid="participants">
+            {value.map((choice) => (
+              <span className="token" key={choice.id}>
+                <bdi>{choice.name}</bdi>
+                <button
+                  type="button"
+                  className="token__remove"
+                  aria-label={t('entity.multiPicker.remove', { name: choice.name })}
+                  onClick={() => onChange(value.filter((candidate) => candidate.id !== choice.id))}
+                  data-testid={`participant-remove-${choice.name}`}
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+            <input
+              {...control}
+              className="tokens__input"
+              type="text"
+              role="combobox"
+              autoComplete="off"
+              aria-expanded={isOpen}
+              aria-controls={listId}
+              aria-autocomplete="list"
+              aria-activedescendant={
+                isOpen && results[active] ? `${listId}-${results[active].id}` : undefined
+              }
+              placeholder={value.length === 0 ? placeholder : ''}
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setIsOpen(true)
+              }}
+              onFocus={() => setIsOpen(true)}
+              onKeyDown={onKeyDown}
+              data-testid="participant-input"
+            />
+          </div>
 
-      <div className="tokens" data-testid="participants">
-        {value.map((choice) => (
-          <span className="token" key={choice.id}>
-            <bdi>{choice.name}</bdi>
-            <button
-              type="button"
-              className="token__remove"
-              aria-label={t('entity.multiPicker.remove', { name: choice.name })}
-              onClick={() => onChange(value.filter((candidate) => candidate.id !== choice.id))}
-              data-testid={`participant-remove-${choice.name}`}
-            >
-              &times;
-            </button>
-          </span>
-        ))}
-        <input
-          id={inputId}
-          className="tokens__input"
-          type="text"
-          role="combobox"
-          autoComplete="off"
-          aria-expanded={isOpen}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-describedby={hint ? hintId : undefined}
-          aria-invalid={error ? true : undefined}
-          aria-activedescendant={
-            isOpen && results[active] ? `${listId}-${results[active].id}` : undefined
-          }
-          placeholder={value.length === 0 ? placeholder : ''}
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value)
-            setIsOpen(true)
-          }}
-          onFocus={() => setIsOpen(true)}
-          onKeyDown={onKeyDown}
-          data-testid="participant-input"
-        />
-      </div>
+          {isOpen ? (
+            <ul className="picker__list" id={listId} role="listbox" aria-label={label} ref={list}>
+              {results.map((item, index) => (
+                <li key={item.id}>
+                  <button
+                    id={`${listId}-${item.id}`}
+                    className="picker__option"
+                    type="button"
+                    role="option"
+                    aria-selected={index === active}
+                    onMouseEnter={() => setActive(() => index)}
+                    onClick={() => choose(item)}
+                    data-testid={`participant-option-${item.name}`}
+                  >
+                    <span className="picker__name">
+                      <bdi>{item.name}</bdi>
+                    </span>
+                    <span className="picker__kind">
+                      <bdi>{item.entityTypeName}</bdi>
+                    </span>
+                  </button>
+                </li>
+              ))}
 
-      {isOpen ? (
-        <ul className="picker__list" id={listId} role="listbox" aria-label={label} ref={list}>
-          {results.map((item, index) => (
-            <li key={item.id}>
-              <button
-                id={`${listId}-${item.id}`}
-                className="picker__option"
-                type="button"
-                role="option"
-                aria-selected={index === active}
-                onMouseEnter={() => setActive(() => index)}
-                onClick={() => choose(item)}
-                data-testid={`participant-option-${item.name}`}
-              >
-                <span className="picker__name">
-                  <bdi>{item.name}</bdi>
-                </span>
-                <span className="picker__kind">
-                  <bdi>{item.entityTypeName}</bdi>
-                </span>
-              </button>
-            </li>
-          ))}
-
-          {results.length === 0 ? (
-            <li className="picker__none">
-              {isSearching ? t('entity.multiPicker.looking') : t('entity.multiPicker.none')}
-            </li>
+              {results.length === 0 ? (
+                <li className="picker__none">
+                  {isSearching ? t('entity.multiPicker.looking') : t('entity.multiPicker.none')}
+                </li>
+              ) : null}
+            </ul>
           ) : null}
-        </ul>
-      ) : null}
-
-      {error ? <p className="field__error">{error}</p> : null}
-    </div>
+        </div>
+      )}
+    </Field>
   )
 }

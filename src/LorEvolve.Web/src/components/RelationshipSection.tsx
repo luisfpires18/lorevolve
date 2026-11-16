@@ -491,7 +491,9 @@ export function RelationshipSection({
           data-testid="save-relationship"
         >
           {isSaving
-            ? t('relationships.section.saving')
+            ? editingId
+              ? t('relationships.section.saving')
+              : t('relationships.section.adding')
             : editingId
               ? t('relationships.section.save')
               : t('relationships.section.addSubmit')}

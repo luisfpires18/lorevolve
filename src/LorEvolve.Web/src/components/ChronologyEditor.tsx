@@ -359,22 +359,26 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         ) : null}
 
         {drafts.length > 1 ? (
-          <div className="eras__order">
-            <p className="field__label" id={`${headingId}-order`}>
-              {t('time.periods.earliestFirst')}
-            </p>
-            <ol
-              className="eras__line"
-              aria-labelledby={`${headingId}-order`}
-              data-testid="era-order"
-            >
-              {drafts.map((era) => (
-                <li key={era.key}>
-                  <bdi>{era.name.trim() || t('time.periods.newCap')}</bdi>
-                </li>
-              ))}
-            </ol>
-          </div>
+          <Field
+            group
+            className="eras__order"
+            id={`${headingId}-order`}
+            label={t('time.periods.earliestFirst')}
+          >
+            {(control) => (
+              <ol
+                className="eras__line"
+                aria-labelledby={control['aria-labelledby']}
+                data-testid="era-order"
+              >
+                {drafts.map((era) => (
+                  <li key={era.key}>
+                    <bdi>{era.name.trim() || t('time.periods.newCap')}</bdi>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Field>
         ) : null}
 
         {drafts.length > 0 ? (

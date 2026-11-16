@@ -152,18 +152,6 @@ public static class RelationshipValidation
     public static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    /// <summary>
-    /// Stored timestamps are UTC <see cref="DateTime"/> values, because SQLite cannot order
-    /// by <c>DateTimeOffset</c>. A kind-less value from a client is read as UTC.
-    /// </summary>
-    public static DateTime? Utc(DateTime? value) => value is { } moment ? Utc(moment) : null;
-
-    public static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
 
     /// <summary>The wording to show when a link is read from <paramref name="perspective"/>.</summary>
     public static string LabelFor(

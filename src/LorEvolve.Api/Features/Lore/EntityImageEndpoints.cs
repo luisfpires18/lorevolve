@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Media;
@@ -160,17 +159,17 @@ public static partial class EntityImageEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose an image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
-        EntityImageCrop? requestedCrop = null;
+        ImageCrop? requestedCrop = null;
         if (!string.IsNullOrWhiteSpace(crop))
         {
-            requestedCrop = ReadCrop(crop);
+            requestedCrop = ImagePreparation.ReadCrop(crop);
 
             if (requestedCrop is null)
             {
-                return Invalid(ImagePreparation.CropField, "The thumbnail selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The thumbnail selection could not be read.");
             }
         }
 
@@ -184,11 +183,11 @@ public static partial class EntityImageEndpoints
         bytes.Position = 0;
 
         var (prepared, rejection) = await ImagePreparation.PrepareAsync(
-            bytes, bytes.Length, requestedCrop?.ToShared(), ImagePreparation.DisplaySide, cancellationToken);
+            bytes, bytes.Length, requestedCrop, ImagePreparation.DisplaySide, cancellationToken);
 
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger("LorEvolve.EntityImages");
@@ -241,7 +240,7 @@ public static partial class EntityImageEndpoints
             catch (MediaStorageUnavailableException exception)
             {
                 // Nothing is configured, so nothing was written and there is nothing to sweep.
-                return Unavailable(exception);
+                return MediaProblem.Unavailable(exception);
             }
             catch (MediaStorageFailedException exception)
             {
@@ -249,14 +248,14 @@ public static partial class EntityImageEndpoints
                 // have landed before the thumbnail did not; nothing points at either yet, so both
                 // come back out, and the entry keeps the picture it had.
                 LogStorageFailure(logger, "upload", entityId, exception);
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
-                return Unavailable(exception);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                return MediaProblem.Unavailable(exception);
             }
             catch (Exception)
             {
                 // Nothing points at these yet, so removing them is safe and is the only thing that
                 // keeps a failed upload from leaving litter in the bucket.
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
@@ -333,12 +332,13 @@ public static partial class EntityImageEndpoints
                         stored.ThumbnailKey = thumbnailKey;
                         stored.DisplayKey = displayKey;
                         stored.ContentType = prepared.ContentType;
-                        stored.FileName = TrimFileName(file.FileName);
+                        stored.FileName = ImagePreparation.TrimFileName(file.FileName);
                         stored.Width = prepared.Width;
                         stored.Height = prepared.Height;
                         stored.ByteSize = bytes.Length;
                         stored.UploadedAt = now;
-                        SetCrop(stored, prepared.Crop);
+                        (stored.CropX, stored.CropY, stored.CropWidth, stored.CropHeight) =
+                            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
                         if (existing is null)
                         {
@@ -372,14 +372,14 @@ public static partial class EntityImageEndpoints
             catch (StorageQuotaExceededException)
             {
                 // The hold lapsed and the room went meanwhile. Nothing moved.
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
                 // The association never moved, so the old image is still the live one and the new
                 // objects are unreferenced. Take them back out.
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
@@ -387,7 +387,7 @@ public static partial class EntityImageEndpoints
             {
                 // Lost a race. Nothing was written and nothing names these objects; the hold is given back
                 // in the finally below.
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return outcome == UploadOutcome.EntryGone ? Results.NotFound() : ReplacedMeanwhile();
             }
 
@@ -395,7 +395,7 @@ public static partial class EntityImageEndpoints
             // failure here is litter to be reported, never a reason to undo the write.
             if (supersededOriginal is not null)
             {
-                await SweepAsync(store, logger, supersededOriginal, supersededThumbnail, supersededDisplay);
+                await MediaObjectWrites.SweepAsync(store, logger, supersededOriginal, supersededThumbnail, supersededDisplay);
             }
 
             return Results.Ok(EntityImageRef.Of(stored));
@@ -512,12 +512,12 @@ public static partial class EntityImageEndpoints
 
         if (request.Crop is null)
         {
-            return Invalid(ImagePreparation.CropField, "Choose the part of the image the thumbnail shows.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the image the thumbnail shows.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop.ToShared()) is { } badCrop)
         {
-            return Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != image.AssetId)
@@ -549,7 +549,7 @@ public static partial class EntityImageEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception exception) when (exception is MediaStorageFailedException
             or IOException
@@ -557,7 +557,7 @@ public static partial class EntityImageEndpoints
         {
             // A read that died part-way through the body is the store failing too, just later.
             LogStorageFailure(logger, "reframe", entityId, exception);
-            return Unavailable(exception as MediaStorageException
+            return MediaProblem.Unavailable(exception as MediaStorageException
                 ?? new MediaStorageFailedException("Image storage could not complete the request.", exception));
         }
 
@@ -571,7 +571,7 @@ public static partial class EntityImageEndpoints
             // A crop that is not square on this picture is the author's to fix. Anything else
             // means the stored original itself no longer passes, which is not.
             return rejection!.Field == ImagePreparation.CropField
-                ? Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : OriginalUnavailable();
         }
 
@@ -585,17 +585,17 @@ public static partial class EntityImageEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, "reframe", entityId, exception);
-            await SweepAsync(store, logger, thumbnailKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
             throw;
         }
 
@@ -642,25 +642,26 @@ public static partial class EntityImageEndpoints
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
             throw;
         }
 
         if (moved == 0)
         {
             // Something else moved the picture first. Nothing points at this thumbnail.
-            await SweepAsync(store, logger, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
             return Changed();
         }
 
         // Past the commit, and only the thumbnail. The original is still the entry's image.
-        await SweepAsync(store, logger, image.ThumbnailKey);
+        await MediaObjectWrites.SweepAsync(store, logger, image.ThumbnailKey);
 
         image.ThumbnailId = thumbnailId;
         image.ThumbnailKey = thumbnailKey;
         image.Width = prepared.Width;
         image.Height = prepared.Height;
-        SetCrop(image, prepared.Crop);
+        (image.CropX, image.CropY, image.CropWidth, image.CropHeight) =
+            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
         return Results.Ok(EntityImageRef.Of(image));
     }
@@ -724,7 +725,7 @@ public static partial class EntityImageEndpoints
 
         // Only past the commit, so the objects are removed after the entry has stopped naming
         // them - never the other way round.
-        await SweepAsync(
+        await MediaObjectWrites.SweepAsync(
             store,
             loggerFactory.CreateLogger("LorEvolve.EntityImages"),
             originalKey,
@@ -841,7 +842,7 @@ public static partial class EntityImageEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger("LorEvolve.EntityImages"), "read", entityId, exception);
             }
 
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -867,50 +868,10 @@ public static partial class EntityImageEndpoints
 
     // ---------- Shared ----------
 
-    /// <summary>Deletes objects nothing points at any more, together. See MediaObjectWrites.</summary>
-    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string?[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, [.. keys.OfType<string>()]);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
-    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
-
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Image storage failed during {Operation} for entry {EntityId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid entityId, Exception exception);
-
-    private static void SetCrop(EntityImage image, ImageCrop crop)
-    {
-        image.CropX = crop.X;
-        image.CropY = crop.Y;
-        image.CropWidth = crop.Width;
-        image.CropHeight = crop.Height;
-    }
-
-    /// <summary>The crop form field, or null when it is not the four numbers a crop is.</summary>
-    internal static EntityImageCrop? ReadCrop(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<EntityImageCrop>(json, JsonSerializerOptions.Web);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    internal static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
-
-    /// <summary>
-    /// 503, whatever the store's reason. The detail is the exception's own message, which is
-    /// always LorEvolve's sentence - never the provider's, which stays in the log.
-    /// </summary>
-    internal static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
 
     internal static IResult Changed() =>
         Results.Problem(
@@ -933,22 +894,4 @@ public static partial class EntityImageEndpoints
             detail: "Its thumbnail cannot be made again. Upload the picture again to replace it.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = OriginalUnavailableCode });
-
-    /// <summary>The author's own filename, kept only as a label and never used to build a key.</summary>
-    internal static string? TrimFileName(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(fileName.Trim());
-
-        return name.Length switch
-        {
-            0 => null,
-            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
-            _ => name,
-        };
-    }
 }

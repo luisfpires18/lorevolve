@@ -129,7 +129,7 @@ internal static class IdeaReferences
         string? search,
         CancellationToken cancellationToken)
     {
-        var pattern = string.IsNullOrWhiteSpace(search) ? null : $"%{IdeaEndpoints.EscapeLike(search.Trim())}%";
+        var pattern = string.IsNullOrWhiteSpace(search) ? null : $"%{Sql.EscapeLike(search.Trim())}%";
 
         return kind switch
         {

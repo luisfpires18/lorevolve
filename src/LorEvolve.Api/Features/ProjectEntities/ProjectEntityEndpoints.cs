@@ -70,12 +70,9 @@ public static class ProjectEntityEndpoints
 
         if (skip < 0 || take < 1 || take > ListMaxTake)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                [skip < 0 ? "skip" : "take"] = [skip < 0
-                    ? "Skip cannot be negative."
-                    : $"Take must be between 1 and {ListMaxTake}."],
-            });
+            return Problems.Field(
+                skip < 0 ? "skip" : "take",
+                skip < 0 ? "Skip cannot be negative." : $"Take must be between 1 and {ListMaxTake}.");
         }
 
         var matching = db.Entities.AsNoTracking().IgnoreQueryFilters()
@@ -150,7 +147,7 @@ public static class ProjectEntityEndpoints
             return denied;
         }
 
-        if (await CheckCanonLinkAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refusedLink)
+        if (await CanonLink.CheckAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refusedLink)
         {
             return refusedLink;
         }
@@ -196,7 +193,7 @@ public static class ProjectEntityEndpoints
             return denied;
         }
 
-        if (await CheckCanonLinkAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refusedLink)
+        if (await CanonLink.CheckAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refusedLink)
         {
             return refusedLink;
         }
@@ -525,36 +522,6 @@ public static class ProjectEntityEndpoints
                     ],
                 value.LinkedEntryId)),
         ];
-    }
-
-    /// <summary>
-    /// The optional link to a lore entry: null is accepted, and a value has to be a live lore entry of the project's
-    /// own universe. A link to a project's entry, to a trashed entry or to another universe's entry is refused by field
-    /// rather than reported as missing, so the message tells an author what to fix without disclosing what exists
-    /// elsewhere.
-    /// </summary>
-    private static async Task<IResult?> CheckCanonLinkAsync(
-        LorEvolveDbContext db,
-        Guid universeId,
-        Guid? canonEntityId,
-        CancellationToken cancellationToken)
-    {
-        if (canonEntityId is not { } id)
-        {
-            return null;
-        }
-
-        // db.Entities is filtered to the lore, which is exactly what a canon link may point at, so this read needs no
-        // opt-out: a project's entry is not a candidate and is not found here.
-        var exists = await db.Entities
-            .AnyAsync(entry => entry.Id == id && entry.UniverseId == universeId && entry.DeletedAt == null, cancellationToken);
-
-        return exists
-            ? null
-            : Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["canonEntityId"] = ["Choose an entry from this universe's lore, or none."],
-            });
     }
 
     /// <summary>

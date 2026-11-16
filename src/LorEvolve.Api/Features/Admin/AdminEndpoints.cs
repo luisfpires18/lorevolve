@@ -97,7 +97,7 @@ public static class AdminEndpoints
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var pattern = $"%{EscapeLike(search.Trim())}%";
+            var pattern = $"%{Sql.EscapeLike(search.Trim())}%";
             query = query.Where(user => EF.Functions.Like(user.UserName!, pattern, "\\")
                 || (user.PublicDisplayName != null && EF.Functions.Like(user.PublicDisplayName, pattern, "\\")));
         }
@@ -148,7 +148,7 @@ public static class AdminEndpoints
         var email = request.Email?.Trim() ?? string.Empty;
         if (EmailValidator.GetValidationResult(email, new ValidationContext(email)) != ValidationResult.Success || email.Length == 0)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["email"] = ["Enter a valid email address."] });
+            return Problems.Field("email", "Enter a valid email address.");
         }
 
         var expiresAt = clock.GetUtcNow().UtcDateTime + SignUpLinks.Lifetime;
@@ -180,7 +180,7 @@ public static class AdminEndpoints
         var address = request.Email?.Trim() ?? string.Empty;
         if (EmailValidator.GetValidationResult(address, new ValidationContext(address)) != ValidationResult.Success || address.Length == 0)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["email"] = ["Enter a valid email address."] });
+            return Problems.Field("email", "Enter a valid email address.");
         }
 
         if (!email.IsConfigured || site.Origin is null)
@@ -445,7 +445,7 @@ public static class AdminEndpoints
         string? error = reason.Length == 0 ? "Say why. The reason is kept in the audit record."
             : reason.Length > AdminLimits.ReasonMaxLength ? $"Keep the reason to {AdminLimits.ReasonMaxLength} characters."
             : null;
-        return error is null ? null : Results.ValidationProblem(new Dictionary<string, string[]> { ["reason"] = [error] });
+        return error is null ? null : Problems.Field("reason", error);
     }
 
     /// <summary>Someone else changed the account first: nothing was done, and the client reloads it.</summary>
@@ -457,9 +457,4 @@ public static class AdminEndpoints
             detail: detail,
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = code });
-
-    private static string EscapeLike(string value) =>
-        value.Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("%", "\\%", StringComparison.Ordinal)
-            .Replace("_", "\\_", StringComparison.Ordinal);
 }

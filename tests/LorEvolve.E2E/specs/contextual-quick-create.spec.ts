@@ -528,7 +528,7 @@ test.describe('Quick Create while a create is on its way', () => {
     await expect(form.getByTestId('quick-create-pending')).toContainText('be closed until')
     await expect(form.locator('form')).toHaveAttribute('aria-busy', 'true')
     await expect(form.getByTestId('quick-create-submit')).toBeDisabled()
-    await expect(form.getByTestId('quick-create-submit')).toHaveText('Creating')
+    await expect(form.getByTestId('quick-create-submit')).toHaveText('Creating…')
     await expect(form.getByTestId('quick-create-cancel')).toBeDisabled()
     await expect(form.getByTestId('quick-create-name')).toBeDisabled()
     await expect(useLava).toBeDisabled()

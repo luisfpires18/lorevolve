@@ -294,7 +294,7 @@ public static partial class MapEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a map image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a map image to upload.");
         }
 
         var ownerId = await db.Universes.AsNoTracking()
@@ -308,12 +308,12 @@ public static partial class MapEndpoints
 
         if (await db.Set<UniverseMap>().CountAsync(map => map.UniverseId == universeId, cancellationToken) >= MapLimits.MaxMapsPerUniverse)
         {
-            return Invalid("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
+            return Problems.Field("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
         }
 
         if (await db.Set<UniverseMap>().AnyAsync(map => map.UniverseId == universeId && map.Name == cleanName, cancellationToken))
         {
-            return Invalid("name", "A map with that name already exists in this universe.");
+            return Problems.Field("name", "A map with that name already exists in this universe.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -324,7 +324,7 @@ public static partial class MapEndpoints
         var (prepared, rejection) = await ImagePreparation.FitAsync(bytes, bytes.Length, MapLimits.DisplaySide, cancellationToken);
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -360,7 +360,7 @@ public static partial class MapEndpoints
                 OriginalKey = originalKey,
                 DisplayKey = displayKey,
                 ContentType = prepared.ContentType,
-                FileName = FileNameLabel(file.FileName),
+                FileName = ImagePreparation.TrimFileName(file.FileName),
                 Width = prepared.Width,
                 Height = prepared.Height,
                 ByteSize = bytes.Length,
@@ -381,11 +381,11 @@ public static partial class MapEndpoints
                 }
                 else if (await db.Set<UniverseMap>().CountAsync(candidate => candidate.UniverseId == universeId, cancellationToken) >= MapLimits.MaxMapsPerUniverse)
                 {
-                    refused = Invalid("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
+                    refused = Problems.Field("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
                 }
                 else if (await db.Set<UniverseMap>().AnyAsync(candidate => candidate.UniverseId == universeId && candidate.Name == cleanName, cancellationToken))
                 {
-                    refused = Invalid("name", "A map with that name already exists in this universe.");
+                    refused = Problems.Field("name", "A map with that name already exists in this universe.");
                 }
                 else
                 {
@@ -398,18 +398,18 @@ public static partial class MapEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 throw;
             }
 
             if (refused is not null)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return refused;
             }
 
@@ -470,7 +470,7 @@ public static partial class MapEndpoints
         if (map.Name != cleanName
             && await db.Set<UniverseMap>().AnyAsync(candidate => candidate.UniverseId == universeId && candidate.Id != mapId && candidate.Name == cleanName, cancellationToken))
         {
-            return Invalid("name", "A map with that name already exists in this universe.");
+            return Problems.Field("name", "A map with that name already exists in this universe.");
         }
 
         if (map.Name != cleanName || map.Description != cleanDescription)
@@ -514,7 +514,7 @@ public static partial class MapEndpoints
         var policy = pins?.Trim().ToLowerInvariant();
         if (policy is not (MapLimits.KeepPins or MapLimits.RemovePins))
         {
-            return Invalid("pins", $"Say what happens to the pins: \"{MapLimits.KeepPins}\" or \"{MapLimits.RemovePins}\".");
+            return Problems.Field("pins", $"Say what happens to the pins: \"{MapLimits.KeepPins}\" or \"{MapLimits.RemovePins}\".");
         }
 
         var existing = await db.Set<UniverseMap>().AsNoTracking()
@@ -528,7 +528,7 @@ public static partial class MapEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a map image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a map image to upload.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -539,7 +539,7 @@ public static partial class MapEndpoints
         var (prepared, rejection) = await ImagePreparation.FitAsync(bytes, bytes.Length, MapLimits.DisplaySide, cancellationToken);
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -601,7 +601,7 @@ public static partial class MapEndpoints
                     map.OriginalKey = originalKey;
                     map.DisplayKey = displayKey;
                     map.ContentType = prepared.ContentType;
-                    map.FileName = FileNameLabel(file.FileName);
+                    map.FileName = ImagePreparation.TrimFileName(file.FileName);
                     map.Width = prepared.Width;
                     map.Height = prepared.Height;
                     map.ByteSize = bytes.Length;
@@ -623,23 +623,23 @@ public static partial class MapEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 throw;
             }
 
             if (refused is not null)
             {
-                await SweepAsync(store, logger, originalKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
                 return refused;
             }
 
             // Past the commit: the new picture is the map's whatever happens next.
-            await SweepAsync(store, logger, supersededOriginal!, supersededDisplay!);
+            await MediaObjectWrites.SweepAsync(store, logger, supersededOriginal!, supersededDisplay!);
 
             return Results.Ok(await LoadDetailAsync(db, universeId, mapId, cancellationToken));
         }
@@ -684,7 +684,7 @@ public static partial class MapEndpoints
         db.Set<UniverseMap>().Remove(map);
         await db.SaveChangesAsync(cancellationToken);
 
-        await SweepAsync(store, loggerFactory.CreateLogger(LoggerName), keys);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), keys);
         return Results.NoContent();
     }
 
@@ -729,7 +729,7 @@ public static partial class MapEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger(LoggerName), "read", mapId, exception);
             }
 
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -777,7 +777,7 @@ public static partial class MapEndpoints
 
         if (map.Count >= MapLimits.MaxPinsPerMap)
         {
-            return Invalid("title", $"A map can hold at most {MapLimits.MaxPinsPerMap} pins.");
+            return Problems.Field("title", $"A map can hold at most {MapLimits.MaxPinsPerMap} pins.");
         }
 
         if (await CheckLinkAsync(db, universeId, mapId, pinId: null, clean.EntityId, cancellationToken) is { } refused)
@@ -952,12 +952,12 @@ public static partial class MapEndpoints
             .FirstOrDefaultAsync(cancellationToken);
         if (entity is null)
         {
-            return Invalid("entityId", "That entry is not in this universe.");
+            return Problems.Field("entityId", "That entry is not in this universe.");
         }
 
         if (entity.DeletedAt is not null)
         {
-            return Invalid("entityId", "That entry is in the Trash. Restore it before pinning it.");
+            return Problems.Field("entityId", "That entry is in the Trash. Restore it before pinning it.");
         }
 
         var duplicate = await db.Set<MapPin>().AsNoTracking()
@@ -1003,17 +1003,17 @@ public static partial class MapEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, operation, mapId, exception);
-            await SweepAsync(store, logger, originalKey, displayKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, originalKey, displayKey);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, displayKey);
             throw;
         }
     }
@@ -1044,24 +1044,11 @@ public static partial class MapEndpoints
         return clean;
     }
 
-    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, keys);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
-    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
-
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Image storage failed during {Operation} for map {MapId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid mapId, Exception exception);
 
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
-
-    private static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
 
     private static IResult ReplacedMeanwhile() =>
         Results.Problem(
@@ -1069,20 +1056,4 @@ public static partial class MapEndpoints
             detail: "Its picture was replaced somewhere else, so this one was not kept. Open the map again and choose the picture.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = ImageChangedCode });
-
-    private static string? FileNameLabel(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(fileName.Trim());
-        return name.Length switch
-        {
-            0 => null,
-            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
-            _ => name,
-        };
-    }
 }

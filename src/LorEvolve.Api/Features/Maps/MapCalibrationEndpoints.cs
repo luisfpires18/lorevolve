@@ -113,7 +113,7 @@ public static partial class MapEndpoints
         var pixels = MapGeography.PixelDistance(request.X1!.Value, request.Y1!.Value, request.X2!.Value, request.Y2!.Value, map.Width, map.Height);
         if (pixels < MapCalibrationLimits.MinPointSeparationPixels)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["x2"] = ["Choose two different points, further apart than a pixel."] });
+            return Problems.Field("x2", "Choose two different points, further apart than a pixel.");
         }
 
         var now = DateTime.UtcNow;

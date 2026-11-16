@@ -116,12 +116,12 @@ public static partial class AppearanceImageEndpoints
 
         if (target.Count >= ProgressionLimits.MaxImagesPerAppearance)
         {
-            return Invalid(ImagePreparation.FileField, $"An appearance can hold at most {ProgressionLimits.MaxImagesPerAppearance} pictures.");
+            return Problems.Field(ImagePreparation.FileField, $"An appearance can hold at most {ProgressionLimits.MaxImagesPerAppearance} pictures.");
         }
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose an image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -132,7 +132,7 @@ public static partial class AppearanceImageEndpoints
         var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, ImagePreparation.DisplaySide, cancellationToken);
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -167,17 +167,17 @@ public static partial class AppearanceImageEndpoints
             }
             catch (MediaStorageUnavailableException exception)
             {
-                return Unavailable(exception);
+                return MediaProblem.Unavailable(exception);
             }
             catch (MediaStorageFailedException exception)
             {
                 LogStorageFailure(logger, "upload", appearanceId, exception);
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
-                return Unavailable(exception);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                return MediaProblem.Unavailable(exception);
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
@@ -189,7 +189,7 @@ public static partial class AppearanceImageEndpoints
                 ThumbnailKey = thumbnailKey,
                 DisplayKey = displayKey,
                 ContentType = prepared.ContentType,
-                FileName = FileNameLabel(file.FileName),
+                FileName = ImagePreparation.TrimFileName(file.FileName),
                 Width = prepared.Width,
                 Height = prepared.Height,
                 ByteSize = bytes.Length,
@@ -204,18 +204,18 @@ public static partial class AppearanceImageEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return StorageQuota.Exceeded(isOwner: ownerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 throw;
             }
 
             if (gone)
             {
-                await SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey, displayKey);
                 return Results.Problem(
                     title: "The appearance changed while this picture was uploading.",
                     detail: "It was removed, or its gallery filled up, somewhere else. This picture was not kept.",
@@ -374,7 +374,7 @@ public static partial class AppearanceImageEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         // Only past the commit: the row stopped naming the objects first.
-        await SweepAsync(store, loggerFactory.CreateLogger(LoggerName), keys);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), keys);
         return Results.NoContent();
     }
 
@@ -436,7 +436,7 @@ public static partial class AppearanceImageEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger(LoggerName), "read", appearanceId, exception);
             }
 
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -453,38 +453,9 @@ public static partial class AppearanceImageEndpoints
 
     // ---------- Shared ----------
 
-    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, keys);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
-    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
-
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Image storage failed during {Operation} for appearance {AppearanceId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid appearanceId, Exception exception);
 
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
-
-    private static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
-
-    private static string? FileNameLabel(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(fileName.Trim());
-        return name.Length switch
-        {
-            0 => null,
-            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
-            _ => name,
-        };
-    }
 }

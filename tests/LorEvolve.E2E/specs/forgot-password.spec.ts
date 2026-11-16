@@ -36,11 +36,11 @@ test('the reset page needs the email link, and a wrong one says to ask again', a
   await page.goto('/reset-password#user=nobody&token=not-a-token')
   await page.getByLabel('New password', { exact: true }).fill('insert-a-pass-1')
   await page.getByLabel('Confirm new password').fill('insert-a-pass-2')
-  await page.getByRole('button', { name: 'Save the new password' }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByText('Both passwords need to match.')).toBeVisible()
 
   await page.getByLabel('Confirm new password').fill('insert-a-pass-1')
-  await page.getByRole('button', { name: 'Save the new password' }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByTestId('auth-error')).toContainText('This link is no longer valid.')
   await page.getByTestId('auth-error').getByRole('link', { name: 'Ask again' }).click()
   await page.waitForURL('/forgot-password')

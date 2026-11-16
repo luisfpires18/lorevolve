@@ -305,33 +305,31 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
             {t('relationships.types.noOrder')}
           </p>
         ) : (
-          <div className="field">
-            <label className="field__label" htmlFor="reltype-age-order">
-              {t('relationships.types.ageOrdering')}
-            </label>
-            <select
-              id="reltype-age-order"
-              className="field__input field__input--select"
-              value={draft.ageOrder}
-              onChange={(event) => edit({ ageOrder: Number(event.target.value) as AgeOrderValue })}
-              aria-invalid={orderError ? true : undefined}
-              aria-describedby={orderError ? 'reltype-age-order-error' : undefined}
-              data-testid="reltype-age-order"
-            >
-              <option value={AgeOrder.None}>{t('relationships.types.noAgeRule')}</option>
-              <option value={AgeOrder.SourceOlder}>
-                {t('relationships.types.sourceMustBeOlder')}
-              </option>
-              <option value={AgeOrder.SourceYounger}>
-                {t('relationships.types.sourceMustBeYounger')}
-              </option>
-            </select>
-            {orderError ? (
-              <p className="field__error" id="reltype-age-order-error">
-                {orderError}
-              </p>
-            ) : null}
-          </div>
+          <Field
+            label={t('relationships.types.ageOrdering')}
+            id="reltype-age-order"
+            error={orderError}
+          >
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={draft.ageOrder}
+                onChange={(event) =>
+                  edit({ ageOrder: Number(event.target.value) as AgeOrderValue })
+                }
+                data-testid="reltype-age-order"
+              >
+                <option value={AgeOrder.None}>{t('relationships.types.noAgeRule')}</option>
+                <option value={AgeOrder.SourceOlder}>
+                  {t('relationships.types.sourceMustBeOlder')}
+                </option>
+                <option value={AgeOrder.SourceYounger}>
+                  {t('relationships.types.sourceMustBeYounger')}
+                </option>
+              </select>
+            )}
+          </Field>
         )}
 
         <div className="reltype__gaps">
@@ -368,39 +366,35 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
           </p>
         ) : null}
 
-        <div className="field">
-          <label className="field__label" htmlFor="reltype-family-meaning">
-            {t('relationships.types.familyMeaning')}
-          </label>
-          <select
-            id="reltype-family-meaning"
-            className="field__input field__input--select"
-            value={
-              draft.isSymmetric && isParentSemantic(draft.familySemantic)
-                ? FamilySemantic.None
-                : draft.familySemantic
-            }
-            onChange={(event) =>
-              edit({ familySemantic: Number(event.target.value) as FamilySemanticValue })
-            }
-            aria-invalid={fieldErrors[FAMILY_KEY] ? true : undefined}
-            aria-describedby={fieldErrors[FAMILY_KEY] ? 'reltype-family-error' : undefined}
-            data-testid="reltype-family-meaning"
-          >
-            {FAMILY_SEMANTIC_ORDER.filter(
-              (option) => !draft.isSymmetric || !isParentSemantic(option),
-            ).map((option) => (
-              <option key={option} value={option}>
-                {FAMILY_SEMANTIC_LABELS[option]}
-              </option>
-            ))}
-          </select>
-          {fieldErrors[FAMILY_KEY] ? (
-            <p className="field__error" id="reltype-family-error">
-              {fieldErrors[FAMILY_KEY]}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          label={t('relationships.types.familyMeaning')}
+          id="reltype-family-meaning"
+          error={fieldErrors[FAMILY_KEY]}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={
+                draft.isSymmetric && isParentSemantic(draft.familySemantic)
+                  ? FamilySemantic.None
+                  : draft.familySemantic
+              }
+              onChange={(event) =>
+                edit({ familySemantic: Number(event.target.value) as FamilySemanticValue })
+              }
+              data-testid="reltype-family-meaning"
+            >
+              {FAMILY_SEMANTIC_ORDER.filter(
+                (option) => !draft.isSymmetric || !isParentSemantic(option),
+              ).map((option) => (
+                <option key={option} value={option}>
+                  {FAMILY_SEMANTIC_LABELS[option]}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
 
         {!draft.isSymmetric && isParentSemantic(draft.familySemantic) ? (
           <p className="reltype__direction" data-testid="reltype-family-direction">
@@ -431,7 +425,9 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
           data-testid="save-relationship-type"
         >
           {isSaving
-            ? t('relationships.types.saving')
+            ? editingId
+              ? t('relationships.types.saving')
+              : t('relationships.types.adding')
             : editingId
               ? t('relationships.types.saveKind')
               : t('relationships.types.addKindSubmit')}

@@ -121,7 +121,7 @@ const DIALOG_FILES = [
 
 // Font sizes written as a literal in styles.css instead of a --text-* token. Only goes down:
 // lower it when a screen's sizes move to tokens.
-const MAX_LITERAL_FONT_SIZES = 214
+const MAX_LITERAL_FONT_SIZES = 200
 
 const tsxFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
   .filter((file) => file.endsWith('.tsx'))
@@ -197,6 +197,14 @@ test('no field is written as label > span.field__label', () => {
     filesWith(/<span[^>]*field__label/),
     [],
     'Use Field (label, hint, control, error) instead of a span label',
+  )
+})
+
+test('field__label appears only in Field.tsx', () => {
+  assert.deepEqual(
+    filesWith(/field__label/).filter((file) => file !== 'src/components/Field.tsx'),
+    [],
+    'Use Field (label, hint, control, error)',
   )
 })
 

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
@@ -135,17 +134,17 @@ public static partial class ProfileImageEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a photo to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a photo to upload.");
         }
 
         ImageCrop? requestedCrop = null;
         if (!string.IsNullOrWhiteSpace(crop))
         {
-            requestedCrop = ReadCrop(crop);
+            requestedCrop = ImagePreparation.ReadCrop(crop);
 
             if (requestedCrop is null)
             {
-                return Invalid(ImagePreparation.CropField, "The photo selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The photo selection could not be read.");
             }
         }
 
@@ -163,7 +162,7 @@ public static partial class ProfileImageEndpoints
 
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -196,19 +195,19 @@ public static partial class ProfileImageEndpoints
         catch (MediaStorageUnavailableException exception)
         {
             // Nothing is configured, so nothing was written and there is nothing to sweep.
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             // The original may well have landed before the thumbnail did not. Nothing points at
             // either yet, so both come back out and the account keeps the photo it had.
             LogStorageFailure(logger, "upload", exception);
-            await SweepAsync(store, logger, originalKey, thumbnailKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, originalKey, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey);
             throw;
         }
 
@@ -225,12 +224,13 @@ public static partial class ProfileImageEndpoints
         stored.OriginalKey = originalKey;
         stored.ThumbnailKey = thumbnailKey;
         stored.ContentType = prepared.ContentType;
-        stored.FileName = TrimFileName(file.FileName);
+        stored.FileName = ImagePreparation.TrimFileName(file.FileName);
         stored.Width = prepared.Width;
         stored.Height = prepared.Height;
         stored.ByteSize = bytes.Length;
         stored.UploadedAt = DateTime.UtcNow;
-        SetCrop(stored, prepared.Crop);
+        (stored.CropX, stored.CropY, stored.CropWidth, stored.CropHeight) =
+            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
         // A new picture is not the one its owner agreed to show publicly (ADR 0037): it starts private again.
         stored.IsPublic = false;
@@ -248,7 +248,7 @@ public static partial class ProfileImageEndpoints
         {
             // The association never moved, so the old photo is still the live one and the new
             // objects are unreferenced. Take them back out.
-            await SweepAsync(store, logger, originalKey, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, thumbnailKey);
             throw;
         }
 
@@ -256,7 +256,7 @@ public static partial class ProfileImageEndpoints
         // failure here is litter to be reported, never a reason to undo the write.
         if (supersededOriginal is not null)
         {
-            await SweepAsync(store, logger, supersededOriginal, supersededThumbnail!);
+            await MediaObjectWrites.SweepAsync(store, logger, supersededOriginal, supersededThumbnail!);
         }
 
         return Results.Ok(ProfileImageRef.Of(stored));
@@ -296,12 +296,12 @@ public static partial class ProfileImageEndpoints
 
         if (request.Crop is null)
         {
-            return Invalid(ImagePreparation.CropField, "Choose the part of the photo the avatar shows.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the photo the avatar shows.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop) is { } badCrop)
         {
-            return Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != image.AssetId)
@@ -333,7 +333,7 @@ public static partial class ProfileImageEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception exception) when (exception is MediaStorageFailedException
             or IOException
@@ -341,7 +341,7 @@ public static partial class ProfileImageEndpoints
         {
             // A read that died part-way through the body is the store failing too, just later.
             LogStorageFailure(logger, "reframe", exception);
-            return Unavailable(exception as MediaStorageException
+            return MediaProblem.Unavailable(exception as MediaStorageException
                 ?? new MediaStorageFailedException("Image storage could not complete the request.", exception));
         }
 
@@ -355,7 +355,7 @@ public static partial class ProfileImageEndpoints
             // A crop that is not square on this picture is the caller's to fix. Anything else
             // means the stored original itself no longer passes, which is not.
             return rejection!.Field == ImagePreparation.CropField
-                ? Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : OriginalUnavailable();
         }
 
@@ -369,17 +369,17 @@ public static partial class ProfileImageEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, "reframe", exception);
-            await SweepAsync(store, logger, thumbnailKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
             throw;
         }
 
@@ -408,25 +408,26 @@ public static partial class ProfileImageEndpoints
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
             throw;
         }
 
         if (moved == 0)
         {
             // Something else moved the photo first. Nothing points at this square.
-            await SweepAsync(store, logger, thumbnailKey);
+            await MediaObjectWrites.SweepAsync(store, logger, thumbnailKey);
             return Changed();
         }
 
         // Past the commit, and only the square. The original is still the account's photo.
-        await SweepAsync(store, logger, image.ThumbnailKey);
+        await MediaObjectWrites.SweepAsync(store, logger, image.ThumbnailKey);
 
         image.ThumbnailId = thumbnailId;
         image.ThumbnailKey = thumbnailKey;
         image.Width = prepared.Width;
         image.Height = prepared.Height;
-        SetCrop(image, prepared.Crop);
+        (image.CropX, image.CropY, image.CropWidth, image.CropHeight) =
+            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
         return Results.Ok(ProfileImageRef.Of(image));
     }
@@ -463,7 +464,7 @@ public static partial class ProfileImageEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         // Only past the commit, so the objects go after the account has stopped naming them.
-        await SweepAsync(store, loggerFactory.CreateLogger(LoggerName), originalKey, thumbnailKey);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), originalKey, thumbnailKey);
 
         return Results.NoContent();
     }
@@ -540,7 +541,7 @@ public static partial class ProfileImageEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger(LoggerName), "read", exception);
             }
 
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -564,15 +565,6 @@ public static partial class ProfileImageEndpoints
 
     // ---------- Shared ----------
 
-    /// <summary>Deletes objects nothing points at any more, together. See MediaObjectWrites.</summary>
-    private static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, keys);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
-    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
-
     /// <summary>
     /// The account is not named, deliberately: a log line about a person's photo failing to store
     /// does not need to say whose, and the operation plus the exception is what a fix starts from.
@@ -581,37 +573,6 @@ public static partial class ProfileImageEndpoints
         Level = LogLevel.Error,
         Message = "Profile photo storage failed during {Operation}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Exception exception);
-
-    private static void SetCrop(ProfileImage image, ImageCrop crop)
-    {
-        image.CropX = crop.X;
-        image.CropY = crop.Y;
-        image.CropWidth = crop.Width;
-        image.CropHeight = crop.Height;
-    }
-
-    /// <summary>The crop form field, or null when it is not the four numbers a crop is.</summary>
-    private static ImageCrop? ReadCrop(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<ImageCrop>(json, JsonSerializerOptions.Web);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
-
-    /// <summary>
-    /// 503, whatever the store's reason. The detail is the exception's own message, which is
-    /// always LorEvolve's sentence - never the provider's, which stays in the log.
-    /// </summary>
-    private static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
 
     private static IResult Changed() =>
         Results.Problem(
@@ -626,22 +587,4 @@ public static partial class ProfileImageEndpoints
             detail: "Its avatar cannot be made again. Upload the photo again to replace it.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = OriginalUnavailableCode });
-
-    /// <summary>The file's own name, kept only as a label and never used to build a key.</summary>
-    private static string? TrimFileName(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(fileName.Trim());
-
-        return name.Length switch
-        {
-            0 => null,
-            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
-            _ => name,
-        };
-    }
 }

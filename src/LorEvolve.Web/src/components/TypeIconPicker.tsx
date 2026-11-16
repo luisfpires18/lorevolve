@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { Check } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { TYPE_ICONS, typeIconLabel } from '../lore/typeIcons'
+import { Field } from './Field'
 import { TypeIcon } from './TypeIcon'
 
 /**
@@ -37,9 +38,13 @@ export function TypeIconPicker({
   ]
 
   return (
-    <fieldset className="iconpicker" disabled={disabled} data-testid={testId}>
-      <legend className="field__label">{t('entityTypes.iconPicker.legend')}</legend>
-
+    <Field
+      label={t('entityTypes.iconPicker.legend')}
+      group="fieldset"
+      className="iconpicker"
+      disabled={disabled}
+      data-testid={testId}
+    >
       <div className="iconpicker__grid">
         {choices.map((choice) => {
           const checked = value === choice.key
@@ -68,6 +73,6 @@ export function TypeIconPicker({
           )
         })}
       </div>
-    </fieldset>
+    </Field>
   )
 }

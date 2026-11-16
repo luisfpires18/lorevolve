@@ -167,7 +167,7 @@ const lore: Dictionary['lore'] = {
     typeFixed: 'Tipo',
     typeLabel: 'Tipo',
     chooseType: 'Escolher um tipo',
-    creating: 'A criar',
+    creating: 'A criar…',
     create: 'Criar',
     cancel: 'Cancelar',
   },

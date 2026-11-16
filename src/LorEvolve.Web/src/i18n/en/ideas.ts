@@ -39,7 +39,7 @@ const ideas = {
     },
     inUniverse: 'In {universe}',
     inThisUniverse: 'In this idea’s universe',
-    title: 'Add a reference',
+    title: 'Add reference',
     whatToReference: 'What to reference',
     findByName: 'Find by name',
     looking: 'Looking…',
@@ -53,8 +53,8 @@ const ideas = {
   boardPicker: {
     inUniverse: 'For a board in {universe}',
     inNoUniverse: 'For a board in no universe',
-    addIdea: 'Add an idea',
-    addEntry: 'Add a lore entry',
+    addIdea: 'Add idea',
+    addEntry: 'Add lore entry',
     findByName: 'Find by name',
     placeholderIdea: 'Words in an idea',
     placeholderEntry: 'Name of a lore entry',
@@ -329,7 +329,7 @@ const ideas = {
     alreadyJoined: 'Those two cards are already joined.',
     linesFull: 'A board holds up to {max} lines.',
     joined: 'Joined “{from}” and “{to}”. It is not saved yet.',
-    lineRemoved: 'Removed the line. It is not saved yet.',
+    lineRemoved: 'Deleted the line. It is not saved yet.',
     delete: {
       title: 'Delete “{title}”?',
       messageDirty:
@@ -410,7 +410,7 @@ const ideas = {
       between: 'Between {from} and {to}.',
       label: 'Label',
       labelPlaceholder: 'Optional: why?',
-      removeLine: 'Remove line',
+      removeLine: 'Delete line',
       hint: 'Choose a card to write on it, open what it points at, or draw a line from it.',
     },
     recoveryWarning:

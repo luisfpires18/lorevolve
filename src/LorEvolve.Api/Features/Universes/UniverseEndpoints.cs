@@ -69,7 +69,7 @@ public static partial class UniverseEndpoints
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var pattern = $"%{EscapeLike(search.Trim())}%";
+            var pattern = $"%{Sql.EscapeLike(search.Trim())}%";
             query = query.Where(universe => EF.Functions.Like(universe.Name, pattern, "\\"));
         }
 
@@ -175,7 +175,7 @@ public static partial class UniverseEndpoints
             OwnerId = ownerId,
             Name = name,
             Description = Normalize(request.Description),
-            AccentColor = NormalizeAccent(request.AccentColor),
+            AccentColor = LoreValidation.NormalizeAccent(request.AccentColor),
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -243,7 +243,7 @@ public static partial class UniverseEndpoints
 
         universe.Name = name;
         universe.Description = Normalize(request.Description);
-        universe.AccentColor = NormalizeAccent(request.AccentColor);
+        universe.AccentColor = LoreValidation.NormalizeAccent(request.AccentColor);
         universe.UpdatedAt = DateTime.UtcNow;
 
         var off = await db.UniverseAiHelpOff.FindAsync([id], cancellationToken);
@@ -410,9 +410,9 @@ public static partial class UniverseEndpoints
 
         // Only past the commit, and never a reason to undo it: each helper logs a key that will not delete and moves on.
         await Task.WhenAll(
-            EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), pictureKeys),
-            UniverseArtworkEndpoints.SweepAsync(store, loggerFactory.CreateLogger(UniverseArtworkEndpoints.LoggerName), artworkKeys),
-            Maps.MapEndpoints.SweepAsync(store, loggerFactory.CreateLogger(Maps.MapEndpoints.LoggerName), mapKeys));
+            MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), pictureKeys),
+            MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(UniverseArtworkEndpoints.LoggerName), artworkKeys),
+            MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(Maps.MapEndpoints.LoggerName), mapKeys));
 
         return Results.NoContent();
     }
@@ -475,10 +475,7 @@ public static partial class UniverseEndpoints
 
     /// <summary>Also answered by a restore, which creates a universe under the same rule (ADR 0032).</summary>
     internal static IResult NameTakenProblem() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = ["You already have a universe with that name."],
-        });
+        Problems.Field("name", "You already have a universe with that name.");
 
     /// <summary>Why a universe cannot be given this name, or null. Measured after trimming, which is what is stored.</summary>
     internal static string? NameError(string? name)
@@ -522,26 +519,6 @@ public static partial class UniverseEndpoints
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static string? NormalizeAccent(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
-
-    /// <summary>Escapes the LIKE wildcards so a search for "100%" cannot match everything.</summary>
-    private static string EscapeLike(string value) =>
-        value.Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("%", "\\%", StringComparison.Ordinal)
-            .Replace("_", "\\_", StringComparison.Ordinal);
-
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")]
     private static partial Regex AccentColorPattern();
-}
-
-internal static class PrincipalExtensions
-{
-    /// <summary>
-    /// The endpoints run behind <c>RequireAuthorization</c>, so a missing id means the
-    /// pipeline is misconfigured rather than that the caller is anonymous.
-    /// </summary>
-    public static string RequireUserId(this ClaimsPrincipal principal) =>
-        principal.FindFirstValue(ClaimTypes.NameIdentifier)
-        ?? throw new InvalidOperationException("Authenticated principal is missing a user id claim.");
 }

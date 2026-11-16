@@ -17,6 +17,7 @@ import {
   type PendingInvitation,
 } from '../universes/collaborators'
 import { UniverseRole, type UniverseRoleValue } from '../universes/types'
+import { Field } from './Field'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; data: Collaborators } | { kind: 'error'; message: string }
@@ -281,55 +282,55 @@ function InviteForm({
 
   return (
     <form className="form collab__invite" onSubmit={submit} noValidate data-testid="invite-form">
-      <div className="field">
-        <label className="field__label" htmlFor="invite-email">
-          {t('universe.collab.email')}
-        </label>
-        <input
-          ref={emailInput}
-          id="invite-email"
-          name="email"
-          className="field__input"
-          type="email"
-          inputMode="email"
-          autoComplete="off"
-          spellCheck={false}
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          aria-invalid={errors.email ? true : undefined}
-          aria-describedby={errors.email ? 'invite-email-error' : undefined}
-          data-testid="invite-email"
-        />
-        {errors.email ? (
-          <p className="field__error" id="invite-email-error" data-testid="invite-email-error">
-            {errors.email}
-          </p>
-        ) : null}
-      </div>
-      <div className="field">
-        <label className="field__label" htmlFor="invite-role">
-          {t('universe.collab.role')}
-        </label>
-        <RoleSelect
-          id="invite-role"
-          value={role}
-          onChange={setRole}
-          describedBy={errors.role ? 'invite-role-hint invite-role-error' : 'invite-role-hint'}
-          testId="invite-role"
-        />
-        <p
-          className="field__hint collab__rolehint"
-          id="invite-role-hint"
-          data-testid="invite-role-hint"
-        >
-          {roleDescription(role)}
-        </p>
-        {errors.role ? (
-          <p className="field__error" id="invite-role-error">
-            {errors.role}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        label={t('universe.collab.email')}
+        id="invite-email"
+        error={
+          errors.email ? <span data-testid="invite-email-error">{errors.email}</span> : undefined
+        }
+      >
+        {(control) => (
+          <input
+            ref={emailInput}
+            id={control.id}
+            name="email"
+            className="field__input"
+            type="email"
+            inputMode="email"
+            autoComplete="off"
+            spellCheck={false}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            aria-invalid={control['aria-invalid']}
+            aria-describedby={control['aria-describedby']}
+            data-testid="invite-email"
+          />
+        )}
+      </Field>
+      <Field label={t('universe.collab.role')} id="invite-role" error={errors.role}>
+        {(control) => (
+          <>
+            <RoleSelect
+              id="invite-role"
+              value={role}
+              onChange={setRole}
+              describedBy={
+                control['aria-describedby']
+                  ? `invite-role-hint ${control['aria-describedby']}`
+                  : 'invite-role-hint'
+              }
+              testId="invite-role"
+            />
+            <p
+              className="field__hint collab__rolehint"
+              id="invite-role-hint"
+              data-testid="invite-role-hint"
+            >
+              {roleDescription(role)}
+            </p>
+          </>
+        )}
+      </Field>
       {errors.form ? (
         <p className="form__message" role="alert">
           {errors.form}
@@ -679,22 +680,21 @@ function CopyLink({
         {status === 'copied' ? t('universe.collab.copied') : ''}
       </span>
       {status === 'manual' ? (
-        <span className="collab__manual">
-          <label className="field__label" htmlFor={inputId}>
-            {t('universe.collab.copyManual')}
-          </label>
-          <input
-            ref={manualInput}
-            id={inputId}
-            name="invite-link"
-            className="field__input"
-            type="text"
-            readOnly
-            value={link}
-            onFocus={(event) => event.target.select()}
-            data-testid={`${testId}-manual`}
-          />
-        </span>
+        <Field label={t('universe.collab.copyManual')} id={inputId} className="collab__manual">
+          {() => (
+            <input
+              ref={manualInput}
+              id={inputId}
+              name="invite-link"
+              className="field__input"
+              type="text"
+              readOnly
+              value={link}
+              onFocus={(event) => event.target.select()}
+              data-testid={`${testId}-manual`}
+            />
+          )}
+        </Field>
       ) : null}
     </span>
   )

@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Security.Claims;
-using System.Text;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
@@ -50,25 +49,11 @@ public static class WorldLogicAccess
         db.CreativeProjects.AsNoTracking()
             .AnyAsync(project => project.Id == projectId && project.UniverseId == universeId, cancellationToken);
 
-    /// <summary>
-    /// A name trimmed, composed and upper-cased: what uniqueness is enforced on. The same normalization a
-    /// validation term uses (ADR 0034), so the two read the same way. Never shown and never compared with lore.
-    /// </summary>
-    public static string Normalize(string name) =>
-        name.Trim().Normalize(NormalizationForm.FormC).ToUpperInvariant();
-
     /// <summary>The start of a body, and whether there is more. Characters as .NET counts them, never half of one.</summary>
     public static (string Excerpt, bool IsShortened) Excerpt(string body) =>
         body.Length > WorldLogicLimits.ExcerptLength
             ? (body[..WorldLogicLimits.ExcerptLength], true)
             : (body, false);
-
-    /// <summary>
-    /// A stored timestamp as UTC. SQLite hands back an unspecified kind, and a client that reads a local time as
-    /// UTC is off by the server's offset; every other feature does this at the edge too.
-    /// </summary>
-    public static DateTime Utc(DateTime value) =>
-        value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
 
     /// <summary>A page number and size clamped to what a list route serves.</summary>
     public static (int Page, int PageSize) Paging(int page, int pageSize) =>

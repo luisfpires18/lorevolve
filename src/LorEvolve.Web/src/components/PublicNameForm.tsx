@@ -4,6 +4,7 @@ import { useLeaveGuard } from '../lib/leaveGuard'
 import { getPublicName, setPublicName } from '../profile/api'
 import { PUBLIC_NAME_MAX } from '../publishing/types'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 
 /**
  * The account's public name: the "by …" on its published universes, and the only thing about the account the
@@ -13,7 +14,6 @@ import { useI18n } from '../i18n'
 export function PublicNameForm() {
   const { t } = useI18n()
   const inputId = useId()
-  const hintId = useId()
   const [saved, setSaved] = useState<string | null>(null)
   const [value, setValue] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -77,34 +77,36 @@ export function PublicNameForm() {
       noValidate
       data-testid="public-name-form"
     >
-      <div className="field">
-        <label className="field__label" htmlFor={inputId}>
-          {t('account.publicName.label')}
-        </label>
-        <input
-          id={inputId}
-          className="field__input"
-          dir="auto"
-          maxLength={PUBLIC_NAME_MAX}
-          value={value}
-          disabled={!loaded}
-          aria-describedby={hintId}
-          aria-invalid={error ? true : undefined}
-          onChange={(event) => {
-            setDone(false)
-            setValue(event.target.value)
-          }}
-          data-testid="public-name"
-        />
-        <p className="field__hint" id={hintId}>
-          {t('account.publicName.hint')}
-        </p>
-        {error ? (
-          <p className="field__error" role="alert" data-testid="public-name-error">
-            {error}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        label={t('account.publicName.label')}
+        id={inputId}
+        hint={t('account.publicName.hint')}
+        error={
+          error ? (
+            <span role="alert" data-testid="public-name-error">
+              {error}
+            </span>
+          ) : undefined
+        }
+      >
+        {(control) => (
+          <input
+            id={control.id}
+            className="field__input"
+            dir="auto"
+            maxLength={PUBLIC_NAME_MAX}
+            value={value}
+            disabled={!loaded}
+            aria-describedby={control['aria-describedby']}
+            aria-invalid={control['aria-invalid']}
+            onChange={(event) => {
+              setDone(false)
+              setValue(event.target.value)
+            }}
+            data-testid="public-name"
+          />
+        )}
+      </Field>
       <div className="form__actions">
         <button
           className="button"

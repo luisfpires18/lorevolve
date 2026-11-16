@@ -244,7 +244,7 @@ internal static class TrashPermanentDelete
     }
 
     private static IResult ItemsProblem(string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { ["items"] = [message] });
+        Problems.Field("items", message);
 
     private static async Task<IResult> EraseOneAsync(
         TrashSelection item,
@@ -310,7 +310,7 @@ internal static class TrashPermanentDelete
 
         if (erased is { ObjectKeys.Length: > 0 })
         {
-            await EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), erased.ObjectKeys);
+            await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), erased.ObjectKeys);
         }
 
         return result;

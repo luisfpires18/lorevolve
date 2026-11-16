@@ -152,10 +152,7 @@ public static class ComicEndpoints
 
         if (count >= ComicLimits.MaxPagesPerChapter)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = [$"A chapter can hold at most {ComicLimits.MaxPagesPerChapter} pages."],
-            });
+            return Problems.Field("name", $"A chapter can hold at most {ComicLimits.MaxPagesPerChapter} pages.");
         }
 
         var now = DateTime.UtcNow;
@@ -333,7 +330,7 @@ public static class ComicEndpoints
             return Results.ValidationProblem(errors);
         }
 
-        if (await CheckCanonLinkAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refused)
+        if (await CanonLink.CheckAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -349,10 +346,7 @@ public static class ComicEndpoints
 
         if (count >= ComicLimits.MaxPanelsPerPage)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["description"] = [$"A page can hold at most {ComicLimits.MaxPanelsPerPage} panels."],
-            });
+            return Problems.Field("description", $"A page can hold at most {ComicLimits.MaxPanelsPerPage} panels.");
         }
 
         var now = DateTime.UtcNow;
@@ -400,7 +394,7 @@ public static class ComicEndpoints
             return Results.ValidationProblem(errors);
         }
 
-        if (await CheckCanonLinkAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refused)
+        if (await CanonLink.CheckAsync(db, project!.UniverseId, request.CanonEntityId, cancellationToken) is { } refused)
         {
             return refused;
         }
@@ -508,20 +502,14 @@ public static class ComicEndpoints
                     page => page.Id == targetId && page.EpisodeId == episodeId,
                     cancellationToken))
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["pageId"] = ["Choose a page of this chapter."],
-                });
+                return Problems.Field("pageId", "Choose a page of this chapter.");
             }
 
             // The limit a create respects holds for a move too, as #145's review established for episodes.
             if (await db.ProjectPanels.CountAsync(each => each.PageId == targetId, cancellationToken)
                 >= ComicLimits.MaxPanelsPerPage)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["pageId"] = [$"That page already holds {ComicLimits.MaxPanelsPerPage} panels."],
-                });
+                return Problems.Field("pageId", $"That page already holds {ComicLimits.MaxPanelsPerPage} panels.");
             }
         }
 
@@ -592,34 +580,6 @@ public static class ComicEndpoints
             .ToListAsync(cancellationToken);
 
         await SeriesEndpoints.PlaceAsync(db, panels, panel => panel.SortOrder, (panel, order) => panel.SortOrder = order, cancellationToken);
-    }
-
-    /// <summary>
-    /// The panel's optional lore link: null is accepted, and a value has to be a live lore entry of the project's own
-    /// universe. The same check a project entry's canon link makes, for the same reason.
-    /// </summary>
-    private static async Task<IResult?> CheckCanonLinkAsync(
-        LorEvolveDbContext db,
-        Guid universeId,
-        Guid? canonEntityId,
-        CancellationToken cancellationToken)
-    {
-        if (canonEntityId is not { } id)
-        {
-            return null;
-        }
-
-        // db.Entities is filtered to the lore, which is exactly what a panel may name.
-        var exists = await db.Entities.AnyAsync(
-            entry => entry.Id == id && entry.UniverseId == universeId && entry.DeletedAt == null,
-            cancellationToken);
-
-        return exists
-            ? null
-            : Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["canonEntityId"] = ["Choose an entry from this universe's lore, or none."],
-            });
     }
 
     private static Dictionary<string, string[]>? ValidatePage(ProjectPageRequest request)

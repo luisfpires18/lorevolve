@@ -555,10 +555,7 @@ public static class EntityTypeEndpoints
 
         if (step == 0)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["direction"] = ["Say \"up\" or \"down\"."],
-            });
+            return Problems.Field("direction", "Say \"up\" or \"down\".");
         }
 
         // Past either end is no move at all: the same list back, not an error.
@@ -610,10 +607,7 @@ public static class EntityTypeEndpoints
                 : index,
             cancellationToken);
 
-        static IResult OutOfRange() => Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["index"] = ["Choose a place among this type's siblings."],
-        });
+        static IResult OutOfRange() => Problems.Field("index", "Choose a place among this type's siblings.");
 
         static IResult ParentChanged() => Results.Problem(
             title: "This type has moved",
@@ -726,10 +720,7 @@ public static class EntityTypeEndpoints
             .ToDictionaryAsync(type => type.Id, type => type.ParentId, cancellationToken);
 
     private static IResult ParentMissing() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["parent"] = ["Choose a type from this universe, or none."],
-        });
+        Problems.Field("parent", "Choose a type from this universe, or none.");
 
     private static async Task<IResult> DeleteAsync(
         Guid universeId,
@@ -1340,7 +1331,7 @@ public static class EntityTypeEndpoints
         db.EntityFieldDefinitions.Remove(definition);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(EntityFieldImageEndpoints.LoggerName), [.. pictureKeys]);
 
         return Results.NoContent();
     }
@@ -1991,10 +1982,7 @@ public static class EntityTypeEndpoints
     }
 
     private static IResult NameTaken() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = ["This universe already has a type with that name."],
-        });
+        Problems.Field("name", "This universe already has a type with that name.");
 
     /// <summary>
     /// Whether some other field on this type already claims that meaning - null when none does, else whether that field is
@@ -2033,15 +2021,13 @@ public static class EntityTypeEndpoints
     }
 
     private static IResult SemanticTaken(EntityFieldSemantic semantic, bool archived) =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["semantic"] = [
-                archived
-                    ? $"An archived field on this type, or a type above or inside it, is already {LoreValidation.SemanticWord(semantic)}. "
-                        + "Only one field may mean it. Restore that field, or choose no meaning here."
-                    : $"Another field on this type, or a type above or inside it, is already {LoreValidation.SemanticWord(semantic)}. "
-                        + "Only one field may mean it."],
-        });
+        Problems.Field(
+            "semantic",
+            archived
+                ? $"An archived field on this type, or a type above or inside it, is already {LoreValidation.SemanticWord(semantic)}. "
+                    + "Only one field may mean it. Restore that field, or choose no meaning here."
+                : $"Another field on this type, or a type above or inside it, is already {LoreValidation.SemanticWord(semantic)}. "
+                    + "Only one field may mean it.");
 
     /// <summary>
     /// Whether another field on this type already has the name - null when none does, else whether that field is archived. An
@@ -2062,13 +2048,11 @@ public static class EntityTypeEndpoints
     }
 
     private static IResult FieldNameTaken(bool archived) =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = [
-                archived
-                    ? "An archived field on this type, or a type above or inside it, already has that name. Restore it, or choose another name."
-                    : "This type, or a type above or inside it, already has a field with that name."],
-        });
+        Problems.Field(
+            "name",
+            archived
+                ? "An archived field on this type, or a type above or inside it, already has that name. Restore it, or choose another name."
+                : "This type, or a type above or inside it, already has a field with that name.");
 
     /// <summary>
     /// Whether a link field names a type that is not this universe's. One answer for a type that does not exist and one
@@ -2092,14 +2076,8 @@ public static class EntityTypeEndpoints
         && !await db.EntityTypeGroups.AnyAsync(group => group.Id == groupId && group.UniverseId == universeId, cancellationToken);
 
     private static IResult UnknownGroup() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["targetGroupId"] = ["Choose a group from this universe, or any Lore type."],
-        });
+        Problems.Field("targetGroupId", "Choose a group from this universe, or any Lore type.");
 
     private static IResult UnknownTarget() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["targetEntityTypeId"] = ["Choose a type from this universe, or any Lore type."],
-        });
+        Problems.Field("targetEntityTypeId", "Choose a type from this universe, or any Lore type.");
 }

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
@@ -100,17 +99,17 @@ public static partial class UniverseArtworkEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a picture to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a picture to upload.");
         }
 
         ImageCrop? requestedCrop = null;
         if (!string.IsNullOrWhiteSpace(crop))
         {
-            requestedCrop = ReadCrop(crop);
+            requestedCrop = ImagePreparation.ReadCrop(crop);
 
             if (requestedCrop is null)
             {
-                return Invalid(ImagePreparation.CropField, "The card selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The card selection could not be read.");
             }
         }
 
@@ -124,7 +123,7 @@ public static partial class UniverseArtworkEndpoints
 
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -153,17 +152,17 @@ public static partial class UniverseArtworkEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, "upload", exception);
-            await SweepAsync(store, logger, originalKey, cardKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, cardKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, originalKey, cardKey);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, cardKey);
             throw;
         }
 
@@ -180,12 +179,13 @@ public static partial class UniverseArtworkEndpoints
         stored.OriginalKey = originalKey;
         stored.CardKey = cardKey;
         stored.ContentType = prepared.ContentType;
-        stored.FileName = TrimFileName(file.FileName);
+        stored.FileName = ImagePreparation.TrimFileName(file.FileName);
         stored.Width = prepared.Width;
         stored.Height = prepared.Height;
         stored.ByteSize = bytes.Length;
         stored.UploadedAt = DateTime.UtcNow;
-        SetCrop(stored, prepared.Crop);
+        (stored.CropX, stored.CropY, stored.CropWidth, stored.CropHeight) =
+            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
         try
         {
@@ -198,13 +198,13 @@ public static partial class UniverseArtworkEndpoints
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, originalKey, cardKey);
+            await MediaObjectWrites.SweepAsync(store, logger, originalKey, cardKey);
             throw;
         }
 
         if (supersededOriginal is not null)
         {
-            await SweepAsync(store, logger, supersededOriginal, supersededCard!);
+            await MediaObjectWrites.SweepAsync(store, logger, supersededOriginal, supersededCard!);
         }
 
         return Results.Ok(UniverseArtworkRef.Of(stored));
@@ -238,12 +238,12 @@ public static partial class UniverseArtworkEndpoints
 
         if (request.Crop is null)
         {
-            return Invalid(ImagePreparation.CropField, "Choose the part of the picture the card shows.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the picture the card shows.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop, ImageFrame.Card) is { } badCrop)
         {
-            return Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != artwork.AssetId)
@@ -275,14 +275,14 @@ public static partial class UniverseArtworkEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception exception) when (exception is MediaStorageFailedException
             or IOException
             or HttpRequestException)
         {
             LogStorageFailure(logger, "reframe", exception);
-            return Unavailable(exception as MediaStorageException
+            return MediaProblem.Unavailable(exception as MediaStorageException
                 ?? new MediaStorageFailedException("Image storage could not complete the request.", exception));
         }
 
@@ -294,7 +294,7 @@ public static partial class UniverseArtworkEndpoints
         if (prepared is null)
         {
             return rejection!.Field == ImagePreparation.CropField
-                ? Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : OriginalUnavailable();
         }
 
@@ -308,17 +308,17 @@ public static partial class UniverseArtworkEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, "reframe", exception);
-            await SweepAsync(store, logger, cardKey);
-            return Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, cardKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, cardKey);
+            await MediaObjectWrites.SweepAsync(store, logger, cardKey);
             throw;
         }
 
@@ -343,23 +343,24 @@ public static partial class UniverseArtworkEndpoints
         }
         catch (Exception)
         {
-            await SweepAsync(store, logger, cardKey);
+            await MediaObjectWrites.SweepAsync(store, logger, cardKey);
             throw;
         }
 
         if (moved == 0)
         {
-            await SweepAsync(store, logger, cardKey);
+            await MediaObjectWrites.SweepAsync(store, logger, cardKey);
             return Changed();
         }
 
-        await SweepAsync(store, logger, artwork.CardKey);
+        await MediaObjectWrites.SweepAsync(store, logger, artwork.CardKey);
 
         artwork.CardId = cardId;
         artwork.CardKey = cardKey;
         artwork.Width = prepared.Width;
         artwork.Height = prepared.Height;
-        SetCrop(artwork, prepared.Crop);
+        (artwork.CropX, artwork.CropY, artwork.CropWidth, artwork.CropHeight) =
+            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
         return Results.Ok(UniverseArtworkRef.Of(artwork));
     }
@@ -421,7 +422,7 @@ public static partial class UniverseArtworkEndpoints
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        await SweepAsync(store, loggerFactory.CreateLogger(LoggerName), originalKey, cardKey);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), originalKey, cardKey);
 
         return Results.NoContent();
     }
@@ -495,7 +496,7 @@ public static partial class UniverseArtworkEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger(LoggerName), "read", exception);
             }
 
-            return Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -510,45 +511,10 @@ public static partial class UniverseArtworkEndpoints
         return Results.Stream(stored.Content, cardId is null ? artwork.ContentType : "image/webp", enableRangeProcessing: false);
     }
 
-    /// <summary>Deletes artwork objects nothing points at any more, together. See MediaObjectWrites.</summary>
-    internal static Task SweepAsync(IMediaObjectStore store, ILogger logger, params string[] keys) =>
-        MediaObjectWrites.SweepAsync(store, logger, LogOrphanedObject, keys);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "Orphaned media object left behind at '{ObjectKey}'. Nothing references it and it is safe to delete.")]
-    private static partial void LogOrphanedObject(ILogger logger, string objectKey, Exception exception);
-
     [LoggerMessage(
         Level = LogLevel.Error,
         Message = "Universe artwork storage failed during {Operation}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Exception exception);
-
-    private static void SetCrop(UniverseArtwork artwork, ImageCrop crop)
-    {
-        artwork.CropX = crop.X;
-        artwork.CropY = crop.Y;
-        artwork.CropWidth = crop.Width;
-        artwork.CropHeight = crop.Height;
-    }
-
-    private static ImageCrop? ReadCrop(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<ImageCrop>(json, JsonSerializerOptions.Web);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
-
-    internal static IResult Unavailable(MediaStorageException exception) =>
-        MediaProblem.Unavailable(exception);
 
     private static IResult Changed() =>
         Results.Problem(
@@ -563,21 +529,4 @@ public static partial class UniverseArtworkEndpoints
             detail: "Its card cannot be cut again. Upload the picture again to replace it.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = OriginalUnavailableCode });
-
-    private static string? TrimFileName(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(fileName.Trim());
-
-        return name.Length switch
-        {
-            0 => null,
-            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
-            _ => name,
-        };
-    }
 }

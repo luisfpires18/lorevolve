@@ -190,10 +190,7 @@ public static class SeriesEndpoints
 
         if (seasons.Count >= SeriesLimits.MaxSeasonsPerProject)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = [$"A project can have at most {SeriesLimits.MaxSeasonsPerProject} seasons."],
-            });
+            return Problems.Field("name", $"A project can have at most {SeriesLimits.MaxSeasonsPerProject} seasons.");
         }
 
         if (seasons.Any(season => string.Equals(season.Name, name, StringComparison.OrdinalIgnoreCase)))
@@ -402,10 +399,7 @@ public static class SeriesEndpoints
 
         if (count >= SeriesLimits.MaxEpisodesPerSeason)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["title"] = [$"A season can hold at most {SeriesLimits.MaxEpisodesPerSeason} episodes."],
-            });
+            return Problems.Field("title", $"A season can hold at most {SeriesLimits.MaxEpisodesPerSeason} episodes.");
         }
 
         var now = DateTime.UtcNow;
@@ -588,10 +582,7 @@ public static class SeriesEndpoints
                     season => season.Id == targetId && season.ProjectId == projectId,
                     cancellationToken))
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["seasonId"] = ["Choose a season of this project."],
-                });
+                return Problems.Field("seasonId", "Choose a season of this project.");
             }
 
             // The limit a create respects holds for a move as well. Without this an author could put more episodes in
@@ -600,10 +591,7 @@ public static class SeriesEndpoints
             if (await db.ProjectEpisodes.CountAsync(episode => episode.SeasonId == targetId, cancellationToken)
                 >= SeriesLimits.MaxEpisodesPerSeason)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["seasonId"] = [$"That season already holds {SeriesLimits.MaxEpisodesPerSeason} episodes."],
-                });
+                return Problems.Field("seasonId", $"That season already holds {SeriesLimits.MaxEpisodesPerSeason} episodes.");
             }
         }
 
@@ -739,8 +727,5 @@ public static class SeriesEndpoints
     }
 
     private static IResult SeasonNameTaken() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = ["This project already has a season with that name."],
-        });
+        Problems.Field("name", "This project already has a season with that name.");
 }

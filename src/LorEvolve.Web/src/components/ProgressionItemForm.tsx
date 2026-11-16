@@ -8,6 +8,7 @@ import { payloadKey } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import {
   abilityInputOf,
   appearanceInputOf,
@@ -309,7 +310,13 @@ export function ProgressionItemForm({
             disabled={isSaving}
             data-testid={`save-${kind}`}
           >
-            {isSaving ? t('progression.item.saving') : item ? words.save : words.add}
+            {isSaving
+              ? item
+                ? t('progression.item.saving')
+                : t('progression.item.adding')
+              : item
+                ? words.save
+                : words.add}
           </button>
           <button className="button button--secondary" type="button" onClick={close}>
             {t('progression.item.cancel')}
@@ -351,93 +358,89 @@ export function ProgressionItemForm({
         />
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="item-name">
-          {isLook ? t('progression.item.label') : t('progression.item.name')}
-        </label>
-        <input
-          id="item-name"
-          ref={nameInput}
-          className="field__input"
-          dir="auto"
-          placeholder={
-            isLook ? t('progression.item.labelPlaceholder') : t('progression.item.namePlaceholder')
-          }
-          value={draft.name}
-          onChange={(event) => edit({ name: event.target.value })}
-          aria-invalid={errorOf('name') ? true : undefined}
-          aria-describedby={errorOf('name') ? 'item-name-error' : undefined}
-          data-testid={`${kind}-name-input`}
-        />
-        {errorOf('name') ? (
-          <p className="field__error" id="item-name-error">
-            {errorOf('name')}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        label={isLook ? t('progression.item.label') : t('progression.item.name')}
+        id="item-name"
+        error={errorOf('name')}
+      >
+        {(control) => (
+          <input
+            {...control}
+            ref={nameInput}
+            className="field__input"
+            dir="auto"
+            placeholder={
+              isLook
+                ? t('progression.item.labelPlaceholder')
+                : t('progression.item.namePlaceholder')
+            }
+            value={draft.name}
+            onChange={(event) => edit({ name: event.target.value })}
+            data-testid={`${kind}-name-input`}
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="item-description">
-          {isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
-        </label>
-        <p className="field__hint">
-          {kind === 'form'
+      <Field
+        label={isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
+        id="item-description"
+        hint={
+          kind === 'form'
             ? t('progression.item.hint.form')
             : kind === 'ability'
               ? t('progression.item.hint.ability')
-              : t('progression.item.hint.appearance')}
-        </p>
-        <textarea
-          id="item-description"
-          className="field__input field__input--area"
-          rows={4}
-          dir="auto"
-          maxLength={DESCRIPTION_MAX}
-          value={draft.description}
-          onChange={(event) => edit({ description: event.target.value })}
-          aria-invalid={errorOf('description') ? true : undefined}
-          aria-describedby={errorOf('description') ? 'item-description-error' : undefined}
-          data-testid={`${kind}-description-input`}
-        />
-        {errorOf('description') ? (
-          <p className="field__error" id="item-description-error">
-            {errorOf('description')}
-          </p>
-        ) : null}
-      </div>
+              : t('progression.item.hint.appearance')
+        }
+        error={errorOf('description')}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            dir="auto"
+            maxLength={DESCRIPTION_MAX}
+            value={draft.description}
+            onChange={(event) => edit({ description: event.target.value })}
+            data-testid={`${kind}-description-input`}
+          />
+        )}
+      </Field>
 
       {isLook ? null : (
-        <fieldset className="itemunlock" data-testid={`${kind}-unlock`}>
-          <legend className="field__label">{t('progression.item.unlock.title')}</legend>
-          <p className="field__hint">{t('progression.item.unlock.hint')}</p>
-
-          <div className="field">
-            <label className="field__label" htmlFor="item-unlock-era">
-              {t('progression.item.unlock.stage')}
-            </label>
-            <select
-              id="item-unlock-era"
-              className="field__input field__input--select"
-              value={draft.unlockEraId}
-              onChange={(event) => edit({ unlockEraId: event.target.value })}
-              aria-invalid={errorOf('unlockEraId') ? true : undefined}
-              data-testid={`${kind}-unlock-era`}
-            >
-              <option value="">
-                {base.eras.length === 0
-                  ? t('progression.item.unlock.noStages')
-                  : t('progression.item.unlock.notSaid')}
-              </option>
-              {base.eras.map((era) => (
-                <option key={era.id} value={era.id}>
-                  {era.name}
+        <Field
+          label={t('progression.item.unlock.title')}
+          group="fieldset"
+          className="itemunlock"
+          data-testid={`${kind}-unlock`}
+          hint={t('progression.item.unlock.hint')}
+        >
+          <Field
+            label={t('progression.item.unlock.stage')}
+            id="item-unlock-era"
+            error={errorOf('unlockEraId')}
+          >
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={draft.unlockEraId}
+                onChange={(event) => edit({ unlockEraId: event.target.value })}
+                data-testid={`${kind}-unlock-era`}
+              >
+                <option value="">
+                  {base.eras.length === 0
+                    ? t('progression.item.unlock.noStages')
+                    : t('progression.item.unlock.notSaid')}
                 </option>
-              ))}
-            </select>
-            {errorOf('unlockEraId') ? (
-              <p className="field__error">{errorOf('unlockEraId')}</p>
-            ) : null}
-          </div>
+                {base.eras.map((era) => (
+                  <option key={era.id} value={era.id}>
+                    {era.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
 
           <ScenePicks
             universeId={universeId}
@@ -457,17 +460,18 @@ export function ProgressionItemForm({
             error={errorOf('unlockMomentId')}
             testId={`${kind}-unlock-moment`}
           />
-        </fieldset>
+        </Field>
       )}
 
       {base.eras.length > 0 ? (
-        <fieldset className="itemeras" data-testid={`${kind}-eras`}>
-          <legend className="field__label">
-            {isLook ? t('progression.item.eras.titleLook') : t('progression.item.eras.title')}
-          </legend>
-          <p className="field__hint">
-            {isLook ? t('progression.item.eras.hintLook') : t('progression.item.eras.hint')}
-          </p>
+        <Field
+          label={isLook ? t('progression.item.eras.titleLook') : t('progression.item.eras.title')}
+          group="fieldset"
+          className="itemeras"
+          data-testid={`${kind}-eras`}
+          hint={isLook ? t('progression.item.eras.hintLook') : t('progression.item.eras.hint')}
+          error={errorOf('eraIds')}
+        >
           {base.eras.map((era) => (
             <label className="check" key={era.id}>
               <input
@@ -491,8 +495,7 @@ export function ProgressionItemForm({
               {t('progression.item.eras.fromUnlock', { name: base.eras[unlockAt].name })}
             </button>
           ) : null}
-          {errorOf('eraIds') ? <p className="field__error">{errorOf('eraIds')}</p> : null}
-        </fieldset>
+        </Field>
       ) : null}
 
       <ScenePicks
@@ -506,11 +509,14 @@ export function ProgressionItemForm({
       />
 
       {kind !== 'form' && base.forms.length > 0 ? (
-        <fieldset className="itemeras" data-testid={`${kind}-forms`}>
-          <legend className="field__label">
-            {isLook ? t('progression.item.forms.titleLook') : t('progression.item.forms.title')}
-          </legend>
-          <p className="field__hint">{t('progression.item.forms.hint')}</p>
+        <Field
+          label={isLook ? t('progression.item.forms.titleLook') : t('progression.item.forms.title')}
+          group="fieldset"
+          className="itemeras"
+          data-testid={`${kind}-forms`}
+          hint={t('progression.item.forms.hint')}
+          error={errorOf('formIds')}
+        >
           {base.forms.map((form) => (
             <label className="check" key={form.id}>
               <input
@@ -524,8 +530,7 @@ export function ProgressionItemForm({
               {form.name}
             </label>
           ))}
-          {errorOf('formIds') ? <p className="field__error">{errorOf('formIds')}</p> : null}
-        </fieldset>
+        </Field>
       ) : null}
     </Drawer>
   )

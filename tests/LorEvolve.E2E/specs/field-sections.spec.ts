@@ -357,7 +357,7 @@ test.describe('field sections', () => {
     await openFields(page, w.u, 'Character')
     await page.getByTestId('arrange-sections-Character').click()
     const dialog = page.getByTestId('sections-dialog')
-    await expect(dialog.getByRole('button', { name: /Remove A section/ })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: /Delete A section/ })).toBeVisible()
     await expect(dialog.getByTestId('place-Weapon')).toBeVisible()
     expect(await noSideways(page)).toBeLessThanOrEqual(0)
     await dialog.getByTestId('cancel-sections').click()

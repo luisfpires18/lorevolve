@@ -34,46 +34,34 @@ export function ProjectShell({
   return (
     <div className={story ? 'projectframe projectframe--story' : 'projectframe'}>
       <div className="projectframe__head">
-        <nav
-          className="projectcrumbs"
-          aria-label={t('projects.shell.breadcrumb')}
-          data-testid="project-breadcrumb"
-        >
-          <ol className="projectcrumbs__list">
-            <li>
-              <Link to={`/app/universes/${universe.id}`} data-testid="project-breadcrumb-universe">
-                <bdi>{universe.name}</bdi>
-              </Link>
-            </li>
-            <li aria-current="page" data-testid="project-breadcrumb-project">
-              <bdi>{projectName}</bdi>
-            </li>
-          </ol>
-        </nav>
-        <nav
-          className="projecttabs"
-          aria-label={t('projects.tabs.label')}
-          data-testid="project-tabs"
-        >
-          <ul className="projecttabs__list">
-            {sections.map((section) => (
-              <li key={section.segment}>
-                <NavLink
-                  className="projecttabs__tab"
-                  to={projectPath(projectId, section.segment, universe.id)}
-                  data-testid={`projecttab-${section.segment}`}
+        <div className="pageheader__crumb">
+          <nav aria-label={t('projects.shell.breadcrumb')} data-testid="project-breadcrumb">
+            <ol>
+              <li>
+                <Link
+                  to={`/app/universes/${universe.id}`}
+                  data-testid="project-breadcrumb-universe"
                 >
-                  <section.icon
-                    className="projecttabs__icon"
-                    aria-hidden="true"
-                    focusable="false"
-                    strokeWidth={1.75}
-                  />
-                  {projectSectionLabel(section)}
-                </NavLink>
+                  <bdi>{universe.name}</bdi>
+                </Link>
               </li>
-            ))}
-          </ul>
+              <li aria-current="page" data-testid="project-breadcrumb-project">
+                <bdi>{projectName}</bdi>
+              </li>
+            </ol>
+          </nav>
+        </div>
+        <nav className="views" aria-label={t('projects.tabs.label')} data-testid="project-tabs">
+          {sections.map((section) => (
+            <NavLink
+              key={section.segment}
+              className="views__link"
+              to={projectPath(projectId, section.segment, universe.id)}
+              data-testid={`projecttab-${section.segment}`}
+            >
+              {projectSectionLabel(section)}
+            </NavLink>
+          ))}
         </nav>
       </div>
       {children}

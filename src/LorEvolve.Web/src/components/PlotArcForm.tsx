@@ -4,6 +4,7 @@ import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { createPlotArc, updatePlotArc } from '../stories/api'
 import type { PlotArc } from '../stories/types'
 
@@ -126,7 +127,9 @@ export function PlotArcForm({
         <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-plot-arc">
             {isSaving
-              ? t('stories.arcForm.saving')
+              ? arc
+                ? t('stories.arcForm.saving')
+                : t('stories.arcForm.adding')
               : arc
                 ? t('stories.arcForm.save')
                 : t('stories.arcForm.add')}
@@ -148,59 +151,62 @@ export function PlotArcForm({
         </p>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="plot-arc-title">
-          {t('stories.arcForm.titleLabel')}
-        </label>
-        <p className="field__hint">{t('stories.arcForm.titleHint')}</p>
-        <input
-          id="plot-arc-title"
-          className="field__input"
-          ref={title}
-          type="text"
-          dir="auto"
-          placeholder={t('stories.arcForm.titlePlaceholder')}
-          value={draft.title}
-          onChange={(event) => edit({ title: event.target.value })}
-          aria-invalid={fieldErrors.title ? true : undefined}
-          data-testid="plot-arc-title-input"
-        />
-        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-      </div>
+      <Field
+        id="plot-arc-title"
+        label={t('stories.arcForm.titleLabel')}
+        hint={t('stories.arcForm.titleHint')}
+        error={fieldErrors.title}
+      >
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={title}
+            type="text"
+            dir="auto"
+            placeholder={t('stories.arcForm.titlePlaceholder')}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="plot-arc-title-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="plot-arc-description">
-          {t('stories.arcForm.descriptionLabel')}
-        </label>
-        <p className="field__hint">{t('stories.arcForm.descriptionHint')}</p>
-        <textarea
-          id="plot-arc-description"
-          className="field__input field__input--area"
-          rows={3}
-          value={draft.description}
-          onChange={(event) => edit({ description: event.target.value })}
-          aria-invalid={fieldErrors.description ? true : undefined}
-          data-testid="plot-arc-description-input"
-        />
-        {fieldErrors.description ? <p className="field__error">{fieldErrors.description}</p> : null}
-      </div>
+      <Field
+        id="plot-arc-description"
+        label={t('stories.arcForm.descriptionLabel')}
+        hint={t('stories.arcForm.descriptionHint')}
+        error={fieldErrors.description}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={3}
+            value={draft.description}
+            onChange={(event) => edit({ description: event.target.value })}
+            data-testid="plot-arc-description-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="plot-arc-notes">
-          {t('stories.arcForm.notesLabel')}
-        </label>
-        <p className="field__hint">{t('stories.arcForm.notesHint')}</p>
-        <textarea
-          id="plot-arc-notes"
-          className="field__input field__input--area"
-          rows={4}
-          value={draft.notes}
-          onChange={(event) => edit({ notes: event.target.value })}
-          aria-invalid={fieldErrors.notes ? true : undefined}
-          data-testid="plot-arc-notes-input"
-        />
-        {fieldErrors.notes ? <p className="field__error">{fieldErrors.notes}</p> : null}
-      </div>
+      <Field
+        id="plot-arc-notes"
+        label={t('stories.arcForm.notesLabel')}
+        hint={t('stories.arcForm.notesHint')}
+        error={fieldErrors.notes}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            value={draft.notes}
+            onChange={(event) => edit({ notes: event.target.value })}
+            data-testid="plot-arc-notes-input"
+          />
+        )}
+      </Field>
     </Drawer>
   )
 }

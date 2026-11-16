@@ -1,3 +1,4 @@
+import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { findMonth, hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
@@ -46,141 +47,106 @@ export function ChronologyPointFields({
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
   const month = custom ? findMonth(chronology, value.month) : null
-  const errorId = (part: ChronologyPointPart) => (errors[part] ? `${ids[part]}-error` : undefined)
 
   return (
     <div
       className={reckonsInEras ? 'momentform__point momentform__point--era' : 'momentform__point'}
     >
       {reckonsInEras ? (
-        <div className="field">
-          <label className="field__label" htmlFor={ids.eraId}>
-            {eraLabel ?? t('time.point.era')}
-          </label>
-          <select
-            id={ids.eraId}
-            className="field__input field__input--select"
-            value={value.eraId}
-            onChange={(event) => onChange('eraId', event.target.value)}
-            aria-invalid={errors.eraId ? true : undefined}
-            aria-describedby={errorId('eraId')}
-            data-testid={ids.eraId}
-          >
-            <option value="">{t('time.point.chooseEra')}</option>
-            {chronology.eras.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name}
-              </option>
-            ))}
-          </select>
-          {errors.eraId ? (
-            <p className="field__error" id={errorId('eraId')}>
-              {errors.eraId}
-            </p>
-          ) : null}
-        </div>
+        <Field id={ids.eraId} label={eraLabel ?? t('time.point.era')} error={errors.eraId}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={value.eraId}
+              onChange={(event) => onChange('eraId', event.target.value)}
+              data-testid={ids.eraId}
+            >
+              <option value="">{t('time.point.chooseEra')}</option>
+              {chronology.eras.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor={ids.year}>
-          {yearLabel ?? t('time.point.year')}
-        </label>
-        <input
-          id={ids.year}
-          className="field__input"
-          type="number"
-          step="1"
-          min={reckonsInEras ? 1 : undefined}
-          inputMode="numeric"
-          placeholder={t('time.point.yearPlaceholder')}
-          value={value.year}
-          onChange={(event) => onChange('year', event.target.value)}
-          aria-invalid={errors.year ? true : undefined}
-          aria-describedby={errorId('year')}
-          data-testid={ids.year}
-        />
-        {errors.year ? (
-          <p className="field__error" id={errorId('year')}>
-            {errors.year}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="field">
-        <label className="field__label" htmlFor={ids.month}>
-          {t('time.point.month')}
-        </label>
-        {custom ? (
-          <select
-            id={ids.month}
-            className="field__input field__input--select"
-            value={value.month}
-            onChange={(event) => {
-              onChange('month', event.target.value)
-              // A day only means something inside a month, so taking the month away takes the day too.
-              if (event.target.value === '') onChange('day', '')
-            }}
-            aria-invalid={errors.month ? true : undefined}
-            aria-describedby={errorId('month')}
-            data-testid={ids.month}
-          >
-            <option value="">{t('time.point.noMonth')}</option>
-            {chronology.calendar?.months.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name} · {tn('time.point.days', option.dayCount, { n: option.dayCount })}
-              </option>
-            ))}
-          </select>
-        ) : (
+      <Field id={ids.year} label={yearLabel ?? t('time.point.year')} error={errors.year}>
+        {(control) => (
           <input
-            id={ids.month}
+            {...control}
+            className="field__input"
+            type="number"
+            step="1"
+            min={reckonsInEras ? 1 : undefined}
+            inputMode="numeric"
+            placeholder={t('time.point.yearPlaceholder')}
+            value={value.year}
+            onChange={(event) => onChange('year', event.target.value)}
+            data-testid={ids.year}
+          />
+        )}
+      </Field>
+
+      <Field id={ids.month} label={t('time.point.month')} error={errors.month}>
+        {(control) =>
+          custom ? (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={value.month}
+              onChange={(event) => {
+                onChange('month', event.target.value)
+                // A day only means something inside a month, so taking the month away takes the day too.
+                if (event.target.value === '') onChange('day', '')
+              }}
+              data-testid={ids.month}
+            >
+              <option value="">{t('time.point.noMonth')}</option>
+              {chronology.calendar?.months.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name} · {tn('time.point.days', option.dayCount, { n: option.dayCount })}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              {...control}
+              className="field__input"
+              type="number"
+              step="1"
+              min={1}
+              max={12}
+              inputMode="numeric"
+              placeholder={t('time.point.monthPlaceholder')}
+              value={value.month}
+              onChange={(event) => onChange('month', event.target.value)}
+              data-testid={ids.month}
+            />
+          )
+        }
+      </Field>
+
+      <Field id={ids.day} label={t('time.point.day')} error={errors.day}>
+        {(control) => (
+          <input
+            {...control}
             className="field__input"
             type="number"
             step="1"
             min={1}
-            max={12}
+            max={custom ? month?.dayCount : 31}
             inputMode="numeric"
-            placeholder={t('time.point.monthPlaceholder')}
-            value={value.month}
-            onChange={(event) => onChange('month', event.target.value)}
-            aria-invalid={errors.month ? true : undefined}
-            aria-describedby={errorId('month')}
-            data-testid={ids.month}
+            placeholder={t('time.point.dayPlaceholder')}
+            disabled={custom && !month && value.day === ''}
+            value={value.day}
+            onChange={(event) => onChange('day', event.target.value)}
+            data-testid={ids.day}
           />
         )}
-        {errors.month ? (
-          <p className="field__error" id={errorId('month')}>
-            {errors.month}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="field">
-        <label className="field__label" htmlFor={ids.day}>
-          {t('time.point.day')}
-        </label>
-        <input
-          id={ids.day}
-          className="field__input"
-          type="number"
-          step="1"
-          min={1}
-          max={custom ? month?.dayCount : 31}
-          inputMode="numeric"
-          placeholder={t('time.point.dayPlaceholder')}
-          disabled={custom && !month && value.day === ''}
-          value={value.day}
-          onChange={(event) => onChange('day', event.target.value)}
-          aria-invalid={errors.day ? true : undefined}
-          aria-describedby={errorId('day')}
-          data-testid={ids.day}
-        />
-        {errors.day ? (
-          <p className="field__error" id={errorId('day')}>
-            {errors.day}
-          </p>
-        ) : null}
-      </div>
+      </Field>
     </div>
   )
 }

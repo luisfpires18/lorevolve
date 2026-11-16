@@ -211,7 +211,7 @@ public static partial class BackupRestoreEndpoints
 
         if (UniverseEndpoints.NameError(request.Name) is { } nameError)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["name"] = [nameError] });
+            return Problems.Field("name", nameError);
         }
 
         var name = request.Name!.Trim();

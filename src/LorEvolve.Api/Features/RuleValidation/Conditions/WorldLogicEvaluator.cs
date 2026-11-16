@@ -358,7 +358,7 @@ public sealed class WorldLogicEvaluator
                 if (all ? result.Outcome == ConditionOutcome.False : held)
                 {
                     var settling = all ? ConditionOutcome.False : exempt ? ConditionOutcome.Exempt : ConditionOutcome.True;
-                    Trace($"{(all ? "all" : "any")} settled by a child -> {Name(settling)}");
+                    Trace($"{(all ? "all" : "any")} settled by a child -> {ConditionOutcomeText.Of(settling)}");
 
                     return settling == ConditionOutcome.Exempt
                         ? NodeResult.Exempt(exemption)
@@ -396,7 +396,7 @@ public sealed class WorldLogicEvaluator
             }
 
             var settled = all ? ConditionOutcome.True : ConditionOutcome.False;
-            Trace($"{(all ? "all" : "any")} -> {Name(settled)}");
+            Trace($"{(all ? "all" : "any")} -> {ConditionOutcomeText.Of(settled)}");
             return new NodeResult(settled);
         }
 
@@ -684,7 +684,7 @@ public sealed class WorldLogicEvaluator
                 Note(evidence.Source, evidence.Id, evidence.Role);
             }
 
-            Trace($"ruleHolds {referenced} -> {Name(result.Outcome)}");
+            Trace($"ruleHolds {referenced} -> {ConditionOutcomeText.Of(result.Outcome)}");
 
             return result.Outcome switch
             {
@@ -1099,13 +1099,5 @@ public sealed class WorldLogicEvaluator
 
         private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 
-        private static string Name(ConditionOutcome outcome) => outcome switch
-        {
-            ConditionOutcome.True => "true",
-            ConditionOutcome.False => "false",
-            ConditionOutcome.Unknown => "unknown",
-            ConditionOutcome.Exempt => "exempt",
-            _ => "error",
-        };
     }
 }

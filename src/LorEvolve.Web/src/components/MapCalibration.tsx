@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Ruler } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import { removeMapCalibration, setMapCalibration } from '../maps/api'
@@ -223,27 +224,29 @@ export function MapCalibrationForm({
         </p>
       ) : null}
 
-      <fieldset className="field mappinform__position">
-        <legend className="field__label">
-          {a ? t('places.calibration.pointA') : t('places.calibration.pointANot')}
-        </legend>
+      <Field
+        group="fieldset"
+        className="mappinform__position"
+        label={a ? t('places.calibration.pointA') : t('places.calibration.pointANot')}
+        error={errors.a}
+      >
         <div className="mappinform__coords">
           {coordinate(t('places.calibration.across'), 0, 'x', a)}
           {coordinate(t('places.calibration.down'), 0, 'y', a)}
         </div>
-        {errors.a ? <p className="field__error">{errors.a}</p> : null}
-      </fieldset>
+      </Field>
 
-      <fieldset className="field mappinform__position">
-        <legend className="field__label">
-          {b ? t('places.calibration.pointB') : t('places.calibration.pointBNot')}
-        </legend>
+      <Field
+        group="fieldset"
+        className="mappinform__position"
+        label={b ? t('places.calibration.pointB') : t('places.calibration.pointBNot')}
+        error={errors.b || errors.x2}
+      >
         <div className="mappinform__coords">
           {coordinate(t('places.calibration.across'), 1, 'x', b)}
           {coordinate(t('places.calibration.down'), 1, 'y', b)}
         </div>
-        {errors.b || errors.x2 ? <p className="field__error">{errors.b ?? errors.x2}</p> : null}
-      </fieldset>
+      </Field>
 
       <div className="mappinform__coords">
         <label className="mappinform__coord mapcalibration__distance">

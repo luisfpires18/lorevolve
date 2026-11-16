@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { createValidationTerm } from '../ruleValidation/api'
+import { Field } from './Field'
 import {
   TERM_KIND_WORDS,
   TERM_NAME_MAX_LENGTH,
@@ -48,10 +49,7 @@ export function ValidationTermSelect({
 }: ValidationTermSelectProps) {
   const { t } = useI18n()
   const selectId = useId()
-  const hintId = useId()
-  const errorId = useId()
   const nameId = useId()
-  const nameErrorId = useId()
 
   const [isAdding, setIsAdding] = useState(false)
   const [name, setName] = useState('')
@@ -131,101 +129,94 @@ export function ValidationTermSelect({
     }
   }
 
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ')
-
   return (
-    <div className="field termselect">
-      <label className="field__label" htmlFor={selectId}>
-        {label}
-      </label>
-      {hint ? (
-        <p className="field__hint" id={hintId}>
-          {hint}
-        </p>
-      ) : null}
-
-      <div className="termselect__row">
-        <select
-          id={selectId}
-          ref={select}
-          className="field__input field__input--select termselect__select"
-          value={value}
-          disabled={terms === null && !missing}
-          onChange={(event) => onChange(event.target.value)}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={describedBy || undefined}
-          data-testid={testId}
-        >
-          <option value="">{terms === null ? t('canon.termSelect.reading') : emptyLabel}</option>
-          {missing ? (
-            <option value={value}>{selectedName ?? t('canon.termSelect.chosen')}</option>
-          ) : null}
-          {options.map((term) => (
-            <option key={term.id} value={term.id}>
-              {term.name}
-            </option>
-          ))}
-        </select>
-        {!isAdding ? (
-          <button
-            ref={newButton}
-            className="button button--secondary"
-            type="button"
-            onClick={open}
-            data-testid={`${testId}-new`}
-          >
-            {t('canon.termSelect.new', { word })}
-          </button>
-        ) : null}
-      </div>
-
-      {isAdding ? (
-        <div className="termselect__new" data-testid={`${testId}-adding`}>
-          <label className="field__label" htmlFor={nameId}>
-            {t('canon.termSelect.nameOf', { word })}
-          </label>
+    <Field label={label} hint={hint} error={error} id={selectId} className="termselect">
+      {(control) => (
+        <>
           <div className="termselect__row">
-            <input
-              id={nameId}
-              ref={nameInput}
-              className="field__input termselect__name"
-              type="text"
-              dir="auto"
-              autoComplete="off"
-              maxLength={TERM_NAME_MAX_LENGTH}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              onKeyDown={onNameKeyDown}
-              aria-invalid={nameError ? true : undefined}
-              aria-describedby={nameError ? nameErrorId : undefined}
-              data-testid={`${testId}-name`}
-            />
-            <button
-              className="button"
-              type="button"
-              disabled={isCreating}
-              onClick={() => void create()}
-              data-testid={`${testId}-add`}
+            <select
+              id={selectId}
+              ref={select}
+              className="field__input field__input--select termselect__select"
+              value={value}
+              disabled={terms === null && !missing}
+              onChange={(event) => onChange(event.target.value)}
+              aria-invalid={control['aria-invalid']}
+              aria-describedby={control['aria-describedby']}
+              data-testid={testId}
             >
-              {isCreating ? t('canon.termSelect.adding') : t('canon.termSelect.add', { word })}
-            </button>
-            <button className="button button--secondary" type="button" onClick={cancel}>
-              {t('canon.termSelect.cancel')}
-            </button>
+              <option value="">
+                {terms === null ? t('canon.termSelect.reading') : emptyLabel}
+              </option>
+              {missing ? (
+                <option value={value}>{selectedName ?? t('canon.termSelect.chosen')}</option>
+              ) : null}
+              {options.map((term) => (
+                <option key={term.id} value={term.id}>
+                  {term.name}
+                </option>
+              ))}
+            </select>
+            {!isAdding ? (
+              <button
+                ref={newButton}
+                className="button button--secondary"
+                type="button"
+                onClick={open}
+                data-testid={`${testId}-new`}
+              >
+                {t('canon.termSelect.new', { word })}
+              </button>
+            ) : null}
           </div>
-          {nameError ? (
-            <p className="field__error" id={nameErrorId} role="alert">
-              {nameError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
 
-      {error ? (
-        <p className="field__error" id={errorId}>
-          {error}
-        </p>
-      ) : null}
-    </div>
+          {isAdding ? (
+            <Field
+              label={t('canon.termSelect.nameOf', { word })}
+              id={nameId}
+              className="termselect__new"
+              data-testid={`${testId}-adding`}
+              error={nameError ? <span role="alert">{nameError}</span> : undefined}
+            >
+              {(nameControl) => (
+                <>
+                  <div className="termselect__row">
+                    <input
+                      id={nameControl.id}
+                      ref={nameInput}
+                      className="field__input termselect__name"
+                      type="text"
+                      dir="auto"
+                      autoComplete="off"
+                      maxLength={TERM_NAME_MAX_LENGTH}
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      onKeyDown={onNameKeyDown}
+                      aria-invalid={nameControl['aria-invalid']}
+                      aria-describedby={nameControl['aria-describedby']}
+                      data-testid={`${testId}-name`}
+                    />
+                    <button
+                      className="button"
+                      type="button"
+                      disabled={isCreating}
+                      onClick={() => void create()}
+                      data-testid={`${testId}-add`}
+                    >
+                      {isCreating
+                        ? t('canon.termSelect.adding')
+                        : t('canon.termSelect.add', { word })}
+                    </button>
+                    <button className="button button--secondary" type="button" onClick={cancel}>
+                      {t('canon.termSelect.cancel')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </Field>
+          ) : null}
+        </>
+      )}
+    </Field>
   )
 }

@@ -231,10 +231,7 @@ public static class ProjectEntityTypeEndpoints
 
         if (existing.Count >= MaxTypesPerProject)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = [$"A project can have at most {MaxTypesPerProject} types."],
-            });
+            return Problems.Field("name", $"A project can have at most {MaxTypesPerProject} types.");
         }
 
         if (existing.Any(type => string.Equals(type.Name, name, StringComparison.OrdinalIgnoreCase)))
@@ -345,10 +342,7 @@ public static class ProjectEntityTypeEndpoints
 
             if (parentId == typeId || EntityTypeHierarchy.IsWithin(parentOf, parentId, typeId))
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["parentId"] = ["A type cannot be put inside itself."],
-                });
+                return Problems.Field("parentId", "A type cannot be put inside itself.");
             }
         }
 
@@ -498,20 +492,14 @@ public static class ProjectEntityTypeEndpoints
 
         if (fields.Count >= MaxFieldsPerType)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = [$"A type can have at most {MaxFieldsPerType} fields."],
-            });
+            return Problems.Field("name", $"A type can have at most {MaxFieldsPerType} fields.");
         }
 
         var name = request.Name!.Trim();
 
         if (fields.Any(field => string.Equals(field.Name, name, StringComparison.OrdinalIgnoreCase)))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = ["This type already has a field with that name."],
-            });
+            return Problems.Field("name", "This type already has a field with that name.");
         }
 
         // A required field cannot be added to a type whose entries already exist with nothing in it, or every one of
@@ -519,10 +507,9 @@ public static class ProjectEntityTypeEndpoints
         if (request.IsRequired is true
             && await db.Entities.IgnoreQueryFilters().AnyAsync(entry => entry.EntityTypeId == typeId, cancellationToken))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["isRequired"] = ["Entries of this type already exist, so a new field cannot be required. Add it, fill it in, then make it required."],
-            });
+            return Problems.Field(
+                "isRequired",
+                "Entries of this type already exist, so a new field cannot be required. Add it, fill it in, then make it required.");
         }
 
         var field = new EntityFieldDefinition
@@ -601,10 +588,7 @@ public static class ProjectEntityTypeEndpoints
                 other => other.EntityTypeId == typeId && other.Id != fieldId && other.Name == name,
                 cancellationToken))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = ["This type already has a field with that name."],
-            });
+            return Problems.Field("name", "This type already has a field with that name.");
         }
 
         // The kind is locked once the field holds a value: reinterpreting a stored number as a date would not convert
@@ -730,7 +714,7 @@ public static class ProjectEntityTypeEndpoints
         db.EntityFieldDefinitions.Remove(field);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
-        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(EntityFieldImageEndpoints.LoggerName), [.. pictureKeys]);
 
         return Results.NoContent();
     }
@@ -947,14 +931,8 @@ public static class ProjectEntityTypeEndpoints
     }
 
     private static IResult NameTaken() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = ["This project already has a type with that name."],
-        });
+        Problems.Field("name", "This project already has a type with that name.");
 
     private static IResult ParentMissing() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["parentId"] = ["Choose a type from this project, or none."],
-        });
+        Problems.Field("parentId", "Choose a type from this project, or none.");
 }

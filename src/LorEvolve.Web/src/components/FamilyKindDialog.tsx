@@ -171,34 +171,32 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         <span>{t('places.kindDialog.symmetric')}</span>
       </label>
 
-      <div className="field">
-        <label className="field__label" htmlFor="family-kind-meaning">
-          {t('places.kindDialog.meaning')}
-        </label>
-        <select
-          id="family-kind-meaning"
-          className="field__input field__input--select"
-          value={chosen}
-          onChange={(event) => setSemantic(Number(event.target.value) as FamilySemanticValue)}
-          aria-invalid={fieldErrors.familysemantic ? true : undefined}
-          aria-describedby="family-kind-meaning-hint"
-          data-testid="family-kind-meaning"
-        >
-          {meanings.map((each) => (
-            <option key={each.value} value={each.value}>
-              {t(each.label)}
-            </option>
-          ))}
-        </select>
-        <p className="field__hint" id="family-kind-meaning-hint">
-          {isParentSemantic(chosen)
+      <Field
+        label={t('places.kindDialog.meaning')}
+        id="family-kind-meaning"
+        hint={
+          isParentSemantic(chosen)
             ? t('places.kindDialog.hintParent')
-            : t('places.kindDialog.hintOther')}
-        </p>
-        {fieldErrors.familysemantic ? (
-          <p className="field__error">{fieldErrors.familysemantic}</p>
-        ) : null}
-      </div>
+            : t('places.kindDialog.hintOther')
+        }
+        error={fieldErrors.familysemantic}
+      >
+        {(control) => (
+          <select
+            {...control}
+            className="field__input field__input--select"
+            value={chosen}
+            onChange={(event) => setSemantic(Number(event.target.value) as FamilySemanticValue)}
+            data-testid="family-kind-meaning"
+          >
+            {meanings.map((each) => (
+              <option key={each.value} value={each.value}>
+                {t(each.label)}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
     </Drawer>
   )
 }

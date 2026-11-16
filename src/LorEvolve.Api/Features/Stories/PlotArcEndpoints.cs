@@ -361,7 +361,7 @@ public static class PlotArcEndpoints
         return Results.Ok(await LoadArcsAsync(db, storyId, null, cancellationToken));
 
         static IResult Refused(string message) =>
-            Results.ValidationProblem(new Dictionary<string, string[]> { ["plotArcIds"] = [message] });
+            Problems.Field("plotArcIds", message);
     }
 
     // ---------- Shared ----------

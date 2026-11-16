@@ -142,10 +142,7 @@ public static class TimelineEndpoints
         if (await ResolveEntitiesAsync(db, universeId, request, cancellationToken)
             is not { } entityIds)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["entityIds"] = ["Link entries from this universe."],
-            });
+            return Problems.Field("entityIds", "Link entries from this universe.");
         }
 
         if (request.Validation is { } details
@@ -247,10 +244,7 @@ public static class TimelineEndpoints
         if (await ResolveEntitiesAsync(db, universeId, request, cancellationToken)
             is not { } entityIds)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["entityIds"] = ["Link entries from this universe."],
-            });
+            return Problems.Field("entityIds", "Link entries from this universe.");
         }
 
         if (request.Validation is { } details
@@ -494,13 +488,9 @@ public static class TimelineEndpoints
     }
 
     private static IResult StoriesRefused() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["storyIds"] =
-            [
-                $"Choose up to {TimelineLimits.MaxLinkedStories} stories from this universe. A story in the Trash cannot be newly linked.",
-            ],
-        });
+        Problems.Field(
+            "storyIds",
+            $"Choose up to {TimelineLimits.MaxLinkedStories} stories from this universe. A story in the Trash cannot be newly linked.");
 
     // ---------- Reading ----------
 

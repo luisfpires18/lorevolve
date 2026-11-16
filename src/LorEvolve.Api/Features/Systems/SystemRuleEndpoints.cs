@@ -174,10 +174,7 @@ public static class SystemRuleEndpoints
         if (request.ProjectId is { } projectId
             && !await WorldLogicAccess.IsProjectOfUniverseAsync(db, universeId, projectId, cancellationToken))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["projectId"] = ["This universe has no such project."],
-            });
+            return Problems.Field("projectId", "This universe has no such project.");
         }
 
         var condition = request.Condition?.GetRawText();
@@ -279,10 +276,7 @@ public static class SystemRuleEndpoints
 
         if (request.ProjectId != rule.ProjectId)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["projectId"] = ["A rule stays in the scope it was created in."],
-            });
+            return Problems.Field("projectId", "A rule stays in the scope it was created in.");
         }
 
         var condition = request.Condition?.GetRawText();
@@ -464,7 +458,7 @@ public static class SystemRuleEndpoints
 
         return Results.Ok(rows
             .Select(row => new WorldLogicRevisionRow(
-                row.Version, WorldLogicAccess.Utc(row.SavedAt), row.Title, row.Description, row.HasCondition))
+                row.Version, Utc(row.SavedAt), row.Title, row.Description, row.HasCondition))
             .ToList());
     }
 
@@ -512,22 +506,12 @@ public static class SystemRuleEndpoints
             id,
             result.RuleVersion,
             result.SchemaVersion,
-            Outcome(result.Outcome),
+            ConditionOutcomeText.Of(result.Outcome),
             result.ErrorCode,
             result.ExemptionId,
             [.. result.Evidence.Select(item => new ConditionEvidenceRow(item.Source, item.Id, item.Role))],
             result.Rationale));
     }
-
-    /// <summary>The outcome as the specification writes it. Text, so a new outcome never shifts an existing one.</summary>
-    private static string Outcome(ConditionOutcome outcome) => outcome switch
-    {
-        ConditionOutcome.True => "true",
-        ConditionOutcome.False => "false",
-        ConditionOutcome.Unknown => "unknown",
-        ConditionOutcome.Exempt => "exempt",
-        _ => "error",
-    };
 
     /// <summary>
     /// Every rule the universe has, of both kinds, in one list by title: the world rules that came before ADR 0072
@@ -603,8 +587,8 @@ public static class SystemRuleEndpoints
                 HasCondition: false,
                 WorldLogicScope.Universe,
                 ProjectId: null,
-                WorldLogicAccess.Utc(rule.CreatedAt),
-                WorldLogicAccess.Utc(rule.UpdatedAt)));
+                Utc(rule.CreatedAt),
+                Utc(rule.UpdatedAt)));
         }
 
         foreach (var rule in systemRules)
@@ -620,8 +604,8 @@ public static class SystemRuleEndpoints
                 rule.HasCondition,
                 rule.Scope,
                 rule.ProjectId,
-                WorldLogicAccess.Utc(rule.CreatedAt),
-                WorldLogicAccess.Utc(rule.UpdatedAt)));
+                Utc(rule.CreatedAt),
+                Utc(rule.UpdatedAt)));
         }
 
         // The same stable order both lists use on their own: case folded, then as written, then by id, so a world
@@ -696,8 +680,8 @@ public static class SystemRuleEndpoints
             row.HasCondition,
             row.SystemCount,
             row.Version,
-            WorldLogicAccess.Utc(row.CreatedAt),
-            WorldLogicAccess.Utc(row.UpdatedAt));
+            Utc(row.CreatedAt),
+            Utc(row.UpdatedAt));
     }
 
     internal static async Task<SystemRuleDetail> DetailAsync(
@@ -743,8 +727,8 @@ public static class SystemRuleEndpoints
             dependsOn,
             systems,
             rule.Version,
-            WorldLogicAccess.Utc(rule.CreatedAt),
-            WorldLogicAccess.Utc(rule.UpdatedAt),
+            Utc(rule.CreatedAt),
+            Utc(rule.UpdatedAt),
             exceptions);
     }
 

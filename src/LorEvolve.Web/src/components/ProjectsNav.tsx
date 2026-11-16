@@ -75,7 +75,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
   return (
     <li className="sidebar__group" data-testid="sidebar-projects">
       {/* The group's label is its fold: one button, announced as expanded or collapsed, named by the label it shows. */}
-      <h2 className="typeswitch__rowlabel sidebar__grouphead" id="sidebar-group-projects">
+      <h2 className="sidebar__grouphead" id="sidebar-group-projects">
         <button
           type="button"
           className="sidebar__grouptoggle"

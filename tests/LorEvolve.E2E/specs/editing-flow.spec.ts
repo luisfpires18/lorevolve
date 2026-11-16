@@ -312,7 +312,7 @@ test.describe('explicit save states', () => {
     await walkSave(page, {
       button: page.getByTestId('save-chronology'),
       status: page.getByTestId('chronology-status'),
-      label: 'Save chronology',
+      label: 'Save',
       edit: () => page.getByTestId('era-name').first().fill('Fourth Age'),
       request: /\/chronology$/,
       method: 'PUT',

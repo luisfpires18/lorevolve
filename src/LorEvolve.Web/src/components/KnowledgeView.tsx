@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
@@ -567,7 +568,9 @@ function RecordForm({
         <>
           <button className="button" type="submit" disabled={isSaving} data-testid="knowledge-save">
             {isSaving
-              ? t('ai.knowledge.form.saving')
+              ? record
+                ? t('ai.knowledge.form.saving')
+                : t('ai.knowledge.form.adding')
               : record
                 ? t('ai.knowledge.form.save')
                 : t('ai.knowledge.form.add')}
@@ -591,7 +594,7 @@ function RecordForm({
 
       {side === 'knows' ? (
         <>
-          <p className="field__label">{t('ai.knowledge.form.whoKnowsFixed')}</p>
+          <p className="knowledge__fixedlabel">{t('ai.knowledge.form.whoKnowsFixed')}</p>
           <p className="knowledge__fixed" data-testid="knowledge-knower">
             <bdi>{entityName}</bdi>
           </p>
@@ -612,7 +615,7 @@ function RecordForm({
             onChange={(other) => setDraft((current) => ({ ...current, other }))}
             excludeId={entityId}
           />
-          <p className="field__label">{t('ai.knowledge.form.aboutFixed')}</p>
+          <p className="knowledge__fixedlabel">{t('ai.knowledge.form.aboutFixed')}</p>
           <p className="knowledge__fixed" data-testid="knowledge-subject">
             <bdi>{entityName}</bdi>
           </p>
@@ -624,30 +627,22 @@ function RecordForm({
         </p>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor={statementId}>
-          {t('ai.knowledge.form.statement')}
-        </label>
-        <textarea
-          id={statementId}
-          className="field__input field__input--area"
-          rows={3}
-          dir="auto"
-          maxLength={KNOWLEDGE_STATEMENT_MAX_LENGTH}
-          value={draft.statement}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, statement: event.target.value }))
-          }
-          aria-invalid={errors.statement ? true : undefined}
-          aria-describedby={errors.statement ? `${statementId}-error` : undefined}
-          data-testid="knowledge-statement"
-        />
-        {errors.statement ? (
-          <p className="field__error" id={`${statementId}-error`}>
-            {errors.statement}
-          </p>
-        ) : null}
-      </div>
+      <Field label={t('ai.knowledge.form.statement')} id={statementId} error={errors.statement}>
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={3}
+            dir="auto"
+            maxLength={KNOWLEDGE_STATEMENT_MAX_LENGTH}
+            value={draft.statement}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, statement: event.target.value }))
+            }
+            data-testid="knowledge-statement"
+          />
+        )}
+      </Field>
 
       <label className="checkbox" htmlFor={startId}>
         <input
@@ -669,74 +664,65 @@ function RecordForm({
 
       {draft.knownFromStart ? null : (
         <>
-          <div className="field">
-            <label className="field__label" htmlFor={storyId}>
-              {t('ai.knowledge.form.story')}
-            </label>
-            <select
-              id={storyId}
-              className="field__input"
-              value={draft.storyId}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  storyId: event.target.value,
-                  sceneId: '',
-                }))
-              }
-              data-testid="knowledge-story"
-            >
-              <option value="">
-                {stories === null
-                  ? t('ai.knowledge.form.readingStories')
-                  : t('ai.knowledge.form.chooseStory')}
-              </option>
-              {(stories ?? []).map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.title}
+          <Field label={t('ai.knowledge.form.story')} id={storyId}>
+            {(control) => (
+              <select
+                {...control}
+                className="field__input"
+                value={draft.storyId}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    storyId: event.target.value,
+                    sceneId: '',
+                  }))
+                }
+                data-testid="knowledge-story"
+              >
+                <option value="">
+                  {stories === null
+                    ? t('ai.knowledge.form.readingStories')
+                    : t('ai.knowledge.form.chooseStory')}
                 </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field__label" htmlFor={sceneId}>
-              {t('ai.knowledge.form.scene')}
-            </label>
-            <select
-              id={sceneId}
-              className="field__input"
-              value={draft.sceneId}
-              disabled={draft.storyId === ''}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, sceneId: event.target.value }))
-              }
-              aria-invalid={errors.sceneId ? true : undefined}
-              aria-describedby={errors.sceneId ? `${sceneId}-error` : undefined}
-              data-testid="knowledge-scene"
-            >
-              <option value="">
-                {draft.storyId === ''
-                  ? t('ai.knowledge.form.chooseStoryFirst')
-                  : story === null
-                    ? t('ai.knowledge.form.readingScenes')
-                    : t('ai.knowledge.form.chooseSceneOption')}
-              </option>
-              {groupedScenes.map((group) => (
-                <optgroup key={group.label} label={group.label}>
-                  {group.scenes.map((scene) => (
-                    <option key={scene.id} value={scene.id}>
-                      {scene.title}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            {errors.sceneId ? (
-              <p className="field__error" id={`${sceneId}-error`}>
-                {errors.sceneId}
-              </p>
-            ) : null}
-          </div>
+                {(stories ?? []).map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.title}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field label={t('ai.knowledge.form.scene')} id={sceneId} error={errors.sceneId}>
+            {(control) => (
+              <select
+                {...control}
+                className="field__input"
+                value={draft.sceneId}
+                disabled={draft.storyId === ''}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, sceneId: event.target.value }))
+                }
+                data-testid="knowledge-scene"
+              >
+                <option value="">
+                  {draft.storyId === ''
+                    ? t('ai.knowledge.form.chooseStoryFirst')
+                    : story === null
+                      ? t('ai.knowledge.form.readingScenes')
+                      : t('ai.knowledge.form.chooseSceneOption')}
+                </option>
+                {groupedScenes.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.scenes.map((scene) => (
+                      <option key={scene.id} value={scene.id}>
+                        {scene.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            )}
+          </Field>
         </>
       )}
     </Drawer>

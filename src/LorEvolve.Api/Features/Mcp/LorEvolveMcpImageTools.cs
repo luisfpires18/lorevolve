@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Reading;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -58,12 +59,6 @@ public sealed partial class LorEvolveMcpImageTools(
     /// <summary>Longer than any entry name or alias LorEvolve stores: anything past it names nothing.</summary>
     private const int NameLength = 200;
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     private sealed record Head(Guid Id, string Name, string TypeName);
 
     private sealed record Named(Guid Id, string Name);
@@ -97,7 +92,7 @@ public sealed partial class LorEvolveMcpImageTools(
         [Description("Optional appearance: its id or exact label. Only that appearance's pictures.")] string? appearance = null,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -254,7 +249,7 @@ public sealed partial class LorEvolveMcpImageTools(
         [Description("The preview's encoding: webp (default) or png.")] string? format = null,
         CancellationToken cancellationToken = default)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -281,7 +276,7 @@ public sealed partial class LorEvolveMcpImageTools(
         {
             return Error(
                 "image_too_large",
-                $"The original is {Megabytes(found.Picture.ByteSize)} MB, over the {Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. "
+                $"The original is {ImagePreparation.Megabytes(found.Picture.ByteSize)} MB, over the {ImagePreparation.Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. "
                 + $"Ask for the {PreviewVariant} instead.",
                 new { bytes = found.Picture.ByteSize, limit = McpLimits.ImageOriginalBytes });
         }
@@ -308,7 +303,7 @@ public sealed partial class LorEvolveMcpImageTools(
                 return which == OriginalVariant
                     ? Error(
                         "image_too_large",
-                        $"The original is over the {Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. Ask for the {PreviewVariant} instead.",
+                        $"The original is over the {ImagePreparation.Megabytes(McpLimits.ImageOriginalBytes)} MB handed over inline. Ask for the {PreviewVariant} instead.",
                         new { limit = McpLimits.ImageOriginalBytes })
                     : Error("image_too_large", "This picture is larger than LorEvolve stores.");
             }
@@ -390,7 +385,7 @@ public sealed partial class LorEvolveMcpImageTools(
             [
                 ImageContentBlock.FromBytes(bytes, contentType),
                 new TextContentBlock { Text = viewText },
-                new TextContentBlock { Text = JsonSerializer.Serialize(about, Json) },
+                new TextContentBlock { Text = JsonSerializer.Serialize(about, McpResults.Json) },
             ],
         };
     }
@@ -568,23 +563,6 @@ public sealed partial class LorEvolveMcpImageTools(
     private string EntryUrl(Guid entryId) => $"{site.Base}/app/universes/{caller.UniverseId:D}/lore/{entryId:D}";
 
     private string ProgressionUrl(Guid entryId) => $"{EntryUrl(entryId)}/progression";
-
-    private static string Megabytes(long bytes) => (bytes / (1024.0 * 1024.0)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
-
-    private CallToolResult? Guard() => caller.IsAllowed ? null : Error("not_allowed", "This connection cannot read a universe.");
-
-    private static CallToolResult NotFound() => Error("not_found", "Nothing with that id is in this universe.");
-
-    private static CallToolResult Result<T>(T value) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }],
-    };
-
-    private static CallToolResult Error(string code, string message, object? details = null) => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new { error = code, message, details }, Json) }],
-    };
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Image storage failed reading a picture of entry {EntityId} for an MCP client.")]
     private static partial void LogStorageFailure(ILogger logger, Guid entityId, Exception exception);
