@@ -48,7 +48,9 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-Nothing in flight. #238 (image fields with crop on project and Lore entry types) merged as PR #239 on 2026-11-16:
+#248 UI consistency tracker running sequentially. #249 (`docs/design/ui-components.md` catalogue plus `uiContract.test.ts`) in PR #258.
+
+Previously: #238 (image fields with crop on project and Lore entry types) merged as PR #239 on 2026-11-16:
 migration `AddEntityFieldImages`, backup format 48. Owner check on DEV: upload and crop a real 2D drawing and a 3D render.
 
 ## Committed, not on `dev`
