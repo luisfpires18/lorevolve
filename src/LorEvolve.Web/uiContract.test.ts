@@ -201,9 +201,7 @@ test('no field is written as label > span.field__label', () => {
 })
 
 // Files that still write their own field__label. Only shrinks: move a file to Field, then delete its line.
-const FIELD_LABEL_FILES = [
-  'src/components/ProjectEntries.tsx',
-]
+const FIELD_LABEL_FILES = ['src/components/ProjectEntries.tsx']
 
 test('field__label is written only by Field.tsx', () => {
   assert.deepEqual(
