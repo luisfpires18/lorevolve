@@ -25,6 +25,7 @@ public sealed class IdeaProjectMigrationTests : IDisposable
 
     /// <summary>The migration before this one: rolling back to it is rolling back exactly the project link.</summary>
     private const string BeforeIdeaProjects = "20261115170315_AddSemanticFindings";
+    private const string AfterIdeaProjects = "20261115194350_AddIdeaProjects";
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(), "lorevolve-idea-projects-migration", Guid.NewGuid().ToString("n"));
@@ -66,9 +67,8 @@ public sealed class IdeaProjectMigrationTests : IDisposable
             Assert.Contains("IdeaSearchIndex_IdeaUpdated", triggersBefore);
             Assert.Contains("IdeaSearchIndex_IdeaDeleted", triggersBefore);
 
-            await db.GetService<IMigrator>().MigrateAsync();
+            await db.GetService<IMigrator>().MigrateAsync(AfterIdeaProjects);
 
-            Assert.False(db.Database.HasPendingModelChanges());
             Assert.Contains("ProjectId", await Columns(db));
 
             // Every existing idea is unchanged and on no project.
@@ -87,6 +87,7 @@ public sealed class IdeaProjectMigrationTests : IDisposable
             Assert.Equal(triggersBefore, await Triggers(db));
 
             await db.GetService<IMigrator>().MigrateAsync();
+            Assert.False(db.Database.HasPendingModelChanges());
         }
 
         SqliteConnection.ClearAllPools();
@@ -99,7 +100,8 @@ public sealed class IdeaProjectMigrationTests : IDisposable
                 .EnsureSuccessStatusCode();
 
             Assert.Equal(["A floating city"], await IdeaTestClient.ListedTitles(client, $"?universeId={universeId}"));
-            Assert.Equal(["Nowhere yet"], await IdeaTestClient.ListedTitles(client, "?unassigned=true"));
+            // The idea with no universe went with the migration that deletes them (#230).
+            Assert.Empty(await IdeaTestClient.ListedTitles(client, "?unassigned=true"));
         }
     }
 

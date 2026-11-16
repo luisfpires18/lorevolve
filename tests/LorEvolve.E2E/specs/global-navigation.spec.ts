@@ -3,7 +3,7 @@ import { openAccountMenu, expectedVersionLabel } from './support/account'
 
 /**
  * Product refinement 024: global navigation and wayfinding. LorEvolve has two sides - Explore, the public one, and My
- * workspace, the signed-in one - and the workspace has its account-level places (Universes, Ideas, and Profile from the
+ * workspace, the signed-in one - and the workspace has its account-level places (Universes, and Profile from the
  * account menu) and, one level deeper, a universe with its own sections. These pin down that every screen says which of
  * those it is, in the same words, with one way up and one way out, to a keyboard and a screen reader as well as to
  * the eye.
@@ -58,30 +58,20 @@ async function world(page: Page, name = unique('Hollowmere ')) {
 }
 
 const workspaceNav = (page: Page) => page.getByRole('navigation', { name: 'My workspace' })
-const tab = (page: Page, name: 'Universes' | 'Ideas') =>
+const tab = (page: Page, name: 'Universes') =>
   workspaceNav(page).getByRole('link', { name, exact: true })
 const main = (page: Page) => page.locator('main')
 const sideways = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
 
 test.describe('My workspace: one frame for the account-level screens', () => {
-  test('Universes, Ideas, an idea and Profile wear the same bar, with the right place current', async ({
+  test('Universes and Profile wear the same bar, with the right place current', async ({
     page,
   }) => {
     await signUp(page)
-    const { id: ideaId } = await api<{ id: string }>(page, 'POST', '/api/ideas', {
-      title: 'Tides that run uphill',
-      body: '',
-      universeId: null,
-      references: [],
-      expectedUpdatedAt: null,
-    })
 
-    const screens: { path: string; heading: string; current: 'Universes' | 'Ideas' | null }[] = [
+    const screens: { path: string; heading: string; current: 'Universes' | null }[] = [
       { path: '/app', heading: 'Universes', current: 'Universes' },
-      { path: '/app/ideas', heading: 'Ideas', current: 'Ideas' },
-      { path: '/app/ideas/new', heading: 'New idea', current: 'Ideas' },
-      { path: `/app/ideas/${ideaId}`, heading: 'Tides that run uphill', current: 'Ideas' },
       { path: '/app/profile', heading: 'Profile', current: null },
     ]
 
@@ -98,12 +88,10 @@ test.describe('My workspace: one frame for the account-level screens', () => {
       await expect(page.getByTestId('account-menu-trigger')).toBeVisible()
 
       // The place that is open is the current page, by its semantics, and only that one. Profile is neither.
-      for (const name of ['Universes', 'Ideas'] as const) {
-        if (name === screen.current) {
-          await expect(tab(page, name)).toHaveAttribute('aria-current', 'page')
-        } else {
-          await expect(tab(page, name)).not.toHaveAttribute('aria-current', 'page')
-        }
+      if (screen.current) {
+        await expect(tab(page, screen.current)).toHaveAttribute('aria-current', 'page')
+      } else {
+        await expect(tab(page, 'Universes')).not.toHaveAttribute('aria-current', 'page')
       }
 
       // The old per-screen header's way back is gone; the bar's places replace it.
@@ -111,11 +99,8 @@ test.describe('My workspace: one frame for the account-level screens', () => {
       await expect(page.getByText('Explore worlds')).toHaveCount(0)
     }
 
-    // The tabs go where they say, and the current mark moves with them.
-    await page.goto('/app')
-    await tab(page, 'Ideas').click()
-    await expect(page).toHaveURL('/app/ideas')
-    await expect(tab(page, 'Ideas')).toHaveAttribute('aria-current', 'page')
+    // The tab goes where it says, and the current mark follows it.
+    await page.goto('/app/profile')
     await tab(page, 'Universes').click()
     await expect(page).toHaveURL('/app')
     await expect(tab(page, 'Universes')).toHaveAttribute('aria-current', 'page')
@@ -124,8 +109,6 @@ test.describe('My workspace: one frame for the account-level screens', () => {
   test('the tab names the screen, and changes as the screen does', async ({ page }) => {
     await signUp(page)
     await expect(page).toHaveTitle('Universes | LorEvolve')
-    await tab(page, 'Ideas').click()
-    await expect(page).toHaveTitle('Ideas | LorEvolve')
     await openAccountMenu(page)
     await page.getByTestId('account-menu-profile').click()
     await expect(page).toHaveTitle('Profile | LorEvolve')
@@ -200,18 +183,13 @@ test.describe('The account menu: Go to, then the account', () => {
     await openAccountMenu(page)
     const panel = page.getByTestId('account-menu-panel')
     const goTo = panel.getByRole('group', { name: 'Go to' })
-    await expect(goTo.getByRole('link')).toHaveText(['My workspace', 'Ideas', 'Explore'])
+    await expect(goTo.getByRole('link')).toHaveText(['My workspace', 'Explore'])
     await expect(panel.getByRole('link', { name: 'Profile', exact: true })).toBeVisible()
     await expect(panel.getByText('View profile')).toHaveCount(0)
 
     await goTo.getByRole('link', { name: 'My workspace' }).click()
     await expect(page).toHaveURL('/app')
     await expect(tab(page, 'Universes')).toHaveAttribute('aria-current', 'page')
-
-    await page.goto(manuscript)
-    await openAccountMenu(page)
-    await page.getByTestId('account-menu-ideas').click()
-    await expect(page).toHaveURL('/app/ideas')
 
     await page.goto(manuscript)
     await openAccountMenu(page)
@@ -331,7 +309,7 @@ test.describe('Changing place moves the focus to what was opened', () => {
 
 test.describe('Narrow screens', () => {
   for (const width of [390, 360]) {
-    test(`the workspace bar at ${width}px: two rows on purpose, every place reachable`, async ({
+    test(`the workspace bar at ${width}px: two rows on purpose, the place reachable`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 800 })
@@ -340,14 +318,12 @@ test.describe('Narrow screens', () => {
       const brand = (await page.getByRole('link', { name: BRAND }).boundingBox())!
       const account = (await page.getByTestId('account-menu-trigger').boundingBox())!
       const universes = (await tab(page, 'Universes').boundingBox())!
-      const ideas = (await tab(page, 'Ideas').boundingBox())!
 
-      // Brand and account share the top row; the workspace's places share the one beneath, each a thumb's height.
+      // Brand and account share the top row; the workspace's place sits on the one beneath, a thumb's height.
       expect(Math.abs(brand.y + brand.height / 2 - (account.y + account.height / 2))).toBeLessThan(
         4,
       )
       expect(universes.y).toBeGreaterThanOrEqual(brand.y + brand.height)
-      expect(Math.abs(universes.y - ideas.y)).toBeLessThan(1)
       expect(universes.height).toBeGreaterThanOrEqual(44)
       expect(universes.height).toBeLessThan(60)
       await expect(page.getByText('My workspace', { exact: true })).toBeVisible()
@@ -355,8 +331,6 @@ test.describe('Narrow screens', () => {
 
       // Explore leaves the bar; the account menu holds it.
       await expect(page.getByTestId('home-explore')).toBeHidden()
-      await tab(page, 'Ideas').click()
-      await expect(page).toHaveURL('/app/ideas')
       await openAccountMenu(page)
       await page.getByTestId('account-menu-explore').click()
       await expect(page).toHaveURL('/')

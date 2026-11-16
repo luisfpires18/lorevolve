@@ -133,14 +133,18 @@ public sealed class UniverseSearchMigrationTests : IDisposable
 
             Assert.False(db.Database.HasPendingModelChanges());
             Assert.Empty(await ForeignKeyViolations(db));
-            // Every arc goes on the way up: the story structure migration drops the old plot (ADR 0070).
-            Assert.Equal(authored.Where(row => !row.StartsWith("arc|", StringComparison.Ordinal)), await AuthoredRows(db));
+            // Every arc goes on the way up: the story structure migration drops the old plot (ADR 0070). So does the idea
+            // with no universe: ideas live only in a universe (#230).
+            Assert.Equal(
+                authored.Where(row => !row.StartsWith("arc|", StringComparison.Ordinal)
+                    && !row.StartsWith("idea|Obsidian, unassigned|", StringComparison.Ordinal)),
+                await AuthoredRows(db));
 
             var tables = await Names(db, "table");
             Assert.All(IndexTables, table => Assert.Contains(table, tables));
             Assert.Equal(Triggers.Order(StringComparer.Ordinal), (await Names(db, "trigger")).Intersect(Triggers).Order(StringComparer.Ordinal));
 
-            // Everything written is copied, the Trash and the unassigned idea included: whether a row is found is the
+            // Everything written is copied, the Trash included: whether a row is found is the
             // search's question, not the index's.
             Assert.Equal(await Scalar(db, "SELECT (SELECT COUNT(*) FROM Stories) + (SELECT COUNT(*) FROM Chapters) + (SELECT COUNT(*) FROM Scenes) + (SELECT COUNT(*) FROM PlotArcs) AS Value"),
                 await Scalar(db, "SELECT COUNT(*) AS Value FROM StorySearchIndex"));
@@ -159,7 +163,7 @@ public sealed class UniverseSearchMigrationTests : IDisposable
             (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-searchmigrate", Password)))
                 .EnsureSuccessStatusCode();
 
-            // Text written before the upgrade is found where it lives; the Trash and the unassigned idea are not.
+            // Text written before the upgrade is found where it lives; the Trash is not.
             var found = await Search(client, universeId, "Obsidian");
             Assert.Equal(
                 [UniverseSearchKind.Story, UniverseSearchKind.Scene, UniverseSearchKind.Manuscript, UniverseSearchKind.Idea],

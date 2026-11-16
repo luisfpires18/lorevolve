@@ -179,19 +179,7 @@ function Root() {
                 path="/app/projects/:projectId/*"
                 element={asSection('project', <ProjectPage />)}
               />
-              <Route path="/app/ideas" element={asSection('ideas', <IdeasPage />)} />
               <Route path="/app/ai-changes" element={asSection('ai-changes', <AiChangesPage />)} />
-              <Route path="/app/ideas/new" element={asSection('idea', <IdeaPage isNew />)} />
-              <Route path="/app/ideas/:ideaId" element={asSection('idea', <IdeaPage />)} />
-              <Route path="/app/ideas/boards" element={asSection('ideas', <IdeaBoardsPage />)} />
-              <Route
-                path="/app/ideas/boards/new"
-                element={asSection('board', <IdeaBoardPage isNew />)}
-              />
-              <Route
-                path="/app/ideas/boards/:boardId"
-                element={asSection('board', <IdeaBoardPage />)}
-              />
             </Route>
             <Route path="/app/universes/:id" element={<UniverseWorkspace />}>
               <Route index element={<UniverseOverview />} />
@@ -325,10 +313,6 @@ function Root() {
                 path="projects/:storyId/manuscript/:sceneId?"
                 element={asSection('project', <ProjectPage inUniverse view="manuscript" />)}
               />
-              <Route
-                path="projects/:storyId/ideas"
-                element={asSection('project', <ProjectPage inUniverse view="ideas" />)}
-              />
               <Route path="stories" element={asSection('stories', <StoriesPage />)} />
               {/*
                * Until #194 a story's pages lived here. Every one of these addresses still resolves, by a redirect to the
@@ -341,7 +325,6 @@ function Root() {
                 path="stories/:storyId/manuscript/:sceneId?"
                 element={<StoryRedirect to="manuscript" />}
               />
-              <Route path="stories/:storyId/ideas" element={<StoryRedirect to="ideas" />} />
               <Route
                 path="ideas"
                 element={asSection(

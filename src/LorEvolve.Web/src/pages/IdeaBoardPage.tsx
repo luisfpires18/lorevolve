@@ -38,9 +38,7 @@ export default function IdeaBoardPage({
       // A created board opens where it now lives, replacing the new form in history.
       onCreated={(board) =>
         void navigate(
-          universe && board.universe?.id === universe.id
-            ? `${listPath}/${board.id}`
-            : `/app/ideas/boards/${board.id}`,
+          universe && board.universe?.id === universe.id ? `${listPath}/${board.id}` : listPath,
           { replace: true },
         )
       }

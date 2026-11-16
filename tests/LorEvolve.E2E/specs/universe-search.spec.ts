@@ -247,7 +247,7 @@ test.describe('universe search', () => {
     await expect(page.getByRole('combobox')).toHaveCount(1)
 
     // No universe, no bar: the account's own screens are not a universe, and nothing pretends otherwise.
-    for (const path of ['/app', '/app/ideas', '/app/profile']) {
+    for (const path of ['/app', '/app/profile']) {
       await page.goto(path)
       await expect(page.getByRole('heading').first()).toBeVisible()
       await expect(searchBox(page), `no bar on ${path}`).toHaveCount(0)
@@ -432,7 +432,7 @@ test.describe('universe search', () => {
     const world = await seedWorld(page)
     const base = `/app/universes/${world.universeId}`
 
-    // The account's own ideas from another universe, or from none: nothing of them here, and a way to where they open.
+    // The account's own ideas from another universe, or from none: nothing of them here.
     for (const [id, title] of [
       [world.elsewhereIdeaId, 'Vesperine elsewhere'],
       [world.unassignedIdeaId, 'Vesperine, unassigned'],
@@ -442,9 +442,6 @@ test.describe('universe search', () => {
       await expect(page.getByTestId('idea-editor')).toHaveCount(0)
       await expect(page.locator('main')).not.toContainText(title)
     }
-    await page.getByRole('link', { name: 'Open it in all ideas' }).click()
-    await page.waitForURL(`/app/ideas/${world.unassignedIdeaId}`)
-    await expect(page.getByTestId('idea-title')).toHaveValue('Vesperine, unassigned')
 
     // An idea that does not exist, and another account's: not here, and nothing of it.
     const strangerContext = await browser.newContext({ baseURL: testInfo.project.use.baseURL })

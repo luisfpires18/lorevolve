@@ -142,32 +142,32 @@ test('an author lays out a board in a universe, joins two cards and finds it all
   await expect(page.getByTestId('board-list-card')).toHaveCount(3)
   await expect(page.getByTestId('board-list')).toContainText('Joined to Arlen - why?')
 
-  // The board is in the universe's list and in all boards.
+  // The board is in the universe's list.
   await page.goto(`/app/universes/${universeId}/ideas/boards`)
   await expect(
     page.locator('[data-testid="board-row"][data-title="Who betrays whom"]'),
   ).toContainText('3 cards')
-  await page.goto('/app/ideas/boards')
-  await expect(
-    page.locator('[data-testid="board-row"][data-title="Who betrays whom"]'),
-  ).toBeVisible()
 })
 
 test('a save over a board saved elsewhere is refused, and the author keeps theirs', async ({
   page,
 }) => {
   await signUp(page)
+  const { id: universeId } = await post(page, '/api/universes', {
+    name: unique('Hollowmere '),
+    description: null,
+    accentColor: '#4f6bd6',
+  })
   const board = await post(page, '/api/idea-boards', {
     title: 'Loose threads',
-    universeId: null,
+    universeId,
     cards: [],
     connections: [],
     expectedUpdatedAt: null,
   })
 
-  await page.goto(`/app/ideas/boards/${board.id}`)
+  await page.goto(`/app/universes/${universeId}/ideas/boards/${board.id}`)
   await expect(page.getByTestId('board-heading')).toHaveText('Loose threads')
-  await expect(page.getByTestId('board-add-entry')).toBeDisabled()
 
   // Saved from somewhere else meanwhile.
   const current = (await (await page.request.get(`/api/idea-boards/${board.id}`)).json()) as {
@@ -176,7 +176,7 @@ test('a save over a board saved elsewhere is refused, and the author keeps their
   const elsewhere = await page.request.put(`/api/idea-boards/${board.id}`, {
     data: {
       title: 'Loose threads, renamed',
-      universeId: null,
+      universeId,
       cards: [],
       connections: [],
       expectedUpdatedAt: current.updatedAt,
@@ -204,7 +204,12 @@ test.describe('a board on a phone', () => {
     page,
   }) => {
     await signUp(page)
-    await page.goto('/app/ideas/boards/new')
+    const { id: universeId } = await post(page, '/api/universes', {
+      name: unique('Hollowmere '),
+      description: null,
+      accentColor: '#4f6bd6',
+    })
+    await page.goto(`/app/universes/${universeId}/ideas/boards/new`)
     await page.getByTestId('board-title').fill('Pocket board')
     await page.getByTestId('board-add-note').click()
     await page.getByTestId('board-note-text').fill('First')
@@ -226,7 +231,9 @@ test.describe('a board on a phone', () => {
     await page.getByTestId('board-list-toggle').tap()
     await expect(page.getByTestId('board-list')).toContainText('Joined to Second')
     await page.getByTestId('board-save').tap()
-    await expect(page).toHaveURL(/\/app\/ideas\/boards\/[0-9a-f-]{36}$/)
+    await expect(page).toHaveURL(
+      new RegExp(`/app/universes/${universeId}/ideas/boards/[0-9a-f-]{36}$`),
+    )
     await expect(page.getByTestId('board-heading')).toHaveText('Pocket board')
   })
 })
