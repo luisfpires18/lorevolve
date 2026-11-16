@@ -261,8 +261,8 @@ public static class SemanticFindingReads
             Status(row.Status),
             row.ClientName,
             row.CitationCount,
-            WorldLogicAccess.Utc(row.CreatedAt),
-            WorldLogicAccess.Utc(row.UpdatedAt),
-            row.DecidedAt is { } decided ? WorldLogicAccess.Utc(decided) : null);
+            Utc(row.CreatedAt),
+            Utc(row.UpdatedAt),
+            row.DecidedAt is { } decided ? Utc(decided) : null);
     }
 }

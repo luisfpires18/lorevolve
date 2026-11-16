@@ -375,6 +375,4 @@ public static class KnowledgeEndpoints
             }),
         ];
     }
-
-    private static DateTime Utc(DateTime value) => DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }

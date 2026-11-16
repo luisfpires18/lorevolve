@@ -45,7 +45,7 @@ public static class LoreReferenceEndpoints
         {
             if (!Guid.TryParse(part, out var id))
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]> { ["ids"] = ["Name entries by their ids, separated by commas."] });
+                return Problems.Field("ids", "Name entries by their ids, separated by commas.");
             }
 
             if (!wanted.Contains(id))
@@ -56,7 +56,7 @@ public static class LoreReferenceEndpoints
 
         if (wanted.Count > MaxIds)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["ids"] = [$"Ask for at most {MaxIds} entries at once."] });
+            return Problems.Field("ids", $"Ask for at most {MaxIds} entries at once.");
         }
 
         var found = await StoryLoreReferences.LoadAsync(db, universeId, wanted, cancellationToken);

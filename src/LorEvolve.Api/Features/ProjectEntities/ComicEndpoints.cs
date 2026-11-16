@@ -152,10 +152,7 @@ public static class ComicEndpoints
 
         if (count >= ComicLimits.MaxPagesPerChapter)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["name"] = [$"A chapter can hold at most {ComicLimits.MaxPagesPerChapter} pages."],
-            });
+            return Problems.Field("name", $"A chapter can hold at most {ComicLimits.MaxPagesPerChapter} pages.");
         }
 
         var now = DateTime.UtcNow;
@@ -349,10 +346,7 @@ public static class ComicEndpoints
 
         if (count >= ComicLimits.MaxPanelsPerPage)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["description"] = [$"A page can hold at most {ComicLimits.MaxPanelsPerPage} panels."],
-            });
+            return Problems.Field("description", $"A page can hold at most {ComicLimits.MaxPanelsPerPage} panels.");
         }
 
         var now = DateTime.UtcNow;
@@ -508,20 +502,14 @@ public static class ComicEndpoints
                     page => page.Id == targetId && page.EpisodeId == episodeId,
                     cancellationToken))
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["pageId"] = ["Choose a page of this chapter."],
-                });
+                return Problems.Field("pageId", "Choose a page of this chapter.");
             }
 
             // The limit a create respects holds for a move too, as #145's review established for episodes.
             if (await db.ProjectPanels.CountAsync(each => each.PageId == targetId, cancellationToken)
                 >= ComicLimits.MaxPanelsPerPage)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["pageId"] = [$"That page already holds {ComicLimits.MaxPanelsPerPage} panels."],
-                });
+                return Problems.Field("pageId", $"That page already holds {ComicLimits.MaxPanelsPerPage} panels.");
             }
         }
 
@@ -616,10 +604,7 @@ public static class ComicEndpoints
 
         return exists
             ? null
-            : Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["canonEntityId"] = ["Choose an entry from this universe's lore, or none."],
-            });
+            : Problems.Field("canonEntityId", "Choose an entry from this universe's lore, or none.");
     }
 
     private static Dictionary<string, string[]>? ValidatePage(ProjectPageRequest request)

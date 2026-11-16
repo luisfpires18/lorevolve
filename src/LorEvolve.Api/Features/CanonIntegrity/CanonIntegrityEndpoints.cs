@@ -187,10 +187,7 @@ public static class CanonIntegrityEndpoints
 
         if (conflict.Status == CanonConflictStatus.Resolved)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["status"] = [refusal],
-            });
+            return Problems.Field("status", refusal);
         }
 
         if (conflict.Status != target)

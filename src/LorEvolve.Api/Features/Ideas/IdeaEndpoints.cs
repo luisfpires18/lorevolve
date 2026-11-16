@@ -80,18 +80,12 @@ public static class IdeaEndpoints
 
         if (universeId is not null && unassigned)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["unassigned"] = ["Ask for one universe's ideas or for unassigned ones, not both."],
-            });
+            return Problems.Field("unassigned", "Ask for one universe's ideas or for unassigned ones, not both.");
         }
 
         if (storyId is not null && universeId is null)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["storyId"] = ["Ask for a story's ideas together with its universe."],
-            });
+            return Problems.Field("storyId", "Ask for a story's ideas together with its universe.");
         }
 
         page = Math.Max(page, 1);
@@ -142,7 +136,7 @@ public static class IdeaEndpoints
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var pattern = $"%{EscapeLike(search.Trim())}%";
+            var pattern = $"%{Sql.EscapeLike(search.Trim())}%";
             query = query.Where(idea =>
                 EF.Functions.Like(idea.Title, pattern, "\\") || EF.Functions.Like(idea.Body, pattern, "\\"));
         }
@@ -437,10 +431,7 @@ public static class IdeaEndpoints
 
         if (!Enum.IsDefined(kind))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["kind"] = ["That is not something an idea can reference."],
-            });
+            return Problems.Field("kind", "That is not something an idea can reference.");
         }
 
         return Results.Ok(await IdeaReferences.TargetsAsync(db, universeId, kind, search, cancellationToken));
@@ -605,13 +596,6 @@ public static class IdeaEndpoints
     internal static bool SameMoment(DateTime stored, DateTime? expected) =>
         expected is { } moment && Utc(stored).Ticks == Utc(moment).Ticks;
 
-    internal static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
-
     /// <summary>
     /// The refusal for a stale save. Carries the stored <c>updatedAt</c>, so a client whose author has seen the warning and
     /// still means to keep their own version can name it and save again - a decision made by a person, never by a retry.
@@ -676,10 +660,4 @@ public static class IdeaEndpoints
         string ownerId,
         CancellationToken cancellationToken) =>
         db.Universes.AnyAsync(universe => universe.Id == universeId && universe.OwnerId == ownerId, cancellationToken);
-
-    /// <summary>Escapes the LIKE wildcards so a search for "100%" cannot match everything.</summary>
-    internal static string EscapeLike(string value) =>
-        value.Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace("%", "\\%", StringComparison.Ordinal)
-            .Replace("_", "\\_", StringComparison.Ordinal);
 }

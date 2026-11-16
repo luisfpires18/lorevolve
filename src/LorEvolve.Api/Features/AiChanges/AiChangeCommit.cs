@@ -51,15 +51,14 @@ internal static class AiChangeCommit
     {
         if (request.ApprovalId is not { } approvalId || request.OperationIds is not { Count: > 0 } selected || request.Revision is not { } revision)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["operationIds"] = ["Choose the changes to approve, with the proposal's revision and an approval id."],
-            });
+            return Problems.Field(
+                "operationIds",
+                "Choose the changes to approve, with the proposal's revision and an approval id.");
         }
 
         if (selected.Distinct().Count() != selected.Count)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["operationIds"] = ["Each change is listed once."] });
+            return Problems.Field("operationIds", "Each change is listed once.");
         }
 
         await AiChangeRetention.SweepAsync(db, clock.GetUtcNow().UtcDateTime, cancellationToken);
@@ -211,7 +210,7 @@ internal static class AiChangeCommit
         var byId = proposal.Operations.ToDictionary(operation => operation.Id);
         if (selected.Any(id => !byId.ContainsKey(id)))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["operationIds"] = ["Choose changes from this proposal."] });
+            return Problems.Field("operationIds", "Choose changes from this proposal.");
         }
 
         var chosen = selected.Select(id => byId[id]).ToList();
@@ -1014,7 +1013,7 @@ internal static class AiChangeCommit
     {
         if (request.Values is not { } values || request.Revision is not { } revision)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["values"] = ["Send the new values and the proposal's revision."] });
+            return Problems.Field("values", "Send the new values and the proposal's revision.");
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -1042,7 +1041,7 @@ internal static class AiChangeCommit
         var work = works.Single(candidate => candidate.OperationId == operationId);
         if (Edited(work.Proposed, values) is not { } edited)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["values"] = ["This change has nothing that can be edited here."] });
+            return Problems.Field("values", "This change has nothing that can be edited here.");
         }
 
         work.Proposed = edited;
@@ -1060,7 +1059,7 @@ internal static class AiChangeCommit
 
         if (work.Action == AiChangeAction.Update && AiChangeSnapshots.Same(work.Before, edited))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["values"] = ["With that edit, this change wouldn't change anything. Reject it instead."] });
+            return Problems.Field("values", "With that edit, this change wouldn't change anything. Reject it instead.");
         }
 
         row.Proposed = AiChangeJson.Write(edited);

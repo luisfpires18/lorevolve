@@ -125,7 +125,7 @@ public static class RelationshipEndpoints
 
         if (era is not null && askedAtPoint)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["era"] = ["Ask about an era or a point in time, not both."] });
+            return Problems.Field("era", "Ask about an era or a point in time, not both.");
         }
 
         var chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken);
@@ -151,7 +151,7 @@ public static class RelationshipEndpoints
 
             if (span is null)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]> { ["era"] = ["Choose one of this entry's eras."] });
+                return Problems.Field("era", "Choose one of this entry's eras.");
             }
 
             var start = span.StartYear is null ? null : new ChronologyValue(span.StartEraId, span.StartYear, span.StartMonth, span.StartDay, span.StartMonthId);
@@ -256,8 +256,8 @@ public static class RelationshipEndpoints
             SourceEntityId = request.SourceEntityId,
             TargetEntityId = request.TargetEntityId,
             CanonStatus = request.CanonStatus,
-            StartDate = RelationshipValidation.Utc(request.StartDate),
-            EndDate = RelationshipValidation.Utc(request.EndDate),
+            StartDate = Utc(request.StartDate),
+            EndDate = Utc(request.EndDate),
             Notes = RelationshipValidation.Normalize(request.Notes),
             CreatedAt = now,
             UpdatedAt = now,
@@ -358,8 +358,8 @@ public static class RelationshipEndpoints
         relationship.SourceEntityId = request.SourceEntityId;
         relationship.TargetEntityId = request.TargetEntityId;
         relationship.CanonStatus = request.CanonStatus;
-        relationship.StartDate = RelationshipValidation.Utc(request.StartDate);
-        relationship.EndDate = RelationshipValidation.Utc(request.EndDate);
+        relationship.StartDate = Utc(request.StartDate);
+        relationship.EndDate = Utc(request.EndDate);
         relationship.Notes = RelationshipValidation.Normalize(request.Notes);
         relationship.UpdatedAt = DateTime.UtcNow;
 

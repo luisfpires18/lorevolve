@@ -211,7 +211,7 @@ public static partial class EntityFieldImageEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return EntityImageEndpoints.Invalid(ImagePreparation.FileField, "Choose an image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
         EntityImageCrop? requestedCrop = null;
@@ -221,7 +221,7 @@ public static partial class EntityFieldImageEndpoints
 
             if (requestedCrop is null)
             {
-                return EntityImageEndpoints.Invalid(ImagePreparation.CropField, "The image selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The image selection could not be read.");
             }
         }
 
@@ -235,7 +235,7 @@ public static partial class EntityFieldImageEndpoints
 
         if (prepared is null)
         {
-            return EntityImageEndpoints.Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -422,12 +422,12 @@ public static partial class EntityFieldImageEndpoints
 
         if (request.Crop is null)
         {
-            return EntityImageEndpoints.Invalid(ImagePreparation.CropField, "Choose the part of the image to show.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the image to show.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop.ToShared(), target.Frame) is { } badCrop)
         {
-            return EntityImageEndpoints.Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != image.AssetId)
@@ -476,7 +476,7 @@ public static partial class EntityFieldImageEndpoints
         if (prepared is null)
         {
             return rejection!.Field == ImagePreparation.CropField
-                ? EntityImageEndpoints.Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : EntityImageEndpoints.OriginalUnavailable();
         }
 

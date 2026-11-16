@@ -61,7 +61,7 @@ public static class PasswordReset
         var address = request.Email?.Trim() ?? string.Empty;
         if (address.Length == 0 || EmailValidator.GetValidationResult(address, new ValidationContext(address)) != ValidationResult.Success)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["email"] = ["Enter a valid email address."] });
+            return Problems.Field("email", "Enter a valid email address.");
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
@@ -85,7 +85,7 @@ public static class PasswordReset
         var password = request.Password ?? string.Empty;
         if (password.Length == 0)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["password"] = ["Choose a password."] });
+            return Problems.Field("password", "Choose a password.");
         }
 
         var user = string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.Token)
@@ -113,5 +113,5 @@ public static class PasswordReset
     }
 
     private static IResult InvalidLinkProblem() =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { ["token"] = [InvalidLink] });
+        Problems.Field("token", InvalidLink);
 }

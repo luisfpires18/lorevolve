@@ -142,10 +142,9 @@ public static class ContentPublicationEndpoints
         var summary = string.IsNullOrWhiteSpace(request.PublicSummary) ? null : request.PublicSummary.Trim();
         if (summary is { Length: > PublicationLimits.SummaryMaxLength })
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                [PublicationRules.PublicSummary] = [$"Keep the public summary under {PublicationLimits.SummaryMaxLength} characters."],
-            });
+            return Problems.Field(
+                PublicationRules.PublicSummary,
+                $"Keep the public summary under {PublicationLimits.SummaryMaxLength} characters.");
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -162,11 +161,9 @@ public static class ContentPublicationEndpoints
 
         if (summary is null && story.Visibility == ContentVisibility.Public)
         {
-            return Results.ValidationProblem(
-                new Dictionary<string, string[]>
-                {
-                    [PublicationRules.PublicSummary] = ["A published story needs its public summary. Make the story private before removing it."],
-                },
+            return Problems.Field(
+                PublicationRules.PublicSummary,
+                "A published story needs its public summary. Make the story private before removing it.",
                 extensions: new Dictionary<string, object?> { ["code"] = PublicationEndpoints.RequiredWhilePublicCode });
         }
 

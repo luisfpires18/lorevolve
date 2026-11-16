@@ -310,7 +310,4 @@ public static class CommentEndpoints
             ? new() { ["body"] = [$"Keep a comment under {CommentLimits.BodyMaxLength:N0} characters."] }
             : null;
     }
-
-    /// <summary>SQLite hands a stored moment back with no kind; every moment here was written as UTC.</summary>
-    private static DateTime Utc(DateTime value) => DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }

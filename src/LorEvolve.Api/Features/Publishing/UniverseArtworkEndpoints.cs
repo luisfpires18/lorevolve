@@ -100,7 +100,7 @@ public static partial class UniverseArtworkEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a picture to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a picture to upload.");
         }
 
         ImageCrop? requestedCrop = null;
@@ -110,7 +110,7 @@ public static partial class UniverseArtworkEndpoints
 
             if (requestedCrop is null)
             {
-                return Invalid(ImagePreparation.CropField, "The card selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The card selection could not be read.");
             }
         }
 
@@ -124,7 +124,7 @@ public static partial class UniverseArtworkEndpoints
 
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -238,12 +238,12 @@ public static partial class UniverseArtworkEndpoints
 
         if (request.Crop is null)
         {
-            return Invalid(ImagePreparation.CropField, "Choose the part of the picture the card shows.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the picture the card shows.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop, ImageFrame.Card) is { } badCrop)
         {
-            return Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != artwork.AssetId)
@@ -294,7 +294,7 @@ public static partial class UniverseArtworkEndpoints
         if (prepared is null)
         {
             return rejection!.Field == ImagePreparation.CropField
-                ? Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : OriginalUnavailable();
         }
 
@@ -544,8 +544,6 @@ public static partial class UniverseArtworkEndpoints
         }
     }
 
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     internal static IResult Unavailable(MediaStorageException exception) =>
         MediaProblem.Unavailable(exception);

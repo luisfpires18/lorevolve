@@ -294,7 +294,7 @@ public static partial class MapEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a map image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a map image to upload.");
         }
 
         var ownerId = await db.Universes.AsNoTracking()
@@ -308,12 +308,12 @@ public static partial class MapEndpoints
 
         if (await db.Set<UniverseMap>().CountAsync(map => map.UniverseId == universeId, cancellationToken) >= MapLimits.MaxMapsPerUniverse)
         {
-            return Invalid("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
+            return Problems.Field("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
         }
 
         if (await db.Set<UniverseMap>().AnyAsync(map => map.UniverseId == universeId && map.Name == cleanName, cancellationToken))
         {
-            return Invalid("name", "A map with that name already exists in this universe.");
+            return Problems.Field("name", "A map with that name already exists in this universe.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -324,7 +324,7 @@ public static partial class MapEndpoints
         var (prepared, rejection) = await ImagePreparation.FitAsync(bytes, bytes.Length, MapLimits.DisplaySide, cancellationToken);
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -381,11 +381,11 @@ public static partial class MapEndpoints
                 }
                 else if (await db.Set<UniverseMap>().CountAsync(candidate => candidate.UniverseId == universeId, cancellationToken) >= MapLimits.MaxMapsPerUniverse)
                 {
-                    refused = Invalid("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
+                    refused = Problems.Field("name", $"A universe can hold at most {MapLimits.MaxMapsPerUniverse} maps.");
                 }
                 else if (await db.Set<UniverseMap>().AnyAsync(candidate => candidate.UniverseId == universeId && candidate.Name == cleanName, cancellationToken))
                 {
-                    refused = Invalid("name", "A map with that name already exists in this universe.");
+                    refused = Problems.Field("name", "A map with that name already exists in this universe.");
                 }
                 else
                 {
@@ -470,7 +470,7 @@ public static partial class MapEndpoints
         if (map.Name != cleanName
             && await db.Set<UniverseMap>().AnyAsync(candidate => candidate.UniverseId == universeId && candidate.Id != mapId && candidate.Name == cleanName, cancellationToken))
         {
-            return Invalid("name", "A map with that name already exists in this universe.");
+            return Problems.Field("name", "A map with that name already exists in this universe.");
         }
 
         if (map.Name != cleanName || map.Description != cleanDescription)
@@ -514,7 +514,7 @@ public static partial class MapEndpoints
         var policy = pins?.Trim().ToLowerInvariant();
         if (policy is not (MapLimits.KeepPins or MapLimits.RemovePins))
         {
-            return Invalid("pins", $"Say what happens to the pins: \"{MapLimits.KeepPins}\" or \"{MapLimits.RemovePins}\".");
+            return Problems.Field("pins", $"Say what happens to the pins: \"{MapLimits.KeepPins}\" or \"{MapLimits.RemovePins}\".");
         }
 
         var existing = await db.Set<UniverseMap>().AsNoTracking()
@@ -528,7 +528,7 @@ public static partial class MapEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose a map image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose a map image to upload.");
         }
 
         await using var upload = file.OpenReadStream();
@@ -539,7 +539,7 @@ public static partial class MapEndpoints
         var (prepared, rejection) = await ImagePreparation.FitAsync(bytes, bytes.Length, MapLimits.DisplaySide, cancellationToken);
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger(LoggerName);
@@ -777,7 +777,7 @@ public static partial class MapEndpoints
 
         if (map.Count >= MapLimits.MaxPinsPerMap)
         {
-            return Invalid("title", $"A map can hold at most {MapLimits.MaxPinsPerMap} pins.");
+            return Problems.Field("title", $"A map can hold at most {MapLimits.MaxPinsPerMap} pins.");
         }
 
         if (await CheckLinkAsync(db, universeId, mapId, pinId: null, clean.EntityId, cancellationToken) is { } refused)
@@ -952,12 +952,12 @@ public static partial class MapEndpoints
             .FirstOrDefaultAsync(cancellationToken);
         if (entity is null)
         {
-            return Invalid("entityId", "That entry is not in this universe.");
+            return Problems.Field("entityId", "That entry is not in this universe.");
         }
 
         if (entity.DeletedAt is not null)
         {
-            return Invalid("entityId", "That entry is in the Trash. Restore it before pinning it.");
+            return Problems.Field("entityId", "That entry is in the Trash. Restore it before pinning it.");
         }
 
         var duplicate = await db.Set<MapPin>().AsNoTracking()
@@ -1057,8 +1057,6 @@ public static partial class MapEndpoints
         Message = "Image storage failed during {Operation} for map {MapId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid mapId, Exception exception);
 
-    private static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     private static IResult Unavailable(MediaStorageException exception) =>
         MediaProblem.Unavailable(exception);

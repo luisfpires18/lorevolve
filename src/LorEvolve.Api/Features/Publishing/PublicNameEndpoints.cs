@@ -52,7 +52,7 @@ public static class PublicNameEndpoints
 
         if (name is not null && Problem(name) is { } problem)
         {
-            return Invalid(problem);
+            return Problems.Field(PublicationRules.PublicDisplayName, problem);
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -62,7 +62,7 @@ public static class PublicNameEndpoints
                 universe => universe.OwnerId == userId && universe.Visibility == UniverseVisibility.Public,
                 cancellationToken))
         {
-            return Invalid("Your public universes are published under this name. Make them private before removing it.");
+            return Problems.Field(PublicationRules.PublicDisplayName, "Your public universes are published under this name. Make them private before removing it.");
         }
 
         await db.Users
@@ -94,6 +94,4 @@ public static class PublicNameEndpoints
     internal static bool HasInvisibleControls(string text) =>
         text.Any(character => char.IsControl(character) || character is >= '‪' and <= '‮' or >= '⁦' and <= '⁩');
 
-    private static IResult Invalid(string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [PublicationRules.PublicDisplayName] = [message] });
 }
