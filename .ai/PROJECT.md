@@ -29,6 +29,7 @@ As `phase-workflow` "Validation", read this way here:
 - Locally: narrowest relevant tests during the work; near the end, the API test classes of every touched area (`dotnet test --filter`) and focused plus neighbouring Playwright specs. A change to shared code (the DbContext, auth, startup, migrations) widens the filter to the classes that use it.
 - Never the whole API test project or the whole Playwright suite locally. CI (`ci.yml`) runs both, sharded, on every PR; a merge waits for it (see above).
 - A Release build where the change compiles, and a pending-migration check when the schema may be affected.
+- Pre-push gate (before every push, about a minute): `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run build`, then `cd tests/LorEvolve.E2E && npx playwright test --list` (every spec loads). Plus the touched page's spec: `npx playwright test specs/<name>.spec.ts`. Commands taken from `ci.yml`; confirm they run once before relying on them.
 
 ## Review overrides
 Codex effort `medium` for changes to authentication, authorization, the database schema or migrations, and deployment workflows.
