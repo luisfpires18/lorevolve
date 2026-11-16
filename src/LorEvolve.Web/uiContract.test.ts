@@ -205,6 +205,11 @@ test('Field renders label, hint, control, error in that order', () => {
     'Field order must stay label, hint, control, error',
   )
   assert.equal(source.includes('<span className="field__label"'), false)
+  // The group form hands its control the group role, the label join and the hint and error join.
+  assert.match(
+    source,
+    /role: 'group',\s*'aria-labelledby': labelId,\s*'aria-describedby': describedBy/,
+  )
 })
 
 test('literal font sizes in styles.css do not grow', () => {
