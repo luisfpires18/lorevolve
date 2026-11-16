@@ -312,6 +312,69 @@ test.describe('World Logic', () => {
     await expect(page.getByTestId('world-logic-systems-empty')).toContainText('No Systems yet')
   })
 
+  test('a System is created, renamed and deleted from the Systems tab', async ({ page }) => {
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+    const name = unique('Magic ')
+
+    await page.goto(`/app/universes/${universeId}/world-logic?tab=systems`)
+    await page.getByTestId('world-logic-new-system').click()
+    await page.waitForURL(`/app/universes/${universeId}/world-logic/systems/new`)
+
+    // A name is required: the API refuses an empty one and the field says so.
+    await page.getByTestId('system-editor-save').click()
+    await expect(page.getByTestId('system-editor-name-error')).toBeVisible()
+
+    await page.getByTestId('system-editor-name').fill(name)
+    await page.getByTestId('system-editor-summary').fill('Mana is paid in memories.')
+    await page.getByTestId('system-editor-save').click()
+
+    await page.waitForURL(`/app/universes/${universeId}/world-logic?tab=systems`)
+    const row = page.getByTestId('world-logic-system-row').filter({ hasText: name })
+    await expect(row).toContainText('Mana is paid in memories.')
+
+    // The same name twice is refused in the field, not as a failed save.
+    await page.getByTestId('world-logic-new-system').click()
+    await page.getByTestId('system-editor-name').fill(name)
+    await page.getByTestId('system-editor-save').click()
+    await expect(page.getByTestId('system-editor-name-error')).toContainText(
+      'already has this name',
+    )
+
+    await page.getByTestId('system-editor-back').click()
+    await row.getByTestId('world-logic-system-edit').click()
+    await page.getByTestId('system-editor-name').fill(`${name} II`)
+    await page.getByTestId('system-editor-save').click()
+    await expect(page.getByTestId('system-editor-announcer')).toHaveText('Saved.')
+
+    await page.getByTestId('system-editor-delete').click()
+    await page.getByRole('button', { name: 'Delete System' }).click()
+    await page.waitForURL(`/app/universes/${universeId}/world-logic?tab=systems`)
+    await expect(page.getByTestId('world-logic-systems-empty')).toBeVisible()
+  })
+
+  test('a System that cannot be deleted says so and stays', async ({ page }) => {
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+    const system = await api<{ id: string }>(page, 'POST', `/api/universes/${universeId}/systems`, {
+      name: unique('Stubborn '),
+      summary: '',
+    })
+    const address = `/app/universes/${universeId}/world-logic/systems/${system.id}`
+
+    await page.route(`**/api/universes/${universeId}/systems/${system.id}`, (route) =>
+      route.request().method() === 'DELETE' ? route.fulfill({ status: 500 }) : route.fallback(),
+    )
+
+    await page.goto(address)
+    await page.getByTestId('system-editor-delete').click()
+    await page.getByRole('button', { name: 'Delete System' }).click()
+
+    // The confirmation stays open with the reason, and the author is still on the System.
+    await expect(page.getByTestId('confirm-dialog-error')).toBeVisible()
+    await expect(page).toHaveURL(address)
+  })
+
   test('each list reaches page 2, keeps its page in the address, and pages on its own', async ({
     page,
   }) => {

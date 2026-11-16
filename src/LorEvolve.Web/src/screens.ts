@@ -52,6 +52,7 @@ export const UniversesPage = lazyWithPreload(() => import('./pages/UniversesPage
 export const WorldRulePage = lazyWithPreload(() => import('./pages/WorldRulePage'))
 export const WorldRulesPage = lazyWithPreload(() => import('./pages/WorldRulesPage'))
 export const WorldLogicPage = lazyWithPreload(() => import('./pages/WorldLogicPage'))
+export const SystemEditorPage = lazyWithPreload(() => import('./pages/SystemEditorPage'))
 
 type Screen = Pick<PreloadableScreen<object>, 'preload'>
 

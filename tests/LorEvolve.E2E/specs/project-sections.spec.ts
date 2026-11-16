@@ -57,9 +57,11 @@ async function sidebarSegments(page: Page, projectId: string) {
   return hrefs.map((href) => href?.split('/').pop())
 }
 
+// Read even where the bar is hidden: a wide screen lists the same views in the sidebar, so the bar steps aside there.
 async function tabSegments(page: Page) {
-  await expect(page.getByTestId('project-tabs')).toBeVisible()
-  const links = page.getByTestId('project-tabs').getByRole('link')
+  await expect(page.getByTestId('project-tabs')).toBeAttached()
+  // `a`, not the link role: a hidden bar is out of the accessibility tree, and its links with it.
+  const links = page.getByTestId('project-tabs').locator('a')
   const hrefs = await links.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')))
   return hrefs.map((href) => href?.split('/').pop())
 }
@@ -92,7 +94,11 @@ test.describe('Project sections', () => {
       await expect(page.getByTestId('workspace-lore')).toBeVisible()
     }
 
-    // And from the tab bar, which is a navigation landmark of links.
+    // A wide screen shows no tab bar beside the sidebar's copy of the same links.
+    await expect(page.getByTestId('project-tabs')).toBeHidden()
+
+    // On a phone, where the sidebar folds the views away, the tab bar is a navigation landmark of links.
+    await page.setViewportSize({ width: 390, height: 844 })
     await expect(page.getByRole('navigation', { name: 'Project views' })).toBeVisible()
     for (const segment of [...expected].reverse()) {
       await page.getByTestId(`projecttab-${segment}`).click()
@@ -135,19 +141,20 @@ test.describe('Project sections', () => {
 
     await page.goto(base)
     const cards = page.getByTestId('project-entity-type-cards')
-    await expect(cards.locator('> li')).toHaveCount(1)
+    await expect(cards.getByTestId('lore-type-card')).toHaveCount(1)
     // A marker on the window: a reload anywhere below would drop it.
     await page.evaluate(() => Object.assign(window, { noReload: true }))
 
     // The write happens in the editor behind the action, then the author moves by links, without a reload.
     await page.getByTestId('project-types-manage').click()
+    // The same drawer the universe's Types screen opens.
     await page.getByTestId('project-type-add').click()
-    await page.getByTestId('project-type-new-name').fill('Encounter')
-    await page.getByTestId('project-type-new-save').click()
+    await page.getByTestId('type-name').fill('Encounter')
+    await page.getByTestId('save-type').click()
     await expect(page.getByTestId('project-types')).toContainText('Encounter')
     await page.getByTestId('project-entities-back').click()
 
-    await expect(cards.locator('> li')).toHaveCount(2)
+    await expect(cards.getByTestId('lore-type-card')).toHaveCount(2)
     await cards.getByRole('link', { name: /Encounter/ }).click()
     await expect(page.getByTestId('project-entries')).toBeVisible()
     await expect(page.getByTestId('project-entries-needs-type')).toHaveCount(0)
@@ -173,7 +180,7 @@ test.describe('Project sections', () => {
       await expect(page.getByTestId('project-schema')).toHaveCount(0)
       await expect(page.getByTestId('project-entries')).toHaveCount(0)
       for (const segment of ['overview', 'script', 'entities']) {
-        await page.getByTestId(`projecttab-${segment}`).click()
+        await page.getByTestId(`project-${segment}-${one.id}`).click()
         await expect(page).toHaveURL(new RegExp(`/${segment}$`))
         await expect(page.getByTestId('project-seasons')).toHaveCount(0)
       }

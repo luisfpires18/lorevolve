@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { listProjectTypes } from '../projectEntities/api'
 import type { ProjectEntityType } from '../projectEntities/types'
+import { buildTypeTree } from '../lore/typeTree'
+import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
 import { ProjectEntries } from './ProjectEntries'
 import { ProjectSchema } from './ProjectSchema'
-import { t, tn, useI18n } from '../i18n'
+import { t, useI18n } from '../i18n'
 
 /**
  * A project's Entities view (#196): its types as cards, one type's entries a page at a time, and the type editor as an
@@ -32,14 +34,22 @@ export function ProjectEntitiesView({
   const managing = params.get('manage') === 'types'
   // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
   const entryId = params.get('entry')
+  // The way back to the cards, said as Lore says it above a type: a quiet crumb over the screen's own name.
+  const back = (
+    <Link to={pathname} data-testid="project-entities-back">
+      {t('projects.entities.title')}
+    </Link>
+  )
 
   if (managing) {
     return (
       <div className="projectbody" data-testid="project-entities-manage">
-        <Link to={pathname} className="button button--text" data-testid="project-entities-back">
-          {t('projects.entities.back')}
-        </Link>
-        <ProjectSchema projectId={projectId} reloadKey={reloadKey} onChanged={onChanged} />
+        <ProjectSchema
+          projectId={projectId}
+          reloadKey={reloadKey}
+          onChanged={onChanged}
+          crumb={back}
+        />
       </div>
     )
   }
@@ -47,9 +57,6 @@ export function ProjectEntitiesView({
   if (typeId) {
     return (
       <div className="projectbody" data-testid="project-entities-type">
-        <Link to={pathname} className="button button--text" data-testid="project-entities-back">
-          {t('projects.entities.back')}
-        </Link>
         {/* Keyed by the type, so opening another card starts its own first page rather than carrying this one's. */}
         <ProjectEntries
           key={typeId}
@@ -57,6 +64,7 @@ export function ProjectEntitiesView({
           fixedTypeId={typeId}
           openEntryId={entryId ?? undefined}
           reloadKey={reloadKey}
+          crumb={back}
         />
       </div>
     )
@@ -72,7 +80,10 @@ export function ProjectEntitiesView({
   )
 }
 
-/** The first screen: every type with its count, from the one list request that already carries the counts. */
+/**
+ * The first screen: every type as Lore's own card - its icon, its description, where it sits and its count - from the one
+ * list request that already carries the counts. It is Lore's catalog itself, not a copy, so the two cannot drift apart.
+ */
 function TypeCards({
   pathname,
   projectId,
@@ -86,6 +97,12 @@ function TypeCards({
 }) {
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
+  // A project type's own entry count is what the card reads as listed; its drill-in lists that type's entries only.
+  const tree = useMemo(
+    () =>
+      buildTypeTree((types ?? []).map((type) => ({ ...type, listedEntityCount: type.entryCount }))),
+    [types],
+  )
 
   // Mounted afresh each time the author comes back to the cards, so a count changed in a drill-in is read again here.
   useEffect(() => {
@@ -101,7 +118,7 @@ function TypeCards({
   }, [projectId, reloadKey])
 
   if (types === null) {
-    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
+    return <LoreCatalogSkeleton />
   }
 
   // No types yet: the schema panel is the empty state, because it is what offers the starter templates.
@@ -131,24 +148,19 @@ function TypeCards({
         </p>
       ) : null}
 
-      <ul className="projectcardlist" data-testid="project-entity-type-cards">
-        {types.map((type) => (
-          <li key={type.id} className="projectcard">
-            <Link
-              to={`${pathname}?type=${type.id}`}
-              className="projectcard__head"
-              data-testid={`project-entity-type-${type.id}`}
-            >
-              <h3 className="projectcard__title">{type.name}</h3>
-              <p className="projectcard__meta">
-                {type.entryCount === 0
-                  ? t('projects.schema.noEntries')
-                  : tn('projects.schema.entryCount', type.entryCount)}
-              </p>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div data-testid="project-entity-type-cards">
+        {/* A project's types have no groups, so the catalog shows no "Browse by group" and never calls these two. */}
+        <LoreCatalog
+          tree={tree}
+          groups={[]}
+          browsing={null}
+          onBrowse={() => undefined}
+          typeHref={(typeId) => `${pathname}?type=${typeId}`}
+          groupHref={() => pathname}
+          typesUrl={`${pathname}?manage=types`}
+          countBranch={false}
+        />
+      </div>
     </section>
   )
 }

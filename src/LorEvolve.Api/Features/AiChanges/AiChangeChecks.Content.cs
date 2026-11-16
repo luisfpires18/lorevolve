@@ -113,10 +113,46 @@ internal sealed partial class AiChangeChecker
             return;
         }
 
+        // The type may be one this proposal creates, by typeRef. Walk up through the types it creates, which must be this
+        // project's, to the first one that exists: from there the stored lineage takes over. Pending keys are the part of
+        // the lineage that does not exist yet.
+        var pendingTypes = new HashSet<string>(StringComparer.Ordinal);
+        Guid? typeId = entry.TypeRef is null ? entry.TypeId : null;
+        var next = entry.TypeRef is { } typeRef ? new AiRef(null, typeRef) : null;
+        while (next is not null)
+        {
+            var (id, pending) = Resolve(next);
+            if (pending is null)
+            {
+                typeId = id;
+                break;
+            }
+
+            if (pending.Proposed is not ProjectTypeValues proposedType || !pendingTypes.Add(pending.Key))
+            {
+                break;
+            }
+
+            if (proposedType.ProjectId != entry.ProjectId)
+            {
+                work.Problem(AiChangeCodes.NotFound, "That type is proposed for another project. An entry's type is one of its own project's.", "typeRef");
+                return;
+            }
+
+            next = proposedType.Parent;
+        }
+
+        if (typeId is null && pendingTypes.Count == 0)
+        {
+            // A typeRef this proposal does not create was reported with the references.
+            return;
+        }
+
         // The type has to be that project's own, which is what keeps a project's entries out of the lore and out of
         // another project (#143).
-        if (!await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
-                .AnyAsync(type => type.Id == entry.TypeId && type.ProjectId == entry.ProjectId, cancellationToken))
+        if (typeId is { } existingType
+            && !await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+                .AnyAsync(type => type.Id == existingType && type.ProjectId == entry.ProjectId, cancellationToken))
         {
             work.Problem(AiChangeCodes.NotFound, "That type does not belong to this project. Read its types with get_project_schema.", "typeId");
             return;
@@ -125,18 +161,47 @@ internal sealed partial class AiChangeChecker
         // The fields an entry of this type may hold: its own and every type above it, resolved by the same helper the
         // routes use, over this project's types only.
         var parents = await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken, entry.ProjectId);
-        var lineage = EntityTypeHierarchy.Lineage(parents, entry.TypeId);
+        var lineage = typeId is { } known ? EntityTypeHierarchy.Lineage(parents, known) : [];
 
         var definitions = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
             .Where(field => lineage.Contains(field.EntityTypeId) && field.ArchivedAt == null)
-            .Select(field => new { field.Id, field.Name, field.Kind, field.IsRequired })
+            .Select(field => new { field.Id, field.Name })
             .ToListAsync(cancellationToken);
 
-        var byId = definitions.ToDictionary(field => field.Id);
+        var byId = definitions.ToDictionary(field => field.Id, field => field.Name);
 
         foreach (var value in entry.Fields)
         {
-            if (!byId.TryGetValue(value.FieldId, out var definition))
+            var fieldId = value.FieldId;
+            string? name = null;
+            if (value.FieldRef is { } fieldRef)
+            {
+                var (made, proposedField) = Resolve(new AiRef(null, fieldRef));
+                if (proposedField?.Proposed is ProjectSchemaFieldValues field)
+                {
+                    // A field this proposal creates, on a type of the entry's lineage: one it creates, or one that exists.
+                    var onLineage = field.Type.Key is { } key
+                        ? pendingTypes.Contains(key) || Resolve(field.Type).Id is { } madeType && lineage.Contains(madeType)
+                        : lineage.Contains(field.Type.Id!.Value);
+                    if (!onLineage)
+                    {
+                        work.Problem(AiChangeCodes.NotFound, $"The field \"{fieldRef}\" is proposed for a type this entry is not of.", "fields");
+                    }
+
+                    name = field.Name;
+                }
+                else if (made is { } madeField)
+                {
+                    fieldId = madeField;
+                }
+                else
+                {
+                    // Reported with the references.
+                    continue;
+                }
+            }
+
+            if (name is null && !byId.TryGetValue(fieldId, out name))
             {
                 work.Problem(
                     AiChangeCodes.NotFound,
@@ -154,7 +219,7 @@ internal sealed partial class AiChangeChecker
                             && candidate.DeletedAt == null,
                         cancellationToken))
             {
-                work.Problem(AiChangeCodes.NotFound, $"{definition.Name} can only link to another entry of this project.", "fields");
+                work.Problem(AiChangeCodes.NotFound, $"{name} can only link to another entry of this project.", "fields");
             }
         }
 
@@ -169,6 +234,183 @@ internal sealed partial class AiChangeChecker
             work.Problem(AiChangeCodes.NotFound, "No live lore entry of this universe has that id.", "canonEntryId");
         }
     }
+
+    /// <summary>
+    /// A proposed type of a project, held to the Types route's own rules: its validation, the per-project limit, one name
+    /// per project ignoring case, and a parent of the same project that does not close a loop. The types this proposal
+    /// creates count toward the limit and the names, so a proposal cannot pass here and fail at approval.
+    /// </summary>
+    private async Task CheckProjectTypeAsync(AiChangeWork work, IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
+    {
+        var type = (ProjectTypeValues)work.Proposed;
+
+        work.Problems(ProjectEntityTypeEndpoints.Validate(new ProjectEntityTypeRequest(type.Name, type.Description, type.Icon, type.AccentColor)));
+
+        if (!await ProjectOfUniverseAsync(type.ProjectId, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.NotFound, "No project of this universe has that id.", "projectId");
+            return;
+        }
+
+        if (work.Action == AiChangeAction.Update)
+        {
+            if (await AiChangeSnapshots.ProjectTypeAsync(db, universeId, work.TargetId!.Value, cancellationToken) is not { } stored)
+            {
+                work.Problem(AiChangeCodes.NotFound, "This type isn't in that project any more.");
+                return;
+            }
+
+            if (!AiChangeSnapshots.Same(stored, work.Before))
+            {
+                work.Conflict("Someone changed this type after the AI suggested this change, so it can't be applied. Reject it, or ask for the change again.");
+            }
+        }
+
+        var existing = await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+            .Where(candidate => candidate.ProjectId == type.ProjectId)
+            .Select(candidate => new { candidate.Id, candidate.Name, candidate.ParentId })
+            .ToListAsync(cancellationToken);
+
+        var created = works
+            .Where(other => other != work && other.IsPending && other.Action == AiChangeAction.Create)
+            .Select(other => other.Proposed)
+            .OfType<ProjectTypeValues>()
+            .Where(other => other.ProjectId == type.ProjectId)
+            .ToList();
+
+        if (work.Action == AiChangeAction.Create && existing.Count + created.Count >= ProjectEntityTypeEndpoints.MaxTypesPerProject)
+        {
+            work.Problem(AiChangeCodes.Invalid, $"A project can have at most {ProjectEntityTypeEndpoints.MaxTypesPerProject} types.", "name");
+        }
+
+        if (existing.Any(other => other.Id != work.TargetId && string.Equals(other.Name, type.Name, StringComparison.OrdinalIgnoreCase))
+            || created.Any(other => string.Equals(other.Name, type.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            work.Problem(AiChangeCodes.Invalid, "This project already has a type with that name.", "name");
+        }
+
+        // The parent: a type of this project that exists, or one this proposal creates for it. Walked up through the
+        // created ones to the first that exists, which is where a loop through this type would show.
+        var parentOf = existing.ToDictionary(each => each.Id, each => each.ParentId);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var next = type.Parent; next is not null;)
+        {
+            var (id, pending) = Resolve(next);
+            if (pending is null)
+            {
+                if (id is { } parentId && !parentOf.ContainsKey(parentId))
+                {
+                    work.Problem(AiChangeCodes.NotFound, "Choose a type from this project, or none.", "parentId");
+                }
+                else if (id is { } within && work.TargetId is { } self
+                    && (within == self || EntityTypeHierarchy.IsWithin(parentOf, within, self)))
+                {
+                    work.Problem(AiChangeCodes.Invalid, "A type cannot be put inside itself.", "parentId");
+                }
+
+                break;
+            }
+
+            if (pending.Proposed is not ProjectTypeValues above || !seen.Add(pending.Key))
+            {
+                break;
+            }
+
+            if (above.ProjectId != type.ProjectId)
+            {
+                work.Problem(AiChangeCodes.NotFound, "Choose a type from this project, or none.", "parentId");
+                break;
+            }
+
+            next = above.Parent;
+        }
+    }
+
+    /// <summary>
+    /// A proposed field on a project's type, held to the Types route's own rules: its validation (a kind LorEvolve has,
+    /// choices only on a field of choices), the per-type limit, one name per type, and a required field only on a type
+    /// with no entries yet. The fields this proposal adds to the same type count toward the limit and the names.
+    /// </summary>
+    private async Task CheckProjectFieldAsync(AiChangeWork work, IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
+    {
+        var field = (ProjectSchemaFieldValues)work.Proposed;
+
+        work.Problems(ProjectEntityTypeEndpoints.ValidateField(new ProjectEntityFieldRequest(field.Name, field.Kind, field.IsRequired, field.Options)));
+
+        if (!await ProjectOfUniverseAsync(field.ProjectId, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.NotFound, "No project of this universe has that id.", "projectId");
+            return;
+        }
+
+        if (work.Action == AiChangeAction.Update)
+        {
+            if (await AiChangeSnapshots.ProjectFieldAsync(db, universeId, work.TargetId!.Value, cancellationToken) is not { } stored)
+            {
+                work.Problem(AiChangeCodes.NotFound, "This field isn't in that project any more.");
+                return;
+            }
+
+            if (!AiChangeSnapshots.Same(stored, work.Before))
+            {
+                work.Conflict("Someone changed this field after the AI suggested this change, so it can't be applied. Reject it, or ask for the change again.");
+            }
+        }
+
+        var (typeId, pendingType) = Resolve(field.Type);
+        if (pendingType?.Proposed is ProjectTypeValues proposedType && proposedType.ProjectId != field.ProjectId)
+        {
+            work.Problem(AiChangeCodes.NotFound, "That type is proposed for another project. A field goes on a type of its own project.", "typeId");
+            return;
+        }
+
+        if (typeId is { } existingType
+            && !await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+                .AnyAsync(type => type.Id == existingType && type.ProjectId == field.ProjectId, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.NotFound, "That type does not belong to this project. Read its types with get_project_schema.", "typeId");
+            return;
+        }
+
+        // Archived fields count, as the route counts them: they still hold their values.
+        var existing = typeId is { } ofType
+            ? await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
+                .Where(candidate => candidate.EntityTypeId == ofType)
+                .Select(candidate => new { candidate.Id, candidate.Name })
+                .ToListAsync(cancellationToken)
+            : [];
+
+        var added = works
+            .Where(other => other != work && other.IsPending && other.Action == AiChangeAction.Create)
+            .Select(other => other.Proposed)
+            .OfType<ProjectSchemaFieldValues>()
+            .Where(other => other.Type == field.Type)
+            .ToList();
+
+        if (work.Action == AiChangeAction.Create && existing.Count + added.Count >= ProjectEntityTypeEndpoints.MaxFieldsPerType)
+        {
+            work.Problem(AiChangeCodes.Invalid, $"A type can have at most {ProjectEntityTypeEndpoints.MaxFieldsPerType} fields.", "name");
+        }
+
+        // The route compares names ignoring case on an add and exactly on a save; so does this.
+        var comparison = work.Action == AiChangeAction.Create ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (existing.Any(other => other.Id != work.TargetId && string.Equals(other.Name, field.Name, comparison))
+            || added.Any(other => string.Equals(other.Name, field.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            work.Problem(AiChangeCodes.Invalid, "This type already has a field with that name.", "name");
+        }
+
+        if (work.Action == AiChangeAction.Create
+            && field.IsRequired
+            && typeId is { } holding
+            && await db.Entities.AsNoTracking().IgnoreQueryFilters().AnyAsync(entry => entry.EntityTypeId == holding, cancellationToken))
+        {
+            work.Problem(AiChangeCodes.Invalid, "Entries of this type already exist, so a new field cannot be required. Add it, fill it in, then make it required.", "isRequired");
+        }
+    }
+
+    private Task<bool> ProjectOfUniverseAsync(Guid projectId, CancellationToken cancellationToken) =>
+        db.CreativeProjects.AsNoTracking().AnyAsync(project => project.Id == projectId && project.UniverseId == universeId, cancellationToken);
 
     private async Task CheckWorldRuleAsync(AiChangeWork work, CancellationToken cancellationToken)
     {

@@ -59,6 +59,7 @@ import {
   UniverseTypes,
   UniversesPage,
   WorldLogicPage,
+  SystemEditorPage,
   WorldRulePage,
   WorldRulesPage,
 } from './screens'
@@ -258,6 +259,24 @@ function Root() {
               />
               <Route path="timeline" element={asSection('timeline', <TimelinePage />)} />
               <Route path="world-logic" element={asSection('world-logic', <WorldLogicPage />)} />
+              <Route
+                path="world-logic/systems/new"
+                element={asSection(
+                  'world-logic',
+                  <RoleGate need="editContent">
+                    <SystemEditorPage isNew />
+                  </RoleGate>,
+                )}
+              />
+              <Route
+                path="world-logic/systems/:systemId"
+                element={asSection(
+                  'world-logic',
+                  <RoleGate need="editContent">
+                    <SystemEditorPage />
+                  </RoleGate>,
+                )}
+              />
               {/* Every world rule address still works, so nothing an author linked or bookmarked broke (#152). */}
               <Route path="world-rules" element={asSection('world-rules', <WorldRulesPage />)} />
               {/* Chronology is Timeline's configuration view (#200); its old address still resolves, by redirect. */}

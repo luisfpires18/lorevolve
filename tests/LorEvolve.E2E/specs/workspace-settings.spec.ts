@@ -183,7 +183,6 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
       'Timeline',
       'World Logic',
       'Ideas',
-      'All projects',
       'New project',
       'AI Changes',
       'Publish',

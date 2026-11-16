@@ -8,6 +8,7 @@ using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
@@ -339,6 +340,8 @@ internal static class AiChangeCommit
         CancellationToken cancellationToken)
     {
         Guid Id(AiRef reference) => reference.Id ?? made[reference.Key!];
+        Task<Projects.CreativeProject?> ProjectAsync(Guid projectId) =>
+            db.CreativeProjects.FirstOrDefaultAsync(project => project.Id == projectId && project.UniverseId == universeId, cancellationToken);
         var target = work.TargetId;
 
         switch (work.Proposed)
@@ -397,9 +400,18 @@ internal static class AiChangeCommit
 
             case ProjectEntryValues proposed:
                 // One path with the route's (#148): the same create, the same field preparation, the same history.
+                // A type or a field this proposal created is named by its change's key, and stands for what that made.
+                var entryType = proposed.TypeRef is { } typeKey ? Id(new AiRef(null, typeKey)) : proposed.TypeId;
                 var projectValues = await ProjectEntityEndpoints.ValuesFromChoicesAsync(
                     db,
-                    [.. proposed.Fields.Select(field => (field.FieldId, field.Text, field.Number, field.Boolean, field.Date, (IReadOnlyList<string>?)field.Choices, field.LinkedEntryId))],
+                    [.. proposed.Fields.Select(field => (
+                        field.FieldRef is { } fieldKey ? Id(new AiRef(null, fieldKey)) : field.FieldId,
+                        field.Text,
+                        field.Number,
+                        field.Boolean,
+                        field.Date,
+                        (IReadOnlyList<string>?)field.Choices,
+                        field.LinkedEntryId))],
                     cancellationToken);
 
                 if (work.Action == AiChangeAction.Create)
@@ -408,7 +420,7 @@ internal static class AiChangeCommit
                         db,
                         universeId,
                         proposed.ProjectId,
-                        proposed.TypeId,
+                        entryType,
                         proposed.Name,
                         proposed.Summary,
                         proposed.CanonEntryId,
@@ -427,7 +439,7 @@ internal static class AiChangeCommit
                         universeId,
                         proposed.ProjectId,
                         target!.Value,
-                        proposed.TypeId,
+                        entryType,
                         proposed.Name,
                         proposed.Summary,
                         proposed.CanonEntryId,
@@ -435,6 +447,81 @@ internal static class AiChangeCommit
                         approverId,
                         cancellationToken),
                     target);
+
+            case SystemRuleValues systemRule:
+            {
+                // The route's own create and update (ADR 0072). An update names the version staging read, so a rule an
+                // author saved since is refused as changed rather than overwritten by the AI's older text.
+                var ruleRequest = AiChangeChecker.RuleRequest(
+                    systemRule,
+                    [.. systemRule.DependsOn.Select(Id)],
+                    work.Action == AiChangeAction.Create ? null : work.BaseVersion);
+                return work.Action == AiChangeAction.Create
+                    ? Made<SystemRuleDetail>(await SystemRuleEndpoints.CreateCoreAsync(db, universeId, ruleRequest, cancellationToken), detail => detail.Id)
+                    : Done(await SystemRuleEndpoints.UpdateCoreAsync(db, universeId, target!.Value, ruleRequest, cancellationToken), target);
+            }
+
+            case LoreSystemValues loreSystem:
+            {
+                // The System's own write first, then its rule list as the difference from the stored one, through the
+                // System's link and unlink paths: a rule left out is unlinked, never deleted.
+                var saved = work.Action == AiChangeAction.Create
+                    ? Made<SystemDetail>(
+                        await SystemEndpoints.CreateCoreAsync(db, universeId, new SystemRequest(loreSystem.Name, loreSystem.Summary, loreSystem.ProjectId), cancellationToken),
+                        detail => detail.Id)
+                    : Done(
+                        await SystemEndpoints.UpdateCoreAsync(
+                            db,
+                            universeId,
+                            target!.Value,
+                            new SystemRequest(loreSystem.Name, loreSystem.Summary, loreSystem.ProjectId, work.BaseVersion),
+                            cancellationToken),
+                        target);
+
+                if (saved.Problem is not null)
+                {
+                    return saved;
+                }
+
+                return await RelinkAsync(db, universeId, saved.Id!.Value, [.. loreSystem.RuleIds.Select(Id)], cancellationToken) is { } refused
+                    ? (null, refused)
+                    : saved;
+            }
+
+            // A project's own schema, through the project Types screen's write paths, never the lore's.
+            case ProjectTypeValues projectType:
+            {
+                if (await ProjectAsync(projectType.ProjectId) is not { } project)
+                {
+                    return Done(Results.NotFound(), null);
+                }
+
+                var request = new ProjectEntityTypeRequest(
+                    projectType.Name,
+                    projectType.Description,
+                    projectType.Icon,
+                    projectType.AccentColor,
+                    projectType.Parent is { } typeParent ? Id(typeParent) : null);
+                return work.Action == AiChangeAction.Create
+                    ? Made<ProjectEntityTypeResponse>(await ProjectEntityTypeEndpoints.CreateTypeCoreAsync(db, project, request, cancellationToken), detail => detail.Id)
+                    : Done(await ProjectEntityTypeEndpoints.UpdateTypeCoreAsync(db, project, target!.Value, request, cancellationToken), target);
+            }
+
+            case ProjectSchemaFieldValues projectField:
+            {
+                if (await ProjectAsync(projectField.ProjectId) is not { } project)
+                {
+                    return Done(Results.NotFound(), null);
+                }
+
+                var fieldType = Id(projectField.Type);
+                var request = new ProjectEntityFieldRequest(projectField.Name, projectField.Kind, projectField.IsRequired, projectField.Options);
+                return work.Action == AiChangeAction.Create
+                    ? Made<ProjectEntityTypeResponse>(
+                        await ProjectEntityTypeEndpoints.AddFieldCoreAsync(db, project, fieldType, request, cancellationToken),
+                        detail => detail.Fields.Single(added => added.Name == projectField.Name).Id)
+                    : Done(await ProjectEntityTypeEndpoints.UpdateFieldCoreAsync(db, project, fieldType, target!.Value, request, cancellationToken), target);
+            }
 
             case WorldRuleValues rule:
                 var stated = new WorldRuleRequest(
@@ -763,6 +850,50 @@ internal static class AiChangeCommit
         };
     }
 
+    /// <summary>
+    /// A System's rule list made the proposed one: each stored link the list leaves out is unlinked, then each listed rule is
+    /// linked at its place, so the order follows the list. A rule already at its place is left alone. The first refusal is
+    /// returned, and the approval rolls back with it.
+    /// </summary>
+    private static async Task<IResult?> RelinkAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid systemId,
+        List<Guid> ruleIds,
+        CancellationToken cancellationToken)
+    {
+        var linked = await db.LoreSystemRules.AsNoTracking()
+            .Where(link => link.SystemId == systemId)
+            .Select(link => new { link.RuleId, link.SortOrder })
+            .ToListAsync(cancellationToken);
+
+        foreach (var gone in linked.Where(link => !ruleIds.Contains(link.RuleId)))
+        {
+            var unlinked = await SystemEndpoints.UnlinkCoreAsync(db, universeId, systemId, gone.RuleId, cancellationToken);
+            if (!Succeeded(unlinked))
+            {
+                return unlinked;
+            }
+        }
+
+        for (var place = 0; place < ruleIds.Count; place++)
+        {
+            var ruleId = ruleIds[place];
+            if (linked.Any(link => link.RuleId == ruleId && link.SortOrder == place))
+            {
+                continue;
+            }
+
+            var made = await SystemEndpoints.LinkCoreAsync(db, universeId, systemId, ruleId, place, cancellationToken);
+            if (!Succeeded(made))
+            {
+                return made;
+            }
+        }
+
+        return null;
+    }
+
     private static (Guid? Id, IResult? Problem) Done(IResult result, Guid? id) => Succeeded(result) ? (id, null) : (null, result);
 
     private static (Guid? Id, IResult? Problem) Made<T>(IResult result, Func<T, Guid> id) =>
@@ -984,6 +1115,16 @@ internal static class AiChangeCommit
                 Title = Required(values.Title, arc.Title),
                 Description = Optional(values.Description, arc.Description),
                 Notes = Optional(values.Notes, arc.Notes),
+            },
+            SystemRuleValues systemRule => systemRule with
+            {
+                Title = Required(values.Title, systemRule.Title),
+                Description = values.Description is null ? systemRule.Description : values.Description.Trim().Length == 0 ? string.Empty : values.Description,
+            },
+            LoreSystemValues loreSystem => loreSystem with
+            {
+                Name = Required(values.Name, loreSystem.Name),
+                Summary = values.Summary is null ? loreSystem.Summary : values.Summary.Trim().Length == 0 ? string.Empty : values.Summary,
             },
             WorldRuleValues rule => rule with
             {

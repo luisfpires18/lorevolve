@@ -4868,6 +4868,30 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   box-shadow: inset 0 0 0 1px var(--accent);
 }
 
+/* A project's entry (#196): Lore's card with no page to open, so it does not lift as a link does, and its one action,
+   the More menu, sits in the corner where Select puts its box. */
+.entitycard--static {
+  position: relative;
+}
+
+@media (hover: hover) {
+  .entitycard--static:hover {
+    border-color: var(--rule);
+    box-shadow: var(--shadow-1);
+    transform: none;
+  }
+}
+
+.entitycard--static .entitycard__body {
+  padding-right: var(--space-7);
+}
+
+.entitycard__actions {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
 .entitycard__body {
   display: flex;
   flex-direction: column;
@@ -18587,6 +18611,15 @@ details.reviewsection > .reviewsection__list {
   gap: var(--space-3);
 }
 
+/* A crumb over a panel's name takes a row of its own, as in `PageHeader`, so the head's action lines up with the name. */
+.projects__crumb {
+  flex-basis: 100%;
+}
+
+.projects__head:has(> .projects__crumb) {
+  row-gap: var(--space-2);
+}
+
 .projects__lede {
   margin: 0;
   color: var(--muted);
@@ -18761,6 +18794,16 @@ details.reviewsection > .reviewsection__list {
 }
 
 /* On a narrow screen the tab bar is the way between a project's views, so the sidebar's copy of them steps aside. */
+/*
+ * From this width the sidebar lists the open project's pages under its name, so the same links as tabs above the page
+ * would only repeat them. Below it the sidebar folds those away and the tabs are the way between the views.
+ */
+@media (min-width: 60rem) {
+  .projecttabs {
+    display: none;
+  }
+}
+
 @media (max-width: 59.99rem) {
   .sidebar__sublinks--project,
   .sidebar__projectrow .sidebar__disclosure {

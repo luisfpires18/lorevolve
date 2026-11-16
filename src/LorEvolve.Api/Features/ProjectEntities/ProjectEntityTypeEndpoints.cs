@@ -194,10 +194,22 @@ public static class ProjectEntityTypeEndpoints
     {
         var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
 
-        if (denied is not null)
-        {
-            return denied;
-        }
+        return denied ?? await CreateTypeCoreAsync(db, project!, request, cancellationToken);
+    }
+
+    // ---------- The cores an approved AI change commits through ----------
+    //
+    // Each runs after the caller's check: the route's access check, or an approved AI change's own checks, run inside the
+    // approval's transaction. One path, so a proposal cannot write what a route would refuse.
+
+    /// <summary>Creates a type of the project. The result is the route's own, the created type with its fields.</summary>
+    internal static async Task<IResult> CreateTypeCoreAsync(
+        LorEvolveDbContext db,
+        CreativeProject project,
+        ProjectEntityTypeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var projectId = project.Id;
 
         if (Validate(request) is { } errors)
         {
@@ -236,7 +248,7 @@ public static class ProjectEntityTypeEndpoints
         var created = new EntityType
         {
             Id = Guid.NewGuid(),
-            UniverseId = project!.UniverseId,
+            UniverseId = project.UniverseId,
             ProjectId = projectId,
             Name = name,
             Description = LoreValidation.Normalize(request.Description),
@@ -277,10 +289,18 @@ public static class ProjectEntityTypeEndpoints
     {
         var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
 
-        if (denied is not null)
-        {
-            return denied;
-        }
+        return denied ?? await UpdateTypeCoreAsync(db, project!, typeId, request, cancellationToken);
+    }
+
+    /// <summary>Saves a type of the project. The result is the route's own, the saved type with its fields.</summary>
+    internal static async Task<IResult> UpdateTypeCoreAsync(
+        LorEvolveDbContext db,
+        CreativeProject project,
+        Guid typeId,
+        ProjectEntityTypeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var projectId = project.Id;
 
         if (Validate(request) is { } errors)
         {
@@ -345,7 +365,7 @@ public static class ProjectEntityTypeEndpoints
 
         await transaction.CommitAsync(cancellationToken);
 
-        var loaded = await LoadTypesAsync(db, project!, cancellationToken);
+        var loaded = await LoadTypesAsync(db, project, cancellationToken);
         return Results.Ok(loaded.First(each => each.Id == typeId));
     }
 
@@ -417,10 +437,18 @@ public static class ProjectEntityTypeEndpoints
     {
         var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
 
-        if (denied is not null)
-        {
-            return denied;
-        }
+        return denied ?? await AddFieldCoreAsync(db, project!, typeId, request, cancellationToken);
+    }
+
+    /// <summary>Adds a field to a type of the project. The result is the route's own, the type with its fields.</summary>
+    internal static async Task<IResult> AddFieldCoreAsync(
+        LorEvolveDbContext db,
+        CreativeProject project,
+        Guid typeId,
+        ProjectEntityFieldRequest request,
+        CancellationToken cancellationToken)
+    {
+        var projectId = project.Id;
 
         if (ValidateField(request) is { } errors)
         {
@@ -484,7 +512,7 @@ public static class ProjectEntityTypeEndpoints
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        var types = await LoadTypesAsync(db, project!, cancellationToken);
+        var types = await LoadTypesAsync(db, project, cancellationToken);
         return Results.Created(
             $"/api/projects/{projectId}/entity-types/{typeId}/fields/{field.Id}",
             types.First(type => type.Id == typeId));
@@ -501,10 +529,19 @@ public static class ProjectEntityTypeEndpoints
     {
         var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
 
-        if (denied is not null)
-        {
-            return denied;
-        }
+        return denied ?? await UpdateFieldCoreAsync(db, project!, typeId, fieldId, request, cancellationToken);
+    }
+
+    /// <summary>Saves a field of a type of the project. The result is the route's own, the type with its fields.</summary>
+    internal static async Task<IResult> UpdateFieldCoreAsync(
+        LorEvolveDbContext db,
+        CreativeProject project,
+        Guid typeId,
+        Guid fieldId,
+        ProjectEntityFieldRequest request,
+        CancellationToken cancellationToken)
+    {
+        var projectId = project.Id;
 
         if (ValidateField(request) is { } errors)
         {
@@ -607,7 +644,7 @@ public static class ProjectEntityTypeEndpoints
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        var types = await LoadTypesAsync(db, project!, cancellationToken);
+        var types = await LoadTypesAsync(db, project, cancellationToken);
         return Results.Ok(types.First(type => type.Id == typeId));
     }
 
@@ -782,7 +819,7 @@ public static class ProjectEntityTypeEndpoints
     }
 
     /// <summary>The choices a save stores: trimmed, blanks dropped, each once ignoring case, first spelling kept.</summary>
-    private static List<string> Options(ProjectEntityFieldRequest request)
+    internal static List<string> Options(ProjectEntityFieldRequest request)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var kept = new List<string>();
@@ -800,7 +837,7 @@ public static class ProjectEntityTypeEndpoints
         return kept;
     }
 
-    private static Dictionary<string, string[]>? Validate(ProjectEntityTypeRequest request)
+    internal static Dictionary<string, string[]>? Validate(ProjectEntityTypeRequest request)
     {
         var errors = new Dictionary<string, string[]>();
 
@@ -826,7 +863,7 @@ public static class ProjectEntityTypeEndpoints
         return errors.Count == 0 ? null : errors;
     }
 
-    private static Dictionary<string, string[]>? ValidateField(ProjectEntityFieldRequest request)
+    internal static Dictionary<string, string[]>? ValidateField(ProjectEntityFieldRequest request)
     {
         var errors = new Dictionary<string, string[]>();
 

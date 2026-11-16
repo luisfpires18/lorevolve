@@ -82,7 +82,9 @@ public sealed record AiChangeOptions(
     IReadOnlyList<AiChangeOptionNamed>? Ideas = null,
     bool MoreIdeas = false,
     AiChangeSchemaOptions? Schema = null,
-    AiChangeOptionProgression? Progression = null);
+    AiChangeOptionProgression? Progression = null,
+    IReadOnlyList<AiChangeOptionNamed>? Systems = null,
+    IReadOnlyList<AiChangeOptionNamed>? SystemRules = null);
 
 internal static class AiChangeCatalog
 {
@@ -113,9 +115,10 @@ internal static class AiChangeCatalog
     public const string Notes =
         "Every change is staged for a person to review in LorEvolve; nothing changes until they approve it there. "
         + "Use ids exactly as given. To refer to something another change in the same proposal creates, use {\"ref\": \"<that change's id>\"} "
-        + "instead of an id. Only the fields listed for a type exist: a type nested beneath another inherits the fields of every type above it, listed first, and an inherited field is changed only on the type that owns it. Types, fields, choices, groups, relationship kinds, date periods, "
+        + "instead of an id. Only the fields listed for a type exist: a type nested beneath another inherits the fields of every type above it, listed first, and an inherited field is changed only on the type that owns it. Lore types, fields, choices, groups, relationship kinds, date periods, "
         + "the calendar, event kinds and methods change only through a schema proposal (see schema), never in the same proposal as "
-        + "content. An image change sends no file: it says which entry, or which of its appearances, a picture is for, and the person "
+        + "content. A project's own types and fields are not lore: read them with get_project_schema, and create or update them "
+        + "as project_type and project_field beside the project's entries. An image change sends no file: it says which entry, or which of its appearances, a picture is for, and the person "
         + "uploads the picture on the proposal's review page in LorEvolve, then approves it; an AI never replaces a profile picture. "
         + "remove moves an item to LorEvolve's Trash (an idea to its owner's deleted ideas), "
         + "from where it can be restored; nothing is ever deleted for good. An article is written as blocks (paragraph, heading, bullet_list, "
@@ -215,7 +218,9 @@ internal static class AiChangeCatalog
                 var ordered = resource is AiChangeResource.Chapter or AiChangeResource.Scene or AiChangeResource.PlotArc;
                 var offered = action switch
                 {
-                    AiChangeAction.Create or AiChangeAction.Remove => !prose && resource != AiChangeResource.Progression,
+                    AiChangeAction.Create => !prose && resource != AiChangeResource.Progression,
+                    // A rule definition has no Trash and a System delete is permanent, so neither is removed by an AI.
+                    AiChangeAction.Remove => !prose && resource is not (AiChangeResource.Progression or AiChangeResource.SystemRule or AiChangeResource.LoreSystem),
                     AiChangeAction.Reorder => ordered,
                     _ => resource != AiChangeResource.Media,
                 };
@@ -223,6 +228,11 @@ internal static class AiChangeCatalog
                 {
                     // A picture is only ever added, and its file comes from the person, in LorEvolve.
                     offered = action == AiChangeAction.Create;
+                }
+                if (resource is AiChangeResource.ProjectType or AiChangeResource.ProjectField)
+                {
+                    // A project's types and fields are created and edited here, beside its entries; deleting one is the person's.
+                    offered = action is AiChangeAction.Create or AiChangeAction.Update;
                 }
                 if (AiChangePermissions.IsSchema(resource))
                 {
@@ -369,7 +379,20 @@ internal static class AiChangeCatalog
             ideas is null ? null : [.. ideas.Take(IdeaLimit)],
             ideas is { Count: > IdeaLimit },
             schema,
-            progressionOf is { } entityId ? await ProgressionAsync(db, universeId, entityId, cancellationToken) : null);
+            progressionOf is { } entityId ? await ProgressionAsync(db, universeId, entityId, cancellationToken) : null,
+            // World Logic, by name, for a system or system_rule change to name; list_systems and the rule readers say more.
+            await db.LoreSystems.AsNoTracking()
+                .Where(system => system.UniverseId == universeId)
+                .OrderBy(system => system.Name)
+                .Take(RuleLimit)
+                .Select(system => new AiChangeOptionNamed(system.Id, system.Name))
+                .ToListAsync(cancellationToken),
+            await db.SystemRules.AsNoTracking()
+                .Where(rule => rule.UniverseId == universeId)
+                .OrderBy(rule => rule.Title)
+                .Take(RuleLimit)
+                .Select(rule => new AiChangeOptionNamed(rule.Id, rule.Title))
+                .ToListAsync(cancellationToken));
     }
 
     /// <summary>A live entry's progression, by id, for a progression change; null for anything else.</summary>
@@ -422,6 +445,10 @@ internal static class AiChangeCatalog
         AiChangeResource.PlotArc => "plot_arc",
         AiChangeResource.WorldRule => "world_rule",
         AiChangeResource.ProjectEntry => "project_entry",
+        AiChangeResource.SystemRule => "system_rule",
+        AiChangeResource.LoreSystem => "system",
+        AiChangeResource.ProjectType => "project_type",
+        AiChangeResource.ProjectField => "project_field",
         AiChangeResource.LoreType => "lore_type",
         AiChangeResource.LoreField => "lore_field",
         AiChangeResource.LoreGroup => "lore_group",

@@ -94,12 +94,10 @@ const projects = {
     starterHint: 'A starting point. Rename them, delete them, or make your own.',
     starterApply: 'Add these types',
     starterApplying: 'Adding',
-    addType: 'Add a type',
-    typeName: 'Name',
-    typeSaving: 'Adding',
-    rename: 'Rename',
-    renameSave: 'Save name',
-    deleteType: 'Delete type',
+    iconHint:
+      'Optional, and only a picture: it marks the type on its card. Nothing is chosen for you from the name.',
+    parentHint:
+      'Organises the types: a nested type sits under its parent and has every field of the types above it.',
     entryCount: {
       one: '1 entry',
       other: '{count} entries',
@@ -218,12 +216,10 @@ const projects = {
     title: 'Entities',
     lede: 'What this project holds, by type. Open a type to see its entries.',
     manage: 'Manage types',
-    back: 'All types',
   },
   entries: {
     more: 'Show more',
     title: 'Entries',
-    lede: 'What this project holds, by type.',
     failed: "This project's entries could not be read.",
     empty: 'Nothing of this type yet.',
     emptyHint: 'Add an entry to make the first one.',
@@ -237,7 +233,7 @@ const projects = {
     summary: 'Summary',
     saving: 'Adding',
     delete: 'Move to Trash',
-    canonNone: 'Nothing in the lore',
+    canon: 'In the lore: {name}',
     values: 'Fields',
   },
   new: {

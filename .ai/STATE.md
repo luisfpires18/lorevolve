@@ -91,6 +91,12 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
   (`docs/testing/mcp-images-checklist.md`). A client's own tool-result cap can cut a large catalog.
+- **World Logic and project schema over MCP** (PR #235, PR #237), on DEV only. `propose_changes` now takes `system`,
+  `system_rule`, `project_type` and `project_field` (create and update, never remove); an entry names a new type or
+  field by `typeRef` / `fieldRef`, so one proposal can hold a game's GameEntity type, its fields and its units. Owner:
+  ask for the `dev` to `master` release when ready; ChatGPT's connector must be refreshed to see new tools (it showed a
+  stale list on PROD). Not yet tried in a real client. Per-tool status lives in `docs/testing/mcp-capability-matrix.md`
+  "Tool status"; keep it current with every MCP change (a test fails when a tool has no row).
 - **Real-device PWA**: Lore entities in an installed iOS, Android and desktop app (`docs/testing/pwa-checklist.md`).
   Passed only in Chromium simulation; #58 was closed without that check.
 - **Maps on a device**: a real map, real touch, a connected app's phrasing over the geography tools

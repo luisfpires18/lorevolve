@@ -71,10 +71,10 @@ test.describe('the shell', () => {
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     // The way up, then fourteen sections: Publish joined the foot in 014, AI Changes joined (ADR 0047) and Maps (ADR 0060). All universes shares the
-    // landmark since refinement 024. Projects added All projects and New project above upkeep (#139); this universe
-    // has no projects yet, so those two are all that group contributes here. Stories and Canon left the sidebar
+    // landmark since refinement 024. Projects added All projects and New project above upkeep (#139); All projects left (#231)
+    // and this universe has no projects yet, so New project is all that group contributes here. Stories and Canon left the sidebar
     // (#191): stories are listed as Writing Projects, and both addresses still resolve.
-    await expect(sections.getByRole('link')).toHaveCount(15)
+    await expect(sections.getByRole('link')).toHaveCount(14)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
 
     // One h1 per screen, and it is the screen's title - the universe name in the sidebar is not it.
@@ -198,7 +198,7 @@ test.describe('the shell', () => {
       const lore = await at('workspace-lore')
       const maps = await at('workspace-maps')
       const ideas = await at('workspace-ideas')
-      const projects = await at('projects-all')
+      const projects = await at('projects-group-toggle')
       expect(Math.abs(lore.x - overview.x)).toBeLessThanOrEqual(1)
       expect(lore.y).toBeGreaterThan(overview.y)
       expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)
