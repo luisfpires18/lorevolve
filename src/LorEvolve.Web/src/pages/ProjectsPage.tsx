@@ -91,12 +91,15 @@ export default function ProjectsPage({
   async function move(project: ProjectDetail, by: -1 | 1) {
     if (state?.kind !== 'ready' || !universeId || isMoving.current) return
     const before = state.projects
-    const from = before.findIndex((candidate) => candidate.id === project.id)
+    // Only stories have an order to move in: the API takes exactly the live stories, each once.
+    const stories = before.filter((candidate) => candidate.storyId)
+    const from = stories.findIndex((candidate) => candidate.id === project.id)
     const to = from + by
-    if (from < 0 || to < 0 || to >= before.length) return
+    if (from < 0 || to < 0 || to >= stories.length) return
 
-    const after = [...before]
-    after.splice(to, 0, ...after.splice(from, 1))
+    const moved = [...stories]
+    moved.splice(to, 0, ...moved.splice(from, 1))
+    const after = [...moved, ...before.filter((candidate) => !candidate.storyId)]
     isMoving.current = true
     setMoveError(null)
     setState({ kind: 'ready', for: requested, projects: after, ordered: true })
@@ -110,7 +113,7 @@ export default function ProjectsPage({
     try {
       const saved = await reorderStories(
         universeId,
-        after.map((candidate) => candidate.storyId ?? candidate.id),
+        moved.map((candidate) => candidate.storyId ?? candidate.id),
       )
       setState({
         kind: 'ready',
@@ -122,7 +125,7 @@ export default function ProjectsPage({
         ordered: true,
       })
       setAnnouncement(
-        t('stories.browse.moved', { title: project.name, n: to + 1, total: after.length }),
+        t('stories.browse.moved', { title: project.name, n: to + 1, total: moved.length }),
       )
     } catch (error: unknown) {
       setState({ kind: 'ready', for: requested, projects: before, ordered: true })
@@ -143,6 +146,8 @@ export default function ProjectsPage({
   const shown = kinds
     ? state.projects.filter((project) => kinds.includes(project.kind))
     : state.projects
+
+  const storyRows = shown.filter((project) => project.storyId)
 
   return (
     <section className="projects" data-testid="projects-page">
@@ -185,7 +190,7 @@ export default function ProjectsPage({
         />
       ) : (
         <ul className="storylist" data-testid="projects-list">
-          {shown.map((project, index) => (
+          {shown.map((project) => (
             <li
               className="storyrow"
               key={project.id}
@@ -203,13 +208,17 @@ export default function ProjectsPage({
                 <span>{kindLabel(project.kind)}</span>
                 <span>{lifecycleLabel(project.lifecycle)}</span>
                 <span>{project.universe.name}</span>
-                {reorderable && state.ordered && access.editContent && shown.length > 1 ? (
+                {reorderable &&
+                state.ordered &&
+                access.editContent &&
+                project.storyId &&
+                storyRows.length > 1 ? (
                   <ActionMenu
                     className="storyrow__menu"
                     label={t('stories.browse.moreActions', { title: project.name })}
                     triggerTestId="story-actions"
                   >
-                    {index > 0 ? (
+                    {storyRows.indexOf(project) > 0 ? (
                       <button
                         className="actionmenu__item"
                         type="button"
@@ -220,7 +229,7 @@ export default function ProjectsPage({
                         {t('stories.browse.moveUp')}
                       </button>
                     ) : null}
-                    {index < shown.length - 1 ? (
+                    {storyRows.indexOf(project) < storyRows.length - 1 ? (
                       <button
                         className="actionmenu__item"
                         type="button"
