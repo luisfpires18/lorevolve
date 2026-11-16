@@ -18580,36 +18580,6 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
 }
 
-.projectlist {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.projectrow {
-  border-radius: var(--radius-sm);
-  box-shadow: inset 0 0 0 1px var(--rule);
-}
-
-.projectrow__main {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  color: inherit;
-  text-decoration: none;
-}
-
-.projectrow__title {
-  font-weight: 600;
-}
-
-.projectrow__meta {
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-
 /*
  * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
  * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than
@@ -18670,7 +18640,6 @@ details.reviewsection > .reviewsection__list {
  * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
  * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.
  */
-.projectrow__meta > span + span::before,
 .projectmeta > span + span::before {
   content: '\00b7';
   margin: 0 var(--space-2);
