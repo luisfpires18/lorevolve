@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Plug } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { getMcpConnectInfo, readable } from '../mcp/api'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -153,42 +154,43 @@ function ConnectSteps({
 
   return (
     <>
-      <div className="connect__url">
-        <label className="field__label" htmlFor={inputId}>
-          {t('ai.connect.urlLabel')}
-        </label>
-        <div className="connect__copyrow">
-          <input
-            ref={input}
-            id={inputId}
-            className="field__input connect__input"
-            type="text"
-            readOnly
-            value={url}
-            aria-describedby={hintId}
-            onFocus={(event) => event.target.select()}
-            data-testid="connect-ai-url"
-          />
-          <button
-            className="button"
-            type="button"
-            onClick={() => void copy()}
-            data-testid="connect-ai-copy"
-          >
-            {t('ai.connect.copy')}
-          </button>
-        </div>
-        <p className="connect__hint" id={hintId}>
-          {t('ai.connect.urlHint')}
-        </p>
-        <p className="connect__status" role="status" data-testid="connect-ai-copy-status">
-          {copied === 'copied'
-            ? t('ai.connect.copied')
-            : copied === 'manual'
-              ? t('ai.connect.copyManual')
-              : ''}
-        </p>
-      </div>
+      <Field label={t('ai.connect.urlLabel')} id={inputId} className="connect__url">
+        {() => (
+          <>
+            <div className="connect__copyrow">
+              <input
+                ref={input}
+                id={inputId}
+                className="field__input connect__input"
+                type="text"
+                readOnly
+                value={url}
+                aria-describedby={hintId}
+                onFocus={(event) => event.target.select()}
+                data-testid="connect-ai-url"
+              />
+              <button
+                className="button"
+                type="button"
+                onClick={() => void copy()}
+                data-testid="connect-ai-copy"
+              >
+                {t('ai.connect.copy')}
+              </button>
+            </div>
+            <p className="connect__hint" id={hintId}>
+              {t('ai.connect.urlHint')}
+            </p>
+            <p className="connect__status" role="status" data-testid="connect-ai-copy-status">
+              {copied === 'copied'
+                ? t('ai.connect.copied')
+                : copied === 'manual'
+                  ? t('ai.connect.copyManual')
+                  : ''}
+            </p>
+          </>
+        )}
+      </Field>
 
       <section className="connect__section" aria-labelledby={`${inputId}-how`}>
         <h3 className="connect__heading" id={`${inputId}-how`}>

@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 import { ValidationTermSelect } from './ValidationTermSelect'
 import { useValidationTerms } from '../ruleValidation/useValidationTerms'
 import { CHECK_ERROR_KEYS, type CheckDraft } from '../ruleValidation/checkDraft'
@@ -44,8 +45,6 @@ export function WorldRuleCheckSection({
   const radioName = useId()
   const hintId = useId()
   const maxId = useId()
-  const maxHintId = useId()
-  const maxErrorId = useId()
   const { terms, failed, add, reload } = useValidationTerms(universeId)
 
   const isLimit = value.kind === WorldRuleValidationKind.MaxOccurrencesPerParticipantAndMethod
@@ -136,33 +135,30 @@ export function WorldRuleCheckSection({
             testId="world-rule-check-method"
           />
 
-          <div className="field rule__max">
-            <label className="field__label" htmlFor={maxId}>
-              {t('canon.check.max.label')}
-            </label>
-            <p className="field__hint" id={maxHintId}>
-              {t('canon.check.max.hint')}
-            </p>
-            <input
-              id={maxId}
-              className="field__input"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={MAX_OCCURRENCES_CEILING}
-              step={1}
-              value={value.maxOccurrences}
-              onChange={(event) => onChange({ maxOccurrences: event.target.value })}
-              aria-invalid={maxError ? true : undefined}
-              aria-describedby={[maxHintId, maxError ? maxErrorId : null].filter(Boolean).join(' ')}
-              data-testid="world-rule-check-max"
-            />
-            {maxError ? (
-              <p className="field__error" id={maxErrorId}>
-                {maxError}
-              </p>
-            ) : null}
-          </div>
+          <Field
+            label={t('canon.check.max.label')}
+            hint={t('canon.check.max.hint')}
+            error={maxError}
+            id={maxId}
+            className="rule__max"
+          >
+            {(control) => (
+              <input
+                id={control.id}
+                className="field__input"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={MAX_OCCURRENCES_CEILING}
+                step={1}
+                value={value.maxOccurrences}
+                onChange={(event) => onChange({ maxOccurrences: event.target.value })}
+                aria-invalid={control['aria-invalid']}
+                aria-describedby={control['aria-describedby']}
+                data-testid="world-rule-check-max"
+              />
+            )}
+          </Field>
         </div>
       ) : null}
 

@@ -21,6 +21,7 @@ import {
 import { compareProse } from '../aiChanges/diff'
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
+import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { t, useI18n } from '../i18n'
 import { ApiError, networkFailure } from '../lib/api'
@@ -781,22 +782,24 @@ function MediaChange({
         <p className="aichangeitem__deps">{t('review.aiChange.media.none')}</p>
       )}
       {waiting ? (
-        <div className="field">
-          <label className="field__label" htmlFor={inputId}>
-            {media.uploaded
-              ? t('review.aiChange.media.replace')
-              : t('review.aiChange.media.upload')}
-          </label>
-          <input
-            id={inputId}
-            className="field__input"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            disabled={busy}
-            onChange={(event) => void upload(event.target.files?.[0])}
-            data-testid="ai-change-media-file"
-          />
-        </div>
+        <Field
+          label={
+            media.uploaded ? t('review.aiChange.media.replace') : t('review.aiChange.media.upload')
+          }
+          id={inputId}
+        >
+          {(control) => (
+            <input
+              id={control.id}
+              className="field__input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={busy}
+              onChange={(event) => void upload(event.target.files?.[0])}
+              data-testid="ai-change-media-file"
+            />
+          )}
+        </Field>
       ) : null}
       {uploaded ? (
         <p className="aichangeitem__deps" role="status" data-testid="ai-change-media-uploaded">
@@ -903,30 +906,29 @@ function EditChange({
 
   const text = (name: keyof ChangeEditable, label: string, long = false) =>
     draft[name] === undefined || draft[name] === null ? null : (
-      <div className="field">
-        <label className="field__label" htmlFor={`${id}-${name}`}>
-          {label}
-        </label>
-        {long ? (
-          <textarea
-            id={`${id}-${name}`}
-            className="field__input field__input--area"
-            rows={name === 'text' ? 10 : 3}
-            dir="auto"
-            value={String(draft[name] ?? '')}
-            onChange={(event) => setDraft({ ...draft, [name]: event.target.value })}
-          />
-        ) : (
-          <input
-            id={`${id}-${name}`}
-            className="field__input"
-            dir="auto"
-            value={String(draft[name] ?? '')}
-            onChange={(event) => setDraft({ ...draft, [name]: event.target.value })}
-            data-testid={`ai-change-edit-${name}`}
-          />
-        )}
-      </div>
+      <Field label={label} id={`${id}-${name}`}>
+        {(control) =>
+          long ? (
+            <textarea
+              id={control.id}
+              className="field__input field__input--area"
+              rows={name === 'text' ? 10 : 3}
+              dir="auto"
+              value={String(draft[name] ?? '')}
+              onChange={(event) => setDraft({ ...draft, [name]: event.target.value })}
+            />
+          ) : (
+            <input
+              id={control.id}
+              className="field__input"
+              dir="auto"
+              value={String(draft[name] ?? '')}
+              onChange={(event) => setDraft({ ...draft, [name]: event.target.value })}
+              data-testid={`ai-change-edit-${name}`}
+            />
+          )
+        }
+      </Field>
     )
 
   return (
@@ -953,25 +955,24 @@ function EditChange({
         true,
       )}
       {draft.canonStatus !== undefined && draft.canonStatus !== null ? (
-        <div className="field">
-          <label className="field__label" htmlFor={`${id}-canon`}>
-            {t('review.aiChange.edit.canon')}
-          </label>
-          <select
-            id={`${id}-canon`}
-            className="field__input"
-            value={draft.canonStatus}
-            onChange={(event) =>
-              setDraft({ ...draft, canonStatus: Number(event.target.value) as CanonStatusValue })
-            }
-          >
-            {[CanonStatus.Idea, CanonStatus.Draft, CanonStatus.Canon].map((status) => (
-              <option key={status} value={status}>
-                {CANON_LABELS[status]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Field label={t('review.aiChange.edit.canon')} id={`${id}-canon`}>
+          {(control) => (
+            <select
+              id={control.id}
+              className="field__input"
+              value={draft.canonStatus ?? ''}
+              onChange={(event) =>
+                setDraft({ ...draft, canonStatus: Number(event.target.value) as CanonStatusValue })
+              }
+            >
+              {[CanonStatus.Idea, CanonStatus.Draft, CanonStatus.Canon].map((status) => (
+                <option key={status} value={status}>
+                  {CANON_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : null}
       {error ? (
         <p className="form__message" role="alert">

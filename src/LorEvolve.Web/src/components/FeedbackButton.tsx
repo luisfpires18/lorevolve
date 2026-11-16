@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
 
@@ -118,8 +119,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
         </p>
       ) : null}
 
-      <fieldset className="field" disabled={sending}>
-        <legend className="field__label">{t('data.feedback.kindLabel')}</legend>
+      <Field label={t('data.feedback.kindLabel')} group="fieldset" disabled={sending}>
         <div className="segmented" role="group" aria-label={t('data.feedback.kindGroup')}>
           <button
             className="segmented__option"
@@ -140,26 +140,34 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
             {t('data.feedback.kindFeature')}
           </button>
         </div>
-      </fieldset>
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor={textId}>
-          {kind === FeedbackKind.Bug ? t('data.feedback.textBug') : t('data.feedback.textFeature')}
-        </label>
-        <textarea
-          id={textId}
-          className="field__input field__input--area"
-          rows={6}
-          maxLength={4000}
-          value={text}
-          disabled={sending}
-          onChange={(event) => setText(event.target.value)}
-          data-testid="feedback-text"
-        />
-        <p className="field__hint">
-          {kind === FeedbackKind.Bug ? t('data.feedback.hintBug') : t('data.feedback.hintFeature')}
-        </p>
-      </div>
+      <Field
+        label={
+          kind === FeedbackKind.Bug ? t('data.feedback.textBug') : t('data.feedback.textFeature')
+        }
+        id={textId}
+      >
+        {() => (
+          <>
+            <textarea
+              id={textId}
+              className="field__input field__input--area"
+              rows={6}
+              maxLength={4000}
+              value={text}
+              disabled={sending}
+              onChange={(event) => setText(event.target.value)}
+              data-testid="feedback-text"
+            />
+            <p className="field__hint">
+              {kind === FeedbackKind.Bug
+                ? t('data.feedback.hintBug')
+                : t('data.feedback.hintFeature')}
+            </p>
+          </>
+        )}
+      </Field>
     </Drawer>
   )
 }

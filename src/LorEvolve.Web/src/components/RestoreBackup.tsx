@@ -45,7 +45,6 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
   const i18n = useI18n()
   const { t, tn } = i18n
   const fileId = useId()
-  const hintId = useId()
   const [file, setFile] = useState<File | null>(null)
   const [stage, setStage] = useState<Stage>({ kind: 'choose' })
   const [chooseError, setChooseError] = useState<string | null>(null)
@@ -210,34 +209,30 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
 
       {stage.kind === 'choose' || stage.kind === 'checking' ? (
         <form className="form" onSubmit={check} noValidate>
-          <div className="field">
-            <label className="field__label" htmlFor={fileId}>
-              {t('admin.restore.file.label')}
-            </label>
-            <p className="field__hint" id={hintId}>
-              {t('admin.restore.file.hint')}
-            </p>
-            <input
-              ref={fileInput}
-              id={fileId}
-              className="restore__file"
-              type="file"
-              accept=".zip,.json,application/zip,application/json"
-              aria-describedby={chooseError ? `${hintId} ${fileId}-error` : hintId}
-              aria-invalid={chooseError ? true : undefined}
-              disabled={busy}
-              onChange={(event) => {
-                setFile(event.target.files?.[0] ?? null)
-                setChooseError(null)
-              }}
-              data-testid="restore-file"
-            />
-            {chooseError ? (
-              <p className="field__error" id={`${fileId}-error`} role="alert">
-                {chooseError}
-              </p>
-            ) : null}
-          </div>
+          <Field
+            label={t('admin.restore.file.label')}
+            hint={t('admin.restore.file.hint')}
+            id={fileId}
+            error={chooseError ? <span role="alert">{chooseError}</span> : undefined}
+          >
+            {(control) => (
+              <input
+                ref={fileInput}
+                id={control.id}
+                className="restore__file"
+                type="file"
+                accept=".zip,.json,application/zip,application/json"
+                aria-describedby={control['aria-describedby']}
+                aria-invalid={control['aria-invalid']}
+                disabled={busy}
+                onChange={(event) => {
+                  setFile(event.target.files?.[0] ?? null)
+                  setChooseError(null)
+                }}
+                data-testid="restore-file"
+              />
+            )}
+          </Field>
 
           {stage.kind === 'checking' ? (
             <div className="restore__progress" data-testid="restore-checking">
