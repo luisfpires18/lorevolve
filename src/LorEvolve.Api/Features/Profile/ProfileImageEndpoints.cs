@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
@@ -574,7 +573,6 @@ public static partial class ProfileImageEndpoints
         Level = LogLevel.Error,
         Message = "Profile photo storage failed during {Operation}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Exception exception);
-
 
     private static IResult Changed() =>
         Results.Problem(

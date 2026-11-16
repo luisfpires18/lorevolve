@@ -341,7 +341,7 @@ public static partial class EntityFieldImageEndpoints
                     stored.ByteSize = bytes.Length;
                     stored.UploadedAt = DateTime.UtcNow;
                     (stored.CropX, stored.CropY, stored.CropWidth, stored.CropHeight) =
-            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
+                        (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
                     if (existing is null)
                     {

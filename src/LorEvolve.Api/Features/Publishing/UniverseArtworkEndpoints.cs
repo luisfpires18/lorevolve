@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
@@ -516,7 +515,6 @@ public static partial class UniverseArtworkEndpoints
         Level = LogLevel.Error,
         Message = "Universe artwork storage failed during {Operation}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Exception exception);
-
 
     private static IResult Changed() =>
         Results.Problem(

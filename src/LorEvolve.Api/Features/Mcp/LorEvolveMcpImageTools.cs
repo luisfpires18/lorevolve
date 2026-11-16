@@ -564,7 +564,6 @@ public sealed partial class LorEvolveMcpImageTools(
 
     private string ProgressionUrl(Guid entryId) => $"{EntryUrl(entryId)}/progression";
 
-
     [LoggerMessage(Level = LogLevel.Error, Message = "Image storage failed reading a picture of entry {EntityId} for an MCP client.")]
     private static partial void LogStorageFailure(ILogger logger, Guid entityId, Exception exception);
 }

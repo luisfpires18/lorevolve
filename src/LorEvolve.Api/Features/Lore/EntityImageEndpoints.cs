@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Media;
@@ -339,7 +338,7 @@ public static partial class EntityImageEndpoints
                         stored.ByteSize = bytes.Length;
                         stored.UploadedAt = now;
                         (stored.CropX, stored.CropY, stored.CropWidth, stored.CropHeight) =
-            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
+                            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
                         if (existing is null)
                         {
@@ -873,7 +872,6 @@ public static partial class EntityImageEndpoints
         Level = LogLevel.Error,
         Message = "Image storage failed during {Operation} for entry {EntityId}. Nothing was changed.")]
     private static partial void LogStorageFailure(ILogger logger, string operation, Guid entityId, Exception exception);
-
 
     internal static IResult Changed() =>
         Results.Problem(
