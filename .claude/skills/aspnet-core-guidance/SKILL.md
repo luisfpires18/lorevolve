@@ -18,6 +18,41 @@ Conventions for `src/LorEvolve.Api`. Follow these over generic tutorial patterns
 - No `Repository<T>`, no `IXxxService` wrapper per entity. Inject `LorEvolveDbContext`.
   Extract a class only when there is real behaviour, and keep it inside the feature.
 
+## New feature recipe
+
+Copy `Features/Comments/` (small) or `Features/Chronology/` (full) before inventing a shape.
+Files in `Features/<Feature>/`, only the ones the feature needs:
+
+| File | Holds |
+| --- | --- |
+| `<X>Endpoints.cs` | `Map<X>Endpoints` and its handlers; registered in `Program.cs` |
+| `<X>Contracts.cs` | request and response records |
+| `<X>Model.cs` | entities |
+| `<X>Configuration.cs` | the `IEntityTypeConfiguration<T>` classes |
+| `<X>Validation.cs`, `<X>Limits.cs` | field checks, length and count constants |
+| `<X>Setup.cs` | dependency injection (`Features/Auth/AuthSetup.cs`) |
+| `<X>Access.cs` | access rules beyond universe roles (`Features/Projects/ProjectAccess.cs`) |
+
+- EF configuration: new code puts it in `<X>Configuration.cs`. Existing configurations
+  that sit beside their entity stay where they are; do not move them.
+- Access: first line of a universe handler is
+  `await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.<X>, ct)`
+  (`Features/Universes/UniverseAccess.cs`); return its result when not null. Projects use
+  `ProjectAccess`, World Logic uses `WorldLogicAccess`. Never re-decide a role in a handler.
+- Shared helpers, reuse before writing:
+  - `Common/`: `Problems.Field` (400 for one wrong field), `PrincipalExtensions.RequireUserId`,
+    `Sql.EscapeLike`, `UtcDates.Utc` (statically imported project-wide).
+  - `Features/Media/`: `ImagePreparation` (the one upload gate), `MediaObjectWrites`
+    (write and sweep objects), `MediaProblem.Unavailable` (the one 503). No feature
+    decodes or stores an image itself.
+  - `Features/Mcp/McpResults.cs`: results and errors for every MCP tool class.
+  - `Features/Lore/LoreEntries.IsLiveAsync` and `Features/ProjectEntities/CanonLink.CheckAsync`:
+    the checks for a link to a live lore entry.
+- Before adding a helper: search `Common/` and the owning feature first
+  (`Grep` the verb). A second copy is how duplicates appeared; move the first one up
+  instead.
+- Add the new files to `SYSTEMS.md`.
+
 ## Endpoints
 
 - Minimal APIs. Return `TypedResults`/`Results` with explicit status codes.
