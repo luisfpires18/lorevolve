@@ -56,6 +56,21 @@ internal sealed record ImageFrame(int AspectWidth, int AspectHeight, int MaxWidt
     /// same original.
     /// </summary>
     public static readonly ImageFrame Card = new(16, 10, 960, "card", "16:10");
+
+    /// <summary>
+    /// An image field's picture (Issue #238), fitted within <see cref="ImagePreparation.DisplaySide"/> on its long side. Free
+    /// has no aspect (0:0): <see cref="ImagePreparation.Place(ImageCrop?, int, int, ImageFrame)"/> skips only the shape rule.
+    /// </summary>
+    public static readonly ImageFrame FieldFree = new(0, 0, ImagePreparation.DisplaySide, "image", "any shape");
+
+    public static readonly ImageFrame FieldSquare = new(1, 1, ImagePreparation.DisplaySide, "image", "square");
+
+    public static readonly ImageFrame FieldFourByThree = new(4, 3, ImagePreparation.DisplaySide, "image", "4:3");
+
+    public static readonly ImageFrame FieldSixteenByNine = new(16, 9, ImagePreparation.DisplaySide, "image", "16:9");
+
+    /// <summary>No aspect: any rectangle inside the picture is the frame.</summary>
+    public bool IsFree => AspectWidth == 0;
 }
 
 /// <summary>
@@ -538,6 +553,11 @@ internal static class ImagePreparation
             return (default, $"The {frame.Noun} selection is smaller than a pixel.");
         }
 
+        if (frame.IsFree)
+        {
+            return (new CropRect(left, top, across, down), null);
+        }
+
         var slack = Math.Max(1, (int)Math.Ceiling(Math.Max(across, down) * 0.01));
 
         // How far the height is from the one the frame's shape gives this width. For the square
@@ -558,7 +578,8 @@ internal static class ImagePreparation
     /// Rounding cannot overshoot: the side it computes is at most the one it is measured against.
     /// </summary>
     private static (int Width, int Height) Fit(int across, int down, ImageFrame frame) =>
-        (long)across * frame.AspectHeight <= (long)down * frame.AspectWidth
+        frame.IsFree ? (across, down)
+        : (long)across * frame.AspectHeight <= (long)down * frame.AspectWidth
             ? (across, Math.Max(1, Pixel((double)across * frame.AspectHeight / frame.AspectWidth)))
             : (Math.Max(1, Pixel((double)down * frame.AspectWidth / frame.AspectHeight)), down);
 
@@ -588,16 +609,27 @@ internal static class ImagePreparation
         ImageFrame frame,
         CancellationToken cancellationToken)
     {
-        var outWidth = Math.Min(frame.MaxWidth, rect.Width);
-        var outHeight = outWidth == rect.Width
-            ? rect.Height
-            : Math.Max(1, Pixel((double)outWidth * frame.AspectHeight / frame.AspectWidth));
+        int outWidth, outHeight;
+        if (frame.IsFree)
+        {
+            // A free frame may be taller than wide, so its long side, not its width, is held to the frame's size.
+            var scale = Math.Min(1d, (double)frame.MaxWidth / Math.Max(rect.Width, rect.Height));
+            outWidth = Math.Max(1, Pixel(rect.Width * scale));
+            outHeight = Math.Max(1, Pixel(rect.Height * scale));
+        }
+        else
+        {
+            outWidth = Math.Min(frame.MaxWidth, rect.Width);
+            outHeight = outWidth == rect.Width
+                ? rect.Height
+                : Math.Max(1, Pixel((double)outWidth * frame.AspectHeight / frame.AspectWidth));
+        }
 
         image.Mutate(context =>
         {
             context.Crop(new Rectangle(rect.Left, rect.Top, rect.Width, rect.Height));
 
-            if (outWidth != rect.Width)
+            if (outWidth != rect.Width || outHeight != rect.Height)
             {
                 context.Resize(new ResizeOptions
                 {

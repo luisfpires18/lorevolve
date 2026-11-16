@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api'
-import type { EntityImageCrop, EntityImageRef } from './types'
+import type { EntityImageCrop, EntityImageRef, FieldImageRef } from './types'
 
 // Shared with the profile photo, which the same cropper frames and the same server code cuts.
 export { IMAGE_ACCEPT, IMAGE_MAX_BYTES } from '../lib/imageCrop'
@@ -83,4 +83,55 @@ export function setEntityThumbnail(
 
 export function removeEntityImage(universeId: string, entityId: string) {
   return apiFetch<void>(base(universeId, entityId), { method: 'DELETE' })
+}
+
+function fieldBase(universeId: string, entityId: string, fieldId: string) {
+  return `/api/universes/${universeId}/entities/${entityId}/field-images/${fieldId}`
+}
+
+/**
+ * Where one variant of an Image field's picture is served from: same-origin, authenticated, under `/api`, and named by
+ * ids that are minted fresh on every upload and every framing, exactly as `entityImageUrl` is.
+ */
+export function fieldImageUrl(
+  universeId: string,
+  entityId: string,
+  image: FieldImageRef,
+  variant: 'original' | 'crop',
+) {
+  const root = `${fieldBase(universeId, entityId, image.fieldId)}/${image.assetId}`
+  return variant === 'original' ? `${root}/original` : `${root}/crop/${image.cropId}`
+}
+
+/** Sets an Image field's picture on an entry that exists, replacing what it had. The file and its framing travel together. */
+export function setFieldImage(
+  universeId: string,
+  entityId: string,
+  fieldId: string,
+  file: File,
+  crop: EntityImageCrop,
+) {
+  const body = new FormData()
+  body.append('file', file)
+  body.append('crop', JSON.stringify(crop))
+
+  return apiFetch<FieldImageRef>(fieldBase(universeId, entityId, fieldId), { method: 'PUT', body })
+}
+
+/** Cuts a new framing from the picture the field already holds. `assetId` guards against a picture replaced meanwhile. */
+export function setFieldImageCrop(
+  universeId: string,
+  entityId: string,
+  fieldId: string,
+  assetId: string,
+  crop: EntityImageCrop,
+) {
+  return apiFetch<FieldImageRef>(`${fieldBase(universeId, entityId, fieldId)}/crop`, {
+    method: 'PUT',
+    body: JSON.stringify({ assetId, crop }),
+  })
+}
+
+export function removeFieldImage(universeId: string, entityId: string, fieldId: string) {
+  return apiFetch<void>(fieldBase(universeId, entityId, fieldId), { method: 'DELETE' })
 }

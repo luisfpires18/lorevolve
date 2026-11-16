@@ -392,8 +392,8 @@ public static class IdeaEndpoints
     }
 
     /// <summary>
-    /// Brings a deleted idea back as it was. Its universe is still its universe unless that universe was deleted meanwhile, in
-    /// which case it comes back unassigned with no references; a reference to something in the Trash is kept, marked.
+    /// Brings a deleted idea back as it was, in its universe; a reference to something in the Trash is kept, marked. Deleting
+    /// a universe deletes its ideas, so an idea with no universe cannot be restored (#230).
     /// </summary>
     private static async Task<IResult> RestoreAsync(
         Guid id,
@@ -404,7 +404,8 @@ public static class IdeaEndpoints
         var ownerId = principal.RequireUserId();
 
         var idea = await db.Ideas.FirstOrDefaultAsync(
-            candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt != null,
+            candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt != null
+                && candidate.UniverseId != null,
             cancellationToken);
         if (idea is null)
         {
@@ -554,20 +555,17 @@ public static class IdeaEndpoints
     {
         if (universeId is null)
         {
-            return references.Count == 0
-                ? null
-                : new Dictionary<string, string[]>
-                {
-                    ["references"] =
-                        ["An idea that belongs to no universe cannot reference anything. Remove the references, or choose a universe."],
-                };
+            return new Dictionary<string, string[]>
+            {
+                ["universeId"] = ["Choose one of your universes."],
+            };
         }
 
         if (!await OwnsUniverseAsync(db, universeId.Value, ownerId, cancellationToken))
         {
             return new Dictionary<string, string[]>
             {
-                ["universeId"] = ["Choose one of your universes, or none."],
+                ["universeId"] = ["Choose one of your universes."],
             };
         }
 

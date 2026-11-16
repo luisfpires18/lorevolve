@@ -306,7 +306,9 @@ export function itemPath(universeId: string, change: Change) {
   if (change.resource === ChangeResource.ValidationTerm) return `${universe}/types`
   if (change.action === ChangeAction.Remove) {
     // Everything removed waits in the Trash - an idea in its owner's deleted ideas - from where it comes back.
-    return change.resource === ChangeResource.Idea ? '/app/ideas' : `${universe}/trash`
+    return change.resource === ChangeResource.Idea
+      ? `${universe}/ideas?view=deleted`
+      : `${universe}/trash`
   }
   if (change.action === ChangeAction.Reorder) {
     if (!story) return null
@@ -336,6 +338,6 @@ export function itemPath(universeId: string, change: Change) {
     case ChangeResource.WorldRule:
       return `${universe}/world-rules/${id}`
     case ChangeResource.Idea:
-      return `/app/ideas/${id}`
+      return `${universe}/ideas/${id}`
   }
 }

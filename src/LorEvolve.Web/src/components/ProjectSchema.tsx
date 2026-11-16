@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Field } from './Field'
 import { ListTree, Pencil, Plus } from 'lucide-react'
 import {
   addProjectField,
@@ -11,6 +12,12 @@ import {
   saveProjectType,
 } from '../projectEntities/api'
 import { buildTypeTree, typePathLabel } from '../lore/typeTree'
+import {
+  FIELD_IMAGE_SHAPE_LABELS,
+  FIELD_IMAGE_SHAPE_ORDER,
+  FieldImageShape,
+  type FieldImageShapeValue,
+} from '../lore/types'
 import {
   FieldKind,
   type FieldKindValue,
@@ -34,6 +41,7 @@ const KINDS: readonly { kind: FieldKindValue; label: () => string }[] = [
   { kind: FieldKind.Date, label: () => t('projects.schema.kind.date') },
   { kind: FieldKind.Select, label: () => t('projects.schema.kind.select') },
   { kind: FieldKind.MultiSelect, label: () => t('projects.schema.kind.multiSelect') },
+  { kind: FieldKind.Image, label: () => t('projects.schema.kind.image') },
 ]
 
 function kindLabel(kind: FieldKindValue) {
@@ -429,6 +437,7 @@ function FieldForm({
     kind: FieldKindValue
     isRequired: boolean | null
     options: string[] | null
+    imageShape: FieldImageShapeValue | null
   }) => void
   onCancel: () => void
 }) {
@@ -437,6 +446,8 @@ function FieldForm({
   const [kind, setKind] = useState<FieldKindValue>(FieldKind.ShortText)
   const [options, setOptions] = useState('')
   const [required, setRequired] = useState(false)
+  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(FieldImageShape.Free)
+  const isImage = kind === FieldKind.Image
   const choosing = kind === FieldKind.Select || kind === FieldKind.MultiSelect
 
   return (
@@ -449,7 +460,9 @@ function FieldForm({
         onSubmit({
           name,
           kind,
-          isRequired: required,
+          // A picture is optional by nature: the API refuses a required Image field.
+          isRequired: isImage ? false : required,
+          imageShape: isImage ? imageShape : null,
           options: choosing
             ? options
                 .split('\n')
@@ -459,56 +472,84 @@ function FieldForm({
         })
       }}
     >
-      <label className="field">
-        <span className="field__label">{t('projects.schema.fieldName')}</span>
-        <input
-          className="field__input"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          data-testid="project-field-new-name"
-          required
-        />
-      </label>
+      <Field label={t('projects.schema.fieldName')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            data-testid="project-field-new-name"
+            required
+          />
+        )}
+      </Field>
 
-      <label className="field">
-        <span className="field__label">{t('projects.schema.fieldKind')}</span>
-        <select
-          className="field__input"
-          value={kind}
-          onChange={(event) => setKind(Number(event.target.value) as FieldKindValue)}
-          data-testid="project-field-new-kind"
-        >
-          {KINDS.map((each) => (
-            <option key={each.kind} value={each.kind}>
-              {each.label()}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Field label={t('projects.schema.fieldKind')}>
+        {(control) => (
+          <select
+            {...control}
+            className="field__input"
+            value={kind}
+            onChange={(event) => setKind(Number(event.target.value) as FieldKindValue)}
+            data-testid="project-field-new-kind"
+          >
+            {KINDS.map((each) => (
+              <option key={each.kind} value={each.kind}>
+                {each.label()}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
 
       {choosing ? (
-        <label className="field">
-          <span className="field__label">{t('projects.schema.fieldOptions')}</span>
-          <textarea
-            className="field__input"
-            value={options}
-            onChange={(event) => setOptions(event.target.value)}
-            data-testid="project-field-new-options"
-          />
-        </label>
+        <Field label={t('projects.schema.fieldOptions')}>
+          {(control) => (
+            <textarea
+              {...control}
+              className="field__input"
+              value={options}
+              onChange={(event) => setOptions(event.target.value)}
+              data-testid="project-field-new-options"
+            />
+          )}
+        </Field>
       ) : null}
 
-      <div className="field">
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={required}
-            onChange={(event) => setRequired(event.target.checked)}
-            data-testid="project-field-new-required"
-          />
-          <span>{t('projects.schema.fieldRequired')}</span>
-        </label>
-      </div>
+      {isImage ? (
+        <Field label={t('projects.schema.imageShape')} hint={t('projects.schema.imageShapeHint')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input"
+              value={imageShape}
+              onChange={(event) =>
+                setImageShape(Number(event.target.value) as FieldImageShapeValue)
+              }
+              data-testid="project-field-new-image-shape"
+            >
+              {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+                <option key={each} value={each}>
+                  {FIELD_IMAGE_SHAPE_LABELS[each]}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+      ) : (
+        <div className="field">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={required}
+              onChange={(event) => setRequired(event.target.checked)}
+              data-testid="project-field-new-required"
+            />
+            <span>{t('projects.schema.fieldRequired')}</span>
+          </label>
+        </div>
+      )}
 
       <div className="form__actions">
         <button

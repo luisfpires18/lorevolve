@@ -85,6 +85,11 @@ internal static class BackupNormalization
             ? payload.EntityTypes!
             : [.. payload.EntityTypes.Select(type => type is null ? null! : ProjectType(type, version))],
         Entities = payload.Entities is null ? null! : [.. payload.Entities.Select(entity => entity is null ? null! : ProjectEntity(entity, version))],
+
+        // Image fields arrived at version 48 (Issue #238): an older file has no field pictures, even when it carries some.
+        ProjectEntities = version >= 48 || payload.ProjectEntities is null
+            ? payload.ProjectEntities
+            : [.. payload.ProjectEntities.Select(entry => entry is null ? null! : entry with { FieldImages = null })],
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
             : [.. payload.RelationshipTypes.Select(type => type is null ? null! : ProjectRelationshipType(type, version))],
@@ -190,6 +195,7 @@ internal static class BackupNormalization
         ArticleUpdatedAt = version >= 9 ? entity.ArticleUpdatedAt : null,
         ArticleRevisions = version >= 9 ? entity.ArticleRevisions : null,
         PrivateNote = version >= 32 ? entity.PrivateNote : null,
+        FieldImages = version >= 48 ? entity.FieldImages : null,
         Progression = version < 27 || entity.Progression is null
             ? null
             : version >= 30 ? entity.Progression

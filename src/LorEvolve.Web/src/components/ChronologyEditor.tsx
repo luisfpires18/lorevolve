@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import { EmptyState } from './EmptyState'
 import { SaveAction } from './SaveAction'
 import { CanonBlockNotice } from './CanonBlockNotice'
@@ -397,136 +398,120 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
                   <div className="era__body">
                     <div className="era__fields">
-                      <div className="field">
-                        <label className="field__label" htmlFor={`${base}-name`}>
-                          {t('time.periods.name')}
-                        </label>
-                        <input
-                          id={`${base}-name`}
-                          className="field__input"
-                          placeholder={t('time.periods.namePlaceholder')}
-                          autoComplete="off"
-                          value={era.name}
-                          onChange={(event) => update(index, { name: event.target.value })}
-                          aria-invalid={fieldErrors[`${prefix}.name`] ? true : undefined}
-                          data-testid="era-name"
-                        />
-                        {fieldErrors[`${prefix}.name`] ? (
-                          <p className="field__error">{fieldErrors[`${prefix}.name`]}</p>
-                        ) : null}
-                      </div>
-
-                      <div className="field">
-                        <label className="field__label" htmlFor={`${base}-abbreviation`}>
-                          {t('time.periods.shortLabel')}
-                        </label>
-                        <input
-                          id={`${base}-abbreviation`}
-                          className="field__input"
-                          placeholder={t('time.periods.abbreviationPlaceholder')}
-                          autoComplete="off"
-                          value={era.abbreviation}
-                          onChange={(event) => update(index, { abbreviation: event.target.value })}
-                          aria-invalid={fieldErrors[`${prefix}.abbreviation`] ? true : undefined}
-                          aria-describedby={
-                            era.abbreviation.trim() ? undefined : `${base}-abbreviation-hint`
-                          }
-                          data-testid="era-abbreviation"
-                        />
-                        {/* Only while empty: once there is a label, Write dates as shows it in use. */}
-                        {era.abbreviation.trim() ? null : (
-                          <p className="field__hint" id={`${base}-abbreviation-hint`}>
-                            {t('time.periods.abbreviationHint')}
-                          </p>
+                      <Field
+                        label={t('time.periods.name')}
+                        id={`${base}-name`}
+                        error={fieldErrors[`${prefix}.name`]}
+                      >
+                        {(control) => (
+                          <input
+                            {...control}
+                            className="field__input"
+                            placeholder={t('time.periods.namePlaceholder')}
+                            autoComplete="off"
+                            value={era.name}
+                            onChange={(event) => update(index, { name: event.target.value })}
+                            data-testid="era-name"
+                          />
                         )}
-                        {fieldErrors[`${prefix}.abbreviation`] ? (
-                          <p className="field__error">{fieldErrors[`${prefix}.abbreviation`]}</p>
-                        ) : null}
-                      </div>
+                      </Field>
 
-                      <div className="field">
-                        <span className="field__label" id={`${base}-direction`}>
-                          {t('time.periods.yearsCount')}
-                        </span>
-                        <div
-                          className="segmented"
-                          role="group"
-                          aria-labelledby={`${base}-direction`}
-                          aria-describedby={`${base}-direction-hint`}
-                          data-testid="era-direction"
-                        >
-                          {DIRECTIONS.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              className="segmented__option"
-                              aria-pressed={era.direction === option.value}
-                              onClick={() => update(index, { direction: option.value })}
-                              data-testid={option.testId}
-                            >
-                              {option.label()}
-                            </button>
-                          ))}
-                        </div>
-                        <p
-                          className="field__hint era__run"
-                          id={`${base}-direction-hint`}
-                          data-testid="era-run"
-                        >
-                          {era.direction === EraDirection.Descending ? (
-                            <>
-                              <span className="era__sequence" aria-hidden="true">
-                                … → 3 → 2 → 1
-                              </span>
-                              <span className="visually-hidden">
-                                {t('time.periods.countDown.spoken')}
-                              </span>
-                              {t('time.periods.countDown.text')}
-                            </>
-                          ) : (
-                            <>
-                              <span className="era__sequence" aria-hidden="true">
-                                1 → 2 → 3 → …
-                              </span>
-                              <span className="visually-hidden">
-                                {t('time.periods.countUp.spoken')}
-                              </span>
-                              {t('time.periods.countUp.text')}
-                            </>
-                          )}
-                        </p>
-                      </div>
+                      {/* The hint shows only while empty: once there is a label, Write dates as shows it in use. */}
+                      <Field
+                        label={t('time.periods.shortLabel')}
+                        id={`${base}-abbreviation`}
+                        hint={
+                          era.abbreviation.trim() ? undefined : t('time.periods.abbreviationHint')
+                        }
+                        error={fieldErrors[`${prefix}.abbreviation`]}
+                      >
+                        {(control) => (
+                          <input
+                            {...control}
+                            className="field__input"
+                            placeholder={t('time.periods.abbreviationPlaceholder')}
+                            autoComplete="off"
+                            value={era.abbreviation}
+                            onChange={(event) =>
+                              update(index, { abbreviation: event.target.value })
+                            }
+                            data-testid="era-abbreviation"
+                          />
+                        )}
+                      </Field>
 
-                      <div className="field">
-                        <span className="field__label" id={`${base}-position`}>
-                          {t('time.periods.writeAs')}
-                        </span>
-                        <div
-                          className="segmented"
-                          role="group"
-                          aria-labelledby={`${base}-position`}
-                          data-testid="era-position"
-                        >
-                          {[EraLabelPosition.BeforeYear, EraLabelPosition.AfterYear].map(
-                            (position) => (
+                      <Field
+                        label={t('time.periods.yearsCount')}
+                        id={`${base}-direction`}
+                        group
+                        hint={
+                          <span className="era__run" data-testid="era-run">
+                            {era.direction === EraDirection.Descending ? (
+                              <>
+                                <span className="era__sequence" aria-hidden="true">
+                                  … → 3 → 2 → 1
+                                </span>
+                                <span className="visually-hidden">
+                                  {t('time.periods.countDown.spoken')}
+                                </span>
+                                {t('time.periods.countDown.text')}
+                              </>
+                            ) : (
+                              <>
+                                <span className="era__sequence" aria-hidden="true">
+                                  1 → 2 → 3 → …
+                                </span>
+                                <span className="visually-hidden">
+                                  {t('time.periods.countUp.spoken')}
+                                </span>
+                                {t('time.periods.countUp.text')}
+                              </>
+                            )}
+                          </span>
+                        }
+                      >
+                        {(control) => (
+                          <div className="segmented" {...control} data-testid="era-direction">
+                            {DIRECTIONS.map((option) => (
                               <button
-                                key={position}
+                                key={option.value}
                                 type="button"
                                 className="segmented__option"
-                                aria-pressed={era.labelPosition === position}
-                                onClick={() => update(index, { labelPosition: position })}
-                                data-testid={
-                                  position === EraLabelPosition.AfterYear
-                                    ? 'era-position-after'
-                                    : 'era-position-before'
-                                }
+                                aria-pressed={era.direction === option.value}
+                                onClick={() => update(index, { direction: option.value })}
+                                data-testid={option.testId}
                               >
-                                <ExampleYear label={label} position={position} />
+                                {option.label()}
                               </button>
-                            ),
-                          )}
-                        </div>
-                      </div>
+                            ))}
+                          </div>
+                        )}
+                      </Field>
+
+                      <Field label={t('time.periods.writeAs')} id={`${base}-position`} group>
+                        {(control) => (
+                          <div className="segmented" {...control} data-testid="era-position">
+                            {[EraLabelPosition.BeforeYear, EraLabelPosition.AfterYear].map(
+                              (position) => (
+                                <button
+                                  key={position}
+                                  type="button"
+                                  className="segmented__option"
+                                  aria-pressed={era.labelPosition === position}
+                                  onClick={() => update(index, { labelPosition: position })}
+                                  data-testid={
+                                    position === EraLabelPosition.AfterYear
+                                      ? 'era-position-after'
+                                      : 'era-position-before'
+                                  }
+                                >
+                                  <ExampleYear label={label} position={position} />
+                                </button>
+                              ),
+                            )}
+                          </div>
+                        )}
+                      </Field>
                     </div>
 
                     <div className="era__foot">

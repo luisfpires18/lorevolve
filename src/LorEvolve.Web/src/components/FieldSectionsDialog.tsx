@@ -4,8 +4,9 @@ import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { Drawer } from './Drawer'
 import { FIELD_LAYOUT_CHANGED_CODE, saveFieldLayout } from '../lore/api'
 import type { EntityType } from '../lore/types'
 
@@ -63,7 +64,6 @@ export function FieldSectionsDialog({
   onSaved: () => Promise<void>
 }) {
   const { t, tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const added = useRef(0)
   const [base, setBase] = useState(() => ({
     layout: layoutOf(type),
@@ -80,17 +80,7 @@ export function FieldSectionsDialog({
   const focusKey = useRef<string | null>(null)
 
   const isDirty = payloadKey({ sections, placed, order }) !== payloadKey(base.layout)
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    t('entityTypes.sections.leaveConfirm', { name: type.name }),
-    onClose,
-  )
-
   useReturnFocus()
-
-  useEffect(() => {
-    dialog.current?.showModal()
-  }, [])
 
   useEffect(() => {
     if (focusKey.current === null) return
@@ -238,230 +228,18 @@ export function FieldSectionsDialog({
     .filter((group) => group.fields.length > 0)
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="sections-heading"
-      {...dialogProps}
-      data-testid="sections-dialog"
-    >
-      <form
-        className="drawer__panel"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">
-            {tx('entityTypes.sections.eyebrow', { name: <bdi>{type.name}</bdi> })}
-          </p>
-          <h2 className="drawer__title" id="sections-heading">
-            {t('entityTypes.sections.title')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="sections-dialog-error">
-              {message}
-            </p>
-          ) : null}
-
-          {stale ? (
-            <div className="callout callout--warning" data-testid="sections-dialog-stale">
-              <p className="callout__title">{t('entityTypes.sections.savedNow')}</p>
-              <p className="fieldconflict__saved">
-                {type.fieldSections.length === 0
-                  ? t('entityTypes.sections.noneSaved')
-                  : type.fieldSections.map((section) => section.name).join(', ')}
-              </p>
-              <p className="types__blockedlinks">
-                <button
-                  className="button button--secondary button--sm"
-                  type="button"
-                  onClick={takeSaved}
-                  data-testid="sections-use-saved"
-                >
-                  {t('entityTypes.sections.useSaved')}
-                </button>
-                <button
-                  className="button button--text button--sm"
-                  type="button"
-                  onClick={keepMine}
-                  data-testid="sections-keep-mine"
-                >
-                  {t('entityTypes.sections.keepMine')}
-                </button>
-              </p>
-            </div>
-          ) : null}
-
-          <p className="field__hint">{t('entityTypes.sections.hint')}</p>
-
-          <section className="drawer__group" aria-labelledby="sections-list">
-            <h3 className="sectionrule sectionrule--accent" id="sections-list">
-              {t('entityTypes.sections.heading')}
-            </h3>
-            {sections.length === 0 ? (
-              <p className="settings__note">{t('entityTypes.sections.empty')}</p>
-            ) : (
-              <ol className="sectionlist">
-                {sections.map((section, index) => (
-                  <li
-                    className="sectionlist__row"
-                    key={section.key}
-                    data-testid={`section-row-${index}`}
-                  >
-                    <Field
-                      label={t('entityTypes.sections.sectionName')}
-                      name={`section-name-${section.key}`}
-                      dir="auto"
-                      value={section.name}
-                      onChange={(event) => patch(section.key, { name: event.target.value })}
-                      error={errors[section.key]}
-                      data-testid={`section-name-${index}`}
-                    />
-                    <label className="check">
-                      <input
-                        type="checkbox"
-                        checked={section.startsCollapsed}
-                        onChange={(event) =>
-                          patch(section.key, { startsCollapsed: event.target.checked })
-                        }
-                        data-testid={`section-collapsed-${index}`}
-                      />
-                      <span>{t('entityTypes.sections.startsCollapsed')}</span>
-                    </label>
-                    <span className="sectionlist__actions">
-                      <button
-                        className="iconbutton"
-                        type="button"
-                        onClick={() => move(index, -1)}
-                        disabled={index === 0}
-                        aria-label={t('entityTypes.sections.moveSectionUp', {
-                          name: sectionLabel(section, index),
-                        })}
-                        title={t('entityTypes.sections.moveUp')}
-                        data-testid={`section-up-${index}`}
-                      >
-                        <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                      </button>
-                      <button
-                        className="iconbutton"
-                        type="button"
-                        onClick={() => move(index, 1)}
-                        disabled={index === sections.length - 1}
-                        aria-label={t('entityTypes.sections.moveSectionDown', {
-                          name: sectionLabel(section, index),
-                        })}
-                        title={t('entityTypes.sections.moveDown')}
-                        data-testid={`section-down-${index}`}
-                      >
-                        <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                      </button>
-                      <button
-                        className="button button--text button--sm fieldlist__delete"
-                        type="button"
-                        onClick={() => remove(section.key)}
-                        aria-label={t('entityTypes.sections.removeSection', {
-                          name: sectionLabel(section, index),
-                        })}
-                        data-testid={`section-remove-${index}`}
-                      >
-                        <ActionIcon icon={Trash2} />
-                        {t('entityTypes.sections.remove')}
-                      </button>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-            <button
-              className="button button--secondary button--sm sectionlist__add"
-              type="button"
-              onClick={add}
-              data-testid="add-section"
-            >
-              <ActionIcon icon={Plus} />
-              {t('entityTypes.sections.add')}
-            </button>
-          </section>
-
-          {type.fields.length > 0 ? (
-            <section className="drawer__group" aria-labelledby="sections-fields">
-              <h3 className="sectionrule sectionrule--accent" id="sections-fields">
-                {t('entityTypes.sections.fields')}
-              </h3>
-              {groups.map((group) => (
-                <div className="sectionfields__group" key={group.key || 'none'}>
-                  <p className="sectionfields__label">
-                    <bdi>{group.label}</bdi>
-                  </p>
-                  <ol
-                    className="sectionfields"
-                    aria-label={t('entityTypes.sections.fieldsIn', { name: group.label })}
-                    data-testid={`fields-in-${group.label}`}
-                  >
-                    {group.fields.map((field, index) => (
-                      <li className="sectionfields__row" key={field.id}>
-                        <label
-                          className="sectionfields__name"
-                          htmlFor={`field-section-${field.id}`}
-                        >
-                          <bdi>{field.name}</bdi>
-                        </label>
-                        <select
-                          id={`field-section-${field.id}`}
-                          className="field__input field__input--select"
-                          value={placed[field.id] ?? ''}
-                          onChange={(event) => place(field.id, event.target.value)}
-                          data-testid={`place-${field.name}`}
-                        >
-                          <option value="">{t('entityTypes.sections.noSectionOption')}</option>
-                          {sections.map((section, at) => (
-                            <option key={section.key} value={section.key}>
-                              {sectionLabel(section, at)}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="sectionlist__actions">
-                          <button
-                            className="iconbutton"
-                            type="button"
-                            onClick={() => shift(field.id, -1)}
-                            disabled={index === 0}
-                            aria-label={t('entityTypes.sections.moveFieldUp', { name: field.name })}
-                            title={t('entityTypes.sections.moveFieldUpTitle')}
-                            data-testid={`field-up-${field.name}`}
-                          >
-                            <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                          </button>
-                          <button
-                            className="iconbutton"
-                            type="button"
-                            onClick={() => shift(field.id, 1)}
-                            disabled={index === group.fields.length - 1}
-                            aria-label={t('entityTypes.sections.moveFieldDown', {
-                              name: field.name,
-                            })}
-                            title={t('entityTypes.sections.moveFieldDownTitle')}
-                            data-testid={`field-down-${field.name}`}
-                          >
-                            <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                          </button>
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
-            </section>
-          ) : null}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="sections-dialog"
+      titleId="sections-heading"
+      eyebrow={tx('entityTypes.sections.eyebrow', { name: <bdi>{type.name}</bdi> })}
+      title={t('entityTypes.sections.title')}
+      isDirty={isDirty}
+      leaveMessage={t('entityTypes.sections.leaveConfirm', { name: type.name })}
+      onClose={onClose}
+      noValidate
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-sections">
             {isSaving ? t('entityTypes.sections.saving') : t('entityTypes.sections.save')}
           </button>
@@ -473,8 +251,202 @@ export function FieldSectionsDialog({
           >
             {t('entityTypes.sections.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid="sections-dialog-error">
+          {message}
+        </p>
+      ) : null}
+
+      {stale ? (
+        <div className="callout callout--warning" data-testid="sections-dialog-stale">
+          <p className="callout__title">{t('entityTypes.sections.savedNow')}</p>
+          <p className="fieldconflict__saved">
+            {type.fieldSections.length === 0
+              ? t('entityTypes.sections.noneSaved')
+              : type.fieldSections.map((section) => section.name).join(', ')}
+          </p>
+          <p className="types__blockedlinks">
+            <button
+              className="button button--secondary button--sm"
+              type="button"
+              onClick={takeSaved}
+              data-testid="sections-use-saved"
+            >
+              {t('entityTypes.sections.useSaved')}
+            </button>
+            <button
+              className="button button--text button--sm"
+              type="button"
+              onClick={keepMine}
+              data-testid="sections-keep-mine"
+            >
+              {t('entityTypes.sections.keepMine')}
+            </button>
+          </p>
+        </div>
+      ) : null}
+
+      <p className="field__hint">{t('entityTypes.sections.hint')}</p>
+
+      <section className="drawer__group" aria-labelledby="sections-list">
+        <h3 className="sectionrule sectionrule--accent" id="sections-list">
+          {t('entityTypes.sections.heading')}
+        </h3>
+        {sections.length === 0 ? (
+          <p className="settings__note">{t('entityTypes.sections.empty')}</p>
+        ) : (
+          <ol className="sectionlist">
+            {sections.map((section, index) => (
+              <li
+                className="sectionlist__row"
+                key={section.key}
+                data-testid={`section-row-${index}`}
+              >
+                <Field
+                  label={t('entityTypes.sections.sectionName')}
+                  name={`section-name-${section.key}`}
+                  dir="auto"
+                  value={section.name}
+                  onChange={(event) => patch(section.key, { name: event.target.value })}
+                  error={errors[section.key]}
+                  data-testid={`section-name-${index}`}
+                />
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={section.startsCollapsed}
+                    onChange={(event) =>
+                      patch(section.key, { startsCollapsed: event.target.checked })
+                    }
+                    data-testid={`section-collapsed-${index}`}
+                  />
+                  <span>{t('entityTypes.sections.startsCollapsed')}</span>
+                </label>
+                <span className="sectionlist__actions">
+                  <button
+                    className="iconbutton"
+                    type="button"
+                    onClick={() => move(index, -1)}
+                    disabled={index === 0}
+                    aria-label={t('entityTypes.sections.moveSectionUp', {
+                      name: sectionLabel(section, index),
+                    })}
+                    title={t('entityTypes.sections.moveUp')}
+                    data-testid={`section-up-${index}`}
+                  >
+                    <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                  </button>
+                  <button
+                    className="iconbutton"
+                    type="button"
+                    onClick={() => move(index, 1)}
+                    disabled={index === sections.length - 1}
+                    aria-label={t('entityTypes.sections.moveSectionDown', {
+                      name: sectionLabel(section, index),
+                    })}
+                    title={t('entityTypes.sections.moveDown')}
+                    data-testid={`section-down-${index}`}
+                  >
+                    <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                  </button>
+                  <button
+                    className="button button--text button--sm fieldlist__delete"
+                    type="button"
+                    onClick={() => remove(section.key)}
+                    aria-label={t('entityTypes.sections.removeSection', {
+                      name: sectionLabel(section, index),
+                    })}
+                    data-testid={`section-remove-${index}`}
+                  >
+                    <ActionIcon icon={Trash2} />
+                    {t('entityTypes.sections.remove')}
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+        <button
+          className="button button--secondary button--sm sectionlist__add"
+          type="button"
+          onClick={add}
+          data-testid="add-section"
+        >
+          <ActionIcon icon={Plus} />
+          {t('entityTypes.sections.add')}
+        </button>
+      </section>
+
+      {type.fields.length > 0 ? (
+        <section className="drawer__group" aria-labelledby="sections-fields">
+          <h3 className="sectionrule sectionrule--accent" id="sections-fields">
+            {t('entityTypes.sections.fields')}
+          </h3>
+          {groups.map((group) => (
+            <div className="sectionfields__group" key={group.key || 'none'}>
+              <p className="sectionfields__label">
+                <bdi>{group.label}</bdi>
+              </p>
+              <ol
+                className="sectionfields"
+                aria-label={t('entityTypes.sections.fieldsIn', { name: group.label })}
+                data-testid={`fields-in-${group.label}`}
+              >
+                {group.fields.map((field, index) => (
+                  <li className="sectionfields__row" key={field.id}>
+                    <label className="sectionfields__name" htmlFor={`field-section-${field.id}`}>
+                      <bdi>{field.name}</bdi>
+                    </label>
+                    <select
+                      id={`field-section-${field.id}`}
+                      className="field__input field__input--select"
+                      value={placed[field.id] ?? ''}
+                      onChange={(event) => place(field.id, event.target.value)}
+                      data-testid={`place-${field.name}`}
+                    >
+                      <option value="">{t('entityTypes.sections.noSectionOption')}</option>
+                      {sections.map((section, at) => (
+                        <option key={section.key} value={section.key}>
+                          {sectionLabel(section, at)}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="sectionlist__actions">
+                      <button
+                        className="iconbutton"
+                        type="button"
+                        onClick={() => shift(field.id, -1)}
+                        disabled={index === 0}
+                        aria-label={t('entityTypes.sections.moveFieldUp', { name: field.name })}
+                        title={t('entityTypes.sections.moveFieldUpTitle')}
+                        data-testid={`field-up-${field.name}`}
+                      >
+                        <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                      </button>
+                      <button
+                        className="iconbutton"
+                        type="button"
+                        onClick={() => shift(field.id, 1)}
+                        disabled={index === group.fields.length - 1}
+                        aria-label={t('entityTypes.sections.moveFieldDown', {
+                          name: field.name,
+                        })}
+                        title={t('entityTypes.sections.moveFieldDownTitle')}
+                        data-testid={`field-down-${field.name}`}
+                      >
+                        <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </section>
+      ) : null}
+    </Drawer>
   )
 }

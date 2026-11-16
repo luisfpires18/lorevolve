@@ -4,6 +4,7 @@ using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.FamilyTrees;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -589,6 +590,8 @@ public static class EntityEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CanonPromotionGate gate,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
@@ -601,10 +604,16 @@ public static class EntityEndpoints
             return refused;
         }
 
-        return await gate.RunAsync(
+        var result = await gate.RunAsync(
             universeId,
             token => UpdateCoreAsync(universeId, entityId, request, principal.RequireUserId(), db, token),
             cancellationToken);
+
+        // A change of type drops the pictures of fields the new type lacks (Issue #238); their objects go now that the gate
+        // has committed.
+        await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
+
+        return result;
     }
 
     /// <summary>The 409 for an entry save written over a version that is no longer current (ADR 0043).</summary>
@@ -728,6 +737,7 @@ public static class EntityEndpoints
             return overridden;
         }
 
+        var retyped = entity.EntityTypeId != request.EntityTypeId;
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -753,6 +763,13 @@ public static class EntityEndpoints
         await db.EntityFieldValues
             .Where(value => value.EntityId == entityId && value.FieldDefinition!.ArchivedAt == null)
             .ExecuteDeleteAsync(cancellationToken);
+
+        // A picture in a field the new type lacks goes with the retype (Issue #238). Every route that comes through here sweeps
+        // its objects after its commit (EntityFieldImageEndpoints.SweepDroppedAsync).
+        if (retyped)
+        {
+            await EntityFieldImageEndpoints.DropInapplicableAsync(db, universeId, entityId, request.EntityTypeId, projectId: null, cancellationToken);
+        }
 
         if (await ApplyAliasesTagsAndFieldsAsync(db, universeId, entity, request, cancellationToken)
             is { } problem)
@@ -1554,6 +1571,16 @@ public static class EntityEndpoints
                 break;
             }
 
+            // A picture is never a value (Issue #238): an empty input, as a form sends for every field, is not refused.
+            case EntityFieldKind.Image:
+                if (!string.IsNullOrWhiteSpace(input.Text) || input.Number is not null || input.Boolean is not null
+                    || input.Date is not null || input.OptionIds is { Count: > 0 } || input.ReferencedEntityId is not null)
+                {
+                    errors[definition.Id.ToString()] = [$"{definition.Name} is a picture and is set through its upload."];
+                }
+
+                break;
+
             default:
                 break;
         }
@@ -1689,6 +1716,19 @@ public static class EntityEndpoints
                     && relationship.RelationshipType!.FamilySemantic != RelationshipFamilySemantic.None
                     && ((relationship.SourceEntityId == candidate.Id && relationship.TargetEntity!.DeletedAt == null)
                         || (relationship.TargetEntityId == candidate.Id && relationship.SourceEntity!.DeletedAt == null))),
+                // Issue #238. An archived field's picture stays stored and out of the read, as its values do.
+                FieldImages = db.EntityFieldImages
+                    .Where(image => image.EntityId == candidate.Id && image.FieldDefinition!.ArchivedAt == null)
+                    .OrderBy(image => image.FieldDefinition!.DisplayOrder)
+                    .Select(image => new FieldImageRef(
+                        image.FieldDefinitionId,
+                        image.AssetId,
+                        image.CropId,
+                        image.Width,
+                        image.Height,
+                        new EntityImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight),
+                        image.FileName))
+                    .ToList(),
                 HasProgression = db.EntityEras.Any(era => era.EntityId == candidate.Id)
                     || db.EntityForms.Any(form => form.EntityId == candidate.Id)
                     || db.EntityAbilities.Any(ability => ability.EntityId == candidate.Id)
@@ -1741,6 +1781,7 @@ public static class EntityEndpoints
             entity.UpdatedAt,
             entity.HasFamilyConnections,
             entity.Version,
-            entity.HasProgression);
+            entity.HasProgression,
+            entity.FieldImages);
     }
 }

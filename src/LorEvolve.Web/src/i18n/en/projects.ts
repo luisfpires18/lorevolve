@@ -110,6 +110,8 @@ const projects = {
     fieldKind: 'What goes in it?',
     fieldOptions: 'Choices, one per line',
     fieldRequired: 'Required',
+    imageShape: 'Crop shape',
+    imageShapeHint: 'The frame each picture in this field is cropped to.',
     fieldSaving: 'Adding',
     deleteField: 'Delete field',
     kind: {
@@ -120,6 +122,7 @@ const projects = {
       date: 'Date',
       select: 'One choice',
       multiSelect: 'Several choices',
+      image: 'Image',
     },
   },
   seasons: {

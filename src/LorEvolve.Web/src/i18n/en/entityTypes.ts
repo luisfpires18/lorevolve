@@ -14,6 +14,13 @@ const entityTypes = {
     select: 'Choose one',
     multiSelect: 'Choose several',
     entityReference: 'Link to an entity',
+    image: 'Image',
+  },
+  imageShape: {
+    free: 'Free (keeps the picture shape)',
+    square: 'Square',
+    fourByThree: '4:3',
+    sixteenByNine: '16:9',
   },
   semantic: {
     birthYear: 'Birth year',
@@ -320,6 +327,9 @@ const entityTypes = {
     semanticHint:
       'Read by the Canon Integrity rules, never guessed from the field’s name. Most fields need none.',
     defaultText: 'Default text',
+    imageShape: 'Crop shape',
+    imageShapeHint:
+      'The frame each picture in this field is cropped to. Free keeps the shape of each picture.',
     defaultHint: 'Optional. New entries start with this text, and you can change it there.',
     requiredLabel: 'Required',
     requiredHint:

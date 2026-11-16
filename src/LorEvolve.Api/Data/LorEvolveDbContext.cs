@@ -116,6 +116,14 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<EntityAppearanceImage> EntityAppearanceImages => Set<EntityAppearanceImage>();
 
+    public DbSet<EntityFieldImage> EntityFieldImages => Set<EntityFieldImage>();
+
+    /// <summary>
+    /// Object keys of field pictures this request's saves stopped naming (Issue #238), for the route to sweep once its commit is
+    /// done (<see cref="EntityFieldImageEndpoints.SweepDroppedAsync"/>). Not mapped: a list in memory, scoped like the context.
+    /// </summary>
+    internal List<string> DroppedFieldImageKeys { get; } = [];
+
     public DbSet<UniverseMap> UniverseMaps => Set<UniverseMap>();
 
     public DbSet<MapPin> MapPins => Set<MapPin>();

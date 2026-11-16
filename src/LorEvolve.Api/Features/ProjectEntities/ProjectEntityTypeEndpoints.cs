@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +32,9 @@ public static class ProjectEntityTypeEndpoints
 
     /// <summary>The 409 for deleting a field that still holds values.</summary>
     public const string FieldInUseCode = "project_entity_field_in_use";
+
+    /// <summary>Stable marker for a type move that would take an inherited image field from entries holding pictures in it.</summary>
+    public const string InheritedPicturesCode = "project_entity_type_inherited_pictures";
 
     /// <summary>How many types one project may define, and how many fields one type may have.</summary>
     public const int MaxTypesPerProject = 200;
@@ -183,7 +187,8 @@ public static class ProjectEntityTypeEndpoints
         [
             .. field.Options.OrderBy(option => option.DisplayOrder).ThenBy(option => option.Value, StringComparer.Ordinal)
                 .Select(option => new ProjectEntityFieldOptionResponse(option.Id, option.Value, option.DisplayOrder)),
-        ]);
+        ],
+        field.ImageShape);
 
     private static async Task<IResult> CreateAsync(
         Guid projectId,
@@ -347,6 +352,30 @@ public static class ProjectEntityTypeEndpoints
             }
         }
 
+        // A move that takes an inherited image field from entries holding pictures in it is refused (Issue #238): nothing is
+        // dropped to make it. Values are not checked here, as before.
+        if (request.ParentId != type.ParentId)
+        {
+            var graph = types.ToDictionary(each => each.Id, each => each.ParentId);
+            var before = type.ParentId is { } oldParent ? EntityTypeHierarchy.Lineage(graph, oldParent) : [];
+            var after = request.ParentId is { } newParent ? EntityTypeHierarchy.Lineage(graph, newParent) : [];
+            var lost = before.Except(after).ToList();
+            var moving = EntityTypeHierarchy.Branch(graph, typeId).ToList();
+
+            if (lost.Count > 0
+                && await db.EntityFieldImages.IgnoreQueryFilters().AnyAsync(
+                    image => lost.Contains(image.FieldDefinition!.EntityTypeId) && moving.Contains(image.Entity!.EntityTypeId),
+                    cancellationToken))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status409Conflict,
+                    title: "Entries hold inherited pictures",
+                    detail: $"{type.Name} can't move there because its entries, or entries of a type nested in it, hold pictures "
+                        + "in an image field it inherits. It would no longer have that field. Remove those pictures first, or keep it where it is.",
+                    extensions: new Dictionary<string, object?> { ["code"] = InheritedPicturesCode });
+            }
+        }
+
         type.Name = name;
         type.Description = LoreValidation.Normalize(request.Description);
         type.Icon = LoreValidation.Normalize(request.Icon);
@@ -504,6 +533,7 @@ public static class ProjectEntityTypeEndpoints
             Kind = request.Kind,
             IsRequired = request.IsRequired ?? false,
             DisplayOrder = fields.Count == 0 ? 0 : fields.Max(each => each.DisplayOrder) + 1,
+            ImageShape = request.Kind == EntityFieldKind.Image ? request.ImageShape ?? FieldImageShape.Free : null,
         };
 
         db.EntityFieldDefinitions.Add(field);
@@ -579,7 +609,8 @@ public static class ProjectEntityTypeEndpoints
 
         // The kind is locked once the field holds a value: reinterpreting a stored number as a date would not convert
         // the data, it would change what it means.
-        var held = await db.EntityFieldValues.CountAsync(value => value.FieldDefinitionId == fieldId, cancellationToken);
+        var held = await db.EntityFieldValues.CountAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+            + await db.EntityFieldImages.CountAsync(image => image.FieldDefinitionId == fieldId, cancellationToken);
 
         if (held > 0 && field.Kind != request.Kind)
         {
@@ -593,6 +624,9 @@ public static class ProjectEntityTypeEndpoints
         field.Name = name;
         field.Kind = request.Kind;
         field.IsRequired = request.IsRequired ?? false;
+
+        // A new shape keeps the stored pictures as they are; the next crop uses it (Issue #238).
+        field.ImageShape = request.Kind == EntityFieldKind.Image ? request.ImageShape ?? field.ImageShape ?? FieldImageShape.Free : null;
 
         // The options a save sends are the complete set. Removing one an entry has chosen is refused rather than
         // silently clearing that entry's value.
@@ -654,6 +688,8 @@ public static class ProjectEntityTypeEndpoints
         Guid fieldId,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
@@ -688,8 +724,13 @@ public static class ProjectEntityTypeEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = FieldInUseCode });
         }
 
+        // An image field's pictures go with it (Issue #238): the rows with the field, the objects once that is saved.
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+        var pictureKeys = await EntityFieldImageEndpoints.DropFieldAsync(db, fieldId, cancellationToken);
         db.EntityFieldDefinitions.Remove(field);
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
 
         return Results.NoContent();
     }
@@ -899,6 +940,8 @@ public static class ProjectEntityTypeEndpoints
         {
             errors["options"] = ["Only a field of choices has choices."];
         }
+
+        LoreValidation.ValidateImageField(errors, request.Kind, request.ImageShape, request.IsRequired is true);
 
         return errors.Count == 0 ? null : errors;
     }

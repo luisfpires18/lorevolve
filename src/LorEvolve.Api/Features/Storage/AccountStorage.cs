@@ -45,13 +45,15 @@ public static partial class AccountStorage
         // Captured as queries, so EF Core folds them into the one statement as subqueries.
         var loreImages = LoreImageBytes(db, userId);
         var appearanceImages = AppearanceImageBytes(db, userId);
+        var fieldImages = FieldImageBytes(db, userId);
         var mapImages = MapImageBytes(db, userId);
 
         return db.Users
             .Where(user => user.Id == userId)
             .Select(user => new StorageUsage(
                 user.StorageQuotaBytes,
-                (loreImages.Sum(bytes => (long?)bytes) ?? 0) + (appearanceImages.Sum(bytes => (long?)bytes) ?? 0),
+                (loreImages.Sum(bytes => (long?)bytes) ?? 0) + (appearanceImages.Sum(bytes => (long?)bytes) ?? 0)
+                    + (fieldImages.Sum(bytes => (long?)bytes) ?? 0),
                 mapImages.Sum(bytes => (long?)bytes) ?? 0))
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -189,6 +191,12 @@ public static partial class AccountStorage
             .Where(image => image.Appearance!.Entity!.Universe!.OwnerId == ownerId)
             .Select(image => image.ByteSize);
 
+    /// <summary>The originals of every image field's picture in those universes (Issue #238), counted beside the Lore pictures.</summary>
+    private static IQueryable<long> FieldImageBytes(LorEvolveDbContext db, string ownerId) =>
+        db.EntityFieldImages.IgnoreQueryFilters()
+            .Where(image => image.Entity!.Universe!.OwnerId == ownerId)
+            .Select(image => image.ByteSize);
+
     /// <summary>The originals of every map in those universes (issue #52): the author's own files, as a picture's are. The derivative never counts.</summary>
     private static IQueryable<long> MapImageBytes(LorEvolveDbContext db, string ownerId) =>
         db.UniverseMaps
@@ -208,6 +216,7 @@ public static partial class AccountStorage
     {
         var loreImages = LoreImageBytes(db, ownerId);
         var appearanceImages = AppearanceImageBytes(db, ownerId);
+        var fieldImages = FieldImageBytes(db, ownerId);
         var mapImages = MapImageBytes(db, ownerId);
 
         var room = await db.Users
@@ -215,7 +224,8 @@ public static partial class AccountStorage
             .Select(user => new
             {
                 user.StorageQuotaBytes,
-                Stored = (loreImages.Sum(stored => (long?)stored) ?? 0) + (appearanceImages.Sum(stored => (long?)stored) ?? 0) + (mapImages.Sum(stored => (long?)stored) ?? 0),
+                Stored = (loreImages.Sum(stored => (long?)stored) ?? 0) + (appearanceImages.Sum(stored => (long?)stored) ?? 0) + (mapImages.Sum(stored => (long?)stored) ?? 0)
+                    + (fieldImages.Sum(stored => (long?)stored) ?? 0),
                 Held = db.StorageReservations
                     .Where(reservation => reservation.UserId == ownerId && reservation.ExpiresAt > now)
                     .Sum(reservation => (long?)reservation.Bytes) ?? 0,

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
 import Cropper, { type Area } from 'react-easy-crop'
 import 'react-easy-crop/react-easy-crop.css'
 import { Check, X } from 'lucide-react'
@@ -62,6 +62,7 @@ export function ImageCropDialog({
   hint,
   workingLabel,
   aspect = 1,
+  frameLabel,
   onConfirm,
   onCancel,
 }: {
@@ -72,6 +73,11 @@ export function ImageCropDialog({
    * 16:10 for its card. The server cuts the same shape and refuses any other.
    */
   aspect?: number
+  /**
+   * Names the frame when it is neither the square nor the card: an Image field's own crop shape. It labels the
+   * cropper and the preview, and the preview is drawn at the frame's own ratio.
+   */
+  frameLabel?: string
   /** Where the square starts. Null starts on the centred square. */
   initialCrop: ImageCrop | null
   title: string
@@ -230,7 +236,8 @@ export function ImageCropDialog({
                 // Names the control, not the errand: the dialog's own title and hint already say
                 // whether this square becomes a card's portrait or an avatar.
                 'aria-label':
-                  aspect === 1 ? t('account.crop.thumbnailSquare') : t('account.crop.cardFrame'),
+                  frameLabel ??
+                  (aspect === 1 ? t('account.crop.thumbnailSquare') : t('account.crop.cardFrame')),
                 'aria-describedby': hintId,
               }}
             />
@@ -262,7 +269,18 @@ export function ImageCropDialog({
           </div>
 
           <div className="cropper__previews" aria-hidden="true">
-            {aspect === 1 ? (
+            {frameLabel ? (
+              <>
+                <CroppedPicture
+                  className="cropper__preview"
+                  style={{ width: `${Math.min(3.25 * aspect, 9)}rem` }}
+                  source={source}
+                  crop={crop}
+                  testId="image-crop-preview"
+                />
+                <span className="cropper__caption">{frameLabel}</span>
+              </>
+            ) : aspect === 1 ? (
               <>
                 <CroppedPicture
                   className="cropper__preview"
@@ -367,15 +385,17 @@ export function CroppedPicture({
   source,
   crop,
   className,
+  style,
   testId,
 }: {
   source: string
   crop: ImageCrop | null
   className: string
+  style?: CSSProperties
   testId?: string
 }) {
   return (
-    <span className={`${className} cropped`} data-testid={testId}>
+    <span className={`${className} cropped`} style={style} data-testid={testId}>
       {crop ? (
         <img
           className="cropped__image"

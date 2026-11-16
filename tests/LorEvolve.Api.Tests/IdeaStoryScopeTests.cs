@@ -56,7 +56,6 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
             references: [Ref(IdeaReferenceKind.Scene, a.Scene), Ref(IdeaReferenceKind.Story, b.Id)]);
         await CreateIdea(client, "Story B only", universeId: universe.Id, references: [Ref(IdeaReferenceKind.PlotArc, b.Arc)]);
         await CreateIdea(client, "Universe only", universeId: universe.Id);
-        await CreateIdea(client, "Unassigned");
 
         // A title naming the story is never read: only references count.
         await CreateIdea(client, "Story A", "Story A scene, Story A arc.", universe.Id);
@@ -74,7 +73,7 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
 
         // The universe and account views are untouched: every idea is still there, once.
         Assert.Equal(8, (await ListIdeas(client, $"?universeId={universe.Id}")).TotalCount);
-        Assert.Equal(9, (await ListIdeas(client)).TotalCount);
+        Assert.Equal(8, (await ListIdeas(client)).TotalCount);
     }
 
     [Fact]
@@ -187,12 +186,14 @@ public sealed class IdeaStoryScopeTests(LorEvolveApiFactory factory) : IClassFix
         var a = await BuildStory(client, universe.Id, "Captured");
 
         // What the three lists send: a title, nothing else, and the place it was typed in.
-        var anywhere = await CreateIdea(client, "A loose thought");
+        // An idea lives only in a universe (#230), so the place is not optional.
+        var anywhere = await client.PostAsJsonAsync(Ideas, new IdeaRequest("A loose thought", null, null, null, null));
+        Assert.Equal(HttpStatusCode.BadRequest, anywhere.StatusCode);
+        Assert.Contains("universeId", await Errors(anywhere), StringComparison.Ordinal);
         var inUniverse = await CreateIdea(client, "A world thought", universeId: universe.Id, references: []);
         var inStory = await CreateIdea(
             client, "What if the council already knows?", universeId: universe.Id, references: [Ref(IdeaReferenceKind.Story, a.Id)]);
 
-        Assert.Equal(("", (Guid?)null, 0), (anywhere.Body, anywhere.Universe?.Id, anywhere.References.Count));
         Assert.Equal(("", (Guid?)universe.Id, 0), (inUniverse.Body, inUniverse.Universe?.Id, inUniverse.References.Count));
         Assert.Equal(("", (Guid?)universe.Id), (inStory.Body, inStory.Universe?.Id));
         Assert.Equal((IdeaReferenceKind.Story, a.Id), (inStory.References.Single().Kind, inStory.References.Single().Id));

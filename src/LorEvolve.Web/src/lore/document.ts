@@ -110,3 +110,8 @@ export function emptyValue(definition: FieldDefinition): FieldValueInput {
     eraId: null,
   }
 }
+
+/** The definitions a save sends values for: an Image field's picture is its own write, never a value. */
+export function valuedFields(definitions: FieldDefinition[]) {
+  return definitions.filter((definition) => definition.kind !== FieldKind.Image)
+}

@@ -15,6 +15,7 @@ Router only. No architecture detail and no operational state here.
 | Graphify, RTK and MCP server usage | `.claude/CLAUDE.md` |
 | How to run a phase | `.claude/skills/phase-workflow/SKILL.md` |
 | Backend conventions | `.claude/skills/aspnet-core-guidance/SKILL.md` |
+| Any UI change | `docs/design/ui-components.md` |
 
 ## Every session
 

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -184,6 +185,8 @@ public static class ProjectEntityEndpoints
         [FromBody] ProjectEntityRequest request,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
@@ -228,6 +231,13 @@ public static class ProjectEntityEndpoints
             return refused;
         }
 
+        // A picture in a field the new type lacks goes with the retype (Issue #238), its objects swept after the commit.
+        if (entity.EntityTypeId != request.EntityTypeId)
+        {
+            await EntityFieldImageEndpoints.DropInapplicableAsync(
+                db, project.UniverseId, entityId, request.EntityTypeId, projectId, cancellationToken);
+        }
+
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
         entity.Summary = LoreValidation.Normalize(request.Summary);
@@ -257,6 +267,7 @@ public static class ProjectEntityEndpoints
             db, entityId, EntityRevisionKind.Edited, restoredFromRevisionId: null, principal.RequireUserId(), cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+        await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
 
         var detail = await EntityEndpoints.LoadDetailAsync(
             db, project.UniverseId, entityId, cancellationToken, liveOnly: false, projectId);
@@ -411,6 +422,13 @@ public static class ProjectEntityEndpoints
         if (entity is null)
         {
             return Results.NotFound();
+        }
+
+        // An approved change that retypes the entry drops the pictures its new type has no field for; the approval route
+        // sweeps their objects after the proposal's commit.
+        if (entity.EntityTypeId != typeId)
+        {
+            await EntityFieldImageEndpoints.DropInapplicableAsync(db, universeId, entityId, typeId, projectId, cancellationToken);
         }
 
         entity.EntityTypeId = typeId;

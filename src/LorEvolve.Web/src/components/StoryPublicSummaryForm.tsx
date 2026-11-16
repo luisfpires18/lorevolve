@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
-import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { saveStoryPublicSummary } from '../publishing/api'
 import { useI18n } from '../i18n'
+import { Drawer } from './Drawer'
 import { PUBLIC_SUMMARY_MAX, type ContentPublicationState } from '../publishing/types'
 
 /**
@@ -27,23 +27,16 @@ export function StoryPublicSummaryForm({
   onSaved: (state: ContentPublicationState) => void
 }) {
   const { t } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const field = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState(summary ?? '')
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
   const isDirty = draft.trim() !== (summary ?? '').trim()
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    t('stories.summaryForm.leaveUnsaved'),
-    onClose,
-  )
 
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     field.current?.focus()
   }, [])
 
@@ -64,64 +57,17 @@ export function StoryPublicSummaryForm({
   }
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="story-public-summary-heading"
-      {...dialogProps}
-      data-testid="story-public-summary-form"
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('stories.summaryForm.eyebrow')}</p>
-          <h2 className="drawer__title" id="story-public-summary-heading">
-            <bdi>{title}</bdi>
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {error ? (
-            <p className="form__message" role="alert" data-testid="story-public-summary-error">
-              {error}
-            </p>
-          ) : null}
-
-          <div className="field">
-            <label className="field__label" htmlFor="story-public-summary">
-              {t('stories.summaryForm.label')}
-            </label>
-            <p className="field__hint" id="story-public-summary-hint">
-              {t('stories.summaryForm.hint')}
-            </p>
-            <textarea
-              id="story-public-summary"
-              className="field__input field__input--area"
-              ref={field}
-              rows={5}
-              dir="auto"
-              maxLength={PUBLIC_SUMMARY_MAX}
-              aria-describedby="story-public-summary-hint story-public-summary-count"
-              aria-invalid={error ? true : undefined}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              data-testid="story-public-summary-input"
-            />
-            <p className="field__hint" id="story-public-summary-count">
-              {t('stories.summaryForm.count', {
-                count: draft.trim().length,
-                max: PUBLIC_SUMMARY_MAX,
-              })}
-            </p>
-          </div>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="story-public-summary-form"
+      titleId="story-public-summary-heading"
+      eyebrow={t('stories.summaryForm.eyebrow')}
+      title={<bdi>{title}</bdi>}
+      isDirty={isDirty}
+      leaveMessage={t('stories.summaryForm.leaveUnsaved')}
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button
             className="button"
             type="submit"
@@ -138,8 +84,42 @@ export function StoryPublicSummaryForm({
           >
             {t('stories.summaryForm.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {error ? (
+        <p className="form__message" role="alert" data-testid="story-public-summary-error">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="field">
+        <label className="field__label" htmlFor="story-public-summary">
+          {t('stories.summaryForm.label')}
+        </label>
+        <p className="field__hint" id="story-public-summary-hint">
+          {t('stories.summaryForm.hint')}
+        </p>
+        <textarea
+          id="story-public-summary"
+          className="field__input field__input--area"
+          ref={field}
+          rows={5}
+          dir="auto"
+          maxLength={PUBLIC_SUMMARY_MAX}
+          aria-describedby="story-public-summary-hint story-public-summary-count"
+          aria-invalid={error ? true : undefined}
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          data-testid="story-public-summary-input"
+        />
+        <p className="field__hint" id="story-public-summary-count">
+          {t('stories.summaryForm.count', {
+            count: draft.trim().length,
+            max: PUBLIC_SUMMARY_MAX,
+          })}
+        </p>
+      </div>
+    </Drawer>
   )
 }

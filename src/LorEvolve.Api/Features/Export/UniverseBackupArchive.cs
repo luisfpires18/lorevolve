@@ -38,6 +38,10 @@ public static class BackupArchive
     public static string AppearanceMediaPathFor(Guid entityId, Guid imageId, string contentType) =>
         $"media/entities/{entityId:D}/appearances/{imageId:D}/original.{ExtensionFor(contentType)}";
 
+    /// <summary>The original of one entry's picture in one image field, inside the archive (since version 48).</summary>
+    public static string FieldImageMediaPathFor(Guid entityId, Guid fieldId, string contentType) =>
+        $"media/entities/{entityId:D}/fields/{fieldId:D}/original.{ExtensionFor(contentType)}";
+
     /// <summary>The original of one map's picture, inside the archive (since version 34).</summary>
     public static string MapMediaPathFor(Guid mapId, string contentType) =>
         $"media/maps/{mapId:D}/original.{ExtensionFor(contentType)}";

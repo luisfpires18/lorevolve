@@ -110,6 +110,8 @@ const projects = {
     fieldKind: 'O que vai lá dentro?',
     fieldOptions: 'Opções, uma por linha',
     fieldRequired: 'Obrigatório',
+    imageShape: 'Forma do recorte',
+    imageShapeHint: 'O enquadramento a que cada imagem deste campo é recortada.',
     fieldSaving: 'A acrescentar',
     deleteField: 'Apagar campo',
     kind: {
@@ -120,6 +122,7 @@ const projects = {
       date: 'Data',
       select: 'Uma opção',
       multiSelect: 'Várias opções',
+      image: 'Imagem',
     },
   },
   seasons: {

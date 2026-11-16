@@ -5,7 +5,7 @@ import { EditConflict, LatestText } from './EditConflict'
 import { SaveAction } from './SaveAction'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
-import { useDrawerGuard } from '../lib/drawerGuard'
+import { Drawer } from './Drawer'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import {
@@ -76,7 +76,6 @@ type LoadState = 'loading' | 'ready' | 'error'
 
 function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerProps) {
   const { t } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const editor = useRef<HTMLTextAreaElement>(null)
   const headingId = useId()
   const textId = useId()
@@ -103,17 +102,7 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
   const isDirty = isReady && draft !== stored.content
   const isTooLong = draft.length > PRIVATE_NOTE_MAX_LENGTH
 
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    t('entity.privateNote.discardGuard'),
-    onClose,
-  )
-
   useReturnFocus()
-
-  useEffect(() => {
-    dialog.current?.showModal()
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -189,141 +178,129 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
   const describedBy = [hintId, statusId, isTooLong ? tooLongId : null].filter(Boolean).join(' ')
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby={headingId}
-      {...dialogProps}
-      data-testid="private-note-drawer"
+    <Drawer
+      testId="private-note-drawer"
+      titleId={headingId}
+      eyebrow={t('entity.privateNote.eyebrow')}
+      title={<bdi>{entryName}</bdi>}
+      context={
+        <p className="drawer__context" id={hintId}>
+          {t('entity.privateNote.privacy')}
+        </p>
+      }
+      isDirty={isDirty}
+      leaveMessage={t('entity.privateNote.discardGuard')}
+      onClose={onClose}
+      actions={(close) => (
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={close}
+          data-testid="private-note-close"
+        >
+          {t('entity.privateNote.close')}
+        </button>
+      )}
     >
-      <div className="drawer__panel">
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('entity.privateNote.eyebrow')}</p>
-          <h2 className="drawer__title" id={headingId}>
-            <bdi>{entryName}</bdi>
-          </h2>
-          <p className="drawer__context" id={hintId}>
-            {t('entity.privateNote.privacy')}
-          </p>
-        </header>
+      {load === 'loading' ? (
+        <p className="notice" role="status" data-testid="private-note-loading">
+          {t('entity.privateNote.opening')}
+        </p>
+      ) : null}
 
-        <div className="drawer__body">
-          {load === 'loading' ? (
-            <p className="notice" role="status" data-testid="private-note-loading">
-              {t('entity.privateNote.opening')}
+      {load === 'error' ? (
+        <div className="notice notice--error" role="alert" data-testid="private-note-load-error">
+          <p>{t('entity.privateNote.openFailed')}</p>
+          <button className="button button--secondary" type="button" onClick={reread}>
+            {t('entity.privateNote.retry')}
+          </button>
+        </div>
+      ) : null}
+
+      {isReady ? (
+        <form
+          className="reviewform privatenote"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void save()
+          }}
+          onKeyDown={onKeyDown}
+        >
+          {conflict ? (
+            <EditConflict
+              what={t('entity.privateNote.what')}
+              read={() => getPrivateNote(universeId, entityId)}
+              renderLatest={(latest) => (
+                <LatestText label={t('entity.privateNote.latestLabel')}>
+                  {latest.content === '' ? (
+                    <p className="entry__blank">{t('entity.privateNote.latestBlank')}</p>
+                  ) : (
+                    <div className="recovery__prose prose" dir="auto">
+                      {latest.content}
+                    </div>
+                  )}
+                </LatestText>
+              )}
+              onKeepMine={keepMine}
+              onUseLatest={reread}
+              testId="private-note-conflict"
+            />
+          ) : null}
+
+          {failure ? (
+            <p className="form__message" role="alert" data-testid="private-note-error">
+              {failure}
             </p>
           ) : null}
 
-          {load === 'error' ? (
-            <div
-              className="notice notice--error"
-              role="alert"
-              data-testid="private-note-load-error"
-            >
-              <p>{t('entity.privateNote.openFailed')}</p>
-              <button className="button button--secondary" type="button" onClick={reread}>
-                {t('entity.privateNote.retry')}
-              </button>
-            </div>
+          <label className="field__label" htmlFor={textId}>
+            {t('entity.privateNote.field')}
+          </label>
+          <textarea
+            ref={editor}
+            id={textId}
+            className="field__input field__input--area privatenote__text"
+            rows={12}
+            dir="auto"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={t('entity.privateNote.placeholder')}
+            spellCheck
+            aria-describedby={describedBy}
+            aria-invalid={isTooLong ? true : undefined}
+            aria-keyshortcuts="Control+S Meta+S"
+            data-testid="private-note-text"
+          />
+
+          {isTooLong ? (
+            <p className="field__error" id={tooLongId} data-testid="private-note-too-long">
+              {t('entity.privateNote.tooLong', {
+                used: count(draft.length),
+                max: count(PRIVATE_NOTE_MAX_LENGTH),
+              })}
+            </p>
           ) : null}
 
-          {isReady ? (
-            <form
-              className="reviewform privatenote"
-              onSubmit={(event) => {
-                event.preventDefault()
-                void save()
-              }}
-              onKeyDown={onKeyDown}
-            >
-              {conflict ? (
-                <EditConflict
-                  what={t('entity.privateNote.what')}
-                  read={() => getPrivateNote(universeId, entityId)}
-                  renderLatest={(latest) => (
-                    <LatestText label={t('entity.privateNote.latestLabel')}>
-                      {latest.content === '' ? (
-                        <p className="entry__blank">{t('entity.privateNote.latestBlank')}</p>
-                      ) : (
-                        <div className="recovery__prose prose" dir="auto">
-                          {latest.content}
-                        </div>
-                      )}
-                    </LatestText>
-                  )}
-                  onKeepMine={keepMine}
-                  onUseLatest={reread}
-                  testId="private-note-conflict"
-                />
-              ) : null}
-
-              {failure ? (
-                <p className="form__message" role="alert" data-testid="private-note-error">
-                  {failure}
-                </p>
-              ) : null}
-
-              <label className="field__label" htmlFor={textId}>
-                {t('entity.privateNote.field')}
-              </label>
-              <textarea
-                ref={editor}
-                id={textId}
-                className="field__input field__input--area privatenote__text"
-                rows={12}
-                dir="auto"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder={t('entity.privateNote.placeholder')}
-                spellCheck
-                aria-describedby={describedBy}
-                aria-invalid={isTooLong ? true : undefined}
-                aria-keyshortcuts="Control+S Meta+S"
-                data-testid="private-note-text"
-              />
-
-              {isTooLong ? (
-                <p className="field__error" id={tooLongId} data-testid="private-note-too-long">
-                  {t('entity.privateNote.tooLong', {
-                    used: count(draft.length),
-                    max: count(PRIVATE_NOTE_MAX_LENGTH),
-                  })}
-                </p>
-              ) : null}
-
-              <div className="privatenote__bar">
-                <SaveAction
-                  label={t('entity.privateNote.save')}
-                  isDirty={isDirty}
-                  isSaving={isSaving}
-                  isBlocked={isTooLong}
-                  saves={saves}
-                  restingStatus={
-                    stored.updatedAt === null
-                      ? t('entity.privateNote.nothingSaved')
-                      : t('entity.privateNote.savedAt', { when: formatDateTime(stored.updatedAt) })
-                  }
-                  statusId={statusId}
-                  statusTestId="private-note-status"
-                  testId="private-note-save"
-                  keyShortcuts="Control+S Meta+S"
-                />
-              </div>
-            </form>
-          ) : null}
-        </div>
-
-        <footer className="drawer__actions">
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => void close()}
-            data-testid="private-note-close"
-          >
-            {t('entity.privateNote.close')}
-          </button>
-        </footer>
-      </div>
-    </dialog>
+          <div className="privatenote__bar">
+            <SaveAction
+              label={t('entity.privateNote.save')}
+              isDirty={isDirty}
+              isSaving={isSaving}
+              isBlocked={isTooLong}
+              saves={saves}
+              restingStatus={
+                stored.updatedAt === null
+                  ? t('entity.privateNote.nothingSaved')
+                  : t('entity.privateNote.savedAt', { when: formatDateTime(stored.updatedAt) })
+              }
+              statusId={statusId}
+              statusTestId="private-note-status"
+              testId="private-note-save"
+              keyShortcuts="Control+S Meta+S"
+            />
+          </div>
+        </form>
+      ) : null}
+    </Drawer>
   )
 }

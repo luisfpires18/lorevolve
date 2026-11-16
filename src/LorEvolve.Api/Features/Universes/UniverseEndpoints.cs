@@ -361,12 +361,14 @@ public static partial class UniverseEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = NotArchivedCode });
         }
 
-        // Ideas belong to the account, not to the universe (ADR 0030): every idea about this
-        // universe stays, unassigned, and only its references - to content deleted below - go; so does
-        // every board, without its entry cards (ADR 0066).
-        // Same transaction, so no idea can be left pointing into a universe that is gone.
-        await IdeaReferences.ReleaseUniverseAsync(db, universe.Id, cancellationToken);
-        await IdeaBoardEndpoints.ReleaseUniverseAsync(db, universe.Id, cancellationToken);
+        // Ideas and boards live only in a universe (#230): they go with it, with their references and cards (cascade).
+        // Same transaction, so nothing is left pointing into a universe that is gone.
+        await db.Ideas
+            .Where(idea => idea.UniverseId == universe.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+        await db.IdeaBoards
+            .Where(board => board.UniverseId == universe.Id)
+            .ExecuteDeleteAsync(cancellationToken);
 
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
         var pictureKeys = (await db.EntityImages
@@ -379,6 +381,12 @@ public static partial class UniverseEndpoints
                     .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                     .ToListAsync(cancellationToken))
                 .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>()))
+            // An image field's pictures (Issue #238), project entries' included: the entry filter is lifted.
+            .Concat((await db.EntityFieldImages.IgnoreQueryFilters()
+                    .Where(image => image.Entity!.UniverseId == universe.Id)
+                    .Select(image => new { image.OriginalKey, image.CropKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks

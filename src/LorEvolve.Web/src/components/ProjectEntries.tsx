@@ -1,12 +1,16 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Field } from './Field'
 import { Link, useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import {
   createProjectEntity,
   deleteProjectEntity,
+  getProjectEntity,
   listProjectEntities,
   listProjectTypes,
 } from '../projectEntities/api'
+import { setFieldImage } from '../lore/images'
+import type { FieldImageRef } from '../lore/types'
 import {
   FieldKind,
   type FieldValueInput,
@@ -17,6 +21,7 @@ import {
 import { buildTypeTree } from '../lore/typeTree'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { FieldImageInput, type PendingFieldImage } from './FieldImageInput'
 import { EmptyState } from './EmptyState'
 import { EntityCardBody } from './EntityCard'
 import { t, tx, useI18n } from '../i18n'
@@ -35,6 +40,7 @@ const ENTRY_LIST_CEILING = 500
  */
 export function ProjectEntries({
   projectId,
+  universeId,
   fixedTypeId,
   openEntryId,
   reloadKey,
@@ -42,6 +48,8 @@ export function ProjectEntries({
   crumb,
 }: {
   projectId: string
+  /** The universe the project belongs to: an entry's pictures are stored under it. */
+  universeId: string
   /** Set when the author opened one type's card: only its entries are listed and no other type is offered (#196). */
   fixedTypeId?: string
   /**
@@ -68,6 +76,8 @@ export function ProjectEntries({
   const [summary, setSummary] = useState('')
   const [adding, setAdding] = useState(false)
   const [values, setValues] = useState<Record<string, FieldValueInput>>({})
+  // An Image field's picture waits here until the entry exists, by field id: it is its own write after the create.
+  const [pendingImages, setPendingImages] = useState<Record<string, PendingFieldImage>>({})
 
   useEffect(() => {
     const controller = new AbortController()
@@ -159,7 +169,7 @@ export function ProjectEntries({
       .catch(failing)
   }
 
-  function refresh() {
+  function refresh(notice: string | null = null) {
     if (typeId === null) return
     // A write re-reads as many rows as were already open, so the author keeps their place in a long list.
     const shown = Math.max(entries?.length ?? 0, ENTRY_PAGE_SIZE)
@@ -167,7 +177,7 @@ export function ProjectEntries({
       .then((read) => {
         showing(read, shown)
         setBusy(false)
-        setFailed(null)
+        setFailed(notice)
         onChanged?.()
       })
       .catch(failing)
@@ -249,6 +259,9 @@ export function ProjectEntries({
   // A type's own fields and the ones it inherits are both filled in on an entry; they differ only in where they are
   // defined, which is the Types screen's business and not this one's.
   const fields: ProjectField[] = type ? [...type.fields, ...type.inheritedFields] : []
+  const imageFieldIds = new Set(
+    fields.filter((one) => one.kind === FieldKind.Image).map((one) => one.id),
+  )
   // The types above this one, each a link to its own list, as Lore's path reads above a type's list.
   const ancestors = (type && buildTypeTree(types).byId.get(type.id)?.path.slice(0, -1)) || []
 
@@ -281,24 +294,27 @@ export function ProjectEntries({
       ) : null}
 
       {fixedTypeId ? null : (
-        <label className="field">
-          <span className="field__label">{t('projects.entries.ofType')}</span>
-          <select
-            className="field__input"
-            value={typeId ?? ''}
-            onChange={(event) => {
-              setTypeId(event.target.value)
-              setValues({})
-            }}
-            data-testid="project-entries-type"
-          >
-            {types.map((each) => (
-              <option key={each.id} value={each.id}>
-                {each.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Field label={t('projects.entries.ofType')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input"
+              value={typeId ?? ''}
+              onChange={(event) => {
+                setTypeId(event.target.value)
+                setValues({})
+                setPendingImages({})
+              }}
+              data-testid="project-entries-type"
+            >
+              {types.map((each) => (
+                <option key={each.id} value={each.id}>
+                  {each.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       )}
 
       {/*
@@ -318,52 +334,94 @@ export function ProjectEntries({
               name,
               summary: summary.length > 0 ? summary : null,
               canonEntityId: null,
-              fields: Object.values(values),
+              // A picture is never a value: it is uploaded below, once the entry has an id.
+              fields: Object.values(values).filter(
+                (one) => !imageFieldIds.has(one.fieldDefinitionId),
+              ),
               expectedVersion: null,
             })
-              .then(() => {
+              .then(async (created) => {
+                // Each picture is its own write and may fail on its own: the entry is already stored.
+                const refused: string[] = []
+                for (const [fieldId, held] of Object.entries(pendingImages)) {
+                  try {
+                    await setFieldImage(universeId, created.id, fieldId, held.file, held.crop)
+                  } catch {
+                    refused.push(fields.find((one) => one.id === fieldId)?.name ?? '')
+                  }
+                }
                 setName('')
                 setSummary('')
                 setValues({})
+                setPendingImages({})
                 setAdding(false)
-                refresh()
+                refresh(
+                  refused.length > 0
+                    ? t('entity.fieldImage.uploadFailed', { name: refused.join(', ') })
+                    : null,
+                )
               })
               .catch(failing)
           }}
         >
-          <label className="field">
-            <span className="field__label">{t('projects.entries.name')}</span>
-            <input
-              className="field__input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="project-entry-new-name"
-              required
-            />
-          </label>
+          <Field label={t('projects.entries.name')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                data-testid="project-entry-new-name"
+                required
+              />
+            )}
+          </Field>
 
-          <label className="field">
-            <span className="field__label">{t('projects.entries.summary')}</span>
-            <input
-              className="field__input"
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              data-testid="project-entry-new-summary"
-            />
-          </label>
+          <Field label={t('projects.entries.summary')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={summary}
+                onChange={(event) => setSummary(event.target.value)}
+                data-testid="project-entry-new-summary"
+              />
+            )}
+          </Field>
 
           {fields.length > 0 ? (
             <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
           ) : null}
 
-          {fields.map((field) => (
-            <ValueField
-              key={field.id}
-              field={field}
-              value={values[field.id]}
-              onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
-            />
-          ))}
+          {fields.map((field) =>
+            field.kind === FieldKind.Image ? (
+              <FieldImageInput
+                key={field.id}
+                universeId={universeId}
+                entityId={null}
+                fieldId={field.id}
+                name={field.name}
+                shape={field.imageShape}
+                image={null}
+                pending={pendingImages[field.id] ?? null}
+                onPending={(held) =>
+                  setPendingImages((current) => {
+                    const { [field.id]: _dropped, ...rest } = current
+                    return held ? { ...rest, [field.id]: held } : rest
+                  })
+                }
+                onChanged={() => undefined}
+                disabled={busy}
+              />
+            ) : (
+              <ValueField
+                key={field.id}
+                field={field}
+                value={values[field.id]}
+                onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
+              />
+            ),
+          )}
 
           <div className="form__actions">
             <button
@@ -433,7 +491,9 @@ export function ProjectEntries({
                       data-testid={`project-entry-delete-${entry.id}`}
                       onClick={() => {
                         setBusy(true)
-                        deleteProjectEntity(projectId, entry.id).then(refresh).catch(failing)
+                        deleteProjectEntity(projectId, entry.id)
+                          .then(() => refresh())
+                          .catch(failing)
                       }}
                     >
                       {t('projects.entries.delete')}
@@ -441,6 +501,15 @@ export function ProjectEntries({
                   </ActionMenu>
                 </div>
               </div>
+              {imageFieldIds.size > 0 ? (
+                <EntryPictures
+                  projectId={projectId}
+                  universeId={universeId}
+                  entryId={entry.id}
+                  fields={fields.filter((one) => one.kind === FieldKind.Image)}
+                  busy={busy}
+                />
+              ) : null}
             </li>
           ))}
         </ul>
@@ -457,6 +526,63 @@ export function ProjectEntries({
         </button>
       ) : null}
     </section>
+  )
+}
+
+/**
+ * An entry's pictures, one per Image field of its type: read from the entry itself, because the list carries no
+ * pictures. Each is the field's own control, so a picture can be replaced, recropped or removed where it is read.
+ */
+function EntryPictures({
+  projectId,
+  universeId,
+  entryId,
+  fields,
+  busy,
+}: {
+  projectId: string
+  universeId: string
+  entryId: string
+  fields: ProjectField[]
+  busy: boolean
+}) {
+  const [pictures, setPictures] = useState<FieldImageRef[] | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getProjectEntity(projectId, entryId, controller.signal)
+      .then((read) => setPictures(read.fieldImages))
+      .catch(() => {
+        if (!controller.signal.aborted) setPictures([])
+      })
+    return () => controller.abort()
+  }, [projectId, entryId])
+
+  if (pictures === null) return null
+
+  return (
+    <div className="entry__fieldimages" data-testid={`project-entry-images-${entryId}`}>
+      {fields.map((field) => (
+        <FieldImageInput
+          key={field.id}
+          universeId={universeId}
+          entityId={entryId}
+          fieldId={field.id}
+          name={field.name}
+          shape={field.imageShape}
+          image={pictures.find((one) => one.fieldId === field.id) ?? null}
+          pending={null}
+          onPending={() => undefined}
+          onChanged={(picture) =>
+            setPictures((current) => [
+              ...(current ?? []).filter((one) => one.fieldId !== field.id),
+              ...(picture ? [picture] : []),
+            ])
+          }
+          disabled={busy}
+        />
+      ))}
+    </div>
   )
 }
 
@@ -539,48 +665,48 @@ function ValueField({
   }
 
   return (
-    <label className="field">
-      <span className="field__label">
-        {field.name}
-        {field.isRequired ? ' *' : ''}
-      </span>
-      {field.kind === FieldKind.LongText ? (
-        <textarea
-          className="field__input"
-          value={current.text ?? ''}
-          data-testid={testId}
-          onChange={(event) => onChange({ ...blank, text: event.target.value })}
-        />
-      ) : (
-        <input
-          className="field__input"
-          type={
-            field.kind === FieldKind.Number
-              ? 'number'
-              : field.kind === FieldKind.Date
-                ? 'date'
-                : 'text'
-          }
-          value={
-            field.kind === FieldKind.Number
-              ? (current.number?.toString() ?? '')
-              : field.kind === FieldKind.Date
-                ? (current.date ?? '')
-                : (current.text ?? '')
-          }
-          data-testid={testId}
-          onChange={(event) => {
-            const raw = event.target.value
-            onChange(
+    <Field label={`${field.name}${field.isRequired ? ' *' : ''}`}>
+      {(control) =>
+        field.kind === FieldKind.LongText ? (
+          <textarea
+            {...control}
+            className="field__input"
+            value={current.text ?? ''}
+            data-testid={testId}
+            onChange={(event) => onChange({ ...blank, text: event.target.value })}
+          />
+        ) : (
+          <input
+            {...control}
+            className="field__input"
+            type={
               field.kind === FieldKind.Number
-                ? { ...blank, number: raw.length > 0 ? Number(raw) : null }
+                ? 'number'
                 : field.kind === FieldKind.Date
-                  ? { ...blank, date: raw.length > 0 ? raw : null }
-                  : { ...blank, text: raw },
-            )
-          }}
-        />
-      )}
-    </label>
+                  ? 'date'
+                  : 'text'
+            }
+            value={
+              field.kind === FieldKind.Number
+                ? (current.number?.toString() ?? '')
+                : field.kind === FieldKind.Date
+                  ? (current.date ?? '')
+                  : (current.text ?? '')
+            }
+            data-testid={testId}
+            onChange={(event) => {
+              const raw = event.target.value
+              onChange(
+                field.kind === FieldKind.Number
+                  ? { ...blank, number: raw.length > 0 ? Number(raw) : null }
+                  : field.kind === FieldKind.Date
+                    ? { ...blank, date: raw.length > 0 ? raw : null }
+                    : { ...blank, text: raw },
+              )
+            }}
+          />
+        )
+      }
+    </Field>
   )
 }

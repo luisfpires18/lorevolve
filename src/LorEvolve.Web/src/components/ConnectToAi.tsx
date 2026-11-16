@@ -2,9 +2,9 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Plug } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Drawer } from './Drawer'
 import { useI18n } from '../i18n'
 import { getMcpConnectInfo, readable } from '../mcp/api'
-import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 
 type Load =
@@ -64,16 +64,10 @@ function ConnectDrawer({
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const [load, setLoad] = useState<Load>({ kind: 'loading' })
-  const { close, dialogProps } = useDrawerGuard(false, '', onClose)
 
   useReturnFocus()
-
-  useEffect(() => {
-    dialog.current?.showModal()
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -88,41 +82,17 @@ function ConnectDrawer({
   }, [universeId])
 
   return (
-    <dialog
-      className="drawer connectdrawer"
-      ref={dialog}
-      aria-labelledby={headingId}
-      {...dialogProps}
-      data-testid="connect-ai-drawer"
-    >
-      <div className="drawer__panel">
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('ai.connect.eyebrow')}</p>
-          <h2 className="drawer__title" id={headingId}>
-            <bdi>{universeName}</bdi>
-          </h2>
-          <p className="drawer__context">{t('ai.connect.context')}</p>
-        </header>
-
-        <div className="drawer__body connect__body">
-          {load.kind === 'loading' ? (
-            <p className="history__quiet" role="status">
-              {t('ai.connect.loading')}
-            </p>
-          ) : load.kind === 'error' ? (
-            <p className="form__message" role="alert" data-testid="connect-ai-error">
-              {t('ai.connect.loadFailed')}
-            </p>
-          ) : load.url === null ? (
-            <p className="history__quiet" data-testid="connect-ai-unavailable">
-              {t('ai.connect.unavailable')}
-            </p>
-          ) : (
-            <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
-          )}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="connect-ai-drawer"
+      titleId={headingId}
+      className="connectdrawer"
+      bodyClassName="connect__body"
+      eyebrow={t('ai.connect.eyebrow')}
+      title={<bdi>{universeName}</bdi>}
+      context={<p className="drawer__context">{t('ai.connect.context')}</p>}
+      onClose={onClose}
+      actions={(close) => (
+        <>
           <button
             className="button button--secondary"
             type="button"
@@ -131,9 +101,25 @@ function ConnectDrawer({
           >
             {t('ai.connect.close')}
           </button>
-        </footer>
-      </div>
-    </dialog>
+        </>
+      )}
+    >
+      {load.kind === 'loading' ? (
+        <p className="history__quiet" role="status">
+          {t('ai.connect.loading')}
+        </p>
+      ) : load.kind === 'error' ? (
+        <p className="form__message" role="alert" data-testid="connect-ai-error">
+          {t('ai.connect.loadFailed')}
+        </p>
+      ) : load.url === null ? (
+        <p className="history__quiet" data-testid="connect-ai-unavailable">
+          {t('ai.connect.unavailable')}
+        </p>
+      ) : (
+        <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
+      )}
+    </Drawer>
   )
 }
 

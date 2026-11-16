@@ -63,6 +63,7 @@ public static class AdminEndpoints
         var collaborations = await db.UniverseMemberships.CountAsync(cancellationToken);
         var loreImages = await db.EntityImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
         var appearanceImages = await db.EntityAppearanceImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
+        var fieldImages = await db.EntityFieldImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
         var connectedApps = await db.McpConnections.CountAsync(cancellationToken);
 
         var created = await db.Universes
@@ -82,7 +83,7 @@ public static class AdminEndpoints
 
         return Results.Ok(new AdminOverview(
             now, accounts, admins, blocked, universes, publicUniverses, collaborations,
-            loreImages + appearanceImages, connectedApps, trend));
+            loreImages + appearanceImages + fieldImages, connectedApps, trend));
     }
 
     private static async Task<IResult> ListUsersAsync(

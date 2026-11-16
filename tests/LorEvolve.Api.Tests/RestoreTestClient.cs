@@ -401,7 +401,6 @@ internal static partial class RestoreTestClient
         var binned = await IdeaTestClient.CreateIdea(client, "A binned idea", "Still recoverable.", u, [IdeaTestClient.Ref(IdeaReferenceKind.Entity, coast.Id)]);
         (await client.DeleteAsync(IdeaTestClient.Idea(binned.Id))).EnsureSuccessStatusCode();
 
-        await IdeaTestClient.CreateIdea(client, "Unassigned thought", "Belongs to the account.");
         var elsewhere = await PostJson<UniverseDetail>(client, "/api/universes", new CreateUniverseRequest($"{name} elsewhere", null, null));
         await IdeaTestClient.CreateIdea(client, "Another world's idea", "Belongs elsewhere.", elsewhere.Id);
 
@@ -472,6 +471,23 @@ internal static partial class RestoreTestClient
             foreach (var member in members)
             {
                 node?.AsObject().Remove(member);
+            }
+        }
+
+        if (version < 48)
+        {
+            // Image fields came in version 48 (Issue #238): a field's crop shape and an entry's field pictures.
+            foreach (var type in payload["entityTypes"]?.AsArray() ?? [])
+            {
+                foreach (var field in type?["fields"]?.AsArray() ?? [])
+                {
+                    Drop(field, "imageShape");
+                }
+            }
+
+            foreach (var entity in (payload["entities"]?.AsArray() ?? []).Concat(payload["projectEntities"]?.AsArray() ?? []))
+            {
+                Drop(entity, "fieldImages");
             }
         }
 

@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Field } from './Field'
+import { Drawer } from './Drawer'
 import { Quoted } from './NameList'
 import { listReferenceTargets, referenceContext } from '../ideas/api'
 import {
@@ -53,11 +55,9 @@ export function IdeaReferencePicker({
   onClose,
 }: IdeaReferencePickerProps) {
   const { t, tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const headingId = useId()
   const searchId = useId()
-  const kindsId = useId()
   const resultsId = useId()
 
   const [kind, setKind] = useState<IdeaReferenceKindValue>(IdeaReferenceKind.Entity)
@@ -75,7 +75,6 @@ export function IdeaReferencePicker({
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     search.current?.focus()
   }, [])
 
@@ -101,115 +100,19 @@ export function IdeaReferencePicker({
   const chosenKeys = new Set(chosen.map((reference) => `${reference.kind}:${reference.id}`))
 
   return (
-    <dialog
-      className="drawer ideapicker"
-      ref={dialog}
-      aria-labelledby={headingId}
-      onCancel={(event) => {
-        event.preventDefault()
-        onClose()
-      }}
-      onClick={(event) => {
-        if (event.target === dialog.current) onClose()
-      }}
-      data-testid="idea-reference-picker"
-    >
-      <div className="drawer__panel">
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">
-            {universeName
-              ? tx('ideas.picker.inUniverse', { universe: <Quoted text={universeName} /> })
-              : t('ideas.picker.inThisUniverse')}
-          </p>
-          <h2 className="drawer__title" id={headingId}>
-            {t('ideas.picker.title')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          <div className="field">
-            <span className="field__label" id={kindsId}>
-              {t('ideas.picker.whatToReference')}
-            </span>
-            <div className="segmented" role="group" aria-labelledby={kindsId}>
-              {IDEA_REFERENCE_KINDS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="segmented__option"
-                  aria-pressed={kind === option}
-                  onClick={() => setKind(option)}
-                  data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`}
-                >
-                  {IDEA_REFERENCE_KIND_LABELS[option]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <label className="field__label" htmlFor={searchId}>
-              {t('ideas.picker.findByName')}
-            </label>
-            <input
-              id={searchId}
-              ref={search}
-              className="field__input"
-              type="search"
-              value={query}
-              placeholder={t(PLACEHOLDERS[kind])}
-              onChange={(event) => setQuery(event.target.value)}
-              aria-controls={resultsId}
-              data-testid="idea-picker-search"
-            />
-          </div>
-
-          <div id={resultsId} aria-live="polite">
-            {results.kind === 'searching' ? (
-              <p className="notice ideapicker__notice" role="status">
-                {t('ideas.picker.looking')}
-              </p>
-            ) : null}
-            {results.kind === 'error' ? (
-              <p className="form__message" role="alert">
-                {t('ideas.picker.loadFailed')}
-              </p>
-            ) : null}
-            {results.kind === 'ready' && results.targets.length === 0 ? (
-              <p className="notice ideapicker__notice" data-testid="idea-picker-empty">
-                {query.trim() ? t('ideas.picker.emptyNamed') : t('ideas.picker.emptyKind')}
-              </p>
-            ) : null}
-            {results.kind === 'ready' && results.targets.length > 0 ? (
-              <ul className="ideapicker__results" data-testid="idea-picker-results">
-                {results.targets.map((target) => {
-                  const added = chosenKeys.has(`${target.kind}:${target.id}`)
-                  const context = referenceContext(target)
-                  return (
-                    <li key={`${target.kind}:${target.id}`}>
-                      <button
-                        className="ideapicker__option"
-                        type="button"
-                        disabled={added}
-                        onClick={() => onChoose(target)}
-                        data-testid="idea-picker-option"
-                        data-name={target.name}
-                      >
-                        <span className="ideapicker__name">{target.name}</span>
-                        {context ? <span className="ideapicker__context">{context}</span> : null}
-                        <span className="ideapicker__state">
-                          {added ? t('ideas.picker.added') : t('ideas.picker.add')}
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            ) : null}
-          </div>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="idea-reference-picker"
+      titleId={headingId}
+      className="ideapicker"
+      eyebrow={
+        universeName
+          ? tx('ideas.picker.inUniverse', { universe: <Quoted text={universeName} /> })
+          : t('ideas.picker.inThisUniverse')
+      }
+      title={t('ideas.picker.title')}
+      onClose={onClose}
+      actions={() => (
+        <>
           <button
             className="button button--secondary"
             type="button"
@@ -218,8 +121,93 @@ export function IdeaReferencePicker({
           >
             {t('ideas.picker.close')}
           </button>
-        </footer>
+        </>
+      )}
+    >
+      <Field label={t('ideas.picker.whatToReference')} group>
+        {(control) => (
+          <div className="segmented" {...control}>
+            {IDEA_REFERENCE_KINDS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="segmented__option"
+                aria-pressed={kind === option}
+                onClick={() => setKind(option)}
+                data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`}
+              >
+                {IDEA_REFERENCE_KIND_LABELS[option]}
+              </button>
+            ))}
+          </div>
+        )}
+      </Field>
+
+      <Field label={t('ideas.picker.findByName')} id={searchId}>
+        {(control) => (
+          <input
+            {...control}
+            ref={search}
+            className="field__input"
+            type="search"
+            value={query}
+            placeholder={t(PLACEHOLDERS[kind])}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && query) {
+                event.preventDefault()
+                setQuery('')
+              }
+            }}
+            aria-controls={resultsId}
+            data-testid="idea-picker-search"
+          />
+        )}
+      </Field>
+
+      <div id={resultsId} aria-live="polite">
+        {results.kind === 'searching' ? (
+          <p className="notice ideapicker__notice" role="status">
+            {t('ideas.picker.looking')}
+          </p>
+        ) : null}
+        {results.kind === 'error' ? (
+          <p className="form__message" role="alert">
+            {t('ideas.picker.loadFailed')}
+          </p>
+        ) : null}
+        {results.kind === 'ready' && results.targets.length === 0 ? (
+          <p className="notice ideapicker__notice" data-testid="idea-picker-empty">
+            {query.trim() ? t('ideas.picker.emptyNamed') : t('ideas.picker.emptyKind')}
+          </p>
+        ) : null}
+        {results.kind === 'ready' && results.targets.length > 0 ? (
+          <ul className="ideapicker__results" data-testid="idea-picker-results">
+            {results.targets.map((target) => {
+              const added = chosenKeys.has(`${target.kind}:${target.id}`)
+              const context = referenceContext(target)
+              return (
+                <li key={`${target.kind}:${target.id}`}>
+                  <button
+                    className="ideapicker__option"
+                    type="button"
+                    disabled={added}
+                    onClick={() => onChoose(target)}
+                    data-testid="idea-picker-option"
+                    data-name={target.name}
+                  >
+                    <span className="ideapicker__name">{target.name}</span>
+                    {context ? <span className="ideapicker__context">{context}</span> : null}
+                    <span className="ideapicker__state">
+                      {added ? t('ideas.picker.added') : t('ideas.picker.add')}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        ) : null}
       </div>
-    </dialog>
+    </Drawer>
   )
 }

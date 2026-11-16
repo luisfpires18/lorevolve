@@ -77,6 +77,7 @@
   --shadow-1: 0 1px 2px rgb(58 44 22 / 0.08);
   --shadow-2: 0 6px 16px -6px rgb(58 44 22 / 0.22);
   --shadow-3: 0 18px 44px -14px rgb(40 30 15 / 0.3);
+  --backdrop: rgb(0 0 0 / 0.45);
   --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -6356,6 +6357,30 @@ html:has(.viewer[open]) {
   background: var(--paper);
 }
 
+/* An Image field's picture keeps the shape it was cropped to, up to a modest size. */
+.imagefield__preview--field {
+  width: auto;
+  height: auto;
+  max-width: 12rem;
+  max-height: 9rem;
+  object-fit: contain;
+}
+
+.entry__fieldimage {
+  margin: 0 0 var(--space-3);
+}
+
+/* The cropped copy keeps the shape it was cut to, whatever the original measured. */
+.entry__fieldimage img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  margin-top: var(--space-1);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
 .imagefield__preview--blank {
   display: grid;
   place-items: center;
@@ -9155,7 +9180,7 @@ html:has(.viewer[open]) {
 }
 
 .confirm::backdrop {
-  background: rgb(0 0 0 / 0.45);
+  background: var(--backdrop);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -9253,7 +9278,7 @@ html:has(.viewer[open]) {
 }
 
 .drawer::backdrop {
-  background: rgb(0 0 0 / 0.45);
+  background: var(--backdrop);
 }
 
 @media (prefers-reduced-motion: no-preference) {
