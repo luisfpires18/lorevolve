@@ -104,7 +104,11 @@ test.describe('Projects navigation', () => {
       .getByTestId('projects-directory-card')
       .and(page.locator('[data-section="writing"]'))
       .click()
-    await page.getByTestId(`projects-row-${first.id}`).click()
+    await page
+      .getByTestId('writing-project-row')
+      .filter({ hasText: first.name })
+      .getByRole('link')
+      .click()
     await expect(page.getByTestId('project-name')).toContainText(first.name)
   })
 
@@ -123,7 +127,11 @@ test.describe('Projects navigation', () => {
       .getByTestId('projects-directory-card')
       .and(page.locator('[data-section="writing"]'))
       .click()
-    await page.getByTestId(`projects-row-${inWorld.id}`).click()
+    await page
+      .getByTestId('writing-project-row')
+      .filter({ hasText: inWorld.name })
+      .getByRole('link')
+      .click()
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/overview$`),
     )

@@ -62,6 +62,13 @@ async function listed(page: Page, universeId: string, category: string) {
   return page.getByTestId('projects-item')
 }
 
+/** Writing is the Stories experience (#277): its projects are `writing-project-row` links, not `projects-item` rows. */
+async function writingRows(page: Page, universeId: string) {
+  await page.goto(`/app/universes/${universeId}/writing`)
+  await expect(page.getByTestId('writing-project-list')).toBeVisible()
+  return page.getByTestId('writing-project-row')
+}
+
 async function ids(items: ReturnType<Page['getByTestId']>) {
   return (
     await items.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-project-id')))
@@ -83,14 +90,18 @@ test.describe('Project listings by category', () => {
     const otherWriting = await project(page, b, 'Other writing', WRITING)
     const otherFilm = await project(page, b, 'Other film', FILM)
 
-    expect(await ids(await listed(page, a, 'writing'))).toEqual([writing])
+    const writingRowsA = await writingRows(page, a)
+    await expect(writingRowsA).toHaveCount(1)
+    await expect(writingRowsA.getByRole('link')).toHaveAttribute('href', new RegExp(writing))
     expect(await ids(await listed(page, a, 'gaming'))).toEqual([game])
     expect(await ids(await listed(page, a, 'comic'))).toEqual([comic])
 
     const cinema = await listed(page, a, 'cinema')
     expect(await ids(cinema)).toEqual([film, series].sort())
     expect(await ids(cinema)).not.toContain(otherFilm)
-    expect(await ids(await listed(page, a, 'writing'))).not.toContain(otherWriting)
+    await writingRows(page, a)
+    await expect(page.getByTestId('writing-project-list')).not.toContainText('Other writing')
+    await expect(page.locator(`a[href*="${otherWriting}"]`)).toHaveCount(0)
 
     // Same name stays two rows, told apart by kind.
     await listed(page, a, 'cinema')
