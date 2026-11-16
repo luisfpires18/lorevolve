@@ -56,7 +56,8 @@ async function project(page: Page, universeId: string, name: string, kind: numbe
 }
 
 const sidebar = (page: Page) => page.getByRole('navigation', { name: 'Universe', exact: true })
-const creationLinks = (page: Page) => sidebar(page).getByTestId('sidebar-creation').getByRole('link')
+const creationLinks = (page: Page) =>
+  sidebar(page).getByTestId('sidebar-creation').getByRole('link')
 
 test.describe('Conditional Creation and Game Entities navigation', () => {
   test('a new universe shows no Creation heading and no Game Entities', async ({ page }) => {
@@ -76,9 +77,7 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await project(page, id, 'Quest', GAME)
     await page.goto(`/app/universes/${id}`)
     await expect(creationLinks(page)).toHaveText(['Gaming'])
-    await expect(
-      sidebar(page).getByTestId('sidebar-world-building').getByRole('link'),
-    ).toHaveText([
+    await expect(sidebar(page).getByTestId('sidebar-world-building').getByRole('link')).toHaveText([
       'Lore',
       'Types',
       'Game Entities',
