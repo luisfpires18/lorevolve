@@ -353,6 +353,28 @@ test.describe('World Logic', () => {
     await expect(page.getByTestId('world-logic-systems-empty')).toBeVisible()
   })
 
+  test('a System that cannot be deleted says so and stays', async ({ page }) => {
+    await signUp(page)
+    const universeId = await seedUniverse(page)
+    const system = await api<{ id: string }>(page, 'POST', `/api/universes/${universeId}/systems`, {
+      name: unique('Stubborn '),
+      summary: '',
+    })
+    const address = `/app/universes/${universeId}/world-logic/systems/${system.id}`
+
+    await page.route(`**/api/universes/${universeId}/systems/${system.id}`, (route) =>
+      route.request().method() === 'DELETE' ? route.fulfill({ status: 500 }) : route.fallback(),
+    )
+
+    await page.goto(address)
+    await page.getByTestId('system-editor-delete').click()
+    await page.getByRole('button', { name: 'Delete System' }).click()
+
+    // The confirmation stays open with the reason, and the author is still on the System.
+    await expect(page.getByTestId('confirm-dialog-error')).toBeVisible()
+    await expect(page).toHaveURL(address)
+  })
+
   test('each list reaches page 2, keeps its page in the address, and pages on its own', async ({
     page,
   }) => {
