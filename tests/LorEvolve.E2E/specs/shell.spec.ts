@@ -210,7 +210,7 @@ test.describe('the shell', () => {
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 
-    test('the section sheet reads down its columns, groups whole, and closes on arrival', async ({
+    test('the section drawer keeps each group whole, in order, and closes on arrival', async ({
       page,
     }) => {
       await signUp(page)
@@ -222,16 +222,14 @@ test.describe('the shell', () => {
 
       const at = async (testId: string) => (await page.getByTestId(testId).boundingBox())!
 
-      // The world building group fills a column, top to bottom, not a zigzag across the two; where the columns break
-      // around the one-row Overview is the browser's balancing, so it is not pinned.
+      // Since #274 the sections are one drawer, one column: world building reads top to bottom.
       const lore = await at('workspace-lore')
       const maps = await at('workspace-maps')
       const ideas = await at('workspace-ideas')
-      expect(Math.abs(maps.x - lore.x)).toBeLessThanOrEqual(1)
       expect(maps.y).toBeGreaterThan(lore.y)
-      // Groups stay whole: all of world building shares a column. Management - Projects, AI Changes, Publish, Trash,
-      // Settings - fills the sheet's three-across foot grid, under everything else (#191, #271).
-      expect(Math.abs(ideas.x - lore.x)).toBeLessThanOrEqual(1)
+      expect(ideas.y).toBeGreaterThan(maps.y)
+      // Management - Projects, AI Changes, Publish, Trash, Settings - fills a three-across foot grid, under
+      // everything else (#191, #271).
       const projects = await at('workspace-projects')
       const aiChanges = await at('workspace-ai-changes')
       const publish = await at('workspace-publish')
@@ -242,7 +240,6 @@ test.describe('the shell', () => {
       expect(projects.x).toBeLessThan(aiChanges.x)
       expect(aiChanges.x).toBeLessThan(publish.x)
       expect(trash.y).toBeGreaterThan(projects.y)
-      expect(Math.abs(trash.x - projects.x)).toBeLessThanOrEqual(1)
       expect(settings.x).toBeGreaterThan(trash.x)
       expect(projects.y).toBeGreaterThan(ideas.y)
       // The same labels as the wide sidebar.

@@ -307,6 +307,8 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     const id = await universe(page)
     await project(page, id, 'Quest', GAME)
     await page.goto(`/app/universes/${id}`)
+    // evaluateAll does not wait, so the contents must have drawn first.
+    await expect(page.getByTestId('overview-lore')).toBeVisible()
     const cards = page.locator('.contents [data-testid^="overview-"]')
     const links = await cards.evaluateAll((all) =>
       all.map((card) => ({
