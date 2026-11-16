@@ -80,4 +80,4 @@ Three screens confirm in place of their button instead of through `confirmAction
 
 Add a class or a component only when no row above fits. Add its row to this page in the same PR.
 
-`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a `label > span.field__label` field, a `field__label` outside `Field.tsx` (bar the files still listed), more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.
+`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a `label > span.field__label` field, a `field__label` outside `Field.tsx`, more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.
