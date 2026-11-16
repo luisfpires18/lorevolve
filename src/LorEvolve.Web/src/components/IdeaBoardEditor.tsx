@@ -630,7 +630,7 @@ export function IdeaBoardEditor({
           universe: <Quoted text={contextUniverse?.name ?? ''} />,
         })}
         hint={tx('ideas.board.elsewhere.hint', {
-          open: <Link to={`/app/ideas/boards/${boardId}`}>{t('ideas.board.elsewhere.open')}</Link>,
+          open: <Link to={listPath}>{t('ideas.board.elsewhere.open')}</Link>,
         })}
       />
     )
@@ -805,7 +805,6 @@ export function IdeaBoardEditor({
             }
             data-testid="board-universe"
           >
-            <option value="">{t('ideas.board.fields.noUniverse')}</option>
             {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
               <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
             ) : null}
@@ -995,7 +994,10 @@ export function IdeaBoardEditor({
                         : t('ideas.board.inspector.entryTrashed')}
                     </p>
                   ) : selectedCard.kind === BoardCardKind.Idea ? (
-                    <Link to={`/app/ideas/${selectedCard.ideaId}`} data-testid="board-card-open">
+                    <Link
+                      to={`${listPath.replace(/\/boards$/, '')}/${selectedCard.ideaId}`}
+                      data-testid="board-card-open"
+                    >
                       {t('ideas.board.inspector.openIdea')}
                     </Link>
                   ) : draft.universeId ? (

@@ -258,13 +258,13 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId('project-tabs')).toBeAttached()
     await expect(page.getByTestId('story-title')).toHaveText(existing.title)
 
-    // And in the universe's own sidebar, a row that expands like every other project's, to the story's three views.
+    // And in the universe's own sidebar, a row that expands like every other project's, to the story's two views.
     await page.goto(`/app/universes/${world.id}`)
     const link = page.getByTestId(`project-link-${existing.id}`)
     await expect(link).toContainText(existing.title)
     await page.getByTestId(`project-toggle-${existing.id}`).click()
     const pages = page.getByTestId(`project-pages-${existing.id}`)
-    await expect(pages.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
+    await expect(pages.getByRole('link')).toHaveText(['Structure', 'Manuscript'])
     await link.click()
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
@@ -297,7 +297,6 @@ test.describe('Projects navigation', () => {
     const cases: Array<[string, string]> = [
       [old, `${next}/structure`],
       [`${old}/plot`, `${next}/structure`],
-      [`${old}/ideas`, `${next}/ideas`],
       [`${old}/manuscript/${scene.id}`, `${next}/manuscript/${scene.id}`],
       // The account-level project address names no universe; a story reached there finds its own (#199).
       [`/app/projects/${existing.id}`, `${next}/structure`],
@@ -327,13 +326,11 @@ test.describe('Projects navigation', () => {
     await page.goto(`${old}#scene-${scene.id}`)
     await expect(page).toHaveURL(new RegExp(`${next}/structure#scene-${scene.id}$`))
 
-    // The project's own views are the story's three, and the story's page is the one it always was. On a wide screen
+    // The project's own views are the story's two, and the story's page is the one it always was. On a wide screen
     // the sidebar lists them and the tab bar steps aside.
     await page.getByTestId(`project-manuscript-${existing.id}`).click()
     await expect(page).toHaveURL(new RegExp(`${next}/manuscript/${scene.id}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText(scene.title)
-    await page.getByTestId(`project-ideas-${existing.id}`).click()
-    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
 
     // The bare project address, and a view a story does not have, land on the Structure.
     await page.goto(next)

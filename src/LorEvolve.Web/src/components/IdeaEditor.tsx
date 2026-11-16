@@ -530,7 +530,7 @@ export function IdeaEditor({
           universe: <Quoted text={contextUniverse?.name ?? ''} />,
         })}
         hint={tx('ideas.editor.elsewhere.hint', {
-          open: <Link to={`/app/ideas/${ideaId}`}>{t('ideas.editor.openInAll')}</Link>,
+          open: <Link to={listPath}>{t('ideas.editor.openInAll')}</Link>,
           back: <Link to={listPath}>{listLabel}</Link>,
         })}
       />
@@ -603,7 +603,11 @@ export function IdeaEditor({
                   context: <Quoted text={contextUniverse.name} />,
                 })
               : t('ideas.editor.belongsToNone')}{' '}
-            <Link to={`/app/ideas/${ideaId}`}>{t('ideas.editor.openInAll')}</Link>
+            {stored.universe ? (
+              <Link to={`/app/universes/${stored.universe.id}/ideas/${ideaId}`}>
+                {t('ideas.editor.openInAll')}
+              </Link>
+            ) : null}
           </p>
         ) : null}
       </header>
@@ -759,7 +763,6 @@ export function IdeaEditor({
             aria-describedby={`${universeFieldId}-hint`}
             data-testid="idea-universe"
           >
-            <option value="">{t('ideas.editor.fields.noUniverse')}</option>
             {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
               <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
             ) : null}

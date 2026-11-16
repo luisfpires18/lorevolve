@@ -297,7 +297,7 @@ test.describe('Project entities', () => {
     // The universe's lore and every other view this kind offers are a link away.
     await page.goto(overview)
     await expect(page.getByTestId('project-overview-lore')).toContainText(/\w/)
-    for (const segment of ['entities', 'systems', 'ideas']) {
+    for (const segment of ['entities', 'systems']) {
       await expect(page.getByTestId(`project-overview-way-${segment}`)).toBeVisible()
     }
     await expect(page.getByTestId('project-overview-way-overview')).toHaveCount(0)

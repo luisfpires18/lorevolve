@@ -35,11 +35,10 @@ export default function IdeaPage({ inUniverse = false, isNew = false }: IdeaPage
           ? tx('ideas.pages.ideasIn', { universe: <Quoted text={universe.name} /> })
           : t('ideas.pages.allIdeas')
       }
-      // Creating is finished once it is created: back to the list it was started from - this universe's while the idea is
-      // still this universe's, otherwise all ideas, since a universe's Ideas list only its own. Replacing the finished form
+      // Creating is finished once it is created: back to the universe's list it was started from. Replacing the finished form
       // in history, so Back never returns to it; the list says what was created.
       onCreated={(idea) =>
-        void navigate(universe && idea.universe?.id !== universe.id ? '/app/ideas' : listPath, {
+        void navigate(listPath, {
           replace: true,
           state: { created: { id: idea.id, title: idea.title } } satisfies IdeasListNotice,
         })

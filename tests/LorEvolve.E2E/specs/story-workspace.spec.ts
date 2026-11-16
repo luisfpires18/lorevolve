@@ -453,8 +453,8 @@ test.describe('story workspace', () => {
 
 /**
  * Issue #141: the Scenes tab reads Structure. The label is all that changes, so these pin down that the view behind it
- * still holds the same arcs, chapters and scenes with the same actions, that Manuscript and Ideas keep their
- * addresses, and that the new word exists in both languages rather than only in English.
+ * still holds the same arcs, chapters and scenes with the same actions, that Manuscript keeps its
+ * address, and that the new word exists in both languages rather than only in English.
  */
 test.describe('the Structure tab', () => {
   test('holds the same hierarchy and actions, and the other views keep their addresses', async ({
@@ -471,7 +471,7 @@ test.describe('the Structure tab', () => {
     await page.goto(storyUrl)
 
     const views = page.getByTestId('story-views')
-    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
+    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript'])
     await expect(views.getByRole('link', { name: 'Structure' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -489,14 +489,12 @@ test.describe('the Structure tab', () => {
     await page.locator(`#scene-${sceneId} [data-testid="scene-write"]`).click()
     await page.waitForURL(new RegExp(`/projects/${storyId}/manuscript/${sceneId}$`))
 
-    // And the other two views keep theirs.
+    // And Manuscript keeps its address.
     await page.goto(`${storyUrl}/manuscript`)
     await expect(views.getByRole('link', { name: 'Manuscript' })).toHaveAttribute(
       'aria-current',
       'page',
     )
-    await page.goto(`${storyUrl}/ideas`)
-    await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
 
     // The story's own address is unchanged, and it is the Structure view.
     await page.goto(storyUrl)

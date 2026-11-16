@@ -9,7 +9,6 @@ import { Wordmark } from './Wordmark'
 
 /** The account-level screen an address is, named as its tab and its title say it. */
 function screenName(pathname: string) {
-  if (pathname.startsWith('/app/ideas')) return t('shell.workspace.screen.ideas')
   if (pathname.startsWith('/app/projects')) return t('shell.workspace.screen.projects')
   if (pathname.startsWith('/app/profile')) return t('shell.workspace.screen.profile')
   if (pathname.startsWith('/app/ai-changes')) return t('shell.workspace.screen.aiChanges')
@@ -72,15 +71,6 @@ export function WorkspaceLayout() {
                 data-testid="workspacebar-projects"
               >
                 {t('shell.workspace.projects')}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/app/ideas"
-                data-testid="workspacebar-ideas"
-              >
-                {t('shell.workspace.ideas')}
               </NavLink>
             </li>
           </ul>

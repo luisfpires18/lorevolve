@@ -79,7 +79,7 @@ test.describe('LorEvolve leads home', () => {
     await page.waitForURL('/')
     expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('dark')
 
-    for (const from of ['/app', '/app/ideas', '/app/profile']) {
+    for (const from of ['/app', '/app/profile']) {
       await page.goto(from)
       await page.getByTestId('home-brand').click()
       await page.waitForURL('/')
