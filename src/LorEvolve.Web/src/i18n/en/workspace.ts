@@ -51,6 +51,26 @@ const workspace = {
       label: 'Types',
       purpose: 'The kinds of entry and relation this world uses.',
     },
+    gameEntities: {
+      label: 'Game Entities',
+      purpose: 'The entities of the games in this universe.',
+    },
+    writing: {
+      label: 'Writing',
+      purpose: 'The writing projects in this universe.',
+    },
+    gaming: {
+      label: 'Gaming',
+      purpose: 'The game projects in this universe.',
+    },
+    cinema: {
+      label: 'Cinema',
+      purpose: 'The films and series in this universe.',
+    },
+    comic: {
+      label: 'Comic',
+      purpose: 'The comic projects in this universe.',
+    },
     familyTree: {
       label: 'Family Tree',
       purpose: 'Families worked out from recorded connections.',

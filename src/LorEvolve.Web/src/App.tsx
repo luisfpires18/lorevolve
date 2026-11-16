@@ -16,6 +16,8 @@ import { RoleGate } from './components/RoleGate'
 import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
 import { useI18n } from './i18n'
+import { ProjectKind } from './projects/types'
+import { CINEMA, COMIC, GAME_ENTITIES, GAMING, WRITING_PROJECTS } from './universes/sections'
 import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { StoryRedirect } from './components/StoryRedirect'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
@@ -295,6 +297,50 @@ function Root() {
                 )}
               />
               <Route path="projects" element={asSection('projects', <ProjectsPage inUniverse />)} />
+              {/* The Creation and Game Entities destinations: the project list narrowed to their kinds (#272). */}
+              <Route
+                path="writing"
+                element={asSection(
+                  'projects',
+                  <ProjectsPage
+                    inUniverse
+                    section={WRITING_PROJECTS}
+                    kinds={[ProjectKind.Writing]}
+                  />,
+                )}
+              />
+              <Route
+                path="gaming"
+                element={asSection(
+                  'projects',
+                  <ProjectsPage inUniverse section={GAMING} kinds={[ProjectKind.Game]} />,
+                )}
+              />
+              <Route
+                path="cinema"
+                element={asSection(
+                  'projects',
+                  <ProjectsPage
+                    inUniverse
+                    section={CINEMA}
+                    kinds={[ProjectKind.Film, ProjectKind.Series]}
+                  />,
+                )}
+              />
+              <Route
+                path="comic"
+                element={asSection(
+                  'projects',
+                  <ProjectsPage inUniverse section={COMIC} kinds={[ProjectKind.Comic]} />,
+                )}
+              />
+              <Route
+                path="game-entities"
+                element={asSection(
+                  'projects',
+                  <ProjectsPage inUniverse section={GAME_ENTITIES} kinds={[ProjectKind.Game]} />,
+                )}
+              />
               <Route
                 path="projects/:projectId/*"
                 element={asSection('project', <ProjectPage inUniverse />)}

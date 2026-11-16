@@ -136,7 +136,7 @@ export default function StoryPage({ view = 'scenes' }: { view?: StoryViewName })
 function StoryView({ view }: { view: StoryViewName }) {
   const { t, tx } = useI18n()
   const access = useUniverseAccess()
-  const { universe, chronology } = useOutletContext<WorkspaceContext>()
+  const { universe, chronology, refreshProjects } = useOutletContext<WorkspaceContext>()
   const { storyId, sceneId } = useParams<{ storyId: string; sceneId?: string }>()
   const navigate = useNavigate()
   const location = useLocation()
@@ -728,7 +728,11 @@ function StoryView({ view }: { view: StoryViewName }) {
       failure: t('stories.page.removeStory.failure'),
       action: () => deleteStory(universe.id, story.id),
     })
-    if (removed) navigate(`/app/universes/${universe.id}/stories`)
+    if (removed) {
+      // The last Writing project may have gone to the Trash: the sidebar follows (#272).
+      refreshProjects().catch(() => undefined)
+      navigate(`/app/universes/${universe.id}/stories`)
+    }
   }
 
   function sceneCards(container: Scene[], titleLevel: 3 | 4 | 5) {

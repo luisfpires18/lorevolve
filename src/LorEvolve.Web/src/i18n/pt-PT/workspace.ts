@@ -53,6 +53,26 @@ const workspace: Dictionary['workspace'] = {
       label: 'Tipos',
       purpose: 'Os tipos de entrada e de relação que este mundo usa.',
     },
+    gameEntities: {
+      label: 'Entidades de jogo',
+      purpose: 'As entidades dos jogos deste universo.',
+    },
+    writing: {
+      label: 'Escrita',
+      purpose: 'Os projetos de escrita deste universo.',
+    },
+    gaming: {
+      label: 'Jogos',
+      purpose: 'Os projetos de jogo deste universo.',
+    },
+    cinema: {
+      label: 'Cinema',
+      purpose: 'Os filmes e as séries deste universo.',
+    },
+    comic: {
+      label: 'Banda desenhada',
+      purpose: 'Os projetos de banda desenhada deste universo.',
+    },
     familyTree: {
       label: 'Árvore genealógica',
       purpose: 'Famílias deduzidas das ligações registadas.',

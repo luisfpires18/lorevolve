@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { Field } from './Field'
 import { ChangeList, EditConflict } from './EditConflict'
 import { ApiError } from '../lib/api'
@@ -10,6 +11,7 @@ import { useReturnFocus } from '../lib/returnFocus'
 import { createStory, getStory, STORY_CHANGED, updateStory } from '../stories/api'
 import { storyChanges } from '../stories/changes'
 import { useI18n } from '../i18n'
+import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import {
   STORY_STATUS_KEYS,
   STORY_STATUS_LABELS,
@@ -59,6 +61,7 @@ interface StoryFormProps {
 export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: StoryFormProps) {
   const { t } = useI18n()
   const suggesting = onSuggested !== undefined && story !== null
+  const refreshProjects = useOutletContext<WorkspaceContext | undefined>()?.refreshProjects
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the story as stored, or the blank form - which the draft is measured against, and the
   // version its save names. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
@@ -99,6 +102,8 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
       const saved = story
         ? await updateStory(universeId, story.id, { ...input, expectedVersion: base.version })
         : await createStory(universeId, input)
+      // A new story is a Writing project: the sidebar's Writing follows it (#272).
+      if (!story) refreshProjects?.().catch(() => undefined)
       onSaved(saved)
     } catch (error: unknown) {
       if (isChangedElsewhere(error, STORY_CHANGED)) {

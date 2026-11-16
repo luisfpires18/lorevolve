@@ -1,5 +1,6 @@
 import { Boxes, Compass, FileText, ListTree, Settings2, type LucideIcon } from 'lucide-react'
 import { t } from '../i18n'
+import type { ProjectFamily } from '../universes/sections'
 import { ProjectKind, ProjectLifecycle, type ProjectDetail } from './types'
 
 /**
@@ -100,6 +101,26 @@ export function kindLabel(kind: ProjectDetail['kind']) {
     default:
       return t('projects.kind.writing')
   }
+}
+
+/** The sidebar family a kind belongs to: Film and Series are one, Cinema (#272). */
+function familyOf(kind: ProjectDetail['kind']): ProjectFamily {
+  switch (kind) {
+    case ProjectKind.Game:
+      return 'game'
+    case ProjectKind.Series:
+    case ProjectKind.Film:
+      return 'cinema'
+    case ProjectKind.Comic:
+      return 'comic'
+    default:
+      return 'writing'
+  }
+}
+
+/** The families of project a universe has, by its projects alone: what is inside them is never read (#272). */
+export function projectFamilies(projects: readonly Pick<ProjectDetail, 'kind'>[]) {
+  return new Set(projects.map((project) => familyOf(project.kind)))
 }
 
 /** How far along it is, in the current language. */

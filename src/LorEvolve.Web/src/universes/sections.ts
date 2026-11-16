@@ -2,22 +2,30 @@ import { t } from '../i18n'
 import type { UniverseCapabilities } from './access'
 import {
   BadgeCheck,
+  BookImage,
   Blocks,
+  Clapperboard,
   Compass,
   Feather,
   FileDiff,
   FolderOpen,
+  Gamepad2,
   Globe,
   Hourglass,
   Library,
   Map,
   Network,
+  PenLine,
   Scale,
   Settings,
   StickyNote,
+  Swords,
   Trash2,
   type LucideIcon,
 } from 'lucide-react'
+
+/** The kinds of project a universe can hold, as the sidebar tells them apart (#272). Film and Series are one: Cinema. */
+export type ProjectFamily = 'writing' | 'game' | 'cinema' | 'comic'
 
 export interface Section {
   segment: string
@@ -28,6 +36,11 @@ export interface Section {
    * the rest regardless. Absent means every member reads it.
    */
   requires?: keyof UniverseCapabilities
+  /**
+   * The family of project the universe must have for the section to be offered (#272). Counted by projects, never by
+   * what is inside them, and read from `offered`, the one place visibility is decided.
+   */
+  needs?: ProjectFamily
   /** Shown, but marked as not yet working properly. */
   wip?: boolean
   /**
@@ -73,6 +86,36 @@ const IDEAS: Section = {
   testId: 'workspace-ideas',
   icon: StickyNote,
   requires: 'keepIdeas',
+}
+export const GAME_ENTITIES: Section = {
+  segment: 'game-entities',
+  testId: 'workspace-game-entities',
+  icon: Swords,
+  needs: 'game',
+}
+export const WRITING_PROJECTS: Section = {
+  segment: 'writing',
+  testId: 'workspace-writing',
+  icon: PenLine,
+  needs: 'writing',
+}
+export const GAMING: Section = {
+  segment: 'gaming',
+  testId: 'workspace-gaming',
+  icon: Gamepad2,
+  needs: 'game',
+}
+export const CINEMA: Section = {
+  segment: 'cinema',
+  testId: 'workspace-cinema',
+  icon: Clapperboard,
+  needs: 'cinema',
+}
+export const COMIC: Section = {
+  segment: 'comic',
+  testId: 'workspace-comic',
+  icon: BookImage,
+  needs: 'comic',
 }
 const PROJECTS: Section = { segment: 'projects', testId: 'workspace-projects', icon: FolderOpen }
 const AI_CHANGES: Section = {
@@ -123,6 +166,7 @@ export const REVIEW: readonly Section[] = [AI_CHANGES]
 export const WORLD_BUILDING: readonly Section[] = [
   LORE,
   TYPES,
+  GAME_ENTITIES,
   FAMILY_TREE,
   MAPS,
   TIMELINE,
@@ -131,10 +175,10 @@ export const WORLD_BUILDING: readonly Section[] = [
 ]
 
 /**
- * The sidebar's Creation group (#271): the place for what is made with the world. Labelled, and empty until later
- * tasks add destinations to it.
+ * The sidebar's Creation group (#271): the place for what is made with the world. Each destination is offered only
+ * while the universe has a project of its family (#272), so the group's heading hides when it has none.
  */
-export const CREATION: readonly Section[] = []
+export const CREATION: readonly Section[] = [WRITING_PROJECTS, GAMING, CINEMA, COMIC]
 
 /**
  * Management, apart from the world building above it: the universe's projects, what an AI proposed, the public
@@ -175,12 +219,18 @@ export function sectionPurpose(section: Section) {
 
 /**
  * The sections a role is offered: those it needs nothing for, and those whose capability it has. AI Changes only while
- * the universe has AI help on.
+ * the universe has AI help on, and those tied to a project family only while it has a project of that family.
  */
-export function offered(sections: readonly Section[], access: UniverseCapabilities, aiHelp = true) {
+export function offered(
+  sections: readonly Section[],
+  access: UniverseCapabilities,
+  aiHelp = true,
+  families: ReadonlySet<ProjectFamily> = new Set(),
+) {
   return sections.filter(
     (section) =>
       (!section.requires || access[section.requires]) &&
+      (!section.needs || families.has(section.needs)) &&
       (aiHelp || section.segment !== 'ai-changes'),
   )
 }
