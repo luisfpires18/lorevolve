@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Field } from './Field'
 import { Link, useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import {
@@ -293,25 +294,27 @@ export function ProjectEntries({
       ) : null}
 
       {fixedTypeId ? null : (
-        <label className="field">
-          <span className="field__label">{t('projects.entries.ofType')}</span>
-          <select
-            className="field__input"
-            value={typeId ?? ''}
-            onChange={(event) => {
-              setTypeId(event.target.value)
-              setValues({})
-              setPendingImages({})
-            }}
-            data-testid="project-entries-type"
-          >
-            {types.map((each) => (
-              <option key={each.id} value={each.id}>
-                {each.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Field label={t('projects.entries.ofType')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input"
+              value={typeId ?? ''}
+              onChange={(event) => {
+                setTypeId(event.target.value)
+                setValues({})
+                setPendingImages({})
+              }}
+              data-testid="project-entries-type"
+            >
+              {types.map((each) => (
+                <option key={each.id} value={each.id}>
+                  {each.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       )}
 
       {/*
@@ -361,26 +364,30 @@ export function ProjectEntries({
               .catch(failing)
           }}
         >
-          <label className="field">
-            <span className="field__label">{t('projects.entries.name')}</span>
-            <input
-              className="field__input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="project-entry-new-name"
-              required
-            />
-          </label>
+          <Field label={t('projects.entries.name')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                data-testid="project-entry-new-name"
+                required
+              />
+            )}
+          </Field>
 
-          <label className="field">
-            <span className="field__label">{t('projects.entries.summary')}</span>
-            <input
-              className="field__input"
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              data-testid="project-entry-new-summary"
-            />
-          </label>
+          <Field label={t('projects.entries.summary')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={summary}
+                onChange={(event) => setSummary(event.target.value)}
+                data-testid="project-entry-new-summary"
+              />
+            )}
+          </Field>
 
           {fields.length > 0 ? (
             <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
@@ -658,48 +665,48 @@ function ValueField({
   }
 
   return (
-    <label className="field">
-      <span className="field__label">
-        {field.name}
-        {field.isRequired ? ' *' : ''}
-      </span>
-      {field.kind === FieldKind.LongText ? (
-        <textarea
-          className="field__input"
-          value={current.text ?? ''}
-          data-testid={testId}
-          onChange={(event) => onChange({ ...blank, text: event.target.value })}
-        />
-      ) : (
-        <input
-          className="field__input"
-          type={
-            field.kind === FieldKind.Number
-              ? 'number'
-              : field.kind === FieldKind.Date
-                ? 'date'
-                : 'text'
-          }
-          value={
-            field.kind === FieldKind.Number
-              ? (current.number?.toString() ?? '')
-              : field.kind === FieldKind.Date
-                ? (current.date ?? '')
-                : (current.text ?? '')
-          }
-          data-testid={testId}
-          onChange={(event) => {
-            const raw = event.target.value
-            onChange(
+    <Field label={`${field.name}${field.isRequired ? ' *' : ''}`}>
+      {(control) =>
+        field.kind === FieldKind.LongText ? (
+          <textarea
+            {...control}
+            className="field__input"
+            value={current.text ?? ''}
+            data-testid={testId}
+            onChange={(event) => onChange({ ...blank, text: event.target.value })}
+          />
+        ) : (
+          <input
+            {...control}
+            className="field__input"
+            type={
               field.kind === FieldKind.Number
-                ? { ...blank, number: raw.length > 0 ? Number(raw) : null }
+                ? 'number'
                 : field.kind === FieldKind.Date
-                  ? { ...blank, date: raw.length > 0 ? raw : null }
-                  : { ...blank, text: raw },
-            )
-          }}
-        />
-      )}
-    </label>
+                  ? 'date'
+                  : 'text'
+            }
+            value={
+              field.kind === FieldKind.Number
+                ? (current.number?.toString() ?? '')
+                : field.kind === FieldKind.Date
+                  ? (current.date ?? '')
+                  : (current.text ?? '')
+            }
+            data-testid={testId}
+            onChange={(event) => {
+              const raw = event.target.value
+              onChange(
+                field.kind === FieldKind.Number
+                  ? { ...blank, number: raw.length > 0 ? Number(raw) : null }
+                  : field.kind === FieldKind.Date
+                    ? { ...blank, date: raw.length > 0 ? raw : null }
+                    : { ...blank, text: raw },
+              )
+            }}
+          />
+        )
+      }
+    </Field>
   )
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Check, Plus, X } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { CanonBlockNotice } from '../components/CanonBlockNotice'
+import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
@@ -417,29 +418,28 @@ export default function MassCreatePage() {
               </select>
             </div>
 
-            <div className="masscreate__default">
-              <span className="field__label" id={`${id}-default-status`}>
-                {t('lore.massCreate.defaultStatus')}
-              </span>
-              <div
-                className="segmented"
-                role="group"
-                aria-labelledby={`${id}-default-status`}
-                data-testid="mass-default-status"
-              >
-                {CANON_ORDER.map((option) => (
-                  <button
-                    key={option}
-                    className="segmented__option"
-                    type="button"
-                    aria-pressed={defaultStatus === option}
-                    onClick={() => setDefaultStatus(option)}
-                  >
-                    {CANON_LABELS[option]}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Field
+              label={t('lore.massCreate.defaultStatus')}
+              id={`${id}-default-status`}
+              group
+              className="masscreate__default"
+            >
+              {(control) => (
+                <div className="segmented" {...control} data-testid="mass-default-status">
+                  {CANON_ORDER.map((option) => (
+                    <button
+                      key={option}
+                      className="segmented__option"
+                      type="button"
+                      aria-pressed={defaultStatus === option}
+                      onClick={() => setDefaultStatus(option)}
+                    >
+                      {CANON_LABELS[option]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </Field>
 
             {rows.length > 0 ? (
               <button
@@ -460,41 +460,42 @@ export default function MassCreatePage() {
           </section>
 
           <section className="masscreate__paste">
-            <label className="field__label" htmlFor={`${id}-paste`}>
-              {t('lore.massCreate.pasteLabel')}
-            </label>
-            <textarea
+            <Field
+              label={t('lore.massCreate.pasteLabel')}
               id={`${id}-paste`}
-              className="field__input field__input--area masscreate__pastearea"
-              rows={5}
-              value={draft}
-              onChange={onDraftChange}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-                  event.preventDefault()
-                  if (draft.trim()) take(draft)
-                }
-              }}
-              aria-describedby={`${id}-paste-hint${pasteMessage ? ` ${id}-paste-message` : ''}`}
-              aria-invalid={pasteMessage ? true : undefined}
-              aria-keyshortcuts="Control+Enter Meta+Enter"
-              autoComplete="off"
-              spellCheck={false}
-              data-testid="mass-paste"
-            />
-            <p className="field__hint masscreate__hint" id={`${id}-paste-hint`}>
-              {t('lore.massCreate.pasteHint')}
-            </p>
-            {pasteMessage ? (
-              <p
-                className="field__error masscreate__pastemessage"
-                id={`${id}-paste-message`}
-                role="alert"
-                data-testid="mass-paste-message"
-              >
-                {pasteMessage}
-              </p>
-            ) : null}
+              hint={<span className="masscreate__hint">{t('lore.massCreate.pasteHint')}</span>}
+              error={
+                pasteMessage ? (
+                  <span
+                    className="masscreate__pastemessage"
+                    role="alert"
+                    data-testid="mass-paste-message"
+                  >
+                    {pasteMessage}
+                  </span>
+                ) : undefined
+              }
+            >
+              {(control) => (
+                <textarea
+                  {...control}
+                  className="field__input field__input--area masscreate__pastearea"
+                  rows={5}
+                  value={draft}
+                  onChange={onDraftChange}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+                      event.preventDefault()
+                      if (draft.trim()) take(draft)
+                    }
+                  }}
+                  aria-keyshortcuts="Control+Enter Meta+Enter"
+                  autoComplete="off"
+                  spellCheck={false}
+                  data-testid="mass-paste"
+                />
+              )}
+            </Field>
             <div>
               <button
                 className="button button--secondary button--sm"

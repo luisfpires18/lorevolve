@@ -950,33 +950,36 @@ function FieldDialog({
         data-testid="field-name"
       />
 
-      <div className="field">
-        <label className="field__label" htmlFor="field-kind">
-          {t('entityTypes.fields.kind')}
-        </label>
-        <select
-          id="field-kind"
-          className="field__input field__input--select"
-          value={kind}
-          disabled={kindLocked}
-          aria-describedby={kindLocked ? 'field-kind-hint' : undefined}
-          onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
-          data-testid="field-kind"
-        >
-          {KIND_ORDER.map((each) => (
-            <option key={each} value={each}>
-              {FIELD_KIND_LABELS[each]}
-            </option>
-          ))}
-        </select>
-        {kindLocked ? (
-          <p className="field__hint" id="field-kind-hint" data-testid="field-kind-hint">
-            {held.entryCount > 0
-              ? tn('entityTypes.fields.kindLockedHeld', held.entryCount, { n: held.entryCount })
-              : t('entityTypes.fields.kindLockedHistory')}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        label={t('entityTypes.fields.kind')}
+        id="field-kind"
+        hint={
+          kindLocked ? (
+            <span data-testid="field-kind-hint">
+              {held.entryCount > 0
+                ? tn('entityTypes.fields.kindLockedHeld', held.entryCount, { n: held.entryCount })
+                : t('entityTypes.fields.kindLockedHistory')}
+            </span>
+          ) : undefined
+        }
+      >
+        {(control) => (
+          <select
+            {...control}
+            className="field__input field__input--select"
+            value={kind}
+            disabled={kindLocked}
+            onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
+            data-testid="field-kind"
+          >
+            {KIND_ORDER.map((each) => (
+              <option key={each} value={each}>
+                {FIELD_KIND_LABELS[each]}
+              </option>
+            ))}
+          </select>
+        )}
+      </Field>
 
       {hasOptions ? (
         <Field
@@ -991,108 +994,116 @@ function FieldDialog({
       ) : null}
 
       {isLink ? (
-        <div className="field">
-          <label className="field__label" htmlFor="field-target">
-            {t('entityTypes.fields.canLinkTo')}
-          </label>
-          <select
-            id="field-target"
-            className="field__input field__input--select"
-            value={target ?? ''}
-            onChange={(event) => setTarget((event.target.value || null) as TargetChoice)}
-            aria-describedby="field-target-hint"
-            aria-invalid={fieldErrors.target ? true : undefined}
-            data-testid="field-target"
-          >
-            {target === null ? (
-              <option value="" disabled>
-                {t('entityTypes.fields.chooseTarget')}
-              </option>
-            ) : null}
-            <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
-            {groups.length > 0 ? (
-              <optgroup label={t('entityTypes.fields.optgroupGroups')}>
-                {groups.map((group) => (
-                  <option key={group.id} value={`group:${group.id}`}>
-                    {t('entityTypes.fields.groupOption', { name: group.name })}
+        <Field
+          label={t('entityTypes.fields.canLinkTo')}
+          id="field-target"
+          error={fieldErrors.target}
+          hint={
+            <>
+              {target === null
+                ? t('entityTypes.fields.targetHintNone')
+                : target === 'any'
+                  ? t('entityTypes.fields.targetHintAny')
+                  : target.startsWith('group:')
+                    ? t('entityTypes.fields.targetHintGroup')
+                    : t('entityTypes.fields.targetHintType')}
+              {field && field.entryCount > 0 ? (
+                <> {t('entityTypes.fields.targetNarrowHint')}</>
+              ) : null}
+            </>
+          }
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={target ?? ''}
+              onChange={(event) => setTarget((event.target.value || null) as TargetChoice)}
+              data-testid="field-target"
+            >
+              {target === null ? (
+                <option value="" disabled>
+                  {t('entityTypes.fields.chooseTarget')}
+                </option>
+              ) : null}
+              <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
+              {groups.length > 0 ? (
+                <optgroup label={t('entityTypes.fields.optgroupGroups')}>
+                  {groups.map((group) => (
+                    <option key={group.id} value={`group:${group.id}`}>
+                      {t('entityTypes.fields.groupOption', { name: group.name })}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+              <optgroup label={t('entityTypes.fields.optgroupTypes')}>
+                {tree.ordered.map((node) => (
+                  <option key={node.type.id} value={`type:${node.type.id}`}>
+                    {typePathLabel(node)}
                   </option>
                 ))}
               </optgroup>
-            ) : null}
-            <optgroup label={t('entityTypes.fields.optgroupTypes')}>
-              {tree.ordered.map((node) => (
-                <option key={node.type.id} value={`type:${node.type.id}`}>
-                  {typePathLabel(node)}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-          <p className="field__hint" id="field-target-hint">
-            {target === null
-              ? t('entityTypes.fields.targetHintNone')
-              : target === 'any'
-                ? t('entityTypes.fields.targetHintAny')
-                : target.startsWith('group:')
-                  ? t('entityTypes.fields.targetHintGroup')
-                  : t('entityTypes.fields.targetHintType')}
-          </p>
-          {field && field.entryCount > 0 ? (
-            <p className="field__hint">{t('entityTypes.fields.targetNarrowHint')}</p>
-          ) : null}
-          {fieldErrors.target ? <p className="field__error">{fieldErrors.target}</p> : null}
-        </div>
+            </select>
+          )}
+        </Field>
       ) : null}
 
       {semanticsFor(kind).length > 0 ? (
-        <div className="field">
-          <label className="field__label" htmlFor="field-semantic">
-            {t('entityTypes.fields.canonMeaningLabel')}
-          </label>
-          <select
-            id="field-semantic"
-            className="field__input field__input--select"
-            value={semantic ?? ''}
-            onChange={(event) =>
-              setSemantic(
-                event.target.value === ''
-                  ? null
-                  : (Number(event.target.value) as FieldSemanticValue),
-              )
-            }
-            data-testid="field-semantic"
-          >
-            <option value="">{t('entityTypes.fields.none')}</option>
-            {semanticsFor(kind).map((each) => (
-              <option key={each} value={each}>
-                {FIELD_SEMANTIC_LABELS[each]}
-              </option>
-            ))}
-          </select>
-          <p className="field__hint">{t('entityTypes.fields.semanticHint')}</p>
-          {fieldErrors.semantic ? <p className="field__error">{fieldErrors.semantic}</p> : null}
-        </div>
+        <Field
+          label={t('entityTypes.fields.canonMeaningLabel')}
+          id="field-semantic"
+          hint={t('entityTypes.fields.semanticHint')}
+          error={fieldErrors.semantic}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={semantic ?? ''}
+              onChange={(event) =>
+                setSemantic(
+                  event.target.value === ''
+                    ? null
+                    : (Number(event.target.value) as FieldSemanticValue),
+                )
+              }
+              data-testid="field-semantic"
+            >
+              <option value="">{t('entityTypes.fields.none')}</option>
+              {semanticsFor(kind).map((each) => (
+                <option key={each} value={each}>
+                  {FIELD_SEMANTIC_LABELS[each]}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : null}
 
       {isImage ? (
-        <div className="field">
-          <label className="field__label" htmlFor="field-image-shape">
-            {t('entityTypes.fields.imageShape')}
-          </label>
-          <select
-            id="field-image-shape"
-            className="field__input field__input--select"
-            value={imageShape}
-            onChange={(event) => setImageShape(Number(event.target.value) as FieldImageShapeValue)}
-            data-testid="field-image-shape"
-          >
-            {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
-              <option key={each} value={each}>
-                {FIELD_IMAGE_SHAPE_LABELS[each]}
-              </option>
-            ))}
-          </select>
-          <p className="field__hint">{t('entityTypes.fields.imageShapeHint')}</p>
-        </div>
+        <Field
+          label={t('entityTypes.fields.imageShape')}
+          id="field-image-shape"
+          hint={t('entityTypes.fields.imageShapeHint')}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={imageShape}
+              onChange={(event) =>
+                setImageShape(Number(event.target.value) as FieldImageShapeValue)
+              }
+              data-testid="field-image-shape"
+            >
+              {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+                <option key={each} value={each}>
+                  {FIELD_IMAGE_SHAPE_LABELS[each]}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : null}
 
       {isText ? (

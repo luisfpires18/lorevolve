@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Field } from './Field'
 import { ChronologyPointFields, type ChronologyPointPart } from './ChronologyPointFields'
 import { EntityMultiPicker, EntityPicker, type EntityChoice } from './EntityPicker'
 import { CanonBlockNotice } from './CanonBlockNotice'
@@ -414,78 +415,82 @@ export function TimelineEntryForm({
         </p>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="moment-title">
-          {t('time.momentForm.title')}
-        </label>
-        <input
-          id="moment-title"
-          className="field__input"
-          ref={title}
-          type="text"
-          dir="auto"
-          placeholder={t('time.momentForm.titlePlaceholder')}
-          value={draft.title}
-          onChange={(event) => edit({ title: event.target.value })}
-          aria-invalid={fieldErrors.title ? true : undefined}
-          data-testid="moment-title"
-        />
-        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-      </div>
+      <Field label={t('time.momentForm.title')} id="moment-title" error={fieldErrors.title}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={title}
+            type="text"
+            dir="auto"
+            placeholder={t('time.momentForm.titlePlaceholder')}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="moment-title"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="moment-description">
-          {t('time.momentForm.description')}
-        </label>
-        <textarea
-          id="moment-description"
-          className="field__input field__input--area"
-          rows={3}
-          placeholder={t('time.momentForm.descriptionPlaceholder')}
-          value={draft.description}
-          onChange={(event) => edit({ description: event.target.value })}
-          data-testid="moment-description"
-        />
-        {fieldErrors.description ? <p className="field__error">{fieldErrors.description}</p> : null}
-      </div>
+      <Field
+        label={t('time.momentForm.description')}
+        id="moment-description"
+        error={fieldErrors.description}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={3}
+            placeholder={t('time.momentForm.descriptionPlaceholder')}
+            value={draft.description}
+            onChange={(event) => edit({ description: event.target.value })}
+            data-testid="moment-description"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <span className="field__label">{t('time.momentForm.status')}</span>
-        <div className="canon" role="group" aria-label={t('time.momentForm.statusGroup')}>
-          {CANON_ORDER.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="canon__step"
-              aria-pressed={draft.canonStatus === option}
-              onClick={() => edit({ canonStatus: option })}
-              data-testid={`moment-canon-${CANON_KEYS[option]}`}
-            >
-              {CANON_LABELS[option]}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Field label={t('time.momentForm.status')} group>
+        {(control) => (
+          <div className="canon" {...control}>
+            {CANON_ORDER.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="canon__step"
+                aria-pressed={draft.canonStatus === option}
+                onClick={() => edit({ canonStatus: option })}
+                data-testid={`moment-canon-${CANON_KEYS[option]}`}
+              >
+                {CANON_LABELS[option]}
+              </button>
+            ))}
+          </div>
+        )}
+      </Field>
 
-      <div className="field">
-        <span className="field__label">{t('time.momentForm.when')}</span>
-        <div className="segmented" role="group" aria-label={t('time.momentForm.kindGroup')}>
-          {DATE_KIND_ORDER.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="segmented__option"
-              aria-pressed={draft.dateKind === option}
-              onClick={() => chooseKind(option)}
-              data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
-            >
-              {DATE_KIND_LABELS[option]}
-            </button>
-          ))}
-        </div>
-        <p className="field__hint">{DATE_KIND_HINTS[draft.dateKind]}</p>
-        {fieldErrors.datekind ? <p className="field__error">{fieldErrors.datekind}</p> : null}
-      </div>
+      <Field
+        label={t('time.momentForm.when')}
+        group
+        hint={DATE_KIND_HINTS[draft.dateKind]}
+        error={fieldErrors.datekind}
+      >
+        {(control) => (
+          <div className="segmented" {...control}>
+            {DATE_KIND_ORDER.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="segmented__option"
+                aria-pressed={draft.dateKind === option}
+                onClick={() => chooseKind(option)}
+                data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
+              >
+                {DATE_KIND_LABELS[option]}
+              </button>
+            ))}
+          </div>
+        )}
+      </Field>
 
       {isDated ? (
         <>
@@ -514,23 +519,24 @@ export function TimelineEntryForm({
           </p>
         ) : null
       ) : (
-        <div className="field">
-          <label className="field__label" htmlFor="moment-era">
-            {t('time.momentForm.yearLabel')}
-          </label>
-          <p className="field__hint">{t('time.momentForm.yearLabelHint')}</p>
-          <input
-            id="moment-era"
-            className="field__input"
-            type="text"
-            placeholder={t('time.momentForm.optional')}
-            value={draft.eraLabel}
-            onChange={(event) => edit({ eraLabel: event.target.value })}
-            aria-invalid={fieldErrors.eralabel ? true : undefined}
-            data-testid="moment-era"
-          />
-          {fieldErrors.eralabel ? <p className="field__error">{fieldErrors.eralabel}</p> : null}
-        </div>
+        <Field
+          label={t('time.momentForm.yearLabel')}
+          id="moment-era"
+          hint={t('time.momentForm.yearLabelHint')}
+          error={fieldErrors.eralabel}
+        >
+          {(control) => (
+            <input
+              {...control}
+              className="field__input"
+              type="text"
+              placeholder={t('time.momentForm.optional')}
+              value={draft.eraLabel}
+              onChange={(event) => edit({ eraLabel: event.target.value })}
+              data-testid="moment-era"
+            />
+          )}
+        </Field>
       )}
 
       <EntityMultiPicker
