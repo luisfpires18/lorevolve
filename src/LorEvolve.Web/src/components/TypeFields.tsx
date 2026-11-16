@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Archive, ArchiveRestore, LayoutList, Pencil, Plus, Trash2 } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
@@ -7,8 +7,9 @@ import { Field } from './Field'
 import { FieldSectionsDialog } from './FieldSectionsDialog'
 import { tn as translateN, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { Drawer } from './Drawer'
 import {
   FIELD_CHANGED_CODE,
   FIELD_REQUIRED_MISSING_CODE,
@@ -718,7 +719,6 @@ function FieldDialog({
   onSaved: (name: string, wasNew: boolean) => Promise<void>
 }) {
   const { t, tn, tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   // What this drawer was opened over: the settings an unsaved change is measured against, and the version an edit names.
   // A refused stale save moves it on only when the author chooses (ADR 0043).
   const [base, setBase] = useState(() => ({ draft: draftOf(field), version: field?.version ?? 0 }))
@@ -756,18 +756,9 @@ function FieldDialog({
     target,
   }
   const isDirty = payloadKey(draft) !== payloadKey({ ...initial, name: initial.name.trim() })
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    field
-      ? t('entityTypes.fields.leaveEdit', { name: field.name })
-      : t('entityTypes.fields.leaveNew'),
-    onClose,
-  )
-
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     document.getElementById('field-name')?.focus()
   }, [])
 
@@ -870,265 +861,22 @@ function FieldDialog({
   }
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="field-heading"
-      {...dialogProps}
-      data-testid="field-dialog"
-    >
-      <form
-        className="drawer__panel"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">
-            {tx('entityTypes.fields.dialogEyebrow', { name: <bdi>{type.name}</bdi> })}
-          </p>
-          <h2 className="drawer__title" id="field-heading">
-            {field ? t('entityTypes.fields.editTitle') : t('entityTypes.fields.addTitle')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="field-dialog-error">
-              {message}
-            </p>
-          ) : null}
-
-          {stale && latest ? (
-            <div className="callout callout--warning" data-testid="field-dialog-stale">
-              <p className="callout__title">{t('entityTypes.fields.savedNow')}</p>
-              <p className="fieldconflict__saved">
-                {tx(
-                  latest.archivedAt !== null
-                    ? 'entityTypes.fields.savedNowArchived'
-                    : 'entityTypes.fields.savedNowSummary',
-                  {
-                    name: <bdi>{latest.name}</bdi>,
-                    summary: describe(latest),
-                  },
-                )}
-              </p>
-              <p className="types__blockedlinks">
-                <button
-                  className="button button--secondary button--sm"
-                  type="button"
-                  onClick={() => takeSaved(latest)}
-                  data-testid="field-use-saved"
-                >
-                  {t('entityTypes.fields.useSaved')}
-                </button>
-                {latest.archivedAt === null ? (
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    onClick={() => keepMine(latest)}
-                    data-testid="field-keep-mine"
-                  >
-                    {t('entityTypes.fields.keepMine')}
-                  </button>
-                ) : null}
-              </p>
-            </div>
-          ) : null}
-
-          <Field
-            label={t('entityTypes.fields.fieldName')}
-            name="field-name"
-            dir="auto"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            error={fieldErrors.name}
-            data-testid="field-name"
-          />
-
-          <div className="field">
-            <label className="field__label" htmlFor="field-kind">
-              {t('entityTypes.fields.kind')}
-            </label>
-            <select
-              id="field-kind"
-              className="field__input field__input--select"
-              value={kind}
-              disabled={kindLocked}
-              aria-describedby={kindLocked ? 'field-kind-hint' : undefined}
-              onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
-              data-testid="field-kind"
-            >
-              {KIND_ORDER.map((each) => (
-                <option key={each} value={each}>
-                  {FIELD_KIND_LABELS[each]}
-                </option>
-              ))}
-            </select>
-            {kindLocked ? (
-              <p className="field__hint" id="field-kind-hint" data-testid="field-kind-hint">
-                {held.entryCount > 0
-                  ? tn('entityTypes.fields.kindLockedHeld', held.entryCount, { n: held.entryCount })
-                  : t('entityTypes.fields.kindLockedHistory')}
-              </p>
-            ) : null}
-          </div>
-
-          {hasOptions ? (
-            <Field
-              label={t('entityTypes.fields.options')}
-              name="field-options"
-              value={options}
-              onChange={(event) => setOptions(event.target.value)}
-              error={fieldErrors.options}
-              hint={field ? t('entityTypes.fields.optionsHint') : undefined}
-              data-testid="field-options"
-            />
-          ) : null}
-
-          {isLink ? (
-            <div className="field">
-              <label className="field__label" htmlFor="field-target">
-                {t('entityTypes.fields.canLinkTo')}
-              </label>
-              <select
-                id="field-target"
-                className="field__input field__input--select"
-                value={target ?? ''}
-                onChange={(event) => setTarget((event.target.value || null) as TargetChoice)}
-                aria-describedby="field-target-hint"
-                aria-invalid={fieldErrors.target ? true : undefined}
-                data-testid="field-target"
-              >
-                {target === null ? (
-                  <option value="" disabled>
-                    {t('entityTypes.fields.chooseTarget')}
-                  </option>
-                ) : null}
-                <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
-                {groups.length > 0 ? (
-                  <optgroup label={t('entityTypes.fields.optgroupGroups')}>
-                    {groups.map((group) => (
-                      <option key={group.id} value={`group:${group.id}`}>
-                        {t('entityTypes.fields.groupOption', { name: group.name })}
-                      </option>
-                    ))}
-                  </optgroup>
-                ) : null}
-                <optgroup label={t('entityTypes.fields.optgroupTypes')}>
-                  {tree.ordered.map((node) => (
-                    <option key={node.type.id} value={`type:${node.type.id}`}>
-                      {typePathLabel(node)}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
-              <p className="field__hint" id="field-target-hint">
-                {target === null
-                  ? t('entityTypes.fields.targetHintNone')
-                  : target === 'any'
-                    ? t('entityTypes.fields.targetHintAny')
-                    : target.startsWith('group:')
-                      ? t('entityTypes.fields.targetHintGroup')
-                      : t('entityTypes.fields.targetHintType')}
-              </p>
-              {field && field.entryCount > 0 ? (
-                <p className="field__hint">{t('entityTypes.fields.targetNarrowHint')}</p>
-              ) : null}
-              {fieldErrors.target ? <p className="field__error">{fieldErrors.target}</p> : null}
-            </div>
-          ) : null}
-
-          {semanticsFor(kind).length > 0 ? (
-            <div className="field">
-              <label className="field__label" htmlFor="field-semantic">
-                {t('entityTypes.fields.canonMeaningLabel')}
-              </label>
-              <select
-                id="field-semantic"
-                className="field__input field__input--select"
-                value={semantic ?? ''}
-                onChange={(event) =>
-                  setSemantic(
-                    event.target.value === ''
-                      ? null
-                      : (Number(event.target.value) as FieldSemanticValue),
-                  )
-                }
-                data-testid="field-semantic"
-              >
-                <option value="">{t('entityTypes.fields.none')}</option>
-                {semanticsFor(kind).map((each) => (
-                  <option key={each} value={each}>
-                    {FIELD_SEMANTIC_LABELS[each]}
-                  </option>
-                ))}
-              </select>
-              <p className="field__hint">{t('entityTypes.fields.semanticHint')}</p>
-              {fieldErrors.semantic ? <p className="field__error">{fieldErrors.semantic}</p> : null}
-            </div>
-          ) : null}
-
-          {isImage ? (
-            <div className="field">
-              <label className="field__label" htmlFor="field-image-shape">
-                {t('entityTypes.fields.imageShape')}
-              </label>
-              <select
-                id="field-image-shape"
-                className="field__input field__input--select"
-                value={imageShape}
-                onChange={(event) =>
-                  setImageShape(Number(event.target.value) as FieldImageShapeValue)
-                }
-                data-testid="field-image-shape"
-              >
-                {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
-                  <option key={each} value={each}>
-                    {FIELD_IMAGE_SHAPE_LABELS[each]}
-                  </option>
-                ))}
-              </select>
-              <p className="field__hint">{t('entityTypes.fields.imageShapeHint')}</p>
-            </div>
-          ) : null}
-
-          {isText ? (
-            <Field
-              label={t('entityTypes.fields.defaultText')}
-              name="field-default"
-              dir="auto"
-              value={defaultValue}
-              onChange={(event) => setDefaultValue(event.target.value)}
-              error={fieldErrors.defaultvalue}
-              hint={t('entityTypes.fields.defaultHint')}
-              data-testid="field-default"
-            />
-          ) : null}
-
-          {isImage ? null : (
-            <div className="field">
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={isRequired}
-                  onChange={(event) => setIsRequired(event.target.checked)}
-                  data-testid="field-required"
-                />
-                <span>{t('entityTypes.fields.requiredLabel')}</span>
-              </label>
-              {field && isRequired && !field.isRequired ? (
-                <p className="field__hint">
-                  {t('entityTypes.fields.requiredHint', { name: type.name })}
-                </p>
-              ) : null}
-            </div>
-          )}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="field-dialog"
+      titleId="field-heading"
+      eyebrow={tx('entityTypes.fields.dialogEyebrow', { name: <bdi>{type.name}</bdi> })}
+      title={field ? t('entityTypes.fields.editTitle') : t('entityTypes.fields.addTitle')}
+      isDirty={isDirty}
+      leaveMessage={
+        field
+          ? t('entityTypes.fields.leaveEdit', { name: field.name })
+          : t('entityTypes.fields.leaveNew')
+      }
+      onClose={onClose}
+      noValidate
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-field">
             {field
               ? isSaving
@@ -1146,8 +894,238 @@ function FieldDialog({
           >
             {t('entityTypes.fields.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid="field-dialog-error">
+          {message}
+        </p>
+      ) : null}
+
+      {stale && latest ? (
+        <div className="callout callout--warning" data-testid="field-dialog-stale">
+          <p className="callout__title">{t('entityTypes.fields.savedNow')}</p>
+          <p className="fieldconflict__saved">
+            {tx(
+              latest.archivedAt !== null
+                ? 'entityTypes.fields.savedNowArchived'
+                : 'entityTypes.fields.savedNowSummary',
+              {
+                name: <bdi>{latest.name}</bdi>,
+                summary: describe(latest),
+              },
+            )}
+          </p>
+          <p className="types__blockedlinks">
+            <button
+              className="button button--secondary button--sm"
+              type="button"
+              onClick={() => takeSaved(latest)}
+              data-testid="field-use-saved"
+            >
+              {t('entityTypes.fields.useSaved')}
+            </button>
+            {latest.archivedAt === null ? (
+              <button
+                className="button button--text button--sm"
+                type="button"
+                onClick={() => keepMine(latest)}
+                data-testid="field-keep-mine"
+              >
+                {t('entityTypes.fields.keepMine')}
+              </button>
+            ) : null}
+          </p>
+        </div>
+      ) : null}
+
+      <Field
+        label={t('entityTypes.fields.fieldName')}
+        name="field-name"
+        dir="auto"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        error={fieldErrors.name}
+        data-testid="field-name"
+      />
+
+      <div className="field">
+        <label className="field__label" htmlFor="field-kind">
+          {t('entityTypes.fields.kind')}
+        </label>
+        <select
+          id="field-kind"
+          className="field__input field__input--select"
+          value={kind}
+          disabled={kindLocked}
+          aria-describedby={kindLocked ? 'field-kind-hint' : undefined}
+          onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
+          data-testid="field-kind"
+        >
+          {KIND_ORDER.map((each) => (
+            <option key={each} value={each}>
+              {FIELD_KIND_LABELS[each]}
+            </option>
+          ))}
+        </select>
+        {kindLocked ? (
+          <p className="field__hint" id="field-kind-hint" data-testid="field-kind-hint">
+            {held.entryCount > 0
+              ? tn('entityTypes.fields.kindLockedHeld', held.entryCount, { n: held.entryCount })
+              : t('entityTypes.fields.kindLockedHistory')}
+          </p>
+        ) : null}
+      </div>
+
+      {hasOptions ? (
+        <Field
+          label={t('entityTypes.fields.options')}
+          name="field-options"
+          value={options}
+          onChange={(event) => setOptions(event.target.value)}
+          error={fieldErrors.options}
+          hint={field ? t('entityTypes.fields.optionsHint') : undefined}
+          data-testid="field-options"
+        />
+      ) : null}
+
+      {isLink ? (
+        <div className="field">
+          <label className="field__label" htmlFor="field-target">
+            {t('entityTypes.fields.canLinkTo')}
+          </label>
+          <select
+            id="field-target"
+            className="field__input field__input--select"
+            value={target ?? ''}
+            onChange={(event) => setTarget((event.target.value || null) as TargetChoice)}
+            aria-describedby="field-target-hint"
+            aria-invalid={fieldErrors.target ? true : undefined}
+            data-testid="field-target"
+          >
+            {target === null ? (
+              <option value="" disabled>
+                {t('entityTypes.fields.chooseTarget')}
+              </option>
+            ) : null}
+            <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
+            {groups.length > 0 ? (
+              <optgroup label={t('entityTypes.fields.optgroupGroups')}>
+                {groups.map((group) => (
+                  <option key={group.id} value={`group:${group.id}`}>
+                    {t('entityTypes.fields.groupOption', { name: group.name })}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            <optgroup label={t('entityTypes.fields.optgroupTypes')}>
+              {tree.ordered.map((node) => (
+                <option key={node.type.id} value={`type:${node.type.id}`}>
+                  {typePathLabel(node)}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+          <p className="field__hint" id="field-target-hint">
+            {target === null
+              ? t('entityTypes.fields.targetHintNone')
+              : target === 'any'
+                ? t('entityTypes.fields.targetHintAny')
+                : target.startsWith('group:')
+                  ? t('entityTypes.fields.targetHintGroup')
+                  : t('entityTypes.fields.targetHintType')}
+          </p>
+          {field && field.entryCount > 0 ? (
+            <p className="field__hint">{t('entityTypes.fields.targetNarrowHint')}</p>
+          ) : null}
+          {fieldErrors.target ? <p className="field__error">{fieldErrors.target}</p> : null}
+        </div>
+      ) : null}
+
+      {semanticsFor(kind).length > 0 ? (
+        <div className="field">
+          <label className="field__label" htmlFor="field-semantic">
+            {t('entityTypes.fields.canonMeaningLabel')}
+          </label>
+          <select
+            id="field-semantic"
+            className="field__input field__input--select"
+            value={semantic ?? ''}
+            onChange={(event) =>
+              setSemantic(
+                event.target.value === ''
+                  ? null
+                  : (Number(event.target.value) as FieldSemanticValue),
+              )
+            }
+            data-testid="field-semantic"
+          >
+            <option value="">{t('entityTypes.fields.none')}</option>
+            {semanticsFor(kind).map((each) => (
+              <option key={each} value={each}>
+                {FIELD_SEMANTIC_LABELS[each]}
+              </option>
+            ))}
+          </select>
+          <p className="field__hint">{t('entityTypes.fields.semanticHint')}</p>
+          {fieldErrors.semantic ? <p className="field__error">{fieldErrors.semantic}</p> : null}
+        </div>
+      ) : null}
+
+      {isImage ? (
+        <div className="field">
+          <label className="field__label" htmlFor="field-image-shape">
+            {t('entityTypes.fields.imageShape')}
+          </label>
+          <select
+            id="field-image-shape"
+            className="field__input field__input--select"
+            value={imageShape}
+            onChange={(event) => setImageShape(Number(event.target.value) as FieldImageShapeValue)}
+            data-testid="field-image-shape"
+          >
+            {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+              <option key={each} value={each}>
+                {FIELD_IMAGE_SHAPE_LABELS[each]}
+              </option>
+            ))}
+          </select>
+          <p className="field__hint">{t('entityTypes.fields.imageShapeHint')}</p>
+        </div>
+      ) : null}
+
+      {isText ? (
+        <Field
+          label={t('entityTypes.fields.defaultText')}
+          name="field-default"
+          dir="auto"
+          value={defaultValue}
+          onChange={(event) => setDefaultValue(event.target.value)}
+          error={fieldErrors.defaultvalue}
+          hint={t('entityTypes.fields.defaultHint')}
+          data-testid="field-default"
+        />
+      ) : null}
+
+      {isImage ? null : (
+        <div className="field">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={isRequired}
+              onChange={(event) => setIsRequired(event.target.checked)}
+              data-testid="field-required"
+            />
+            <span>{t('entityTypes.fields.requiredLabel')}</span>
+          </label>
+          {field && isRequired && !field.isRequired ? (
+            <p className="field__hint">
+              {t('entityTypes.fields.requiredHint', { name: type.name })}
+            </p>
+          ) : null}
+        </div>
+      )}
+    </Drawer>
   )
 }

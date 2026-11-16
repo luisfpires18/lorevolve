@@ -9,7 +9,8 @@ import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
+import { Drawer } from './Drawer'
 import {
   CANON_LABELS,
   CANON_ORDER,
@@ -222,7 +223,6 @@ export function TimelineEntryForm({
   onSaved,
 }: TimelineEntryFormProps) {
   const { tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the moment as stored, or the blank form - which the draft is measured against.
   const [initial] = useState<MomentDraft>(() =>
@@ -247,19 +247,7 @@ export function TimelineEntryForm({
   const isDirty =
     payloadKey(inputOf(draft, reckonsInEras, custom)) !==
     payloadKey(inputOf(initial, reckonsInEras, custom))
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    entry
-      ? t('time.momentForm.leaveGuardEdit', { title: entry.title })
-      : t('time.momentForm.leaveGuardNew'),
-    onClose,
-  )
-
   useEffect(() => {
-    // showModal, not the open attribute: it brings the focus trap, the backdrop and
-    // Escape with it rather than leaving them to be rebuilt here.
-    dialog.current?.showModal()
-
     // Left alone, the browser hands the focus to the scrolling body, which then wears a
     // focus ring across the whole panel. The title is where the writing starts anyway.
     title.current?.focus()
@@ -382,266 +370,22 @@ export function TimelineEntryForm({
   }
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="moment-heading"
-      {...dialogProps}
-      data-testid="moment-form"
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          {/* A new moment's title already says so; the eyebrow names only what is being edited. */}
-          {entry ? <p className="drawer__eyebrow">{t('time.momentForm.eyebrow')}</p> : null}
-          <h2 className="drawer__title" id="moment-heading">
-            {entry ? entry.title || t('time.momentForm.untitled') : t('time.momentForm.newMoment')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {blocked ? (
-            <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
-          ) : null}
-
-          {message ? (
-            <p className="form__message" role="alert" data-testid="moment-error">
-              {message}
-            </p>
-          ) : null}
-
-          <div className="field">
-            <label className="field__label" htmlFor="moment-title">
-              {t('time.momentForm.title')}
-            </label>
-            <input
-              id="moment-title"
-              className="field__input"
-              ref={title}
-              type="text"
-              dir="auto"
-              placeholder={t('time.momentForm.titlePlaceholder')}
-              value={draft.title}
-              onChange={(event) => edit({ title: event.target.value })}
-              aria-invalid={fieldErrors.title ? true : undefined}
-              data-testid="moment-title"
-            />
-            {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-          </div>
-
-          <div className="field">
-            <label className="field__label" htmlFor="moment-description">
-              {t('time.momentForm.description')}
-            </label>
-            <textarea
-              id="moment-description"
-              className="field__input field__input--area"
-              rows={3}
-              placeholder={t('time.momentForm.descriptionPlaceholder')}
-              value={draft.description}
-              onChange={(event) => edit({ description: event.target.value })}
-              data-testid="moment-description"
-            />
-            {fieldErrors.description ? (
-              <p className="field__error">{fieldErrors.description}</p>
-            ) : null}
-          </div>
-
-          <div className="field">
-            <span className="field__label">{t('time.momentForm.status')}</span>
-            <div className="canon" role="group" aria-label={t('time.momentForm.statusGroup')}>
-              {CANON_ORDER.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="canon__step"
-                  aria-pressed={draft.canonStatus === option}
-                  onClick={() => edit({ canonStatus: option })}
-                  data-testid={`moment-canon-${CANON_KEYS[option]}`}
-                >
-                  {CANON_LABELS[option]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="field">
-            <span className="field__label">{t('time.momentForm.when')}</span>
-            <div className="segmented" role="group" aria-label={t('time.momentForm.kindGroup')}>
-              {DATE_KIND_ORDER.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="segmented__option"
-                  aria-pressed={draft.dateKind === option}
-                  onClick={() => chooseKind(option)}
-                  data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
-                >
-                  {DATE_KIND_LABELS[option]}
-                </button>
-              ))}
-            </div>
-            <p className="field__hint">{DATE_KIND_HINTS[draft.dateKind]}</p>
-            {fieldErrors.datekind ? <p className="field__error">{fieldErrors.datekind}</p> : null}
-          </div>
-
-          {isDated ? (
-            <>
-              {point(
-                'start',
-                isRange ? t('time.momentForm.startsInYear') : t('time.momentForm.year'),
-                {
-                  era: fieldErrors.starteraid,
-                  year: fieldErrors.startyear,
-                  month: fieldErrors.startmonth,
-                  day: fieldErrors.startday,
-                },
-              )}
-
-              {isRange
-                ? point('end', t('time.momentForm.endsInYear'), {
-                    era: fieldErrors.enderaid,
-                    year: fieldErrors.endyear,
-                    month: fieldErrors.endmonth,
-                    day: fieldErrors.endday,
-                  })
-                : null}
-            </>
-          ) : null}
-
-          {reckonsInEras ? (
-            draft.eraLabel ? (
-              <p className="field__hint" data-testid="moment-old-label">
-                {tx('time.momentForm.oldLabel', { label: <bdi>{draft.eraLabel}</bdi> })}
-              </p>
-            ) : null
-          ) : (
-            <div className="field">
-              <label className="field__label" htmlFor="moment-era">
-                {t('time.momentForm.yearLabel')}
-              </label>
-              <p className="field__hint">{t('time.momentForm.yearLabelHint')}</p>
-              <input
-                id="moment-era"
-                className="field__input"
-                type="text"
-                placeholder={t('time.momentForm.optional')}
-                value={draft.eraLabel}
-                onChange={(event) => edit({ eraLabel: event.target.value })}
-                aria-invalid={fieldErrors.eralabel ? true : undefined}
-                data-testid="moment-era"
-              />
-              {fieldErrors.eralabel ? <p className="field__error">{fieldErrors.eralabel}</p> : null}
-            </div>
-          )}
-
-          <EntityMultiPicker
-            label={t('time.momentForm.entities')}
-            hint={t('time.momentForm.entitiesHint')}
-            universeId={universeId}
-            value={draft.entities}
-            onChange={(entities) => edit({ entities })}
-            error={fieldErrors.entityids}
-          />
-
-          <StoryLinks
-            universeId={universeId}
-            value={draft.stories}
-            onChange={(stories) => edit({ stories })}
-            error={fieldErrors.storyids}
-          />
-
-          <details
-            className="moment__details"
-            open={detailsOpen}
-            onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
-            data-testid="moment-validation"
-          >
-            <summary data-testid="moment-validation-toggle">
-              {t('time.momentForm.details')}
-              {detailCount > 0 ? (
-                <span className="moment__detailscount">
-                  {' '}
-                  {t('time.momentForm.detailsSet', { n: detailCount })}
-                </span>
-              ) : (
-                <span className="moment__detailscount">
-                  {' '}
-                  {t('time.momentForm.detailsOptional')}
-                </span>
-              )}
-            </summary>
-
-            <div className="moment__detailsbody">
-              <p className="field__hint">{t('time.momentForm.detailsHint')}</p>
-
-              {termsFailed ? (
-                <p className="form__message" role="alert">
-                  {t('time.momentForm.termsFailed')}{' '}
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
-                    onClick={reloadTerms}
-                  >
-                    {t('time.momentForm.tryAgain')}
-                  </button>
-                </p>
-              ) : null}
-
-              <ValidationTermSelect
-                universeId={universeId}
-                kind={ValidationTermKind.EventKind}
-                label={t('time.momentForm.eventKind')}
-                terms={terms}
-                value={draft.eventKindId}
-                selectedName={
-                  entry?.validation?.eventKind?.id === draft.eventKindId
-                    ? entry.validation.eventKind.name
-                    : null
-                }
-                emptyLabel={t('time.momentForm.eventKindNone')}
-                onChange={(eventKindId) => edit({ eventKindId })}
-                onCreated={addTerm}
-                error={fieldErrors[DETAIL_ERROR_KEYS.eventKind]}
-                testId="moment-event-kind"
-              />
-
-              <ValidationTermSelect
-                universeId={universeId}
-                kind={ValidationTermKind.Method}
-                label={t('time.momentForm.method')}
-                terms={terms}
-                value={draft.methodId}
-                selectedName={
-                  entry?.validation?.method?.id === draft.methodId
-                    ? entry.validation.method.name
-                    : null
-                }
-                emptyLabel={t('time.momentForm.methodNone')}
-                onChange={(methodId) => edit({ methodId })}
-                onCreated={addTerm}
-                error={fieldErrors[DETAIL_ERROR_KEYS.method]}
-                testId="moment-method"
-              />
-
-              <EntityPicker
-                label={t('time.momentForm.participant')}
-                universeId={universeId}
-                value={draft.participant}
-                onChange={(participant) => edit({ participant })}
-                placeholder={t('time.momentForm.participantPlaceholder')}
-                error={fieldErrors[DETAIL_ERROR_KEYS.participant]}
-              />
-            </div>
-          </details>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="moment-form"
+      titleId="moment-heading"
+      // A new moment's title already says so; the eyebrow names only what is being edited.
+      eyebrow={entry ? t('time.momentForm.eyebrow') : null}
+      title={entry ? entry.title || t('time.momentForm.untitled') : t('time.momentForm.newMoment')}
+      isDirty={isDirty}
+      leaveMessage={
+        entry
+          ? t('time.momentForm.leaveGuardEdit', { title: entry.title })
+          : t('time.momentForm.leaveGuardNew')
+      }
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-moment">
             {isSaving
               ? t('time.momentForm.saving')
@@ -657,9 +401,233 @@ export function TimelineEntryForm({
           >
             {t('time.momentForm.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {blocked ? (
+        <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
+      ) : null}
+
+      {message ? (
+        <p className="form__message" role="alert" data-testid="moment-error">
+          {message}
+        </p>
+      ) : null}
+
+      <div className="field">
+        <label className="field__label" htmlFor="moment-title">
+          {t('time.momentForm.title')}
+        </label>
+        <input
+          id="moment-title"
+          className="field__input"
+          ref={title}
+          type="text"
+          dir="auto"
+          placeholder={t('time.momentForm.titlePlaceholder')}
+          value={draft.title}
+          onChange={(event) => edit({ title: event.target.value })}
+          aria-invalid={fieldErrors.title ? true : undefined}
+          data-testid="moment-title"
+        />
+        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="moment-description">
+          {t('time.momentForm.description')}
+        </label>
+        <textarea
+          id="moment-description"
+          className="field__input field__input--area"
+          rows={3}
+          placeholder={t('time.momentForm.descriptionPlaceholder')}
+          value={draft.description}
+          onChange={(event) => edit({ description: event.target.value })}
+          data-testid="moment-description"
+        />
+        {fieldErrors.description ? <p className="field__error">{fieldErrors.description}</p> : null}
+      </div>
+
+      <div className="field">
+        <span className="field__label">{t('time.momentForm.status')}</span>
+        <div className="canon" role="group" aria-label={t('time.momentForm.statusGroup')}>
+          {CANON_ORDER.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="canon__step"
+              aria-pressed={draft.canonStatus === option}
+              onClick={() => edit({ canonStatus: option })}
+              data-testid={`moment-canon-${CANON_KEYS[option]}`}
+            >
+              {CANON_LABELS[option]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="field">
+        <span className="field__label">{t('time.momentForm.when')}</span>
+        <div className="segmented" role="group" aria-label={t('time.momentForm.kindGroup')}>
+          {DATE_KIND_ORDER.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="segmented__option"
+              aria-pressed={draft.dateKind === option}
+              onClick={() => chooseKind(option)}
+              data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
+            >
+              {DATE_KIND_LABELS[option]}
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">{DATE_KIND_HINTS[draft.dateKind]}</p>
+        {fieldErrors.datekind ? <p className="field__error">{fieldErrors.datekind}</p> : null}
+      </div>
+
+      {isDated ? (
+        <>
+          {point('start', isRange ? t('time.momentForm.startsInYear') : t('time.momentForm.year'), {
+            era: fieldErrors.starteraid,
+            year: fieldErrors.startyear,
+            month: fieldErrors.startmonth,
+            day: fieldErrors.startday,
+          })}
+
+          {isRange
+            ? point('end', t('time.momentForm.endsInYear'), {
+                era: fieldErrors.enderaid,
+                year: fieldErrors.endyear,
+                month: fieldErrors.endmonth,
+                day: fieldErrors.endday,
+              })
+            : null}
+        </>
+      ) : null}
+
+      {reckonsInEras ? (
+        draft.eraLabel ? (
+          <p className="field__hint" data-testid="moment-old-label">
+            {tx('time.momentForm.oldLabel', { label: <bdi>{draft.eraLabel}</bdi> })}
+          </p>
+        ) : null
+      ) : (
+        <div className="field">
+          <label className="field__label" htmlFor="moment-era">
+            {t('time.momentForm.yearLabel')}
+          </label>
+          <p className="field__hint">{t('time.momentForm.yearLabelHint')}</p>
+          <input
+            id="moment-era"
+            className="field__input"
+            type="text"
+            placeholder={t('time.momentForm.optional')}
+            value={draft.eraLabel}
+            onChange={(event) => edit({ eraLabel: event.target.value })}
+            aria-invalid={fieldErrors.eralabel ? true : undefined}
+            data-testid="moment-era"
+          />
+          {fieldErrors.eralabel ? <p className="field__error">{fieldErrors.eralabel}</p> : null}
+        </div>
+      )}
+
+      <EntityMultiPicker
+        label={t('time.momentForm.entities')}
+        hint={t('time.momentForm.entitiesHint')}
+        universeId={universeId}
+        value={draft.entities}
+        onChange={(entities) => edit({ entities })}
+        error={fieldErrors.entityids}
+      />
+
+      <StoryLinks
+        universeId={universeId}
+        value={draft.stories}
+        onChange={(stories) => edit({ stories })}
+        error={fieldErrors.storyids}
+      />
+
+      <details
+        className="moment__details"
+        open={detailsOpen}
+        onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
+        data-testid="moment-validation"
+      >
+        <summary data-testid="moment-validation-toggle">
+          {t('time.momentForm.details')}
+          {detailCount > 0 ? (
+            <span className="moment__detailscount">
+              {' '}
+              {t('time.momentForm.detailsSet', { n: detailCount })}
+            </span>
+          ) : (
+            <span className="moment__detailscount"> {t('time.momentForm.detailsOptional')}</span>
+          )}
+        </summary>
+
+        <div className="moment__detailsbody">
+          <p className="field__hint">{t('time.momentForm.detailsHint')}</p>
+
+          {termsFailed ? (
+            <p className="form__message" role="alert">
+              {t('time.momentForm.termsFailed')}{' '}
+              <button
+                className="button button--secondary button--sm"
+                type="button"
+                onClick={reloadTerms}
+              >
+                {t('time.momentForm.tryAgain')}
+              </button>
+            </p>
+          ) : null}
+
+          <ValidationTermSelect
+            universeId={universeId}
+            kind={ValidationTermKind.EventKind}
+            label={t('time.momentForm.eventKind')}
+            terms={terms}
+            value={draft.eventKindId}
+            selectedName={
+              entry?.validation?.eventKind?.id === draft.eventKindId
+                ? entry.validation.eventKind.name
+                : null
+            }
+            emptyLabel={t('time.momentForm.eventKindNone')}
+            onChange={(eventKindId) => edit({ eventKindId })}
+            onCreated={addTerm}
+            error={fieldErrors[DETAIL_ERROR_KEYS.eventKind]}
+            testId="moment-event-kind"
+          />
+
+          <ValidationTermSelect
+            universeId={universeId}
+            kind={ValidationTermKind.Method}
+            label={t('time.momentForm.method')}
+            terms={terms}
+            value={draft.methodId}
+            selectedName={
+              entry?.validation?.method?.id === draft.methodId ? entry.validation.method.name : null
+            }
+            emptyLabel={t('time.momentForm.methodNone')}
+            onChange={(methodId) => edit({ methodId })}
+            onCreated={addTerm}
+            error={fieldErrors[DETAIL_ERROR_KEYS.method]}
+            testId="moment-method"
+          />
+
+          <EntityPicker
+            label={t('time.momentForm.participant')}
+            universeId={universeId}
+            value={draft.participant}
+            onChange={(participant) => edit({ participant })}
+            placeholder={t('time.momentForm.participantPlaceholder')}
+            error={fieldErrors[DETAIL_ERROR_KEYS.participant]}
+          />
+        </div>
+      </details>
+    </Drawer>
   )
 }
 

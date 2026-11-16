@@ -11,9 +11,10 @@ import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
+import { Drawer } from './Drawer'
 import { emptyValue } from '../lore/document'
 import { renderFact } from '../lore/facts'
 import type { FieldDefinition, FieldValue, FieldValueInput } from '../lore/types'
@@ -178,7 +179,6 @@ export function EraForm({
   onSaved,
 }: EraFormProps) {
   useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const nameInput = useRef<HTMLInputElement>(null)
   const saveButton = useRef<HTMLButtonElement>(null)
   const reckonsInEras = namesEras(chronology)
@@ -195,16 +195,9 @@ export function EraForm({
   const isDirty =
     payloadKey(inputOf(draft, null, reckonsInEras, custom)) !==
     payloadKey(inputOf(initial, null, reckonsInEras, custom))
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    era ? t('time.eraForm.leaveGuardEdit', { name: era.name }) : t('time.eraForm.leaveGuardNew'),
-    onClose,
-  )
-
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     nameInput.current?.focus()
   }, [])
 
@@ -264,167 +257,23 @@ export function EraForm({
   }
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="era-heading"
-      {...dialogProps}
-      data-testid="era-form"
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">
-            {era
-              ? t('time.eraForm.eyebrowEdit', { name: entityName })
-              : t('time.eraForm.eyebrowNew', { name: entityName })}
-          </p>
-          <h2 className="drawer__title" id="era-heading">
-            {era ? era.name : t('time.eraForm.newStage')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="era-error">
-              {message}
-            </p>
-          ) : null}
-
-          {conflict ? (
-            <EditConflict
-              what={t('time.eraForm.conflictWhat')}
-              read={() => getProgression(universeId, entityId)}
-              renderLatest={(latest) => (
-                <ul className="namelist">
-                  {latest.eras.map((one) => (
-                    <li key={one.id}>{one.name}</li>
-                  ))}
-                </ul>
-              )}
-              onKeepMine={(latest) => {
-                setBase(latest)
-                setConflict(false)
-                requestAnimationFrame(() => saveButton.current?.focus())
-              }}
-              onUseLatest={(latest) => {
-                setBase(latest)
-                const reread = latest.eras.find((one) => one.id === era?.id) ?? null
-                setDraft(draftOf(reread, definitions))
-                setConflict(false)
-                requestAnimationFrame(() => nameInput.current?.focus())
-              }}
-              testId="era-conflict"
-            />
-          ) : null}
-
-          <div className="field">
-            <label className="field__label" htmlFor="era-name">
-              {t('time.eraForm.name')}
-            </label>
-            <input
-              id="era-name"
-              ref={nameInput}
-              className="field__input"
-              dir="auto"
-              placeholder={t('time.eraForm.namePlaceholder')}
-              value={draft.name}
-              onChange={(event) => edit({ name: event.target.value })}
-              aria-invalid={errorOf('name') ? true : undefined}
-              aria-describedby={errorOf('name') ? 'era-name-error' : undefined}
-              data-testid="era-name-input"
-            />
-            {errorOf('name') ? (
-              <p className="field__error" id="era-name-error">
-                {errorOf('name')}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="field">
-            <label className="field__label" htmlFor="era-description">
-              {t('time.eraForm.happens')}
-            </label>
-            <p className="field__hint">{t('time.eraForm.happensHint', { name: entityName })}</p>
-            <textarea
-              id="era-description"
-              className="field__input field__input--area"
-              rows={4}
-              dir="auto"
-              value={draft.description}
-              onChange={(event) => edit({ description: event.target.value })}
-              aria-invalid={errorOf('description') ? true : undefined}
-              aria-describedby={errorOf('description') ? 'era-description-error' : undefined}
-              data-testid="era-description-input"
-            />
-            {errorOf('description') ? (
-              <p className="field__error" id="era-description-error">
-                {errorOf('description')}
-              </p>
-            ) : null}
-          </div>
-
-          <fieldset className="scenechron">
-            <legend className="field__label">{t('time.eraForm.when')}</legend>
-            <p className="field__hint">{t('time.eraForm.whenHint')}</p>
-            <EraPoint
-              label={t('time.eraForm.from')}
-              prefix="era-start"
-              errorKey={`${key}.start`}
-              chronology={chronology}
-              value={draft.start}
-              fieldErrors={fieldErrors}
-              onChange={(start) => edit({ start })}
-            />
-            <EraPoint
-              label={t('time.eraForm.to')}
-              prefix="era-end"
-              errorKey={`${key}.end`}
-              chronology={chronology}
-              value={draft.end}
-              fieldErrors={fieldErrors}
-              onChange={(end) => edit({ end })}
-            />
-          </fieldset>
-
-          <EraStories
-            universeId={universeId}
-            stories={draft.stories}
-            scenes={draft.scenes}
-            onChange={(stories, scenes) => edit({ stories, scenes })}
-            storyError={errorOf('storyIds')}
-            sceneError={errorOf('sceneIds')}
-          />
-
-          {definitions.length > 0 ? (
-            <fieldset className="erafields" data-testid="era-fields">
-              <legend className="field__label">{t('time.eraForm.details')}</legend>
-              <p className="field__hint">{t('time.eraForm.detailsHint', { name: entityName })}</p>
-              {definitions.map((definition) => (
-                <EraFieldRow
-                  key={definition.id}
-                  definition={definition}
-                  field={draft.fields[definition.id]}
-                  inherited={
-                    entryFields.find((value) => value.fieldDefinitionId === definition.id) ?? null
-                  }
-                  universeId={universeId}
-                  entityId={entityId}
-                  chronology={chronology}
-                  error={errorOf(`fields.${definition.id}`)}
-                  onChange={(change) => editField(definition.id, change)}
-                />
-              ))}
-            </fieldset>
-          ) : null}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="era-form"
+      titleId="era-heading"
+      eyebrow={
+        era
+          ? t('time.eraForm.eyebrowEdit', { name: entityName })
+          : t('time.eraForm.eyebrowNew', { name: entityName })
+      }
+      title={era ? era.name : t('time.eraForm.newStage')}
+      isDirty={isDirty}
+      leaveMessage={
+        era ? t('time.eraForm.leaveGuardEdit', { name: era.name }) : t('time.eraForm.leaveGuardNew')
+      }
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button
             ref={saveButton}
             className="button"
@@ -446,9 +295,142 @@ export function EraForm({
           >
             {t('time.eraForm.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid="era-error">
+          {message}
+        </p>
+      ) : null}
+
+      {conflict ? (
+        <EditConflict
+          what={t('time.eraForm.conflictWhat')}
+          read={() => getProgression(universeId, entityId)}
+          renderLatest={(latest) => (
+            <ul className="namelist">
+              {latest.eras.map((one) => (
+                <li key={one.id}>{one.name}</li>
+              ))}
+            </ul>
+          )}
+          onKeepMine={(latest) => {
+            setBase(latest)
+            setConflict(false)
+            requestAnimationFrame(() => saveButton.current?.focus())
+          }}
+          onUseLatest={(latest) => {
+            setBase(latest)
+            const reread = latest.eras.find((one) => one.id === era?.id) ?? null
+            setDraft(draftOf(reread, definitions))
+            setConflict(false)
+            requestAnimationFrame(() => nameInput.current?.focus())
+          }}
+          testId="era-conflict"
+        />
+      ) : null}
+
+      <div className="field">
+        <label className="field__label" htmlFor="era-name">
+          {t('time.eraForm.name')}
+        </label>
+        <input
+          id="era-name"
+          ref={nameInput}
+          className="field__input"
+          dir="auto"
+          placeholder={t('time.eraForm.namePlaceholder')}
+          value={draft.name}
+          onChange={(event) => edit({ name: event.target.value })}
+          aria-invalid={errorOf('name') ? true : undefined}
+          aria-describedby={errorOf('name') ? 'era-name-error' : undefined}
+          data-testid="era-name-input"
+        />
+        {errorOf('name') ? (
+          <p className="field__error" id="era-name-error">
+            {errorOf('name')}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="era-description">
+          {t('time.eraForm.happens')}
+        </label>
+        <p className="field__hint">{t('time.eraForm.happensHint', { name: entityName })}</p>
+        <textarea
+          id="era-description"
+          className="field__input field__input--area"
+          rows={4}
+          dir="auto"
+          value={draft.description}
+          onChange={(event) => edit({ description: event.target.value })}
+          aria-invalid={errorOf('description') ? true : undefined}
+          aria-describedby={errorOf('description') ? 'era-description-error' : undefined}
+          data-testid="era-description-input"
+        />
+        {errorOf('description') ? (
+          <p className="field__error" id="era-description-error">
+            {errorOf('description')}
+          </p>
+        ) : null}
+      </div>
+
+      <fieldset className="scenechron">
+        <legend className="field__label">{t('time.eraForm.when')}</legend>
+        <p className="field__hint">{t('time.eraForm.whenHint')}</p>
+        <EraPoint
+          label={t('time.eraForm.from')}
+          prefix="era-start"
+          errorKey={`${key}.start`}
+          chronology={chronology}
+          value={draft.start}
+          fieldErrors={fieldErrors}
+          onChange={(start) => edit({ start })}
+        />
+        <EraPoint
+          label={t('time.eraForm.to')}
+          prefix="era-end"
+          errorKey={`${key}.end`}
+          chronology={chronology}
+          value={draft.end}
+          fieldErrors={fieldErrors}
+          onChange={(end) => edit({ end })}
+        />
+      </fieldset>
+
+      <EraStories
+        universeId={universeId}
+        stories={draft.stories}
+        scenes={draft.scenes}
+        onChange={(stories, scenes) => edit({ stories, scenes })}
+        storyError={errorOf('storyIds')}
+        sceneError={errorOf('sceneIds')}
+      />
+
+      {definitions.length > 0 ? (
+        <fieldset className="erafields" data-testid="era-fields">
+          <legend className="field__label">{t('time.eraForm.details')}</legend>
+          <p className="field__hint">{t('time.eraForm.detailsHint', { name: entityName })}</p>
+          {definitions.map((definition) => (
+            <EraFieldRow
+              key={definition.id}
+              definition={definition}
+              field={draft.fields[definition.id]}
+              inherited={
+                entryFields.find((value) => value.fieldDefinitionId === definition.id) ?? null
+              }
+              universeId={universeId}
+              entityId={entityId}
+              chronology={chronology}
+              error={errorOf(`fields.${definition.id}`)}
+              onChange={(change) => editField(definition.id, change)}
+            />
+          ))}
+        </fieldset>
+      ) : null}
+    </Drawer>
   )
 }
 
