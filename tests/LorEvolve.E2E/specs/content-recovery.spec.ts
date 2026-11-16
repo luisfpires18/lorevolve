@@ -618,7 +618,7 @@ test.describe('content recovery', () => {
     await expandStory(page)
     await chooseFromMenu(page, 'delete-story')
     await acceptConfirm(page, 'to the Trash')
-    await page.waitForURL(/\/stories$/)
+    await page.waitForURL(/\/writing$/)
     await expect(
       page.locator('[data-testid="story-row"][data-title="The Long Winter"]'),
     ).toHaveCount(0)

@@ -549,7 +549,7 @@ export default function UniversePublish() {
               <span className="publish__contentcount" data-testid="published-stories">
                 {published ? t('universe.publish.storiesCount', { n: published.stories }) : null}
               </span>
-              <Link className="button button--secondary button--sm" to={`${base}/stories`}>
+              <Link className="button button--secondary button--sm" to={`${base}/writing`}>
                 {t('universe.publish.viewStories')}
               </Link>
             </li>

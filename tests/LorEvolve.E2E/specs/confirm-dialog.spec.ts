@@ -57,7 +57,7 @@ async function storyOpen(page: Page) {
     ).ok(),
   ).toBe(true)
   await page.goto(`/app/universes/${u}/stories/${s}`)
-  return { u, s, title, storiesUrl: `/app/universes/${u}/stories` }
+  return { u, s, title, storiesUrl: `/app/universes/${u}/writing` }
 }
 
 async function askToTrash(page: Page) {

@@ -185,7 +185,7 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await page.getByTestId('story-move-down').click()
     await expect(titles).toHaveText(['Second Tale', 'First Tale'])
     // The screen moves first; the announcement is the API's answer, so reload only after it.
-    await expect(page.getByTestId('projects-announcement')).toContainText('story 2 of 2')
+    await expect(page.getByTestId('stories-announcement')).toContainText('story 2 of 2')
 
     await page.reload()
     await expect(titles).toHaveText(['Second Tale', 'First Tale'])

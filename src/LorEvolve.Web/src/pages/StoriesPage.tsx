@@ -7,6 +7,11 @@ import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
+import { listAllProjects } from '../projects/api'
+import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
+import { ProjectKind, type ProjectDetail } from '../projects/types'
+import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { listStories, reorderStories } from '../stories/api'
 import { sceneCountLabel } from '../stories/format'
 import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
@@ -16,7 +21,9 @@ import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; stories: StorySummary[] } | { kind: 'error' }
+  | { kind: 'loading' }
+  | { kind: 'ready'; stories: StorySummary[]; others: ProjectDetail[] }
+  | { kind: 'error' }
 
 /**
  * The stories told in this universe. A story is narrative an author writes with the lore - it draws
@@ -34,6 +41,8 @@ export default function StoriesPage() {
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const navigate = useNavigate()
+  const heading = sectionLabel(WRITING_PROJECTS)
+  useDocumentTitle(heading)
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [isCreating, setIsCreating] = useState(false)
@@ -53,7 +62,7 @@ export default function StoriesPage() {
     after.splice(to, 0, ...after.splice(from, 1))
     isMoving.current = true
     setMoveError(null)
-    setState({ kind: 'ready', stories: after })
+    setState({ kind: 'ready', stories: after, others: state.others })
     requestAnimationFrame(() =>
       document
         .querySelector<HTMLElement>(`[data-story-id="${story.id}"] [data-testid="story-actions"]`)
@@ -64,12 +73,12 @@ export default function StoriesPage() {
         universe.id,
         after.map((candidate) => candidate.id),
       )
-      setState({ kind: 'ready', stories: saved })
+      setState({ kind: 'ready', stories: saved, others: state.others })
       setAnnouncement(
         t('stories.browse.moved', { title: story.title, n: to + 1, total: after.length }),
       )
     } catch (error: unknown) {
-      setState({ kind: 'ready', stories: before })
+      setState({ kind: 'ready', stories: before, others: state.others })
       setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
     } finally {
       isMoving.current = false
@@ -79,8 +88,15 @@ export default function StoriesPage() {
   useEffect(() => {
     const controller = new AbortController()
 
-    listStories(universe.id, controller.signal)
-      .then((stories) => setState({ kind: 'ready', stories }))
+    // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.
+    const others = listAllProjects({ universeId: universe.id }, controller.signal)
+      .then((projects) =>
+        projects.filter((project) => project.kind === ProjectKind.Writing && !project.storyId),
+      )
+      .catch((): ProjectDetail[] => [])
+
+    Promise.all([listStories(universe.id, controller.signal), others])
+      .then(([stories, rest]) => setState({ kind: 'ready', stories, others: rest }))
       .catch(() => {
         if (controller.signal.aborted) return
         setState({ kind: 'error' })
@@ -94,7 +110,7 @@ export default function StoriesPage() {
   return (
     <article className="stories">
       <PageHeader
-        title={t('stories.browse.title')}
+        title={heading}
         lede={t('stories.browse.lede')}
         actions={
           access.editContent ? (
@@ -152,7 +168,7 @@ export default function StoriesPage() {
               data-title={story.title}
               data-story-id={story.id}
             >
-              <Link className="storyrow__title" to={story.id}>
+              <Link className="storyrow__title" to={storyProjectPath(universe.id, story.id)}>
                 <bdi>{story.title}</bdi>
               </Link>
               <p className="storyrow__meta">
@@ -195,7 +211,25 @@ export default function StoriesPage() {
         </ul>
       ) : null}
 
-      {state.kind === 'ready' && state.stories.length === 0 ? (
+      {state.kind === 'ready' && state.others.length > 0 ? (
+        <ul className="storylist" data-testid="writing-project-list">
+          {state.others.map((project) => (
+            <li className="storyrow" key={project.id} data-testid="writing-project-row">
+              <Link className="storyrow__title" to={projectRowPath(project)}>
+                <bdi>{project.name}</bdi>
+              </Link>
+              <p className="storyrow__meta">
+                <span>{lifecycleLabel(project.lifecycle)}</span>
+              </p>
+              {project.summary ? (
+                <p className="storyrow__premise prose">{project.summary}</p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {state.kind === 'ready' && state.stories.length === 0 && state.others.length === 0 ? (
         <EmptyState
           testId="stories-empty"
           title={t('stories.browse.empty.title')}
@@ -221,7 +255,7 @@ export default function StoriesPage() {
           universeId={universe.id}
           story={null}
           onClose={() => setIsCreating(false)}
-          onSaved={(story) => navigate(`/app/universes/${universe.id}/stories/${story.id}`)}
+          onSaved={(story) => navigate(storyProjectPath(universe.id, story.id))}
         />
       ) : null}
     </article>
