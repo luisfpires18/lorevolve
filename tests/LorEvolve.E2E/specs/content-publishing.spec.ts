@@ -271,7 +271,7 @@ test.describe('publishing lore and stories', () => {
       .getByRole('navigation', { name: 'Breadcrumb' })
       .getByRole('link', { name: 'Stories' })
       .click()
-    await page.waitForURL(`/app/universes/${universe.id}/stories`)
+    await page.waitForURL(`/app/universes/${universe.id}/writing`)
     expect(asked).toEqual([])
     await expect(confirmDialog(page)).toHaveCount(0)
   })

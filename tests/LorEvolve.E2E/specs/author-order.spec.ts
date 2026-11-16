@@ -30,6 +30,14 @@ function titles(page: Page) {
 }
 
 test.describe('author order', () => {
+  test('the old stories list lands on Writing, keeping the query', async ({ page }) => {
+    await signUp(page)
+    const universeId = await world(page)
+    await page.goto(`/app/universes/${universeId}/stories?x=1`)
+    await page.waitForURL(`/app/universes/${universeId}/writing?x=1`)
+    await expect(page.getByRole('heading', { level: 1, name: 'Writing' })).toBeVisible()
+  })
+
   test('stories are moved up and down from their menu, and the order is kept', async ({ page }) => {
     await signUp(page)
     const universeId = await world(page)
@@ -37,7 +45,7 @@ test.describe('author order', () => {
       await post(page, `/api/universes/${universeId}/stories`, { title, premise: null, status: 1 })
     }
 
-    await page.goto(`/app/universes/${universeId}/stories`)
+    await page.goto(`/app/universes/${universeId}/writing`)
     await expect
       .poll(() => titles(page))
       .toEqual(['The Endless War', 'The Great Forging', 'The Legacy'])

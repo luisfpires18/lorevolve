@@ -40,8 +40,8 @@ test.describe('the shell', () => {
   test('the first Tab reaches a skip link, and it lands on the screen itself', async ({ page }) => {
     await signUp(page)
     const base = await newUniverse(page)
-    await page.goto(`${base}/stories`)
-    await expect(page.getByRole('heading', { level: 1, name: 'Stories' })).toBeVisible()
+    await page.goto(`${base}/writing`)
+    await expect(page.getByRole('heading', { level: 1, name: 'Writing' })).toBeVisible()
 
     const skip = page.getByTestId('skip-link')
 
