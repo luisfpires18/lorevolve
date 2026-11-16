@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Field } from './Field'
 import {
   createEpisode,
   createSeason,
@@ -174,16 +175,18 @@ export function ProjectSeasons({
               .catch(failing)
           }}
         >
-          <label className="field">
-            <span className="field__label">{t('projects.seasons.name')}</span>
-            <input
-              className="field__input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="project-season-new-name"
-              required
-            />
-          </label>
+          <Field label={t('projects.seasons.name')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                data-testid="project-season-new-name"
+                required
+              />
+            )}
+          </Field>
           <div className="form__actions">
             <button
               className="button"
@@ -233,16 +236,18 @@ export function ProjectSeasons({
                     .catch(failing)
                 }}
               >
-                <label className="field">
-                  <span className="field__label">{t('projects.seasons.name')}</span>
-                  <input
-                    className="field__input"
-                    value={renameTo}
-                    onChange={(event) => setRenameTo(event.target.value)}
-                    data-testid="project-season-rename-name"
-                    required
-                  />
-                </label>
+                <Field label={t('projects.seasons.name')}>
+                  {(control) => (
+                    <input
+                      {...control}
+                      className="field__input"
+                      value={renameTo}
+                      onChange={(event) => setRenameTo(event.target.value)}
+                      data-testid="project-season-rename-name"
+                      required
+                    />
+                  )}
+                </Field>
                 <button
                   className="button button--sm"
                   type="submit"
@@ -504,25 +509,29 @@ function EpisodeForm({
         onSubmit(title, synopsis.length > 0 ? synopsis : null)
       }}
     >
-      <label className="field">
-        <span className="field__label">{t('projects.seasons.episodeTitle')}</span>
-        <input
-          className="field__input"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          data-testid="project-episode-new-title"
-          required
-        />
-      </label>
-      <label className="field">
-        <span className="field__label">{t('projects.seasons.synopsis')}</span>
-        <input
-          className="field__input"
-          value={synopsis}
-          onChange={(event) => setSynopsis(event.target.value)}
-          data-testid="project-episode-new-synopsis"
-        />
-      </label>
+      <Field label={t('projects.seasons.episodeTitle')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            data-testid="project-episode-new-title"
+            required
+          />
+        )}
+      </Field>
+      <Field label={t('projects.seasons.synopsis')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={synopsis}
+            onChange={(event) => setSynopsis(event.target.value)}
+            data-testid="project-episode-new-synopsis"
+          />
+        )}
+      </Field>
       <div className="form__actions">
         <button
           className="button"
@@ -625,26 +634,30 @@ function ScriptEditor({
         </p>
       ) : null}
 
-      <label className="field">
-        <span className="field__label">{t('projects.seasons.episodeTitle')}</span>
-        <input
-          className="field__input"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          data-testid={`project-script-title-${episode.id}`}
-          required
-        />
-      </label>
+      <Field label={t('projects.seasons.episodeTitle')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            data-testid={`project-script-title-${episode.id}`}
+            required
+          />
+        )}
+      </Field>
 
-      <label className="field">
-        <span className="field__label">{t('projects.seasons.synopsis')}</span>
-        <input
-          className="field__input"
-          value={synopsis}
-          onChange={(event) => setSynopsis(event.target.value)}
-          data-testid={`project-script-synopsis-${episode.id}`}
-        />
-      </label>
+      <Field label={t('projects.seasons.synopsis')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={synopsis}
+            onChange={(event) => setSynopsis(event.target.value)}
+            data-testid={`project-script-synopsis-${episode.id}`}
+          />
+        )}
+      </Field>
 
       {/*
        * Drawn only once the stored script has arrived. Showing an empty field first and filling it in on arrival would
@@ -653,16 +666,18 @@ function ScriptEditor({
       {script === null ? (
         <p className="projectcard__meta">{t('projects.common.loading')}</p>
       ) : (
-        <label className="field">
-          <span className="field__label">{t('projects.seasons.script')}</span>
-          <textarea
-            className="field__input"
-            rows={12}
-            value={script}
-            onChange={(event) => setScript(event.target.value)}
-            data-testid={`project-script-text-${episode.id}`}
-          />
-        </label>
+        <Field label={t('projects.seasons.script')}>
+          {(control) => (
+            <textarea
+              {...control}
+              className="field__input"
+              rows={12}
+              value={script}
+              onChange={(event) => setScript(event.target.value)}
+              data-testid={`project-script-text-${episode.id}`}
+            />
+          )}
+        </Field>
       )}
 
       <div className="form__actions">

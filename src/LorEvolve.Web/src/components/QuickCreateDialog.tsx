@@ -352,36 +352,34 @@ export function QuickCreateDialog({
           </p>
         ) : eligible.length === 1 ? (
           <p className="quickcreate__type" data-testid="quick-create-type">
-            <span className="field__label">{t('lore.quickCreate.typeFixed')}</span>{' '}
-            <bdi>{eligible[0].name}</bdi>
+            {t('lore.quickCreate.typeFixed')} <bdi>{eligible[0].name}</bdi>
           </p>
         ) : (
-          <div className="field">
-            <label className="field__label" htmlFor={typeId}>
-              {t('lore.quickCreate.typeLabel')}
-            </label>
-            <select
-              id={typeId}
-              className="field__input field__input--select"
-              value={chosenTypeId}
-              onChange={(event) => {
-                setChosenTypeId(event.target.value)
-                setFieldErrors({})
-              }}
-              aria-invalid={fieldErrors.entitytypeid ? true : undefined}
-              data-testid="quick-create-type-select"
-            >
-              <option value="">{t('lore.quickCreate.chooseType')}</option>
-              {eligible.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.entitytypeid ? (
-              <p className="field__error">{fieldErrors.entitytypeid}</p>
-            ) : null}
-          </div>
+          <Field
+            label={t('lore.quickCreate.typeLabel')}
+            id={typeId}
+            error={fieldErrors.entitytypeid}
+          >
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={chosenTypeId}
+                onChange={(event) => {
+                  setChosenTypeId(event.target.value)
+                  setFieldErrors({})
+                }}
+                data-testid="quick-create-type-select"
+              >
+                <option value="">{t('lore.quickCreate.chooseType')}</option>
+                {eligible.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
         )}
 
         {required.length > 0 ? (
@@ -397,10 +395,8 @@ export function QuickCreateDialog({
                   onChange={(next) =>
                     setValues((current) => ({ ...current, [definition.id]: next }))
                   }
+                  error={fieldErrors[definition.id]}
                 />
-                {fieldErrors[definition.id] ? (
-                  <p className="field__error">{fieldErrors[definition.id]}</p>
-                ) : null}
               </div>
             ))}
           </div>

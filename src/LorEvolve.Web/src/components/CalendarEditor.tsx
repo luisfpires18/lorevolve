@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import { SaveAction } from './SaveAction'
 import { removeCalendar, saveCalendar } from '../chronology/api'
 import type {
@@ -87,7 +88,6 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
   const [saves, setSaves] = useState(0)
   const [moved, setMoved] = useState('')
   const headingId = useId()
-  const modeId = useId()
   const statusId = useId()
   const touched = useRef(false)
   const created = useRef(0)
@@ -249,36 +249,30 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
         {t('time.calendar.heading')}
       </h2>
 
-      <div className="field calendar__mode">
-        <span className="field__label" id={modeId}>
-          {t('time.calendar.datesUse')}
-        </span>
-        <div
-          className="segmented"
-          role="group"
-          aria-labelledby={modeId}
-          data-testid="calendar-mode"
-        >
-          <button
-            type="button"
-            className="segmented__option"
-            aria-pressed={mode === 'simple'}
-            onClick={() => choose('simple')}
-            data-testid="calendar-mode-simple"
-          >
-            {t('time.calendar.simple')}
-          </button>
-          <button
-            type="button"
-            className="segmented__option"
-            aria-pressed={mode === 'custom'}
-            onClick={() => choose('custom')}
-            data-testid="calendar-mode-custom"
-          >
-            {t('time.calendar.custom')}
-          </button>
-        </div>
-      </div>
+      <Field label={t('time.calendar.datesUse')} group className="calendar__mode">
+        {(control) => (
+          <div className="segmented" {...control} data-testid="calendar-mode">
+            <button
+              type="button"
+              className="segmented__option"
+              aria-pressed={mode === 'simple'}
+              onClick={() => choose('simple')}
+              data-testid="calendar-mode-simple"
+            >
+              {t('time.calendar.simple')}
+            </button>
+            <button
+              type="button"
+              className="segmented__option"
+              aria-pressed={mode === 'custom'}
+              onClick={() => choose('custom')}
+              data-testid="calendar-mode-custom"
+            >
+              {t('time.calendar.custom')}
+            </button>
+          </div>
+        )}
+      </Field>
 
       {mode === 'simple' ? (
         <p className="settings__note" data-testid="calendar-note">
@@ -311,78 +305,63 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
                   </span>
 
                   <div className="month__fields">
-                    <div className="field">
-                      <label className="field__label" htmlFor={`${base}-name`}>
-                        {t('time.calendar.name')}
-                      </label>
-                      <input
-                        id={`${base}-name`}
-                        className="field__input"
-                        placeholder={t('time.calendar.namePlaceholder')}
-                        autoComplete="off"
-                        value={month.name}
-                        onChange={(event) => update(index, { name: event.target.value })}
-                        aria-invalid={nameError ? true : undefined}
-                        aria-describedby={nameError ? `${base}-name-error` : undefined}
-                        data-testid="month-name"
-                      />
-                      {nameError ? (
-                        <p className="field__error" id={`${base}-name-error`}>
-                          {nameError}
-                        </p>
-                      ) : null}
-                    </div>
+                    <Field label={t('time.calendar.name')} id={`${base}-name`} error={nameError}>
+                      {(control) => (
+                        <input
+                          {...control}
+                          className="field__input"
+                          placeholder={t('time.calendar.namePlaceholder')}
+                          autoComplete="off"
+                          value={month.name}
+                          onChange={(event) => update(index, { name: event.target.value })}
+                          data-testid="month-name"
+                        />
+                      )}
+                    </Field>
 
-                    <div className="field">
-                      <label className="field__label" htmlFor={`${base}-short`}>
-                        {t('time.calendar.shortName')}
-                      </label>
-                      <input
-                        id={`${base}-short`}
-                        className="field__input"
-                        placeholder={t('time.calendar.optional')}
-                        autoComplete="off"
-                        value={month.abbreviation}
-                        onChange={(event) => update(index, { abbreviation: event.target.value })}
-                        aria-invalid={shortError ? true : undefined}
-                        aria-describedby={shortError ? `${base}-short-error` : undefined}
-                        data-testid="month-abbreviation"
-                      />
-                      {shortError ? (
-                        <p className="field__error" id={`${base}-short-error`}>
-                          {shortError}
-                        </p>
-                      ) : null}
-                    </div>
+                    <Field
+                      label={t('time.calendar.shortName')}
+                      id={`${base}-short`}
+                      error={shortError}
+                    >
+                      {(control) => (
+                        <input
+                          {...control}
+                          className="field__input"
+                          placeholder={t('time.calendar.optional')}
+                          autoComplete="off"
+                          value={month.abbreviation}
+                          onChange={(event) => update(index, { abbreviation: event.target.value })}
+                          data-testid="month-abbreviation"
+                        />
+                      )}
+                    </Field>
 
-                    <div className="field month__days">
-                      <label className="field__label" htmlFor={`${base}-days`}>
-                        {t('time.calendar.days')}
-                      </label>
-                      <input
-                        id={`${base}-days`}
-                        className="field__input"
-                        type="number"
-                        inputMode="numeric"
-                        step="1"
-                        min={Math.max(1, month.maxDayUsed ?? 1)}
-                        max={1000}
-                        value={month.days}
-                        onChange={(event) => update(index, { days: event.target.value })}
-                        aria-invalid={daysError ? true : undefined}
-                        aria-describedby={
-                          [useId, daysError ? `${base}-days-error` : undefined]
-                            .filter(Boolean)
-                            .join(' ') || undefined
-                        }
-                        data-testid="month-days"
-                      />
-                      {daysError ? (
-                        <p className="field__error" id={`${base}-days-error`}>
-                          {daysError}
-                        </p>
-                      ) : null}
-                    </div>
+                    <Field
+                      label={t('time.calendar.days')}
+                      id={`${base}-days`}
+                      error={daysError}
+                      className="month__days"
+                    >
+                      {(control) => (
+                        <input
+                          {...control}
+                          className="field__input"
+                          type="number"
+                          inputMode="numeric"
+                          step="1"
+                          min={Math.max(1, month.maxDayUsed ?? 1)}
+                          max={1000}
+                          value={month.days}
+                          onChange={(event) => update(index, { days: event.target.value })}
+                          aria-describedby={
+                            [control['aria-describedby'], useId].filter(Boolean).join(' ') ||
+                            undefined
+                          }
+                          data-testid="month-days"
+                        />
+                      )}
+                    </Field>
                   </div>
 
                   <div className="month__tools">

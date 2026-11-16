@@ -9,6 +9,7 @@ import {
   type FieldImageRef,
   type FieldValueInput,
 } from '../lore/types'
+import { Field } from './Field'
 import { FieldImageInput, type PendingFieldImage } from './FieldImageInput'
 import { EntityPicker, type EntityChoice, type QuickCreateOptions } from './EntityPicker'
 
@@ -49,7 +50,13 @@ interface FieldInputProps {
 
   /** Where an Image field keeps its picture. An Image field is not offered without it. */
   image?: FieldImageBinding
+
+  /** What the API refused about this field, drawn under its control and named by it. */
+  error?: string
 }
+
+/** What `Field` hands a labelable control. */
+type Control = { id: string; 'aria-describedby'?: string; 'aria-invalid'?: true }
 
 /** Renders the one control the field's kind calls for. */
 export function FieldInput({
@@ -62,6 +69,7 @@ export function FieldInput({
   onChange,
   quickCreate = null,
   image,
+  error,
 }: FieldInputProps) {
   const { t } = useI18n()
   const id = `field-${definition.id}`
@@ -81,9 +89,9 @@ export function FieldInput({
     onChange({ ...value, ...part })
   }
 
-  const numberInput = (
+  const numberInput = (control: Control) => (
     <input
-      id={id}
+      {...control}
       type="number"
       className="field__input"
       min={showsEra && value.eraId ? 1 : undefined}
@@ -139,127 +147,136 @@ export function FieldInput({
         entityTypeGroupId={definition.targetGroupId}
         placeholder={t('entityTypes.input.searchEntry')}
         quickCreate={quickCreate}
+        error={error}
       />
     )
   }
 
+  if (definition.kind === FieldKind.MultiSelect) {
+    return (
+      <Field label={label} id={id} group error={error}>
+        {(control) => (
+          <div className="choices" {...control}>
+            {definition.options.map((option) => {
+              const chosen = value.optionIds?.includes(option.id) ?? false
+              return (
+                <label className="check" key={option.id}>
+                  <input
+                    type="checkbox"
+                    checked={chosen}
+                    onChange={(event) => {
+                      const current = value.optionIds ?? []
+                      patch({
+                        optionIds: event.target.checked
+                          ? [...current, option.id]
+                          : current.filter((candidate) => candidate !== option.id),
+                      })
+                    }}
+                  />
+                  <span>{option.value}</span>
+                </label>
+              )
+            })}
+          </div>
+        )}
+      </Field>
+    )
+  }
+
   return (
-    <div className="field">
-      <label className="field__label" htmlFor={id}>
-        {label}
-      </label>
+    <Field label={label} id={id} error={error}>
+      {(control) => (
+        <>
+          {definition.kind === FieldKind.ShortText ? (
+            <input
+              {...control}
+              className="field__input"
+              value={value.text ?? ''}
+              onChange={(event) => patch({ text: event.target.value })}
+            />
+          ) : null}
 
-      {definition.kind === FieldKind.ShortText ? (
-        <input
-          id={id}
-          className="field__input"
-          value={value.text ?? ''}
-          onChange={(event) => patch({ text: event.target.value })}
-        />
-      ) : null}
+          {definition.kind === FieldKind.LongText ? (
+            <textarea
+              {...control}
+              className="field__input field__input--area"
+              rows={3}
+              value={value.text ?? ''}
+              onChange={(event) => patch({ text: event.target.value })}
+            />
+          ) : null}
 
-      {definition.kind === FieldKind.LongText ? (
-        <textarea
-          id={id}
-          className="field__input field__input--area"
-          rows={3}
-          value={value.text ?? ''}
-          onChange={(event) => patch({ text: event.target.value })}
-        />
-      ) : null}
+          {definition.kind === FieldKind.Number ? (
+            showsEra ? (
+              <div className="fieldera">
+                <select
+                  className="field__input field__input--select"
+                  aria-label={t('entityTypes.input.datePeriodLabel', { name: definition.name })}
+                  value={value.eraId ?? ''}
+                  onChange={(event) => patch({ eraId: event.target.value || null })}
+                  data-testid={`field-era-${definition.id}`}
+                >
+                  <option value="">
+                    {yearMeaning
+                      ? t('entityTypes.input.chooseDatePeriod')
+                      : t('entityTypes.input.noDatePeriod')}
+                  </option>
+                  {chronology.eras.map((era) => (
+                    <option key={era.id} value={era.id}>
+                      {era.abbreviation ? `${era.name} (${era.abbreviation})` : era.name}
+                    </option>
+                  ))}
+                </select>
+                {numberInput(control)}
+              </div>
+            ) : (
+              numberInput(control)
+            )
+          ) : null}
 
-      {definition.kind === FieldKind.Number ? (
-        showsEra ? (
-          <div className="fieldera">
+          {definition.kind === FieldKind.Boolean ? (
+            <label className="check">
+              <input
+                {...control}
+                type="checkbox"
+                checked={value.boolean ?? false}
+                onChange={(event) => patch({ boolean: event.target.checked })}
+              />
+              <span>{t('entityTypes.input.yes')}</span>
+            </label>
+          ) : null}
+
+          {definition.kind === FieldKind.Date ? (
+            <input
+              {...control}
+              type="date"
+              className="field__input"
+              value={value.date ? value.date.slice(0, 10) : ''}
+              onChange={(event) =>
+                patch({ date: event.target.value ? `${event.target.value}T00:00:00Z` : null })
+              }
+            />
+          ) : null}
+
+          {definition.kind === FieldKind.Select ? (
             <select
+              {...control}
               className="field__input field__input--select"
-              aria-label={t('entityTypes.input.datePeriodLabel', { name: definition.name })}
-              value={value.eraId ?? ''}
-              onChange={(event) => patch({ eraId: event.target.value || null })}
-              data-testid={`field-era-${definition.id}`}
+              value={value.optionIds?.[0] ?? ''}
+              onChange={(event) =>
+                patch({ optionIds: event.target.value ? [event.target.value] : [] })
+              }
             >
-              <option value="">
-                {yearMeaning
-                  ? t('entityTypes.input.chooseDatePeriod')
-                  : t('entityTypes.input.noDatePeriod')}
-              </option>
-              {chronology.eras.map((era) => (
-                <option key={era.id} value={era.id}>
-                  {era.abbreviation ? `${era.name} (${era.abbreviation})` : era.name}
+              <option value="">{t('entityTypes.input.notSet')}</option>
+              {definition.options.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.value}
                 </option>
               ))}
             </select>
-            {numberInput}
-          </div>
-        ) : (
-          numberInput
-        )
-      ) : null}
-
-      {definition.kind === FieldKind.Boolean ? (
-        <label className="check">
-          <input
-            id={id}
-            type="checkbox"
-            checked={value.boolean ?? false}
-            onChange={(event) => patch({ boolean: event.target.checked })}
-          />
-          <span>{t('entityTypes.input.yes')}</span>
-        </label>
-      ) : null}
-
-      {definition.kind === FieldKind.Date ? (
-        <input
-          id={id}
-          type="date"
-          className="field__input"
-          value={value.date ? value.date.slice(0, 10) : ''}
-          onChange={(event) =>
-            patch({ date: event.target.value ? `${event.target.value}T00:00:00Z` : null })
-          }
-        />
-      ) : null}
-
-      {definition.kind === FieldKind.Select ? (
-        <select
-          id={id}
-          className="field__input field__input--select"
-          value={value.optionIds?.[0] ?? ''}
-          onChange={(event) => patch({ optionIds: event.target.value ? [event.target.value] : [] })}
-        >
-          <option value="">{t('entityTypes.input.notSet')}</option>
-          {definition.options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.value}
-            </option>
-          ))}
-        </select>
-      ) : null}
-
-      {definition.kind === FieldKind.MultiSelect ? (
-        <div className="choices" id={id}>
-          {definition.options.map((option) => {
-            const chosen = value.optionIds?.includes(option.id) ?? false
-            return (
-              <label className="check" key={option.id}>
-                <input
-                  type="checkbox"
-                  checked={chosen}
-                  onChange={(event) => {
-                    const current = value.optionIds ?? []
-                    patch({
-                      optionIds: event.target.checked
-                        ? [...current, option.id]
-                        : current.filter((candidate) => candidate !== option.id),
-                    })
-                  }}
-                />
-                <span>{option.value}</span>
-              </label>
-            )
-          })}
-        </div>
-      ) : null}
-    </div>
+          ) : null}
+        </>
+      )}
+    </Field>
   )
 }

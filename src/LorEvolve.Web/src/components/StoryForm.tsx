@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Field } from './Field'
 import { ChangeList, EditConflict } from './EditConflict'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
@@ -207,64 +208,65 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         />
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="story-title">
-          {t('stories.storyForm.titleLabel')}
-        </label>
-        <input
-          id="story-title"
-          className="field__input"
-          ref={title}
-          type="text"
-          dir="auto"
-          placeholder={t('stories.storyForm.titlePlaceholder')}
-          value={draft.title}
-          onChange={(event) => edit({ title: event.target.value })}
-          aria-invalid={fieldErrors.title ? true : undefined}
-          data-testid="story-title-input"
-        />
-        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-      </div>
+      <Field label={t('stories.storyForm.titleLabel')} id="story-title" error={fieldErrors.title}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={title}
+            type="text"
+            dir="auto"
+            placeholder={t('stories.storyForm.titlePlaceholder')}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="story-title-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="story-premise">
-          {t('stories.storyForm.premiseLabel')}
-        </label>
-        <p className="field__hint">{t('stories.storyForm.premiseHint')}</p>
-        <textarea
-          id="story-premise"
-          className="field__input field__input--area"
-          rows={4}
-          placeholder={t('stories.storyForm.premisePlaceholder')}
-          value={draft.premise}
-          onChange={(event) => edit({ premise: event.target.value })}
-          aria-invalid={fieldErrors.premise ? true : undefined}
-          data-testid="story-premise-input"
-        />
-        {fieldErrors.premise ? <p className="field__error">{fieldErrors.premise}</p> : null}
-      </div>
+      <Field
+        label={t('stories.storyForm.premiseLabel')}
+        id="story-premise"
+        hint={t('stories.storyForm.premiseHint')}
+        error={fieldErrors.premise}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            placeholder={t('stories.storyForm.premisePlaceholder')}
+            value={draft.premise}
+            onChange={(event) => edit({ premise: event.target.value })}
+            data-testid="story-premise-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <span className="field__label" id="story-status-label">
-          {t('stories.storyForm.statusLabel')}
-        </span>
-        <div className="segmented" role="group" aria-labelledby="story-status-label">
-          {STORY_STATUS_ORDER.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="segmented__option"
-              aria-pressed={draft.status === option}
-              onClick={() => edit({ status: option })}
-              data-testid={`story-status-${STORY_STATUS_KEYS[option]}`}
-            >
-              {STORY_STATUS_LABELS[option]}
-            </button>
-          ))}
-        </div>
-        <p className="field__hint">{t('stories.storyForm.statusHint')}</p>
-        {fieldErrors.status ? <p className="field__error">{fieldErrors.status}</p> : null}
-      </div>
+      <Field
+        label={t('stories.storyForm.statusLabel')}
+        id="story-status"
+        group
+        hint={t('stories.storyForm.statusHint')}
+        error={fieldErrors.status}
+      >
+        {(control) => (
+          <div className="segmented" {...control}>
+            {STORY_STATUS_ORDER.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="segmented__option"
+                aria-pressed={draft.status === option}
+                onClick={() => edit({ status: option })}
+                data-testid={`story-status-${STORY_STATUS_KEYS[option]}`}
+              >
+                {STORY_STATUS_LABELS[option]}
+              </button>
+            ))}
+          </div>
+        )}
+      </Field>
     </Drawer>
   )
 }

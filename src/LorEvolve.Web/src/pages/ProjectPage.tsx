@@ -9,6 +9,7 @@ import {
   useSearchParams,
 } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { ProjectOverview } from '../components/ProjectOverview'
@@ -109,43 +110,49 @@ function NewProject() {
             })
         }}
       >
-        <label className="field">
-          <span className="field__label">{t('projects.new.name')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            data-testid="project-new-name"
-            required
-          />
-        </label>
+        <Field label={t('projects.new.name')}>
+          {(control) => (
+            <input
+              {...control}
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              data-testid="project-new-name"
+              required
+            />
+          )}
+        </Field>
 
-        <label className="field">
-          <span className="field__label">{t('projects.new.kind')}</span>
-          <select
-            className="field__input field__input--select"
-            value={kind}
-            onChange={(event) => setKind(Number(event.target.value) as ProjectKindValue)}
-            data-testid="project-new-kind"
-          >
-            {KINDS.map((value) => (
-              <option key={value} value={value}>
-                {kindLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Field label={t('projects.new.kind')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={kind}
+              onChange={(event) => setKind(Number(event.target.value) as ProjectKindValue)}
+              data-testid="project-new-kind"
+            >
+              {KINDS.map((value) => (
+                <option key={value} value={value}>
+                  {kindLabel(value)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
 
-        <label className="field">
-          <span className="field__label">{t('projects.new.summary')}</span>
-          <textarea
-            className="field__input"
-            value={summary}
-            onChange={(event) => setSummary(event.target.value)}
-            data-testid="project-new-summary"
-            rows={4}
-          />
-        </label>
+        <Field label={t('projects.new.summary')}>
+          {(control) => (
+            <textarea
+              {...control}
+              className="field__input"
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              data-testid="project-new-summary"
+              rows={4}
+            />
+          )}
+        </Field>
 
         {failed ? (
           <p className="notice notice--error" data-testid="project-new-error">

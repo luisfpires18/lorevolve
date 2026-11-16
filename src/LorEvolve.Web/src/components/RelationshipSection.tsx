@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Field } from './Field'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
@@ -366,32 +367,32 @@ export function RelationshipSection({
       </p>
 
       <div className="relform__grid">
-        <div className="field">
-          <label className="field__label" htmlFor="relation-reading">
-            {t('relationships.section.reading')}
-          </label>
-          <select
-            id="relation-reading"
-            className="field__input field__input--select"
-            value={readingValue}
-            onChange={(event) => {
-              const chosen = choices.find((choice) => choice.key === event.target.value)
-              if (chosen) {
-                edit({ typeId: chosen.typeId, useInverse: chosen.useInverse })
-              }
-            }}
-            data-testid="relationship-reading"
-          >
-            {choices.map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {choice.label}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.relationshiptypeid ? (
-            <p className="field__error">{fieldErrors.relationshiptypeid}</p>
-          ) : null}
-        </div>
+        <Field
+          label={t('relationships.section.reading')}
+          id="relation-reading"
+          error={fieldErrors.relationshiptypeid}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={readingValue}
+              onChange={(event) => {
+                const chosen = choices.find((choice) => choice.key === event.target.value)
+                if (chosen) {
+                  edit({ typeId: chosen.typeId, useInverse: chosen.useInverse })
+                }
+              }}
+              data-testid="relationship-reading"
+            >
+              {choices.map((choice) => (
+                <option key={choice.key} value={choice.key}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
 
         <EntityPicker
           label={t('relationships.section.connectedTo')}
@@ -409,23 +410,24 @@ export function RelationshipSection({
           }
         />
 
-        <div className="field">
-          <span className="field__label">{t('relationships.section.status')}</span>
-          <div className="canon" role="group" aria-label={t('relationships.section.statusGroup')}>
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="canon__step"
-                aria-pressed={draft.canonStatus === option}
-                onClick={() => edit({ canonStatus: option })}
-                data-testid={`relation-canon-${CANON_KEYS[option]}`}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Field label={t('relationships.section.status')} group>
+          {(control) => (
+            <div className="canon" {...control}>
+              {CANON_ORDER.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className="canon__step"
+                  aria-pressed={draft.canonStatus === option}
+                  onClick={() => edit({ canonStatus: option })}
+                  data-testid={`relation-canon-${CANON_KEYS[option]}`}
+                >
+                  {CANON_LABELS[option]}
+                </button>
+              ))}
+            </div>
+          )}
+        </Field>
       </div>
 
       <RelationshipPeriodsField
@@ -441,40 +443,44 @@ export function RelationshipSection({
       {/* The real-world dates a relation could carry before it could be placed in the universe's own time: kept, shown and
           clearable, never typed any more (Issue #18). */}
       {draft.legacyStart || draft.legacyEnd ? (
-        <div className="field relform__legacy" data-testid="relation-legacy-dates">
-          <span className="field__label">{t('relationships.section.legacyLabel')}</span>
-          <p className="field__hint">
-            {t('relationships.section.legacyHint', {
-              span: formatSpan(draft.legacyStart, draft.legacyEnd) ?? '',
-            })}
-          </p>
-          <button
-            type="button"
-            className="button button--secondary button--sm"
-            onClick={() => edit({ legacyStart: null, legacyEnd: null })}
-            data-testid="relation-legacy-clear"
-          >
-            {t('relationships.section.legacyClear')}
-          </button>
-          {fieldErrors.enddate ? <p className="field__error">{fieldErrors.enddate}</p> : null}
-        </div>
+        <Field
+          label={t('relationships.section.legacyLabel')}
+          group
+          className="relform__legacy"
+          data-testid="relation-legacy-dates"
+          hint={t('relationships.section.legacyHint', {
+            span: formatSpan(draft.legacyStart, draft.legacyEnd) ?? '',
+          })}
+          error={fieldErrors.enddate}
+        >
+          {(control) => (
+            <div {...control}>
+              <button
+                type="button"
+                className="button button--secondary button--sm"
+                onClick={() => edit({ legacyStart: null, legacyEnd: null })}
+                data-testid="relation-legacy-clear"
+              >
+                {t('relationships.section.legacyClear')}
+              </button>
+            </div>
+          )}
+        </Field>
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="relation-notes">
-          {t('relationships.section.notes')}
-        </label>
-        <textarea
-          id="relation-notes"
-          className="entry__summaryinput"
-          rows={2}
-          placeholder={t('relationships.section.notesPlaceholder')}
-          value={draft.notes}
-          onChange={(event) => edit({ notes: event.target.value })}
-          data-testid="relation-notes"
-        />
-        {fieldErrors.notes ? <p className="field__error">{fieldErrors.notes}</p> : null}
-      </div>
+      <Field label={t('relationships.section.notes')} id="relation-notes" error={fieldErrors.notes}>
+        {(control) => (
+          <textarea
+            {...control}
+            className="entry__summaryinput"
+            rows={2}
+            placeholder={t('relationships.section.notesPlaceholder')}
+            value={draft.notes}
+            onChange={(event) => edit({ notes: event.target.value })}
+            data-testid="relation-notes"
+          />
+        )}
+      </Field>
 
       <div className="relform__actions">
         <button

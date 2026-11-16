@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Field } from './Field'
 import { Plus } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
@@ -255,23 +256,24 @@ export function FamilyLinkForm({
           error={fieldErrors.targetentityid ?? fieldErrors.sourceentityid}
         />
 
-        <div className="field">
-          <span className="field__label">{t('places.linkForm.status')}</span>
-          <div className="canon" role="group" aria-label={t('places.linkForm.statusGroup')}>
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="canon__step"
-                aria-pressed={canonStatus === option}
-                onClick={() => setCanonStatus(option)}
-                data-testid={`family-link-canon-${CANON_KEYS[option]}`}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Field label={t('places.linkForm.status')} group>
+          {(control) => (
+            <div className="canon" {...control}>
+              {CANON_ORDER.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className="canon__step"
+                  aria-pressed={canonStatus === option}
+                  onClick={() => setCanonStatus(option)}
+                  data-testid={`family-link-canon-${CANON_KEYS[option]}`}
+                >
+                  {CANON_LABELS[option]}
+                </button>
+              ))}
+            </div>
+          )}
+        </Field>
       </div>
 
       {message ? (
