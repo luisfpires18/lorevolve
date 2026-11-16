@@ -421,7 +421,7 @@ internal sealed partial class UniverseRestore(
                     CropWidth = image.Crop.Width,
                     CropHeight = image.Crop.Height,
                     ContentType = validated.ContentType,
-                    FileName = FileNameLabel(image.FileName),
+                    FileName = ImagePreparation.TrimFileName(image.FileName),
                     Width = validated.Width,
                     Height = validated.Height,
                     ByteSize = validated.ByteSize,
@@ -497,7 +497,7 @@ internal sealed partial class UniverseRestore(
                 OriginalKey = originalKey,
                 DisplayKey = displayKey,
                 ContentType = validated.ContentType,
-                FileName = FileNameLabel(map.Image.FileName),
+                FileName = ImagePreparation.TrimFileName(map.Image.FileName),
                 Width = validated.Width,
                 Height = validated.Height,
                 ByteSize = validated.ByteSize,
@@ -582,7 +582,7 @@ internal sealed partial class UniverseRestore(
                         OriginalKey = originalKey,
                         ThumbnailKey = thumbnailKey,
                         ContentType = validated.ContentType,
-                        FileName = FileNameLabel(image.FileName),
+                        FileName = ImagePreparation.TrimFileName(image.FileName),
                         Width = validated.Width,
                         Height = validated.Height,
                         ByteSize = validated.ByteSize,
@@ -655,7 +655,7 @@ internal sealed partial class UniverseRestore(
                     CropWidth = image.Crop?.Width,
                     CropHeight = image.Crop?.Height,
                     ContentType = validated.ContentType,
-                    FileName = FileNameLabel(image.FileName),
+                    FileName = ImagePreparation.TrimFileName(image.FileName),
                     Width = validated.Width,
                     Height = validated.Height,
                     ByteSize = validated.ByteSize,
@@ -747,23 +747,12 @@ internal sealed partial class UniverseRestore(
             CropWidth = artwork.Crop.Width,
             CropHeight = artwork.Crop.Height,
             ContentType = validated.ContentType,
-            FileName = FileNameLabel(artwork.FileName),
+            FileName = ImagePreparation.TrimFileName(artwork.FileName),
             Width = validated.Width,
             Height = validated.Height,
             ByteSize = validated.ByteSize,
             UploadedAt = now,
         };
-    }
-
-    private static string? FileNameLabel(string? fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-        {
-            return null;
-        }
-
-        var label = Path.GetFileName(fileName.Trim());
-        return label.Length == 0 ? null : label[..Math.Min(label.Length, StoredImageLimits.FileNameMaxLength)];
     }
 
     // ---------- The database ----------

@@ -310,7 +310,7 @@ internal static class TrashPermanentDelete
 
         if (erased is { ObjectKeys.Length: > 0 })
         {
-            await EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), erased.ObjectKeys);
+            await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), erased.ObjectKeys);
         }
 
         return result;

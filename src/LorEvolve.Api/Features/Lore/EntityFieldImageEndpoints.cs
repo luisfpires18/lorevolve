@@ -23,7 +23,7 @@ public static partial class EntityFieldImageEndpoints
 
     private const int InMemoryBodyThreshold = (int)ImagePreparation.MaxUploadBytes + 64 * 1024;
 
-    private const string LoggerName = "LorEvolve.EntityFieldImages";
+    internal const string LoggerName = "LorEvolve.EntityFieldImages";
 
     public static IEndpointRouteBuilder MapEntityFieldImageEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -116,7 +116,10 @@ public static partial class EntityFieldImageEndpoints
             .SelectMany(key => new[] { key.OriginalKey, key.CropKey })
             .ToHashSet(StringComparer.Ordinal);
 
-        await SweepAsync(store, loggerFactory, dropped.Where(key => !named.Contains(key)));
+        await MediaObjectWrites.SweepAsync(
+            store,
+            loggerFactory.CreateLogger(LoggerName),
+            [.. dropped.Where(key => !named.Contains(key))]);
     }
 
     /// <summary>Deletes every picture of a field that is being deleted and answers their keys, to sweep after the commit.</summary>
@@ -132,10 +135,6 @@ public static partial class EntityFieldImageEndpoints
         await pictures.ExecuteDeleteAsync(cancellationToken);
         return [.. keys.SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
     }
-
-    /// <summary>Best-effort sweep of objects nothing names any more (ADR 0019), always after the commit that stopped naming them.</summary>
-    internal static Task SweepAsync(IMediaObjectStore store, ILoggerFactory loggerFactory, IEnumerable<string> keys) =>
-        EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), [.. keys]);
 
     /// <summary>A live entry of this universe (Lore or project) and an unarchived Image field that applies to its type.</summary>
     private sealed record Target(string OwnerId, ImageFrame Frame);
@@ -214,10 +213,10 @@ public static partial class EntityFieldImageEndpoints
             return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
-        EntityImageCrop? requestedCrop = null;
+        ImageCrop? requestedCrop = null;
         if (!string.IsNullOrWhiteSpace(crop))
         {
-            requestedCrop = EntityImageEndpoints.ReadCrop(crop);
+            requestedCrop = ImagePreparation.ReadCrop(crop);
 
             if (requestedCrop is null)
             {
@@ -231,7 +230,7 @@ public static partial class EntityFieldImageEndpoints
         bytes.Position = 0;
 
         var (prepared, rejection) = await ImagePreparation.PrepareAsync(
-            bytes, bytes.Length, requestedCrop?.ToShared(), target.Frame, cancellationToken);
+            bytes, bytes.Length, requestedCrop, target.Frame, cancellationToken);
 
         if (prepared is null)
         {
@@ -280,17 +279,17 @@ public static partial class EntityFieldImageEndpoints
             }
             catch (MediaStorageUnavailableException exception)
             {
-                return EntityImageEndpoints.Unavailable(exception);
+                return MediaProblem.Unavailable(exception);
             }
             catch (MediaStorageFailedException exception)
             {
                 LogStorageFailure(logger, "upload", entityId, exception);
-                await EntityImageEndpoints.SweepAsync(store, logger, originalKey, cropKey);
-                return EntityImageEndpoints.Unavailable(exception);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, cropKey);
+                return MediaProblem.Unavailable(exception);
             }
             catch (Exception)
             {
-                await EntityImageEndpoints.SweepAsync(store, logger, originalKey, cropKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, cropKey);
                 throw;
             }
 
@@ -336,12 +335,13 @@ public static partial class EntityFieldImageEndpoints
                     stored.OriginalKey = originalKey;
                     stored.CropKey = cropKey;
                     stored.ContentType = prepared.ContentType;
-                    stored.FileName = EntityImageEndpoints.TrimFileName(file.FileName);
+                    stored.FileName = ImagePreparation.TrimFileName(file.FileName);
                     stored.Width = prepared.Width;
                     stored.Height = prepared.Height;
                     stored.ByteSize = bytes.Length;
                     stored.UploadedAt = DateTime.UtcNow;
-                    SetCrop(stored, prepared.Crop);
+                    (stored.CropX, stored.CropY, stored.CropWidth, stored.CropHeight) =
+                        (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
                     if (existing is null)
                     {
@@ -355,23 +355,23 @@ public static partial class EntityFieldImageEndpoints
             }
             catch (StorageQuotaExceededException)
             {
-                await EntityImageEndpoints.SweepAsync(store, logger, originalKey, cropKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, cropKey);
                 return StorageQuota.Exceeded(isOwner: target.OwnerId == principal.RequireUserId());
             }
             catch (Exception)
             {
-                await EntityImageEndpoints.SweepAsync(store, logger, originalKey, cropKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, cropKey);
                 throw;
             }
 
             if (!committed)
             {
-                await EntityImageEndpoints.SweepAsync(store, logger, originalKey, cropKey);
+                await MediaObjectWrites.SweepAsync(store, logger, originalKey, cropKey);
                 return entryGone ? Results.NotFound() : EntityImageEndpoints.ReplacedMeanwhile();
             }
 
             // Past the commit: the new picture stands whatever happens next.
-            await EntityImageEndpoints.SweepAsync(store, logger, supersededOriginal, supersededCrop);
+            await MediaObjectWrites.SweepAsync(store, logger, supersededOriginal, supersededCrop);
 
             return Results.Ok(FieldImageRef.Of(stored));
         }
@@ -459,12 +459,12 @@ public static partial class EntityFieldImageEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return EntityImageEndpoints.Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception exception) when (exception is MediaStorageFailedException or IOException or HttpRequestException)
         {
             LogStorageFailure(logger, "recrop", entityId, exception);
-            return EntityImageEndpoints.Unavailable(exception as MediaStorageException
+            return MediaProblem.Unavailable(exception as MediaStorageException
                 ?? new MediaStorageFailedException("Image storage could not complete the request.", exception));
         }
 
@@ -490,17 +490,17 @@ public static partial class EntityFieldImageEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return EntityImageEndpoints.Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
         catch (MediaStorageFailedException exception)
         {
             LogStorageFailure(logger, "recrop", entityId, exception);
-            await EntityImageEndpoints.SweepAsync(store, logger, cropKey);
-            return EntityImageEndpoints.Unavailable(exception);
+            await MediaObjectWrites.SweepAsync(store, logger, cropKey);
+            return MediaProblem.Unavailable(exception);
         }
         catch (Exception)
         {
-            await EntityImageEndpoints.SweepAsync(store, logger, cropKey);
+            await MediaObjectWrites.SweepAsync(store, logger, cropKey);
             throw;
         }
 
@@ -528,23 +528,24 @@ public static partial class EntityFieldImageEndpoints
         }
         catch (Exception)
         {
-            await EntityImageEndpoints.SweepAsync(store, logger, cropKey);
+            await MediaObjectWrites.SweepAsync(store, logger, cropKey);
             throw;
         }
 
         if (moved == 0)
         {
-            await EntityImageEndpoints.SweepAsync(store, logger, cropKey);
+            await MediaObjectWrites.SweepAsync(store, logger, cropKey);
             return EntityImageEndpoints.Changed();
         }
 
-        await EntityImageEndpoints.SweepAsync(store, logger, image.CropKey);
+        await MediaObjectWrites.SweepAsync(store, logger, image.CropKey);
 
         image.CropId = cropId;
         image.CropKey = cropKey;
         image.Width = prepared.Width;
         image.Height = prepared.Height;
-        SetCrop(image, prepared.Crop);
+        (image.CropX, image.CropY, image.CropWidth, image.CropHeight) =
+            (prepared.Crop.X, prepared.Crop.Y, prepared.Crop.Width, prepared.Crop.Height);
 
         return Results.Ok(FieldImageRef.Of(image));
     }
@@ -583,7 +584,7 @@ public static partial class EntityFieldImageEndpoints
         db.EntityFieldImages.Remove(image);
         await db.SaveChangesAsync(cancellationToken);
 
-        await EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), image.OriginalKey, image.CropKey);
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(LoggerName), image.OriginalKey, image.CropKey);
 
         return Results.NoContent();
     }
@@ -639,7 +640,7 @@ public static partial class EntityFieldImageEndpoints
                 LogStorageFailure(loggerFactory.CreateLogger(LoggerName), "read", entityId, exception);
             }
 
-            return EntityImageEndpoints.Unavailable(exception);
+            return MediaProblem.Unavailable(exception);
         }
 
         if (stored is null)
@@ -652,14 +653,6 @@ public static partial class EntityFieldImageEndpoints
         context.Response.Headers.XContentTypeOptions = "nosniff";
 
         return Results.Stream(stored.Content, cropId is null ? image.ContentType : "image/webp", enableRangeProcessing: false);
-    }
-
-    private static void SetCrop(EntityFieldImage image, ImageCrop crop)
-    {
-        image.CropX = crop.X;
-        image.CropY = crop.Y;
-        image.CropWidth = crop.Width;
-        image.CropHeight = crop.Height;
     }
 
     [LoggerMessage(

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -102,6 +103,39 @@ internal sealed record ImageFrame(int AspectWidth, int AspectHeight, int MaxWidt
 /// </summary>
 internal static class ImagePreparation
 {
+    /// <summary>The author's own filename, kept only as a label and never used to build a key.</summary>
+    internal static string? TrimFileName(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return null;
+        }
+
+        var name = Path.GetFileName(fileName.Trim());
+
+        return name.Length switch
+        {
+            0 => null,
+            > StoredImageLimits.FileNameMaxLength => name[..StoredImageLimits.FileNameMaxLength],
+            _ => name,
+        };
+    }
+
+    /// <summary>The crop form field, or null when it is not the four numbers a crop is.</summary>
+    internal static ImageCrop? ReadCrop(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ImageCrop>(json, JsonSerializerOptions.Web);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    internal static string Megabytes(long bytes) => (bytes / (1024.0 * 1024.0)).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+
     public const string FileField = "file";
 
     public const string CropField = "crop";

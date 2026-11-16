@@ -410,9 +410,9 @@ public static partial class UniverseEndpoints
 
         // Only past the commit, and never a reason to undo it: each helper logs a key that will not delete and moves on.
         await Task.WhenAll(
-            EntityImageEndpoints.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), pictureKeys),
-            UniverseArtworkEndpoints.SweepAsync(store, loggerFactory.CreateLogger(UniverseArtworkEndpoints.LoggerName), artworkKeys),
-            Maps.MapEndpoints.SweepAsync(store, loggerFactory.CreateLogger(Maps.MapEndpoints.LoggerName), mapKeys));
+            MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger("LorEvolve.EntityImages"), pictureKeys),
+            MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(UniverseArtworkEndpoints.LoggerName), artworkKeys),
+            MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(Maps.MapEndpoints.LoggerName), mapKeys));
 
         return Results.NoContent();
     }
