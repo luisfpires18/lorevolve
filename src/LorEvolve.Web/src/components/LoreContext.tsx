@@ -2,12 +2,12 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Library } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Drawer } from './Drawer'
 import { EntityTile } from './EntityTile'
 import { StatusBadge } from './StatusBadge'
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { useDrawerGuard } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { getEntity, listEntities } from '../lore/api'
@@ -126,12 +126,9 @@ function LoreContextDrawer({
     null,
   )
 
-  // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
-  const { close, dialogProps } = useDrawerGuard(false, '', onClose)
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     search.current?.focus()
   }, [])
 
@@ -377,214 +374,17 @@ function LoreContextDrawer({
   }
 
   return (
-    <dialog
-      className="drawer lorecontext"
-      ref={dialog}
-      aria-labelledby={headingId}
-      {...dialogProps}
-      data-testid="lore-context"
-    >
-      <div className="drawer__panel">
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('lore.context.drawerEyebrow')}</p>
-          <h2 className="drawer__title" id={headingId}>
-            <bdi>{scene.title}</bdi>
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="lore-context-error">
-              {message}
-            </p>
-          ) : null}
-
-          {preview ? (
-            <LorePreview
-              universeId={universeId}
-              entityId={preview.id}
-              chronology={chronology}
-              isLinked={linkedIds.has(preview.id)}
-              canLink={access.editContent}
-              busy={busy !== null}
-              onLink={(row, link) => void setLink(row, link)}
-              onBack={closePreview}
-            />
-          ) : (
-            <>
-              <section className="lorecontext__group" aria-labelledby={`${headingId}-linked`}>
-                <h3
-                  className="sectionrule sectionrule--accent"
-                  id={`${headingId}-linked`}
-                  ref={linkedHeading}
-                  tabIndex={-1}
-                >
-                  {t('lore.context.inScenePick')}
-                </h3>
-                {linked.length === 0 ? (
-                  <p className="entry__blank" data-testid="lore-context-none">
-                    {access.editContent ? t('lore.context.noneEditable') : t('lore.context.none')}
-                  </p>
-                ) : (
-                  <ul className="relations__rows" data-testid="lore-context-linked-list">
-                    {linked.map((row) => rowOf(row, 'linked'))}
-                  </ul>
-                )}
-              </section>
-
-              {mentioned.length > 0 ? (
-                <section
-                  className="lorecontext__group"
-                  aria-labelledby={`${headingId}-mentioned`}
-                  data-testid="lore-context-mentions"
-                >
-                  <h3 className="sectionrule sectionrule--accent" id={`${headingId}-mentioned`}>
-                    {t('lore.context.mentioned')}
-                  </h3>
-                  {references === 'failed' ? (
-                    <p className="form__message" data-testid="lore-context-mentions-error">
-                      {t('lore.context.mentionedFailed')}
-                    </p>
-                  ) : (
-                    <ul className="relations__rows">
-                      {mentioned.map((mention) => {
-                        const reference =
-                          references instanceof Map ? references.get(mention.entityId) : undefined
-                        const known = references instanceof Map
-                        const live = reference !== undefined && !reference.isTrashed
-                        const isLinked = linkedIds.has(mention.entityId)
-                        const name = reference?.name ?? mention.name
-                        const key = `mention-${mention.entityId}`
-                        return (
-                          <li
-                            className="relation lorecontext__row"
-                            key={mention.entityId}
-                            data-testid="lore-context-mention"
-                            data-name={name}
-                          >
-                            <EntityTile
-                              className="relation__tile"
-                              universeId={universeId}
-                              entityId={mention.entityId}
-                              image={live ? reference.image : null}
-                              typeIcon={reference?.entityTypeIcon ?? null}
-                              typeAccent={reference?.entityTypeAccentColor ?? null}
-                            />
-                            <div className="relation__body">
-                              {live ? (
-                                <button
-                                  className="relation__name lorecontext__name"
-                                  type="button"
-                                  onClick={() => openPreview(mention.entityId, key)}
-                                  data-preview-from={key}
-                                  aria-label={t('lore.context.previewPick', { name })}
-                                  data-testid="lore-context-mention-preview"
-                                >
-                                  <bdi>{name}</bdi>
-                                </button>
-                              ) : (
-                                <span className="relation__name lorecontext__name--trashed">
-                                  <bdi>{name}</bdi>
-                                </span>
-                              )}
-                              <p
-                                className="relation__meta"
-                                data-testid="lore-context-mention-state"
-                              >
-                                {!known ? (
-                                  t('lore.context.reading')
-                                ) : reference === undefined ? (
-                                  t('lore.context.notInLore')
-                                ) : reference.isTrashed ? (
-                                  t('lore.context.inTheTrash')
-                                ) : (
-                                  <>
-                                    <bdi>{reference.entityTypeName}</bdi>
-                                    {reference.name !== mention.name ? (
-                                      <span>
-                                        {tx('lore.context.writtenAs', {
-                                          name: <bdi>{mention.name}</bdi>,
-                                        })}
-                                      </span>
-                                    ) : null}
-                                    {isLinked ? <span>{t('lore.context.inSceneLore')}</span> : null}
-                                  </>
-                                )}
-                              </p>
-                            </div>
-                            {access.editContent && live && !isLinked ? (
-                              <button
-                                className="button button--text lorecontext__action"
-                                type="button"
-                                aria-disabled={busy !== null}
-                                aria-label={t('lore.context.addLabel', { name })}
-                                onClick={() => void setLink({ id: mention.entityId, name }, true)}
-                                data-testid="lore-context-mention-link"
-                              >
-                                {t('lore.context.add')}
-                              </button>
-                            ) : null}
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-                </section>
-              ) : null}
-
-              <section className="lorecontext__group" aria-labelledby={`${headingId}-find`}>
-                <h3 className="sectionrule sectionrule--accent" id={`${headingId}-find`}>
-                  {t('lore.context.find')}
-                </h3>
-                <label className="visually-hidden" htmlFor={searchId}>
-                  {t('lore.context.searchLabel')}
-                </label>
-                <input
-                  id={searchId}
-                  ref={search}
-                  className="field__input"
-                  type="search"
-                  dir="auto"
-                  placeholder={t('lore.context.searchPlaceholder')}
-                  autoComplete="off"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={moveThrough}
-                  aria-controls={resultsId}
-                  data-testid="lore-context-search"
-                />
-                <div id={resultsId}>
-                  <p className="visually-hidden" role="status">
-                    {isSearching
-                      ? t('lore.context.searching')
-                      : results
-                        ? results.length === 0
-                          ? t('lore.context.noMatches')
-                          : tn('lore.context.matches', results.length, { n: results.length })
-                        : ''}
-                  </p>
-                  {searchFailed ? (
-                    <p className="form__message" data-testid="lore-context-search-error">
-                      {t('lore.context.searchFailed')}
-                    </p>
-                  ) : term !== '' && !results ? (
-                    <p className="entry__blank">{t('lore.context.searchingNote')}</p>
-                  ) : results && results.length === 0 ? (
-                    <p className="entry__blank" data-testid="lore-context-no-results">
-                      {tx('lore.context.nothingMatches', { term: <bdi>{term}</bdi> })}
-                    </p>
-                  ) : results ? (
-                    <ul className="relations__rows" data-testid="lore-context-results">
-                      {results.map((row) => rowOf(row, 'result'))}
-                    </ul>
-                  ) : null}
-                </div>
-              </section>
-            </>
-          )}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="lore-context"
+      titleId={headingId}
+      className="lorecontext"
+      dialogRef={dialog}
+      eyebrow={t('lore.context.drawerEyebrow')}
+      title={<bdi>{scene.title}</bdi>}
+      // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
+      onClose={onClose}
+      actions={(close) => (
+        <>
           <button
             className="button button--secondary"
             type="button"
@@ -593,13 +393,200 @@ function LoreContextDrawer({
           >
             {t('lore.context.close')}
           </button>
-        </footer>
-      </div>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid="lore-context-error">
+          {message}
+        </p>
+      ) : null}
+
+      {preview ? (
+        <LorePreview
+          universeId={universeId}
+          entityId={preview.id}
+          chronology={chronology}
+          isLinked={linkedIds.has(preview.id)}
+          canLink={access.editContent}
+          busy={busy !== null}
+          onLink={(row, link) => void setLink(row, link)}
+          onBack={closePreview}
+        />
+      ) : (
+        <>
+          <section className="lorecontext__group" aria-labelledby={`${headingId}-linked`}>
+            <h3
+              className="sectionrule sectionrule--accent"
+              id={`${headingId}-linked`}
+              ref={linkedHeading}
+              tabIndex={-1}
+            >
+              {t('lore.context.inScenePick')}
+            </h3>
+            {linked.length === 0 ? (
+              <p className="entry__blank" data-testid="lore-context-none">
+                {access.editContent ? t('lore.context.noneEditable') : t('lore.context.none')}
+              </p>
+            ) : (
+              <ul className="relations__rows" data-testid="lore-context-linked-list">
+                {linked.map((row) => rowOf(row, 'linked'))}
+              </ul>
+            )}
+          </section>
+
+          {mentioned.length > 0 ? (
+            <section
+              className="lorecontext__group"
+              aria-labelledby={`${headingId}-mentioned`}
+              data-testid="lore-context-mentions"
+            >
+              <h3 className="sectionrule sectionrule--accent" id={`${headingId}-mentioned`}>
+                {t('lore.context.mentioned')}
+              </h3>
+              {references === 'failed' ? (
+                <p className="form__message" data-testid="lore-context-mentions-error">
+                  {t('lore.context.mentionedFailed')}
+                </p>
+              ) : (
+                <ul className="relations__rows">
+                  {mentioned.map((mention) => {
+                    const reference =
+                      references instanceof Map ? references.get(mention.entityId) : undefined
+                    const known = references instanceof Map
+                    const live = reference !== undefined && !reference.isTrashed
+                    const isLinked = linkedIds.has(mention.entityId)
+                    const name = reference?.name ?? mention.name
+                    const key = `mention-${mention.entityId}`
+                    return (
+                      <li
+                        className="relation lorecontext__row"
+                        key={mention.entityId}
+                        data-testid="lore-context-mention"
+                        data-name={name}
+                      >
+                        <EntityTile
+                          className="relation__tile"
+                          universeId={universeId}
+                          entityId={mention.entityId}
+                          image={live ? reference.image : null}
+                          typeIcon={reference?.entityTypeIcon ?? null}
+                          typeAccent={reference?.entityTypeAccentColor ?? null}
+                        />
+                        <div className="relation__body">
+                          {live ? (
+                            <button
+                              className="relation__name lorecontext__name"
+                              type="button"
+                              onClick={() => openPreview(mention.entityId, key)}
+                              data-preview-from={key}
+                              aria-label={t('lore.context.previewPick', { name })}
+                              data-testid="lore-context-mention-preview"
+                            >
+                              <bdi>{name}</bdi>
+                            </button>
+                          ) : (
+                            <span className="relation__name lorecontext__name--trashed">
+                              <bdi>{name}</bdi>
+                            </span>
+                          )}
+                          <p className="relation__meta" data-testid="lore-context-mention-state">
+                            {!known ? (
+                              t('lore.context.reading')
+                            ) : reference === undefined ? (
+                              t('lore.context.notInLore')
+                            ) : reference.isTrashed ? (
+                              t('lore.context.inTheTrash')
+                            ) : (
+                              <>
+                                <bdi>{reference.entityTypeName}</bdi>
+                                {reference.name !== mention.name ? (
+                                  <span>
+                                    {tx('lore.context.writtenAs', {
+                                      name: <bdi>{mention.name}</bdi>,
+                                    })}
+                                  </span>
+                                ) : null}
+                                {isLinked ? <span>{t('lore.context.inSceneLore')}</span> : null}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        {access.editContent && live && !isLinked ? (
+                          <button
+                            className="button button--text lorecontext__action"
+                            type="button"
+                            aria-disabled={busy !== null}
+                            aria-label={t('lore.context.addLabel', { name })}
+                            onClick={() => void setLink({ id: mention.entityId, name }, true)}
+                            data-testid="lore-context-mention-link"
+                          >
+                            {t('lore.context.add')}
+                          </button>
+                        ) : null}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
+          ) : null}
+
+          <section className="lorecontext__group" aria-labelledby={`${headingId}-find`}>
+            <h3 className="sectionrule sectionrule--accent" id={`${headingId}-find`}>
+              {t('lore.context.find')}
+            </h3>
+            <label className="visually-hidden" htmlFor={searchId}>
+              {t('lore.context.searchLabel')}
+            </label>
+            <input
+              id={searchId}
+              ref={search}
+              className="field__input"
+              type="search"
+              dir="auto"
+              placeholder={t('lore.context.searchPlaceholder')}
+              autoComplete="off"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={moveThrough}
+              aria-controls={resultsId}
+              data-testid="lore-context-search"
+            />
+            <div id={resultsId}>
+              <p className="visually-hidden" role="status">
+                {isSearching
+                  ? t('lore.context.searching')
+                  : results
+                    ? results.length === 0
+                      ? t('lore.context.noMatches')
+                      : tn('lore.context.matches', results.length, { n: results.length })
+                    : ''}
+              </p>
+              {searchFailed ? (
+                <p className="form__message" data-testid="lore-context-search-error">
+                  {t('lore.context.searchFailed')}
+                </p>
+              ) : term !== '' && !results ? (
+                <p className="entry__blank">{t('lore.context.searchingNote')}</p>
+              ) : results && results.length === 0 ? (
+                <p className="entry__blank" data-testid="lore-context-no-results">
+                  {tx('lore.context.nothingMatches', { term: <bdi>{term}</bdi> })}
+                </p>
+              ) : results ? (
+                <ul className="relations__rows" data-testid="lore-context-results">
+                  {results.map((row) => rowOf(row, 'result'))}
+                </ul>
+              ) : null}
+            </div>
+          </section>
+        </>
+      )}
 
       <p className="visually-hidden" role="status" data-testid="lore-context-announcer">
         {announcement}
       </p>
-    </dialog>
+    </Drawer>
   )
 }
 

@@ -1,9 +1,9 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { MessageSquareWarning } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
-import { useDrawerGuard } from '../lib/drawerGuard'
+import { Drawer } from './Drawer'
 import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
 
@@ -51,7 +51,6 @@ export function FeedbackButton() {
 
 function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () => void }) {
   const { t } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const textId = useId()
   const { pathname } = useLocation()
@@ -60,14 +59,8 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
-  const { close, dialogProps } = useDrawerGuard(
-    text.trim() !== '' && !sending,
-    t('data.feedback.leaveConfirm'),
-    onClose,
-  )
 
   useEffect(() => {
-    dialog.current?.showModal()
     document.getElementById(textId)?.focus()
   }, [textId])
 
@@ -92,85 +85,19 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   }
 
   return (
-    <dialog
-      className="drawer feedbackdialog"
-      ref={dialog}
-      aria-labelledby={headingId}
-      {...dialogProps}
-      data-testid="feedback-dialog"
-    >
-      <form
-        className="drawer__panel"
-        aria-busy={sending}
-        onSubmit={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          void send()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('data.feedback.open')}</p>
-          <h2 className="drawer__title" id={headingId}>
-            {t('data.feedback.title')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {error ? (
-            <p className="form__message" role="alert" data-testid="feedback-error">
-              {error}
-            </p>
-          ) : null}
-
-          <fieldset className="field" disabled={sending}>
-            <legend className="field__label">{t('data.feedback.kindLabel')}</legend>
-            <div className="segmented" role="group" aria-label={t('data.feedback.kindGroup')}>
-              <button
-                className="segmented__option"
-                type="button"
-                aria-pressed={kind === FeedbackKind.Bug}
-                onClick={() => setKind(FeedbackKind.Bug)}
-                data-testid="feedback-kind-bug"
-              >
-                {t('data.feedback.kindBug')}
-              </button>
-              <button
-                className="segmented__option"
-                type="button"
-                aria-pressed={kind === FeedbackKind.Feature}
-                onClick={() => setKind(FeedbackKind.Feature)}
-                data-testid="feedback-kind-feature"
-              >
-                {t('data.feedback.kindFeature')}
-              </button>
-            </div>
-          </fieldset>
-
-          <div className="field">
-            <label className="field__label" htmlFor={textId}>
-              {kind === FeedbackKind.Bug
-                ? t('data.feedback.textBug')
-                : t('data.feedback.textFeature')}
-            </label>
-            <textarea
-              id={textId}
-              className="field__input field__input--area"
-              rows={6}
-              maxLength={4000}
-              value={text}
-              disabled={sending}
-              onChange={(event) => setText(event.target.value)}
-              data-testid="feedback-text"
-            />
-            <p className="field__hint">
-              {kind === FeedbackKind.Bug
-                ? t('data.feedback.hintBug')
-                : t('data.feedback.hintFeature')}
-            </p>
-          </div>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="feedback-dialog"
+      titleId={headingId}
+      className="feedbackdialog"
+      eyebrow={t('data.feedback.open')}
+      title={t('data.feedback.title')}
+      isDirty={text.trim() !== '' && !sending}
+      leaveMessage={t('data.feedback.leaveConfirm')}
+      onClose={onClose}
+      onSubmit={() => void send()}
+      busy={sending}
+      actions={(close) => (
+        <>
           <button className="button" type="submit" disabled={sending} data-testid="feedback-send">
             {sending ? t('data.feedback.sending') : t('data.feedback.send')}
           </button>
@@ -182,8 +109,57 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
           >
             {t('data.feedback.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {error ? (
+        <p className="form__message" role="alert" data-testid="feedback-error">
+          {error}
+        </p>
+      ) : null}
+
+      <fieldset className="field" disabled={sending}>
+        <legend className="field__label">{t('data.feedback.kindLabel')}</legend>
+        <div className="segmented" role="group" aria-label={t('data.feedback.kindGroup')}>
+          <button
+            className="segmented__option"
+            type="button"
+            aria-pressed={kind === FeedbackKind.Bug}
+            onClick={() => setKind(FeedbackKind.Bug)}
+            data-testid="feedback-kind-bug"
+          >
+            {t('data.feedback.kindBug')}
+          </button>
+          <button
+            className="segmented__option"
+            type="button"
+            aria-pressed={kind === FeedbackKind.Feature}
+            onClick={() => setKind(FeedbackKind.Feature)}
+            data-testid="feedback-kind-feature"
+          >
+            {t('data.feedback.kindFeature')}
+          </button>
+        </div>
+      </fieldset>
+
+      <div className="field">
+        <label className="field__label" htmlFor={textId}>
+          {kind === FeedbackKind.Bug ? t('data.feedback.textBug') : t('data.feedback.textFeature')}
+        </label>
+        <textarea
+          id={textId}
+          className="field__input field__input--area"
+          rows={6}
+          maxLength={4000}
+          value={text}
+          disabled={sending}
+          onChange={(event) => setText(event.target.value)}
+          data-testid="feedback-text"
+        />
+        <p className="field__hint">
+          {kind === FeedbackKind.Bug ? t('data.feedback.hintBug') : t('data.feedback.hintFeature')}
+        </p>
+      </div>
+    </Drawer>
   )
 }

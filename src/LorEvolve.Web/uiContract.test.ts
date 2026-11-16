@@ -111,34 +111,20 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['unisearch__excerpttext', '#248'],
 ])
 
-// Files that write their own <dialog>. Only shrinks; the tracker ends at five.
+// Files that write their own <dialog>. Only shrinks; the tracker ends at five (Drawer and the four that stay).
 const DIALOG_FILES = [
-  'src/components/ChapterForm.tsx',
   'src/components/ConfirmDialog.tsx',
-  'src/components/ConnectToAi.tsx',
+  'src/components/Drawer.tsx',
   'src/components/EraForm.tsx',
-  'src/components/FamilyKindDialog.tsx',
   'src/components/FamilyMemberDetails.tsx',
-  'src/components/FeedbackButton.tsx',
   'src/components/FieldSectionsDialog.tsx',
-  'src/components/IdeaBoardPicker.tsx',
-  'src/components/IdeaReferencePicker.tsx',
   'src/components/ImageCropDialog.tsx',
   'src/components/ImageViewer.tsx',
-  'src/components/KnowledgeView.tsx',
-  'src/components/LoreContext.tsx',
   'src/components/MapForm.tsx',
   'src/components/MapPinForm.tsx',
-  'src/components/PlotArcForm.tsx',
-  'src/components/PrivateNotes.tsx',
   'src/components/ProgressionItemForm.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/ReviewComments.tsx',
   'src/components/SceneForm.tsx',
-  'src/components/StoryForm.tsx',
-  'src/components/StoryPublicSummaryForm.tsx',
   'src/components/TimelineEntryForm.tsx',
-  'src/components/TypeDialog.tsx',
   'src/components/TypeFields.tsx',
 ]
 

@@ -1,16 +1,8 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MouseEvent,
-  type SyntheticEvent,
-} from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
 import { emptyValue, valuedFields } from '../lore/document'
 import { createEntity, listEntities, listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import { withInheritedFields } from '../lore/fieldInheritance'
@@ -22,6 +14,7 @@ import {
   type FieldValueInput,
 } from '../lore/types'
 import type { EntityChoice } from './EntityPicker'
+import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { FieldInput } from './FieldInputs'
 
@@ -72,7 +65,6 @@ export function QuickCreateDialog({
   onCancel,
 }: Props) {
   const { t } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const nameId = useId()
   const headingId = useId()
   const typeId = useId()
@@ -97,26 +89,7 @@ export function QuickCreateDialog({
   const isDirty =
     payloadKey({ name: name.trim(), chosenTypeId, values }) !==
     payloadKey({ name: initialName.trim(), chosenTypeId: takenTypeId, values: {} })
-  const { close, dialogProps } = useDrawerGuard(isDirty, t('lore.quickCreate.leave'), onCancel)
-
-  // While a create is out there is nothing to close: Cancel is disabled with the rest of the form, and Escape and the
-  // backdrop are swallowed here before the drawer guard sees them.
-  const guardedProps = {
-    onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
-      if (sending.current && event.key === 'Escape') event.preventDefault()
-      else dialogProps.onKeyDown(event)
-    },
-    onCancel(event: SyntheticEvent<HTMLDialogElement>) {
-      if (sending.current) event.preventDefault()
-      else dialogProps.onCancel(event)
-    },
-    onClick(event: MouseEvent<HTMLDialogElement>) {
-      if (!sending.current) dialogProps.onClick(event)
-    },
-  }
-
   useEffect(() => {
-    dialog.current?.showModal()
     document.getElementById(nameId)?.focus()
   }, [nameId])
 
@@ -258,173 +231,22 @@ export function QuickCreateDialog({
   }
 
   return (
-    <dialog
-      className="drawer quickcreate"
-      ref={dialog}
-      aria-labelledby={headingId}
-      {...guardedProps}
-      data-testid="quick-create-dialog"
-    >
-      <form
-        className="drawer__panel"
-        aria-busy={isSaving}
-        onSubmit={(event) => {
-          event.preventDefault()
-          // The form it opened from is not a form element, but the event still travels up React's tree to it.
-          event.stopPropagation()
-          void create()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('lore.quickCreate.eyebrow')}</p>
-          <h2 className="drawer__title" id={headingId}>
-            {t('lore.quickCreate.title')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p
-              className="form__message"
-              role="alert"
-              tabIndex={-1}
-              ref={messageRef}
-              data-testid="quick-create-error"
-            >
-              {message}
-            </p>
-          ) : null}
-
-          <p className="quickcreate__pending" role="status" data-testid="quick-create-pending">
-            {isSaving ? t('lore.quickCreate.pending') : null}
-          </p>
-
-          {/* Everything the create was sent with stays as it was sent until the answer comes. */}
-          <fieldset className="quickcreate__inputs" disabled={isSaving}>
-            <p className="quickcreate__note">{t('lore.quickCreate.note')}</p>
-
-            <Field
-              label={t('lore.quickCreate.name')}
-              name={nameId}
-              dir="auto"
-              autoComplete="off"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              error={fieldErrors.name}
-              data-testid="quick-create-name"
-            />
-
-            {shownSimilar.length > 0 ? (
-              <div
-                className="callout callout--warning quickcreate__similar"
-                data-testid="quick-create-similar"
-              >
-                <p className="callout__title">{t('lore.quickCreate.similarTitle')}</p>
-                <p>{t('lore.quickCreate.similarBody')}</p>
-                <ul className="quickcreate__matches">
-                  {shownSimilar.map((item) => (
-                    <li key={item.id}>
-                      <span className="quickcreate__match">
-                        <bdi>{item.name}</bdi>{' '}
-                        <span className="picker__kind">
-                          <bdi>{item.entityTypeName}</bdi>
-                        </span>
-                      </span>
-                      <button
-                        className="button button--secondary button--sm"
-                        type="button"
-                        onClick={() =>
-                          onChooseExisting({
-                            id: item.id,
-                            name: item.name,
-                            typeName: item.entityTypeName,
-                          })
-                        }
-                        aria-label={t('lore.quickCreate.useLabel', {
-                          name: item.name,
-                          type: item.entityTypeName,
-                        })}
-                        data-testid={`quick-create-use-${item.name}`}
-                      >
-                        {t('lore.quickCreate.useThis')}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {types.kind === 'loading' ? (
-              <p className="field__hint" role="status">
-                {t('lore.quickCreate.readingTypes')}
-              </p>
-            ) : types.kind === 'error' ? (
-              <p className="form__message" role="alert">
-                {t('lore.quickCreate.typesFailed')}
-              </p>
-            ) : eligible.length === 0 ? (
-              <p className="form__message" role="alert" data-testid="quick-create-no-types">
-                {t('lore.quickCreate.noTypes')}
-              </p>
-            ) : eligible.length === 1 ? (
-              <p className="quickcreate__type" data-testid="quick-create-type">
-                <span className="field__label">{t('lore.quickCreate.typeFixed')}</span>{' '}
-                <bdi>{eligible[0].name}</bdi>
-              </p>
-            ) : (
-              <div className="field">
-                <label className="field__label" htmlFor={typeId}>
-                  {t('lore.quickCreate.typeLabel')}
-                </label>
-                <select
-                  id={typeId}
-                  className="field__input field__input--select"
-                  value={chosenTypeId}
-                  onChange={(event) => {
-                    setChosenTypeId(event.target.value)
-                    setFieldErrors({})
-                  }}
-                  aria-invalid={fieldErrors.entitytypeid ? true : undefined}
-                  data-testid="quick-create-type-select"
-                >
-                  <option value="">{t('lore.quickCreate.chooseType')}</option>
-                  {eligible.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.entitytypeid ? (
-                  <p className="field__error">{fieldErrors.entitytypeid}</p>
-                ) : null}
-              </div>
-            )}
-
-            {required.length > 0 ? (
-              <div className="quickcreate__fields" data-testid="quick-create-fields">
-                {required.map((definition) => (
-                  <div key={definition.id}>
-                    {/* No quick create in here: a link field picks an existing entry. */}
-                    <FieldInput
-                      definition={definition}
-                      value={values[definition.id] ?? emptyValue(definition)}
-                      universeId={universeId}
-                      chronology={chronology}
-                      onChange={(next) =>
-                        setValues((current) => ({ ...current, [definition.id]: next }))
-                      }
-                    />
-                    {fieldErrors[definition.id] ? (
-                      <p className="field__error">{fieldErrors[definition.id]}</p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </fieldset>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="quick-create-dialog"
+      titleId={headingId}
+      className="quickcreate"
+      eyebrow={t('lore.quickCreate.eyebrow')}
+      title={t('lore.quickCreate.title')}
+      isDirty={isDirty}
+      leaveMessage={t('lore.quickCreate.leave')}
+      onClose={onCancel}
+      // While a create is out there is nothing to close: Cancel is disabled with the rest of the form, and Escape and
+      // the backdrop are swallowed before the drawer guard sees them.
+      isLocked={() => sending.current}
+      busy={isSaving}
+      onSubmit={() => void create()}
+      actions={(close) => (
+        <>
           <button
             className="button"
             type="submit"
@@ -442,8 +264,148 @@ export function QuickCreateDialog({
           >
             {t('lore.quickCreate.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p
+          className="form__message"
+          role="alert"
+          tabIndex={-1}
+          ref={messageRef}
+          data-testid="quick-create-error"
+        >
+          {message}
+        </p>
+      ) : null}
+
+      <p className="quickcreate__pending" role="status" data-testid="quick-create-pending">
+        {isSaving ? t('lore.quickCreate.pending') : null}
+      </p>
+
+      {/* Everything the create was sent with stays as it was sent until the answer comes. */}
+      <fieldset className="quickcreate__inputs" disabled={isSaving}>
+        <p className="quickcreate__note">{t('lore.quickCreate.note')}</p>
+
+        <Field
+          label={t('lore.quickCreate.name')}
+          name={nameId}
+          dir="auto"
+          autoComplete="off"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          error={fieldErrors.name}
+          data-testid="quick-create-name"
+        />
+
+        {shownSimilar.length > 0 ? (
+          <div
+            className="callout callout--warning quickcreate__similar"
+            data-testid="quick-create-similar"
+          >
+            <p className="callout__title">{t('lore.quickCreate.similarTitle')}</p>
+            <p>{t('lore.quickCreate.similarBody')}</p>
+            <ul className="quickcreate__matches">
+              {shownSimilar.map((item) => (
+                <li key={item.id}>
+                  <span className="quickcreate__match">
+                    <bdi>{item.name}</bdi>{' '}
+                    <span className="picker__kind">
+                      <bdi>{item.entityTypeName}</bdi>
+                    </span>
+                  </span>
+                  <button
+                    className="button button--secondary button--sm"
+                    type="button"
+                    onClick={() =>
+                      onChooseExisting({
+                        id: item.id,
+                        name: item.name,
+                        typeName: item.entityTypeName,
+                      })
+                    }
+                    aria-label={t('lore.quickCreate.useLabel', {
+                      name: item.name,
+                      type: item.entityTypeName,
+                    })}
+                    data-testid={`quick-create-use-${item.name}`}
+                  >
+                    {t('lore.quickCreate.useThis')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {types.kind === 'loading' ? (
+          <p className="field__hint" role="status">
+            {t('lore.quickCreate.readingTypes')}
+          </p>
+        ) : types.kind === 'error' ? (
+          <p className="form__message" role="alert">
+            {t('lore.quickCreate.typesFailed')}
+          </p>
+        ) : eligible.length === 0 ? (
+          <p className="form__message" role="alert" data-testid="quick-create-no-types">
+            {t('lore.quickCreate.noTypes')}
+          </p>
+        ) : eligible.length === 1 ? (
+          <p className="quickcreate__type" data-testid="quick-create-type">
+            <span className="field__label">{t('lore.quickCreate.typeFixed')}</span>{' '}
+            <bdi>{eligible[0].name}</bdi>
+          </p>
+        ) : (
+          <div className="field">
+            <label className="field__label" htmlFor={typeId}>
+              {t('lore.quickCreate.typeLabel')}
+            </label>
+            <select
+              id={typeId}
+              className="field__input field__input--select"
+              value={chosenTypeId}
+              onChange={(event) => {
+                setChosenTypeId(event.target.value)
+                setFieldErrors({})
+              }}
+              aria-invalid={fieldErrors.entitytypeid ? true : undefined}
+              data-testid="quick-create-type-select"
+            >
+              <option value="">{t('lore.quickCreate.chooseType')}</option>
+              {eligible.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.entitytypeid ? (
+              <p className="field__error">{fieldErrors.entitytypeid}</p>
+            ) : null}
+          </div>
+        )}
+
+        {required.length > 0 ? (
+          <div className="quickcreate__fields" data-testid="quick-create-fields">
+            {required.map((definition) => (
+              <div key={definition.id}>
+                {/* No quick create in here: a link field picks an existing entry. */}
+                <FieldInput
+                  definition={definition}
+                  value={values[definition.id] ?? emptyValue(definition)}
+                  universeId={universeId}
+                  chronology={chronology}
+                  onChange={(next) =>
+                    setValues((current) => ({ ...current, [definition.id]: next }))
+                  }
+                />
+                {fieldErrors[definition.id] ? (
+                  <p className="field__error">{fieldErrors[definition.id]}</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </fieldset>
+    </Drawer>
   )
 }

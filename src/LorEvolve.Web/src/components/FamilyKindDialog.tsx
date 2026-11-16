@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
+import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { createRelationshipType } from '../relationships/api'
 import {
@@ -33,7 +34,6 @@ const MEANINGS = [
  */
 export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
   const { t, tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const [name, setName] = useState('')
   const [inverseName, setInverseName] = useState('')
   const [isSymmetric, setIsSymmetric] = useState(false)
@@ -50,12 +50,10 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       isSymmetric: false,
       semantic: FamilySemantic.NonStructuralFamily,
     })
-  const { close, dialogProps } = useDrawerGuard(isDirty, t('places.kindDialog.leave'), onClose)
 
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     document.getElementById('family-kind-name')?.focus()
   }, [])
 
@@ -99,103 +97,17 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
   const reads = name.trim() || t('places.kindDialog.readsAs')
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="family-kind-heading"
-      {...dialogProps}
-      data-testid="family-kind-dialog"
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('places.kindDialog.eyebrow')}</p>
-          <h2 className="drawer__title" id="family-kind-heading">
-            {t('places.kindDialog.title')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="family-kind-error">
-              {message}
-            </p>
-          ) : null}
-
-          <Field
-            label={t('places.kindDialog.name')}
-            name="family-kind-name"
-            placeholder={t('places.kindDialog.namePlaceholder')}
-            dir="auto"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            error={fieldErrors.name}
-            data-testid="family-kind-name"
-          />
-
-          {isSymmetric ? (
-            <p className="field__hint" data-testid="family-kind-both-ways">
-              {tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}
-            </p>
-          ) : (
-            <Field
-              label={t('places.kindDialog.inverse')}
-              name="family-kind-inverse"
-              placeholder={t('places.kindDialog.inversePlaceholder')}
-              dir="auto"
-              value={inverseName}
-              onChange={(event) => setInverseName(event.target.value)}
-              error={fieldErrors.inversename}
-              data-testid="family-kind-inverse"
-            />
-          )}
-
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={isSymmetric}
-              onChange={(event) => setIsSymmetric(event.target.checked)}
-              data-testid="family-kind-symmetric"
-            />
-            <span>{t('places.kindDialog.symmetric')}</span>
-          </label>
-
-          <div className="field">
-            <label className="field__label" htmlFor="family-kind-meaning">
-              {t('places.kindDialog.meaning')}
-            </label>
-            <select
-              id="family-kind-meaning"
-              className="field__input field__input--select"
-              value={chosen}
-              onChange={(event) => setSemantic(Number(event.target.value) as FamilySemanticValue)}
-              aria-invalid={fieldErrors.familysemantic ? true : undefined}
-              aria-describedby="family-kind-meaning-hint"
-              data-testid="family-kind-meaning"
-            >
-              {meanings.map((each) => (
-                <option key={each.value} value={each.value}>
-                  {t(each.label)}
-                </option>
-              ))}
-            </select>
-            <p className="field__hint" id="family-kind-meaning-hint">
-              {isParentSemantic(chosen)
-                ? t('places.kindDialog.hintParent')
-                : t('places.kindDialog.hintOther')}
-            </p>
-            {fieldErrors.familysemantic ? (
-              <p className="field__error">{fieldErrors.familysemantic}</p>
-            ) : null}
-          </div>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="family-kind-dialog"
+      titleId="family-kind-heading"
+      eyebrow={t('places.kindDialog.eyebrow')}
+      title={t('places.kindDialog.title')}
+      isDirty={isDirty}
+      leaveMessage={t('places.kindDialog.leave')}
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button
             className="button"
             type="submit"
@@ -212,8 +124,81 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
           >
             {t('places.kindDialog.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid="family-kind-error">
+          {message}
+        </p>
+      ) : null}
+
+      <Field
+        label={t('places.kindDialog.name')}
+        name="family-kind-name"
+        placeholder={t('places.kindDialog.namePlaceholder')}
+        dir="auto"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        error={fieldErrors.name}
+        data-testid="family-kind-name"
+      />
+
+      {isSymmetric ? (
+        <p className="field__hint" data-testid="family-kind-both-ways">
+          {tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}
+        </p>
+      ) : (
+        <Field
+          label={t('places.kindDialog.inverse')}
+          name="family-kind-inverse"
+          placeholder={t('places.kindDialog.inversePlaceholder')}
+          dir="auto"
+          value={inverseName}
+          onChange={(event) => setInverseName(event.target.value)}
+          error={fieldErrors.inversename}
+          data-testid="family-kind-inverse"
+        />
+      )}
+
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={isSymmetric}
+          onChange={(event) => setIsSymmetric(event.target.checked)}
+          data-testid="family-kind-symmetric"
+        />
+        <span>{t('places.kindDialog.symmetric')}</span>
+      </label>
+
+      <div className="field">
+        <label className="field__label" htmlFor="family-kind-meaning">
+          {t('places.kindDialog.meaning')}
+        </label>
+        <select
+          id="family-kind-meaning"
+          className="field__input field__input--select"
+          value={chosen}
+          onChange={(event) => setSemantic(Number(event.target.value) as FamilySemanticValue)}
+          aria-invalid={fieldErrors.familysemantic ? true : undefined}
+          aria-describedby="family-kind-meaning-hint"
+          data-testid="family-kind-meaning"
+        >
+          {meanings.map((each) => (
+            <option key={each.value} value={each.value}>
+              {t(each.label)}
+            </option>
+          ))}
+        </select>
+        <p className="field__hint" id="family-kind-meaning-hint">
+          {isParentSemantic(chosen)
+            ? t('places.kindDialog.hintParent')
+            : t('places.kindDialog.hintOther')}
+        </p>
+        {fieldErrors.familysemantic ? (
+          <p className="field__error">{fieldErrors.familysemantic}</p>
+        ) : null}
+      </div>
+    </Drawer>
   )
 }

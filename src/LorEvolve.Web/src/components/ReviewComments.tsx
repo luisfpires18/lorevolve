@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { MessageSquare } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { QueryTabList, TabPanel } from './QueryTabs'
@@ -16,7 +16,7 @@ import {
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { formatDateTime } from '../lib/dates'
-import { useDrawerGuard } from '../lib/drawerGuard'
+import { Drawer } from './Drawer'
 import type { Change } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { suggestionsPath } from '../suggestions/api'
@@ -121,7 +121,6 @@ function CommentsDrawer<T>({
 }: DrawerProps<T>) {
   const { t, tx } = useI18n()
   const access = useUniverseAccess()
-  const dialog = useRef<HTMLDialogElement>(null)
   const headingId = useId()
   const newId = useId()
   const [tab, setTab] = useState<ReviewTab>('comments')
@@ -136,8 +135,6 @@ function CommentsDrawer<T>({
   const [failed, setFailed] = useState(false)
 
   const isDirty = draft.trim() !== '' || (replyTo !== null && reply.trim() !== '')
-  const { close, dialogProps } = useDrawerGuard(isDirty, t('review.comments.leave.title'), onClose)
-
   useReturnFocus()
 
   /** Leaves the drawer for the subject's form - asking first if a comment would be lost. */
@@ -156,10 +153,6 @@ function CommentsDrawer<T>({
     onClose()
     onSuggest()
   }
-
-  useEffect(() => {
-    dialog.current?.showModal()
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -385,152 +378,143 @@ function CommentsDrawer<T>({
   }
 
   return (
-    <dialog
-      className="drawer reviewdrawer"
-      ref={dialog}
-      aria-labelledby={headingId}
-      {...dialogProps}
-      data-testid="comments-drawer"
+    <Drawer
+      className="reviewdrawer"
+      testId="comments-drawer"
+      titleId={headingId}
+      eyebrow={t('review.comments.drawer.eyebrow')}
+      title={<bdi>{subjectName}</bdi>}
+      context={<p className="drawer__context">{t(SUBJECT_WORDS[kind])}</p>}
+      isDirty={isDirty}
+      leaveMessage={t('review.comments.leave.title')}
+      onClose={onClose}
+      actions={(close) => (
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={close}
+          data-testid="comments-close"
+        >
+          {t('review.comments.drawer.close')}
+        </button>
+      )}
     >
-      <div className="drawer__panel">
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{t('review.comments.drawer.eyebrow')}</p>
-          <h2 className="drawer__title" id={headingId}>
-            <bdi>{subjectName}</bdi>
-          </h2>
-          <p className="drawer__context">{t(SUBJECT_WORDS[kind])}</p>
-        </header>
+      <QueryTabList
+        label={t('review.comments.tabs.label')}
+        idPrefix="review"
+        tabs={[
+          { id: 'comments', label: t('review.comments.tabs.comments') },
+          { id: 'suggestions', label: t('review.comments.tabs.suggestions') },
+        ]}
+        tab={tab}
+        onChoose={setTab}
+      />
 
-        <div className="drawer__body">
-          <QueryTabList
-            label={t('review.comments.tabs.label')}
-            idPrefix="review"
-            tabs={[
-              { id: 'comments', label: t('review.comments.tabs.comments') },
-              { id: 'suggestions', label: t('review.comments.tabs.suggestions') },
-            ]}
-            tab={tab}
-            onChoose={setTab}
-          />
+      <TabPanel idPrefix="review" id="comments" tab={tab}>
+        {message ? (
+          <p className="form__message" role="alert" data-testid="comments-error">
+            {message}
+          </p>
+        ) : null}
 
-          <TabPanel idPrefix="review" id="comments" tab={tab}>
-            {message ? (
-              <p className="form__message" role="alert" data-testid="comments-error">
-                {message}
+        {access.comment ? (
+          <form
+            className="reviewform"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void post()
+            }}
+          >
+            <label className="field__label" htmlFor={newId}>
+              {t('review.comments.newComment')}
+            </label>
+            <textarea
+              id={newId}
+              className="field__input field__input--area"
+              rows={3}
+              dir="auto"
+              maxLength={COMMENT_MAX_LENGTH}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              aria-invalid={draftError ? true : undefined}
+              aria-describedby={draftError ? `${newId}-error` : undefined}
+              data-testid="comment-new-text"
+            />
+            {draftError ? (
+              <p className="field__error" id={`${newId}-error`}>
+                {draftError}
               </p>
             ) : null}
-
-            {access.comment ? (
-              <form
-                className="reviewform"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  void post()
-                }}
+            <div>
+              <button
+                className="button button--sm"
+                type="submit"
+                disabled={busy !== null}
+                data-testid="comment-new-post"
               >
-                <label className="field__label" htmlFor={newId}>
-                  {t('review.comments.newComment')}
-                </label>
-                <textarea
-                  id={newId}
-                  className="field__input field__input--area"
-                  rows={3}
-                  dir="auto"
-                  maxLength={COMMENT_MAX_LENGTH}
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                  aria-invalid={draftError ? true : undefined}
-                  aria-describedby={draftError ? `${newId}-error` : undefined}
-                  data-testid="comment-new-text"
-                />
-                {draftError ? (
-                  <p className="field__error" id={`${newId}-error`}>
-                    {draftError}
-                  </p>
-                ) : null}
-                <div>
-                  <button
-                    className="button button--sm"
-                    type="submit"
-                    disabled={busy !== null}
-                    data-testid="comment-new-post"
-                  >
-                    {busy === 'new' ? t('review.comments.posting') : t('review.comments.post')}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <p className="history__quiet" data-testid="comments-read-only">
-                {t('review.comments.readOnly')}
-              </p>
-            )}
+                {busy === 'new' ? t('review.comments.posting') : t('review.comments.post')}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p className="history__quiet" data-testid="comments-read-only">
+            {t('review.comments.readOnly')}
+          </p>
+        )}
 
-            {failed ? (
-              <p className="history__quiet" role="status">
-                {t('review.comments.readFailed')}
-              </p>
-            ) : threads === null ? (
-              <p className="history__quiet" role="status">
-                {t('review.comments.opening')}
-              </p>
-            ) : threads.length === 0 ? (
-              <p className="history__quiet" data-testid="comments-empty">
-                {t('review.comments.empty')}
-              </p>
-            ) : (
-              <>
-                {open.length > 0 ? (
-                  <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
-                    <h3 className="reviewsection__title" id={`${headingId}-open`}>
-                      {tx('review.comments.open', {
-                        n: <span className="reviewsection__count">{open.length}</span>,
-                      })}
-                    </h3>
-                    <ol className="reviewsection__list" data-testid="comments-open">
-                      {open.map(renderThread)}
-                    </ol>
-                  </section>
-                ) : null}
-                {resolved.length > 0 ? (
-                  <details className="reviewsection" data-testid="comments-resolved-group">
-                    <summary className="reviewsection__title">
-                      {tx('review.comments.resolved', {
-                        n: <span className="reviewsection__count">{resolved.length}</span>,
-                      })}
-                    </summary>
-                    <ol className="reviewsection__list" data-testid="comments-resolved">
-                      {resolved.map(renderThread)}
-                    </ol>
-                  </details>
-                ) : null}
-              </>
-            )}
-          </TabPanel>
+        {failed ? (
+          <p className="history__quiet" role="status">
+            {t('review.comments.readFailed')}
+          </p>
+        ) : threads === null ? (
+          <p className="history__quiet" role="status">
+            {t('review.comments.opening')}
+          </p>
+        ) : threads.length === 0 ? (
+          <p className="history__quiet" data-testid="comments-empty">
+            {t('review.comments.empty')}
+          </p>
+        ) : (
+          <>
+            {open.length > 0 ? (
+              <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
+                <h3 className="reviewsection__title" id={`${headingId}-open`}>
+                  {tx('review.comments.open', {
+                    n: <span className="reviewsection__count">{open.length}</span>,
+                  })}
+                </h3>
+                <ol className="reviewsection__list" data-testid="comments-open">
+                  {open.map(renderThread)}
+                </ol>
+              </section>
+            ) : null}
+            {resolved.length > 0 ? (
+              <details className="reviewsection" data-testid="comments-resolved-group">
+                <summary className="reviewsection__title">
+                  {tx('review.comments.resolved', {
+                    n: <span className="reviewsection__count">{resolved.length}</span>,
+                  })}
+                </summary>
+                <ol className="reviewsection__list" data-testid="comments-resolved">
+                  {resolved.map(renderThread)}
+                </ol>
+              </details>
+            ) : null}
+          </>
+        )}
+      </TabPanel>
 
-          <TabPanel idPrefix="review" id="suggestions" tab={tab}>
-            <ReviewSuggestions
-              universeId={universeId}
-              path={suggestions}
-              what={kind}
-              active={tab === 'suggestions'}
-              describe={describeSuggestion}
-              onAccepted={onSuggestionAccepted}
-              onSuggest={suggest}
-            />
-          </TabPanel>
-        </div>
-
-        <footer className="drawer__actions">
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="comments-close"
-          >
-            {t('review.comments.drawer.close')}
-          </button>
-        </footer>
-      </div>
-    </dialog>
+      <TabPanel idPrefix="review" id="suggestions" tab={tab}>
+        <ReviewSuggestions
+          universeId={universeId}
+          path={suggestions}
+          what={kind}
+          active={tab === 'suggestions'}
+          describe={describeSuggestion}
+          onAccepted={onSuggestionAccepted}
+          onSuggest={suggest}
+        />
+      </TabPanel>
+    </Drawer>
   )
 }

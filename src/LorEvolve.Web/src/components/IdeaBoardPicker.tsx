@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Drawer } from './Drawer'
 import { Quoted } from './NameList'
 import { listIdeas, listReferenceTargets } from '../ideas/api'
 import { IdeaReferenceKind } from '../ideas/types'
@@ -43,7 +44,6 @@ export function IdeaBoardPicker({
   onClose,
 }: IdeaBoardPickerProps) {
   const { t, tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const headingId = useId()
   const searchId = useId()
@@ -55,7 +55,6 @@ export function IdeaBoardPicker({
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     search.current?.focus()
   }, [])
 
@@ -117,105 +116,19 @@ export function IdeaBoardPicker({
   const results = answer?.request === query ? answer.targets : undefined
 
   return (
-    <dialog
-      className="drawer ideapicker"
-      ref={dialog}
-      aria-labelledby={headingId}
-      onCancel={(event) => {
-        event.preventDefault()
-        onClose()
-      }}
-      onClick={(event) => {
-        if (event.target === dialog.current) onClose()
-      }}
-      data-testid="board-picker"
-    >
-      <div className="drawer__panel">
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">
-            {universe
-              ? tx('ideas.boardPicker.inUniverse', { universe: <Quoted text={universe.name} /> })
-              : t('ideas.boardPicker.inNoUniverse')}
-          </p>
-          <h2 className="drawer__title" id={headingId}>
-            {what === 'idea' ? t('ideas.boardPicker.addIdea') : t('ideas.boardPicker.addEntry')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          <div className="field">
-            <label className="field__label" htmlFor={searchId}>
-              {t('ideas.boardPicker.findByName')}
-            </label>
-            <input
-              id={searchId}
-              ref={search}
-              className="field__input"
-              type="search"
-              value={query}
-              placeholder={
-                what === 'idea'
-                  ? t('ideas.boardPicker.placeholderIdea')
-                  : t('ideas.boardPicker.placeholderEntry')
-              }
-              onChange={(event) => setQuery(event.target.value)}
-              aria-controls={resultsId}
-              data-testid="board-picker-search"
-            />
-          </div>
-
-          <div id={resultsId} aria-live="polite">
-            {results === undefined ? (
-              <p className="notice ideapicker__notice" role="status">
-                {t('ideas.boardPicker.looking')}
-              </p>
-            ) : results === null ? (
-              <p className="form__message" role="alert">
-                {t('ideas.boardPicker.loadFailed')}
-              </p>
-            ) : results.length === 0 ? (
-              <p className="notice ideapicker__notice" data-testid="board-picker-empty">
-                {query.trim()
-                  ? what === 'idea'
-                    ? t('ideas.boardPicker.emptyNamedIdea')
-                    : t('ideas.boardPicker.emptyNamedEntry')
-                  : what === 'idea'
-                    ? t('ideas.boardPicker.emptyIdeas')
-                    : t('ideas.boardPicker.emptyEntries')}
-              </p>
-            ) : (
-              <ul className="ideapicker__results" data-testid="board-picker-results">
-                {results.map((target) => {
-                  const isPlaced = placed.has(target.id)
-                  return (
-                    <li key={target.id}>
-                      <button
-                        className="ideapicker__option"
-                        type="button"
-                        disabled={isPlaced}
-                        onClick={() => onChoose(target)}
-                        data-testid="board-picker-option"
-                        data-name={target.name}
-                      >
-                        <span className="ideapicker__name">
-                          <bdi>{target.name}</bdi>
-                        </span>
-                        {target.entityTypeName ? (
-                          <span className="ideapicker__context">{target.entityTypeName}</span>
-                        ) : null}
-                        <span className="ideapicker__state">
-                          {isPlaced ? t('ideas.boardPicker.placed') : t('ideas.boardPicker.add')}
-                        </span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="board-picker"
+      titleId={headingId}
+      className="ideapicker"
+      eyebrow={
+        universe
+          ? tx('ideas.boardPicker.inUniverse', { universe: <Quoted text={universe.name} /> })
+          : t('ideas.boardPicker.inNoUniverse')
+      }
+      title={what === 'idea' ? t('ideas.boardPicker.addIdea') : t('ideas.boardPicker.addEntry')}
+      onClose={onClose}
+      actions={() => (
+        <>
           <button
             className="button button--secondary"
             type="button"
@@ -224,8 +137,85 @@ export function IdeaBoardPicker({
           >
             {t('ideas.boardPicker.close')}
           </button>
-        </footer>
+        </>
+      )}
+    >
+      <div className="field">
+        <label className="field__label" htmlFor={searchId}>
+          {t('ideas.boardPicker.findByName')}
+        </label>
+        <input
+          id={searchId}
+          ref={search}
+          className="field__input"
+          type="search"
+          value={query}
+          placeholder={
+            what === 'idea'
+              ? t('ideas.boardPicker.placeholderIdea')
+              : t('ideas.boardPicker.placeholderEntry')
+          }
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && query) {
+              event.preventDefault()
+              setQuery('')
+            }
+          }}
+          aria-controls={resultsId}
+          data-testid="board-picker-search"
+        />
       </div>
-    </dialog>
+
+      <div id={resultsId} aria-live="polite">
+        {results === undefined ? (
+          <p className="notice ideapicker__notice" role="status">
+            {t('ideas.boardPicker.looking')}
+          </p>
+        ) : results === null ? (
+          <p className="form__message" role="alert">
+            {t('ideas.boardPicker.loadFailed')}
+          </p>
+        ) : results.length === 0 ? (
+          <p className="notice ideapicker__notice" data-testid="board-picker-empty">
+            {query.trim()
+              ? what === 'idea'
+                ? t('ideas.boardPicker.emptyNamedIdea')
+                : t('ideas.boardPicker.emptyNamedEntry')
+              : what === 'idea'
+                ? t('ideas.boardPicker.emptyIdeas')
+                : t('ideas.boardPicker.emptyEntries')}
+          </p>
+        ) : (
+          <ul className="ideapicker__results" data-testid="board-picker-results">
+            {results.map((target) => {
+              const isPlaced = placed.has(target.id)
+              return (
+                <li key={target.id}>
+                  <button
+                    className="ideapicker__option"
+                    type="button"
+                    disabled={isPlaced}
+                    onClick={() => onChoose(target)}
+                    data-testid="board-picker-option"
+                    data-name={target.name}
+                  >
+                    <span className="ideapicker__name">
+                      <bdi>{target.name}</bdi>
+                    </span>
+                    {target.entityTypeName ? (
+                      <span className="ideapicker__context">{target.entityTypeName}</span>
+                    ) : null}
+                    <span className="ideapicker__state">
+                      {isPlaced ? t('ideas.boardPicker.placed') : t('ideas.boardPicker.add')}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </Drawer>
   )
 }

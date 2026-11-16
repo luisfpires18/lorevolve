@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChangeList, EditConflict } from './EditConflict'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
+import { Drawer } from './Drawer'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { suggestStoryChanges } from '../suggestions/api'
 import { useReturnFocus } from '../lib/returnFocus'
@@ -57,7 +58,6 @@ interface StoryFormProps {
 export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: StoryFormProps) {
   const { t } = useI18n()
   const suggesting = onSuggested !== undefined && story !== null
-  const dialog = useRef<HTMLDialogElement>(null)
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the story as stored, or the blank form - which the draft is measured against, and the
   // version its save names. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
@@ -71,21 +71,9 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   const saveButton = useRef<HTMLButtonElement>(null)
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    suggesting && story
-      ? t('stories.storyForm.leaveSuggestion', { title: story.title })
-      : story
-        ? t('stories.storyForm.leaveUnsaved', { title: story.title })
-        : t('stories.storyForm.leaveNew'),
-    onClose,
-  )
-
   useReturnFocus()
 
   useEffect(() => {
-    // showModal brings the focus trap, the backdrop and Escape with it.
-    dialog.current?.showModal()
     title.current?.focus()
   }, [])
 
@@ -134,129 +122,29 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   }
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="story-heading"
-      {...dialogProps}
-      data-testid="story-form"
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          {story ? (
-            <p className="drawer__eyebrow">
-              {suggesting
-                ? t('stories.storyForm.eyebrowSuggesting')
-                : t('stories.storyForm.eyebrowEditing')}
-            </p>
-          ) : null}
-          <h2 className="drawer__title" id="story-heading">
-            {story ? story.title : t('stories.storyForm.newTitle')}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {suggesting ? (
-            <p className="callout" data-testid="story-suggesting">
-              {t('stories.storyForm.suggestingNote')}
-            </p>
-          ) : null}
-
-          {message ? (
-            <p className="form__message" role="alert" data-testid="story-error">
-              {message}
-            </p>
-          ) : null}
-
-          {conflict && story ? (
-            <EditConflict
-              what={t('stories.storyForm.conflictNoun')}
-              read={() => getStory(universeId, story.id)}
-              renderLatest={(latest) => <ChangeList changes={storyChanges(latest, draft)} />}
-              suggesting={suggesting}
-              onKeepMine={(latest) => {
-                // The form stays as typed, measured against the latest; the next save names the version reviewed.
-                setBase({ draft: draftOf(latest), version: latest.version })
-                setConflict(false)
-                requestAnimationFrame(() => saveButton.current?.focus())
-              }}
-              onUseLatest={(latest) => {
-                setBase({ draft: draftOf(latest), version: latest.version })
-                setDraft(draftOf(latest))
-                setConflict(false)
-                requestAnimationFrame(() => title.current?.focus())
-              }}
-              testId="story-conflict"
-            />
-          ) : null}
-
-          <div className="field">
-            <label className="field__label" htmlFor="story-title">
-              {t('stories.storyForm.titleLabel')}
-            </label>
-            <input
-              id="story-title"
-              className="field__input"
-              ref={title}
-              type="text"
-              dir="auto"
-              placeholder={t('stories.storyForm.titlePlaceholder')}
-              value={draft.title}
-              onChange={(event) => edit({ title: event.target.value })}
-              aria-invalid={fieldErrors.title ? true : undefined}
-              data-testid="story-title-input"
-            />
-            {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
-          </div>
-
-          <div className="field">
-            <label className="field__label" htmlFor="story-premise">
-              {t('stories.storyForm.premiseLabel')}
-            </label>
-            <p className="field__hint">{t('stories.storyForm.premiseHint')}</p>
-            <textarea
-              id="story-premise"
-              className="field__input field__input--area"
-              rows={4}
-              placeholder={t('stories.storyForm.premisePlaceholder')}
-              value={draft.premise}
-              onChange={(event) => edit({ premise: event.target.value })}
-              aria-invalid={fieldErrors.premise ? true : undefined}
-              data-testid="story-premise-input"
-            />
-            {fieldErrors.premise ? <p className="field__error">{fieldErrors.premise}</p> : null}
-          </div>
-
-          <div className="field">
-            <span className="field__label" id="story-status-label">
-              {t('stories.storyForm.statusLabel')}
-            </span>
-            <div className="segmented" role="group" aria-labelledby="story-status-label">
-              {STORY_STATUS_ORDER.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="segmented__option"
-                  aria-pressed={draft.status === option}
-                  onClick={() => edit({ status: option })}
-                  data-testid={`story-status-${STORY_STATUS_KEYS[option]}`}
-                >
-                  {STORY_STATUS_LABELS[option]}
-                </button>
-              ))}
-            </div>
-            <p className="field__hint">{t('stories.storyForm.statusHint')}</p>
-            {fieldErrors.status ? <p className="field__error">{fieldErrors.status}</p> : null}
-          </div>
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId="story-form"
+      titleId="story-heading"
+      eyebrow={
+        story
+          ? suggesting
+            ? t('stories.storyForm.eyebrowSuggesting')
+            : t('stories.storyForm.eyebrowEditing')
+          : null
+      }
+      title={story ? story.title : t('stories.storyForm.newTitle')}
+      isDirty={isDirty}
+      leaveMessage={
+        suggesting && story
+          ? t('stories.storyForm.leaveSuggestion', { title: story.title })
+          : story
+            ? t('stories.storyForm.leaveUnsaved', { title: story.title })
+            : t('stories.storyForm.leaveNew')
+      }
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button
             ref={saveButton}
             className="button"
@@ -282,8 +170,101 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
           >
             {t('stories.storyForm.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {suggesting ? (
+        <p className="callout" data-testid="story-suggesting">
+          {t('stories.storyForm.suggestingNote')}
+        </p>
+      ) : null}
+
+      {message ? (
+        <p className="form__message" role="alert" data-testid="story-error">
+          {message}
+        </p>
+      ) : null}
+
+      {conflict && story ? (
+        <EditConflict
+          what={t('stories.storyForm.conflictNoun')}
+          read={() => getStory(universeId, story.id)}
+          renderLatest={(latest) => <ChangeList changes={storyChanges(latest, draft)} />}
+          suggesting={suggesting}
+          onKeepMine={(latest) => {
+            // The form stays as typed, measured against the latest; the next save names the version reviewed.
+            setBase({ draft: draftOf(latest), version: latest.version })
+            setConflict(false)
+            requestAnimationFrame(() => saveButton.current?.focus())
+          }}
+          onUseLatest={(latest) => {
+            setBase({ draft: draftOf(latest), version: latest.version })
+            setDraft(draftOf(latest))
+            setConflict(false)
+            requestAnimationFrame(() => title.current?.focus())
+          }}
+          testId="story-conflict"
+        />
+      ) : null}
+
+      <div className="field">
+        <label className="field__label" htmlFor="story-title">
+          {t('stories.storyForm.titleLabel')}
+        </label>
+        <input
+          id="story-title"
+          className="field__input"
+          ref={title}
+          type="text"
+          dir="auto"
+          placeholder={t('stories.storyForm.titlePlaceholder')}
+          value={draft.title}
+          onChange={(event) => edit({ title: event.target.value })}
+          aria-invalid={fieldErrors.title ? true : undefined}
+          data-testid="story-title-input"
+        />
+        {fieldErrors.title ? <p className="field__error">{fieldErrors.title}</p> : null}
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="story-premise">
+          {t('stories.storyForm.premiseLabel')}
+        </label>
+        <p className="field__hint">{t('stories.storyForm.premiseHint')}</p>
+        <textarea
+          id="story-premise"
+          className="field__input field__input--area"
+          rows={4}
+          placeholder={t('stories.storyForm.premisePlaceholder')}
+          value={draft.premise}
+          onChange={(event) => edit({ premise: event.target.value })}
+          aria-invalid={fieldErrors.premise ? true : undefined}
+          data-testid="story-premise-input"
+        />
+        {fieldErrors.premise ? <p className="field__error">{fieldErrors.premise}</p> : null}
+      </div>
+
+      <div className="field">
+        <span className="field__label" id="story-status-label">
+          {t('stories.storyForm.statusLabel')}
+        </span>
+        <div className="segmented" role="group" aria-labelledby="story-status-label">
+          {STORY_STATUS_ORDER.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="segmented__option"
+              aria-pressed={draft.status === option}
+              onClick={() => edit({ status: option })}
+              data-testid={`story-status-${STORY_STATUS_KEYS[option]}`}
+            >
+              {STORY_STATUS_LABELS[option]}
+            </button>
+          ))}
+        </div>
+        <p className="field__hint">{t('stories.storyForm.statusHint')}</p>
+        {fieldErrors.status ? <p className="field__error">{fieldErrors.status}</p> : null}
+      </div>
+    </Drawer>
   )
 }
