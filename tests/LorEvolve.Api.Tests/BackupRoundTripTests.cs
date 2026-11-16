@@ -72,7 +72,6 @@ public sealed class BackupRoundTripTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Contains(before, line => line.StartsWith("relation kind rules", StringComparison.Ordinal)
             && line.Contains("family=None", StringComparison.Ordinal));
         Assert.Contains(before, line => line.StartsWith("dismissed CANON-REL-001", StringComparison.Ordinal));
-        Assert.DoesNotContain(before, line => line.Contains("Unassigned thought", StringComparison.Ordinal));
     }
 
     [Fact]

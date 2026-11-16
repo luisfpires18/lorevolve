@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { Field } from './Field'
 import { Drawer } from './Drawer'
 import { Quoted } from './NameList'
 import { listReferenceTargets, referenceContext } from '../ideas/api'
@@ -57,7 +58,6 @@ export function IdeaReferencePicker({
   const search = useRef<HTMLInputElement>(null)
   const headingId = useId()
   const searchId = useId()
-  const kindsId = useId()
   const resultsId = useId()
 
   const [kind, setKind] = useState<IdeaReferenceKindValue>(IdeaReferenceKind.Entity)
@@ -124,48 +124,46 @@ export function IdeaReferencePicker({
         </>
       )}
     >
-      <div className="field">
-        <span className="field__label" id={kindsId}>
-          {t('ideas.picker.whatToReference')}
-        </span>
-        <div className="segmented" role="group" aria-labelledby={kindsId}>
-          {IDEA_REFERENCE_KINDS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="segmented__option"
-              aria-pressed={kind === option}
-              onClick={() => setKind(option)}
-              data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`}
-            >
-              {IDEA_REFERENCE_KIND_LABELS[option]}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Field label={t('ideas.picker.whatToReference')} group>
+        {(control) => (
+          <div className="segmented" {...control}>
+            {IDEA_REFERENCE_KINDS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className="segmented__option"
+                aria-pressed={kind === option}
+                onClick={() => setKind(option)}
+                data-testid={`idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`}
+              >
+                {IDEA_REFERENCE_KIND_LABELS[option]}
+              </button>
+            ))}
+          </div>
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor={searchId}>
-          {t('ideas.picker.findByName')}
-        </label>
-        <input
-          id={searchId}
-          ref={search}
-          className="field__input"
-          type="search"
-          value={query}
-          placeholder={t(PLACEHOLDERS[kind])}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && query) {
-              event.preventDefault()
-              setQuery('')
-            }
-          }}
-          aria-controls={resultsId}
-          data-testid="idea-picker-search"
-        />
-      </div>
+      <Field label={t('ideas.picker.findByName')} id={searchId}>
+        {(control) => (
+          <input
+            {...control}
+            ref={search}
+            className="field__input"
+            type="search"
+            value={query}
+            placeholder={t(PLACEHOLDERS[kind])}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && query) {
+                event.preventDefault()
+                setQuery('')
+              }
+            }}
+            aria-controls={resultsId}
+            data-testid="idea-picker-search"
+          />
+        )}
+      </Field>
 
       <div id={resultsId} aria-live="polite">
         {results.kind === 'searching' ? (

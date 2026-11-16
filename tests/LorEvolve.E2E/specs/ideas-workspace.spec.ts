@@ -2,12 +2,11 @@ import { expect, test, type Browser, type Page } from '@playwright/test'
 import { makeTestPassword } from './support/account'
 
 /**
- * Refinement 037: Ideas as a fast scratch space, seen from three places - all of the account's ideas, one universe's, and
- * one story's - over the one account-owned idea (ADR 0030 amendment).
+ * Refinement 037: Ideas as a fast scratch space, seen from one universe's Ideas, over the one account-owned idea
+ * (ADR 0030 amendment).
  *
- * A one-line capture keeps a thought without leaving the list, placed by where it was typed. A story's Ideas view lists
- * the ideas with an explicit reference to the story or to a scene or arc in it, once each, and only for the owner.
- * An idea from any of the three opens in the one editor, and Back returns to the list as it was left.
+ * A one-line capture keeps a thought without leaving the list, placed in the universe it was typed in. The universe's
+ * Ideas are the owner's only. An idea opens in the one editor, and Back returns to the list as it was left.
  *
  * Each test registers its own account with a throwaway password.
  */
@@ -35,8 +34,6 @@ async function post(page: Page, path: string, data: unknown) {
   expect(response.ok(), `${path} answered ${response.status()}`).toBe(true)
   return ((await response.json()) as { id: string }).id
 }
-
-const Kind = { Story: 1, Scene: 2, PlotArc: 3 } as const
 
 /** A universe with a story holding a scene and an arc. */
 async function seedWorld(page: Page, storyTitle = 'The Long Winter') {
@@ -84,10 +81,6 @@ async function seedIdea(
   })
 }
 
-function rows(page: Page) {
-  return page.getByTestId('idea-row')
-}
-
 function row(page: Page, title: string) {
   return page.locator(`[data-testid="idea-row"][data-title="${title}"]`)
 }
@@ -116,11 +109,13 @@ async function person(browser: Browser) {
 }
 
 test.describe('ideas workspace', () => {
-  test('all ideas: a line captured stays in the list, opens in the full editor, and Back returns', async ({
+  test('a universe’s ideas: a line captured stays in the list, opens in the full editor, and Back returns', async ({
     page,
   }) => {
     await signUp(page)
-    await page.goto('/app/ideas')
+    const { universeId } = await seedWorld(page)
+    const base = `/app/universes/${universeId}/ideas`
+    await page.goto(base)
     await expect(page.getByTestId('ideas-empty')).toBeVisible()
 
     const input = page.getByTestId('idea-capture-input')
@@ -138,14 +133,13 @@ test.describe('ideas workspace', () => {
     await expect(input).toHaveValue('   ')
 
     await capture(page, 'Maybe this city floats')
-    await expect(page).toHaveURL('/app/ideas')
+    await expect(page).toHaveURL(base)
     await expect(page.getByTestId('idea-capture-error')).toHaveCount(0)
     await expect(row(page, 'Maybe this city floats')).toBeVisible()
-    await expect(row(page, 'Maybe this city floats').getByTestId('idea-universe-label')).toHaveText(
-      'No universe',
-    )
 
-    const listed = (await (await page.request.get('/api/ideas')).json()) as {
+    const listed = (await (
+      await page.request.get(`/api/ideas?universeId=${universeId}`)
+    ).json()) as {
       items: {
         id: string
         title: string
@@ -155,11 +149,15 @@ test.describe('ideas workspace', () => {
       }[]
     }
     expect(listed.items).toHaveLength(1)
-    expect(listed.items[0]).toMatchObject({ excerpt: '', universe: null, referenceCount: 0 })
+    expect(listed.items[0]).toMatchObject({
+      excerpt: '',
+      universe: { id: universeId },
+      referenceCount: 0,
+    })
 
     // The full editor is where it grows.
     await row(page, 'Maybe this city floats').getByTestId('idea-open').click()
-    await page.waitForURL(`/app/ideas/${listed.items[0].id}`)
+    await page.waitForURL(`${base}/${listed.items[0].id}`)
     await page.getByTestId('idea-body').fill('Nobody below has seen its underside.')
     await page.getByTestId('idea-save').click()
     await expect
@@ -173,7 +171,7 @@ test.describe('ideas workspace', () => {
     await expect(page.getByTestId('idea-status')).toHaveText('Saved')
 
     await page.goBack()
-    await page.waitForURL('/app/ideas')
+    await page.waitForURL(base)
     await expect(row(page, 'Maybe this city floats').getByTestId('idea-excerpt')).toHaveText(
       'Nobody below has seen its underside.',
     )
@@ -183,7 +181,9 @@ test.describe('ideas workspace', () => {
     page,
   }) => {
     await signUp(page)
-    await page.goto('/app/ideas')
+    const { universeId } = await seedWorld(page)
+    const base = `/app/universes/${universeId}/ideas`
+    await page.goto(base)
     const input = page.getByTestId('idea-capture-input')
 
     await page.route('**/api/ideas', (route) =>
@@ -195,7 +195,7 @@ test.describe('ideas workspace', () => {
     await input.press('Enter')
     await expect(page.getByTestId('idea-capture-error')).toContainText('Your words are still here.')
     await expect(input).toHaveValue('Lost to a server error')
-    await expect(page).toHaveURL('/app/ideas')
+    await expect(page).toHaveURL(base)
     await page.unrouteAll()
 
     // Slow the answer down, and press Enter again while it is on its way.
@@ -215,165 +215,22 @@ test.describe('ideas workspace', () => {
     await expect(row(page, 'Only once')).toHaveCount(1)
   })
 
-  test('a universe’s capture belongs to the universe and is among all ideas too', async ({
-    page,
-  }) => {
+  test('a universe’s capture belongs to the universe', async ({ page }) => {
     await signUp(page)
     const { universeId } = await seedWorld(page)
 
     await page.goto(`/app/universes/${universeId}/ideas`)
     await capture(page, 'The river remembers')
-    await expect(row(page, 'The river remembers')).toBeVisible()
-
-    await page.getByTestId('ideas-all').click()
-    await page.waitForURL('/app/ideas')
-    const everywhere = row(page, 'The river remembers')
-    await expect(everywhere).toBeVisible()
-    await expect(everywhere.getByTestId('idea-universe-label')).not.toHaveText('No universe')
-    expect(await everywhere.getAttribute('data-universe')).toMatch(/^Hollowmere /)
-  })
-
-  test('a story’s Ideas: captured with the story as reference, opened in the editor, and Back returns', async ({
-    page,
-  }) => {
-    await signUp(page)
-    const { universeId, storyId } = await seedWorld(page)
-    const storyPath = `/app/universes/${universeId}/stories/${storyId}`
-
-    await page.goto(storyPath)
-    const views = page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript', 'Ideas'])
-    await views.getByRole('link', { name: 'Ideas' }).click()
-    await page.waitForURL(`${storyPath.replace('/stories/', '/projects/')}/ideas`)
-    await expect(views.getByRole('link', { name: 'Ideas' })).toHaveAttribute('aria-current', 'page')
-    await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
-    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
-    await expect(page.getByRole('heading', { name: 'Ideas', level: 2 })).toBeAttached()
-
-    await capture(page, 'What if the council already knows?')
-    const captured = row(page, 'What if the council already knows?')
+    const captured = row(page, 'The river remembers')
     await expect(captured).toBeVisible()
-    await expect(captured).toContainText('1 reference')
-
-    await captured.getByTestId('idea-open').click()
-    await page.waitForURL(new RegExp(`/app/universes/${universeId}/ideas/[0-9a-f-]+$`))
-    await expect(page.getByTestId('idea-title')).toHaveValue('What if the council already knows?')
-    await expect(page.getByTestId('idea-body')).toHaveValue('')
-    await expect(page.getByTestId('idea-universe')).toHaveValue(universeId)
-    const reference = page.getByTestId('idea-reference')
-    await expect(reference).toHaveCount(1)
-    await expect(reference).toContainText('The Long Winter')
-    await expect(reference).toContainText('Story')
-
-    await page.goBack()
-    await page.waitForURL(`${storyPath.replace('/stories/', '/projects/')}/ideas`)
-    await expect(row(page, 'What if the council already knows?')).toBeVisible()
-    await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
+    expect(await captured.getAttribute('data-universe')).toMatch(/^Hollowmere /)
   })
 
-  test('a story lists ideas naming it or its parts, once each, and no other story’s', async ({
-    page,
-  }) => {
-    await signUp(page)
-    const a = await seedWorld(page, 'Story A')
-    const b = await seedStory(page, a.universeId, 'Story B')
-
-    await seedIdea(page, 'Via the scene', a.universeId, [{ kind: Kind.Scene, id: a.sceneId }])
-    await seedIdea(page, 'Via the arc', a.universeId, [{ kind: Kind.PlotArc, id: a.arcId }])
-    await seedIdea(page, 'Story and scene', a.universeId, [
-      { kind: Kind.Story, id: a.storyId },
-      { kind: Kind.Scene, id: a.sceneId },
-    ])
-    await seedIdea(page, 'Only Story B', a.universeId, [{ kind: Kind.Story, id: b.storyId }])
-    await seedIdea(page, 'Only the universe', a.universeId)
-    await seedIdea(page, 'Story A', null)
-
-    await page.goto(`/app/universes/${a.universeId}/stories/${a.storyId}/ideas`)
-    await expect(rows(page)).toHaveCount(3)
-    for (const title of ['Via the scene', 'Via the arc', 'Story and scene']) {
-      await expect(row(page, title)).toHaveCount(1)
-    }
-    await expect(row(page, 'Story and scene')).toContainText('2 references')
-
-    await page.goto(`/app/universes/${a.universeId}/stories/${b.storyId}/ideas`)
-    await expect(rows(page)).toHaveCount(1)
-    await expect(row(page, 'Only Story B')).toBeVisible()
-  })
-
-  test('a story’s Ideas keep their search and page in the address, through reload, Back and Forward', async ({
-    page,
-  }) => {
-    await signUp(page)
-    const { universeId, storyId } = await seedWorld(page)
-    for (let i = 1; i <= 22; i++) {
-      await seedIdea(page, `Tide ${String(i).padStart(2, '0')}`, universeId, [
-        { kind: Kind.Story, id: storyId },
-      ])
-    }
-    await seedIdea(page, 'Ember thought', universeId, [{ kind: Kind.Story, id: storyId }])
-    const ideasPath = `/app/universes/${universeId}/projects/${storyId}/ideas`
-
-    await page.goto(ideasPath)
-    await expect(rows(page)).toHaveCount(20)
-    await page.getByRole('button', { name: 'Next' }).click()
-    await expect(page).toHaveURL(`${ideasPath}?page=2`)
-    await expect(rows(page)).toHaveCount(3)
-
-    await page.getByTestId('ideas-search').fill('ember')
-    await expect(page).toHaveURL(`${ideasPath}?q=ember`)
-    await expect(rows(page)).toHaveCount(1)
-
-    await page.reload()
-    await expect(page.getByTestId('ideas-search')).toHaveValue('ember')
-    await expect(rows(page)).toHaveCount(1)
-
-    await row(page, 'Ember thought').getByTestId('idea-open').click()
-    await page.waitForURL(new RegExp(`/app/universes/${universeId}/ideas/[0-9a-f-]+$`))
-    await page.goBack()
-    await expect(page).toHaveURL(`${ideasPath}?q=ember`)
-    await expect(rows(page)).toHaveCount(1)
-    await expect(page.getByTestId('ideas-search')).toHaveValue('ember')
-
-    await page.goForward()
-    await page.waitForURL(new RegExp(`/app/universes/${universeId}/ideas/[0-9a-f-]+$`))
-    await page.goBack()
-    await expect(page).toHaveURL(`${ideasPath}?q=ember`)
-  })
-
-  test('a story’s deleted idea waits in its Recently deleted and comes back to the story', async ({
-    page,
-  }) => {
-    await signUp(page)
-    const { universeId, storyId, sceneId } = await seedWorld(page)
-    const id = await seedIdea(page, 'At the coronation', universeId, [
-      { kind: Kind.Scene, id: sceneId },
-    ])
-    expect((await page.request.delete(`/api/ideas/${id}`)).status()).toBe(204)
-
-    const ideasPath = `/app/universes/${universeId}/projects/${storyId}/ideas`
-    await page.goto(ideasPath)
-    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
-
-    await page.getByTestId('ideas-view-deleted').click()
-    await expect(page).toHaveURL(`${ideasPath}?view=deleted`)
-    await expect(page.getByTestId('idea-capture')).toHaveCount(0)
-    await row(page, 'At the coronation').getByTestId('idea-restore').click()
-    await expect(page.getByTestId('ideas-message')).toContainText('is back in your ideas')
-    await expect(rows(page)).toHaveCount(0)
-
-    await page.getByTestId('ideas-view-live').click()
-    await expect(row(page, 'At the coronation')).toBeVisible()
-  })
-
-  test('a collaborator sees no Ideas view in the owner’s story, and no owner’s idea', async ({
-    browser,
-  }) => {
+  test('a collaborator sees no owner’s ideas in the owner’s universe', async ({ browser }) => {
     const owner = await person(browser)
     const editor = await person(browser)
     const { universeId, storyId } = await seedWorld(owner.page)
-    await seedIdea(owner.page, 'Owner’s private thought', universeId, [
-      { kind: Kind.Story, id: storyId },
-    ])
+    await seedIdea(owner.page, 'Owner’s private thought', universeId)
 
     const inviteResponse = await owner.page.request.post(
       `/api/universes/${universeId}/invitations`,
@@ -391,17 +248,12 @@ test.describe('ideas workspace', () => {
       ).ok(),
     ).toBe(true)
 
-    const storyPath = `/app/universes/${universeId}/stories/${storyId}`
-    await editor.page.goto(storyPath)
-    const views = editor.page.getByRole('navigation', { name: 'Story views' })
-    await expect(views.getByRole('link')).toHaveText(['Structure', 'Manuscript'])
-
     // By address, the view says it is not theirs, and asks for nothing.
     let asked = false
     editor.page.on('request', (request) => {
       if (new URL(request.url()).pathname === '/api/ideas') asked = true
     })
-    await editor.page.goto(`${storyPath}/ideas`)
+    await editor.page.goto(`/app/universes/${universeId}/ideas`)
     await expect(editor.page.getByTestId('role-unavailable')).toBeVisible()
     await expect(editor.page.getByText('Owner’s private thought')).toHaveCount(0)
     expect(asked).toBe(false)
@@ -415,77 +267,21 @@ test.describe('ideas workspace', () => {
     await editor.context.close()
   })
 
-  test('a project’s Ideas: captured on the project, listed there only, and kept through an editor save', async ({
-    page,
-  }) => {
-    await signUp(page)
-    const { universeId } = await seedWorld(page)
-    const project = {
-      name: 'Salt Road',
-      kind: 1,
-      lifecycle: 1,
-      subtype: null,
-      summary: '',
-      universeId,
-    }
-    const projectId = await post(page, '/api/projects', project)
-    const otherId = await post(page, '/api/projects', { ...project, name: 'Other' })
-    const projectPath = `/app/universes/${universeId}/projects/${projectId}`
-
-    await page.goto(`${projectPath}/ideas`)
-    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
-
-    await capture(page, 'A boss on the bridge')
-    await expect(row(page, 'A boss on the bridge')).toBeVisible()
-
-    // Another project of the same universe does not list it; the universe's ideas do.
-    await page.goto(`/app/universes/${universeId}/projects/${otherId}/ideas`)
-    await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this project yet.')
-    await page.goto(`/app/universes/${universeId}/ideas`)
-    await expect(row(page, 'A boss on the bridge')).toBeVisible()
-
-    // A save in the editor keeps the idea on its project.
-    await page.goto(`${projectPath}/ideas`)
-    await row(page, 'A boss on the bridge').getByTestId('idea-open').click()
-    await page.waitForURL(new RegExp(`/app/universes/${universeId}/ideas/[0-9a-f-]+$`))
-    const ideaId = page.url().split('/').pop()!
-    await page.getByTestId('idea-body').fill('Two phases.')
-    await page.getByTestId('idea-save').click()
-    await expect
-      .poll(async () => {
-        const response = await page.request.get(`/api/ideas/${ideaId}`)
-        const saved = (await response.json()) as { body: string; project: { id: string } | null }
-        return [saved.body, saved.project?.id ?? null]
-      })
-      .toEqual(['Two phases.', projectId])
-  })
-
   for (const width of [390, 360]) {
-    test(`a story’s three views and its capture fit a ${width}px phone`, async ({ page }) => {
+    test(`a universe’s ideas and its capture fit a ${width}px phone`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 })
       await signUp(page)
-      const { universeId, storyId } = await seedWorld(
-        page,
-        'A story with a long enough title to wrap',
-      )
-      await page.goto(`/app/universes/${universeId}/stories/${storyId}/ideas`)
-
-      const views = page.getByTestId('story-views')
-      await expect(views.getByRole('link')).toHaveCount(3)
-      expect((await views.boundingBox())!.height, 'the three views wrapped').toBeLessThan(60)
-      const last = (await views.getByRole('link', { name: 'Ideas' }).boundingBox())!
-      expect(last.x + last.width).toBeLessThanOrEqual(width)
+      const { universeId } = await seedWorld(page)
+      await page.goto(`/app/universes/${universeId}/ideas`)
 
       await capture(page, 'A thought typed on a phone, long enough to fill the line')
       await expect(
         row(page, 'A thought typed on a phone, long enough to fill the line'),
       ).toBeVisible()
-      await expectNoSidewaysScroll(page, 'story ideas')
+      await expectNoSidewaysScroll(page, 'universe ideas')
 
       await page.getByTestId('ideas-view-deleted').click()
-      await expectNoSidewaysScroll(page, 'story recently deleted')
-      await page.goto('/app/ideas')
-      await expectNoSidewaysScroll(page, 'all ideas')
+      await expectNoSidewaysScroll(page, 'universe recently deleted')
     })
   }
 })

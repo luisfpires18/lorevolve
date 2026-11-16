@@ -300,7 +300,8 @@ public static class IdeaBoardEndpoints
         var ownerId = principal.RequireUserId();
 
         var board = await db.IdeaBoards.FirstOrDefaultAsync(
-            candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt != null,
+            candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt != null
+                && candidate.UniverseId != null,
             cancellationToken);
         if (board is null)
         {
@@ -311,35 +312,6 @@ public static class IdeaBoardEndpoints
         await db.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(await LoadDetailAsync(db, board.Id, ownerId, cancellationToken));
-    }
-
-    /// <summary>
-    /// Lets go of every board's association with a universe about to be deleted, in the caller's transaction: its entry cards
-    /// and their lines go with the entries, the board stays unassigned with everything else, and <c>UpdatedAt</c> moves so a
-    /// window still holding the old universe saves as stale. Deleted boards are released the same way.
-    /// </summary>
-    public static async Task ReleaseUniverseAsync(
-        LorEvolveDbContext db,
-        Guid universeId,
-        CancellationToken cancellationToken)
-    {
-        await db.IdeaBoardConnections
-            .Where(connection => connection.FromCard!.Board!.UniverseId == universeId
-                && (connection.FromCard.Kind == IdeaBoardCardKind.Entity
-                    || connection.ToCard!.Kind == IdeaBoardCardKind.Entity))
-            .ExecuteDeleteAsync(cancellationToken);
-        await db.IdeaBoardCards
-            .Where(card => card.Board!.UniverseId == universeId && card.Kind == IdeaBoardCardKind.Entity)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        var now = DateTime.UtcNow;
-        await db.IdeaBoards
-            .Where(board => board.UniverseId == universeId)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(board => board.UniverseId, (Guid?)null)
-                    .SetProperty(board => board.UpdatedAt, now),
-                cancellationToken);
     }
 
     // ---------- Reading ----------
@@ -526,22 +498,15 @@ public static class IdeaBoardEndpoints
         HashSet<Guid> storedEntities,
         CancellationToken cancellationToken)
     {
-        if (universeId is { } universe
-            && !await IdeaEndpoints.OwnsUniverseAsync(db, universe, ownerId, cancellationToken))
+        if (universeId is not { } universe
+            || !await IdeaEndpoints.OwnsUniverseAsync(db, universe, ownerId, cancellationToken))
         {
-            return Refused("universeId", "Choose one of your universes, or none.");
+            return Refused("universeId", "Choose one of your universes.");
         }
 
         var entityIds = cards.Where(card => card.EntityId is not null).Select(card => card.EntityId!.Value).ToHashSet();
         if (entityIds.Count > 0)
         {
-            if (universeId is null)
-            {
-                return Refused(
-                    "cards",
-                    "A board that belongs to no universe cannot hold entries. Remove them, or choose a universe.");
-            }
-
             var found = await db.Entities.AsNoTracking()
                 .Where(entity => entity.UniverseId == universeId && entityIds.Contains(entity.Id))
                 .Select(entity => new { entity.Id, InTrash = entity.DeletedAt != null })

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Field } from './Field'
 import { Link } from 'react-router-dom'
 import {
   createPage,
@@ -148,16 +149,18 @@ export function ChapterPages({
               .catch(failing)
           }}
         >
-          <label className="field">
-            <span className="field__label">{t('projects.pages.name')}</span>
-            <input
-              className="field__input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t('projects.pages.namePlaceholder')}
-              data-testid={`project-page-new-name-${chapterId}`}
-            />
-          </label>
+          <Field label={t('projects.pages.name')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t('projects.pages.namePlaceholder')}
+                data-testid={`project-page-new-name-${chapterId}`}
+              />
+            )}
+          </Field>
           <div className="form__actions">
             <button
               className="button"
@@ -407,24 +410,28 @@ function PanelForm({
         )
       }}
     >
-      <label className="field">
-        <span className="field__label">{t('projects.pages.description')}</span>
-        <input
-          className="field__input"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          data-testid="project-panel-new-description"
-        />
-      </label>
-      <label className="field">
-        <span className="field__label">{t('projects.pages.dialogue')}</span>
-        <textarea
-          className="field__input"
-          value={dialogue}
-          onChange={(event) => setDialogue(event.target.value)}
-          data-testid="project-panel-new-dialogue"
-        />
-      </label>
+      <Field label={t('projects.pages.description')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            data-testid="project-panel-new-description"
+          />
+        )}
+      </Field>
+      <Field label={t('projects.pages.dialogue')}>
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input"
+            value={dialogue}
+            onChange={(event) => setDialogue(event.target.value)}
+            data-testid="project-panel-new-dialogue"
+          />
+        )}
+      </Field>
       {/* The lore entry this panel shows, chosen with the picker the rest of LorEvolve uses. Optional: a panel of
           scenery names nothing. */}
       <div data-testid="project-panel-new-shows">

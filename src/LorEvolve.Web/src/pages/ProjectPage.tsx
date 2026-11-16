@@ -9,9 +9,9 @@ import {
   useSearchParams,
 } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
-import { ProjectIdeas } from '../components/ProjectIdeas'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
@@ -51,7 +51,7 @@ export default function ProjectPage({
    * story's own page, which reads `storyId` and `sceneId` from the address, so those views have routes of their own
    * that carry those names (#194); any other project reached through one of them reads it as that segment.
    */
-  view?: 'structure' | 'manuscript' | 'ideas'
+  view?: 'structure' | 'manuscript'
 }) {
   return isNew ? <NewProject /> : <Project inUniverse={inUniverse} view={view} />
 }
@@ -110,43 +110,49 @@ function NewProject() {
             })
         }}
       >
-        <label className="field">
-          <span className="field__label">{t('projects.new.name')}</span>
-          <input
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            data-testid="project-new-name"
-            required
-          />
-        </label>
+        <Field label={t('projects.new.name')}>
+          {(control) => (
+            <input
+              {...control}
+              className="field__input"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              data-testid="project-new-name"
+              required
+            />
+          )}
+        </Field>
 
-        <label className="field">
-          <span className="field__label">{t('projects.new.kind')}</span>
-          <select
-            className="field__input field__input--select"
-            value={kind}
-            onChange={(event) => setKind(Number(event.target.value) as ProjectKindValue)}
-            data-testid="project-new-kind"
-          >
-            {KINDS.map((value) => (
-              <option key={value} value={value}>
-                {kindLabel(value)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <Field label={t('projects.new.kind')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={kind}
+              onChange={(event) => setKind(Number(event.target.value) as ProjectKindValue)}
+              data-testid="project-new-kind"
+            >
+              {KINDS.map((value) => (
+                <option key={value} value={value}>
+                  {kindLabel(value)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
 
-        <label className="field">
-          <span className="field__label">{t('projects.new.summary')}</span>
-          <textarea
-            className="field__input"
-            value={summary}
-            onChange={(event) => setSummary(event.target.value)}
-            data-testid="project-new-summary"
-            rows={4}
-          />
-        </label>
+        <Field label={t('projects.new.summary')}>
+          {(control) => (
+            <textarea
+              {...control}
+              className="field__input"
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              data-testid="project-new-summary"
+              rows={4}
+            />
+          )}
+        </Field>
 
         {failed ? (
           <p className="notice notice--error" data-testid="project-new-error">
@@ -286,9 +292,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         sections={storySections}
         story
       >
-        <StoryPage
-          view={view === 'structure' ? 'scenes' : view === 'manuscript' ? 'manuscript' : 'ideas'}
-        />
+        <StoryPage view={view === 'manuscript' ? 'manuscript' : 'scenes'} />
       </ProjectShell>
     )
   }
@@ -356,9 +360,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
        * the entries still share `schemaVersion`. It lives here, in the component that stays mounted while the author
        * moves between this project's views and between the Entities view's own screens.
        */}
-      {section.pending ? (
-        <ProjectIdeas project={project} />
-      ) : section.segment === 'overview' ? (
+      {section.segment === 'overview' ? (
         <ProjectOverview project={project} />
       ) : section.segment === 'entities' ? (
         <ProjectEntitiesView

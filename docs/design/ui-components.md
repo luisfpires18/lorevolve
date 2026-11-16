@@ -10,7 +10,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | Need | Use |
 | --- | --- |
 | Screen title, crumb, lede, actions | `components/PageHeader.tsx` |
-| A form field: label, hint, control, error | `components/Field.tsx` (input only today) |
+| A form field: label, hint, control, error | `components/Field.tsx`: an input, or any control through its slot; a group of buttons with `group` |
 | A button or a link that looks like one | `.button` 519, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
 | An icon with a name | `.iconbutton` 696 |
 | Save with its status | `components/SaveAction.tsx` |
@@ -26,6 +26,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | A drawer: head, body, actions, Escape and backdrop guarded | `components/Drawer.tsx` |
 | Guard a drawer against a lost draft | `useDrawerGuard` in `lib/drawerGuard.ts:31`, used through `Drawer` |
 | A drawer's look | `.drawer*` 9266 |
+| Ask for one value, such as a link address | A Drawer with `onSubmit` and a `Field`, as `LinkDrawer` in `components/LoreEditor.tsx`; never `window.prompt` or `window.alert` |
 | A message box | `.callout` 2436, `.notice` 2423 |
 | A form's own message | `.form__message` 423 |
 | Sticky status and actions for a document or drawer | `.actionbar` 2540 |
@@ -51,8 +52,12 @@ Custom properties of the first `:root` block (`styles.css:37-131`). Use these na
 - Motion: `--duration-1`, `--duration-2`, `--duration-3`, `--ease`
 - Layers: `--z-sticky`, `--z-dropdown`, `--z-drawer`, `--z-modal`
 
+## The one inline pattern
+
+Three screens confirm in place of their button instead of through `confirmAction`, by the owner's decision on #255 (2026-11-16): Universe Settings (`.settings__confirm`, also used by Collaborators and Connected apps), Publish (`.publication__confirm`) and Trash (`.trash__confirm`). Each one opens beside the control it confirms and keeps the page around it in view (the universe name, the list of items and what each loses), shows its own error in place when the call fails, and returns the focus to its own button. A modal would cover what the author is confirming. Every other confirmation uses `confirmAction`. A new inline confirm reuses one of these classes; there is no fourth one.
+
 ## One rule
 
 Add a class or a component only when no row above fits. Add its row to this page in the same PR.
 
-`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a new `label > span.field__label` field, and more literal `font-size` values than the stylesheet has now. Its allowlists only shrink: fix a file, then remove it from the list.
+`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a `label > span.field__label` field, more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.

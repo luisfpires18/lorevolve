@@ -27,7 +27,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['aichanges__summary', '#248'],
   ['article__historytoggle', '#248'],
   ['artwork', '#248'],
-  ['avatarcircle', '#255'],
   ['board', '#248'],
   ['board__layout', '#248'],
   ['boardcanvas__controls', '#248'],
@@ -120,25 +119,6 @@ const DIALOG_FILES = [
   'src/components/ImageViewer.tsx',
 ]
 
-// Files that write a field as label > span.field__label with no htmlFor. Only shrinks; the tracker ends at zero.
-const SPAN_LABEL_FILES = [
-  'src/components/CalendarEditor.tsx',
-  'src/components/ChapterPages.tsx',
-  'src/components/ChronologyEditor.tsx',
-  'src/components/FamilyLinkForm.tsx',
-  'src/components/FieldImageInput.tsx',
-  'src/components/IdeaReferencePicker.tsx',
-  'src/components/ProjectEntries.tsx',
-  'src/components/ProjectSchema.tsx',
-  'src/components/ProjectSeasons.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/RelationshipSection.tsx',
-  'src/components/StoryForm.tsx',
-  'src/components/TimelineEntryForm.tsx',
-  'src/pages/MassCreatePage.tsx',
-  'src/pages/ProjectPage.tsx',
-]
-
 // Font sizes written as a literal in styles.css instead of a --text-* token. Only goes down:
 // lower it when a screen's sizes move to tokens.
 const MAX_LITERAL_FONT_SIZES = 214
@@ -200,17 +180,46 @@ test('no new hand-written <dialog>', () => {
   )
 })
 
-test('no new span-label fields', () => {
-  const found = filesWith(/<span[^>]*field__label/)
+test('no native prompt, alert or confirm', () => {
+  const files = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
+    .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.test.ts'))
+    .sort()
+    .map((file) => 'src/' + file.replaceAll('\\', '/'))
   assert.deepEqual(
-    found.filter((file) => !SPAN_LABEL_FILES.includes(file)),
+    files.filter((file) => /\bwindow\.(prompt|alert|confirm)\s*\(/.test(read(file))),
     [],
-    'Use Field (label with htmlFor, hint, control, error) instead of label > span.field__label',
+    'Use confirmAction or a Drawer form instead of a browser dialog',
+  )
+})
+
+test('no field is written as label > span.field__label', () => {
+  assert.deepEqual(
+    filesWith(/<span[^>]*field__label/),
+    [],
+    'Use Field (label, hint, control, error) instead of a span label',
+  )
+})
+
+test('Field renders label, hint, control, error in that order', () => {
+  const source = readFileSync(join(webRoot, 'src/components/Field.tsx'), 'utf8')
+  const render = source.slice(source.lastIndexOf('return ('))
+  const at = ['{labelNode}', 'field__hint', '{control}', 'field__error'].map((part) =>
+    render.indexOf(part),
+  )
+  assert.ok(
+    at.every((index) => index >= 0),
+    'Field.tsx must render all four parts in one return',
   )
   assert.deepEqual(
-    SPAN_LABEL_FILES.filter((file) => !found.includes(file)),
-    [],
-    'No longer writes a span label: remove it from SPAN_LABEL_FILES',
+    at,
+    [...at].sort((a, b) => a - b),
+    'Field order must stay label, hint, control, error',
+  )
+  assert.equal(source.includes('<span className="field__label"'), false)
+  // The group form hands its control the group role, the label join and the hint and error join.
+  assert.match(
+    source,
+    /role: 'group',\s*'aria-labelledby': labelId,\s*'aria-describedby': describedBy/,
   )
 })
 

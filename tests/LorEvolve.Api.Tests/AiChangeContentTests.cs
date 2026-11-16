@@ -369,17 +369,17 @@ public sealed class AiChangeContentTests(LorEvolveApiFactory factory) : IClassFi
     }
 
     [Fact]
-    public async Task An_idea_of_another_account_another_universe_or_none_answers_as_missing()
+    public async Task An_idea_of_another_account_or_another_universe_answers_as_missing()
     {
         var (owner, ownerId, u, _) = await World("aiideaforeign");
         var otherUniverse = (await CreateUniverse(owner, "Elsewhere")).Id;
         var (stranger, _) = await PublishingTestClient.Account(_factory, "aiideaforeign-stranger");
 
         var elsewhere = await PostJson<IdeaDetail>(owner, "/api/ideas", new IdeaRequest("Elsewhere idea", "", otherUniverse, null, null));
-        var unassigned = await PostJson<IdeaDetail>(owner, "/api/ideas", new IdeaRequest("Loose idea", "", null, null, null));
-        var theirs = await PostJson<IdeaDetail>(stranger, "/api/ideas", new IdeaRequest("Not yours", "", null, null, null));
+        var theirs = await PostJson<IdeaDetail>(
+            stranger, "/api/ideas", new IdeaRequest("Not yours", "", (await CreateUniverse(stranger, "Theirs")).Id, null, null));
 
-        foreach (var target in new[] { elsewhere.Id, unassigned.Id, theirs.Id })
+        foreach (var target in new[] { elsewhere.Id, theirs.Id })
         {
             var staged = await Stage(_factory, u, ownerId, new AiChangeOperationInput("e", "update", "idea", target, Idea: new AiIdeaInput(Title: "Taken")));
             Assert.Equal(AiChangeCodes.NotFound, Assert.Single(staged.Issues).Code);

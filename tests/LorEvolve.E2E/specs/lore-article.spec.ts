@@ -224,6 +224,111 @@ test.describe('lore article', () => {
     expect((await readArticle(page, universeId, entityId)).content).not.toContain('outlived')
   })
 
+  test('the link dialog sets, refuses and removes a link from the keyboard, and gives the focus back to the editor', async ({
+    page,
+  }) => {
+    const dialogs: string[] = []
+    page.on('dialog', (dialog) => {
+      dialogs.push(dialog.message())
+      void dialog.dismiss()
+    })
+
+    await signUp(page)
+    const universeId = await newUniverse(page, unique('Article Link '))
+    const entityId = await seedEntity(page, universeId, 'Alenna Vance')
+    await page.goto(`/app/universes/${universeId}/lore/${entityId}`)
+    await page.getByTestId('article-write').click()
+
+    const editor = page.getByTestId('lore-editor')
+    const drawer = page.getByTestId('lore-link')
+    const address = page.getByTestId('lore-link-address')
+    const linkButton = page
+      .getByRole('toolbar', { name: 'Formatting' })
+      .getByRole('button', { name: 'Link' })
+    const links = editor.locator('a')
+
+    // Opens from the keyboard on the toolbar button, with the address field focused and holding its starting value.
+    async function openFromKeyboard() {
+      await linkButton.focus()
+      await page.keyboard.press('Enter')
+      await expect(drawer).toBeVisible()
+      await expect(address).toBeFocused()
+    }
+
+    await expect(editor).toBeFocused()
+    await page.keyboard.type('Lighthouse')
+    await page.keyboard.press('ControlOrMeta+a')
+    // ProseMirror learns of a new selection from the browser's `selectionchange`, an event that arrives a frame later and
+    // is dropped once the editor has lost the focus. Wait for it, so the Link button is not focused too soon.
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    )
+    await expect
+      .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+      .toBe('Lighthouse')
+
+    await openFromKeyboard()
+    await expect(address).toHaveValue('https://')
+
+    // An unsafe address stays in the dialog as the field's error and puts the focus back on the field.
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.type('  javascript:alert(1)')
+    await page.keyboard.press('Enter')
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByText('Links must be http, https or mailto addresses.')).toBeVisible()
+    await expect(address).toHaveAttribute('aria-invalid', 'true')
+    await expect(address).toBeFocused()
+    await expect(links).toHaveCount(0)
+
+    // A safe address is applied, the dialog closes and the writing has the focus again; it saves to the API.
+    const href = `https://${unique('link')}.example.test/`
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.type(`  ${href}  `)
+    await page.keyboard.press('Enter')
+    await expect(drawer).toHaveCount(0)
+    await expect(editor).toBeFocused()
+    await expect(editor.locator(`a[href="${href}"]`)).toHaveCount(1)
+    await saveWith(page, () => page.keyboard.press('ControlOrMeta+s'))
+    expect((await readArticle(page, universeId, entityId)).content).toContain(href)
+
+    // Escape closes it and changes nothing; the field started from the link's own address.
+    await openFromKeyboard()
+    await expect(address).toHaveValue(href)
+    await page.keyboard.press('Escape')
+    await expect(drawer).toHaveCount(0)
+    await expect(editor).toBeFocused()
+    await expect(editor.locator(`a[href="${href}"]`)).toHaveCount(1)
+
+    // A press on the backdrop does the same.
+    await openFromKeyboard()
+    await page.mouse.click(2, 2)
+    await expect(drawer).toHaveCount(0)
+    await expect(editor).toBeFocused()
+    await expect(editor.locator(`a[href="${href}"]`)).toHaveCount(1)
+
+    // Cancel does the same.
+    await openFromKeyboard()
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await expect(drawer).toHaveCount(0)
+    await expect(editor).toBeFocused()
+    await expect(editor.locator(`a[href="${href}"]`)).toHaveCount(1)
+
+    // An empty address removes the link.
+    await openFromKeyboard()
+    await page.keyboard.press('ControlOrMeta+a')
+    await page.keyboard.press('Delete')
+    await page.keyboard.press('Enter')
+    await expect(drawer).toHaveCount(0)
+    await expect(editor).toBeFocused()
+    await expect(links).toHaveCount(0)
+
+    // The browser's own dialogs were never used.
+    expect(dialogs).toEqual([])
+  })
+
   test('nothing unsaved in an article is left behind without asking, and a failed, stale or orphaned save keeps the text', async ({
     page,
   }) => {

@@ -7,7 +7,7 @@ import { storyProjectPath } from '../projects/sections'
  * The scene id, the query and the hash all travel with it, so a manuscript link to one scene and a `#scene-` link
  * into the Structure both land where they did before. A replace, so the old address is not left in the history.
  */
-export function StoryRedirect({ to }: { to: 'structure' | 'manuscript' | 'ideas' }) {
+export function StoryRedirect({ to }: { to: 'structure' | 'manuscript' }) {
   const { id, storyId, sceneId } = useParams<{ id: string; storyId: string; sceneId?: string }>()
   const { search, hash } = useLocation()
   const path = storyProjectPath(id!, storyId!, to, to === 'manuscript' ? sceneId : undefined)

@@ -50,7 +50,7 @@ public sealed class IdeaBoardMigrationTests : IDisposable
 
             universeId = (await CreateUniverse(client, "World boardmigrate")).Id;
             entityId = await CreateEntity(client, universeId, "Arlen");
-            var idea = await CreateIdea(client, "Loose", "Words.");
+            var idea = await CreateIdea(client, "Loose", "Words.", universeId);
             boardId = await CreateBoard(client, universeId, entityId, idea.Id);
         }
 
@@ -92,7 +92,7 @@ public sealed class IdeaBoardMigrationTests : IDisposable
             (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-boardmigrate", Password)))
                 .EnsureSuccessStatusCode();
 
-            var idea = await CreateIdea(client, "After the upgrade");
+            var idea = await CreateIdea(client, "After the upgrade", universeId: universeId);
             boardId = await CreateBoard(client, universeId, entityId, idea.Id);
         }
 
@@ -107,7 +107,7 @@ public sealed class IdeaBoardMigrationTests : IDisposable
                 + "VALUES ({0}, {1}, 0, 0, 0, 100, 100, 9, 'x', {2}, NULL)",
                 Key(boardId), Key(Guid.NewGuid()), Key(anyIdea)));
 
-            // Without the API's release step: the board stays unassigned, the entry card and its line go with the entry.
+            // Straight on the file, past the API's delete of the universe's boards (#230): the schema alone leaves the board unassigned, the entry card and its line go with the entry.
             await db.Database.ExecuteSqlRawAsync("DELETE FROM \"Universes\" WHERE \"Id\" = {0}", Key(universeId));
 
             var board = await db.IdeaBoards.AsNoTracking().SingleAsync(candidate => candidate.Id == boardId);

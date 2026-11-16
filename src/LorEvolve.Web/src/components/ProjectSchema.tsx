@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Field } from './Field'
 import { ListTree, Pencil, Plus } from 'lucide-react'
 import {
   addProjectField,
@@ -471,62 +472,71 @@ function FieldForm({
         })
       }}
     >
-      <label className="field">
-        <span className="field__label">{t('projects.schema.fieldName')}</span>
-        <input
-          className="field__input"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          data-testid="project-field-new-name"
-          required
-        />
-      </label>
-
-      <label className="field">
-        <span className="field__label">{t('projects.schema.fieldKind')}</span>
-        <select
-          className="field__input"
-          value={kind}
-          onChange={(event) => setKind(Number(event.target.value) as FieldKindValue)}
-          data-testid="project-field-new-kind"
-        >
-          {KINDS.map((each) => (
-            <option key={each.kind} value={each.kind}>
-              {each.label()}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {choosing ? (
-        <label className="field">
-          <span className="field__label">{t('projects.schema.fieldOptions')}</span>
-          <textarea
+      <Field label={t('projects.schema.fieldName')}>
+        {(control) => (
+          <input
+            {...control}
             className="field__input"
-            value={options}
-            onChange={(event) => setOptions(event.target.value)}
-            data-testid="project-field-new-options"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            data-testid="project-field-new-name"
+            required
           />
-        </label>
-      ) : null}
+        )}
+      </Field>
 
-      {isImage ? (
-        <label className="field">
-          <span className="field__label">{t('projects.schema.imageShape')}</span>
+      <Field label={t('projects.schema.fieldKind')}>
+        {(control) => (
           <select
+            {...control}
             className="field__input"
-            value={imageShape}
-            onChange={(event) => setImageShape(Number(event.target.value) as FieldImageShapeValue)}
-            data-testid="project-field-new-image-shape"
+            value={kind}
+            onChange={(event) => setKind(Number(event.target.value) as FieldKindValue)}
+            data-testid="project-field-new-kind"
           >
-            {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
-              <option key={each} value={each}>
-                {FIELD_IMAGE_SHAPE_LABELS[each]}
+            {KINDS.map((each) => (
+              <option key={each.kind} value={each.kind}>
+                {each.label()}
               </option>
             ))}
           </select>
-          <span className="field__hint">{t('projects.schema.imageShapeHint')}</span>
-        </label>
+        )}
+      </Field>
+
+      {choosing ? (
+        <Field label={t('projects.schema.fieldOptions')}>
+          {(control) => (
+            <textarea
+              {...control}
+              className="field__input"
+              value={options}
+              onChange={(event) => setOptions(event.target.value)}
+              data-testid="project-field-new-options"
+            />
+          )}
+        </Field>
+      ) : null}
+
+      {isImage ? (
+        <Field label={t('projects.schema.imageShape')} hint={t('projects.schema.imageShapeHint')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input"
+              value={imageShape}
+              onChange={(event) =>
+                setImageShape(Number(event.target.value) as FieldImageShapeValue)
+              }
+              data-testid="project-field-new-image-shape"
+            >
+              {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+                <option key={each} value={each}>
+                  {FIELD_IMAGE_SHAPE_LABELS[each]}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       ) : (
         <div className="field">
           <label className="check">

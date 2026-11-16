@@ -11,8 +11,8 @@ namespace LorEvolve.Api.Tests;
 
 /// <summary>
 /// Ideas that belong to a project (#197). A project idea is a universe idea with a narrower home: it takes the project's
-/// universe, it is listed by the project, and when the project goes it stays, released, exactly as an idea does from a
-/// deleted universe. An idea with no universe and no project is untouched by any of it.
+/// universe, it is listed by the project, and when the project goes with its universe, so does the idea (#230). An idea
+/// with a universe and no project is untouched by any of it.
 /// </summary>
 public sealed class IdeaProjectTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
@@ -57,7 +57,6 @@ public sealed class IdeaProjectTests(LorEvolveApiFactory factory) : IClassFixtur
         await Create(client, new IdeaRequest("For the first", null, null, null, null, first.Id));
         await Create(client, new IdeaRequest("For the second", null, null, null, null, second.Id));
         await CreateIdea(client, "For the universe", universeId: universe.Id);
-        await CreateIdea(client, "For nothing");
 
         Assert.Equal(["For the first"], await ListedTitles(client, $"?projectId={first.Id}"));
         Assert.Equal(["For the second"], await ListedTitles(client, $"?projectId={second.Id}"));
@@ -104,39 +103,37 @@ public sealed class IdeaProjectTests(LorEvolveApiFactory factory) : IClassFixtur
     }
 
     [Fact]
-    public async Task An_idea_with_no_universe_and_no_project_works_as_it_always_has()
+    public async Task An_idea_with_a_universe_and_no_project_works_as_it_always_has_and_one_with_neither_is_refused()
     {
-        var client = await SignedIn(_factory, "ideaprojectnone");
-        var idea = await CreateIdea(client, "Loose", "Nothing yet.");
-        Assert.Equal(((IdeaUniverse?)null, (IdeaProject?)null), (idea.Universe, idea.Project));
+        var (client, universe) = await SignedInWithUniverse(_factory, "ideaprojectnone");
+        var neither = await client.PostAsJsonAsync(Ideas, new IdeaRequest("Loose", "Nothing yet.", null, null, null));
+        Assert.Contains("universeId", await Errors(neither), StringComparison.Ordinal);
+
+        var idea = await CreateIdea(client, "Loose", "Nothing yet.", universe.Id);
+        Assert.Equal((universe.Id, (IdeaProject?)null), (idea.Universe!.Id, idea.Project));
 
         var saved = await Save(client, idea, title: "Still loose");
         Assert.Equal(("Still loose", (IdeaProject?)null), (saved.Title, saved.Project));
-        Assert.Equal(["Still loose"], await ListedTitles(client, "?unassigned=true"));
+        Assert.Equal(["Still loose"], await ListedTitles(client, $"?universeId={universe.Id}"));
     }
 
     /// <summary>
-    /// A project has no delete of its own: it goes only with its universe (#171). So "deleting a project does what deleting
-    /// a universe does" is literal here: the idea stays, whole, on no universe and no project, as the universe route has
-    /// always left a universe idea.
+    /// A project has no delete of its own: it goes only with its universe (#171). Its ideas go the same way as the universe's
+    /// own (#230): an idea lives only in a universe, so none is left behind.
     /// </summary>
     [Fact]
-    public async Task Deleting_the_universe_and_with_it_the_project_keeps_the_idea_released_from_both()
+    public async Task Deleting_the_universe_and_with_it_the_project_deletes_the_ideas_of_both()
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "ideaprojectdelete");
         var project = await NewProject(client, universe.Id, "Gone");
-        var idea = await Create(client, new IdeaRequest("Survives", "Still here.", null, null, null, project.Id));
-        var universeIdea = await CreateIdea(client, "Also survives", universeId: universe.Id);
+        var idea = await Create(client, new IdeaRequest("Gone with it", "Not kept.", null, null, null, project.Id));
+        var universeIdea = await CreateIdea(client, "Also gone", universeId: universe.Id);
 
         await DeleteUniverse(client, universe.Id);
 
-        foreach (var kept in new[] { await ReadIdea(client, idea.Id), await ReadIdea(client, universeIdea.Id) })
-        {
-            Assert.Null(kept.Universe);
-            Assert.Null(kept.Project);
-        }
-
-        Assert.Equal(("Survives", "Still here."), ((await ReadIdea(client, idea.Id)).Title, (await ReadIdea(client, idea.Id)).Body));
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Idea(idea.Id))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(Idea(universeIdea.Id))).StatusCode);
+        Assert.Empty((await ListIdeas(client)).Items);
     }
 
     [Fact]

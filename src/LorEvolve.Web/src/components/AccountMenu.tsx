@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, LogOut, ShieldCheck, StickyNote, Telescope, UserRound } from 'lucide-react'
+import { BookOpen, LogOut, ShieldCheck, Telescope, UserRound } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { useProfileImage } from '../profile/useProfileImage'
@@ -109,10 +109,6 @@ export function AccountMenu({
           <Link className="actionmenu__item" to="/app" data-testid="account-menu-workspace">
             <ActionIcon icon={BookOpen} />
             {t('account.menu.workspace')}
-          </Link>
-          <Link className="actionmenu__item" to="/app/ideas" data-testid="account-menu-ideas">
-            <ActionIcon icon={StickyNote} />
-            {t('account.menu.ideas')}
           </Link>
           <Link className="actionmenu__item" to="/" data-testid="account-menu-explore">
             <ActionIcon icon={Telescope} />

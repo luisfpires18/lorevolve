@@ -105,7 +105,7 @@ export function ProjectsNav({ universeId }: { universeId?: string }) {
 
           // #140 gave a Story shown as a Writing Project one link to the story and no disclosure, because its pages were
           // the story's own tabs on the story's screen. Since #194 the project shell renders those same views, so its row
-          // expands like every other project's, to the story's Structure, Manuscript and Ideas.
+          // expands like every other project's, to the story's Structure and Manuscript.
           const frame = project.universe.id
 
           return (
