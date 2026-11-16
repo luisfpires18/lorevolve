@@ -120,16 +120,6 @@ public static class MapGeography
         return new LoreLocationsReading(lore, [.. pins.Select(Describe)]);
     }
 
-    /// <summary>One pin of this universe, or null.</summary>
-    public static async Task<LocationReading?> GetPinAsync(LorEvolveDbContext db, Guid universeId, Guid pinId, CancellationToken cancellationToken)
-    {
-        var pin = await Pins(db, universeId)
-            .Where(candidate => candidate.Id == pinId)
-            .Select(Projection(universeId))
-            .FirstOrDefaultAsync(cancellationToken);
-        return pin is null ? null : Describe(pin);
-    }
-
     /// <summary>
     /// The straight-line separation of two pins of this universe, or null when either is not here. A distance in the
     /// creator's unit only when both pins are on one map, both positions are confirmed on the picture it shows, and that
