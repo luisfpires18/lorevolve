@@ -175,7 +175,7 @@ public static partial class UniverseEndpoints
             OwnerId = ownerId,
             Name = name,
             Description = Normalize(request.Description),
-            AccentColor = NormalizeAccent(request.AccentColor),
+            AccentColor = LoreValidation.NormalizeAccent(request.AccentColor),
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -243,7 +243,7 @@ public static partial class UniverseEndpoints
 
         universe.Name = name;
         universe.Description = Normalize(request.Description);
-        universe.AccentColor = NormalizeAccent(request.AccentColor);
+        universe.AccentColor = LoreValidation.NormalizeAccent(request.AccentColor);
         universe.UpdatedAt = DateTime.UtcNow;
 
         var off = await db.UniverseAiHelpOff.FindAsync([id], cancellationToken);
@@ -518,9 +518,6 @@ public static partial class UniverseEndpoints
 
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private static string? NormalizeAccent(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
 
     [GeneratedRegex("^#[0-9a-fA-F]{6}$")]
     private static partial Regex AccentColorPattern();

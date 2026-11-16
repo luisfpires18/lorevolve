@@ -49,7 +49,7 @@ public static class EntityPrivateNoteEndpoints
             return denied;
         }
 
-        if (!await IsLiveAsync(db, universeId, entityId, cancellationToken))
+        if (!await LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken))
         {
             return Results.NotFound();
         }
@@ -80,7 +80,7 @@ public static class EntityPrivateNoteEndpoints
         // One transaction for the comparison and the write, so nothing can land between them: SQLite has one writer.
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        if (!await IsLiveAsync(db, universeId, entityId, cancellationToken))
+        if (!await LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken))
         {
             return Results.NotFound();
         }
@@ -147,6 +147,4 @@ public static class EntityPrivateNoteEndpoints
         return null;
     }
 
-    private static Task<bool> IsLiveAsync(LorEvolveDbContext db, Guid universeId, Guid entityId, CancellationToken cancellationToken) =>
-        db.Entities.AnyAsync(entity => entity.Id == entityId && entity.UniverseId == universeId && entity.DeletedAt == null, cancellationToken);
 }

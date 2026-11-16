@@ -2060,7 +2060,7 @@ internal sealed partial class UniverseRestore(
                 Scope = system.Scope,
                 ProjectId = ids.Map(system.ProjectId),
                 Name = system.Name,
-                NormalizedName = WorldLogicAccess.Normalize(system.Name),
+                NormalizedName = ValidationTerm.Normalize(system.Name),
                 Summary = system.Summary,
                 Version = system.Version,
                 CreatedAt = system.CreatedAt,

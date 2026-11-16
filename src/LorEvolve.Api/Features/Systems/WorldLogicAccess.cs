@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Security.Claims;
-using System.Text;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
@@ -49,13 +48,6 @@ public static class WorldLogicAccess
         CancellationToken cancellationToken) =>
         db.CreativeProjects.AsNoTracking()
             .AnyAsync(project => project.Id == projectId && project.UniverseId == universeId, cancellationToken);
-
-    /// <summary>
-    /// A name trimmed, composed and upper-cased: what uniqueness is enforced on. The same normalization a
-    /// validation term uses (ADR 0034), so the two read the same way. Never shown and never compared with lore.
-    /// </summary>
-    public static string Normalize(string name) =>
-        name.Trim().Normalize(NormalizationForm.FormC).ToUpperInvariant();
 
     /// <summary>The start of a body, and whether there is more. Characters as .NET counts them, never half of one.</summary>
     public static (string Excerpt, bool IsShortened) Excerpt(string body) =>

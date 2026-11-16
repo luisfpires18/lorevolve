@@ -382,7 +382,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             ruleId = id,
             ruleVersion = result.RuleVersion,
             schemaVersion = result.SchemaVersion,
-            outcome = Outcome(result.Outcome),
+            outcome = ConditionOutcomeText.Of(result.Outcome),
             errorCode = result.ErrorCode,
             exemptionId = result.ExemptionId,
             evidence = result.Evidence.Select(item => new { source = item.Source, id = item.Id, role = item.Role }),
@@ -751,16 +751,6 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
             ? (id, null)
             : (null, Error("not_found", "No project with that id is in this universe."));
     }
-
-    /// <summary>The outcome as the specification writes it. Text, so a new outcome never shifts an existing one.</summary>
-    private static string Outcome(ConditionOutcome outcome) => outcome switch
-    {
-        ConditionOutcome.True => "true",
-        ConditionOutcome.False => "false",
-        ConditionOutcome.Unknown => "unknown",
-        ConditionOutcome.Exempt => "exempt",
-        _ => "error",
-    };
 
     private static WorldLogicFindingOutcome? OutcomeOf(string? wire) => wire?.Trim().ToLowerInvariant() switch
     {
