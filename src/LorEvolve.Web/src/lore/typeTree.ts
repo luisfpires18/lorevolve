@@ -5,22 +5,30 @@ import type { EntityType } from './types'
  * order a list arrived in, and walked with a visited set so a malformed graph ends the walk instead of looping. Every screen
  * that lists types for a choice - Lore, the Types screen, New entry, Mass create - orders them through `ordered`.
  */
-export interface TypeNode {
-  type: EntityType
+/** What the tree reads of a type: a lore type and a project's own type (#144) both have it. */
+export interface TreeType {
+  id: string
+  name: string
+  parentId: string | null
+  displayOrder: number
+}
+
+export interface TypeNode<T extends TreeType = EntityType> {
+  type: T
   depth: number
   /** Root first, the type itself last. */
-  path: EntityType[]
-  children: TypeNode[]
+  path: T[]
+  children: TypeNode<T>[]
 }
 
-export interface TypeTree {
-  roots: TypeNode[]
+export interface TypeTree<T extends TreeType = EntityType> {
+  roots: TypeNode<T>[]
   /** Every type, a parent before its descendants, siblings by their place, then name. */
-  ordered: TypeNode[]
-  byId: Map<string, TypeNode>
+  ordered: TypeNode<T>[]
+  byId: Map<string, TypeNode<T>>
 }
 
-function bySiblingOrder(a: EntityType, b: EntityType) {
+function bySiblingOrder(a: TreeType, b: TreeType) {
   return (
     a.displayOrder - b.displayOrder ||
     (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) ||
@@ -28,21 +36,21 @@ function bySiblingOrder(a: EntityType, b: EntityType) {
   )
 }
 
-export function buildTypeTree(types: readonly EntityType[]): TypeTree {
+export function buildTypeTree<T extends TreeType>(types: readonly T[]): TypeTree<T> {
   const ids = new Set(types.map((type) => type.id))
-  const childrenOf = new Map<string | null, EntityType[]>()
+  const childrenOf = new Map<string | null, T[]>()
   for (const type of types) {
     const parent = type.parentId !== null && ids.has(type.parentId) ? type.parentId : null
     childrenOf.set(parent, [...(childrenOf.get(parent) ?? []), type])
   }
   for (const list of childrenOf.values()) list.sort(bySiblingOrder)
 
-  const byId = new Map<string, TypeNode>()
-  const ordered: TypeNode[] = []
+  const byId = new Map<string, TypeNode<T>>()
+  const ordered: TypeNode<T>[] = []
 
-  function visit(type: EntityType, parent: TypeNode | null): TypeNode | null {
+  function visit(type: T, parent: TypeNode<T> | null): TypeNode<T> | null {
     if (byId.has(type.id)) return null
-    const node: TypeNode = {
+    const node: TypeNode<T> = {
       type,
       depth: parent ? parent.depth + 1 : 0,
       path: [...(parent?.path ?? []), type],
@@ -57,7 +65,7 @@ export function buildTypeTree(types: readonly EntityType[]): TypeTree {
     return node
   }
 
-  const roots: TypeNode[] = []
+  const roots: TypeNode<T>[] = []
   for (const root of childrenOf.get(null) ?? []) {
     const node = visit(root, null)
     if (node) roots.push(node)
@@ -72,16 +80,16 @@ export function buildTypeTree(types: readonly EntityType[]): TypeTree {
 }
 
 /** The type's ancestors and itself, as one readable label: "Runes › Material Runes › Metal Runes". */
-export function typePathLabel(node: TypeNode) {
+export function typePathLabel(node: TypeNode<TreeType>) {
   return node.path.map((type) => type.name).join(' › ')
 }
 
 /** The type and every type beneath it, at any depth. */
-export function branchIds(node: TypeNode): Set<string> {
+export function branchIds(node: TypeNode<TreeType>): Set<string> {
   const ids = new Set<string>()
   const pending = [node]
   while (pending.length > 0) {
-    const current = pending.pop()!
+    const current: TypeNode<TreeType> = pending.pop()!
     if (ids.has(current.type.id)) continue
     ids.add(current.type.id)
     pending.push(...current.children)

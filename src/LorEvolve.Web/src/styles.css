@@ -18761,6 +18761,16 @@ details.reviewsection > .reviewsection__list {
 }
 
 /* On a narrow screen the tab bar is the way between a project's views, so the sidebar's copy of them steps aside. */
+/*
+ * From this width the sidebar lists the open project's pages under its name, so the same links as tabs above the page
+ * would only repeat them. Below it the sidebar folds those away and the tabs are the way between the views.
+ */
+@media (min-width: 60rem) {
+  .projecttabs {
+    display: none;
+  }
+}
+
 @media (max-width: 59.99rem) {
   .sidebar__sublinks--project,
   .sidebar__projectrow .sidebar__disclosure {

@@ -94,12 +94,10 @@ const projects = {
     starterHint: 'Um ponto de partida. Mude o nome, apague, ou faça os seus.',
     starterApply: 'Acrescentar estes tipos',
     starterApplying: 'A acrescentar',
-    addType: 'Acrescentar um tipo',
-    typeName: 'Nome',
-    typeSaving: 'A acrescentar',
-    rename: 'Mudar o nome',
-    renameSave: 'Guardar nome',
-    deleteType: 'Apagar tipo',
+    iconHint:
+      'Opcional, e apenas uma imagem: marca o tipo no seu cartão. Nada é escolhido por si a partir do nome.',
+    parentHint:
+      'Organiza os tipos: um tipo aninhado fica sob o seu pai e tem todos os campos dos tipos acima dele.',
     entryCount: {
       one: '1 registo',
       other: '{count} registos',
