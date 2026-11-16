@@ -18655,18 +18655,6 @@ details.reviewsection > .reviewsection__list {
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 59.99rem) {
-  /*
-   * A story-backed project's three views are the story's own, and the story's page already carries them in its view
-   * bar (#194). On a phone two bars of the same three links would push the manuscript off the first screen, so the
-   * project's copy steps aside there. The breadcrumb steps aside with it (#199): the story's
-   * own header already leads back, and on a phone the first screen belongs to the prose.
-   */
-  .projectframe--story > .projectframe__head {
-    display: none;
-  }
-}
-
 /*
  * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
  * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.

@@ -12,13 +12,19 @@ const BRAND = 'LorEvolve'
  * universe's shell names the section and the universe. Nothing beneath a shell sets one, so two never race.
  */
 export function useDocumentTitle(...parts: string[]) {
-  const named = parts.filter(Boolean)
-  useWholeTitle(named.length > 0 ? `${named.join(' | ')} | ${BRAND}` : BRAND)
+  useWholeTitle(documentTitle(...parts))
 }
 
-/** The tab's whole title as given. */
-export function useWholeTitle(full: string) {
+/** The title useDocumentTitle would set, for a screen that owns its title only some of the time. */
+export function documentTitle(...parts: string[]) {
+  const named = parts.filter(Boolean)
+  return named.length > 0 ? `${named.join(' | ')} | ${BRAND}` : BRAND
+}
+
+/** The tab's whole title as given; null leaves it to the shell above. */
+export function useWholeTitle(full: string | null) {
   useEffect(() => {
+    if (full === null) return
     const previous = document.title
     document.title = full
     return () => {

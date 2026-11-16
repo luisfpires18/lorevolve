@@ -243,11 +243,13 @@ test.describe('Projects navigation', () => {
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
     )
 
-    await expect(page.getByTestId('project-tabs')).toBeAttached()
     await expect(page.getByTestId('story-title')).toHaveText(existing.title)
 
-    // Its tab bar carries the story's two views, and the sidebar has no row for it.
-    await expect(page.getByTestId('project-tabs').getByRole('link')).toHaveText([
+    // One bar of views, the story's own, carrying its two views; the project draws no second one, and the sidebar
+    // has no row for it.
+    await expect(page.getByTestId('project-tabs')).toHaveCount(0)
+    await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
+    await expect(page.getByTestId('story-views').getByRole('link')).toHaveText([
       'Structure',
       'Manuscript',
     ])
@@ -291,10 +293,8 @@ test.describe('Projects navigation', () => {
     for (const [from, to] of cases) {
       await page.goto(from)
       await expect(page).toHaveURL(new RegExp(`${to}$`))
-      await expect(page.getByTestId('project-tabs')).toBeAttached()
       await expect(page.getByTestId('story-title')).toHaveText(existing.title)
-      await expect(page.getByTestId('project-breadcrumb-universe')).toHaveText(world.name)
-      await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(existing.title)
+      await expect(page.getByTestId('project-tabs')).toHaveCount(0)
     }
     await page.goto(
       `/app/projects/${existing.id}/manuscript/${scene.id}?from=search#scene-${scene.id}`,
@@ -312,8 +312,8 @@ test.describe('Projects navigation', () => {
     await page.goto(`${old}#scene-${scene.id}`)
     await expect(page).toHaveURL(new RegExp(`${next}/structure#scene-${scene.id}$`))
 
-    // The project's own views are the story's two, and the story's page is the one it always was. The tab bar walks them.
-    await page.getByTestId('projecttab-manuscript').click()
+    // The project's views are the story's two, walked from the story's own bar: the shell draws no second one.
+    await page.getByTestId('story-view-manuscript').click()
     await expect(page).toHaveURL(new RegExp(`${next}/manuscript/${scene.id}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText(scene.title)
 
