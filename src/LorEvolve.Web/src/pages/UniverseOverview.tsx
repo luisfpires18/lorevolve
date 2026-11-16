@@ -9,29 +9,19 @@ import { t, tx, useI18n } from '../i18n'
 import { listEntities } from '../lore/api'
 import { roleDescription, roleLabel, useUniverseAccess } from '../universes/access'
 import {
+  groupKey,
   offered,
-  REVIEW,
-  RULES,
+  SECTION_GROUPS,
   sectionLabel,
   sectionPurpose,
-  WORLD,
-  WRITING,
   type Section,
 } from '../universes/sections'
 import { UniverseRole } from '../universes/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
-/** The contents page's parts: the sidebar's worldbuilding groups, between the front page and the upkeep. */
-const CONTENTS = [
-  { heading: 'world', name: 'world', sections: WORLD },
-  { heading: 'rules', name: 'rules', sections: RULES },
-  { heading: 'writing', name: 'writing', sections: WRITING },
-  { heading: 'review', name: 'review', sections: REVIEW },
-]
-
 /**
  * A universe's front page, set as a book's contents: its name and opening line, then a doorway into
- * each part of it, grouped as the sidebar groups them. No feed, no recent items, no counts - a
+ * each part of it, grouped as the sidebar groups them, with the sections it offers (#273). No feed, no recent items, no counts - a
  * count would mean reading every list just to print a number, and a contents page does not need
  * one to say where things are.
  *
@@ -42,7 +32,7 @@ const CONTENTS = [
  */
 export default function UniverseOverview() {
   useI18n()
-  const { universe } = useOutletContext<WorkspaceContext>()
+  const { universe, families } = useOutletContext<WorkspaceContext>()
   const access = useUniverseAccess()
   const shared = universe.accessRole !== UniverseRole.Owner
   const canWrite = access.editContent
@@ -65,10 +55,14 @@ export default function UniverseOverview() {
     }
   }, [universe.id, canWrite])
 
-  const groups = CONTENTS.map((group) => ({
-    ...group,
-    sections: offered(group.sections, access, universe.aiHelp),
-  })).filter(({ sections }) => sections.length > 0)
+  // The sidebar's own groups and rules, less the front page. Settings stays out: the lede above links to it (#273).
+  const groups = SECTION_GROUPS.flatMap((source) => {
+    const name = groupKey(source)
+    const sections = offered(source, access, universe.aiHelp, families).filter(
+      (section) => section.segment !== 'settings',
+    )
+    return name && sections.length > 0 ? [{ name, sections }] : []
+  })
   const [world, ...rest] = groups
 
   return (
@@ -137,20 +131,12 @@ export default function UniverseOverview() {
   )
 }
 
-function Contents({
-  heading,
-  name,
-  sections,
-}: {
-  heading: string
-  name: string
-  sections: readonly Section[]
-}) {
+function Contents({ name, sections }: { name: string; sections: readonly Section[] }) {
   useI18n()
   return (
-    <section className={`contents contents--${name}`} aria-labelledby={`contents-${heading}`}>
-      <h2 className="contents__heading sectionrule" id={`contents-${heading}`}>
-        {t(`workspace.overview.groups.${heading}` as never)}
+    <section className={`contents contents--${name}`} aria-labelledby={`contents-${name}`}>
+      <h2 className="contents__heading sectionrule" id={`contents-${name}`}>
+        {t(`workspace.rail.groups.${name}` as never)}
       </h2>
       <ul className="contents__list">
         {sections.map((section) => (

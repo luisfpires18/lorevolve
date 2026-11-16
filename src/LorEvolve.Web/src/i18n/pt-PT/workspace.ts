@@ -33,12 +33,6 @@ const workspace: Dictionary['workspace'] = {
     empty:
       'Ainda não está nada escrito aqui. {lore}, onde cada personagem, lugar e coisa ganha a sua página.',
     emptyLore: 'Começa em Lore',
-    groups: {
-      world: 'Mundo',
-      rules: 'Regras',
-      writing: 'Escrita',
-      review: 'Revisão',
-    },
   },
   sections: {
     overview: {

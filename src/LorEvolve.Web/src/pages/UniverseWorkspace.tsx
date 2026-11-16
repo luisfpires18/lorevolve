@@ -14,16 +14,13 @@ import type { EntityType, EntityTypeGroup } from '../lore/types'
 import { getUniverse } from '../universes/api'
 import {
   ALL_SECTIONS,
-  CREATION,
   FRONT,
-  MANAGEMENT,
+  groupKey,
   offered,
   owns,
   SECTION_GROUPS,
   sectionLabel,
-  WORLD_BUILDING,
   type ProjectFamily,
-  type Section,
 } from '../universes/sections'
 import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
@@ -36,14 +33,6 @@ import type { UniverseArtworkRef } from '../publishing/types'
 import { EmptyState } from '../components/EmptyState'
 
 const SECTIONS = ALL_SECTIONS
-
-/** A labelled group's dictionary key; the front page alone carries no label (#191). */
-function groupKey(source: readonly Section[]) {
-  if (source === WORLD_BUILDING) return 'worldBuilding'
-  if (source === CREATION) return 'creation'
-  if (source === MANAGEMENT) return 'management'
-  return null
-}
 
 const GROUP_TEST_IDS = {
   worldBuilding: 'sidebar-world-building',
@@ -96,6 +85,8 @@ export interface WorkspaceContext {
   revalidateTypes: () => void
   /** Reads the universe's projects again, so the sidebar's project-bound sections follow a create, trash or restore (#272). */
   refreshProjects: () => Promise<void>
+  /** The families of project this universe has: the set the sidebar reads, so the Overview offers the same sections (#272, #273). */
+  families: ReadonlySet<ProjectFamily>
 }
 
 /** The part of the URL below this universe, without its surrounding slashes. */
@@ -550,6 +541,7 @@ function Workspace() {
                   refreshTypes,
                   revalidateTypes,
                   refreshProjects,
+                  families,
                 } satisfies WorkspaceContext
               }
             />

@@ -31,12 +31,6 @@ const workspace = {
     empty:
       'Nothing is written here yet. {lore}, where each character, place and thing gets a page.',
     emptyLore: 'Begin in Lore',
-    groups: {
-      world: 'World',
-      rules: 'Rules',
-      writing: 'Writing',
-      review: 'Review',
-    },
   },
   sections: {
     overview: {
