@@ -74,6 +74,7 @@ const relationships: Dictionary['relationships'] = {
     notes: 'Notas',
     notesPlaceholder: 'O que vale a pena recordar sobre esta ligação.',
     saving: 'A guardar…',
+    adding: 'A adicionar…',
     save: 'Guardar',
     addSubmit: 'Adicionar relação',
     cancel: 'Cancelar',
@@ -155,6 +156,7 @@ const relationships: Dictionary['relationships'] = {
     familyListedHint:
       'Aparece na árvore genealógica nas palavras próprias deste tipo. Não coloca ninguém na ascendência e não implica nenhum outro parente.',
     saving: 'A guardar…',
+    adding: 'A adicionar…',
     saveKind: 'Guardar',
     addKindSubmit: 'Adicionar tipo',
     cancel: 'Cancelar',

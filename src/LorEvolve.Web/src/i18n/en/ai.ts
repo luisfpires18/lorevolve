@@ -103,6 +103,7 @@ const ai = {
       readingScenes: 'Reading the scenes…',
       chooseSceneOption: 'Choose a scene',
       saving: 'Saving…',
+      adding: 'Adding…',
       save: 'Save',
       add: 'Add record',
       cancel: 'Cancel',

@@ -105,6 +105,7 @@ const ai: Dictionary['ai'] = {
       readingScenes: 'A ler as cenas…',
       chooseSceneOption: 'Escolhe uma cena',
       saving: 'A guardar…',
+      adding: 'A adicionar…',
       save: 'Guardar',
       add: 'Adicionar registo',
       cancel: 'Cancelar',

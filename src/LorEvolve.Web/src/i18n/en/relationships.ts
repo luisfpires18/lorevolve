@@ -70,6 +70,7 @@ const relationships = {
     notes: 'Notes',
     notesPlaceholder: 'What is worth remembering about this connection.',
     saving: 'Saving…',
+    adding: 'Adding…',
     save: 'Save',
     addSubmit: 'Add relation',
     cancel: 'Cancel',
@@ -151,6 +152,7 @@ const relationships = {
     familyListedHint:
       'Listed on the Family Tree in this kind’s own words. It places nobody in the ancestry and implies no other relative.',
     saving: 'Saving…',
+    adding: 'Adding…',
     saveKind: 'Save',
     addKindSubmit: 'Add kind',
     cancel: 'Cancel',

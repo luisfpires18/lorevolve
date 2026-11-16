@@ -255,6 +255,7 @@ const progression: Dictionary['progression'] = {
       hint: 'Nenhuma, uma ou várias.',
     },
     saving: 'A guardar…',
+    adding: 'A adicionar…',
     cancel: 'Cancelar',
   },
 }

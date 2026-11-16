@@ -234,6 +234,7 @@ const time: Dictionary['time'] = {
     detailsHint:
       'Um detalhe que esta fase não define é lido do perfil principal de {name}. Nenhuma outra fase é consultada.',
     saving: 'A guardar…',
+    adding: 'A adicionar…',
     save: 'Guardar',
     add: 'Adicionar fase',
     cancel: 'Cancelar',
@@ -306,6 +307,7 @@ const time: Dictionary['time'] = {
     participant: 'Participante',
     participantPlaceholder: 'De quem é este evento',
     saving: 'A guardar…',
+    adding: 'A adicionar…',
     save: 'Guardar',
     create: 'Adicionar acontecimento',
     cancel: 'Cancelar',

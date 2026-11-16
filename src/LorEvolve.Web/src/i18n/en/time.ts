@@ -219,6 +219,7 @@ const time = {
     detailsHint:
       'A detail this stage doesn’t set reads from {name}’s main profile. No other stage is consulted.',
     saving: 'Saving…',
+    adding: 'Adding…',
     save: 'Save',
     add: 'Add stage',
     cancel: 'Cancel',
@@ -291,6 +292,7 @@ const time = {
     participant: 'Participant',
     participantPlaceholder: 'Whose event this is',
     saving: 'Saving…',
+    adding: 'Adding…',
     save: 'Save',
     create: 'Add moment',
     cancel: 'Cancel',

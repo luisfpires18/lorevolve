@@ -248,6 +248,7 @@ const progression = {
       hint: 'None, one or several.',
     },
     saving: 'Saving…',
+    adding: 'Adding…',
     cancel: 'Cancel',
   },
 }
