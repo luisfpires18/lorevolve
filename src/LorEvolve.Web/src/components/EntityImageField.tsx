@@ -10,6 +10,7 @@ import {
 } from '../lore/images'
 import type { EntityImageCrop, EntityImageRef } from '../lore/types'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
 import { useI18n } from '../i18n'
 
@@ -187,87 +188,90 @@ export function EntityImageField({
   }
 
   return (
-    <div className="imagefield" data-testid="entity-image-field">
-      <h2 className="entryform__heading sectionrule sectionrule--accent">
-        {t('entity.image.heading')}
-      </h2>
+    <>
+      <Field
+        label={t('entity.image.heading')}
+        id={inputId}
+        className="imagefield"
+        data-testid="entity-image-field"
+        hint={pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}
+        error={
+          error ? (
+            <span role="alert" data-testid="entity-image-error">
+              {error}
+            </span>
+          ) : undefined
+        }
+      >
+        {(control) => (
+          <div className="imagefield__row">
+            {pending && preview ? (
+              <CroppedPicture
+                className="imagefield__preview"
+                source={preview}
+                crop={pending.crop}
+                testId="entity-image-preview"
+              />
+            ) : image && entityId ? (
+              <img
+                className="imagefield__preview"
+                src={entityImageUrl(universeId, entityId, image, 'thumbnail')}
+                alt=""
+                data-testid="entity-image-preview"
+              />
+            ) : (
+              <span className="imagefield__preview imagefield__preview--blank" aria-hidden="true">
+                —
+              </span>
+            )}
 
-      <div className="imagefield__row">
-        {pending && preview ? (
-          <CroppedPicture
-            className="imagefield__preview"
-            source={preview}
-            crop={pending.crop}
-            testId="entity-image-preview"
-          />
-        ) : image && entityId ? (
-          <img
-            className="imagefield__preview"
-            src={entityImageUrl(universeId, entityId, image, 'thumbnail')}
-            alt=""
-            data-testid="entity-image-preview"
-          />
-        ) : (
-          <span className="imagefield__preview imagefield__preview--blank" aria-hidden="true">
-            —
-          </span>
-        )}
-
-        <div className="imagefield__actions">
-          {/* The input comes first so the label can be styled from its state - focus and
+            <div className="imagefield__actions">
+              {/* The input comes first so the label can be styled from its state - focus and
               disabled both travel forwards through a sibling selector and not backwards. */}
-          <input
-            ref={input}
-            id={inputId}
-            className="imagefield__input"
-            type="file"
-            accept={IMAGE_ACCEPT}
-            disabled={busyOrDisabled}
-            onChange={(event) => choose(event.target.files?.[0])}
-            data-testid="entity-image-input"
-          />
-
-          <label className="button button--secondary imagefield__pick" htmlFor={inputId}>
-            <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
-            {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
-          </label>
-
-          {hasPicture ? (
-            <>
-              <button
-                className="button button--secondary"
-                type="button"
+              <input
+                ref={input}
+                {...control}
+                className="imagefield__input"
+                type="file"
+                accept={IMAGE_ACCEPT}
                 disabled={busyOrDisabled}
-                onClick={reframe}
-                data-testid="entity-image-reframe"
-              >
-                <ActionIcon icon={Crop} />
-                {t('entity.image.editThumbnail')}
-              </button>
-              <button
-                className="button button--secondary button--danger-quiet"
-                type="button"
-                disabled={busyOrDisabled}
-                onClick={() => void remove()}
-                data-testid="entity-image-remove"
-              >
-                <ActionIcon icon={ImageMinus} />
-                {busy ? t('entity.image.removing') : t('entity.image.remove')}
-              </button>
-            </>
-          ) : null}
-        </div>
-      </div>
+                onChange={(event) => choose(event.target.files?.[0])}
+                data-testid="entity-image-input"
+              />
 
-      <p className="imagefield__hint">
-        {pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}
-      </p>
+              <label className="button button--secondary imagefield__pick" htmlFor={inputId}>
+                <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
+                {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
+              </label>
 
-      {error ? (
-        <p className="field__error" role="alert" data-testid="entity-image-error">
-          {error}
-        </p>
-      ) : null}
+              {hasPicture ? (
+                <>
+                  <button
+                    className="button button--secondary"
+                    type="button"
+                    disabled={busyOrDisabled}
+                    onClick={reframe}
+                    data-testid="entity-image-reframe"
+                  >
+                    <ActionIcon icon={Crop} />
+                    {t('entity.image.editThumbnail')}
+                  </button>
+                  <button
+                    className="button button--secondary button--danger-quiet"
+                    type="button"
+                    disabled={busyOrDisabled}
+                    onClick={() => void remove()}
+                    data-testid="entity-image-remove"
+                  >
+                    <ActionIcon icon={ImageMinus} />
+                    {busy ? t('entity.image.removing') : t('entity.image.remove')}
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
+      </Field>
 
       {framing ? (
         <ImageCropDialog
@@ -291,6 +295,6 @@ export function EntityImageField({
           onCancel={() => setFraming(null)}
         />
       ) : null}
-    </div>
+    </>
   )
 }

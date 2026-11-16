@@ -134,7 +134,7 @@ function TypeCards({
     <section className="projects" data-testid="project-entity-types">
       <header className="projects__head">
         <div className="projects__headtext">
-          <h2>{t('projects.entities.title')}</h2>
+          <h2 className="sectionrule">{t('projects.entities.title')}</h2>
           <p className="projects__lede">{t('projects.entities.lede')}</p>
         </div>
         <Link
