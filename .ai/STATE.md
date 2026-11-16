@@ -48,7 +48,8 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-Nothing in flight. `fix/project-screens-app-design` (#184) merged as PR #186 on 2026-11-15, so its line is gone by the rule above.
+Nothing in flight. #238 (image fields with crop on project and Lore entry types) merged as PR #239 on 2026-11-16:
+migration `AddEntityFieldImages`, backup format 48. Owner check on DEV: upload and crop a real 2D drawing and a 3D render.
 
 ## Committed, not on `dev`
 
