@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type KeyboardEvent } from 'react'
 import { useUniverseAccess } from '../universes/access'
+import { Field } from './Field'
 import { Quoted } from './NameList'
 import { t, tn, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
@@ -38,7 +39,6 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
   const { tx } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
-  const newNameErrorId = useId()
 
   const [terms, setTerms] = useState<ValidationTerm[] | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -185,60 +185,61 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
                     {group.map((term) =>
                       renaming?.id === term.id ? (
                         <li className="types__row" key={term.id}>
-                          <div className="terms__rename">
-                            <label className="field__label" htmlFor={`${groupId}-rename`}>
-                              {tx('canon.terms.renameLabel', { name: <Quoted text={term.name} /> })}
-                            </label>
-                            <div className="termselect__row">
-                              <input
-                                id={`${groupId}-rename`}
-                                className="field__input termselect__name"
-                                type="text"
-                                dir="auto"
-                                autoFocus
-                                maxLength={TERM_NAME_MAX_LENGTH}
-                                value={renaming.text}
-                                onChange={(event) =>
-                                  setRenaming({
-                                    ...renaming,
-                                    text: event.target.value,
-                                    error: null,
-                                  })
-                                }
-                                onKeyDown={onRenameKeyDown}
-                                aria-invalid={renaming.error ? true : undefined}
-                                aria-describedby={
-                                  renaming.error ? `${groupId}-rename-error` : undefined
-                                }
-                                data-testid={`rename-term-input-${term.name}`}
-                              />
-                              <button
-                                className="button"
-                                type="button"
-                                disabled={busyId === term.id}
-                                onClick={() => void saveRename()}
-                                data-testid={`save-term-${term.name}`}
-                              >
-                                {t('canon.terms.saveName')}
-                              </button>
-                              <button
-                                className="button button--secondary button--sm"
-                                type="button"
-                                onClick={() => setRenaming(null)}
-                              >
-                                {t('canon.terms.cancel')}
-                              </button>
-                            </div>
-                            {renaming.error ? (
-                              <p
-                                className="field__error"
-                                id={`${groupId}-rename-error`}
-                                role="alert"
-                              >
-                                {renaming.error}
-                              </p>
-                            ) : null}
-                          </div>
+                          <Field
+                            label={tx('canon.terms.renameLabel', {
+                              name: <Quoted text={term.name} />,
+                            })}
+                            id={`${groupId}-rename`}
+                            className="terms__rename"
+                            error={
+                              renaming.error ? (
+                                <span role="alert">{renaming.error}</span>
+                              ) : undefined
+                            }
+                          >
+                            {(control) => (
+                              <>
+                                <div className="termselect__row">
+                                  <input
+                                    id={control.id}
+                                    className="field__input termselect__name"
+                                    type="text"
+                                    dir="auto"
+                                    autoFocus
+                                    maxLength={TERM_NAME_MAX_LENGTH}
+                                    value={renaming.text}
+                                    onChange={(event) =>
+                                      setRenaming({
+                                        ...renaming,
+                                        text: event.target.value,
+                                        error: null,
+                                      })
+                                    }
+                                    onKeyDown={onRenameKeyDown}
+                                    aria-invalid={control['aria-invalid']}
+                                    aria-describedby={control['aria-describedby']}
+                                    data-testid={`rename-term-input-${term.name}`}
+                                  />
+                                  <button
+                                    className="button"
+                                    type="button"
+                                    disabled={busyId === term.id}
+                                    onClick={() => void saveRename()}
+                                    data-testid={`save-term-${term.name}`}
+                                  >
+                                    {t('canon.terms.saveName')}
+                                  </button>
+                                  <button
+                                    className="button button--secondary button--sm"
+                                    type="button"
+                                    onClick={() => setRenaming(null)}
+                                  >
+                                    {t('canon.terms.cancel')}
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </Field>
                         </li>
                       ) : (
                         <li className="types__row" key={term.id} data-term-name={term.name}>
@@ -287,62 +288,59 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
 
       {access.editContent ? (
         <div className="types__new terms__new">
-          <div className="field">
-            <label className="field__label" htmlFor={`${headingId}-new-kind`}>
-              {t('canon.terms.newKind')}
-            </label>
-            <select
-              id={`${headingId}-new-kind`}
-              className="field__input field__input--select"
-              value={newKind}
-              onChange={(event) =>
-                setNewKind(Number(event.target.value) as ValidationTermKindValue)
-              }
-              data-testid="new-term-kind"
-            >
-              {TERM_KIND_ORDER.map((kind) => (
-                <option key={kind} value={kind}>
-                  {TERM_KIND_LABELS[kind]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="field">
-            <label className="field__label" htmlFor={`${headingId}-new-name`}>
-              {t('canon.terms.newName')}
-            </label>
-            <input
-              id={`${headingId}-new-name`}
-              className="field__input"
-              type="text"
-              dir="auto"
-              maxLength={TERM_NAME_MAX_LENGTH}
-              placeholder={
-                newKind === ValidationTermKind.EventKind
-                  ? t('canon.terms.placeholderEventKind')
-                  : t('canon.terms.placeholderMethod')
-              }
-              value={newName}
-              onChange={(event) => {
-                setNewName(event.target.value)
-                setNewError(null)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  void add()
+          <Field label={t('canon.terms.newKind')} id={`${headingId}-new-kind`}>
+            {(control) => (
+              <select
+                id={control.id}
+                className="field__input field__input--select"
+                value={newKind}
+                onChange={(event) =>
+                  setNewKind(Number(event.target.value) as ValidationTermKindValue)
                 }
-              }}
-              aria-invalid={newError ? true : undefined}
-              aria-describedby={newError ? newNameErrorId : undefined}
-              data-testid="new-term-name"
-            />
-            {newError ? (
-              <p className="field__error" id={newNameErrorId} role="alert">
-                {newError}
-              </p>
-            ) : null}
-          </div>
+                data-testid="new-term-kind"
+              >
+                {TERM_KIND_ORDER.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {TERM_KIND_LABELS[kind]}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field
+            label={t('canon.terms.newName')}
+            id={`${headingId}-new-name`}
+            error={newError ? <span role="alert">{newError}</span> : undefined}
+          >
+            {(control) => (
+              <input
+                id={control.id}
+                className="field__input"
+                type="text"
+                dir="auto"
+                maxLength={TERM_NAME_MAX_LENGTH}
+                placeholder={
+                  newKind === ValidationTermKind.EventKind
+                    ? t('canon.terms.placeholderEventKind')
+                    : t('canon.terms.placeholderMethod')
+                }
+                value={newName}
+                onChange={(event) => {
+                  setNewName(event.target.value)
+                  setNewError(null)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    void add()
+                  }
+                }}
+                aria-invalid={control['aria-invalid']}
+                aria-describedby={control['aria-describedby']}
+                data-testid="new-term-name"
+              />
+            )}
+          </Field>
           <button
             className="button"
             type="button"

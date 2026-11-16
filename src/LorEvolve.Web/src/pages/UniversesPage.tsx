@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore, Plus, Search } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
+import { Field } from '../components/Field'
 import { useI18n } from '../i18n'
 import { RestoreBackup } from '../components/RestoreBackup'
 import { UniverseCard } from '../components/UniverseCard'
@@ -162,27 +163,26 @@ export default function UniversesPage() {
       ) : null}
 
       <div className="controls">
-        <div className="controls__search">
-          <label className="field__label" htmlFor="universe-search">
-            {t('universe.list.filter')}
-          </label>
-          <span className="controls__searchfield">
-            <Search
-              className="controls__searchicon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            <input
-              id="universe-search"
-              className="field__input"
-              type="search"
-              placeholder={t('universe.list.filterPlaceholder')}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </span>
-        </div>
+        <Field className="controls__search" id="universe-search" label={t('universe.list.filter')}>
+          {(control) => (
+            <span className="controls__searchfield">
+              <Search
+                className="controls__searchicon"
+                aria-hidden="true"
+                focusable="false"
+                strokeWidth={1.75}
+              />
+              <input
+                {...control}
+                className="field__input"
+                type="search"
+                placeholder={t('universe.list.filterPlaceholder')}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </span>
+          )}
+        </Field>
 
         <div className="segmented" role="group" aria-label={t('universe.list.archiveFilter')}>
           <button

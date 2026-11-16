@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { Field } from './Field'
 import { WorldRuleCheckSection } from './WorldRuleCheckSection'
 import {
   CHECK_ERROR_KEYS,
@@ -364,9 +365,6 @@ export function WorldRuleEditor({
   }
 
   const nearLimit = draft.description.length > WORLD_RULE_DESCRIPTION_MAX_LENGTH * 0.9
-  const titleErrorId = `${titleId}-error`
-  const descriptionHintId = `${descriptionId}-hint`
-  const descriptionErrorId = `${descriptionId}-error`
 
   return (
     <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
@@ -449,76 +447,74 @@ export function WorldRuleEditor({
           void save(stored.updatedAt)
         }}
       >
-        <div className="field">
-          <label className="field__label" htmlFor={titleId}>
-            {t('canon.editor.title')}
-          </label>
-          <input
-            id={titleId}
-            ref={titleInput}
-            className="field__input field__input--title"
-            type="text"
-            dir="auto"
-            value={draft.title}
-            maxLength={WORLD_RULE_TITLE_MAX_LENGTH}
-            placeholder={t('canon.editor.titlePlaceholder')}
-            onChange={(event) => edit({ title: event.target.value })}
-            aria-invalid={fieldErrors.title ? true : undefined}
-            aria-describedby={fieldErrors.title ? titleErrorId : undefined}
-            aria-required="true"
-            data-testid="world-rule-title"
-          />
-          {fieldErrors.title ? (
-            <p className="field__error" id={titleErrorId} data-testid="world-rule-title-error">
-              {fieldErrors.title}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          label={t('canon.editor.title')}
+          id={titleId}
+          error={
+            fieldErrors.title ? (
+              <span data-testid="world-rule-title-error">{fieldErrors.title}</span>
+            ) : undefined
+          }
+        >
+          {(control) => (
+            <input
+              id={control.id}
+              ref={titleInput}
+              className="field__input field__input--title"
+              type="text"
+              dir="auto"
+              value={draft.title}
+              maxLength={WORLD_RULE_TITLE_MAX_LENGTH}
+              placeholder={t('canon.editor.titlePlaceholder')}
+              onChange={(event) => edit({ title: event.target.value })}
+              aria-invalid={control['aria-invalid']}
+              aria-describedby={control['aria-describedby']}
+              aria-required="true"
+              data-testid="world-rule-title"
+            />
+          )}
+        </Field>
 
-        <div className="field">
-          <label className="field__label" htmlFor={descriptionId}>
-            {t('canon.editor.description')}
-          </label>
-          <p className="field__hint" id={descriptionHintId}>
-            {t('canon.editor.descriptionHint')}
-          </p>
-          <textarea
-            id={descriptionId}
-            className="field__input field__input--area rule__description"
-            rows={8}
-            dir="auto"
-            value={draft.description}
-            placeholder={t('canon.editor.descriptionPlaceholder')}
-            spellCheck
-            onChange={(event) => edit({ description: event.target.value })}
-            aria-invalid={isTooLong || fieldErrors.description ? true : undefined}
-            aria-describedby={[
-              descriptionHintId,
-              nearLimit ? countId : null,
-              fieldErrors.description ? descriptionErrorId : null,
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            data-testid="world-rule-description"
-          />
-          {nearLimit ? (
-            <p
-              className={isTooLong ? 'field__error' : 'field__hint rule__count'}
-              id={countId}
-              data-testid="world-rule-description-count"
-            >
-              {t(isTooLong ? 'canon.editor.countTooLong' : 'canon.editor.count', {
-                used: count(draft.description.length),
-                max: count(WORLD_RULE_DESCRIPTION_MAX_LENGTH),
-              })}
-            </p>
-          ) : null}
-          {fieldErrors.description ? (
-            <p className="field__error" id={descriptionErrorId}>
-              {fieldErrors.description}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          label={t('canon.editor.description')}
+          hint={t('canon.editor.descriptionHint')}
+          id={descriptionId}
+          error={fieldErrors.description}
+        >
+          {(control) => (
+            <>
+              <textarea
+                id={control.id}
+                className="field__input field__input--area rule__description"
+                rows={8}
+                dir="auto"
+                value={draft.description}
+                placeholder={t('canon.editor.descriptionPlaceholder')}
+                spellCheck
+                onChange={(event) => edit({ description: event.target.value })}
+                aria-invalid={isTooLong || fieldErrors.description ? true : undefined}
+                aria-describedby={
+                  [control['aria-describedby'], nearLimit ? countId : null]
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
+                data-testid="world-rule-description"
+              />
+              {nearLimit ? (
+                <p
+                  className={isTooLong ? 'field__error' : 'field__hint rule__count'}
+                  id={countId}
+                  data-testid="world-rule-description-count"
+                >
+                  {t(isTooLong ? 'canon.editor.countTooLong' : 'canon.editor.count', {
+                    used: count(draft.description.length),
+                    max: count(WORLD_RULE_DESCRIPTION_MAX_LENGTH),
+                  })}
+                </p>
+              ) : null}
+            </>
+          )}
+        </Field>
 
         <WorldRuleCheckSection
           universeId={universeId}
