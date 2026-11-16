@@ -337,3 +337,44 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     expect(description!.y).toBeLessThan(firstSection!.y)
   })
 })
+
+test.describe('Projects directory', () => {
+  test('Projects is four category cards with counts, each opening its own list', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const id = await universe(page)
+    await project(page, id, unique('Reel '), FILM)
+    await project(page, id, unique('Season '), SERIES)
+    await project(page, id, unique('Quest '), GAME)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`/app/universes/${id}/projects`)
+
+    const cards = page.getByTestId('projects-directory-card')
+    await expect(cards).toHaveCount(4)
+    await expect(cards.locator('.typecard__name')).toHaveText([
+      'Writing',
+      'Gaming',
+      'Cinema',
+      'Comic',
+    ])
+    await expect(page.getByTestId('projects-directory-count')).toHaveText([
+      'No projects yet',
+      '1 project',
+      '2 projects',
+      'No projects yet',
+    ])
+    await expect(page.getByTestId('projects-page-new')).toBeVisible()
+    await expect(sidebar(page).locator('[data-testid^="project-link-"]')).toHaveCount(0)
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(0)
+
+    for (const segment of ['writing', 'gaming', 'cinema', 'comic']) {
+      await page.goto(`/app/universes/${id}/projects`)
+      await cards.and(page.locator(`[data-section="${segment}"]`)).click()
+      await expect(page).toHaveURL(new RegExp(`/app/universes/${id}/${segment}$`))
+    }
+  })
+})
