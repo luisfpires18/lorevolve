@@ -16,6 +16,13 @@ const entityTypes: Dictionary['entityTypes'] = {
     select: 'Escolha única',
     multiSelect: 'Escolha múltipla',
     entityReference: 'Ligação a uma entrada',
+    image: 'Imagem',
+  },
+  imageShape: {
+    free: 'Livre (a forma da própria imagem)',
+    square: 'Quadrado',
+    fourByThree: '4:3',
+    sixteenByNine: '16:9',
   },
   semantic: {
     birthYear: 'Ano de nascimento',
@@ -329,6 +336,9 @@ const entityTypes: Dictionary['entityTypes'] = {
     semanticHint:
       'Lido pelas regras de Integridade do Cânone, nunca adivinhado a partir do nome do campo. A maioria dos campos não precisa de nenhum.',
     defaultText: 'Texto predefinido',
+    imageShape: 'Forma do recorte',
+    imageShapeHint:
+      'O enquadramento a que cada imagem deste campo é recortada. Livre mantém a forma da própria imagem.',
     defaultHint: 'Opcional. As novas entradas começam com este texto, e podes alterá-lo aí.',
     requiredLabel: 'Obrigatório',
     requiredHint:

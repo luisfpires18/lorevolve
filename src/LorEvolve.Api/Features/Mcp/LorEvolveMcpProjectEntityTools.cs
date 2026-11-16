@@ -260,6 +260,20 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
                         linkedEntry = value.ReferencedEntity != null ? value.ReferencedEntity.Name : null,
                     })
                     .ToList(),
+
+                // An image field (Issue #238) is named with its picture's size, never its bytes.
+                images = db.EntityFieldImages
+                    .Where(image => image.EntityId == candidate.Id && image.FieldDefinition!.ArchivedAt == null)
+                    .OrderBy(image => image.FieldDefinition!.DisplayOrder)
+                    .Select(image => new
+                    {
+                        fieldId = image.FieldDefinitionId,
+                        field = image.FieldDefinition!.Name,
+                        kind = "image",
+                        width = image.Width,
+                        height = image.Height,
+                    })
+                    .ToList(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 

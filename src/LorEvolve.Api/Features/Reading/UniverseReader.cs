@@ -130,6 +130,14 @@ public static class UniverseReader
                 && (relationship.SourceEntityId == loreId || relationship.TargetEntityId == loreId),
             cancellationToken);
 
+        // An image field (Issue #238) reads as its name, the word image and the picture's size: never its bytes.
+        var pictureIds = (detail.FieldImages ?? []).Select(picture => picture.FieldId).ToList();
+        var pictureNames = pictureIds.Count == 0
+            ? []
+            : await db.EntityFieldDefinitions.AsNoTracking()
+                .Where(field => pictureIds.Contains(field.Id))
+                .ToDictionaryAsync(field => field.Id, field => field.Name, cancellationToken);
+
         return new LoreReading(
             detail.Id,
             detail.Name,
@@ -145,6 +153,9 @@ public static class UniverseReader
                         ? new FieldReading(field.Name, value, field.Kind == EntityFieldKind.EntityReference ? field.ReferencedEntityId : null)
                         : null)
                     .OfType<FieldReading>()
+                    .Concat((detail.FieldImages ?? [])
+                        .Where(picture => pictureNames.ContainsKey(picture.FieldId))
+                        .Select(picture => new FieldReading(pictureNames[picture.FieldId], $"image, {picture.Width} x {picture.Height} pixels", null)))
                     .Take(FieldLimit),
             ],
             ReadingText.Cut(LoreArticleText.Extract(article), ArticleLength),

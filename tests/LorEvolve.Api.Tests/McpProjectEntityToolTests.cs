@@ -108,6 +108,57 @@ public sealed class McpProjectEntityToolTests(McpProjectEntityFixture fixture) :
     }
 
     [Fact]
+    public async Task An_entry_with_an_image_field_reads_with_the_field_named_and_sized_and_no_bytes()
+    {
+        // A project and a Lore type of their own, so the fixture's counts stay as the other tests read them.
+        var project = await McpProjectEntityFixture.NewProjectAsync(W.Owner, "Pictured units", kind: 1, universeId: W.U);
+        var hero = await McpProjectEntityFixture.PostJson<ProjectEntityTypeResponse>(W.Owner, $"/api/projects/{project}/entity-types", new ProjectEntityTypeRequest("Hero", null, null, null));
+        var art = (await McpProjectEntityFixture.PostJson<ProjectEntityTypeResponse>(
+                W.Owner,
+                $"/api/projects/{project}/entity-types/{hero.Id}/fields",
+                new ProjectEntityFieldRequest("Art", EntityFieldKind.Image, ImageShape: FieldImageShape.Square)))
+            .Fields.Single(field => field.Name == "Art").Id;
+        var entry = await McpProjectEntityFixture.PostJson<EntityDetail>(W.Owner, $"/api/projects/{project}/entities", new ProjectEntityRequest(hero.Id, "Tidecaller", null));
+        await PutPicture(W.Owner, W.U, entry.Id, art, PublishingTestClient.Png(300, 300));
+
+        var relic = await McpProjectEntityFixture.PostJson<EntityTypeResponse>(W.Owner, $"/api/universes/{W.U}/entity-types", new EntityTypeRequest("Relic", null, null, null, null));
+        var sketch = (await McpProjectEntityFixture.PostJson<EntityTypeResponse>(
+                W.Owner,
+                $"/api/universes/{W.U}/entity-types/{relic.Id}/fields",
+                new FieldDefinitionRequest("Sketch", EntityFieldKind.Image, false, null, null, null, ImageShape: FieldImageShape.Free)))
+            .Fields.Single(field => field.Name == "Sketch").Id;
+        var lore = await McpProjectEntityFixture.PostJson<EntityDetail>(
+            W.Owner, $"/api/universes/{W.U}/entities", new EntityRequest(relic.Id, "The Salt Crown", null, CanonStatus.Idea, null, null, null));
+        await PutPicture(W.Owner, W.U, lore.Id, sketch, PublishingTestClient.Png(400, 200));
+
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+
+        var read = await Call(
+            client,
+            LorEvolveMcpProjectEntityTools.GetTool,
+            new() { ["projectId"] = project.ToString(), ["entryId"] = entry.Id.ToString() });
+        var image = Assert.Single(read.GetProperty("images").EnumerateArray());
+        Assert.Equal("Art", image.GetProperty("field").GetString());
+        Assert.Equal("image", image.GetProperty("kind").GetString());
+        Assert.Equal(300, image.GetProperty("width").GetInt32());
+        Assert.DoesNotContain("field-images", read.GetRawText(), StringComparison.Ordinal);
+
+        var loreRead = await Call(client, "get_lore_entry", new() { ["loreId"] = lore.Id.ToString() });
+        var field = Assert.Single(loreRead.GetProperty("fields").EnumerateArray(), each => each.GetProperty("name").GetString() == "Sketch");
+        Assert.Equal("image, 400 x 200 pixels", field.GetProperty("value").GetString());
+    }
+
+    private static async Task PutPicture(HttpClient client, Guid u, Guid entry, Guid field, byte[] png)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(png);
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "picture.png");
+        var response = await client.PutAsync($"/api/universes/{u}/entities/{entry}/field-images/{field}", form);
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task A_project_of_another_universe_is_not_found_and_a_page_past_the_end_is_empty()
     {
         await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
@@ -562,7 +613,7 @@ public sealed class McpProjectEntityFixture : IAsyncLifetime
     }
 
     /// <summary>A project of one kind in one universe. Kind and lifecycle travel as numbers: 1 is Game, 4 is Comic.</summary>
-    private static async Task<Guid> NewProjectAsync(HttpClient client, string name, int kind, Guid universeId)
+    internal static async Task<Guid> NewProjectAsync(HttpClient client, string name, int kind, Guid universeId)
     {
         var created = await PostJson<ProjectDetail>(
             client,
@@ -581,7 +632,7 @@ public sealed class McpProjectEntityFixture : IAsyncLifetime
         return created.Id;
     }
 
-    private static async Task<T> PostJson<T>(HttpClient client, string path, object body)
+    internal static async Task<T> PostJson<T>(HttpClient client, string path, object body)
     {
         var response = await client.PostAsJsonAsync(path, body);
         response.EnsureSuccessStatusCode();

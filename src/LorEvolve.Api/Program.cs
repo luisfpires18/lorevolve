@@ -153,6 +153,7 @@ app.MapEntityTypeEndpoints();
 app.MapEntityTypeGroupEndpoints();
 app.MapEntityEndpoints();
 app.MapEntityImageEndpoints();
+app.MapEntityFieldImageEndpoints();
 app.MapEntityRevisionEndpoints();
 app.MapEntityArticleEndpoints();
 app.MapEntityPrivateNoteEndpoints();

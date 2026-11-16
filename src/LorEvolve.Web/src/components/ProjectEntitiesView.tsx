@@ -18,10 +18,13 @@ import { t, useI18n } from '../i18n'
  */
 export function ProjectEntitiesView({
   projectId,
+  universeId,
   reloadKey,
   onChanged,
 }: {
   projectId: string
+  /** The universe the project belongs to: an entry's pictures are stored under it. */
+  universeId: string
   /** The page's `schemaVersion`: bumped by a schema write, so the cards and the entries re-read what they offer. */
   reloadKey: number
   onChanged: () => void
@@ -61,6 +64,7 @@ export function ProjectEntitiesView({
         <ProjectEntries
           key={typeId}
           projectId={projectId}
+          universeId={universeId}
           fixedTypeId={typeId}
           openEntryId={entryId ?? undefined}
           reloadKey={reloadKey}

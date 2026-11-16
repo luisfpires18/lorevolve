@@ -379,6 +379,13 @@ internal static class TrashPermanentDelete
                     .ToListAsync(cancellationToken))
                 .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>())];
 
+            // An image field's pictures (Issue #238) too.
+            objectKeys = [.. objectKeys, .. (await db.EntityFieldImages
+                    .Where(image => entries.Contains(image.EntityId))
+                    .Select(image => new { image.OriginalKey, image.CropKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(image => new[] { image.OriginalKey, image.CropKey })];
+
             var relationshipIds = await db.Relationships
                 .Where(relationship => entries.Contains(relationship.SourceEntityId) || entries.Contains(relationship.TargetEntityId))
                 .Select(relationship => relationship.Id)

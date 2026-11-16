@@ -339,8 +339,13 @@ public sealed record UniverseBackup(
     /// a project of the same file, translated on restore like every other id. Not ignorable: a version 46 reader would
     /// restore the idea on no project, and the project's Ideas view would come back empty. A file at version 46 or
     /// earlier has none, and every restored idea is on no project.
+    ///
+    /// 48 - A field may be an image field (Issue #238). <see cref="BackupFieldDefinition.ImageShape"/> carries its crop shape,
+    /// and <see cref="BackupEntity.FieldImages"/> and <see cref="BackupProjectEntity.FieldImages"/> each entry's pictures in
+    /// those fields, each original in the archive with the crop the author chose. Not ignorable: a version 47 reader would
+    /// restore an image field with no shape and its entries with no pictures. A file at version 47 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 47;
+    public const int CurrentVersion = 48;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -631,6 +636,7 @@ public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, 
 /// <paramref name="TargetGroupId"/> (version 23) is the group of this file it is limited to instead, or null.
 /// <paramref name="ArchivedAt"/> (version 25) is when the field was archived, or null for an active field.
 /// <paramref name="SectionId"/> (version 31) is the section of its own type it is shown in, or null.
+/// <paramref name="ImageShape"/> (version 48) is an image field's crop shape, or null on any other kind.
 /// </summary>
 public sealed record BackupFieldDefinition(
     Guid Id,
@@ -644,7 +650,8 @@ public sealed record BackupFieldDefinition(
     Guid? TargetEntityTypeId = null,
     Guid? TargetGroupId = null,
     DateTime? ArchivedAt = null,
-    Guid? SectionId = null);
+    Guid? SectionId = null,
+    FieldImageShape? ImageShape = null);
 
 /// <summary>
 /// A semantic group (since version 23): its id, which fields and memberships name, its name, and the types of this file in
@@ -712,7 +719,23 @@ public sealed record BackupEntity(
     IReadOnlyList<BackupRevision> Revisions,
     IReadOnlyList<BackupArticleRevision>? ArticleRevisions,
     BackupProgression? Progression = null,
-    BackupPrivateNote? PrivateNote = null);
+    BackupPrivateNote? PrivateNote = null,
+    IReadOnlyList<BackupFieldImage>? FieldImages = null);
+
+/// <summary>
+/// The picture an entry holds in one image field (since version 48, Issue #238), as <see cref="BackupEntityImage"/> describes
+/// an entry's own: the original's facts, where it sits in the archive, and the frame the author chose. The crop itself is
+/// derived and cut again on restore.
+/// </summary>
+public sealed record BackupFieldImage(
+    Guid FieldDefinitionId,
+    string? FileName,
+    string ContentType,
+    int Width,
+    int Height,
+    long ByteSize,
+    string MediaPath,
+    BackupImageCrop Crop);
 
 /// <summary>
 /// The owner's private note on an entry (since version 32, ADR 0056): the text exactly as saved - <c>""</c> for a note that
@@ -983,7 +1006,9 @@ public sealed record BackupProjectEntity(
     /// a project entry's history is captured by the same code; carried because history that vanishes on a restore is
     /// worse than no history at all.
     /// </summary>
-    IReadOnlyList<BackupRevision>? Revisions = null);
+    IReadOnlyList<BackupRevision>? Revisions = null,
+    /// <summary>The entry's pictures in its image fields (since version 48, Issue #238), as <see cref="BackupEntity.FieldImages"/>.</summary>
+    IReadOnlyList<BackupFieldImage>? FieldImages = null);
 
 public sealed record BackupFieldValue(
     Guid FieldDefinitionId,

@@ -125,6 +125,7 @@ public sealed class EntityFieldDefinitionConfiguration : IEntityTypeConfiguratio
         builder.Property(field => field.DefaultValue).HasMaxLength(LoreLimits.TextValueMaxLength);
         builder.Property(field => field.Kind).HasConversion<int>();
         builder.Property(field => field.Semantic).HasConversion<int?>();
+        builder.Property(field => field.ImageShape).HasConversion<int?>();
 
         builder.HasOne(field => field.EntityType)
             .WithMany(type => type.Fields)

@@ -20,7 +20,11 @@ import {
   type FieldInput,
 } from '../lore/api'
 import {
+  FIELD_IMAGE_SHAPE_LABELS,
+  FIELD_IMAGE_SHAPE_ORDER,
   FIELD_KIND_LABELS,
+  FieldImageShape,
+  type FieldImageShapeValue,
   FIELD_SEMANTIC_LABELS,
   FieldKind,
   semanticsFor,
@@ -43,6 +47,7 @@ const KIND_ORDER: FieldKindValue[] = [
   FieldKind.Select,
   FieldKind.MultiSelect,
   FieldKind.EntityReference,
+  FieldKind.Image,
 ]
 
 interface TypeFieldsProps {
@@ -111,7 +116,11 @@ export function TypeFields({
   function summary(field: FieldDefinition) {
     const parts = [
       FIELD_KIND_LABELS[field.kind],
-      field.isRequired ? t('entityTypes.fields.required') : t('entityTypes.fields.optional'),
+      field.kind === FieldKind.Image
+        ? FIELD_IMAGE_SHAPE_LABELS[field.imageShape ?? FieldImageShape.Free]
+        : field.isRequired
+          ? t('entityTypes.fields.required')
+          : t('entityTypes.fields.optional'),
     ]
     if (field.kind === FieldKind.EntityReference) {
       parts.push(t('entityTypes.fields.linksTo', { target: targetLabel(field) }))
@@ -677,6 +686,7 @@ function draftOf(field: FieldDefinition | null) {
     options: field ? field.options.map((option) => option.value).join(', ') : '',
     semantic: field?.semantic ?? null,
     defaultValue: field?.defaultValue ?? '',
+    imageShape: field?.imageShape ?? FieldImageShape.Free,
     target: (field ? targetChoice(field) : null) as TargetChoice,
   }
 }
@@ -721,6 +731,7 @@ function FieldDialog({
   const [options, setOptions] = useState(initial.options)
   const [semantic, setSemantic] = useState<FieldSemanticValue | null>(initial.semantic)
   const [defaultValue, setDefaultValue] = useState(initial.defaultValue)
+  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(initial.imageShape)
   const [target, setTarget] = useState<TargetChoice>(initial.target)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
@@ -732,8 +743,18 @@ function FieldDialog({
   const hasOptions = kind === FieldKind.Select || kind === FieldKind.MultiSelect
   const isLink = kind === FieldKind.EntityReference
   const isText = kind === FieldKind.ShortText || kind === FieldKind.LongText
+  const isImage = kind === FieldKind.Image
 
-  const draft = { name: name.trim(), kind, isRequired, options, semantic, defaultValue, target }
+  const draft = {
+    name: name.trim(),
+    kind,
+    isRequired,
+    options,
+    semantic,
+    defaultValue,
+    imageShape,
+    target,
+  }
   const isDirty = payloadKey(draft) !== payloadKey({ ...initial, name: initial.name.trim() })
   const { close, dialogProps } = useDrawerGuard(
     isDirty,
@@ -770,6 +791,7 @@ function FieldDialog({
     setOptions(next.options)
     setSemantic(next.semantic)
     setDefaultValue(next.defaultValue)
+    setImageShape(next.imageShape)
     setTarget(next.target)
     setStale(false)
     setMessage(null)
@@ -800,12 +822,14 @@ function FieldDialog({
     const input: FieldInput = {
       name: name.trim(),
       kind,
-      isRequired,
+      // A picture is optional by nature: the API refuses a required Image field.
+      isRequired: isImage ? false : isRequired,
       // A new field goes last, and an edit keeps its place: the order is the Sections drawer's (Issue #26).
       displayOrder: null,
       defaultValue: isText ? defaultValue.trim() || null : null,
       options: hasOptions ? splitOptions(options) : null,
       semantic,
+      imageShape: isImage ? imageShape : null,
       ...parseTarget(isLink ? target : null),
       ...(field ? { expectedVersion: base.version } : {}),
     }
@@ -1047,6 +1071,30 @@ function FieldDialog({
             </div>
           ) : null}
 
+          {isImage ? (
+            <div className="field">
+              <label className="field__label" htmlFor="field-image-shape">
+                {t('entityTypes.fields.imageShape')}
+              </label>
+              <select
+                id="field-image-shape"
+                className="field__input field__input--select"
+                value={imageShape}
+                onChange={(event) =>
+                  setImageShape(Number(event.target.value) as FieldImageShapeValue)
+                }
+                data-testid="field-image-shape"
+              >
+                {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+                  <option key={each} value={each}>
+                    {FIELD_IMAGE_SHAPE_LABELS[each]}
+                  </option>
+                ))}
+              </select>
+              <p className="field__hint">{t('entityTypes.fields.imageShapeHint')}</p>
+            </div>
+          ) : null}
+
           {isText ? (
             <Field
               label={t('entityTypes.fields.defaultText')}
@@ -1060,22 +1108,24 @@ function FieldDialog({
             />
           ) : null}
 
-          <div className="field">
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={isRequired}
-                onChange={(event) => setIsRequired(event.target.checked)}
-                data-testid="field-required"
-              />
-              <span>{t('entityTypes.fields.requiredLabel')}</span>
-            </label>
-            {field && isRequired && !field.isRequired ? (
-              <p className="field__hint">
-                {t('entityTypes.fields.requiredHint', { name: type.name })}
-              </p>
-            ) : null}
-          </div>
+          {isImage ? null : (
+            <div className="field">
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={isRequired}
+                  onChange={(event) => setIsRequired(event.target.checked)}
+                  data-testid="field-required"
+                />
+                <span>{t('entityTypes.fields.requiredLabel')}</span>
+              </label>
+              {field && isRequired && !field.isRequired ? (
+                <p className="field__hint">
+                  {t('entityTypes.fields.requiredHint', { name: type.name })}
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
 
         <footer className="drawer__actions">

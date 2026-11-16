@@ -22,7 +22,8 @@ public sealed record ProjectEntityFieldRequest(
     string? Name,
     EntityFieldKind Kind,
     bool? IsRequired = null,
-    IReadOnlyList<string>? Options = null);
+    IReadOnlyList<string>? Options = null,
+    FieldImageShape? ImageShape = null);
 
 public sealed record ProjectEntityFieldResponse(
     Guid Id,
@@ -30,7 +31,8 @@ public sealed record ProjectEntityFieldResponse(
     EntityFieldKind Kind,
     bool IsRequired,
     int DisplayOrder,
-    IReadOnlyList<ProjectEntityFieldOptionResponse> Options);
+    IReadOnlyList<ProjectEntityFieldOptionResponse> Options,
+    FieldImageShape? ImageShape = null);
 
 public sealed record ProjectEntityFieldOptionResponse(Guid Id, string Value, int DisplayOrder);
 

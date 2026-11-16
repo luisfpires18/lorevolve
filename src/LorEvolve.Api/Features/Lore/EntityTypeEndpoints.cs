@@ -3,6 +3,7 @@ using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.FamilyTrees;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -470,7 +471,9 @@ public static class EntityTypeEndpoints
             var held = await db.EntityFieldDefinitions.AsNoTracking()
                 .Where(field => lost.Contains(field.EntityTypeId)
                     && (field.Values.Any(value => moving.Contains(value.Entity!.EntityTypeId))
-                        || db.EntityEraFieldValues.Any(value => value.FieldDefinitionId == field.Id && moving.Contains(value.EntityEra!.Entity!.EntityTypeId))))
+                        || db.EntityEraFieldValues.Any(value => value.FieldDefinitionId == field.Id && moving.Contains(value.EntityEra!.Entity!.EntityTypeId))
+                        // An image field's picture is held the same way (Issue #238).
+                        || db.EntityFieldImages.Any(image => image.FieldDefinitionId == field.Id && moving.Contains(image.Entity!.EntityTypeId))))
                 .Select(field => new { field.Name, TypeName = field.EntityType!.Name })
                 .ToListAsync(cancellationToken);
 
@@ -480,10 +483,10 @@ public static class EntityTypeEndpoints
                 var others = ordered.Count - 1;
                 return Results.Problem(
                     title: "Entries hold inherited values",
-                    detail: $"{typeName} can't move there because its entries, or entries of a type nested in it, hold values in "
+                    detail: $"{typeName} can't move there because its entries, or entries of a type nested in it, hold values or pictures in "
                         + $"\"{ordered[0].Name}\", a field it inherits from {ordered[0].TypeName}"
                         + (others == 0 ? string.Empty : others == 1 ? ", and in 1 other inherited field" : $", and in {others} other inherited fields")
-                        + ". It would no longer have those fields. Clear those values first, or keep it where it is.",
+                        + ". It would no longer have those fields. Clear those first, or keep it where it is.",
                     statusCode: StatusCodes.Status409Conflict,
                     extensions: new Dictionary<string, object?> { ["code"] = InheritedFieldsCode });
             }
@@ -883,6 +886,7 @@ public static class EntityTypeEndpoints
             DefaultValue = LoreValidation.Normalize(request.DefaultValue),
             TargetEntityTypeId = request.TargetEntityTypeId,
             TargetGroupId = request.TargetGroupId,
+            ImageShape = request.Kind == EntityFieldKind.Image ? request.ImageShape ?? FieldImageShape.Free : null,
         };
 
         AddOptions(definition, request.Options);
@@ -1020,6 +1024,11 @@ public static class EntityTypeEndpoints
         definition.TargetGroupId = request.TargetGroupId;
         definition.Kind = request.Kind;
 
+        // A new shape keeps the stored pictures as they are; the next crop uses it (Issue #238).
+        definition.ImageShape = request.Kind == EntityFieldKind.Image
+            ? request.ImageShape ?? definition.ImageShape ?? FieldImageShape.Free
+            : null;
+
         // Meaning is metadata about the field, not about what is stored in it, so it may be
         // declared or withdrawn at any time - unlike the kind, which is frozen once values exist.
         definition.Semantic = request.Semantic;
@@ -1110,7 +1119,8 @@ public static class EntityTypeEndpoints
 
         // An era's override is a value of the field too (Issue #41).
         var hasValues = await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
-            || await db.EntityEraFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken);
+            || await db.EntityEraFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+            || await db.EntityFieldImages.AnyAsync(image => image.FieldDefinitionId == fieldId, cancellationToken);
 
         // Changing the kind would reinterpret every stored value, so it is refused while
         // any exist. Renaming and reordering stay safe. An older version's values count too: restoring
@@ -1253,6 +1263,8 @@ public static class EntityTypeEndpoints
         Guid fieldId,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
@@ -1322,9 +1334,13 @@ public static class EntityTypeEndpoints
                 });
         }
 
+        // An image field's pictures go with it (Issue #238): the rows inside the transaction, the objects once it committed.
+        var pictureKeys = await EntityFieldImageEndpoints.DropFieldAsync(db, fieldId, cancellationToken);
+
         db.EntityFieldDefinitions.Remove(definition);
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, pictureKeys);
 
         return Results.NoContent();
     }
@@ -1861,7 +1877,8 @@ public static class EntityTypeEndpoints
             0,
             false,
             field.Version,
-            field.SectionId);
+            field.SectionId,
+            field.ImageShape);
 
     /// <summary>
     /// The universe's types with their fields, sections and counts. The counts are read in three grouped queries over the

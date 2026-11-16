@@ -103,6 +103,9 @@ public static class AiChangeCodes
     /// <summary>A picture change whose file the person has not uploaded in LorEvolve yet: it waits, and can't be approved until then.</summary>
     public const string AwaitingUpload = "awaiting_upload";
 
+    /// <summary>A value staged for an image field (Issue #238): its picture is only ever uploaded in LorEvolve.</summary>
+    public const string ImageField = "image_field";
+
     // ---------- The refusals of the review routes ----------
     public const string ProposalChanged = "ai_change_proposal_changed";
     public const string AlreadyDecided = "ai_change_already_decided";
@@ -810,6 +813,16 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                         ? "That field isn't one of this type's fields. Choose fields from get_change_options."
                         : $"That field belongs to {owner}, not {type.Name}: a type has its own fields and those of the types above it, "
                           + $"never a nested or unrelated type's. Choose from {type.Name}'s fields in get_change_options, or propose the field on {type.Name} first.",
+                    $"fields.{value.FieldId}");
+                continue;
+            }
+
+            // An image field holds a picture, never a value, and a change cannot carry one (Issue #238).
+            if (definition.Kind == EntityFieldKind.Image)
+            {
+                work.Problem(
+                    AiChangeCodes.ImageField,
+                    $"{definition.Name} is an image field. Its picture is uploaded in LorEvolve; a change cannot set it.",
                     $"fields.{value.FieldId}");
                 continue;
             }

@@ -106,7 +106,30 @@ public static partial class LoreValidation
             errors["targetGroupId"] = ["Choose one type or one group, not both."];
         }
 
+        ValidateImageField(errors, request.Kind, request.ImageShape, request.IsRequired);
+
         return errors.Count == 0 ? null : errors;
+    }
+
+    /// <summary>
+    /// An image field's own rules (Issue #238), shared by Lore and project types: a crop shape only on an Image field, one
+    /// LorEvolve knows, and never required, because a picture can only be uploaded once the entry exists.
+    /// </summary>
+    public static void ValidateImageField(Dictionary<string, string[]> errors, EntityFieldKind kind, FieldImageShape? shape, bool isRequired)
+    {
+        if (shape is not null && kind != EntityFieldKind.Image)
+        {
+            errors["imageShape"] = ["Only an image field has a crop shape."];
+        }
+        else if (shape is { } chosen && !Enum.IsDefined(chosen))
+        {
+            errors["imageShape"] = ["That is not a crop shape LorEvolve knows."];
+        }
+
+        if (kind == EntityFieldKind.Image && isRequired)
+        {
+            errors["isRequired"] = ["An image field cannot be required: its picture is added once the entry exists."];
+        }
     }
 
     /// <summary>

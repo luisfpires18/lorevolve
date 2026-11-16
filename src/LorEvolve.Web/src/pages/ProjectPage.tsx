@@ -363,6 +363,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       ) : section.segment === 'entities' ? (
         <ProjectEntitiesView
           projectId={project.id}
+          universeId={project.universe.id}
           reloadKey={schemaVersion}
           onChanged={() => setSchemaVersion((version) => version + 1)}
         />

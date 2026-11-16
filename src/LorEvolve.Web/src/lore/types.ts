@@ -47,6 +47,7 @@ export const FieldKind = {
   Select: 5,
   MultiSelect: 6,
   EntityReference: 7,
+  Image: 8,
 } as const
 
 export type FieldKindValue = (typeof FieldKind)[keyof typeof FieldKind]
@@ -76,6 +77,55 @@ export const FIELD_KIND_LABELS: Record<FieldKindValue, string> = {
   get [FieldKind.EntityReference]() {
     return t('entityTypes.kind.entityReference')
   },
+  get [FieldKind.Image]() {
+    return t('entityTypes.kind.image')
+  },
+}
+
+/** Mirrors the backend enum: the frame an Image field's picture is cropped to. Free keeps the picture's own ratio. */
+export const FieldImageShape = {
+  Free: 0,
+  Square: 1,
+  FourByThree: 2,
+  SixteenByNine: 3,
+} as const
+
+export type FieldImageShapeValue = (typeof FieldImageShape)[keyof typeof FieldImageShape]
+
+export const FIELD_IMAGE_SHAPE_ORDER: FieldImageShapeValue[] = [
+  FieldImageShape.Free,
+  FieldImageShape.Square,
+  FieldImageShape.FourByThree,
+  FieldImageShape.SixteenByNine,
+]
+
+export const FIELD_IMAGE_SHAPE_LABELS: Record<FieldImageShapeValue, string> = {
+  get [FieldImageShape.Free]() {
+    return t('entityTypes.imageShape.free')
+  },
+  get [FieldImageShape.Square]() {
+    return t('entityTypes.imageShape.square')
+  },
+  get [FieldImageShape.FourByThree]() {
+    return t('entityTypes.imageShape.fourByThree')
+  },
+  get [FieldImageShape.SixteenByNine]() {
+    return t('entityTypes.imageShape.sixteenByNine')
+  },
+}
+
+/** The frame's width over its height, or null for Free, which takes the picked picture's own ratio. */
+export function aspectOfShape(shape: FieldImageShapeValue | null | undefined): number | null {
+  switch (shape) {
+    case FieldImageShape.Square:
+      return 1
+    case FieldImageShape.FourByThree:
+      return 4 / 3
+    case FieldImageShape.SixteenByNine:
+      return 16 / 9
+    default:
+      return null
+  }
 }
 
 /**
@@ -169,6 +219,8 @@ export interface FieldDefinition {
    * only. An archived field keeps it, so a restore puts it back where it was.
    */
   sectionId: string | null
+  /** For an Image field: the frame its picture is cropped to. Null for every other kind. */
+  imageShape: FieldImageShapeValue | null
 }
 
 /** One optional section of a type's fields (Issue #26): a heading and a fold, nothing more. */
@@ -295,6 +347,20 @@ export interface EntityImageRef {
 }
 
 /**
+ * The one picture an Image field holds on one entry. Like `EntityImageRef` it names the picture, never a URL: the address
+ * is composed by `fieldImageUrl`. `cropId` names the cropped copy, so a new framing is a new address.
+ */
+export interface FieldImageRef {
+  fieldId: string
+  assetId: string
+  cropId: string
+  width: number
+  height: number
+  crop: EntityImageCrop | null
+  fileName: string | null
+}
+
+/**
  * The square a thumbnail is cut from. Its own name here because it is what the lore API and a
  * backup call it, and the shape itself is shared - the cropper and the server's crop arithmetic
  * are the same for an entry's portrait and an account's photo.
@@ -332,6 +398,7 @@ export interface EntitySummary {
 /** An entry's structured lore. Its article is read on its own route - see `article.ts`. */
 export interface EntityDetail extends EntitySummary {
   fields: FieldValue[]
+  fieldImages: FieldImageRef[]
   createdAt: string
   /** A live family link touches it, so its tree stays reachable whatever its type (ADR 0040). */
   hasFamilyConnections: boolean

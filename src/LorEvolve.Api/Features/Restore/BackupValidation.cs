@@ -63,7 +63,8 @@ internal sealed record RestorableBackup(
     BackupPreviewCounts Counts,
     ValidatedImage? Artwork = null,
     IReadOnlyDictionary<Guid, ValidatedImage>? AppearanceImages = null,
-    IReadOnlyDictionary<Guid, ValidatedMapImage>? MapImages = null);
+    IReadOnlyDictionary<Guid, ValidatedMapImage>? MapImages = null,
+    IReadOnlyDictionary<(Guid EntityId, Guid FieldId), ValidatedImage>? FieldImages = null);
 
 /// <summary>
 /// Decides whether a parsed backup can be reconstructed, without writing anything anywhere.
@@ -115,6 +116,7 @@ internal static partial class BackupValidation
         var appearanceImages = await CheckAppearanceImagesAsync(payload, opened, issues, cancellationToken);
         var artwork = await CheckArtworkAsync(payload.Universe, opened, issues, cancellationToken);
         var mapImages = await CheckMapImagesAsync(payload, opened, issues, cancellationToken);
+        var fieldImages = await CheckFieldImagesAsync(payload, opened, issues, cancellationToken);
         issues.ThrowIfAny();
 
         return new RestorableBackup(
@@ -123,10 +125,11 @@ internal static partial class BackupValidation
             payload,
             images,
             records,
-            BackupPreviewCounts.Of(payload, images.Count + appearanceImages.Count),
+            BackupPreviewCounts.Of(payload, images.Count + appearanceImages.Count + fieldImages.Count),
             artwork,
             appearanceImages,
-            mapImages);
+            mapImages,
+            fieldImages);
     }
 
     /// <summary>
@@ -337,6 +340,87 @@ internal static partial class BackupValidation
     }
 
     /// <summary>
+    /// Every image field's picture (since version 48, Issue #238), decoded in full and cut to its field's shape with the crop
+    /// the backup recorded, by the same gate an upload goes through. Keyed by (entry, field) in the file.
+    /// </summary>
+    private static async Task<Dictionary<(Guid EntityId, Guid FieldId), ValidatedImage>> CheckFieldImagesAsync(
+        UniverseBackupPayload payload,
+        OpenedBackup opened,
+        BackupIssueList issues,
+        CancellationToken cancellationToken)
+    {
+        var shapes = payload.EntityTypes
+            .SelectMany(type => type.Fields)
+            .Where(field => field.Kind == EntityFieldKind.Image)
+            .ToDictionary(field => field.Id, field => field.ImageShape);
+        var pictures = payload.Entities.Select(entity => (entity.Id, Name: Entry(entity), entity.FieldImages))
+            .Concat((payload.ProjectEntities ?? []).Select(entry => (entry.Id, Name: $"the project entry {Quote(entry.Name)}", entry.FieldImages)))
+            .SelectMany(owner => (owner.FieldImages ?? []).Select(image => (EntityId: owner.Id, owner.Name, Image: image)))
+            .ToList();
+        var results = new Dictionary<(Guid EntityId, Guid FieldId), ValidatedImage>();
+        using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
+
+        await Task.WhenAll(pictures.Select(async picture =>
+        {
+            await gate.WaitAsync(cancellationToken);
+            try
+            {
+                var image = picture.Image;
+                var bytes = await opened.ReadMediaAsync(image.MediaPath, cancellationToken);
+                var crop = new ImageCrop(image.Crop.X, image.Crop.Y, image.Crop.Width, image.Crop.Height);
+                var frame = EntityFieldImageEndpoints.FrameFor(shapes.GetValueOrDefault(image.FieldDefinitionId));
+
+                using var stream = new MemoryStream(bytes, writable: false);
+                PreparedImage? prepared;
+                ImageRejection? rejection;
+
+                try
+                {
+                    (prepared, rejection) = await ImagePreparation.PrepareAsync(stream, bytes.Length, crop, frame, cancellationToken);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    (prepared, rejection) = (null, new ImageRejection(ImagePreparation.FileField, "That image could not be read."));
+                }
+
+                lock (results)
+                {
+                    if (prepared is null)
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"A field picture of {picture.Name} could not be used: {rejection!.Message}");
+                    }
+                    else if (!string.Equals(prepared.ContentType, image.ContentType, StringComparison.Ordinal))
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"A field picture of {picture.Name} is not the kind of image the backup says it is.");
+                    }
+                    else if (bytes.Length != image.ByteSize)
+                    {
+                        issues.Add(BackupIssueCodes.InvalidImage, $"A field picture of {picture.Name} is not the size the backup says it is.");
+                    }
+                    else
+                    {
+                        results[(picture.EntityId, image.FieldDefinitionId)] = new ValidatedImage(
+                            picture.EntityId,
+                            image.MediaPath,
+                            prepared.ContentType,
+                            prepared.Extension,
+                            prepared.Width,
+                            prepared.Height,
+                            bytes.Length,
+                            prepared.Thumbnail);
+                    }
+                }
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }));
+
+        return results;
+    }
+
+    /// <summary>
     /// Every map's picture (since version 34), decoded in full and fitted into its display copy by the same gate an upload
     /// goes through - so a picture that would fail the restore fails here. Keyed by the map's id in the file.
     /// </summary>
@@ -431,7 +515,7 @@ internal static partial class BackupValidation
         foreach (var entity in payload.Entities)
         {
             count += 2 + entity.Aliases.Count + entity.TagIds.Count + entity.FieldValues.Count + (entity.Image is null ? 0 : 1)
-                + entity.ArticleRevisions!.Count;
+                + entity.ArticleRevisions!.Count + (entity.FieldImages?.Count ?? 0);
 
             if (entity.Progression is { } progression)
             {
@@ -475,7 +559,7 @@ internal static partial class BackupValidation
                 continue;
             }
 
-            count += 1 + (entry.FieldValues?.Count ?? 0);
+            count += 1 + (entry.FieldValues?.Count ?? 0) + (entry.FieldImages?.Count ?? 0);
 
             foreach (var revision in entry.Revisions ?? [])
             {
@@ -573,6 +657,7 @@ internal static partial class BackupValidation
         private readonly HashSet<Guid> _ideas = [];
         private readonly Dictionary<Guid, ValidationTermKind> _terms = [];
         private readonly HashSet<string> _referencedMedia = new(StringComparer.Ordinal);
+        private readonly Dictionary<Guid, FieldImageShape?> _imageFields = [];
 
         public void Run()
         {
@@ -1177,6 +1262,7 @@ internal static partial class BackupValidation
 
                     Defined(field.Kind, $"{fieldWhat}'s kind");
                     Text(field.DefaultValue, LoreLimits.TextValueMaxLength, $"{fieldWhat}'s default value");
+                    CheckImageField(field, fieldWhat);
 
                     // A section of its own type only: the restore maps it to that section's new id.
                     if (field.SectionId is { } sectionId)
@@ -1394,6 +1480,8 @@ internal static partial class BackupValidation
                     }
                 }
 
+                CheckFieldImages(entry.Id, entry.EntityTypeId, entry.FieldImages, what);
+
                 // The entry's saved versions (version 42, #146). Each id is registered, as a lore entry's versions are,
                 // so a reference to one inside the file resolves and a duplicate is caught.
                 foreach (var revision in entry.Revisions ?? [])
@@ -1576,6 +1664,8 @@ internal static partial class BackupValidation
                 CheckImage(entity, image, what);
             }
 
+            CheckFieldImages(entity.Id, entity.EntityTypeId, entity.FieldImages, what);
+
             CheckRevisions(entity, what);
             CheckArticleRevisions(entity, what);
             CheckProgression(entity, what);
@@ -1745,6 +1835,101 @@ internal static partial class BackupValidation
                 if (revision.Snapshot?.Eras is null)
                 {
                     Missing($"what version {revision.Number} of the eras of {Entry(entity)} held");
+                }
+            }
+        }
+
+        /// <summary>An image field's shape (version 48): on an Image field only, one LorEvolve knows; no Image field before 48.</summary>
+        private void CheckImageField(BackupFieldDefinition field, string fieldWhat)
+        {
+            if (field.Kind == EntityFieldKind.Image)
+            {
+                if (version < 48)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{fieldWhat} is an image field, which a backup of this version cannot hold.");
+                }
+
+                _imageFields[field.Id] = field.ImageShape;
+            }
+
+            if (field.ImageShape is { } shape && (field.Kind != EntityFieldKind.Image || !Enum.IsDefined(shape)))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{fieldWhat} has a crop shape LorEvolve cannot use.");
+            }
+        }
+
+        /// <summary>
+        /// An entry's pictures in its image fields (version 48, Issue #238): each in an Image field of the entry's own type or a
+        /// type above it, one per field, at the path LorEvolve would have built, the size the backup says, with a frame that
+        /// fits the field's shape. The pixels are checked by <see cref="CheckFieldImagesAsync"/>.
+        /// </summary>
+        private void CheckFieldImages(Guid entityId, Guid typeId, IReadOnlyList<BackupFieldImage>? images, string what)
+        {
+            var seen = new HashSet<Guid>();
+
+            foreach (var image in images ?? [])
+            {
+                if (image is null)
+                {
+                    Missing($"a field picture of {what}");
+                    continue;
+                }
+
+                _typeParents ??= _types.ToDictionary(type => type.Key, type => type.Value.ParentId);
+                if (!_imageFields.TryGetValue(image.FieldDefinitionId, out var shape)
+                    || !_fieldOwner.TryGetValue(image.FieldDefinitionId, out var owner)
+                    || !EntityTypeHierarchy.IsWithin(_typeParents, typeId, owner))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} has a picture for a field that is not an image field of its type.");
+                    continue;
+                }
+
+                if (!seen.Add(image.FieldDefinitionId))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} has two pictures for the same field.");
+                    continue;
+                }
+
+                if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
+                {
+                    Add(BackupIssueCodes.InvalidImage, $"{what} has a field picture of a kind LorEvolve does not store.");
+                    continue;
+                }
+
+                var expected = BackupArchive.FieldImageMediaPathFor(entityId, image.FieldDefinitionId, image.ContentType);
+                if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
+                {
+                    Add(BackupIssueCodes.InvalidImage, $"{what} names a field picture at a place LorEvolve would not have put it.");
+                    continue;
+                }
+
+                _referencedMedia.Add(expected);
+
+                if (opened.MediaLength(expected) is not { } length)
+                {
+                    Add(BackupIssueCodes.MissingMedia, $"A field picture of {what} is missing from the archive.");
+                    continue;
+                }
+
+                if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
+                {
+                    Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} is not the size the backup says it is.");
+                }
+
+                if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
+                {
+                    Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} has dimensions LorEvolve does not accept.");
+                }
+
+                Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of a field picture of {what}");
+
+                if (image.Crop is not { } crop)
+                {
+                    Missing($"the crop of a field picture of {what}");
+                }
+                else if (ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height), EntityFieldImageEndpoints.FrameFor(shape)) is { } badCrop)
+                {
+                    Add(BackupIssueCodes.InvalidImage, $"The crop of a field picture of {what} cannot be used: {badCrop}");
                 }
             }
         }

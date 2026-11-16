@@ -431,6 +431,13 @@ internal sealed class ReadableBook
             text.AppendLine(Image(page, entity.Name, image.MediaPath)).AppendLine();
         }
 
+        // An image field's picture (Issue #238), named by its field, as the entry's own picture is.
+        foreach (var picture in entity.FieldImages ?? [])
+        {
+            var label = _fields.TryGetValue(picture.FieldDefinitionId, out var imageField) ? imageField.Name : entity.Name;
+            text.AppendLine(Image(page, label, picture.MediaPath)).AppendLine();
+        }
+
         Paragraph(text, entity.Summary);
         Details(text, page, type, entity.FieldValues);
 
