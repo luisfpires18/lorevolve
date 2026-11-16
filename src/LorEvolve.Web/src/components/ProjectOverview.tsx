@@ -89,7 +89,7 @@ export function ProjectOverview({ project }: { project: ProjectDetail }) {
       <section className="projects" data-testid="project-overview-counts">
         <header className="projects__head">
           <div className="projects__headtext">
-            <h2>{t('projects.overview.types')}</h2>
+            <h2 className="sectionrule">{t('projects.overview.types')}</h2>
             <p className="projects__lede">
               {entries === 0
                 ? t('projects.schema.noEntries')
@@ -134,7 +134,7 @@ export function ProjectOverview({ project }: { project: ProjectDetail }) {
       <section className="projects" data-testid="project-overview-recent">
         <header className="projects__head">
           <div className="projects__headtext">
-            <h2>{t('projects.overview.recent')}</h2>
+            <h2 className="sectionrule">{t('projects.overview.recent')}</h2>
             <p className="projects__lede">{t('projects.overview.recentLede')}</p>
           </div>
         </header>
@@ -170,7 +170,7 @@ export function ProjectOverview({ project }: { project: ProjectDetail }) {
       <section className="projects" data-testid="project-overview-links">
         <header className="projects__head">
           <div className="projects__headtext">
-            <h2>{t('projects.overview.lore')}</h2>
+            <h2 className="sectionrule">{t('projects.overview.lore')}</h2>
             <p className="projects__lede">{t('projects.overview.loreLede')}</p>
           </div>
         </header>
