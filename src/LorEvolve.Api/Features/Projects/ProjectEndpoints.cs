@@ -346,15 +346,4 @@ public static class ProjectEndpoints
             Utc(project.CreatedAt),
             Utc(project.UpdatedAt),
             project.Version);
-
-    /// <summary>
-    /// SQLite hands a stored moment back with no kind, so every timestamp is stamped UTC on the way out. Without this a
-    /// client parses <c>updatedAt</c> as local time and shows a project saved minutes ago as hours old.
-    /// </summary>
-    private static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
 }

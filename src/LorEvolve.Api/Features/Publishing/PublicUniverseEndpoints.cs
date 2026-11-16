@@ -182,7 +182,7 @@ public static partial class PublicUniverseEndpoints
 
         if (!string.IsNullOrEmpty(search))
         {
-            var pattern = $"%{IdeaEndpoints.EscapeLike(search)}%";
+            var pattern = $"%{Sql.EscapeLike(search)}%";
             query = query.Where(universe =>
                 EF.Functions.Like(universe.Name, pattern, "\\")
                 || EF.Functions.Like(universe.PublicSummary!, pattern, "\\")

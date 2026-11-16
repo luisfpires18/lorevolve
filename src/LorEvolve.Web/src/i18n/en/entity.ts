@@ -137,7 +137,7 @@ const entity = {
     field: 'Note',
     placeholder: 'Notes for yourself: reveals to come, what this entry is really for, loose ends.',
     tooLong: 'Too long to save: {used} of {max} characters.',
-    save: 'Save note',
+    save: 'Save',
     nothingSaved: 'Nothing saved yet',
     savedAt: 'Saved {when}',
     close: 'Close',
@@ -152,7 +152,7 @@ const entity = {
     replace: 'Replace',
     add: 'Add image',
     editThumbnail: 'Edit thumbnail',
-    removing: 'Removing',
+    removing: 'Removing…',
     remove: 'Remove',
     hint: {
       pending: 'Added when this entry is created.',
@@ -161,7 +161,7 @@ const entity = {
     crop: {
       editTitle: 'Edit thumbnail',
       frameTitle: 'Frame the thumbnail',
-      saveThumbnail: 'Save thumbnail',
+      saveThumbnail: 'Save',
       upload: 'Upload',
       usePicture: 'Use this picture',
     },
@@ -173,7 +173,7 @@ const entity = {
     crop: {
       editTitle: 'Edit crop',
       frameTitle: 'Crop the picture',
-      saveCrop: 'Save crop',
+      saveCrop: 'Save',
     },
   },
   picker: {
@@ -360,7 +360,7 @@ const entity = {
       aliases: 'Aliases',
       aliasesPlaceholder: 'Other names',
       tags: 'Tags',
-      tagsPlaceholder: 'Add a tag',
+      tagsPlaceholder: 'Add tag',
       records: 'What a {type} records',
       noteCopied: 'The copied article is added to the entry once it exists.',
       noteArticle: 'The article is written on the entry once it exists.',
@@ -378,7 +378,7 @@ const entity = {
       noChanges: 'No changes yet',
       sending: 'Sending',
       send: 'Send suggestion',
-      saving: 'Saving',
+      saving: 'Saving…',
       create: 'Create entry',
       save: 'Save changes',
       cancel: 'Cancel',

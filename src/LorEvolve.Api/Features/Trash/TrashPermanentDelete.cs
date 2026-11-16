@@ -244,7 +244,7 @@ internal static class TrashPermanentDelete
     }
 
     private static IResult ItemsProblem(string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { ["items"] = [message] });
+        Problems.Field("items", message);
 
     private static async Task<IResult> EraseOneAsync(
         TrashSelection item,

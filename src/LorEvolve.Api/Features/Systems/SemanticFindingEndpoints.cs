@@ -110,10 +110,9 @@ public static class SemanticFindingEndpoints
         var note = request?.Note?.Trim();
         if (note is { Length: > SemanticFindingLimits.DecisionNoteMaxLength })
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["note"] = [$"Keep the note to {WorldLogicAccess.Number(SemanticFindingLimits.DecisionNoteMaxLength)} characters or fewer."],
-            });
+            return Problems.Field(
+                "note",
+                $"Keep the note to {WorldLogicAccess.Number(SemanticFindingLimits.DecisionNoteMaxLength)} characters or fewer.");
         }
 
         var finding = await db.SemanticFindings.FirstOrDefaultAsync(

@@ -132,7 +132,7 @@ public static class PublicAuthorEndpoints
         if (image is null)
         {
             return request.IsPublic
-                ? Results.ValidationProblem(new Dictionary<string, string[]> { ["photo"] = ["Add a photo to your profile first."] })
+                ? Problems.Field("photo", "Add a photo to your profile first.")
                 : Results.Ok(await SettingsAsync(db, userId, cancellationToken));
         }
 

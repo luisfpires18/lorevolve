@@ -143,28 +143,19 @@ public static partial class AuthEndpoints
 
         if (invitedEmail is not null && userManager.NormalizeEmail(email) != invitedEmail)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["email"] = ["Use the email address your invitation was sent to."],
-            });
+            return Problems.Field("email", "Use the email address your invitation was sent to.");
         }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         if (await userManager.FindByNameAsync(username) is not null)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["username"] = ["That username is already taken."],
-            });
+            return Problems.Field("username", "That username is already taken.");
         }
 
         if (await userManager.FindByEmailAsync(email) is not null)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["email"] = ["That email address is already registered."],
-            });
+            return Problems.Field("email", "That email address is already registered.");
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
@@ -179,10 +170,7 @@ public static partial class AuthEndpoints
         {
             // Two registrations for the same username or email can pass the checks above
             // concurrently; the unique indexes settle it and one of them lands here.
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["request"] = ["Those details were just taken. Try again."],
-            });
+            return Problems.Field("request", "Those details were just taken. Try again.");
         }
 
         if (!result.Succeeded)
@@ -210,10 +198,7 @@ public static partial class AuthEndpoints
 
         if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrEmpty(password))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["credentials"] = [InvalidCredentials],
-            });
+            return Problems.Field("credentials", InvalidCredentials);
         }
 
         cancellationToken.ThrowIfCancellationRequested();

@@ -198,7 +198,7 @@ public static class StoryEndpoints
         return await ListAsync(universeId, principal, db, cancellationToken);
 
         static IResult Refused(string message) =>
-            Results.ValidationProblem(new Dictionary<string, string[]> { ["storyIds"] = [message] });
+            Problems.Field("storyIds", message);
     }
 
     private static async Task<IResult> UpdateAsync(

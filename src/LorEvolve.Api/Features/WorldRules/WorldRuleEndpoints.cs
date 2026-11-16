@@ -444,13 +444,6 @@ public static class WorldRuleEndpoints
     private static bool SameMoment(DateTime stored, DateTime? expected) =>
         expected is { } moment && Utc(stored).Ticks == Utc(moment).Ticks;
 
-    private static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
-
     /// <summary>
     /// The refusal for a stale save. Carries the stored <c>updatedAt</c>, so a client whose author has seen the warning and
     /// still means to keep their own version can name it and save again - a decision made by a person, never by a retry.

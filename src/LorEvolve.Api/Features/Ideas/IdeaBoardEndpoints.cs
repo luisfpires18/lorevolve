@@ -62,10 +62,7 @@ public static class IdeaBoardEndpoints
 
         if (universeId is not null && unassigned)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["unassigned"] = ["Ask for one universe's boards or for unassigned ones, not both."],
-            });
+            return Problems.Field("unassigned", "Ask for one universe's boards or for unassigned ones, not both.");
         }
 
         page = Math.Max(page, 1);
@@ -85,7 +82,7 @@ public static class IdeaBoardEndpoints
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var pattern = $"%{IdeaEndpoints.EscapeLike(search.Trim())}%";
+            var pattern = $"%{Sql.EscapeLike(search.Trim())}%";
             query = query.Where(board => EF.Functions.Like(board.Title, pattern, "\\"));
         }
 
@@ -123,9 +120,9 @@ public static class IdeaBoardEndpoints
                 row.Title,
                 row.Universe,
                 row.CardCount,
-                IdeaEndpoints.Utc(row.CreatedAt),
-                IdeaEndpoints.Utc(row.UpdatedAt),
-                row.DeletedAt is { } deletedAt ? IdeaEndpoints.Utc(deletedAt) : null))
+                Utc(row.CreatedAt),
+                Utc(row.UpdatedAt),
+                row.DeletedAt is { } deletedAt ? Utc(deletedAt) : null))
             .ToList();
 
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -382,8 +379,8 @@ public static class IdeaBoardEndpoints
             board.Universe,
             cards,
             connections,
-            IdeaEndpoints.Utc(board.CreatedAt),
-            IdeaEndpoints.Utc(board.UpdatedAt));
+            Utc(board.CreatedAt),
+            Utc(board.UpdatedAt));
     }
 
     // ---------- Checks ----------
@@ -617,6 +614,6 @@ public static class IdeaBoardEndpoints
             extensions: new Dictionary<string, object?>
             {
                 ["code"] = ChangedCode,
-                ["updatedAt"] = IdeaEndpoints.Utc(current),
+                ["updatedAt"] = Utc(current),
             });
 }

@@ -567,7 +567,9 @@ function RecordForm({
         <>
           <button className="button" type="submit" disabled={isSaving} data-testid="knowledge-save">
             {isSaving
-              ? t('ai.knowledge.form.saving')
+              ? record
+                ? t('ai.knowledge.form.saving')
+                : t('ai.knowledge.form.adding')
               : record
                 ? t('ai.knowledge.form.save')
                 : t('ai.knowledge.form.add')}

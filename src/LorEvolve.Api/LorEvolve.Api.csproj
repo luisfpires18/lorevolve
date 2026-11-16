@@ -31,4 +31,9 @@
     <InternalsVisibleTo Include="LorEvolve.Api.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Using Include="LorEvolve.Api.Common" />
+    <Using Include="LorEvolve.Api.Common.UtcDates" Static="true" />
+  </ItemGroup>
+
 </Project>

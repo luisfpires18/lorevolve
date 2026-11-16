@@ -287,7 +287,7 @@ test.describe('chronology date periods', () => {
     await expect(page.getByTestId('chronology-unplaced')).toContainText('1 existing date doesn’t')
     const remove = card.getByTestId('era-remove')
     await expect(remove).toBeDisabled()
-    await expect(remove).toHaveAccessibleName('Remove Third Age')
+    await expect(remove).toHaveAccessibleName('Delete Third Age')
     await expect(remove).toHaveAccessibleDescription(
       'Dates 1 moment In use. Move its dates to another date period before removing it.',
     )

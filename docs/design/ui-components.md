@@ -38,6 +38,23 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 Form and button rules start with their own comments: forms at `styles.css:410`, buttons at `styles.css:508`.
 The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2511.
 
+## Verbs
+
+One word for one act, on every screen and in both languages.
+
+| Act | English | Portuguese | Busy label |
+| --- | --- | --- | --- |
+| A new record that gets its own page: a universe, project, story, map, idea, board, Lore entry, System, world rule, invitation, account | Create | Criar | Creating… / A criar… |
+| A new child inside a parent, with no article: "Add type", never "Add a type" | Add | Adicionar | Adding… / A adicionar… |
+| The record stops existing, at once or at the next save, even when the Trash or a history can bring it back | Delete | Eliminar | Deleting… / A eliminar… |
+| The thing still exists afterwards: a person leaves a universe, an entry leaves a scene, a reference or a picture comes off a record, a value such as a map scale is cleared, or a draft row that was never saved goes | Remove | Remover | Removing… / A remover… |
+| The save of a drawer, and of any form or dialog that is not a page save bar | Save | Guardar | Saving… / A guardar… |
+| The save bar of a page whose whole subject is one document: an entry, an idea, a board, a world rule, a System, a manuscript | Save changes | Guardar alterações | Saving… / A guardar… |
+
+- A save never names its object: "Save", not "Save pin" or "Save name".
+- A busy label is its verb with "…" and keeps the verb's object when the button has one ("Creating account…").
+- Outside these rules: a conflict choice ("Save mine over it", "Guardar a minha por cima") and status words ("Saved", "Guardado").
+
 ## Tokens
 
 Custom properties of the first `:root` block (`styles.css:37-131`). Use these names, not literal values. Values are left out so this page does not drift when a colour moves.

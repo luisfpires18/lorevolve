@@ -126,7 +126,9 @@ export function PlotArcForm({
         <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-plot-arc">
             {isSaving
-              ? t('stories.arcForm.saving')
+              ? arc
+                ? t('stories.arcForm.saving')
+                : t('stories.arcForm.adding')
               : arc
                 ? t('stories.arcForm.save')
                 : t('stories.arcForm.add')}

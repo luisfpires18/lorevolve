@@ -63,13 +63,6 @@ public static class WorldLogicAccess
             ? (body[..WorldLogicLimits.ExcerptLength], true)
             : (body, false);
 
-    /// <summary>
-    /// A stored timestamp as UTC. SQLite hands back an unspecified kind, and a client that reads a local time as
-    /// UTC is off by the server's offset; every other feature does this at the edge too.
-    /// </summary>
-    public static DateTime Utc(DateTime value) =>
-        value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
-
     /// <summary>A page number and size clamped to what a list route serves.</summary>
     public static (int Page, int PageSize) Paging(int page, int pageSize) =>
         (Math.Max(page, 1), Math.Clamp(pageSize, 1, WorldLogicLimits.MaxPageSize));

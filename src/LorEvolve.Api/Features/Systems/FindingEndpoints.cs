@@ -61,10 +61,7 @@ public static class FindingEndpoints
         if (projectId is { } project
             && !await WorldLogicAccess.IsProjectOfUniverseAsync(db, universeId, project, cancellationToken))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["projectId"] = ["Insert a project of this universe."],
-            });
+            return Problems.Field("projectId", "Insert a project of this universe.");
         }
 
         var summary = await sweep.RunAsync(universeId, projectId, cancellationToken);
@@ -76,7 +73,7 @@ public static class FindingEndpoints
             summary.Persisted,
             summary.Closed,
             summary.IsTruncated,
-            WorldLogicAccess.Utc(summary.EvaluatedAt)));
+            Utc(summary.EvaluatedAt)));
     }
 
     // ---------- The author's decisions ----------
@@ -172,10 +169,9 @@ public static class FindingEndpoints
 
         if (note.Length > WorldLogicFindingLimits.NoteMaxLength)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["note"] = [$"Keep the note to {WorldLogicAccess.Number(WorldLogicFindingLimits.NoteMaxLength)} characters or fewer."],
-            });
+            return Problems.Field(
+                "note",
+                $"Keep the note to {WorldLogicAccess.Number(WorldLogicFindingLimits.NoteMaxLength)} characters or fewer.");
         }
 
         var finding = await db.WorldLogicFindings.FirstOrDefaultAsync(
@@ -191,10 +187,7 @@ public static class FindingEndpoints
         // The exception is resolving: a resolved finding is already where resolve would put it.
         if (finding.Status == WorldLogicFindingStatus.Resolved && target != WorldLogicFindingStatus.Resolved)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["status"] = [refusal],
-            });
+            return Problems.Field("status", refusal);
         }
 
         if (finding.Status != target)
@@ -244,10 +237,7 @@ public static class FindingEndpoints
         // offers is refused rather than quietly answered in another one.
         if (Sort(sort) is not { } wantedSort)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["sort"] = ["Insert either attention or newest."],
-            });
+            return Problems.Field("sort", "Insert either attention or newest.");
         }
 
         var (wantedPage, wantedSize) = WorldLogicAccess.Paging(page, pageSize);
@@ -377,7 +367,7 @@ public static class FindingEndpoints
                     Action(entry.Action),
                     entry.ActorId,
                     entry.Note,
-                    WorldLogicAccess.Utc(entry.At))),
+                    Utc(entry.At))),
             ]);
     }
 
@@ -434,9 +424,9 @@ public static class FindingEndpoints
             row.SchemaVersion,
             row.Fingerprint,
             row.EvidenceCount,
-            WorldLogicAccess.Utc(row.CreatedAt),
-            WorldLogicAccess.Utc(row.UpdatedAt),
-            row.ResolvedAt is { } resolved ? WorldLogicAccess.Utc(resolved) : null);
+            Utc(row.CreatedAt),
+            Utc(row.UpdatedAt),
+            row.ResolvedAt is { } resolved ? Utc(resolved) : null);
 
     /// <summary>
     /// Each enum as text, so adding a value never shifts an existing one's meaning on the wire. A violation is the

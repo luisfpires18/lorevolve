@@ -81,7 +81,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(calibration => calibration.Map!.UniverseId == universeId)
             .ToDictionaryAsync(calibration => calibration.MapId, cancellationToken);
 
-
         // Every entry's saved versions, read once: the lore's entries and the projects' entries both carry them (#146),
         // and reading the same rows twice to hand them to two builders would be a second query set for nothing.
         var revisions = await RevisionsAsync(universeId, cancellationToken);
@@ -1827,18 +1826,4 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     private static string Key(Guid id) => id.ToString();
 
     private static string Key(Guid? id) => id?.ToString() ?? string.Empty;
-
-    /// <summary>
-    /// Timestamps are stored as UTC but come back from SQLite kind-less, which would serialise
-    /// without a zone and leave the reader guessing. Every moment in the file is written with
-    /// an explicit <c>Z</c>.
-    /// </summary>
-    private static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
-
-    private static DateTime? Utc(DateTime? value) => value is { } moment ? Utc(moment) : null;
 }

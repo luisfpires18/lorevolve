@@ -141,7 +141,7 @@ const entity: Dictionary['entity'] = {
     placeholder:
       'Notas para ti: revelações futuras, para que serve realmente esta entrada, pontas soltas.',
     tooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
-    save: 'Guardar nota',
+    save: 'Guardar',
     nothingSaved: 'Ainda nada guardado',
     savedAt: 'Guardado {when}',
     close: 'Fechar',
@@ -156,7 +156,7 @@ const entity: Dictionary['entity'] = {
     replace: 'Substituir',
     add: 'Adicionar imagem',
     editThumbnail: 'Editar miniatura',
-    removing: 'A remover',
+    removing: 'A remover…',
     remove: 'Remover',
     hint: {
       pending: 'Adicionada quando esta entrada for criada.',
@@ -165,7 +165,7 @@ const entity: Dictionary['entity'] = {
     crop: {
       editTitle: 'Editar miniatura',
       frameTitle: 'Enquadrar a miniatura',
-      saveThumbnail: 'Guardar miniatura',
+      saveThumbnail: 'Guardar',
       upload: 'Carregar',
       usePicture: 'Usar esta imagem',
     },
@@ -177,7 +177,7 @@ const entity: Dictionary['entity'] = {
     crop: {
       editTitle: 'Editar recorte',
       frameTitle: 'Recortar a imagem',
-      saveCrop: 'Guardar recorte',
+      saveCrop: 'Guardar',
     },
   },
   picker: {
@@ -365,7 +365,7 @@ const entity: Dictionary['entity'] = {
       aliases: 'Nomes alternativos',
       aliasesPlaceholder: 'Outros nomes',
       tags: 'Etiquetas',
-      tagsPlaceholder: 'Adiciona uma etiqueta',
+      tagsPlaceholder: 'Adicionar etiqueta',
       records: 'O que o tipo {type} regista',
       noteCopied: 'O artigo copiado é adicionado à entrada quando ela existir.',
       noteArticle: 'O artigo é escrito na entrada quando ela existir.',
@@ -383,7 +383,7 @@ const entity: Dictionary['entity'] = {
       noChanges: 'Ainda sem alterações',
       sending: 'A enviar',
       send: 'Enviar sugestão',
-      saving: 'A guardar',
+      saving: 'A guardar…',
       create: 'Criar entrada',
       save: 'Guardar alterações',
       cancel: 'Cancelar',

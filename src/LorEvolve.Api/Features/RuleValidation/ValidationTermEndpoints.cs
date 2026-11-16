@@ -73,7 +73,7 @@ public static class ValidationTermEndpoints
     {
         if (!Enum.IsDefined(request.Kind))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["kind"] = ["Say whether this is an event kind or a method."] });
+            return Problems.Field("kind", "Say whether this is an event kind or a method.");
         }
 
         if (ValidateName(request.Name, request.Kind) is { } errors)
@@ -315,15 +315,11 @@ public static class ValidationTermEndpoints
     }
 
     private static IResult NameTaken(ValidationTermKind kind, string name) =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = [$"This universe already has {(kind == ValidationTermKind.EventKind ? "an" : "a")} {Word(kind)} called “{name}”."],
-        });
+        Problems.Field(
+            "name",
+            $"This universe already has {(kind == ValidationTermKind.EventKind ? "an" : "a")} {Word(kind)} called “{name}”.");
 
     internal static string Word(ValidationTermKind kind) => kind == ValidationTermKind.EventKind ? "event kind" : "method";
 
     private static string Count(int count, string noun) => count == 1 ? $"1 {noun}" : $"{count} {noun}s";
-
-    private static DateTime Utc(DateTime value) =>
-        value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }

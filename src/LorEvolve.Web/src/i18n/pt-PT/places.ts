@@ -105,8 +105,8 @@ const places: Dictionary['places'] = {
       'A entrada a partir da qual se lê é o progenitor. A árvore coloca ambas e deduz os familiares a partir dela.',
     hintOther:
       'Listada com a família tal como a escreveste. Não coloca ninguém na árvore e não implica nenhum outro familiar.',
-    creating: 'A criar',
-    create: 'Criar',
+    creating: 'A adicionar…',
+    create: 'Adicionar tipo',
     cancel: 'Cancelar',
   },
   linkForm: {
@@ -130,7 +130,7 @@ const places: Dictionary['places'] = {
     connectedTo: 'Ligação a',
     status: 'Estado',
     statusGroup: 'Estado da ligação',
-    saving: 'A guardar',
+    saving: 'A adicionar…',
     add: 'Adicionar ligação',
     cancel: 'Cancelar',
   },
@@ -284,7 +284,7 @@ const places: Dictionary['places'] = {
     uploaded: 'Carregado. A preparar o mapa…',
     saving: 'A guardar…',
     createMap: 'Criar mapa',
-    saveDetails: 'Guardar detalhes',
+    saveDetails: 'Guardar',
     replacePicture: 'Substituir imagem',
     cancel: 'Cancelar',
   },
@@ -316,7 +316,7 @@ const places: Dictionary['places'] = {
     across: 'Na horizontal',
     down: 'Na vertical',
     saving: 'A guardar…',
-    save: 'Guardar marcador',
+    save: 'Guardar',
     place: 'Colocar marcador',
     cancel: 'Cancelar',
   },
@@ -353,7 +353,7 @@ const places: Dictionary['places'] = {
     unit: 'Unidade',
     unitPlaceholder: 'Insere uma unidade',
     saving: 'A guardar…',
-    save: 'Guardar escala',
+    save: 'Guardar',
     cancel: 'Cancelar',
   },
   viewer: {
@@ -369,10 +369,10 @@ const places: Dictionary['places'] = {
   },
   mapPage: {
     moveFailed: 'Não foi possível mover o marcador.',
-    removePinTitle: 'Remover o marcador {pin}?',
+    removePinTitle: 'Eliminar o marcador {pin}?',
     removePinLore: 'A entrada de lore que ele representa não é afetada.',
     removePinOnly: 'Só o marcador desaparece.',
-    removePinConfirm: 'Remover marcador',
+    removePinConfirm: 'Eliminar marcador',
     deleteTitle: 'Eliminar o mapa {map}?',
     deleteMessage:
       'O mapa e os respetivos marcadores são eliminados definitivamente. Os mapas não vão para a reciclagem. As entradas de lore que os marcadores representam não são afetadas.',
@@ -419,7 +419,7 @@ const places: Dictionary['places'] = {
     annotation: 'Uma anotação, sem ligação a nenhuma entrada.',
     position: '{x}% na horizontal · {y}% na vertical',
     editPin: 'Editar',
-    removePin: 'Remover',
+    removePin: 'Eliminar',
     pins: 'Marcadores',
     noPinsEditor:
       'Ainda sem marcadores. Adiciona um para assinalar um lugar e abrir o lore dele a partir do mapa.',
