@@ -46,6 +46,7 @@ import {
   MassCreatePage,
   ProfilePage,
   ProjectPage,
+  ProjectsDirectory,
   ProjectsPage,
   PublicAuthorPage,
   PublicLorePage,
@@ -296,7 +297,7 @@ function Root() {
                   </RoleGate>,
                 )}
               />
-              <Route path="projects" element={asSection('projects', <ProjectsPage inUniverse />)} />
+              <Route path="projects" element={asSection('projects', <ProjectsDirectory />)} />
               {/* The Creation and Game Entities destinations: the project list narrowed to their kinds (#272). */}
               <Route
                 path="writing"

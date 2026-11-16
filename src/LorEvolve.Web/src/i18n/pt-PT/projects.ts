@@ -66,6 +66,17 @@ const projects = {
     empty: 'Ainda não há projetos.',
     emptyHint:
       'Um projeto é o que está a fazer: um romance, um jogo, uma série, um filme ou uma banda desenhada.',
+    emptyWriting: 'Ainda não há projetos de escrita.',
+    emptyGame: 'Ainda não há projetos de jogo.',
+    emptyCinema: 'Ainda não há projetos de filme ou série.',
+    emptyComic: 'Ainda não há projetos de banda desenhada.',
+    emptyCategoryHint: 'Use Novo projeto para começar um neste universo.',
+  },
+  directory: {
+    lede: 'Escolha um tipo de projeto para ver o que está a fazer neste universo.',
+    none: 'Ainda sem projetos',
+    count: { one: '1 projeto', other: '{n} projetos' },
+    loadFailed: 'Não foi possível contar os seus projetos.',
   },
   one: {
     title: 'Projeto',

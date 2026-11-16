@@ -8,7 +8,7 @@ import { PageHeader } from '../components/PageHeader'
 import { ApiError } from '../lib/api'
 import { listAllProjects } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
-import type { ProjectDetail, ProjectKindValue } from '../projects/types'
+import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 import { listStories, reorderStories } from '../stories/api'
@@ -24,6 +24,14 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 type LoadState =
   | { kind: 'ready'; for: string; projects: ProjectDetail[]; ordered: boolean }
   | { kind: 'failed'; for: string }
+
+/** The empty wording of a category list, named by its first kind; Series reads as Cinema, like Film. */
+function categoryEmpty(kind: ProjectKindValue) {
+  if (kind === ProjectKind.Game) return 'projects.list.emptyGame' as const
+  if (kind === ProjectKind.Comic) return 'projects.list.emptyComic' as const
+  if (kind === ProjectKind.Writing) return 'projects.list.emptyWriting' as const
+  return 'projects.list.emptyCinema' as const
+}
 
 /**
  * Every project an author can reach, most recently updated first, each inside the universe it belongs to.
@@ -164,7 +172,7 @@ export default function ProjectsPage({
           universeId ? (
             <Link
               className="button"
-              to={`/app/projects/new?universeId=${universeId}`}
+              to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
               data-testid="projects-page-new"
             >
               {t('projects.nav.new')}
@@ -184,8 +192,8 @@ export default function ProjectsPage({
 
       {shown.length === 0 ? (
         <EmptyState
-          title={t('projects.list.empty')}
-          hint={t('projects.list.emptyHint')}
+          title={t(kinds ? categoryEmpty(kinds[0]) : 'projects.list.empty')}
+          hint={t(kinds ? 'projects.list.emptyCategoryHint' : 'projects.list.emptyHint')}
           testId="projects-empty"
         />
       ) : (
@@ -196,6 +204,7 @@ export default function ProjectsPage({
               key={project.id}
               data-testid="projects-item"
               data-project-id={project.id}
+              data-kind={project.kind}
             >
               <Link
                 className="storyrow__title"
@@ -207,7 +216,7 @@ export default function ProjectsPage({
               <p className="storyrow__meta">
                 <span>{kindLabel(project.kind)}</span>
                 <span>{lifecycleLabel(project.lifecycle)}</span>
-                <span>{project.universe.name}</span>
+                {inUniverse ? null : <span>{project.universe.name}</span>}
                 {reorderable &&
                 state.ordered &&
                 access.editContent &&

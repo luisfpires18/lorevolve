@@ -48,7 +48,11 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
+#299 M2 Projects & Writing tracker running; its deferred E2E and CI run at the tracker end (owner). #275 done: a universe's Projects (`/app/universes/:id/projects`) is a directory of four category cards (Writing, Gaming, Cinema, Comic) drawn from `CREATION`, each with its project count and a link to its list; `ProjectsDirectory.tsx`, one `listAllProjects` read (PR #324).
+
 #298 sidebar tracker (#271-#274) complete; its deferred E2E and CI run at the tracker end (owner). #274 done: below 860px the one `nav.sidebar` is an off-canvas drawer (scrim, Escape, focus in and back, page behind `inert`), no inline sheet (PR #320). #271 done (PR #315). #272 done: Creation (Writing, Gaming, Cinema, Comic) and World Building Game Entities appear only when the universe has a project of that family (`needs` + `projectFamilies` + `offered()`); refreshed after story create, trash, restore (PR #317). #273 done: the Overview draws the sidebar's own groups (World building, Creation, Management) through `SECTION_GROUPS`, `groupKey`, `offered(..., families)` and the shared `families` outlet context; Stories, Canon and Settings cards gone (routes kept) (PR #318).
+
+#299 M2 Projects & Writing tracker; its deferred E2E and CI run at the tracker end (owner). #276 done: Writing, Gaming, Cinema and Comic lists show category empty wording, `New project` preselects the list's kind (`?kind=`), rows carry `data-kind`, and the universe name is dropped inside a universe (PR #327).
 
 #248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five. #255 done: link `Drawer` replaces `window.prompt`/`alert`, `Avatar` default dropped, inline confirms stay inline and are listed in the catalogue (PR #263). #251 done: one `Field` markup (PR #264). #253 one set of verbs (PR #265). #254 done (PR #269, #306, #308, #307): every field is `Field`, and `uiContract.test.ts` checks `field__label` appears only in `Field.tsx`. #252 (project tabs are `.views`, crumb is `.pageheader__crumb`, panel heads are `.sectionrule`, one raised-card rule, cropper and finding on tokens, font-size ratchet 200) in PR #268, evidence in `docs/design/evidence/252/`.
 

@@ -73,6 +73,11 @@ test.describe('Sidebar and many projects', () => {
     await sidebar.getByTestId('workspace-projects').click()
     await expect(page).toHaveURL(`/app/universes/${worldId}/projects`)
     await expect(sidebar.getByTestId('workspace-projects')).toHaveAttribute('aria-current', 'page')
+    // The directory holds the four families; the seeded Game projects are listed under Gaming.
+    await page
+      .getByTestId('projects-directory-card')
+      .and(page.locator('[data-section="gaming"]'))
+      .click()
     for (const shown of oldestFirst) {
       await expect(page.getByTestId(`projects-row-${shown.id}`)).toBeVisible()
     }
