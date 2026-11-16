@@ -17,7 +17,7 @@ const progression: Dictionary['progression'] = {
     edit: 'Editar aspeto',
     moveEarlier: 'Mover para antes',
     moveLater: 'Mover para depois',
-    remove: 'Remover aspeto',
+    remove: 'Eliminar aspeto',
     gallery: 'Imagens de {name}',
     /** A picture's name wherever one is read out: its place in the appearance's own gallery. */
     pictureName: '{name}, imagem {index} de {total}',
@@ -52,31 +52,31 @@ const progression: Dictionary['progression'] = {
       'Estas fases foram alteradas noutro local. As mais recentes são mostradas agora; tenta novamente.',
     saveFailed: 'Não foi possível guardar essa alteração.',
     removeStage: {
-      title: 'Remover a fase “{name}”?',
+      title: 'Eliminar a fase “{name}”?',
       message:
         'O que define para {name} desaparece com ela; as formas, as capacidades e os aspetos deixam de lhe pertencer. O perfil principal não é alterado. O histórico de fases pode recuperá-la.',
-      confirm: 'Remover fase',
+      confirm: 'Eliminar fase',
     },
     removeForm: {
-      title: 'Remover a forma “{name}”?',
+      title: 'Eliminar a forma “{name}”?',
       message:
         'As capacidades e os aspetos deixam de lhe pertencer. O histórico de fases pode recuperá-la.',
-      confirm: 'Remover forma',
+      confirm: 'Eliminar forma',
     },
     removeAbility: {
-      title: 'Remover a capacidade “{name}”?',
+      title: 'Eliminar a capacidade “{name}”?',
       message: 'O histórico de fases pode recuperá-la.',
-      confirm: 'Remover capacidade',
+      confirm: 'Eliminar capacidade',
     },
     removeAppearance: {
-      title: 'Remover o aspeto “{name}”?',
+      title: 'Eliminar o aspeto “{name}”?',
       messageEmpty: 'O histórico de fases pode recuperá-lo.',
       message: {
         one: 'A sua imagem é eliminada definitivamente; o histórico de fases guarda o aspeto, mas não as imagens.',
         other:
           'As suas {n} imagens são eliminadas definitivamente; o histórico de fases guarda o aspeto, mas não as imagens.',
       },
-      confirm: 'Remover aspeto',
+      confirm: 'Eliminar aspeto',
       failed: 'Não foi possível remover esse aspeto.',
     },
     empty: {
@@ -99,7 +99,7 @@ const progression: Dictionary['progression'] = {
     moreActions: 'Mais ações para {name}',
     moveEarlier: 'Mover para antes',
     moveLater: 'Mover para depois',
-    remove: 'Remover fase',
+    remove: 'Eliminar fase',
     covers: 'Abrange',
     inTrash: '{title} (na reciclagem)',
     forms: 'Formas nesta fase',
@@ -130,14 +130,14 @@ const progression: Dictionary['progression'] = {
       title: 'Formas',
       add: 'Adicionar forma',
       edit: 'Editar forma',
-      remove: 'Remover forma',
+      remove: 'Eliminar forma',
       empty: 'Sem formas. Uma forma é um estado que {name} pode assumir, como uma transformação.',
     },
     ability: {
       title: 'Capacidades',
       add: 'Adicionar capacidade',
       edit: 'Editar capacidade',
-      remove: 'Remover capacidade',
+      remove: 'Eliminar capacidade',
       empty: 'Sem capacidades. Adiciona apenas as que importam para a história.',
     },
     actions: 'Ações para {name}',
@@ -189,7 +189,7 @@ const progression: Dictionary['progression'] = {
       heading: 'Nova forma',
       eyebrow: 'Uma forma de {name}',
       eyebrowNew: 'Nova forma de {name}',
-      save: 'Guardar forma',
+      save: 'Guardar',
       add: 'Adicionar forma',
     },
     ability: {
@@ -200,7 +200,7 @@ const progression: Dictionary['progression'] = {
       heading: 'Nova capacidade',
       eyebrow: 'Uma capacidade de {name}',
       eyebrowNew: 'Nova capacidade de {name}',
-      save: 'Guardar capacidade',
+      save: 'Guardar',
       add: 'Adicionar capacidade',
     },
     appearance: {
@@ -211,7 +211,7 @@ const progression: Dictionary['progression'] = {
       heading: 'Novo aspeto',
       eyebrow: 'Um aspeto de {name}',
       eyebrowNew: 'Novo aspeto de {name}',
-      save: 'Guardar aspeto',
+      save: 'Guardar',
       add: 'Adicionar aspeto',
     },
     unsavedExisting: '“{name}” tem alterações por guardar. Sair sem as guardar?',
@@ -254,7 +254,8 @@ const progression: Dictionary['progression'] = {
       titleLook: 'Um aspeto das formas',
       hint: 'Nenhuma, uma ou várias.',
     },
-    saving: 'A guardar',
+    saving: 'A guardar…',
+    adding: 'A adicionar…',
     cancel: 'Cancelar',
   },
 }

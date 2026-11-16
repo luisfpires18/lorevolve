@@ -60,10 +60,7 @@ internal static class TimelineFeed
 
         if (source is { } kind && !Enum.IsDefined(kind))
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["source"] = ["That is not something the timeline shows."],
-            });
+            return Problems.Field("source", "That is not something the timeline shows.");
         }
 
         return Results.Ok(await ReadAsync(db, universeId, source, storyId, canonStatus, entityId, search, page, pageSize, cancellationToken));
@@ -90,7 +87,7 @@ internal static class TimelineFeed
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
         var namesEras = await db.ChronologyEras.AnyAsync(era => era.UniverseId == universeId, cancellationToken);
-        var pattern = string.IsNullOrWhiteSpace(search) ? null : $"%{IdeaEndpoints.EscapeLike(search.Trim())}%";
+        var pattern = string.IsNullOrWhiteSpace(search) ? null : $"%{Sql.EscapeLike(search.Trim())}%";
 
         IQueryable<FeedRow>? stream = null;
 

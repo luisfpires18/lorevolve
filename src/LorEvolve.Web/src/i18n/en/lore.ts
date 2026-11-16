@@ -163,7 +163,7 @@ const lore = {
     typeFixed: 'Type',
     typeLabel: 'Type',
     chooseType: 'Choose a type',
-    creating: 'Creating',
+    creating: 'Creating…',
     create: 'Create',
     cancel: 'Cancel',
   },

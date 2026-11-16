@@ -160,7 +160,7 @@ public static partial class EntityImageEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return Invalid(ImagePreparation.FileField, "Choose an image to upload.");
+            return Problems.Field(ImagePreparation.FileField, "Choose an image to upload.");
         }
 
         EntityImageCrop? requestedCrop = null;
@@ -170,7 +170,7 @@ public static partial class EntityImageEndpoints
 
             if (requestedCrop is null)
             {
-                return Invalid(ImagePreparation.CropField, "The thumbnail selection could not be read.");
+                return Problems.Field(ImagePreparation.CropField, "The thumbnail selection could not be read.");
             }
         }
 
@@ -188,7 +188,7 @@ public static partial class EntityImageEndpoints
 
         if (prepared is null)
         {
-            return Invalid(rejection!.Field, rejection.Message);
+            return Problems.Field(rejection!.Field, rejection.Message);
         }
 
         var logger = loggerFactory.CreateLogger("LorEvolve.EntityImages");
@@ -512,12 +512,12 @@ public static partial class EntityImageEndpoints
 
         if (request.Crop is null)
         {
-            return Invalid(ImagePreparation.CropField, "Choose the part of the image the thumbnail shows.");
+            return Problems.Field(ImagePreparation.CropField, "Choose the part of the image the thumbnail shows.");
         }
 
         if (ImagePreparation.CheckCrop(request.Crop.ToShared()) is { } badCrop)
         {
-            return Invalid(ImagePreparation.CropField, badCrop);
+            return Problems.Field(ImagePreparation.CropField, badCrop);
         }
 
         if (request.AssetId != image.AssetId)
@@ -571,7 +571,7 @@ public static partial class EntityImageEndpoints
             // A crop that is not square on this picture is the author's to fix. Anything else
             // means the stored original itself no longer passes, which is not.
             return rejection!.Field == ImagePreparation.CropField
-                ? Invalid(ImagePreparation.CropField, rejection.Message)
+                ? Problems.Field(ImagePreparation.CropField, rejection.Message)
                 : OriginalUnavailable();
         }
 
@@ -902,8 +902,6 @@ public static partial class EntityImageEndpoints
         }
     }
 
-    internal static IResult Invalid(string field, string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     /// <summary>
     /// 503, whatever the store's reason. The detail is the exception's own message, which is

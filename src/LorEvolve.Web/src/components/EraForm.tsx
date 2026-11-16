@@ -282,7 +282,9 @@ export function EraForm({
             data-testid="save-era"
           >
             {isSaving
-              ? t('time.eraForm.saving')
+              ? era
+                ? t('time.eraForm.saving')
+                : t('time.eraForm.adding')
               : era
                 ? t('time.eraForm.save')
                 : t('time.eraForm.add')}

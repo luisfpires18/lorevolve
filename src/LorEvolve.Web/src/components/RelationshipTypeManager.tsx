@@ -431,7 +431,9 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
           data-testid="save-relationship-type"
         >
           {isSaving
-            ? t('relationships.types.saving')
+            ? editingId
+              ? t('relationships.types.saving')
+              : t('relationships.types.adding')
             : editingId
               ? t('relationships.types.saveKind')
               : t('relationships.types.addKindSubmit')}

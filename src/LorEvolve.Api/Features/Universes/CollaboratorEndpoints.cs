@@ -193,7 +193,7 @@ public static class CollaboratorEndpoints
 
         if (RoleError(request.Role) is { } roleError)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["role"] = [roleError] });
+            return Problems.Field("role", roleError);
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
@@ -251,7 +251,7 @@ public static class CollaboratorEndpoints
 
         if (RoleError(request.Role) is { } roleError)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["role"] = [roleError] });
+            return Problems.Field("role", roleError);
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -323,7 +323,7 @@ public static class CollaboratorEndpoints
             InvitationClaims.Issue(protection, invitation.Id, invitation.NormalizedEmail));
 
     private static IResult EmailProblem(string message) =>
-        Results.ValidationProblem(new Dictionary<string, string[]> { ["email"] = [message] });
+        Problems.Field("email", message);
 
     /// <summary>
     /// The address already has a live invitation here. Not a second one: the existing one is named, to change, copy or

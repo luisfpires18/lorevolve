@@ -321,8 +321,5 @@ public static class RelationshipTypeEndpoints
             .ToListAsync(cancellationToken);
 
     private static IResult NameTaken() =>
-        Results.ValidationProblem(new Dictionary<string, string[]>
-        {
-            ["name"] = ["This universe already has a relationship type with that name."],
-        });
+        Problems.Field("name", "This universe already has a relationship type with that name.");
 }

@@ -364,11 +364,4 @@ public static class ProgressionEndpoints
                     && revision.Entity!.UniverseId == universeId
                     && revision.Entity.DeletedAt == null,
                 cancellationToken);
-
-    private static DateTime Utc(DateTime value) => value.Kind switch
-    {
-        DateTimeKind.Utc => value,
-        DateTimeKind.Local => value.ToUniversalTime(),
-        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc),
-    };
 }

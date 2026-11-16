@@ -58,7 +58,7 @@ public static class AiChangeEndpoints
 
         if (open is not { } wantOpen)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["state"] = ["Ask for open or decided proposals."] });
+            return Problems.Field("state", "Ask for open or decided proposals.");
         }
 
         await AiChangeRetention.SweepAsync(db, clock.GetUtcNow().UtcDateTime, cancellationToken);
@@ -76,7 +76,7 @@ public static class AiChangeEndpoints
             var cursor = await visible.Where(proposal => proposal.Id == cursorId).Select(proposal => new { proposal.CreatedAt, proposal.Id }).FirstOrDefaultAsync(cancellationToken);
             if (cursor is null)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]> { ["before"] = ["Continue from a proposal on this page."] });
+                return Problems.Field("before", "Continue from a proposal on this page.");
             }
 
             rows = rows.Where(proposal => proposal.CreatedAt < cursor.CreatedAt || (proposal.CreatedAt == cursor.CreatedAt && proposal.Id > cursor.Id));

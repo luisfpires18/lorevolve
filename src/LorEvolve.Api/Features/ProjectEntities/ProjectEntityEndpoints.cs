@@ -70,12 +70,9 @@ public static class ProjectEntityEndpoints
 
         if (skip < 0 || take < 1 || take > ListMaxTake)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                [skip < 0 ? "skip" : "take"] = [skip < 0
-                    ? "Skip cannot be negative."
-                    : $"Take must be between 1 and {ListMaxTake}."],
-            });
+            return Problems.Field(
+                skip < 0 ? "skip" : "take",
+                skip < 0 ? "Skip cannot be negative." : $"Take must be between 1 and {ListMaxTake}.");
         }
 
         var matching = db.Entities.AsNoTracking().IgnoreQueryFilters()
@@ -551,10 +548,7 @@ public static class ProjectEntityEndpoints
 
         return exists
             ? null
-            : Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["canonEntityId"] = ["Choose an entry from this universe's lore, or none."],
-            });
+            : Problems.Field("canonEntityId", "Choose an entry from this universe's lore, or none.");
     }
 
     /// <summary>

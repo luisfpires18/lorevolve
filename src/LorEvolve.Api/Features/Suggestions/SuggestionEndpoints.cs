@@ -141,7 +141,7 @@ public static class SuggestionEndpoints
 
         if (open is not { } wantOpen)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]> { ["state"] = ["Ask for open or decided suggestions."] });
+            return Problems.Field("state", "Ask for open or decided suggestions.");
         }
 
         var rows = target.Where(row => (row.Status == SuggestionStatus.Open) == wantOpen);
@@ -155,7 +155,7 @@ public static class SuggestionEndpoints
 
             if (cursor is null)
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]> { ["before"] = ["Continue from a suggestion on this page."] });
+                return Problems.Field("before", "Continue from a suggestion on this page.");
             }
 
             rows = rows.Where(row => row.CreatedAt < cursor.CreatedAt || (row.CreatedAt == cursor.CreatedAt && row.Id > cursor.Id));
@@ -709,7 +709,4 @@ public static class SuggestionEndpoints
                 JsonSerializer.Deserialize<TSnapshot>(row.Proposed, Json)!)),
         ];
     }
-
-    /// <summary>SQLite hands a stored moment back with no kind; every moment here was written as UTC.</summary>
-    private static DateTime Utc(DateTime value) => DateTime.SpecifyKind(value, DateTimeKind.Utc);
 }

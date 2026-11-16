@@ -389,7 +389,9 @@ export function TimelineEntryForm({
         <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-moment">
             {isSaving
-              ? t('time.momentForm.saving')
+              ? entry
+                ? t('time.momentForm.saving')
+                : t('time.momentForm.adding')
               : entry
                 ? t('time.momentForm.save')
                 : t('time.momentForm.create')}

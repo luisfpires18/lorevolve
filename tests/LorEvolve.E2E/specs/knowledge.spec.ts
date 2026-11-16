@@ -203,7 +203,7 @@ test.describe('knowledge records', () => {
     await expect(records(owner.page)).toHaveCount(2)
     await records(owner.page).first().getByTestId('knowledge-actions').click()
     await owner.page.getByTestId('knowledge-delete').click()
-    await owner.page.getByRole('button', { name: 'Remove' }).click()
+    await owner.page.getByRole('button', { name: 'Delete' }).click()
     await expect(records(owner.page)).toHaveCount(1)
 
     await owner.context.close()
