@@ -48,7 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-#248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five.
+#248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five. #251 (one `Field` markup: input, slot and group forms; span-label allowlist gone) in PR #264, evidence in `docs/design/evidence/251/`.
 
 Previously: #238 (image fields with crop on project and Lore entry types) merged as PR #239 on 2026-11-16:
 migration `AddEntityFieldImages`, backup format 48. Owner check on DEV: upload and crop a real 2D drawing and a 3D render.
