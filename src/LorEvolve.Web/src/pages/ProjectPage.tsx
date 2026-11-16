@@ -26,7 +26,7 @@ import {
   type ProjectDetail,
   type ProjectKindValue,
 } from '../projects/types'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { documentTitle, useDocumentTitle, useWholeTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 
 const KINDS: readonly ProjectKindValue[] = [
@@ -246,7 +246,12 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     return () => controller.abort()
   }, [projectId, inUniverse, universeId])
 
-  useDocumentTitle(read?.kind === 'ready' ? read.project.name : t('projects.one.title'))
+  // Inside a universe its shell names the tab (section and universe); only the account-level page names it here.
+  useWholeTitle(
+    inUniverse
+      ? null
+      : documentTitle(read?.kind === 'ready' ? read.project.name : t('projects.one.title')),
+  )
 
   if (read === null) {
     return <p className="projects__lede">{t('projects.one.loading')}</p>

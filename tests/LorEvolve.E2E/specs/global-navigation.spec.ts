@@ -241,7 +241,9 @@ test.describe('A universe: up is All universes, inside its navigation', () => {
 
     // A deep screen is still its section.
     await page.goto(`/app/universes/${w.id}/stories/${w.storyId}/manuscript`)
-    await expect(page).toHaveTitle(`Stories | ${w.name} | LorEvolve`)
+    // A story is reached as its project since #194, so it is the Projects section.
+    await expect(page).toHaveURL(new RegExp(`/projects/${w.storyId}/manuscript`))
+    await expect(page).toHaveTitle(`Projects | ${w.name} | LorEvolve`)
     await nav.getByRole('link', { name: 'Settings' }).click()
     await expect(page).toHaveTitle(`Settings | ${w.name} | LorEvolve`)
 
