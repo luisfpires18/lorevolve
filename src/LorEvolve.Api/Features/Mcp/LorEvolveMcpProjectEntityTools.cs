@@ -8,6 +8,7 @@ using LorEvolve.Api.Features.Projects;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -52,12 +53,6 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
         + "project_field (create and update), in the same proposal as entries that use them: an entry names a new type with "
         + "typeRef and a new field with fieldRef. Nothing is applied until the person approves it in LorEvolve.";
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     [McpServerTool(Name = TypesTool, Title = "Read a project's own types", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("The types one project defines for itself, with the fields on each: a game's Map, Unit and Item, a series' or "
         + "film's Character, Location and Prop, a comic's cast and its published unit, or whatever the author made instead. "
@@ -76,7 +71,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
 
         if (await ProjectAsync(projectId, cancellationToken) is not { } project)
         {
-            return NotFound();
+            return NotFound(NoSuchId);
         }
 
         // IgnoreQueryFilters with the project named: the filter that keeps a project's types out of the lore would
@@ -148,12 +143,12 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
 
         if (await ProjectAsync(projectId, cancellationToken) is not { } project)
         {
-            return NotFound();
+            return NotFound(NoSuchId);
         }
 
         if (!OptionalId(typeId, out var type))
         {
-            return NotFound();
+            return NotFound(NoSuchId);
         }
 
         var words = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
@@ -224,7 +219,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             || !OptionalId(entryId, out var wanted)
             || wanted is not { } id)
         {
-            return NotFound();
+            return NotFound(NoSuchId);
         }
 
         var entry = await db.Entities.AsNoTracking().IgnoreQueryFilters()
@@ -277,7 +272,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return entry is null ? NotFound() : Result(entry);
+        return entry is null ? NotFound(NoSuchId) : Result(entry);
     }
 
     [McpServerTool(Name = StructureTool, Title = "Read a project's structure", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
@@ -296,7 +291,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
 
         if (await ProjectAsync(projectId, cancellationToken) is not { } project)
         {
-            return NotFound();
+            return NotFound(NoSuchId);
         }
 
         var bands = await db.ProjectSeasons.AsNoTracking()
@@ -377,7 +372,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             || !OptionalId(unitId, out var wanted)
             || wanted is not { } id)
         {
-            return NotFound();
+            return NotFound(NoSuchId);
         }
 
         // Scoped through the season to the project in one read, so a unit of another project is not found.
@@ -394,7 +389,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             .FirstOrDefaultAsync(cancellationToken);
 
         return unit is null
-            ? NotFound()
+            ? NotFound(NoSuchId)
             : Result(new
             {
                 projectId = project.Id,
@@ -442,28 +437,7 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
     private CallToolResult? Guard() =>
         caller.IsAllowed
             ? null
-            : new CallToolResult
-            {
-                IsError = true,
-                Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new
-                {
-                    error = "not_connected",
-                    message = "This connection is not allowed to read a universe. Reconnect from LorEvolve.",
-                }, Json) }],
-            };
+            : Error("not_connected", "This connection is not allowed to read a universe. Reconnect from LorEvolve.");
 
-    private static CallToolResult NotFound() => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new
-        {
-            error = "not_found",
-            message = "No project or entry of this universe has that id.",
-        }, Json) }],
-    };
-
-    private static CallToolResult Result(object payload) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(payload, Json) }],
-    };
+    private const string NoSuchId = "No project or entry of this universe has that id.";
 }

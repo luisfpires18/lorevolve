@@ -7,6 +7,7 @@ using LorEvolve.Api.Features.Reading;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -30,19 +31,13 @@ public sealed class LorEvolveMcpMapTools(LorEvolveDbContext db, McpCaller caller
     /// <summary>Longer than any entry name or alias LorEvolve stores: anything past it names nothing.</summary>
     private const int NameLength = 200;
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     [McpServerTool(Name = ListTool, Title = "List the universe's maps", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("The maps of the connected universe: each with its id, name, description, picture size in pixels, how many pins it holds, "
         + "and its scale when the creator recorded one (a distance between two points in the creator's own unit). A map without a scale "
         + "can locate places but not measure distances.")]
     public async Task<CallToolResult> ListMapsAsync(CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -75,7 +70,7 @@ public sealed class LorEvolveMcpMapTools(LorEvolveDbContext db, McpCaller caller
         [Description("A name or part of one.")] string query,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -103,7 +98,7 @@ public sealed class LorEvolveMcpMapTools(LorEvolveDbContext db, McpCaller caller
         [Description("The lore entry: its id, or its exact name or alias.")] string lore,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -144,7 +139,7 @@ public sealed class LorEvolveMcpMapTools(LorEvolveDbContext db, McpCaller caller
         [Description("The second pin's id.")] string toPinId,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -241,18 +236,4 @@ public sealed class LorEvolveMcpMapTools(LorEvolveDbContext db, McpCaller caller
         reading.Note,
     };
 
-    private CallToolResult? Guard() => caller.IsAllowed ? null : Error("not_allowed", "This connection cannot read a universe.");
-
-    private static CallToolResult NotFound() => Error("not_found", "Nothing with that id is in this universe.");
-
-    private static CallToolResult Result<T>(T value) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }],
-    };
-
-    private static CallToolResult Error(string code, string message, object? details = null) => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new { error = code, message, details }, Json) }],
-    };
 }
