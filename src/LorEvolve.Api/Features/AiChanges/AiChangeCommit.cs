@@ -340,6 +340,8 @@ internal static class AiChangeCommit
         CancellationToken cancellationToken)
     {
         Guid Id(AiRef reference) => reference.Id ?? made[reference.Key!];
+        Task<Projects.CreativeProject?> ProjectAsync(Guid projectId) =>
+            db.CreativeProjects.FirstOrDefaultAsync(project => project.Id == projectId && project.UniverseId == universeId, cancellationToken);
         var target = work.TargetId;
 
         switch (work.Proposed)
@@ -398,9 +400,18 @@ internal static class AiChangeCommit
 
             case ProjectEntryValues proposed:
                 // One path with the route's (#148): the same create, the same field preparation, the same history.
+                // A type or a field this proposal created is named by its change's key, and stands for what that made.
+                var entryType = proposed.TypeRef is { } typeKey ? Id(new AiRef(null, typeKey)) : proposed.TypeId;
                 var projectValues = await ProjectEntityEndpoints.ValuesFromChoicesAsync(
                     db,
-                    [.. proposed.Fields.Select(field => (field.FieldId, field.Text, field.Number, field.Boolean, field.Date, (IReadOnlyList<string>?)field.Choices, field.LinkedEntryId))],
+                    [.. proposed.Fields.Select(field => (
+                        field.FieldRef is { } fieldKey ? Id(new AiRef(null, fieldKey)) : field.FieldId,
+                        field.Text,
+                        field.Number,
+                        field.Boolean,
+                        field.Date,
+                        (IReadOnlyList<string>?)field.Choices,
+                        field.LinkedEntryId))],
                     cancellationToken);
 
                 if (work.Action == AiChangeAction.Create)
@@ -409,7 +420,7 @@ internal static class AiChangeCommit
                         db,
                         universeId,
                         proposed.ProjectId,
-                        proposed.TypeId,
+                        entryType,
                         proposed.Name,
                         proposed.Summary,
                         proposed.CanonEntryId,
@@ -428,7 +439,7 @@ internal static class AiChangeCommit
                         universeId,
                         proposed.ProjectId,
                         target!.Value,
-                        proposed.TypeId,
+                        entryType,
                         proposed.Name,
                         proposed.Summary,
                         proposed.CanonEntryId,
@@ -475,6 +486,41 @@ internal static class AiChangeCommit
                 return await RelinkAsync(db, universeId, saved.Id!.Value, [.. loreSystem.RuleIds.Select(Id)], cancellationToken) is { } refused
                     ? (null, refused)
                     : saved;
+            }
+
+            // A project's own schema, through the project Types screen's write paths, never the lore's.
+            case ProjectTypeValues projectType:
+            {
+                if (await ProjectAsync(projectType.ProjectId) is not { } project)
+                {
+                    return Done(Results.NotFound(), null);
+                }
+
+                var request = new ProjectEntityTypeRequest(
+                    projectType.Name,
+                    projectType.Description,
+                    projectType.Icon,
+                    projectType.AccentColor,
+                    projectType.Parent is { } typeParent ? Id(typeParent) : null);
+                return work.Action == AiChangeAction.Create
+                    ? Made<ProjectEntityTypeResponse>(await ProjectEntityTypeEndpoints.CreateTypeCoreAsync(db, project, request, cancellationToken), detail => detail.Id)
+                    : Done(await ProjectEntityTypeEndpoints.UpdateTypeCoreAsync(db, project, target!.Value, request, cancellationToken), target);
+            }
+
+            case ProjectSchemaFieldValues projectField:
+            {
+                if (await ProjectAsync(projectField.ProjectId) is not { } project)
+                {
+                    return Done(Results.NotFound(), null);
+                }
+
+                var fieldType = Id(projectField.Type);
+                var request = new ProjectEntityFieldRequest(projectField.Name, projectField.Kind, projectField.IsRequired, projectField.Options);
+                return work.Action == AiChangeAction.Create
+                    ? Made<ProjectEntityTypeResponse>(
+                        await ProjectEntityTypeEndpoints.AddFieldCoreAsync(db, project, fieldType, request, cancellationToken),
+                        detail => detail.Fields.Single(added => added.Name == projectField.Name).Id)
+                    : Done(await ProjectEntityTypeEndpoints.UpdateFieldCoreAsync(db, project, fieldType, target!.Value, request, cancellationToken), target);
             }
 
             case WorldRuleValues rule:

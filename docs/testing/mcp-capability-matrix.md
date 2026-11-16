@@ -85,7 +85,7 @@ universe only.
 | A project itself | `/`, `template` | `list_projects`, `get_project`, `get_project_script` | `person-only` |
 | A project's entries | `entities` | `list_project_entries`, `get_project_entry` | `ProjectEntry` |
 | A project entry's history | `entities/revisions` | `live-only` | `live-only` |
-| A project's own types | `entity-types` | `get_project_schema` | `read-only-by-design` |
+| A project's own types | `entity-types` | `get_project_schema` | `ProjectType`, `ProjectField` |
 | A project's structure | `seasons` | `get_project_structure` | `read-only-by-design` |
 
 ## The write path
@@ -182,7 +182,7 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | --- | --- |
 | The tool list is exactly these tools | `McpCapabilityMatrixTests`, `McpToolTests.The_SDK_client_finds_exactly_the_read_only_tools`, `McpProposalTests`, `McpWorldLogicToolTests.Every_read_tool_is_discoverable_and_the_one_that_writes_is_not` |
 | Reads, through the real transport and the official SDK client | `McpToolTests`, `McpClientInteropTests`, `McpProjectToolTests`, `McpProjectEntityToolTests`, `McpImageToolTests`, `MapGeographyTests` |
-| Proposals, and that they only stage | `McpProposalTests`, `McpProjectEntityToolTests`, `McpWorldLogicProposalTests`, `McpWorldLogicToolTests.Get_change_options_and_propose_changes_still_work_and_a_rule_is_still_proposed_through_them` |
+| Proposals, and that they only stage | `McpProposalTests`, `McpProjectEntityToolTests`, `McpWorldLogicProposalTests`, `McpProjectSchemaProposalTests`, `McpWorldLogicToolTests.Get_change_options_and_propose_changes_still_work_and_a_rule_is_still_proposed_through_them` |
 | A submitted claim: unverified, cited, never a computed finding, refused to a read-only connection | `McpWorldLogicToolTests.A_submitted_claim_is_unverified_cited_and_never_one_of_the_computed_findings`, `McpWorldLogicToolTests.An_uncited_claim_is_refused_and_nothing_is_stored`, `McpWorldLogicToolTests.A_read_only_connection_cannot_submit_a_claim_even_by_calling_the_tool_directly`, `SemanticFindingTests` |
 | World Logic read over MCP: both kinds of rule, a System's rules, an evaluation that records nothing, a rule's impact, a finding's evidence | `McpWorldLogicToolTests` |
 | The approval boundary: nothing over MCP approves, and a staged change dies with its permission | `McpProposalTests.An_app_stages_a_proposal_that_waits_for_a_person_and_never_applies_itself`, `McpProposalTests.Turning_proposals_off_or_disconnecting_stops_the_tools_and_blocks_what_was_staged` |
