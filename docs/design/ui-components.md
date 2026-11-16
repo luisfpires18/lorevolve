@@ -23,6 +23,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | Routed views of one object | `.views` 10009; a project's tabs are `.views` too |
 | A raised card's surface | `.entitycard`, `.typecard`, `.projectcard` share one rule, first in "Shared surfaces" |
 | A sidebar group's head | `.sidebar__grouphead` |
+| The universe sidebar | Four parts from `SECTION_GROUPS` in `universes/sections.ts`, drawn by one loop in `pages/UniverseWorkspace.tsx`: Overview, World Building, Creation, Management. A destination is a section entry, never a new nav widget. A section tied to a kind of project carries `needs` and is offered by `offered()` only while the universe has a project of that family (#272); a group with nothing offered is hidden. Below 860px the same nav is an off-canvas drawer opened by the bar's Sections toggle; there is no second phone nav |
 | A choice on the page | `.segmented` 1996 |
 | Confirm a destructive step | `confirmAction` in `lib/confirm.ts:79`, drawn by `ConfirmHost` in `components/ConfirmDialog.tsx` (ADR 0049) |
 | Confirm leaving unsaved work | `confirmDiscard` in `lib/confirm.ts:91` |

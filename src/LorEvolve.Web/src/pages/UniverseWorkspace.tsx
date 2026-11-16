@@ -5,6 +5,8 @@ import { AccountMenu } from '../components/AccountMenu'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
+import { listAllProjects } from '../projects/api'
+import { projectFamilies } from '../projects/sections'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
@@ -13,13 +15,12 @@ import { getUniverse } from '../universes/api'
 import {
   ALL_SECTIONS,
   FRONT,
-  MANAGEMENT,
+  groupKey,
   offered,
   owns,
   SECTION_GROUPS,
   sectionLabel,
-  WORLD_BUILDING,
-  type Section,
+  type ProjectFamily,
 } from '../universes/sections'
 import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
@@ -30,16 +31,14 @@ import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
 import { EmptyState } from '../components/EmptyState'
-import { ProjectsNav } from '../components/ProjectsNav'
 
 const SECTIONS = ALL_SECTIONS
 
-/** A labelled group's dictionary key; the front page alone carries no label (#191). */
-function groupKey(first: Section) {
-  if (WORLD_BUILDING.includes(first)) return 'worldBuilding'
-  if (MANAGEMENT.includes(first)) return 'management'
-  return null
-}
+const GROUP_TEST_IDS = {
+  worldBuilding: 'sidebar-world-building',
+  creation: 'sidebar-creation',
+  management: 'sidebar-upkeep',
+} as const
 
 /** A group's name, drawn as a heading so a screen reader reads it as the group's name and can jump between them. */
 function GroupLabel({ id, label }: { id: string; label: string }) {
@@ -84,6 +83,10 @@ export interface WorkspaceContext {
   /** Reads both again. Rejects when the read fails; what was read before stays meanwhile and after a failure. */
   refreshTypes: () => Promise<void>
   revalidateTypes: () => void
+  /** Reads the universe's projects again, so the sidebar's project-bound sections follow a create, trash or restore (#272). */
+  refreshProjects: () => Promise<void>
+  /** The families of project this universe has: the set the sidebar reads, so the Overview offers the same sections (#272, #273). */
+  families: ReadonlySet<ProjectFamily>
 }
 
 /** The part of the URL below this universe, without its surrounding slashes. */
@@ -118,6 +121,9 @@ function Workspace() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [types, setTypes] = useState<EntityType[] | 'failed' | null>(null)
   const [typeGroups, setTypeGroups] = useState<EntityTypeGroup[] | 'failed' | null>(null)
+  // The families of project this universe has, which decide the sidebar's Creation and Game Entities (#272). Empty until read.
+  const [families, setFamilies] = useState<ReadonlySet<ProjectFamily>>(new Set())
+  const projectsRead = useRef<AbortController | null>(null)
   const typesRead = useRef<AbortController | null>(null)
   const typesClaimed = useRef(false)
 
@@ -132,6 +138,31 @@ function Workspace() {
   const [navOpenAt, setNavOpenAt] = useState<string | null>(null)
   const isNavOpen = navOpenAt === pathname
   const navId = useId()
+  const navRef = useRef<HTMLElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+
+  // Below 860px the open list is a drawer over the page (#274): focus goes into it, and back to the toggle when it
+  // closes, by the Sections toggle, Escape, the scrim, or a link pressed.
+  useEffect(() => {
+    if (!isNavOpen) return
+    const nav = navRef.current
+    const first =
+      nav?.querySelector<HTMLElement>('a[aria-current="page"]') ??
+      nav?.querySelector<HTMLElement>('a')
+    first?.focus()
+    const toggle = toggleRef.current
+    return () => toggle?.focus()
+  }, [isNavOpen])
+
+  // Resizing or rotating to the wide layout, where the list is always drawn, must not leave the page behind it inert.
+  useEffect(() => {
+    const wide = window.matchMedia('(min-width: 861px)')
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setNavOpenAt(null)
+    }
+    wide.addEventListener('change', onChange)
+    return () => wide.removeEventListener('change', onChange)
+  }, [])
 
   const load = useCallback(
     (signal?: AbortSignal) => {
@@ -187,6 +218,20 @@ function Workspace() {
     return readTypes()
   }, [readTypes])
 
+  // The latest read wins, as for the types. A failed read leaves what was read before.
+  const refreshProjects = useCallback(() => {
+    if (!id) return Promise.resolve()
+    projectsRead.current?.abort()
+    const controller = new AbortController()
+    projectsRead.current = controller
+    return listAllProjects({ universeId: id }, controller.signal).then(
+      (projects) => setFamilies(projectFamilies(projects)),
+      (error: unknown) => {
+        if (!controller.signal.aborted) throw error
+      },
+    )
+  }, [id])
+
   const revalidateTypes = useCallback(() => {
     if (!typesClaimed.current) {
       typesClaimed.current = true
@@ -200,11 +245,13 @@ function Workspace() {
     const controller = new AbortController()
     load(controller.signal)
     readTypes().catch(() => undefined)
+    refreshProjects().catch(() => undefined)
     return () => {
       controller.abort()
       typesRead.current?.abort()
+      projectsRead.current?.abort()
     }
-  }, [load, readTypes])
+  }, [load, readTypes, refreshProjects])
 
   // Once the universe is open and the browser has nothing better to do, every section's code and an entry's are fetched,
   // so the first visit to another one opens without a fallback.
@@ -320,9 +367,11 @@ function Workspace() {
   // What this account may do here, for what is drawn: the API decides every request on its own (ADR 0041).
   const access = capabilitiesOf(universe.accessRole)
   const shared = universe.accessRole !== UniverseRole.Owner
-  const groups = SECTION_GROUPS.map((group) => offered(group, access, universe.aiHelp)).filter(
-    (group) => group.length > 0,
-  )
+  // A group with nothing offered is not drawn, Creation included: it has a destination only per kind of project (#272).
+  const groups = SECTION_GROUPS.map((source) => ({
+    source,
+    items: offered(source, access, universe.aiHelp, families),
+  })).filter(({ items }) => items.length > 0)
   const section = currentSection(pathname, id)
 
   return (
@@ -362,6 +411,7 @@ function Workspace() {
         <button
           className="rail__toggle"
           type="button"
+          ref={toggleRef}
           aria-expanded={isNavOpen}
           aria-controls={navId}
           onClick={() => setNavOpenAt(isNavOpen ? null : pathname)}
@@ -389,8 +439,12 @@ function Workspace() {
       <nav
         className="sidebar"
         id={navId}
+        ref={navRef}
         data-open={isNavOpen ? 'true' : 'false'}
         aria-label={t('workspace.rail.universe')}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && isNavOpen) setNavOpenAt(null)
+        }}
       >
         <div className="sidebar__head">
           <Link className="sidebar__back" to="/app">
@@ -430,31 +484,25 @@ function Workspace() {
         </div>
 
         <ul className="sidebar__nav">
-          {/*
-           * The universe's own sections, then this universe's projects, and management last - set apart at the foot,
-           * as upkeep was before the projects group existed. Projects is drawn by its own component because, unlike a section, its rows
-           * are read from the API and each one expands.
-           */}
-          {groups.map((group) => {
-            const key = groupKey(group[0])
+          {/* The universe's own sections: the front page, world building, creation, and management last - set apart
+              at the foot. */}
+          {groups.map(({ source, items }) => {
+            const key = groupKey(source)
             const isManagement = key === 'management'
             const labelId = key ? `sidebar-group-${key}` : undefined
             return (
-              <Fragment key={`group-${group[0].segment}`}>
-                {isManagement && id ? <ProjectsLabelled universeId={id} /> : null}
+              <Fragment key={`group-${key ?? 'front'}`}>
                 <li
                   className={
                     isManagement ? 'sidebar__group sidebar__group--upkeep' : 'sidebar__group'
                   }
-                  data-testid={
-                    isManagement ? 'sidebar-upkeep' : key ? 'sidebar-world-building' : undefined
-                  }
+                  data-testid={key ? GROUP_TEST_IDS[key] : undefined}
                 >
                   {key && labelId ? (
                     <GroupLabel id={labelId} label={t(`workspace.rail.groups.${key}`)} />
                   ) : null}
                   <ul className="sidebar__links" aria-labelledby={labelId}>
-                    {group.map((each) => (
+                    {items.map((each) => (
                       <li key={each.segment}>
                         {/* A Link rather than a NavLink: which section is current is this component's answer, not a
                             path match, because World Logic is still the current section at a world rule's own address
@@ -480,14 +528,19 @@ function Workspace() {
               </Fragment>
             )
           })}
-          {/* A role with no management section at all still gets the projects group, at the foot. */}
-          {!groups.some((group) => MANAGEMENT.includes(group[0])) && id ? (
-            <ProjectsLabelled universeId={id} />
-          ) : null}
         </ul>
       </nav>
 
-      <div className="workspace__column">
+      {isNavOpen ? (
+        <div
+          className="sidebar__scrim"
+          aria-hidden="true"
+          onClick={() => setNavOpenAt(null)}
+          data-testid="workspace-nav-scrim"
+        />
+      ) : null}
+
+      <div className="workspace__column" inert={isNavOpen}>
         {/* The atmosphere: the world's own artwork behind the head of every screen, fading into the working surface.
             Decorative, out of the flow, never a target; the front page takes it taller. Nothing is drawn for a world
             without a picture (ADR 0068). */}
@@ -526,6 +579,8 @@ function Workspace() {
                   setGroups: setGroupList,
                   refreshTypes,
                   revalidateTypes,
+                  refreshProjects,
+                  families,
                 } satisfies WorkspaceContext
               }
             />
@@ -535,12 +590,4 @@ function Workspace() {
       </div>
     </div>
   )
-}
-
-/**
- * The projects group under its label. The label is drawn by `ProjectsNav` itself since #198, because there it is the
- * button that folds the group; it reads the same as the section groups' labels around it (#191).
- */
-function ProjectsLabelled({ universeId }: { universeId: string }) {
-  return <ProjectsNav universeId={universeId} />
 }

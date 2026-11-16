@@ -88,11 +88,20 @@ test.describe('Projects navigation', () => {
     // Stories is no longer a section beside the projects that list the same stories (#191).
     await expect(page.getByTestId('workspace-stories')).toHaveCount(0)
 
-    await expect(page.getByTestId('sidebar-projects')).toBeVisible()
-    await expect(page.getByTestId('projects-new')).toBeVisible()
-    await expect(page.getByTestId(`project-link-${first.id}`)).toContainText(first.name)
-    // The group's heading folds it, so there is no All projects row (#231).
+    // Projects is one entry under Management; the sidebar has no per-project rows, toggle or New project (#271).
+    const sidebar = page.getByRole('navigation', { name: 'Universe', exact: true })
+    await expect(sidebar.getByTestId('sidebar-upkeep').getByRole('link').first()).toHaveText(
+      'Projects',
+    )
+    await expect(sidebar.locator('[data-testid^="project-link-"]')).toHaveCount(0)
+    await expect(page.getByTestId('sidebar-projects')).toHaveCount(0)
+    await expect(page.getByTestId('projects-new')).toHaveCount(0)
     await expect(page.getByTestId('projects-all')).toHaveCount(0)
+
+    // The project is reached from the Projects page.
+    await page.getByTestId('workspace-projects').click()
+    await page.getByTestId(`projects-row-${first.id}`).click()
+    await expect(page.getByTestId('project-name')).toContainText(first.name)
   })
 
   test('opening a project from a universe keeps the author inside that universe', async ({
@@ -104,67 +113,45 @@ test.describe('Projects navigation', () => {
 
     await page.goto(`/app/universes/${world.id}`)
 
-    // The project itself, from the universe's own sidebar.
-    await page.getByTestId(`project-link-${inWorld.id}`).click()
+    // The project itself, from the universe's Projects page.
+    await page.getByTestId('workspace-projects').click()
+    await page.getByTestId(`projects-row-${inWorld.id}`).click()
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/overview$`),
     )
     await expect(page.getByTestId('project-name')).toContainText(inWorld.name)
 
-    // The universe's own sections are still in the same navigation, which is the point.
+    // The universe's own sections are still in the same navigation, which is the point, and Projects stays current.
     await expect(page.getByTestId('workspace-lore')).toBeVisible()
     await expect(page.getByTestId('workspace-timeline')).toBeVisible()
     await expect(page.getByTestId('workspace-name')).toContainText(world.name)
+    await expect(page.getByTestId('workspace-projects')).toHaveAttribute('aria-current', 'page')
 
-    // Being the project that is open, it is already expanded here: the universe's frame is one of the two the
-    // sidebar counts, so nothing has to be clicked to reveal its pages.
-    await expect(page.getByTestId(`project-toggle-${inWorld.id}`)).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    )
-
-    // And the project's own views stay inside the universe too (#192).
-    await page.getByTestId(`project-manuscript-${inWorld.id}`).click()
+    // And the project's own views, from its tab bar, stay inside the universe too (#192).
+    await page.getByTestId('projecttab-manuscript').click()
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/manuscript$`),
     )
     await expect(page.getByTestId('workspace-lore')).toBeVisible()
   })
 
-  test('only the project being read is expanded, and the others open on request', async ({
+  test('a project has no row in the sidebar, and its views are walked from its tab bar', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
     const open = await project(page, unique('Winter Light '), world.id)
-    const shut = await project(page, unique('Hollow Season '), world.id)
 
     await page.goto(`/app/projects/${open.id}`)
 
-    const openToggle = page.getByTestId(`project-toggle-${open.id}`)
-    const shutToggle = page.getByTestId(`project-toggle-${shut.id}`)
+    await expect(page.locator('[data-testid^="project-toggle-"]')).toHaveCount(0)
+    await expect(page.getByTestId('project-tabs')).toBeVisible()
 
-    await expect(openToggle).toHaveAttribute('aria-expanded', 'true')
-    await expect(shutToggle).toHaveAttribute('aria-expanded', 'false')
-    await expect(page.getByTestId(`project-pages-${open.id}`)).toBeVisible()
-    await expect(page.getByTestId(`project-pages-${shut.id}`)).toHaveCount(0)
-
-    // The disclosure is a button, so a keyboard opens it with no key handling of our own.
-    await shutToggle.focus()
-    await page.keyboard.press('Enter')
-    await expect(shutToggle).toHaveAttribute('aria-expanded', 'true')
-    await expect(page.getByTestId(`project-pages-${shut.id}`)).toBeVisible()
-
-    // What was opened by hand stays open; the one being read can be closed by hand.
-    await openToggle.click()
-    await expect(openToggle).toHaveAttribute('aria-expanded', 'false')
-    await expect(shutToggle).toHaveAttribute('aria-expanded', 'true')
-
-    await page.getByTestId(`project-structure-${shut.id}`).click()
+    await page.getByTestId('projecttab-structure').click()
     await expect(page).toHaveURL(
-      new RegExp(`/app/universes/${world.id}/projects/${shut.id}/structure$`),
+      new RegExp(`/app/universes/${world.id}/projects/${open.id}/structure$`),
     )
-    await expect(page.getByTestId('project-name')).toContainText(shut.name)
+    await expect(page.getByTestId('project-name')).toContainText(open.name)
   })
 
   /**
@@ -186,9 +173,9 @@ test.describe('Projects navigation', () => {
 
     // Both universes' projects, each naming the universe it belongs to.
     await expect(page.getByTestId(`projects-row-${here.id}`)).toContainText(here.name)
-    await expect(page.getByTestId(`projects-row-${here.id}`)).toContainText(first.name)
+    await expect(page.locator(`[data-project-id="${here.id}"]`)).toContainText(first.name)
     await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(there.name)
-    await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(second.name)
+    await expect(page.locator(`[data-project-id="${there.id}"]`)).toContainText(second.name)
 
     // No filter for projects without a universe, because there are none, and nothing here makes one.
     await expect(page.getByTestId('projects-filter-standalone')).toHaveCount(0)
@@ -206,7 +193,7 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId('project-breadcrumb-universe')).toContainText(second.name)
   })
 
-  test('a project is made from the sidebar, and the list works at phone width', async ({
+  test('a project is made from the Projects page, and the list works at phone width', async ({
     page,
   }) => {
     await signUp(page)
@@ -246,7 +233,8 @@ test.describe('Projects navigation', () => {
     await page.goto('/app/projects')
     const row = page.getByTestId(`projects-row-${existing.id}`)
     await expect(row).toContainText(existing.title)
-    await expect(row).toContainText('Writing')
+    // The row's link carries the title; its kind sits in the line beneath it.
+    await expect(page.locator(`[data-project-id="${existing.id}"]`)).toContainText('Writing')
 
     // It opens the project shell, whose Structure is the story's own page: nothing of it was copied anywhere (#140),
     // and since #194 it is reached the way every other project is.
@@ -255,17 +243,17 @@ test.describe('Projects navigation', () => {
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
     )
 
-    await expect(page.getByTestId('project-tabs')).toBeAttached()
     await expect(page.getByTestId('story-title')).toHaveText(existing.title)
 
-    // And in the universe's own sidebar, a row that expands like every other project's, to the story's two views.
-    await page.goto(`/app/universes/${world.id}`)
-    const link = page.getByTestId(`project-link-${existing.id}`)
-    await expect(link).toContainText(existing.title)
-    await page.getByTestId(`project-toggle-${existing.id}`).click()
-    const pages = page.getByTestId(`project-pages-${existing.id}`)
-    await expect(pages.getByRole('link')).toHaveText(['Structure', 'Manuscript'])
-    await link.click()
+    // One bar of views, the story's own, carrying its two views; the project draws no second one, and the sidebar
+    // has no row for it.
+    await expect(page.getByTestId('project-tabs')).toHaveCount(0)
+    await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
+    await expect(page.getByTestId('story-views').getByRole('link')).toHaveText([
+      'Structure',
+      'Manuscript',
+    ])
+    await expect(page.locator('[data-testid^="project-link-"]')).toHaveCount(0)
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
     )
@@ -305,10 +293,8 @@ test.describe('Projects navigation', () => {
     for (const [from, to] of cases) {
       await page.goto(from)
       await expect(page).toHaveURL(new RegExp(`${to}$`))
-      await expect(page.getByTestId('project-tabs')).toBeAttached()
       await expect(page.getByTestId('story-title')).toHaveText(existing.title)
-      await expect(page.getByTestId('project-breadcrumb-universe')).toHaveText(world.name)
-      await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(existing.title)
+      await expect(page.getByTestId('project-tabs')).toHaveCount(0)
     }
     await page.goto(
       `/app/projects/${existing.id}/manuscript/${scene.id}?from=search#scene-${scene.id}`,
@@ -326,9 +312,8 @@ test.describe('Projects navigation', () => {
     await page.goto(`${old}#scene-${scene.id}`)
     await expect(page).toHaveURL(new RegExp(`${next}/structure#scene-${scene.id}$`))
 
-    // The project's own views are the story's two, and the story's page is the one it always was. On a wide screen
-    // the sidebar lists them and the tab bar steps aside.
-    await page.getByTestId(`project-manuscript-${existing.id}`).click()
+    // The project's views are the story's two, walked from the story's own bar: the shell draws no second one.
+    await page.getByTestId('story-view-manuscript').click()
     await expect(page).toHaveURL(new RegExp(`${next}/manuscript/${scene.id}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText(scene.title)
 

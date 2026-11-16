@@ -163,7 +163,7 @@ function eraseText(kind: TrashKindValue) {
 export default function UniverseTrash() {
   const { tn } = useI18n()
   const access = useUniverseAccess()
-  const { universe } = useOutletContext<WorkspaceContext>()
+  const { universe, refreshProjects } = useOutletContext<WorkspaceContext>()
   const { user } = useAuth()
 
   const [page, setPage] = useState(1)
@@ -305,6 +305,7 @@ export default function UniverseTrash() {
 
     try {
       await restoreFromTrash(universe.id, item)
+      refreshProjects().catch(() => undefined)
       let privateNote: ReactNode = null
       if (!access.publish && item.publication !== TrashPublication.None) {
         privateNote = ` ${t('data.trash.outcome.restoredPrivately')}`

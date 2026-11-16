@@ -27,43 +27,48 @@ export function ProjectShell({
   /** The universe the project belongs to, whose workspace frames these views. */
   universe: { id: string; name: string }
   sections: readonly ProjectSection[]
-  /** A Story shown as a Writing Project, whose page carries its own bar of the same views (#194). */
+  /**
+   * A Story shown as a Writing Project (#194). Its page carries its own header and bar of the same views, so the shell
+   * draws neither breadcrumb nor tabs: two bars of the same links were double navigation.
+   */
   story?: boolean
   children: ReactNode
 }) {
   return (
     <div className={story ? 'projectframe projectframe--story' : 'projectframe'}>
-      <div className="projectframe__head">
-        <div className="pageheader__crumb">
-          <nav aria-label={t('projects.shell.breadcrumb')} data-testid="project-breadcrumb">
-            <ol>
-              <li>
-                <Link
-                  to={`/app/universes/${universe.id}`}
-                  data-testid="project-breadcrumb-universe"
-                >
-                  <bdi>{universe.name}</bdi>
-                </Link>
-              </li>
-              <li aria-current="page" data-testid="project-breadcrumb-project">
-                <bdi>{projectName}</bdi>
-              </li>
-            </ol>
+      {story ? null : (
+        <div className="projectframe__head">
+          <div className="pageheader__crumb">
+            <nav aria-label={t('projects.shell.breadcrumb')} data-testid="project-breadcrumb">
+              <ol>
+                <li>
+                  <Link
+                    to={`/app/universes/${universe.id}`}
+                    data-testid="project-breadcrumb-universe"
+                  >
+                    <bdi>{universe.name}</bdi>
+                  </Link>
+                </li>
+                <li aria-current="page" data-testid="project-breadcrumb-project">
+                  <bdi>{projectName}</bdi>
+                </li>
+              </ol>
+            </nav>
+          </div>
+          <nav className="views" aria-label={t('projects.tabs.label')} data-testid="project-tabs">
+            {sections.map((section) => (
+              <NavLink
+                key={section.segment}
+                className="views__link"
+                to={projectPath(projectId, section.segment, universe.id)}
+                data-testid={`projecttab-${section.segment}`}
+              >
+                {projectSectionLabel(section)}
+              </NavLink>
+            ))}
           </nav>
         </div>
-        <nav className="views" aria-label={t('projects.tabs.label')} data-testid="project-tabs">
-          {sections.map((section) => (
-            <NavLink
-              key={section.segment}
-              className="views__link"
-              to={projectPath(projectId, section.segment, universe.id)}
-              data-testid={`projecttab-${section.segment}`}
-            >
-              {projectSectionLabel(section)}
-            </NavLink>
-          ))}
-        </nav>
-      </div>
+      )}
       {children}
     </div>
   )

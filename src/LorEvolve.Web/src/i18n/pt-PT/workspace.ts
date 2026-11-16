@@ -13,7 +13,7 @@ const workspace: Dictionary['workspace'] = {
     sharedAs: 'Partilhado como {role}',
     groups: {
       worldBuilding: 'Construção do mundo',
-      projects: 'Projetos',
+      creation: 'Criação',
       management: 'Gestão',
     },
   },
@@ -33,12 +33,6 @@ const workspace: Dictionary['workspace'] = {
     empty:
       'Ainda não está nada escrito aqui. {lore}, onde cada personagem, lugar e coisa ganha a sua página.',
     emptyLore: 'Começa em Lore',
-    groups: {
-      world: 'Mundo',
-      rules: 'Regras',
-      writing: 'Escrita',
-      review: 'Revisão',
-    },
   },
   sections: {
     overview: {
@@ -52,6 +46,26 @@ const workspace: Dictionary['workspace'] = {
     types: {
       label: 'Tipos',
       purpose: 'Os tipos de entrada e de relação que este mundo usa.',
+    },
+    gameEntities: {
+      label: 'Entidades de jogo',
+      purpose: 'As entidades dos jogos deste universo.',
+    },
+    writing: {
+      label: 'Escrita',
+      purpose: 'Os projetos de escrita deste universo.',
+    },
+    gaming: {
+      label: 'Jogos',
+      purpose: 'Os projetos de jogo deste universo.',
+    },
+    cinema: {
+      label: 'Cinema',
+      purpose: 'Os filmes e as séries deste universo.',
+    },
+    comic: {
+      label: 'Banda desenhada',
+      purpose: 'Os projetos de banda desenhada deste universo.',
     },
     familyTree: {
       label: 'Árvore genealógica',
@@ -84,6 +98,10 @@ const workspace: Dictionary['workspace'] = {
     ideas: {
       label: 'Ideias',
       purpose: 'Possibilidades, mantidas à parte da lore.',
+    },
+    projects: {
+      label: 'Projetos',
+      purpose: 'Os trabalhos escritos neste universo.',
     },
     aiChanges: {
       label: 'Alterações da IA',

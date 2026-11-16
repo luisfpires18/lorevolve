@@ -70,12 +70,44 @@ test.describe('the shell', () => {
     const base = await newUniverse(page)
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
-    // The way up, then fourteen sections: Publish joined the foot in 014, AI Changes joined (ADR 0047) and Maps (ADR 0060). All universes shares the
-    // landmark since refinement 024. Projects added All projects and New project above upkeep (#139); All projects left (#231)
-    // and this universe has no projects yet, so New project is all that group contributes here. Stories and Canon left the sidebar
-    // (#191): stories are listed as Writing Projects, and both addresses still resolve.
+    // The way up, then thirteen sections (#271): Overview, the seven World Building destinations, then Projects, AI Changes,
+    // Publish, Trash and Settings under Management. Creation is hidden while the universe has no project, and no project has a row here.
     await expect(sections.getByRole('link')).toHaveCount(14)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
+
+    // The sidebar's four parts, in order (#271): Overview, World Building, Management (Creation only appears with a project, #272).
+    await expect(sections.getByRole('heading', { level: 2 })).toHaveText([
+      'World building',
+      'Management',
+    ])
+    await expect(sections.getByTestId('sidebar-world-building').getByRole('link')).toHaveText([
+      'Lore',
+      'Types',
+      'Family Tree',
+      'Maps',
+      'Timeline',
+      'World Logic',
+      'Ideas',
+    ])
+    await expect(sections.getByTestId('sidebar-creation')).toHaveCount(0)
+    // Settings is the owner-kept existing link, last in Management (deferred owner check).
+    await expect(sections.getByTestId('sidebar-upkeep').getByRole('link')).toHaveText([
+      'Projects',
+      'AI Changes',
+      'Publish',
+      'Trash',
+      'Settings',
+    ])
+    // A project has no row, toggle or New project button here: projects are reached from the Projects page.
+    await expect(sections.locator('[data-testid^="project-link-"]')).toHaveCount(0)
+    await expect(sections.locator('[data-testid^="project-toggle-"]')).toHaveCount(0)
+
+    // Tab walks the sidebar's links in the order they are drawn.
+    await sections.getByRole('link', { name: 'All universes' }).focus()
+    for (const name of ['Overview', 'Lore', 'Types']) {
+      await page.keyboard.press('Tab')
+      await expect(sections.getByRole('link', { name })).toBeFocused()
+    }
 
     // One h1 per screen, and it is the screen's title - the universe name in the sidebar is not it.
     await page.goto(`${base}/timeline`)
@@ -178,7 +210,7 @@ test.describe('the shell', () => {
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 
-    test('the section sheet reads down its columns, groups whole, and closes on arrival', async ({
+    test('the section drawer keeps each group whole, in order, and closes on arrival', async ({
       page,
     }) => {
       await signUp(page)
@@ -190,34 +222,29 @@ test.describe('the shell', () => {
 
       const at = async (testId: string) => (await page.getByTestId(testId).boundingBox())!
 
-      // Overview and the world building group fill the first column, top to bottom; the projects
-      // start the second - not a zigzag across the two.
-      const overview = await at('workspace-overview')
+      // Since #274 the sections are one drawer, one column: world building reads top to bottom.
       const lore = await at('workspace-lore')
       const maps = await at('workspace-maps')
       const ideas = await at('workspace-ideas')
-      const projects = await at('projects-group-toggle')
-      expect(Math.abs(lore.x - overview.x)).toBeLessThanOrEqual(1)
-      expect(lore.y).toBeGreaterThan(overview.y)
-      expect(Math.abs(maps.x - overview.x)).toBeLessThanOrEqual(1)
-      // Groups stay whole: all of world building shares a column, projects the other. Management - AI Changes,
-      // Publish, Trash, Settings - fills the sheet's three-across foot row, under everything else (#191).
-      expect(Math.abs(ideas.x - lore.x)).toBeLessThanOrEqual(1)
-      expect(projects.x).toBeGreaterThan(lore.x)
+      expect(maps.y).toBeGreaterThan(lore.y)
+      expect(ideas.y).toBeGreaterThan(maps.y)
+      // Management - Projects, AI Changes, Publish, Trash, Settings - fills a three-across foot grid, under
+      // everything else (#191, #271).
+      const projects = await at('workspace-projects')
       const aiChanges = await at('workspace-ai-changes')
-      const trash = await at('workspace-trash')
       const publish = await at('workspace-publish')
+      const trash = await at('workspace-trash')
       const settings = await at('workspace-settings')
-      expect(Math.abs(publish.y - aiChanges.y)).toBeLessThanOrEqual(1)
-      expect(Math.abs(trash.y - aiChanges.y)).toBeLessThanOrEqual(1)
+      expect(Math.abs(aiChanges.y - projects.y)).toBeLessThanOrEqual(1)
+      expect(Math.abs(publish.y - projects.y)).toBeLessThanOrEqual(1)
+      expect(projects.x).toBeLessThan(aiChanges.x)
       expect(aiChanges.x).toBeLessThan(publish.x)
-      expect(publish.x).toBeLessThan(trash.x)
-      expect(settings.y).toBeGreaterThan(aiChanges.y)
-      expect(aiChanges.y).toBeGreaterThan(Math.max(ideas.y, projects.y))
-      // The same three labels as the wide sidebar.
+      expect(trash.y).toBeGreaterThan(projects.y)
+      expect(settings.x).toBeGreaterThan(trash.x)
+      expect(projects.y).toBeGreaterThan(ideas.y)
+      // The same labels as the wide sidebar.
       await expect(page.locator('.sidebar').getByRole('heading', { level: 2 })).toHaveText([
         'World building',
-        'Projects',
         'Management',
       ])
 

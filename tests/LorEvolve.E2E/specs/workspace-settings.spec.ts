@@ -114,6 +114,7 @@ test.describe('Publish', () => {
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     // Publish follows AI Changes in the management group (#191).
     await expect(page.getByTestId('sidebar-upkeep').getByRole('link')).toHaveText([
+      'Projects',
       'AI Changes',
       'Publish',
       'Trash',
@@ -172,7 +173,7 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     // The way up, All universes, then the Overview and three labelled groups in the owner's order (#191): world
-    // building, projects (#139), and management apart at the foot. Stories and Canon are no longer sections here.
+    // building, creation (#271), and management apart at the foot, Projects first in it. Stories and Canon are no longer sections here.
     await expect(sections.getByRole('link')).toHaveText([
       'All universes',
       'Overview',
@@ -183,7 +184,7 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
       'Timeline',
       'World Logic',
       'Ideas',
-      'New project',
+      'Projects',
       'AI Changes',
       'Publish',
       'Trash',
@@ -191,7 +192,6 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
     ])
     await expect(sections.getByRole('heading', { level: 2 })).toHaveText([
       'World building',
-      'Projects',
       'Management',
     ])
     // Each label names its group's list for a screen reader.
@@ -199,6 +199,7 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
     await expect(sections.getByRole('list', { name: 'Management' })).toBeVisible()
     const upkeep = page.getByTestId('sidebar-upkeep')
     await expect(upkeep.getByRole('link')).toHaveText([
+      'Projects',
       'AI Changes',
       'Publish',
       'Trash',

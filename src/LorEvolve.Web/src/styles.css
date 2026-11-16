@@ -2780,6 +2780,11 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   background: var(--paper);
 }
 
+/* Drawn only by the narrow layout, behind the open drawer (#274). */
+.sidebar__scrim {
+  display: none;
+}
+
 /* The world itself at the head of its sections: its artwork in miniature (the owner's, when there is one), then its
    name. */
 .sidebar__identity {
@@ -2882,7 +2887,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 
 /* A section: its icon and its name, 36px tall. Where you are is the accent wash, the ink label at
    500 and the universe's own colour as a bar on the inside edge - never the ink fill, which means
-   "act". `aria-current="page"` comes from the router's NavLink. */
+   "act". `aria-current="page"` is set by the workspace, which knows the current section. */
 .wipbadge {
   display: inline-block;
   margin-inline-start: var(--space-2);
@@ -3239,22 +3244,22 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 /* The world's parts as a small spread once there is room: three across, Lore - where most of a world lives - leading
    at double width, so five doorways fill two rows instead of leaving one alone on a third. */
 @container (min-width: 46rem) {
-  .contents--world .contents__list {
+  .contents--worldBuilding .contents__list {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .contents--world .contents__list > li:first-child {
+  .contents--worldBuilding .contents__list > li:first-child {
     grid-column: span 2;
   }
 
-  .contents--world .contents__list > li:first-child .doorway__name {
+  .contents--worldBuilding .contents__list > li:first-child .doorway__name {
     font-size: 1.75rem;
   }
 }
 
 /* Between a phone and the spread, two across: Lore takes the whole first row, so the other four pair off beneath it. */
 @container (min-width: 29rem) and (max-width: 45.99rem) {
-  .contents--world .contents__list > li:first-child {
+  .contents--worldBuilding .contents__list > li:first-child {
     grid-column: 1 / -1;
   }
 }
@@ -3287,7 +3292,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
     transform var(--duration-2) var(--ease);
 }
 
-.contents--review .doorway {
+.contents--management .doorway {
   background: transparent;
   box-shadow: none;
 }
@@ -3398,7 +3403,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
     margin: 0;
   }
 
-  .contents--world .contents__list > li:first-child .doorway__name {
+  .contents--worldBuilding .contents__list > li:first-child .doorway__name {
     font-size: 1.3125rem;
   }
 }
@@ -8743,10 +8748,42 @@ html:has(.viewer[open]) {
     margin-bottom: 0;
   }
 
+  /* The open list is a drawer over the page, under the bar (#274): the one nav, not a second one. The bar is the
+     touch control plus its padding, and the safe area above it. */
   .sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-    padding: var(--space-3) var(--gutter) var(--space-4);
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + var(--control-touch) + 1rem);
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-drawer);
+    width: min(20rem, 85vw);
+    overflow-y: auto;
+    border-right: 1px solid var(--rule);
+    border-bottom: 0;
+    background: var(--raised);
+    box-shadow: var(--shadow-3);
+    padding: var(--space-3) var(--gutter) max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .sidebar__scrim {
+    display: block;
+    position: fixed;
+    inset: calc(env(safe-area-inset-top) + var(--control-touch) + 1rem) 0 0;
+    z-index: calc(var(--z-drawer) - 1);
+    background: var(--backdrop);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sidebar[data-open='true'] {
+      animation: sidebar-in var(--duration-3) var(--ease);
+    }
+  }
+
+  @keyframes sidebar-in {
+    from {
+      transform: translateX(-2rem);
+      opacity: 0;
+    }
   }
 
   .sidebar[data-open='false'] {
@@ -8770,26 +8807,20 @@ html:has(.viewer[open]) {
     min-height: var(--control-touch);
   }
 
-  /* Two columns filled top to bottom, each group kept whole, so the list reads down and not in a
-     zigzag: eleven sections in one column would be taller than the phone they are read on, and the
-     point of the panel is that it gets out of the way. */
+  /* One column, the groups in the desktop order. */
   .sidebar__nav {
     display: block;
-    columns: 2;
-    column-gap: var(--space-4);
     margin-top: 0;
     padding-top: 0;
     border-top: 0;
   }
 
   .sidebar__group {
-    break-inside: avoid;
     padding-bottom: var(--space-3);
   }
 
   /* The upkeep row spans the sheet under a rule, its three links side by side. */
   .sidebar__group--upkeep {
-    column-span: all;
     margin-top: 0;
     padding-top: var(--space-3);
     padding-bottom: 0;
@@ -18522,47 +18553,7 @@ details.reviewsection > .reviewsection__list {
 
 /* ---------- Projects (#139) ---------- */
 
-/*
- * A project in the sidebar: the disclosure that opens it and the link that goes to it sit on one row, so the row reads
- * as one thing while each half stays its own control. The row is positioned because the disclosure's label is for
- * screen readers only and an absolutely positioned span in a scrolling column would otherwise stretch the column on a
- * phone.
- */
-.sidebar__projectrow {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-
-.sidebar__disclosure {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.75rem;
-  min-height: 1.75rem;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: inherit;
-  cursor: pointer;
-}
-
-.sidebar__grouptoggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-}
-
+/* A sidebar group's head: the small muted capitals the type switcher's row labels use (#191). */
 .sidebar__grouphead {
   margin: 0;
   color: var(--muted);
@@ -18570,74 +18561,6 @@ details.reviewsection > .reviewsection__list {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-/* The folded projects group: .sidebar__links sets display, so the attribute alone would not hide it (#198). */
-.sidebar__links[hidden] {
-  display: none;
-}
-
-.sidebar__disclosure:hover {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-}
-
-.sidebar__chevron {
-  width: 1rem;
-  height: 1rem;
-  transition: transform 150ms ease;
-}
-
-.sidebar__chevron--open {
-  transform: rotate(90deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sidebar__chevron {
-    transition: none;
-  }
-}
-
-.sidebar__link--project {
-  flex: 1 1 auto;
-  min-width: 0;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.sidebar__projectname {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sidebar__projectkind {
-  flex: 0 0 auto;
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-
-.sidebar__sublinks {
-  margin: 0;
-  padding: 0 0 0 var(--space-5);
-  list-style: none;
-}
-
-.sidebar__sublink {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 2rem;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
-  text-decoration: none;
-}
-
-.sidebar__sublink:hover,
-.sidebar__sublink.active {
-  background: color-mix(in srgb, var(--ink) 8%, transparent);
-  color: var(--ink);
 }
 
 /* The Projects screens: the list of projects, and one project. */
@@ -18688,36 +18611,6 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
 }
 
-.projectlist {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.projectrow {
-  border-radius: var(--radius-sm);
-  box-shadow: inset 0 0 0 1px var(--rule);
-}
-
-.projectrow__main {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  color: inherit;
-  text-decoration: none;
-}
-
-.projectrow__title {
-  font-weight: 600;
-}
-
-.projectrow__meta {
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-
 /*
  * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
  * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than
@@ -18763,37 +18656,9 @@ details.reviewsection > .reviewsection__list {
 }
 
 /*
- * From this width the sidebar lists the open project's pages under its name, so the same links as tabs above the page
- * would only repeat them. Below it the sidebar folds those away and the tabs are the way between the views.
- */
-@media (min-width: 60rem) {
-  .projectframe__head > .views {
-    display: none;
-  }
-}
-
-@media (max-width: 59.99rem) {
-  .sidebar__sublinks--project,
-  .sidebar__projectrow .sidebar__disclosure {
-    display: none;
-  }
-
-  /*
-   * A story-backed project's three views are the story's own, and the story's page already carries them in its view
-   * bar (#194). On a phone two bars of the same three links would push the manuscript off the first screen, so the
-   * project's copy steps aside there, as the sidebar's does. The breadcrumb steps aside with it (#199): the story's
-   * own header already leads back, and on a phone the first screen belongs to the prose.
-   */
-  .projectframe--story > .projectframe__head {
-    display: none;
-  }
-}
-
-/*
  * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
  * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.
  */
-.projectrow__meta > span + span::before,
 .projectmeta > span + span::before {
   content: '\00b7';
   margin: 0 var(--space-2);
