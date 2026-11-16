@@ -10014,7 +10014,7 @@ a.lorechip--pov:focus-visible .lorechip__name {
 
 .views__link {
   margin-bottom: -1px;
-  padding: var(--space-2) var(--space-1);
+  padding: var(--space-2) 0;
   border-bottom: 2px solid transparent;
   color: var(--muted);
   font-size: var(--text-ui);
