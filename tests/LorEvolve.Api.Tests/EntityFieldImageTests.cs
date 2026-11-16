@@ -354,6 +354,73 @@ public sealed class EntityFieldImageTests(LorEvolveApiFactory factory) : IClassF
     }
 
     [Fact]
+    public async Task A_Lore_type_cannot_move_out_from_under_an_image_field_its_entries_hold_pictures_in()
+    {
+        var (client, ownerId) = await Account(_factory, "fimgmove");
+        var u = (await CreateUniverse(client, "World fimgmove")).Id;
+        var beasts = await NewLoreType(client, u, "Beasts", null);
+        var dragons = await NewLoreType(client, u, "Dragons", beasts);
+        var portrait = await LoreField(client, u, beasts, "Portrait", FieldImageShape.Square);
+        var entry = await LoreEntry(client, u, dragons, "Ashwing");
+        var stored = await Uploaded(client, u, entry, portrait.Id, Png(300, 300), null, "ashwing.png");
+
+        var refused = await client.PutAsJsonAsync(
+            $"/api/universes/{u}/entity-types/{dragons}",
+            new EntityTypeRequest("Dragons", null, null, null, null, Parent: new EntityTypeParentChoice(null)));
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Contains(EntityTypeEndpoints.InheritedFieldsCode, await refused.Content.ReadAsStringAsync());
+
+        // An AI change asks the same question and is refused before anything is staged.
+        var staged = await AiChangeTestClient.StageSchema(
+            _factory, u, ownerId,
+            new AiChangeOperationInput("root", "update", "lore_type", dragons, LoreType: new AiLoreTypeInput(Root: true)));
+        Assert.Null(staged.Proposal);
+        Assert.Contains(staged.Issues, issue => issue.Field == "parent");
+
+        var detail = (await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!;
+        Assert.Equal(stored.AssetId, Assert.Single(detail.FieldImages!).AssetId);
+        Assert.True(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!;
+        Assert.Equal(beasts, types.Single(type => type.Id == dragons).ParentId);
+    }
+
+    [Fact]
+    public async Task A_project_type_cannot_move_out_from_under_an_image_field_its_entries_hold_pictures_in()
+    {
+        var (client, u, _) = await World("fimgprojmove");
+        var project = await NewProject(client, u);
+        var unit = await NewProjectType(client, project, "Unit");
+        var added = await client.PostAsJsonAsync(
+            $"/api/projects/{project}/entity-types/{unit}/fields",
+            new ProjectEntityFieldRequest("Art", EntityFieldKind.Image, ImageShape: FieldImageShape.Free));
+        added.EnsureSuccessStatusCode();
+        var art = (await added.Content.ReadFromJsonAsync<ProjectEntityTypeResponse>())!.Fields.Single(field => field.Name == "Art").Id;
+
+        var nested = await client.PostAsJsonAsync($"/api/projects/{project}/entity-types", new ProjectEntityTypeRequest("Scout", null, null, null, unit));
+        nested.EnsureSuccessStatusCode();
+        var scout = (await nested.Content.ReadFromJsonAsync<ProjectEntityTypeResponse>())!.Id;
+
+        var created = await client.PostAsJsonAsync($"/api/projects/{project}/entities", new ProjectEntityRequest(scout, "Pathfinder", null));
+        created.EnsureSuccessStatusCode();
+        var entry = (await created.Content.ReadFromJsonAsync<EntityDetail>())!.Id;
+        var stored = await Uploaded(client, u, entry, art, Png(300, 200), null, "pathfinder.png");
+
+        var refused = await client.PutAsJsonAsync($"/api/projects/{project}/entity-types/{scout}", new ProjectEntityTypeRequest("Scout", null, null, null));
+        Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+        Assert.Equal(ProjectEntityTypeEndpoints.InheritedPicturesCode, await ProblemCode(refused));
+
+        var detail = (await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project}/entities/{entry}"))!;
+        Assert.Equal(stored.AssetId, Assert.Single(detail.FieldImages!).AssetId);
+        Assert.True(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        var types = (await client.GetFromJsonAsync<List<ProjectEntityTypeResponse>>($"/api/projects/{project}/entity-types"))!;
+        Assert.Equal(unit, types.Single(type => type.Id == scout).ParentId);
+
+        // A rename that keeps the parent is not a move and goes through.
+        var renamed = await client.PutAsJsonAsync($"/api/projects/{project}/entity-types/{scout}", new ProjectEntityTypeRequest("Scouts", null, null, null, unit));
+        Assert.True(renamed.IsSuccessStatusCode, await renamed.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task A_restored_version_of_another_type_drops_the_picture_and_sweeps_its_keys()
     {
         var (client, u, character) = await World("fimgrevision");
@@ -542,6 +609,15 @@ public sealed class EntityFieldImageTests(LorEvolveApiFactory factory) : IClassF
             new EntityRequest(typeId, name, null, CanonStatus.Idea, null, null, null));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<EntityDetail>())!.Id;
+    }
+
+    private static async Task<Guid> NewLoreType(HttpClient client, Guid u, string name, Guid? parent)
+    {
+        var response = await client.PostAsJsonAsync(
+            $"/api/universes/{u}/entity-types",
+            new EntityTypeRequest(name, null, null, null, null, Parent: parent is null ? null : new EntityTypeParentChoice(parent)));
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        return (await response.Content.ReadFromJsonAsync<EntityTypeResponse>())!.Id;
     }
 
     /// <summary>A root Lore type other than Character, so it neither has nor inherits Character's fields.</summary>

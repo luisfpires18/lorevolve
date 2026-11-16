@@ -311,11 +311,10 @@ public static partial class EntityFieldImageEndpoints
             {
                 await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-                // Under the writer lock: the entry must still be live and the field must still hold the picture this upload
-                // was measured against, or a concurrent write wins and this one keeps nothing.
-                var live = await db.Entities.IgnoreQueryFilters().AnyAsync(
-                    candidate => candidate.Id == entityId && candidate.UniverseId == universeId && candidate.DeletedAt == null,
-                    cancellationToken);
+                // Under the writer lock: the entry must still be live, the field still an unarchived Image field of its type,
+                // and the field must still hold the picture this upload was measured against, or a concurrent write wins and
+                // this one keeps nothing (a 404 when the entry or the field went).
+                var live = await FindTargetAsync(db, universeId, entityId, fieldId, cancellationToken) is not null;
                 var current = live
                     ? await db.EntityFieldImages.AsNoTracking()
                         .Where(image => image.EntityId == entityId && image.FieldDefinitionId == fieldId)

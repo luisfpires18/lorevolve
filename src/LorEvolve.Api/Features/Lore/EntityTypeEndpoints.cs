@@ -471,7 +471,9 @@ public static class EntityTypeEndpoints
             var held = await db.EntityFieldDefinitions.AsNoTracking()
                 .Where(field => lost.Contains(field.EntityTypeId)
                     && (field.Values.Any(value => moving.Contains(value.Entity!.EntityTypeId))
-                        || db.EntityEraFieldValues.Any(value => value.FieldDefinitionId == field.Id && moving.Contains(value.EntityEra!.Entity!.EntityTypeId))))
+                        || db.EntityEraFieldValues.Any(value => value.FieldDefinitionId == field.Id && moving.Contains(value.EntityEra!.Entity!.EntityTypeId))
+                        // An image field's picture is held the same way (Issue #238).
+                        || db.EntityFieldImages.Any(image => image.FieldDefinitionId == field.Id && moving.Contains(image.Entity!.EntityTypeId))))
                 .Select(field => new { field.Name, TypeName = field.EntityType!.Name })
                 .ToListAsync(cancellationToken);
 
@@ -481,10 +483,10 @@ public static class EntityTypeEndpoints
                 var others = ordered.Count - 1;
                 return Results.Problem(
                     title: "Entries hold inherited values",
-                    detail: $"{typeName} can't move there because its entries, or entries of a type nested in it, hold values in "
+                    detail: $"{typeName} can't move there because its entries, or entries of a type nested in it, hold values or pictures in "
                         + $"\"{ordered[0].Name}\", a field it inherits from {ordered[0].TypeName}"
                         + (others == 0 ? string.Empty : others == 1 ? ", and in 1 other inherited field" : $", and in {others} other inherited fields")
-                        + ". It would no longer have those fields. Clear those values first, or keep it where it is.",
+                        + ". It would no longer have those fields. Clear those first, or keep it where it is.",
                     statusCode: StatusCodes.Status409Conflict,
                     extensions: new Dictionary<string, object?> { ["code"] = InheritedFieldsCode });
             }

@@ -1010,9 +1010,11 @@ function EntityScreen({ view }: { view: EntryView }) {
               className="field__input field__input--select entry__typepick"
               aria-label={t('entity.page.head.typeLabel')}
               value={draft.entityTypeId}
-              onChange={(event) =>
+              onChange={(event) => {
                 setDraft({ ...draft, entityTypeId: event.target.value, fields: {} })
-              }
+                // Pictures held for the old type's fields belong to no field of the new one.
+                setPendingFieldImages({})
+              }}
             >
               {typeChoices(types).map(({ type, label }) => (
                 <option key={type.id} value={type.id}>
@@ -1463,8 +1465,6 @@ function EntityScreen({ view }: { view: EntryView }) {
                       <img
                         src={fieldImageUrl(universe.id, detail!.id, picture, 'crop')}
                         alt={name}
-                        width={picture.width}
-                        height={picture.height}
                       />
                     </figure>
                   )

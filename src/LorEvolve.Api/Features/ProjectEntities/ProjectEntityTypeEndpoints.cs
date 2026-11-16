@@ -33,6 +33,9 @@ public static class ProjectEntityTypeEndpoints
     /// <summary>The 409 for deleting a field that still holds values.</summary>
     public const string FieldInUseCode = "project_entity_field_in_use";
 
+    /// <summary>Stable marker for a type move that would take an inherited image field from entries holding pictures in it.</summary>
+    public const string InheritedPicturesCode = "project_entity_type_inherited_pictures";
+
     /// <summary>How many types one project may define, and how many fields one type may have.</summary>
     public const int MaxTypesPerProject = 200;
 
@@ -326,6 +329,30 @@ public static class ProjectEntityTypeEndpoints
                 {
                     ["parentId"] = ["A type cannot be put inside itself."],
                 });
+            }
+        }
+
+        // A move that takes an inherited image field from entries holding pictures in it is refused (Issue #238): nothing is
+        // dropped to make it. Values are not checked here, as before.
+        if (request.ParentId != type.ParentId)
+        {
+            var graph = types.ToDictionary(each => each.Id, each => each.ParentId);
+            var before = type.ParentId is { } oldParent ? EntityTypeHierarchy.Lineage(graph, oldParent) : [];
+            var after = request.ParentId is { } newParent ? EntityTypeHierarchy.Lineage(graph, newParent) : [];
+            var lost = before.Except(after).ToList();
+            var moving = EntityTypeHierarchy.Branch(graph, typeId).ToList();
+
+            if (lost.Count > 0
+                && await db.EntityFieldImages.IgnoreQueryFilters().AnyAsync(
+                    image => lost.Contains(image.FieldDefinition!.EntityTypeId) && moving.Contains(image.Entity!.EntityTypeId),
+                    cancellationToken))
+            {
+                return Results.Problem(
+                    statusCode: StatusCodes.Status409Conflict,
+                    title: "Entries hold inherited pictures",
+                    detail: $"{type.Name} can't move there because its entries, or entries of a type nested in it, hold pictures "
+                        + "in an image field it inherits. It would no longer have that field. Remove those pictures first, or keep it where it is.",
+                    extensions: new Dictionary<string, object?> { ["code"] = InheritedPicturesCode });
             }
         }
 
