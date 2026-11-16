@@ -8,6 +8,7 @@ using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.Storage;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Timeline;
 using LorEvolve.Api.Features.Universes;
 using LorEvolve.Api.Features.WorldRules;
@@ -436,6 +437,46 @@ internal static class AiChangeCommit
                         cancellationToken),
                     target);
 
+            case SystemRuleValues systemRule:
+            {
+                // The route's own create and update (ADR 0072). An update names the version staging read, so a rule an
+                // author saved since is refused as changed rather than overwritten by the AI's older text.
+                var ruleRequest = AiChangeChecker.RuleRequest(
+                    systemRule,
+                    [.. systemRule.DependsOn.Select(Id)],
+                    work.Action == AiChangeAction.Create ? null : work.BaseVersion);
+                return work.Action == AiChangeAction.Create
+                    ? Made<SystemRuleDetail>(await SystemRuleEndpoints.CreateCoreAsync(db, universeId, ruleRequest, cancellationToken), detail => detail.Id)
+                    : Done(await SystemRuleEndpoints.UpdateCoreAsync(db, universeId, target!.Value, ruleRequest, cancellationToken), target);
+            }
+
+            case LoreSystemValues loreSystem:
+            {
+                // The System's own write first, then its rule list as the difference from the stored one, through the
+                // System's link and unlink paths: a rule left out is unlinked, never deleted.
+                var saved = work.Action == AiChangeAction.Create
+                    ? Made<SystemDetail>(
+                        await SystemEndpoints.CreateCoreAsync(db, universeId, new SystemRequest(loreSystem.Name, loreSystem.Summary, loreSystem.ProjectId), cancellationToken),
+                        detail => detail.Id)
+                    : Done(
+                        await SystemEndpoints.UpdateCoreAsync(
+                            db,
+                            universeId,
+                            target!.Value,
+                            new SystemRequest(loreSystem.Name, loreSystem.Summary, loreSystem.ProjectId, work.BaseVersion),
+                            cancellationToken),
+                        target);
+
+                if (saved.Problem is not null)
+                {
+                    return saved;
+                }
+
+                return await RelinkAsync(db, universeId, saved.Id!.Value, [.. loreSystem.RuleIds.Select(Id)], cancellationToken) is { } refused
+                    ? (null, refused)
+                    : saved;
+            }
+
             case WorldRuleValues rule:
                 var stated = new WorldRuleRequest(
                     rule.Title,
@@ -763,6 +804,50 @@ internal static class AiChangeCommit
         };
     }
 
+    /// <summary>
+    /// A System's rule list made the proposed one: each stored link the list leaves out is unlinked, then each listed rule is
+    /// linked at its place, so the order follows the list. A rule already at its place is left alone. The first refusal is
+    /// returned, and the approval rolls back with it.
+    /// </summary>
+    private static async Task<IResult?> RelinkAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid systemId,
+        List<Guid> ruleIds,
+        CancellationToken cancellationToken)
+    {
+        var linked = await db.LoreSystemRules.AsNoTracking()
+            .Where(link => link.SystemId == systemId)
+            .Select(link => new { link.RuleId, link.SortOrder })
+            .ToListAsync(cancellationToken);
+
+        foreach (var gone in linked.Where(link => !ruleIds.Contains(link.RuleId)))
+        {
+            var unlinked = await SystemEndpoints.UnlinkCoreAsync(db, universeId, systemId, gone.RuleId, cancellationToken);
+            if (!Succeeded(unlinked))
+            {
+                return unlinked;
+            }
+        }
+
+        for (var place = 0; place < ruleIds.Count; place++)
+        {
+            var ruleId = ruleIds[place];
+            if (linked.Any(link => link.RuleId == ruleId && link.SortOrder == place))
+            {
+                continue;
+            }
+
+            var made = await SystemEndpoints.LinkCoreAsync(db, universeId, systemId, ruleId, place, cancellationToken);
+            if (!Succeeded(made))
+            {
+                return made;
+            }
+        }
+
+        return null;
+    }
+
     private static (Guid? Id, IResult? Problem) Done(IResult result, Guid? id) => Succeeded(result) ? (id, null) : (null, result);
 
     private static (Guid? Id, IResult? Problem) Made<T>(IResult result, Func<T, Guid> id) =>
@@ -984,6 +1069,16 @@ internal static class AiChangeCommit
                 Title = Required(values.Title, arc.Title),
                 Description = Optional(values.Description, arc.Description),
                 Notes = Optional(values.Notes, arc.Notes),
+            },
+            SystemRuleValues systemRule => systemRule with
+            {
+                Title = Required(values.Title, systemRule.Title),
+                Description = values.Description is null ? systemRule.Description : values.Description.Trim().Length == 0 ? string.Empty : values.Description,
+            },
+            LoreSystemValues loreSystem => loreSystem with
+            {
+                Name = Required(values.Name, loreSystem.Name),
+                Summary = values.Summary is null ? loreSystem.Summary : values.Summary.Trim().Length == 0 ? string.Empty : values.Summary,
             },
             WorldRuleValues rule => rule with
             {

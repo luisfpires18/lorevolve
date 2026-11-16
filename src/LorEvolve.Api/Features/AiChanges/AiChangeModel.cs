@@ -102,6 +102,18 @@ public enum AiChangeResource
     /// project's own rows, never the universe's lore, and proposed through the same review as everything else here.
     /// </summary>
     ProjectEntry = 20,
+
+    /// <summary>
+    /// A World Logic rule definition (ADR 0072): stands on its own and may sit in several Systems. Created and updated
+    /// through review, never removed by an AI: a rule definition has no Trash.
+    /// </summary>
+    SystemRule = 21,
+
+    /// <summary>
+    /// A World Logic System (ADR 0072): a named, ordered set of rule definitions it references and never owns. Its rule
+    /// list travels with it. Created and updated through review, never removed by an AI: a System delete is permanent.
+    /// </summary>
+    LoreSystem = 22,
 }
 
 public enum AiChangeAction
@@ -291,7 +303,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);

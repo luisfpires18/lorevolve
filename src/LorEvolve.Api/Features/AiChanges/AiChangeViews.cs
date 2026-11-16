@@ -265,6 +265,38 @@ internal static class AiChangeViews
                 return (work.Action == AiChangeAction.Create ? $"New world rule: {rule.Title}" : $"Edit world rule: {old?.Title ?? rule.Title}", lines);
             }
 
+            case (SystemRuleValues rule, var before):
+            {
+                var old = before as SystemRuleValues;
+                Line("Title", old?.Title, rule.Title);
+                Line("Description", old is null ? null : Blank(old.Description), Blank(rule.Description));
+                Line("Project", old is null ? null : names.Project(old.ProjectId), names.Project(rule.ProjectId));
+                Line("Condition", old?.Condition, rule.Condition);
+                Line("Exceptions", old?.Exceptions, rule.Exceptions);
+                Line("Depends on", Join(old?.DependsOn.Select(names.Rule)), Join(rule.DependsOn.Select(names.Rule)));
+                return (work.Action == AiChangeAction.Create ? $"New rule definition: {rule.Title}" : $"Edit rule definition: {old?.Title ?? rule.Title}", lines);
+            }
+
+            case (LoreSystemValues system, var before):
+            {
+                var old = before as LoreSystemValues;
+                Line("Name", old?.Name, system.Name);
+                Line("Summary", old is null ? null : Blank(old.Summary), Blank(system.Summary));
+                Line("Project", old is null ? null : names.Project(old.ProjectId), names.Project(system.ProjectId));
+                if (old is null)
+                {
+                    Line("Rules", null, Numbered(system.RuleIds.Select(names.Rule)));
+                }
+                else
+                {
+                    Line("Rules", Numbered(old.RuleIds.Select(names.Rule)), Numbered(system.RuleIds.Select(names.Rule)));
+                    Line("Rules added", null, Join(system.RuleIds.Except(old.RuleIds).Select(names.Rule)));
+                    Line("Rules removed", null, Join(old.RuleIds.Except(system.RuleIds).Select(names.Rule)));
+                }
+
+                return (work.Action == AiChangeAction.Create ? $"New System: {system.Name}" : $"Edit System: {old?.Name ?? system.Name}", lines);
+            }
+
             case (IdeaValues idea, var before):
             {
                 var old = before as IdeaValues;
@@ -522,6 +554,8 @@ internal static class AiChangeViews
         ManuscriptValues manuscript => new AiChangeEditable(Text: manuscript.Text),
         PlotArcValues arc => new AiChangeEditable(Title: arc.Title, Description: arc.Description ?? string.Empty, Notes: arc.Notes ?? string.Empty),
         WorldRuleValues rule => new AiChangeEditable(Title: rule.Title, Description: rule.Description),
+        SystemRuleValues rule => new AiChangeEditable(Title: rule.Title, Description: rule.Description),
+        LoreSystemValues system => new AiChangeEditable(Name: system.Name, Summary: system.Summary),
         IdeaValues idea => new AiChangeEditable(Title: idea.Title, Text: idea.Body),
         _ => null,
     };
@@ -669,6 +703,8 @@ internal static class AiChangeViews
         AiChangeResource.PlotArc => "plot arc",
         AiChangeResource.WorldRule => "world rule",
         AiChangeResource.ProjectEntry => "project entry",
+        AiChangeResource.SystemRule => "rule definition",
+        AiChangeResource.LoreSystem => "System",
         _ => "item",
     };
 
@@ -712,6 +748,7 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _groups = [];
         private Dictionary<Guid, string> _projects = [];
         private Dictionary<Guid, string> _appearances = [];
+        private Dictionary<Guid, string> _rules = [];
         private Dictionary<string, AiChangeWork> _pending = [];
         private UniverseChronology _chronology = UniverseChronology.Plain;
 
@@ -746,6 +783,7 @@ internal static class AiChangeViews
                 _appearances = await db.EntityAppearances.AsNoTracking()
                     .Where(look => look.Entity!.UniverseId == universeId && ids.Contains(look.EntityId))
                     .ToDictionaryAsync(look => look.Id, look => look.Label, cancellationToken),
+                _rules = await db.SystemRules.AsNoTracking().Where(rule => rule.UniverseId == universeId && ids.Contains(rule.Id)).ToDictionaryAsync(rule => rule.Id, rule => rule.Title, cancellationToken),
                 _pending = works.ToDictionary(work => work.Key, StringComparer.Ordinal),
                 _chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken),
             };
@@ -791,6 +829,9 @@ internal static class AiChangeViews
         public Guid? StoryOfScene(AiRef reference) => reference.Id is { } id && _scenes.TryGetValue(id, out var scene) ? scene.StoryId : null;
 
         public string Arc(AiRef reference) => Named(reference, _arcs, work => (work.Proposed as PlotArcValues)?.Title);
+
+        /// <summary>A rule definition by its title, or one this proposal creates: "Fusion (new)".</summary>
+        public string Rule(AiRef reference) => Named(reference, _rules, work => (work.Proposed as SystemRuleValues)?.Title);
 
 
         private string Term(Guid id) => _terms.GetValueOrDefault(id) ?? "(unknown term)";

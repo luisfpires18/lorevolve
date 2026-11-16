@@ -65,7 +65,10 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         + "evidence each one cited. get_rule_impact says what a rule change would touch before you propose it. "
         + "submit_semantic_finding is for what you noticed that no condition can express: it records your claim as unverified "
         + "for the author to accept or dismiss, it is never a proven violation, and it must cite the records it is about. To "
-        + "change a rule, use get_change_options and propose_changes as for anything else; nothing here edits the universe.";
+        + "change a rule, use get_change_options and propose_changes as for anything else; nothing here edits the universe. "
+        + "A rule definition (system_rule) and a System (system) are proposed there too: create or update, never remove, and "
+        + "a System's rule list can name a rule the same proposal creates by its ref. A condition may name only records that "
+        + "already exist.";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

@@ -123,7 +123,8 @@ internal static partial class AiChangeStaging
                 action = AiChangeAction.Update;
             }
 
-            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Progression)
+            if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Progression
+                    or AiChangeResource.SystemRule or AiChangeResource.LoreSystem)
             {
                 Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(resource));
                 continue;
@@ -255,6 +256,8 @@ internal static partial class AiChangeStaging
         "plot_arc" or "arc" => AiChangeResource.PlotArc,
         "world_rule" or "rule" => AiChangeResource.WorldRule,
         "project_entry" or "project_entity" => AiChangeResource.ProjectEntry,
+        "system_rule" or "world_logic_rule" => AiChangeResource.SystemRule,
+        "system" or "lore_system" or "world_logic_system" => AiChangeResource.LoreSystem,
         "idea" => AiChangeResource.Idea,
         "lore_type" or "type" => AiChangeResource.LoreType,
         "lore_field" or "field" or "field_definition" => AiChangeResource.LoreField,
@@ -306,6 +309,8 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.PlotArc, _) => await PlotArcAsync(cancellationToken),
                 (AiChangeResource.WorldRule, _) => await WorldRuleAsync(cancellationToken),
                 (AiChangeResource.ProjectEntry, _) => await ProjectEntryAsync(cancellationToken),
+                (AiChangeResource.SystemRule, _) => await SystemRuleAsync(cancellationToken),
+                (AiChangeResource.LoreSystem, _) => await LoreSystemAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
                 (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),
                 (AiChangeResource.LoreField, _) => await LoreFieldAsync(cancellationToken),

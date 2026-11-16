@@ -152,6 +152,19 @@ public static class SystemEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The create itself, after the caller's change check. The route calls it, and so does an approved AI change (ADR 0047),
+    /// so a System proposed through review is written exactly as one typed in.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        SystemRequest request,
+        CancellationToken cancellationToken)
+    {
         if (Validate(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -227,6 +240,17 @@ public static class SystemEndpoints
             return denied;
         }
 
+        return await UpdateCoreAsync(db, universeId, id, request, cancellationToken);
+    }
+
+    /// <summary>The update itself, after the caller's change check; shared with an approved AI change.</summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid id,
+        SystemRequest request,
+        CancellationToken cancellationToken)
+    {
         if (Validate(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -374,6 +398,18 @@ public static class SystemEndpoints
             return denied;
         }
 
+        return await LinkCoreAsync(db, universeId, id, ruleId, sortOrder, cancellationToken);
+    }
+
+    /// <summary>The link itself, after the caller's change check; shared with an approved AI change.</summary>
+    internal static async Task<IResult> LinkCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid id,
+        Guid ruleId,
+        int sortOrder,
+        CancellationToken cancellationToken)
+    {
         var system = await db.LoreSystems
             .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken);
 
@@ -452,6 +488,17 @@ public static class SystemEndpoints
             return denied;
         }
 
+        return await UnlinkCoreAsync(db, universeId, id, ruleId, cancellationToken);
+    }
+
+    /// <summary>The unlink itself, after the caller's change check; shared with an approved AI change.</summary>
+    internal static async Task<IResult> UnlinkCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid id,
+        Guid ruleId,
+        CancellationToken cancellationToken)
+    {
         var system = await db.LoreSystems
             .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken);
 
@@ -474,7 +521,7 @@ public static class SystemEndpoints
         return Results.NoContent();
     }
 
-    private static Dictionary<string, string[]>? Validate(SystemRequest request)
+    internal static Dictionary<string, string[]>? Validate(SystemRequest request)
     {
         var errors = new Dictionary<string, string[]>();
 

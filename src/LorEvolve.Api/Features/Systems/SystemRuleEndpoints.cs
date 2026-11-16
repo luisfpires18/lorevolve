@@ -153,6 +153,19 @@ public static class SystemRuleEndpoints
             return denied;
         }
 
+        return await CreateCoreAsync(db, universeId, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The create itself, after the caller has decided the person may change World Logic. The route calls it, and so
+    /// does an approved AI change (ADR 0047), so a rule proposed through review is written exactly as one typed in.
+    /// </summary>
+    internal static async Task<IResult> CreateCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        SystemRuleRequest request,
+        CancellationToken cancellationToken)
+    {
         if (Validate(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -235,6 +248,17 @@ public static class SystemRuleEndpoints
             return denied;
         }
 
+        return await UpdateCoreAsync(db, universeId, id, request, cancellationToken);
+    }
+
+    /// <summary>The update itself, after the caller's change check; shared with an approved AI change, as the create is.</summary>
+    internal static async Task<IResult> UpdateCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid id,
+        SystemRuleRequest request,
+        CancellationToken cancellationToken)
+    {
         if (Validate(request) is { } errors)
         {
             return Results.ValidationProblem(errors);
@@ -724,7 +748,7 @@ public static class SystemRuleEndpoints
             exceptions);
     }
 
-    private static Dictionary<string, string[]>? Validate(SystemRuleRequest request)
+    internal static Dictionary<string, string[]>? Validate(SystemRuleRequest request)
     {
         var errors = new Dictionary<string, string[]>();
 
@@ -773,7 +797,14 @@ public static class SystemRuleEndpoints
     /// The condition and the exceptions, each held to the specification, or null when both are acceptable. The
     /// exceptions are checked with the same closed sets and budgets, because the same evaluator reads them.
     /// </summary>
-    private static IResult? Refuse(string? condition, string? exceptions, int? schemaVersion)
+    internal static IResult? Refuse(string? condition, string? exceptions, int? schemaVersion) =>
+        ConditionProblemOf(condition, exceptions, schemaVersion) is { } problem ? ConditionRefused(problem) : null;
+
+    /// <summary>
+    /// What <see cref="Refuse"/> refuses, as the specification's own problem: shared with AI Changes staging, which reports
+    /// it as an issue on the change rather than as a response.
+    /// </summary>
+    internal static ConditionProblem? ConditionProblemOf(string? condition, string? exceptions, int? schemaVersion)
     {
         if (schemaVersion is not { } version)
         {
@@ -782,13 +813,15 @@ public static class SystemRuleEndpoints
 
         if (condition is not null && ConditionSchema.Validate(condition, version) is { } problem)
         {
-            return ConditionRefused(problem);
+            return problem;
         }
 
-        return exceptions is not null && ConditionSchema.ValidateExceptions(exceptions, version) is { } exceptionProblem
-            ? ConditionRefused(exceptionProblem)
-            : null;
+        return exceptions is not null ? ConditionSchema.ValidateExceptions(exceptions, version) : null;
     }
+
+    /// <summary>The sentence a refused condition carries, in the route's response and in an AI change's issue alike.</summary>
+    internal static string ConditionMessage(ConditionProblem problem) =>
+        $"This condition is not one the World Logic specification describes ({problem.Code} at {problem.Path}).";
 
     /// <summary>
     /// What is wrong with the declared dependencies, or null. Four things are checked, in this order, so the first
@@ -796,7 +829,7 @@ public static class SystemRuleEndpoints
     /// exceptions reference only declared rules; the declared set closes no cycle; and the chain is not deeper than
     /// the specification allows.
     /// </summary>
-    private static async Task<Dictionary<string, string[]>?> DependencyProblemAsync(
+    internal static async Task<Dictionary<string, string[]>?> DependencyProblemAsync(
         LorEvolveDbContext db,
         Guid universeId,
         Guid? ruleId,
@@ -946,7 +979,7 @@ public static class SystemRuleEndpoints
         {
             code = problem.Code,
             path = problem.Path,
-            message = $"This condition is not one the World Logic specification describes ({problem.Code} at {problem.Path}).",
+            message = ConditionMessage(problem),
         });
 
     private static IResult Changed() => Results.Conflict(new

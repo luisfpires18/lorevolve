@@ -94,10 +94,11 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("The timeline", ["timeline"], ["browse_timeline", "get_timeline_moment"], ["TimelineEvent"]),
         Mapped("The reckoning and its calendar", ["chronology"], ["get_change_options"], ["Chronology"]),
         Mapped("World Rules", ["world-rules"], ["get_change_options"], ["WorldRule"]),
-        ReadOnly(
+        Mapped(
             "World Logic Systems and rule definitions",
             ["systems", "system-rules", "world-logic/rules"],
-            ["list_systems", "list_world_logic_rules", "get_world_logic_rule", "evaluate_world_logic_rule", "get_rule_impact"]),
+            ["list_systems", "list_world_logic_rules", "get_world_logic_rule", "evaluate_world_logic_rule", "get_rule_impact"],
+            ["SystemRule", "LoreSystem"]),
         new(
             "Recorded World Logic findings",
             ["world-logic/findings"],
@@ -217,6 +218,21 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Nothing("Tools the server offers that the matrix does not map", [.. offered.Except(mapped).Order(StringComparer.Ordinal)]);
         Nothing("Names the matrix maps that the server does not offer", [.. mapped.Except(offered).Order(StringComparer.Ordinal)]);
         Assert.Equal(35, offered.Count);
+    }
+
+    [Fact]
+    public async Task Every_MCP_tool_the_server_offers_has_a_status()
+    {
+        var offered = await ProposingConnectionToolsAsync("mcpmatrixstatus");
+        var published = File.ReadAllText(Path.Combine(RepositoryRoot(), Path.Combine(Document)))
+            .ReplaceLineEndings("\n");
+        var status = published[published.IndexOf("## Tool status", StringComparison.Ordinal)..];
+        status = status[..status.IndexOf("\n## ", StringComparison.Ordinal)];
+
+        // The status table names each registered tool in its first cell, so a new tool cannot land without a status.
+        Nothing("Tools the server offers that the status table does not list", [.. offered
+            .Where(tool => !status.Contains($"| `{tool}` | ", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal)]);
     }
 
     [Fact]
@@ -367,9 +383,9 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
             : null;
 
     /// <summary>Every tool a connection that may both read and propose is offered.</summary>
-    private async Task<HashSet<string>> ProposingConnectionToolsAsync()
+    private async Task<HashSet<string>> ProposingConnectionToolsAsync(string tag = "mcpmatrix")
     {
-        var (browser, _) = await NewBrowser(_factory, "mcpmatrix");
+        var (browser, _) = await NewBrowser(_factory, tag);
         var universe = await PlotTestClient.CreateUniverse(browser, "Matrix world");
         var clientId = await RegisterPublicClient(_factory.CreateClient());
         var (verifier, challenge) = Pkce();
