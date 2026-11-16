@@ -7,6 +7,7 @@ import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { listFamilies } from '../familyTree/api'
 import type { FamilyDiscoveryPage } from '../familyTree/types'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 
 /** What a family summary carries in history, so "Browse families" on its tree can come back to this search and page. */
 export interface FamiliesReturn {
@@ -128,31 +129,34 @@ export function FamilyDiscovery({
     <div className="discovery" data-testid="family-discovery">
       {isEmpty ? null : (
         <div className="discovery__bar">
-          <div className="discovery__search">
-            <label className="field__label" htmlFor={searchId}>
-              {t('places.discovery.searchLabel')}
-            </label>
-            <span className="controls__searchfield">
-              <Search
-                className="controls__searchicon"
-                aria-hidden="true"
-                focusable="false"
-                strokeWidth={1.75}
-              />
-              <input
-                id={searchId}
-                className="field__input"
-                type="search"
-                name="q"
-                placeholder={t('places.discovery.searchPlaceholder')}
-                autoComplete="off"
-                spellCheck={false}
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                data-testid="family-search"
-              />
-            </span>
-          </div>
+          <Field
+            label={t('places.discovery.searchLabel')}
+            id={searchId}
+            className="discovery__search"
+          >
+            {(control) => (
+              <span className="controls__searchfield">
+                <Search
+                  className="controls__searchicon"
+                  aria-hidden="true"
+                  focusable="false"
+                  strokeWidth={1.75}
+                />
+                <input
+                  {...control}
+                  className="field__input"
+                  type="search"
+                  name="q"
+                  placeholder={t('places.discovery.searchPlaceholder')}
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  data-testid="family-search"
+                />
+              </span>
+            )}
+          </Field>
           <button
             className="button button--secondary"
             type="button"

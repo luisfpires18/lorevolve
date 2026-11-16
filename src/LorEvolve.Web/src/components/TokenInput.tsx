@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 
 interface TokenInputProps {
   label: string
@@ -38,35 +39,34 @@ export function TokenInput({ label, name, placeholder, values, onChange }: Token
   }
 
   return (
-    <div className="field">
-      <label className="field__label" htmlFor={name}>
-        {label}
-      </label>
-      <div className="tokens" data-testid={`${name}-tokens`}>
-        {values.map((value) => (
-          <span className="token" key={value}>
-            {value}
-            <button
-              type="button"
-              className="token__remove"
-              aria-label={t('data.tokens.remove', { value })}
-              onClick={() => onChange(values.filter((candidate) => candidate !== value))}
-            >
-              <X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />
-            </button>
-          </span>
-        ))}
-        <input
-          id={name}
-          name={name}
-          className="tokens__input"
-          placeholder={values.length === 0 ? placeholder : ''}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={() => commit(draft)}
-        />
-      </div>
-    </div>
+    <Field label={label} id={name}>
+      {(control) => (
+        <div className="tokens" data-testid={`${name}-tokens`}>
+          {values.map((value) => (
+            <span className="token" key={value}>
+              {value}
+              <button
+                type="button"
+                className="token__remove"
+                aria-label={t('data.tokens.remove', { value })}
+                onClick={() => onChange(values.filter((candidate) => candidate !== value))}
+              >
+                <X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />
+              </button>
+            </span>
+          ))}
+          <input
+            {...control}
+            name={name}
+            className="tokens__input"
+            placeholder={values.length === 0 ? placeholder : ''}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={() => commit(draft)}
+          />
+        </div>
+      )}
+    </Field>
   )
 }

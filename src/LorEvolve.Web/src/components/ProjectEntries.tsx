@@ -613,11 +613,11 @@ function ValueField({
   if (field.kind === FieldKind.Select || field.kind === FieldKind.MultiSelect) {
     const chosen = current.optionIds ?? []
     return (
-      <fieldset className="field" data-testid={testId}>
-        <legend className="field__label">
-          {field.name}
-          {field.isRequired ? ' *' : ''}
-        </legend>
+      <Field
+        label={`${field.name}${field.isRequired ? ' *' : ''}`}
+        group="fieldset"
+        data-testid={testId}
+      >
         <div className="choices">
           {field.options.map((option) => (
             <label key={option.id} className="check">
@@ -641,7 +641,7 @@ function ValueField({
             </label>
           ))}
         </div>
-      </fieldset>
+      </Field>
     )
   }
 

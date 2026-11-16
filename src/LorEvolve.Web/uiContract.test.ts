@@ -200,34 +200,11 @@ test('no field is written as label > span.field__label', () => {
   )
 })
 
-// Files that still write their own field__label. Only shrinks: move a file to Field, then delete its line.
-const FIELD_LABEL_FILES = [
-  'src/components/EntityPicker.tsx',
-  'src/components/FamilyDiscovery.tsx',
-  'src/components/FamilyKindDialog.tsx',
-  'src/components/FamilyLinkForm.tsx',
-  'src/components/ImageCropDialog.tsx',
-  'src/components/KnowledgeView.tsx',
-  'src/components/MomentPick.tsx',
-  'src/components/PrivateNotes.tsx',
-  'src/components/ProgressionItemForm.tsx',
-  'src/components/ProjectEntries.tsx',
-  'src/components/RelationshipPeriodsField.tsx',
-  'src/components/RelationshipTypeManager.tsx',
-  'src/components/ScenePicks.tsx',
-  'src/components/TokenInput.tsx',
-  'src/components/TypeDialog.tsx',
-  'src/components/TypeGroupsField.tsx',
-  'src/components/TypeGroupsPanel.tsx',
-  'src/components/TypeIconPicker.tsx',
-  'src/pages/MassCreatePage.tsx',
-]
-
-test('field__label is written only by Field.tsx', () => {
+test('field__label appears only in Field.tsx', () => {
   assert.deepEqual(
     filesWith(/field__label/).filter((file) => file !== 'src/components/Field.tsx'),
-    FIELD_LABEL_FILES,
-    'Use Field (label, hint, control, error); a fixed file leaves FIELD_LABEL_FILES',
+    [],
+    'Use Field (label, hint, control, error)',
   )
 })
 

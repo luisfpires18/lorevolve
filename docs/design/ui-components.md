@@ -11,6 +11,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | --- | --- |
 | Screen title, crumb, lede, actions | `components/PageHeader.tsx`. A crumb outside a header, or of several steps, is `.pageheader__crumb` around a `nav > ol`, as `ProjectShell` |
 | A form field: label, hint, control, error | `components/Field.tsx`: an input, or any control through its slot; a group of buttons with `group`; a set of controls under a legend with `group: 'fieldset'` |
+| The name above a fixed value that is shown, not chosen, such as the knower in a knowledge form | `.knowledge__fixedlabel`; no `Field`, since it names no control |
 | A button or a link that looks like one | `.button` 519, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
 | An icon with a name | `.iconbutton` 696 |
 | Save with its status | `components/SaveAction.tsx` |
@@ -79,4 +80,4 @@ Three screens confirm in place of their button instead of through `confirmAction
 
 Add a class or a component only when no row above fits. Add its row to this page in the same PR.
 
-`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a `label > span.field__label` field, a `field__label` outside `Field.tsx` (bar the files still listed), more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.
+`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a `label > span.field__label` field, a `field__label` outside `Field.tsx`, more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.

@@ -17,6 +17,7 @@ import {
 } from '../lore/privateNote'
 import { numberFormat } from '../i18n/format'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 
 interface PrivateNotesProps {
   universeId: string
@@ -81,7 +82,6 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
   const textId = useId()
   const hintId = useId()
   const statusId = useId()
-  const tooLongId = useId()
 
   const [load, setLoad] = useState<LoadState>('loading')
   const [reads, setReads] = useState(0)
@@ -175,7 +175,9 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
     requestAnimationFrame(() => editor.current?.focus())
   }
 
-  const describedBy = [hintId, statusId, isTooLong ? tooLongId : null].filter(Boolean).join(' ')
+  const describedBy = [hintId, statusId, isTooLong ? `${textId}-error` : null]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <Drawer
@@ -253,33 +255,37 @@ function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerP
             </p>
           ) : null}
 
-          <label className="field__label" htmlFor={textId}>
-            {t('entity.privateNote.field')}
-          </label>
-          <textarea
-            ref={editor}
+          <Field
+            label={t('entity.privateNote.field')}
             id={textId}
-            className="field__input field__input--area privatenote__text"
-            rows={12}
-            dir="auto"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={t('entity.privateNote.placeholder')}
-            spellCheck
-            aria-describedby={describedBy}
-            aria-invalid={isTooLong ? true : undefined}
-            aria-keyshortcuts="Control+S Meta+S"
-            data-testid="private-note-text"
-          />
-
-          {isTooLong ? (
-            <p className="field__error" id={tooLongId} data-testid="private-note-too-long">
-              {t('entity.privateNote.tooLong', {
-                used: count(draft.length),
-                max: count(PRIVATE_NOTE_MAX_LENGTH),
-              })}
-            </p>
-          ) : null}
+            error={
+              isTooLong ? (
+                <span data-testid="private-note-too-long">
+                  {t('entity.privateNote.tooLong', {
+                    used: count(draft.length),
+                    max: count(PRIVATE_NOTE_MAX_LENGTH),
+                  })}
+                </span>
+              ) : undefined
+            }
+          >
+            {(control) => (
+              <textarea
+                {...control}
+                ref={editor}
+                className="field__input field__input--area privatenote__text"
+                rows={12}
+                dir="auto"
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder={t('entity.privateNote.placeholder')}
+                spellCheck
+                aria-describedby={describedBy}
+                aria-keyshortcuts="Control+S Meta+S"
+                data-testid="private-note-text"
+              />
+            )}
+          </Field>
 
           <div className="privatenote__bar">
             <SaveAction

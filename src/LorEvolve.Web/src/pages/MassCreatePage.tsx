@@ -398,25 +398,30 @@ export default function MassCreatePage() {
       {load.kind === 'ready' ? (
         <>
           <section className="masscreate__defaults" aria-label={t('lore.massCreate.defaults')}>
-            <div className="masscreate__default">
-              <label className="field__label" htmlFor={`${id}-default-type`}>
-                {t('lore.massCreate.defaultType')}
-              </label>
-              <select
-                id={`${id}-default-type`}
-                className="field__input field__input--select"
-                value={defaultTypeId}
-                onChange={(event) => setChosenTypeId(event.target.value)}
-                disabled={eligible.length === 0}
-                data-testid="mass-default-type"
-              >
-                {choices.map(({ type, label }) => (
-                  <option key={type.id} value={type.id} disabled={hasRequiredFields(type)}>
-                    {hasRequiredFields(type) ? t('lore.massCreate.hasRequired', { label }) : label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Field
+              label={t('lore.massCreate.defaultType')}
+              id={`${id}-default-type`}
+              className="masscreate__default"
+            >
+              {(control) => (
+                <select
+                  {...control}
+                  className="field__input field__input--select"
+                  value={defaultTypeId}
+                  onChange={(event) => setChosenTypeId(event.target.value)}
+                  disabled={eligible.length === 0}
+                  data-testid="mass-default-type"
+                >
+                  {choices.map(({ type, label }) => (
+                    <option key={type.id} value={type.id} disabled={hasRequiredFields(type)}>
+                      {hasRequiredFields(type)
+                        ? t('lore.massCreate.hasRequired', { label })
+                        : label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
 
             <Field
               label={t('lore.massCreate.defaultStatus')}

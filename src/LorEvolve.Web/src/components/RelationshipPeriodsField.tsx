@@ -1,6 +1,6 @@
-import { useId } from 'react'
 import { Plus, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import {
   ChronologyPointFields,
   type ChronologyPointDraft,
@@ -42,7 +42,6 @@ export function RelationshipPeriodsField({
   errors: Record<string, string>
 }) {
   const { t } = useI18n()
-  const hintId = useId()
   const noEras = !erasReading && !erasFailed && eras.length === 0
 
   function patch(index: number, change: Partial<PeriodDraft>) {
@@ -50,18 +49,21 @@ export function RelationshipPeriodsField({
   }
 
   return (
-    <fieldset className="relperiods" aria-describedby={hintId} data-testid="relation-periods">
-      <legend className="field__label">{t('relationships.periods.legend')}</legend>
-      <p className="field__hint" id={hintId}>
-        {value.length === 0
+    <Field
+      label={t('relationships.periods.legend')}
+      group="fieldset"
+      className="relperiods"
+      data-testid="relation-periods"
+      hint={
+        value.length === 0
           ? erasFailed
             ? t('relationships.periods.hintAlwaysFailed')
             : t('relationships.periods.hintAlways')
           : erasFailed
             ? t('relationships.periods.hintDuringFailed')
-            : t('relationships.periods.hintDuring')}
-      </p>
-
+            : t('relationships.periods.hintDuring')
+      }
+    >
       {errors['periods'] ? <p className="field__error">{errors['periods']}</p> : null}
 
       {value.map((period, index) => {
@@ -126,42 +128,38 @@ export function RelationshipPeriodsField({
             {errors[key] ? <p className="field__error">{errors[key]}</p> : null}
 
             {period.kind === 'era' ? (
-              <div className="field">
-                <label className="field__label" htmlFor={`${period.key}-era`}>
-                  {t('relationships.periods.era')}
-                </label>
-                <select
-                  id={`${period.key}-era`}
-                  className="field__input field__input--select"
-                  value={period.entityEraId}
-                  onChange={(event) => {
-                    const chosen = options.find((era) => era.id === event.target.value)
-                    patch(index, {
-                      entityEraId: event.target.value,
-                      eraLabel: chosen?.label ?? null,
-                    })
-                  }}
-                  aria-invalid={eraError ? true : undefined}
-                  aria-describedby={eraError ? `${period.key}-era-error` : undefined}
-                  data-testid={`relation-period-${index}-era-select`}
-                >
-                  <option value="">
-                    {erasReading
-                      ? t('relationships.periods.readingStages')
-                      : t('relationships.periods.chooseStage')}
-                  </option>
-                  {options.map((era) => (
-                    <option key={era.id} value={era.id}>
-                      {era.label}
+              <Field
+                label={t('relationships.periods.era')}
+                id={`${period.key}-era`}
+                error={eraError}
+              >
+                {(control) => (
+                  <select
+                    {...control}
+                    className="field__input field__input--select"
+                    value={period.entityEraId}
+                    onChange={(event) => {
+                      const chosen = options.find((era) => era.id === event.target.value)
+                      patch(index, {
+                        entityEraId: event.target.value,
+                        eraLabel: chosen?.label ?? null,
+                      })
+                    }}
+                    data-testid={`relation-period-${index}-era-select`}
+                  >
+                    <option value="">
+                      {erasReading
+                        ? t('relationships.periods.readingStages')
+                        : t('relationships.periods.chooseStage')}
                     </option>
-                  ))}
-                </select>
-                {eraError ? (
-                  <p className="field__error" id={`${period.key}-era-error`}>
-                    {eraError}
-                  </p>
-                ) : null}
-              </div>
+                    {options.map((era) => (
+                      <option key={era.id} value={era.id}>
+                        {era.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
             ) : (
               <>
                 <PeriodPoint
@@ -195,7 +193,7 @@ export function RelationshipPeriodsField({
         <ActionIcon icon={Plus} />
         {t('relationships.periods.add')}
       </button>
-    </fieldset>
+    </Field>
   )
 }
 

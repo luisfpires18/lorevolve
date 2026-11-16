@@ -2,6 +2,7 @@ import { useId, useState, type KeyboardEvent } from 'react'
 import { Plus } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import type { EntityTypeGroup } from '../lore/types'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
@@ -129,32 +130,36 @@ export function TypeGroupsField({
       ) : null}
 
       {showPicker && !creating ? (
-        <div className="field">
-          <label className="field__label" htmlFor={`${ids}-add`}>
-            {value.length === 0
+        <Field
+          label={
+            value.length === 0
               ? t('entityTypes.groupsField.group')
-              : t('entityTypes.groupsField.anotherGroup')}
-          </label>
-          <select
-            id={`${ids}-add`}
-            className="field__input field__input--select"
-            value=""
-            onChange={(event) => choose(event.target.value)}
-            data-testid="type-group-add"
-          >
-            <option value="">
-              {value.length === 0
-                ? t('entityTypes.groupsField.none')
-                : t('entityTypes.groupsField.chooseGroup')}
-            </option>
-            {available.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
+              : t('entityTypes.groupsField.anotherGroup')
+          }
+          id={`${ids}-add`}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value=""
+              onChange={(event) => choose(event.target.value)}
+              data-testid="type-group-add"
+            >
+              <option value="">
+                {value.length === 0
+                  ? t('entityTypes.groupsField.none')
+                  : t('entityTypes.groupsField.chooseGroup')}
               </option>
-            ))}
-            <option value={NEW_GROUP}>{t('entityTypes.groupsField.newGroupOption')}</option>
-          </select>
-        </div>
+              {available.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+              <option value={NEW_GROUP}>{t('entityTypes.groupsField.newGroupOption')}</option>
+            </select>
+          )}
+        </Field>
       ) : null}
 
       {!showPicker && !creating ? (
@@ -170,49 +175,48 @@ export function TypeGroupsField({
       ) : null}
 
       {creating ? (
-        <div className="field" data-testid="type-group-new">
-          <label className="field__label" htmlFor={`${ids}-new`}>
-            {t('entityTypes.groupsField.newName')}
-          </label>
-          <div className="typegroups__newrow">
-            <input
-              id={`${ids}-new`}
-              className="field__input"
-              dir="auto"
-              value={newName}
-              autoFocus
-              placeholder={t('entityTypes.groupsField.namePlaceholder')}
-              aria-invalid={newError ? true : undefined}
-              aria-describedby={`${ids}-new-hint`}
-              onChange={(event) => setNewName(event.target.value)}
-              onKeyDown={onNewKey}
-              data-testid="type-group-new-name"
-            />
-            <button
-              className="button button--secondary button--sm"
-              type="button"
-              onClick={addNew}
-              data-testid="type-group-new-add"
-            >
-              {t('entityTypes.groupsField.add')}
-            </button>
-            <button
-              className="button button--text button--sm"
-              type="button"
-              onClick={() => {
-                setCreating(false)
-                setNewName('')
-                setNewError(null)
-              }}
-            >
-              {t('entityTypes.groupsField.cancel')}
-            </button>
-          </div>
-          <p className="field__hint" id={`${ids}-new-hint`}>
-            {t('entityTypes.groupsField.createdHint')}
-          </p>
-          {newError ? <p className="field__error">{newError}</p> : null}
-        </div>
+        <Field
+          label={t('entityTypes.groupsField.newName')}
+          id={`${ids}-new`}
+          data-testid="type-group-new"
+          hint={t('entityTypes.groupsField.createdHint')}
+          error={newError}
+        >
+          {(control) => (
+            <div className="typegroups__newrow">
+              <input
+                {...control}
+                className="field__input"
+                dir="auto"
+                value={newName}
+                autoFocus
+                placeholder={t('entityTypes.groupsField.namePlaceholder')}
+                onChange={(event) => setNewName(event.target.value)}
+                onKeyDown={onNewKey}
+                data-testid="type-group-new-name"
+              />
+              <button
+                className="button button--secondary button--sm"
+                type="button"
+                onClick={addNew}
+                data-testid="type-group-new-add"
+              >
+                {t('entityTypes.groupsField.add')}
+              </button>
+              <button
+                className="button button--text button--sm"
+                type="button"
+                onClick={() => {
+                  setCreating(false)
+                  setNewName('')
+                  setNewError(null)
+                }}
+              >
+                {t('entityTypes.groupsField.cancel')}
+              </button>
+            </div>
+          )}
+        </Field>
       ) : null}
 
       <p className="field__hint" data-testid="type-groups-elsewhere">

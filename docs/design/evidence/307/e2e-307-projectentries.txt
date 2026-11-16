@@ -1,0 +1,19 @@
+
+Running 14 tests using 2 workers
+
+  ok  1 [chromium] › specs\project-entities.spec.ts:57:3 › Project entities › a game takes the starter types, holds an entry with a field value, and the author shapes the rest (5.3s)
+  ok  2 [chromium] › specs\project-entities.spec.ts:141:3 › Project entities › a type with more entries than one page shows the rest when asked (5.4s)
+  ok  3 [chromium] › specs\project-entities.spec.ts:196:3 › Project entities › a project's types and entries stay out of the universe's lore and out of another project (4.6s)
+  ok  4 [chromium] › specs\project-entities.spec.ts:228:3 › Project entities › a game overview says what is in the project, what was touched last, and the way into the rest (5.8s)
+  ok  6 [chromium] › specs\project-field-images.spec.ts:59:3 › Image fields on project entries › a type with two Image fields holds a picture in each, shows them, and lets one go (4.8s)
+  ok  5 [chromium] › specs\project-entities.spec.ts:306:3 › Project entities › a game, a series and a film open a type as Lore does, edit types, and move between views at both widths (7.7s)
+  ok  7 [chromium] › specs\project-field-images.spec.ts:143:3 › Image fields on project entries › while an entry type change is unsaved, its Image field controls are disabled (2.7s)
+  ok  8 [chromium] › specs\project-sections.spec.ts:70:3 › Project sections › a game project walks its views from the sidebar and from the tab bar (3.3s)
+  ok  9 [chromium] › specs\project-sections.spec.ts:124:3 › Project sections › a type made in the type editor is in the entries the moment its card opens (3.4s)
+  ok 10 [chromium] › specs\project-sections.spec.ts:165:3 › Project sections › only Series, Film and Comic draw a structure panel, on Structure alone (6.1s)
+  ok 12 [chromium] › specs\project-sections.spec.ts:223:3 › Project sections › an unknown segment lands on the first view, at both addresses (3.5s)
+  ok 11 [chromium] › specs\project-sections.spec.ts:188:3 › Project sections › each kind offers its own views, at both project addresses (9.9s)
+  ok 13 [chromium] › specs\project-sections.spec.ts:241:3 › Project sections › every project address resolves to one canonical address, under a breadcrumb (3.4s)
+  ok 14 [chromium] › specs\project-sections.spec.ts:270:3 › Project sections › on a narrow screen the tab bar stands in for the sidebar expansion (3.5s)
+
+  14 passed (36.6s)
