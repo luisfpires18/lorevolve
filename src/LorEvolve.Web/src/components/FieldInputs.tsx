@@ -21,6 +21,7 @@ export interface FieldImageBinding {
   onPending: (pending: PendingFieldImage | null) => void
   onChanged: (image: FieldImageRef | null) => void
   disabled?: boolean
+  disabledHint?: string
 }
 
 interface FieldInputProps {
@@ -108,6 +109,7 @@ export function FieldInput({
         onPending={image.onPending}
         onChanged={image.onChanged}
         disabled={image.disabled ?? false}
+        disabledHint={image.disabledHint}
       />
     ) : null
   }

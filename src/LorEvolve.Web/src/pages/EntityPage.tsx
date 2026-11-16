@@ -871,6 +871,9 @@ function EntityScreen({ view }: { view: EntryView }) {
     if (view !== 'article') void navigate(entryPath)
   }
 
+  const typeChanged =
+    !isNew && detail !== null && draft !== null && draft.entityTypeId !== detail.entityTypeId
+
   /** One field's control in the form, with the refusal under it; `data-field-id` is where a refused save sends the focus. */
   const fieldInput = (definition: FieldDefinition) => (
     <div key={definition.id} data-field-id={definition.id}>
@@ -910,7 +913,9 @@ function EntityScreen({ view }: { view: EntryView }) {
                   }
                 : current,
             ),
-          disabled: isSaving,
+          // The picture belongs to the entry's saved type: none is created or changed while a type change is unsaved.
+          disabled: isSaving || typeChanged,
+          disabledHint: typeChanged ? t('entity.fieldImage.saveTypeFirst') : undefined,
         }}
       />
       {fieldErrors[definition.id] ? (

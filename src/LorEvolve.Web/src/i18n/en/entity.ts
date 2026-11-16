@@ -167,6 +167,7 @@ const entity = {
     },
   },
   fieldImage: {
+    saveTypeFirst: 'Save the new entry type before adding or changing pictures.',
     reframe: 'Edit crop',
     uploadFailed: 'A picture for "{name}" could not be saved.',
     crop: {

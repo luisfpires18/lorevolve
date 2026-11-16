@@ -72,6 +72,7 @@ export function FieldImageInput({
   onPending,
   onChanged,
   disabled,
+  disabledHint,
 }: {
   universeId: string
   entityId: string | null
@@ -83,6 +84,8 @@ export function FieldImageInput({
   onPending: (pending: PendingFieldImage | null) => void
   onChanged: (image: FieldImageRef | null) => void
   disabled: boolean
+  /** Why the control is disabled, when the reason is worth saying. */
+  disabledHint?: string
 }) {
   const { t } = useI18n()
   const inputId = useId()
@@ -273,6 +276,12 @@ export function FieldImageInput({
           ) : null}
         </div>
       </div>
+
+      {disabledHint ? (
+        <p className="imagefield__hint" data-testid={testId('disabled-hint')}>
+          {disabledHint}
+        </p>
+      ) : null}
 
       <p className="imagefield__hint">
         {pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}

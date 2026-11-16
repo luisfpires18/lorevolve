@@ -139,4 +139,55 @@ test.describe('Image fields on project entries', () => {
     await expect(reloaded.getByTestId(`field-image-${cover}-preview`)).toBeVisible()
     await expect(reloaded.getByTestId(`field-image-${banner}-preview`)).toHaveCount(0)
   })
+
+  test('while an entry type change is unsaved, its Image field controls are disabled', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
+      name: unique('Gameworld '),
+      description: null,
+    })
+    const u = `/api/universes/${world.id}`
+    const types = await api<{ id: string; name: string }[]>(page, 'GET', `${u}/entity-types`)
+    const character = types.find((type) => type.name === 'Character')!.id
+    const location = types.find((type) => type.name === 'Location')!.id
+
+    const withField = await api<{ fields: { id: string; name: string }[] }>(
+      page,
+      'POST',
+      `${u}/entity-types/${location}/fields`,
+      {
+        name: 'Portrait',
+        kind: IMAGE_KIND,
+        isRequired: false,
+        displayOrder: null,
+        defaultValue: null,
+        options: null,
+        semantic: null,
+        targetEntityTypeId: null,
+        targetGroupId: null,
+        imageShape: FREE,
+      },
+    )
+    const portrait = withField.fields.find((field) => field.name === 'Portrait')!.id
+    const entry = await api<{ id: string }>(page, 'POST', `${u}/entities`, {
+      entityTypeId: character,
+      name: 'Akron Wright',
+      summary: null,
+      canonStatus: 0,
+      aliases: [],
+      tags: [],
+      fields: [],
+    })
+
+    await page.goto(`/app/universes/${world.id}/lore/${entry.id}`)
+    await page.getByTestId('edit-entity').click()
+
+    // Location is not the entry's saved type, so its Image field belongs to nothing yet: no picture may be created
+    // or changed until the type change is saved.
+    await page.getByLabel('Entry type').selectOption({ label: 'Location' })
+    await expect(page.getByTestId(`field-image-${portrait}-input`)).toBeDisabled()
+    await expect(page.getByTestId(`field-image-${portrait}-disabled-hint`)).toBeVisible()
+  })
 })

@@ -171,6 +171,7 @@ const entity: Dictionary['entity'] = {
     },
   },
   fieldImage: {
+    saveTypeFirst: 'Guarda o novo tipo de entrada antes de acrescentar ou alterar imagens.',
     reframe: 'Editar recorte',
     uploadFailed: 'Não foi possível guardar a imagem de "{name}".',
     crop: {
