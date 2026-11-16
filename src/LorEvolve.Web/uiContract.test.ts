@@ -223,7 +223,7 @@ test('no new hand-written <dialog>', () => {
 })
 
 test('no new span-label fields', () => {
-  const found = filesWith(/<span[^>]*className="field__label/)
+  const found = filesWith(/<span[^>]*field__label/)
   assert.deepEqual(
     found.filter((file) => !SPAN_LABEL_FILES.includes(file)),
     [],
