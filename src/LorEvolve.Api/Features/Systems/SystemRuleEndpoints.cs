@@ -506,22 +506,12 @@ public static class SystemRuleEndpoints
             id,
             result.RuleVersion,
             result.SchemaVersion,
-            Outcome(result.Outcome),
+            ConditionOutcomeText.Of(result.Outcome),
             result.ErrorCode,
             result.ExemptionId,
             [.. result.Evidence.Select(item => new ConditionEvidenceRow(item.Source, item.Id, item.Role))],
             result.Rationale));
     }
-
-    /// <summary>The outcome as the specification writes it. Text, so a new outcome never shifts an existing one.</summary>
-    private static string Outcome(ConditionOutcome outcome) => outcome switch
-    {
-        ConditionOutcome.True => "true",
-        ConditionOutcome.False => "false",
-        ConditionOutcome.Unknown => "unknown",
-        ConditionOutcome.Exempt => "exempt",
-        _ => "error",
-    };
 
     /// <summary>
     /// Every rule the universe has, of both kinds, in one list by title: the world rules that came before ADR 0072

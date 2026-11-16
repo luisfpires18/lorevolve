@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.RuleValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -177,7 +178,7 @@ public static class SystemEndpoints
         }
 
         var name = request.Name!.Trim();
-        var normalized = WorldLogicAccess.Normalize(name);
+        var normalized = ValidationTerm.Normalize(name);
 
         if (await db.LoreSystems.AnyAsync(
                 candidate => candidate.UniverseId == universeId
@@ -272,7 +273,7 @@ public static class SystemEndpoints
         }
 
         var name = request.Name!.Trim();
-        var normalized = WorldLogicAccess.Normalize(name);
+        var normalized = ValidationTerm.Normalize(name);
         var summary = request.Summary ?? string.Empty;
 
         if (system.Name == name && system.Summary == summary)

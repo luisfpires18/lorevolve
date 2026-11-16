@@ -75,7 +75,7 @@ public static class SuggestionEndpoints
             return denied;
         }
 
-        return await CommentEndpoints.EntryIsLiveAsync(db, universeId, entityId, cancellationToken)
+        return await LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken)
             ? await PageAsync<EntrySuggestion>(db, db.SuggestedChanges.Where(row => row.EntityId == entityId), state, before, cancellationToken)
             : Results.NotFound();
     }

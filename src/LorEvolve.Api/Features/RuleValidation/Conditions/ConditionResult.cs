@@ -24,6 +24,19 @@ public enum ConditionOutcome
     Exempt = 4,
 }
 
+/// <summary>The outcome as the specification writes it. Text, so a new outcome never shifts an existing one.</summary>
+public static class ConditionOutcomeText
+{
+    public static string Of(ConditionOutcome outcome) => outcome switch
+    {
+        ConditionOutcome.True => "true",
+        ConditionOutcome.False => "false",
+        ConditionOutcome.Unknown => "unknown",
+        ConditionOutcome.Exempt => "exempt",
+        _ => "error",
+    };
+}
+
 /// <summary>Every error code the specification defines, in one place, so a caller never invents one.</summary>
 public static class ConditionErrors
 {

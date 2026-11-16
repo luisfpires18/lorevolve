@@ -58,7 +58,7 @@ public static class EntityArticleEndpoints
             return denied;
         }
 
-        if (!await IsLiveAsync(db, universeId, entityId, cancellationToken))
+        if (!await LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken))
         {
             return Results.NotFound();
         }
@@ -105,7 +105,7 @@ public static class EntityArticleEndpoints
         // One transaction for the comparison and the write, so nothing can land between them: SQLite has one writer.
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        if (!await IsLiveAsync(db, universeId, entityId, cancellationToken))
+        if (!await LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken))
         {
             return Results.NotFound();
         }
@@ -142,7 +142,7 @@ public static class EntityArticleEndpoints
             return denied;
         }
 
-        if (!await IsLiveAsync(db, universeId, entityId, cancellationToken))
+        if (!await LoreEntries.IsLiveAsync(db, universeId, entityId, cancellationToken))
         {
             return Results.NotFound();
         }
@@ -330,15 +330,6 @@ public static class EntityArticleEndpoints
 
         return Results.Ok(new EntityArticleResponse(entityId, document, now, version + 1));
     }
-
-    private static Task<bool> IsLiveAsync(
-        LorEvolveDbContext db,
-        Guid universeId,
-        Guid entityId,
-        CancellationToken cancellationToken) =>
-        db.Entities.AnyAsync(
-            entity => entity.Id == entityId && entity.UniverseId == universeId && entity.DeletedAt == null,
-            cancellationToken);
 
     /// <summary>A version reached only through a live entry of this universe, so a trashed entry's history is not reachable.</summary>
     private static Task<EntityArticleRevision?> FindRevisionAsync(
