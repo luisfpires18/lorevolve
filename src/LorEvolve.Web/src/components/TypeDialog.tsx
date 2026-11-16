@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Field } from './Field'
 import { TypeIconPicker } from './TypeIconPicker'
 import { TypeGroupsField, type GroupChoice } from './TypeGroupsField'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
+import { Drawer } from './Drawer'
 import { useReturnFocus } from '../lib/returnFocus'
 import type { EntityTypeGroup } from '../lore/types'
 import { branchIds, typePathLabel, type TreeType, type TypeTree } from '../lore/typeTree'
@@ -71,7 +72,6 @@ export function TypeDialog({
   onSaved: (name: string, parentId: string | null) => Promise<void>
 }) {
   const { t, tx } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const initial = {
     name: type?.name ?? '',
     icon: type?.icon ?? null,
@@ -110,18 +110,9 @@ export function TypeDialog({
         familyTreeEligible: initial.familyTreeEligible,
         parentId: initial.parentId,
       })
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    type
-      ? t('entityTypes.page.dialog.leaveEdit', { name: type.name })
-      : t('entityTypes.page.dialog.leaveNew'),
-    onClose,
-  )
-
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     document.getElementById('type-name')?.focus()
   }, [])
 
@@ -167,128 +158,35 @@ export function TypeDialog({
   }
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="type-heading"
-      {...dialogProps}
-      data-testid={type ? 'edit-type-dialog' : 'new-type-dialog'}
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">{eyebrow ?? t('entityTypes.page.dialog.eyebrow')}</p>
-          <h2 className="drawer__title" id="type-heading">
-            {type
-              ? t('entityTypes.page.dialog.editTitle')
-              : chosenParent
-                ? t('entityTypes.page.dialog.newChildTitle')
-                : t('entityTypes.page.dialog.newTitle')}
-          </h2>
-          {/* Where a new type is going, in a line, while it is going inside one. The Parent type select is what decides. */}
-          {!type && chosenParent ? (
-            <p className="drawer__context" data-testid="type-dialog-context">
-              {tx('entityTypes.page.dialog.inside', { name: <bdi>{chosenParent.name}</bdi> })}
-            </p>
-          ) : null}
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid="type-dialog-error">
-              {message}
-            </p>
-          ) : null}
-
-          {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
-          <section className="drawer__group" aria-labelledby="type-identity">
-            <h3 className="sectionrule sectionrule--accent" id="type-identity">
-              {t('entityTypes.page.dialog.identity')}
-            </h3>
-            <Field
-              label={t('entityTypes.page.dialog.name')}
-              name="type-name"
-              placeholder={type ? undefined : t('entityTypes.page.dialog.namePlaceholder')}
-              dir="auto"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              error={fieldErrors.name}
-              data-testid="type-name"
-            />
-
-            <div className="field">
-              <TypeIconPicker value={icon} onChange={setIcon} testId="type-icon" />
-              <p className="field__hint">{iconHint ?? t('entityTypes.page.dialog.iconHint')}</p>
-              {fieldErrors.icon ? <p className="field__error">{fieldErrors.icon}</p> : null}
-            </div>
-          </section>
-
-          <section className="drawer__group" aria-labelledby="type-hierarchy">
-            <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
-              {t('entityTypes.page.dialog.hierarchy')}
-            </h3>
-            <div className="field">
-              <label className="field__label" htmlFor="type-parent">
-                {t('entityTypes.page.dialog.parent')}
-              </label>
-              <select
-                id="type-parent"
-                className="field__input field__input--select"
-                value={parentId ?? ''}
-                onChange={(event) => setParentId(event.target.value || null)}
-                aria-describedby="type-parent-hint"
-                data-testid="type-parent"
-              >
-                <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
-                {parents.map((node) => (
-                  <option key={node.type.id} value={node.type.id}>
-                    {typePathLabel(node)}
-                  </option>
-                ))}
-              </select>
-              <p className="field__hint" id="type-parent-hint">
-                {parentHint ?? t('entityTypes.page.dialog.parentHint')}
-              </p>
-              {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
-            </div>
-          </section>
-
-          {groups ? (
-            <>
-              <TypeGroupsField groups={groups} value={groupChoices} onChange={setGroupChoices} />
-              {fieldErrors.groups ? <p className="field__error">{fieldErrors.groups}</p> : null}
-            </>
-          ) : null}
-
-          {type || !groups ? null : (
-            <section className="drawer__group" aria-labelledby="type-behaviour">
-              <h3 className="sectionrule sectionrule--accent" id="type-behaviour">
-                {t('entityTypes.page.dialog.behaviour')}
-              </h3>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={familyTreeEligible}
-                  onChange={(event) => setFamilyTreeEligible(event.target.checked)}
-                  data-testid="type-family"
-                />
-                <span>
-                  <span className="types__familylabel">
-                    {t('entityTypes.page.dialog.familyLabel')}
-                  </span>
-                  {t('entityTypes.page.dialog.familyText')}
-                </span>
-              </label>
-            </section>
-          )}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId={type ? 'edit-type-dialog' : 'new-type-dialog'}
+      titleId="type-heading"
+      eyebrow={eyebrow ?? t('entityTypes.page.dialog.eyebrow')}
+      title={
+        type
+          ? t('entityTypes.page.dialog.editTitle')
+          : chosenParent
+            ? t('entityTypes.page.dialog.newChildTitle')
+            : t('entityTypes.page.dialog.newTitle')
+      }
+      // Where a new type is going, in a line, while it is going inside one. The Parent type select is what decides.
+      context={
+        !type && chosenParent ? (
+          <p className="drawer__context" data-testid="type-dialog-context">
+            {tx('entityTypes.page.dialog.inside', { name: <bdi>{chosenParent.name}</bdi> })}
+          </p>
+        ) : null
+      }
+      isDirty={isDirty}
+      leaveMessage={
+        type
+          ? t('entityTypes.page.dialog.leaveEdit', { name: type.name })
+          : t('entityTypes.page.dialog.leaveNew')
+      }
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-type">
             {type
               ? isSaving
@@ -306,8 +204,94 @@ export function TypeDialog({
           >
             {t('entityTypes.page.dialog.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid="type-dialog-error">
+          {message}
+        </p>
+      ) : null}
+
+      {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
+      <section className="drawer__group" aria-labelledby="type-identity">
+        <h3 className="sectionrule sectionrule--accent" id="type-identity">
+          {t('entityTypes.page.dialog.identity')}
+        </h3>
+        <Field
+          label={t('entityTypes.page.dialog.name')}
+          name="type-name"
+          placeholder={type ? undefined : t('entityTypes.page.dialog.namePlaceholder')}
+          dir="auto"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          error={fieldErrors.name}
+          data-testid="type-name"
+        />
+
+        <div className="field">
+          <TypeIconPicker value={icon} onChange={setIcon} testId="type-icon" />
+          <p className="field__hint">{iconHint ?? t('entityTypes.page.dialog.iconHint')}</p>
+          {fieldErrors.icon ? <p className="field__error">{fieldErrors.icon}</p> : null}
+        </div>
+      </section>
+
+      <section className="drawer__group" aria-labelledby="type-hierarchy">
+        <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
+          {t('entityTypes.page.dialog.hierarchy')}
+        </h3>
+        <div className="field">
+          <label className="field__label" htmlFor="type-parent">
+            {t('entityTypes.page.dialog.parent')}
+          </label>
+          <select
+            id="type-parent"
+            className="field__input field__input--select"
+            value={parentId ?? ''}
+            onChange={(event) => setParentId(event.target.value || null)}
+            aria-describedby="type-parent-hint"
+            data-testid="type-parent"
+          >
+            <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
+            {parents.map((node) => (
+              <option key={node.type.id} value={node.type.id}>
+                {typePathLabel(node)}
+              </option>
+            ))}
+          </select>
+          <p className="field__hint" id="type-parent-hint">
+            {parentHint ?? t('entityTypes.page.dialog.parentHint')}
+          </p>
+          {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
+        </div>
+      </section>
+
+      {groups ? (
+        <>
+          <TypeGroupsField groups={groups} value={groupChoices} onChange={setGroupChoices} />
+          {fieldErrors.groups ? <p className="field__error">{fieldErrors.groups}</p> : null}
+        </>
+      ) : null}
+
+      {type || !groups ? null : (
+        <section className="drawer__group" aria-labelledby="type-behaviour">
+          <h3 className="sectionrule sectionrule--accent" id="type-behaviour">
+            {t('entityTypes.page.dialog.behaviour')}
+          </h3>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={familyTreeEligible}
+              onChange={(event) => setFamilyTreeEligible(event.target.checked)}
+              data-testid="type-family"
+            />
+            <span>
+              <span className="types__familylabel">{t('entityTypes.page.dialog.familyLabel')}</span>
+              {t('entityTypes.page.dialog.familyText')}
+            </span>
+          </label>
+        </section>
+      )}
+    </Drawer>
   )
 }
