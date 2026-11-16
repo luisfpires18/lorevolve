@@ -89,14 +89,10 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId('workspace-stories')).toHaveCount(0)
 
     await expect(page.getByTestId('sidebar-projects')).toBeVisible()
-    await expect(page.getByTestId('projects-all')).toBeVisible()
     await expect(page.getByTestId('projects-new')).toBeVisible()
     await expect(page.getByTestId(`project-link-${first.id}`)).toContainText(first.name)
-
-    // All projects, inside the universe, lists that universe's projects.
-    await page.getByTestId('projects-all').click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}/projects$`))
-    await expect(page.getByTestId(`projects-row-${first.id}`)).toContainText(first.name)
+    // The group's heading folds it, so there is no All projects row (#231).
+    await expect(page.getByTestId('projects-all')).toHaveCount(0)
   })
 
   test('opening a project from a universe keeps the author inside that universe', async ({

@@ -1,16 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * Issue #198: the sidebar's project list is bounded. A universe seeded with more projects than the bound draws only the
- * most recently updated ones, still draws the project the author is in when that one is the oldest, leaves the rest to
- * All projects, and folds the whole group from its heading.
- *
- * The bound is `SIDEBAR_PROJECT_LIMIT` in `components/ProjectsNav.tsx`; it is repeated here because a spec should say
- * the number it expects rather than read it from the code under test.
+ * Issue #231: the sidebar lists every project, with no All projects row, and folds the whole group from its heading.
+ * Twelve projects is more than the old bound of eight (#198), so a returning bound would fail here.
  */
 
-const BOUND = 8
-const SEEDED = BOUND + 4
+const SEEDED = 12
 const PASSWORD = 'Test-password-123!'
 
 function unique(prefix: string) {
@@ -63,39 +58,17 @@ async function seed(page: Page) {
 const projectLinks = (page: Page) =>
   page.getByTestId('sidebar-projects').locator('[data-testid^="project-link-"]')
 
-test.describe('Sidebar project bound', () => {
-  test('the sidebar lists the newest projects, keeps the one being read, and All projects lists every one', async ({
-    page,
-  }) => {
+test.describe('Sidebar project list', () => {
+  test('the sidebar lists every project and has no All projects row', async ({ page }) => {
     await signUp(page)
     const { worldId, oldestFirst } = await seed(page)
-    const newest = oldestFirst.slice(-BOUND)
-    const oldest = oldestFirst[0]
 
     await page.goto(`/app/universes/${worldId}`)
-    await expect(projectLinks(page)).toHaveCount(BOUND)
-    for (const shown of newest) {
+    await expect(projectLinks(page)).toHaveCount(SEEDED)
+    for (const shown of oldestFirst) {
       await expect(page.getByTestId(`project-link-${shown.id}`)).toBeVisible()
     }
-    await expect(page.getByTestId(`project-link-${oldest.id}`)).toHaveCount(0)
-
-    // The oldest project, past the bound, is still drawn while the author is inside it, and starts expanded.
-    await page.goto(`/app/universes/${worldId}/projects/${oldest.id}`)
-    await expect(page.getByTestId(`project-link-${oldest.id}`)).toBeVisible()
-    await expect(page.getByTestId(`project-toggle-${oldest.id}`)).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    )
-    await expect(projectLinks(page)).toHaveCount(BOUND + 1)
-
-    // The rest are behind All projects, which lists every one of them.
-    await page.getByTestId('projects-all').click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${worldId}/projects$`))
-    const list = page.getByTestId('projects-list')
-    await expect(list.locator('[data-testid^="projects-row-"]')).toHaveCount(SEEDED)
-    for (const each of oldestFirst) {
-      await expect(page.getByTestId(`projects-row-${each.id}`)).toBeVisible()
-    }
+    await expect(page.getByTestId('projects-all')).toHaveCount(0)
   })
 
   test('the projects group folds from its heading and says so', async ({ page }) => {
@@ -106,17 +79,16 @@ test.describe('Sidebar project bound', () => {
     const toggle = page.getByTestId('projects-group-toggle')
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
     await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible()
-    await expect(projectLinks(page)).toHaveCount(BOUND)
+    await expect(projectLinks(page)).toHaveCount(SEEDED)
 
     // A button, so the keyboard folds it with no key handling of our own.
     await toggle.focus()
     await page.keyboard.press('Enter')
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
     await expect(projectLinks(page).first()).toBeHidden()
-    await expect(page.getByTestId('projects-all')).toBeHidden()
 
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    await expect(projectLinks(page)).toHaveCount(BOUND)
+    await expect(projectLinks(page)).toHaveCount(SEEDED)
   })
 })
