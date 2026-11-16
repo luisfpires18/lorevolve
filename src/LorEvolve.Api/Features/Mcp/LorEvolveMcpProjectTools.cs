@@ -6,6 +6,7 @@ using LorEvolve.Api.Features.Projects;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using static LorEvolve.Api.Features.Mcp.McpResults;
 
 namespace LorEvolve.Api.Features.Mcp;
 
@@ -39,19 +40,13 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
         + "project of its own by id. Every project belongs to one universe, so this connection sees all of this universe's "
         + "projects.";
 
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
-    {
-        Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     [McpServerTool(Name = ListTool, Title = "List the universe's projects", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("What the connected universe is used to make: each project with its id, name, kind (Writing, Game, Series, Film "
         + "or Comic), stage, subtype when the author gave one, and a summary. A project carrying storyId is one of the universe's "
         + "stories shown as the Writing Project it is: read it with get_story by that id. Most recently changed first.")]
     public async Task<CallToolResult> ListProjectsAsync(CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -113,7 +108,7 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
         [Description("The project's id, exactly as list_projects gave it.")] string projectId,
         CancellationToken cancellationToken)
     {
-        if (Guard() is { } refused)
+        if (Guard(caller) is { } refused)
         {
             return refused;
         }
@@ -164,18 +159,4 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
         });
     }
 
-    private CallToolResult? Guard() => caller.IsAllowed ? null : Error("not_allowed", "This connection cannot read a universe.");
-
-    private static CallToolResult NotFound() => Error("not_found", "Nothing with that id is in this universe.");
-
-    private static CallToolResult Result<T>(T value) => new()
-    {
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(value, Json) }],
-    };
-
-    private static CallToolResult Error(string code, string message, object? details = null) => new()
-    {
-        IsError = true,
-        Content = [new TextContentBlock { Text = JsonSerializer.Serialize(new { error = code, message, details }, Json) }],
-    };
 }
