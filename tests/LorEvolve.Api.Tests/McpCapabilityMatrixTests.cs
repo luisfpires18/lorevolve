@@ -158,7 +158,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         new("A project itself", ["", "template"], ["list_projects", "get_project", "get_project_script"], "", [], Why.PersonOnly),
         Mapped("A project's entries", ["entities"], ["list_project_entries", "get_project_entry"], ["ProjectEntry"]),
         Excepted("A project entry's history", ["entities/revisions"], Why.LiveOnly),
-        ReadOnly("A project's own types", ["entity-types"], ["get_project_schema"]),
+        Mapped("A project's own types", ["entity-types"], ["get_project_schema"], ["ProjectType", "ProjectField"]),
         ReadOnly("A project's structure", ["seasons"], ["get_project_structure"]),
     ];
 

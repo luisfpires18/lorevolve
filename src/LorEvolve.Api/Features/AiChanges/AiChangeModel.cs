@@ -114,6 +114,12 @@ public enum AiChangeResource
     /// list travels with it. Created and updated through review, never removed by an AI: a System delete is permanent.
     /// </summary>
     LoreSystem = 22,
+
+    /// <summary>A type of one of the universe's projects, such as a game's GameEntity. The project's own schema, proposed beside its entries.</summary>
+    ProjectType = 23,
+
+    /// <summary>A field on a type of one of the universe's projects. Proposed beside the type and the entries that use it.</summary>
+    ProjectField = 24,
 }
 
 public enum AiChangeAction
@@ -303,7 +309,7 @@ public sealed class AiChangeOperationConfiguration : IEntityTypeConfiguration<Ai
         builder.ToTable("AiChangeOperations", table =>
         {
             table.HasCheckConstraint("CK_AiChangeOperations_Status", "\"Status\" IN (0, 1, 2)");
-            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22)");
+            table.HasCheckConstraint("CK_AiChangeOperations_Resource", "\"Resource\" IN (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24)");
             table.HasCheckConstraint("CK_AiChangeOperations_Action", "\"Action\" IN (0, 1, 2, 3)");
         });
         builder.HasKey(operation => operation.Id);

@@ -85,7 +85,7 @@ universe only.
 | A project itself | `/`, `template` | `list_projects`, `get_project`, `get_project_script` | `person-only` |
 | A project's entries | `entities` | `list_project_entries`, `get_project_entry` | `ProjectEntry` |
 | A project entry's history | `entities/revisions` | `live-only` | `live-only` |
-| A project's own types | `entity-types` | `get_project_schema` | `read-only-by-design` |
+| A project's own types | `entity-types` | `get_project_schema` | `ProjectType`, `ProjectField` |
 | A project's structure | `seasons` | `get_project_structure` | `read-only-by-design` |
 
 ## The write path
@@ -165,6 +165,8 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `propose_changes` `project_entry` | Create, update or remove an entry of one of the universe's projects. | implemented | |
 | `propose_changes` `system_rule` | Create or update a World Logic rule definition: title, description, condition, exceptions, dependencies. | implemented | Since the ADR 0072 addendum, 2026-11-15. Checked by the rule routes' own validation; an update is bound to the version read at staging. |
 | `propose_changes` `system` | Create or update a World Logic System and its whole ordered rule list. | implemented | Since the ADR 0072 addendum, 2026-11-15. The list is applied as link and unlink by difference; it may name a `system_rule` of the same proposal by its ref. |
+| `propose_changes` `project_type` | Create or update a type of one of the universe's projects, such as a game's GameEntity, in the same proposal as its fields and entries. | implemented | No remove: a type in use cannot be deleted and there is no Trash. An entry names a new type with `typeRef`. |
+| `propose_changes` `project_field` | Create or update a field on a project's type, with its choices. | implemented | No remove. An entry names a new field with `fieldRef`. Changing the kind of a field that holds values, or dropping a choice an entry uses, is refused at approval, not at staging. |
 | `propose_changes` `lore_type` | Create or update a lore type. | implemented | Schema: a proposal of its own, where the connection allows schema. |
 | `propose_changes` `lore_field` | Create, update or archive a field definition. | implemented | Schema. |
 | `propose_changes` `lore_group` | Create or update a semantic group. | implemented | Schema. |
@@ -175,6 +177,8 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `sort` on `list_world_logic_findings` | Read the newest findings first. | missing | The route has had `sort=newest` since #209; the tool always reads the `attention` order. |
 | Reading back a submitted semantic finding | See what became of a claim this client submitted. | missing | No tool reads `world-logic/semantic-findings`; deliberate for now (#209). |
 | A condition naming a record the same proposal creates | Stage a `system_rule` whose condition names a lore entry or rule created in that proposal. | missing | A condition may name only records that already exist; propose the rest after the first proposal is approved. |
+| `remove` of a `project_type` or a `project_field` | Delete a project's type or field. | missing | By design for now: the API refuses a type in use and a field holding values, and neither has a Trash. |
+| A `project_entry` link value naming an entry the same proposal creates | Link two new entries in one proposal. | missing | The link must name an entry that already exists. |
 
 ## What is exercised, and where
 
@@ -182,7 +186,7 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | --- | --- |
 | The tool list is exactly these tools | `McpCapabilityMatrixTests`, `McpToolTests.The_SDK_client_finds_exactly_the_read_only_tools`, `McpProposalTests`, `McpWorldLogicToolTests.Every_read_tool_is_discoverable_and_the_one_that_writes_is_not` |
 | Reads, through the real transport and the official SDK client | `McpToolTests`, `McpClientInteropTests`, `McpProjectToolTests`, `McpProjectEntityToolTests`, `McpImageToolTests`, `MapGeographyTests` |
-| Proposals, and that they only stage | `McpProposalTests`, `McpProjectEntityToolTests`, `McpWorldLogicProposalTests`, `McpWorldLogicToolTests.Get_change_options_and_propose_changes_still_work_and_a_rule_is_still_proposed_through_them` |
+| Proposals, and that they only stage | `McpProposalTests`, `McpProjectEntityToolTests`, `McpWorldLogicProposalTests`, `McpProjectSchemaProposalTests`, `McpWorldLogicToolTests.Get_change_options_and_propose_changes_still_work_and_a_rule_is_still_proposed_through_them` |
 | A submitted claim: unverified, cited, never a computed finding, refused to a read-only connection | `McpWorldLogicToolTests.A_submitted_claim_is_unverified_cited_and_never_one_of_the_computed_findings`, `McpWorldLogicToolTests.An_uncited_claim_is_refused_and_nothing_is_stored`, `McpWorldLogicToolTests.A_read_only_connection_cannot_submit_a_claim_even_by_calling_the_tool_directly`, `SemanticFindingTests` |
 | World Logic read over MCP: both kinds of rule, a System's rules, an evaluation that records nothing, a rule's impact, a finding's evidence | `McpWorldLogicToolTests` |
 | The approval boundary: nothing over MCP approves, and a staged change dies with its permission | `McpProposalTests.An_app_stages_a_proposal_that_waits_for_a_person_and_never_applies_itself`, `McpProposalTests.Turning_proposals_off_or_disconnecting_stops_the_tools_and_blocks_what_was_staged` |

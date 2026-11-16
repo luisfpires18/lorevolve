@@ -27,7 +27,7 @@ public sealed record AiChangeOperationInput(
     string? Id,
     [property: Description("create, update, remove or reorder. remove moves the item to LorEvolve's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, or a chapter's scenes.")]
     string? Action,
-    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea, project_entry (an entry of one of the universe's projects), system_rule (a World Logic rule definition) or system (a World Logic System and its ordered rule list) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
+    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea, project_entry (an entry of one of the universe's projects), system_rule (a World Logic rule definition), system (a World Logic System and its ordered rule list), project_type (a type of a project, such as a game's GameEntity) or project_field (a field on a project's type) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
     string? Resource,
     [property: Description("For update and remove: the existing item's id, exactly as a read tool gave it. For a manuscript or an article, the scene or entry goes in manuscript.scene or article.entry instead; for reorder, the container goes in order.")]
     Guid? TargetId = null,
@@ -55,7 +55,9 @@ public sealed record AiChangeOperationInput(
     AiImageInput? Image = null,
     AiProjectEntryInput? ProjectEntry = null,
     AiSystemRuleInput? SystemRule = null,
-    AiSystemInput? System = null);
+    AiSystemInput? System = null,
+    AiProjectTypeInput? ProjectType = null,
+    AiProjectSchemaFieldInput? ProjectField = null);
 
 /// <summary>Something that exists, by its id, or something this proposal creates, by the change's id.</summary>
 public sealed record AiRefInput(
@@ -184,12 +186,13 @@ public sealed record AiWorldRuleInput(
     + "almost no worldbuilding.")]
 public sealed record AiProjectEntryInput(
     [property: Description("The project's id, from list_projects. Required on create.")] Guid? ProjectId = null,
-    [property: Description("A type of that project, from get_project_schema. Required on create.")] Guid? TypeId = null,
+    [property: Description("A type of that project, from get_project_schema. Required on create, unless typeRef is given.")] Guid? TypeId = null,
     string? Name = null,
     [property: Description("Plain text. On update, \"\" clears it.")] string? Summary = null,
     [property: Description("Optional: the universe's lore entry this stands for. On update, null leaves it as it is and clearCanonEntry removes it.")] Guid? CanonEntryId = null,
     [property: Description("On update, true removes the link to the lore entry.")] bool? ClearCanonEntry = null,
-    [property: Description("The field values to store, by field id from get_project_schema. On update, only the fields named are changed.")] IReadOnlyList<AiProjectFieldInput>? Fields = null);
+    [property: Description("The field values to store, by field id from get_project_schema. On update, only the fields named are changed.")] IReadOnlyList<AiProjectFieldInput>? Fields = null,
+    [property: Description("Instead of typeId: the id of a project_type create in this proposal.")] string? TypeRef = null);
 
 [Description("One field value of a project's entry. Fill only the member the field's kind uses.")]
 public sealed record AiProjectFieldInput(
@@ -199,7 +202,30 @@ public sealed record AiProjectFieldInput(
     bool? Boolean = null,
     DateTime? Date = null,
     [property: Description("For a field of one choice or several: the choice values exactly as get_project_schema gives them.")] IReadOnlyList<string>? Choices = null,
-    [property: Description("For a link field: another entry of the same project.")] Guid? LinkedEntryId = null);
+    [property: Description("For a link field: another entry of the same project.")] Guid? LinkedEntryId = null,
+    [property: Description("Instead of fieldId: the id of a project_field create in this proposal.")] string? FieldRef = null);
+
+[Description("A type of one of the universe's projects, such as a game's GameEntity or a film's Character: the entries of that "
+    + "project are made of its types. For create: projectId and name are required. For update: only what you set changes.")]
+public sealed record AiProjectTypeInput(
+    [property: Description("The project's id, from list_projects. Required on create.")] Guid? ProjectId = null,
+    string? Name = null,
+    [property: Description("Plain text. On update, \"\" clears it.")] string? Description = null,
+    [property: Description("One of LorEvolve's type icons, or none. On update, \"\" clears it.")] string? Icon = null,
+    [property: Description("A colour such as #7a5cff. On update, \"\" clears it.")] string? AccentColor = null,
+    [property: Description("Optional: a type of the same project, from get_project_schema, that this type sits inside and inherits fields from.")] Guid? ParentId = null,
+    [property: Description("Instead of parentId: the id of a project_type create in this proposal.")] string? ParentRef = null);
+
+[Description("A field on a type of one of the universe's projects. For create: projectId, typeId (or typeRef), name and kind are "
+    + "required. For update: only what you set changes; a field stays on its type.")]
+public sealed record AiProjectSchemaFieldInput(
+    [property: Description("The project's id, from list_projects. Required on create.")] Guid? ProjectId = null,
+    [property: Description("A type of that project, from get_project_schema.")] Guid? TypeId = null,
+    [property: Description("Instead of typeId: the id of a project_type create in this proposal.")] string? TypeRef = null,
+    string? Name = null,
+    [property: Description("short_text, long_text, number, yes_no, date, one_choice, choices or link.")] string? Kind = null,
+    bool? IsRequired = null,
+    [property: Description("For one_choice and choices only: the whole list of choices.")] IReadOnlyList<string>? Options = null);
 
 [Description("A World Logic rule definition (system_rule): it stands on its own and can sit in several Systems (ADR 0072). "
     + "Read the existing ones with list_world_logic_rules and get_world_logic_rule. There is no remove: a rule is deleted by hand.")]
@@ -401,7 +427,8 @@ public sealed record ProjectEntryValues(
     string Name,
     string Summary,
     Guid? CanonEntryId,
-    List<ProjectFieldValue> Fields);
+    List<ProjectFieldValue> Fields,
+    string? TypeRef = null);
 
 /// <summary>One field value of a proposed project entry, in the shape the check and the review screen both read.</summary>
 public sealed record ProjectFieldValue(
@@ -411,7 +438,29 @@ public sealed record ProjectFieldValue(
     bool? Boolean,
     DateTime? Date,
     List<string>? Choices,
-    Guid? LinkedEntryId);
+    Guid? LinkedEntryId,
+    string? FieldRef = null);
+
+// A project entry's TypeRef and a field value's FieldRef name a type or field this same proposal creates; when set, the
+// Guid beside it is empty. Both are trailing and optional, so an entry staged before they existed reads as it was.
+
+/// <summary>What a proposed type of a project would hold. The project is its scope and never changes.</summary>
+public sealed record ProjectTypeValues(
+    Guid ProjectId,
+    string Name,
+    string? Description,
+    string? Icon,
+    string? AccentColor,
+    AiRef? Parent);
+
+/// <summary>What a proposed field on a project's type would hold. The type is its scope and never changes.</summary>
+public sealed record ProjectSchemaFieldValues(
+    Guid ProjectId,
+    AiRef Type,
+    string Name,
+    EntityFieldKind Kind,
+    bool IsRequired,
+    List<string> Options);
 
 public sealed record IdeaReferenceValue(Ideas.IdeaReferenceKind Kind, AiRef Target);
 

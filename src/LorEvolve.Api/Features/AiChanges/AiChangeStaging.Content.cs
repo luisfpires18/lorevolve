@@ -1,4 +1,6 @@
 using LorEvolve.Api.Features.Ideas;
+using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.ProjectEntities;
 using Microsoft.EntityFrameworkCore;
 
 namespace LorEvolve.Api.Features.AiChanges;
@@ -160,7 +162,15 @@ internal static partial class AiChangeStaging
             }
 
             var projectId = before?.ProjectId ?? entry?.ProjectId ?? Guid.Empty;
-            var typeId = entry?.TypeId ?? before?.TypeId ?? Guid.Empty;
+            // The type is an existing one by id, or one this proposal creates, by its change's id in typeRef.
+            var typeRef = entry?.TypeId is null ? entry?.TypeRef?.Trim() : null;
+            if (entry?.TypeId is not null && !string.IsNullOrWhiteSpace(entry.TypeRef))
+            {
+                Fail(AiChangeCodes.Invalid, "Give the entry's type as typeId or as typeRef, not both.", "projectEntry.typeRef");
+                return null;
+            }
+
+            var typeId = string.IsNullOrEmpty(typeRef) ? entry?.TypeId ?? before?.TypeId ?? Guid.Empty : Guid.Empty;
 
             if (projectId == Guid.Empty)
             {
@@ -168,7 +178,7 @@ internal static partial class AiChangeStaging
                 return null;
             }
 
-            if (typeId == Guid.Empty)
+            if (typeId == Guid.Empty && string.IsNullOrEmpty(typeRef))
             {
                 Fail(AiChangeCodes.Invalid, "Name a type of that project, from get_project_schema.", "projectEntry.typeId");
                 return null;
@@ -178,13 +188,15 @@ internal static partial class AiChangeStaging
 
             foreach (var value in entry?.Fields ?? [])
             {
-                if (value?.FieldId is not { } fieldId)
+                var fieldRef = value?.FieldRef?.Trim();
+                if (value is null || (value.FieldId is null) == string.IsNullOrEmpty(fieldRef))
                 {
-                    Fail(AiChangeCodes.Invalid, "Every field value needs the field's id.", "projectEntry.fields");
+                    Fail(AiChangeCodes.Invalid, "Every field value needs exactly one of the field's id and fieldRef, a project_field create in this proposal.", "projectEntry.fields");
                     return null;
                 }
 
-                fields.RemoveAll(each => each.FieldId == fieldId);
+                var fieldId = value.FieldId ?? Guid.Empty;
+                fields.RemoveAll(each => fieldId != Guid.Empty ? each.FieldId == fieldId : each.FieldRef == fieldRef);
                 fields.Add(new ProjectFieldValue(
                     fieldId,
                     value.Text,
@@ -192,7 +204,8 @@ internal static partial class AiChangeStaging
                     value.Boolean,
                     value.Date,
                     value.Choices?.ToList(),
-                    value.LinkedEntryId));
+                    value.LinkedEntryId,
+                    value.FieldId is null ? fieldRef : null));
             }
 
             // The link to a lore entry: left as it was unless this change names one or asks for it to go.
@@ -206,7 +219,137 @@ internal static partial class AiChangeStaging
                 (entry?.Name ?? before?.Name ?? string.Empty).Trim(),
                 Cleared(entry?.Summary, before?.Summary) ?? string.Empty,
                 canon,
-                fields);
+                fields,
+                string.IsNullOrEmpty(typeRef) ? null : typeRef);
+        }
+
+        private async Task<AiChangeWork?> ProjectTypeAsync(CancellationToken cancellationToken)
+        {
+            if (input.ProjectType is not { } type)
+            {
+                Fail(AiChangeCodes.Invalid, "Put the type's values in projectType.", "projectType");
+                return null;
+            }
+
+            return action == AiChangeAction.Create
+                ? Work(null, null, ProjectType(type, null))
+                : await StoredAsync(
+                    () => AiChangeSnapshots.ProjectTypeAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                    stored => Work(stored, null, ProjectType(type, stored)));
+        }
+
+        /// <summary>A proposed type of a project: on an update the stored type with only what the input sets changed.</summary>
+        private ProjectTypeValues? ProjectType(AiProjectTypeInput type, ProjectTypeValues? before)
+        {
+            if (before is { } current && type.ProjectId is { } named && named != current.ProjectId)
+            {
+                Fail(AiChangeCodes.Invalid, "A type stays in the project it was made in. Leave projectId out, or send its own project.", "projectType.projectId");
+                return null;
+            }
+
+            var projectId = before?.ProjectId ?? type.ProjectId ?? Guid.Empty;
+            if (projectId == Guid.Empty)
+            {
+                Fail(AiChangeCodes.Invalid, "Name the project this type belongs to.", "projectType.projectId");
+                return null;
+            }
+
+            var parent = type.ParentId is null && type.ParentRef is null
+                ? before?.Parent
+                : Ref(new AiRefInput(type.ParentId, type.ParentRef), "projectType.parentId");
+            if (_failed)
+            {
+                return null;
+            }
+
+            return new ProjectTypeValues(
+                projectId,
+                (type.Name ?? before?.Name ?? string.Empty).Trim(),
+                Cleared(type.Description, before?.Description),
+                Cleared(type.Icon, before?.Icon),
+                Cleared(type.AccentColor, before?.AccentColor),
+                parent);
+        }
+
+        private async Task<AiChangeWork?> ProjectFieldAsync(CancellationToken cancellationToken)
+        {
+            if (input.ProjectField is not { } field)
+            {
+                Fail(AiChangeCodes.Invalid, "Put the field's values in projectField.", "projectField");
+                return null;
+            }
+
+            return action == AiChangeAction.Create
+                ? Work(null, null, ProjectField(field, null))
+                : await StoredAsync(
+                    () => AiChangeSnapshots.ProjectFieldAsync(db, universeId, input.TargetId!.Value, cancellationToken),
+                    stored => Work(stored, null, ProjectField(field, stored)));
+        }
+
+        /// <summary>A proposed field on a project's type: on an update the stored field with only what the input sets changed.</summary>
+        private ProjectSchemaFieldValues? ProjectField(AiProjectSchemaFieldInput field, ProjectSchemaFieldValues? before)
+        {
+            if (before is { } current && field.ProjectId is { } named && named != current.ProjectId)
+            {
+                Fail(AiChangeCodes.Invalid, "A field stays in the project it was made in. Leave projectId out, or send its own project.", "projectField.projectId");
+                return null;
+            }
+
+            var projectId = before?.ProjectId ?? field.ProjectId ?? Guid.Empty;
+            if (projectId == Guid.Empty)
+            {
+                Fail(AiChangeCodes.Invalid, "Name the project this field's type belongs to.", "projectField.projectId");
+                return null;
+            }
+
+            var given = field.TypeId is null && field.TypeRef is null
+                ? null
+                : Ref(new AiRefInput(field.TypeId, field.TypeRef), "projectField.typeId");
+            if (_failed)
+            {
+                return null;
+            }
+
+            if (before is not null && given is not null && given != before.Type)
+            {
+                Fail(AiChangeCodes.Unsupported, "A field can't move to another type. Add a field to that type instead.", "projectField.typeId");
+                return null;
+            }
+
+            if ((before?.Type ?? given) is not { } type)
+            {
+                Fail(AiChangeCodes.Invalid, "Say which type of the project the field belongs to, in typeId or typeRef.", "projectField.typeId");
+                return null;
+            }
+
+            EntityFieldKind? kind = field.Kind is null ? before?.Kind : ProjectFieldKind(field.Kind);
+            if (kind is null)
+            {
+                Fail(AiChangeCodes.Invalid, $"A field's kind is one of {string.Join(", ", FieldKinds.Select(known => known.Wire))}.", "projectField.kind");
+                return null;
+            }
+
+            return new ProjectSchemaFieldValues(
+                projectId,
+                type,
+                (field.Name ?? before?.Name ?? string.Empty).Trim(),
+                kind.Value,
+                field.IsRequired ?? before?.IsRequired ?? false,
+                field.Options is null ? before?.Options ?? [] : ProjectEntityTypeEndpoints.Options(new ProjectEntityFieldRequest(null, kind.Value, null, field.Options)));
+        }
+
+        /// <summary>A field kind as an AI names it: the wire names get_change_options lists, or the names get_project_schema shows.</summary>
+        private static EntityFieldKind? ProjectFieldKind(string text)
+        {
+            var trimmed = text.Trim();
+            if (FieldKinds.FirstOrDefault(known => string.Equals(known.Wire, trimmed, StringComparison.OrdinalIgnoreCase)) is { Wire: not null } found)
+            {
+                return found.Kind;
+            }
+
+            return !trimmed.All(char.IsAsciiDigit) && Enum.TryParse<EntityFieldKind>(trimmed, true, out var parsed) && Enum.IsDefined(parsed)
+                ? parsed
+                : null;
         }
 
         private async Task<AiChangeWork?> WorldRuleAsync(CancellationToken cancellationToken)

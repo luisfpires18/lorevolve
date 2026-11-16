@@ -149,6 +149,14 @@ internal static partial class AiChangeStaging
                 continue;
             }
 
+            // A project's type or field is deleted for good, and only once nothing uses it: there is no Trash for either,
+            // so neither is removed through a proposal. The person deletes them in LorEvolve.
+            if (action == AiChangeAction.Remove && resource is AiChangeResource.ProjectType or AiChangeResource.ProjectField)
+            {
+                Problem(AiChangeCodes.Unsupported, "A project's types and fields can't be removed through a proposal. Delete them in LorEvolve.");
+                continue;
+            }
+
             if (!AiChangePermissions.MayStage(effective, resource, action))
             {
                 Problem(AiChangeCodes.NotAllowed, resource == AiChangeResource.Idea
@@ -258,6 +266,8 @@ internal static partial class AiChangeStaging
         "project_entry" or "project_entity" => AiChangeResource.ProjectEntry,
         "system_rule" or "world_logic_rule" => AiChangeResource.SystemRule,
         "system" or "lore_system" or "world_logic_system" => AiChangeResource.LoreSystem,
+        "project_type" or "project_entity_type" => AiChangeResource.ProjectType,
+        "project_field" or "project_entity_field" => AiChangeResource.ProjectField,
         "idea" => AiChangeResource.Idea,
         "lore_type" or "type" => AiChangeResource.LoreType,
         "lore_field" or "field" or "field_definition" => AiChangeResource.LoreField,
@@ -311,6 +321,8 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.ProjectEntry, _) => await ProjectEntryAsync(cancellationToken),
                 (AiChangeResource.SystemRule, _) => await SystemRuleAsync(cancellationToken),
                 (AiChangeResource.LoreSystem, _) => await LoreSystemAsync(cancellationToken),
+                (AiChangeResource.ProjectType, _) => await ProjectTypeAsync(cancellationToken),
+                (AiChangeResource.ProjectField, _) => await ProjectFieldAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),
                 (AiChangeResource.LoreType, _) => await LoreTypeAsync(cancellationToken),
                 (AiChangeResource.LoreField, _) => await LoreFieldAsync(cancellationToken),
