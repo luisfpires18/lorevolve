@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { EntityTile } from './EntityTile'
@@ -31,7 +32,7 @@ export function EntityCard({
   selection?: { checked: boolean; onToggle: () => void }
 }) {
   const { t } = useI18n()
-  const body = <CardBody universeId={universeId} entity={entity} eager={eager} />
+  const body = <EntityCardBody universeId={universeId} entity={entity} eager={eager} />
 
   if (selection) {
     return (
@@ -66,14 +67,28 @@ export function EntityCard({
   )
 }
 
-function CardBody({
+/**
+ * What a card draws. A project's entry (#196) has a name, a type and a summary, and none of a Lore entry's picture, other
+ * names or status, so those are optional here rather than faked there.
+ */
+export type CardEntity = Pick<
+  EntitySummary,
+  'id' | 'name' | 'summary' | 'entityTypeName' | 'entityTypeIcon' | 'entityTypeAccentColor'
+> &
+  Partial<Pick<EntitySummary, 'aliases' | 'image' | 'canonStatus' | 'articleExcerpt'>>
+
+/** The inside of a Lore card, shared with a project's entry cards so the two cannot drift apart. */
+export function EntityCardBody({
   universeId,
   entity,
-  eager,
+  eager = false,
+  note,
 }: {
   universeId: string
-  entity: EntitySummary
-  eager: boolean
+  entity: CardEntity
+  eager?: boolean
+  /** A quiet line under the name, where a Lore entry lists its other names. */
+  note?: ReactNode
 }) {
   const { t, tx } = useI18n()
   return (
@@ -82,7 +97,7 @@ function CardBody({
         className="entitycard__tile"
         universeId={universeId}
         entityId={entity.id}
-        image={entity.image}
+        image={entity.image ?? null}
         typeIcon={entity.entityTypeIcon}
         typeAccent={entity.entityTypeAccentColor}
         eager={eager}
@@ -93,11 +108,12 @@ function CardBody({
           <bdi>{entity.name}</bdi>
         </span>
 
-        {entity.aliases.length > 0 ? (
+        {entity.aliases?.length ? (
           <span className="entitycard__aliases">
             {tx('entity.card.also', { names: <NameList names={entity.aliases} /> })}
           </span>
         ) : null}
+        {note ? <span className="entitycard__aliases">{note}</span> : null}
 
         <span className="entitycard__meta">
           <span
@@ -115,11 +131,13 @@ function CardBody({
               {entity.entityTypeName}
             </span>
           </span>
-          <StatusBadge
-            className="entitycard__status"
-            step={entity.canonStatus}
-            label={CANON_LABELS[entity.canonStatus]}
-          />
+          {entity.canonStatus === undefined ? null : (
+            <StatusBadge
+              className="entitycard__status"
+              step={entity.canonStatus}
+              label={CANON_LABELS[entity.canonStatus]}
+            />
+          )}
         </span>
 
         {/* Why a search found it, when the article is where: plain runs of text, the matched words marked. */}
