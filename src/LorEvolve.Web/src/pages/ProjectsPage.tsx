@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { Link, useOutletContext } from 'react-router-dom'
+import { ActionIcon } from '../components/ActionIcon'
+import { ActionMenu } from '../components/ActionMenu'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { ApiError } from '../lib/api'
 import { listAllProjects } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
 import type { ProjectDetail, ProjectKindValue } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
-import { sectionLabel, type Section } from '../universes/sections'
+import { listStories, reorderStories } from '../stories/api'
+import { useUniverseAccess } from '../universes/access'
+import { WRITING_PROJECTS, sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 /**
@@ -38,10 +44,16 @@ export default function ProjectsPage({
   section?: Section
 }) {
   useI18n()
+  const access = useUniverseAccess()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? workspace?.universe.id : undefined
   const requested = universeId ?? 'all'
   const [state, setState] = useState<LoadState | null>(null)
+  const [announcement, setAnnouncement] = useState('')
+  const [moveError, setMoveError] = useState<string | null>(null)
+  const isMoving = useRef(false)
+  // Writing is the one family with an order of the author's own: the stories' (#272 follow-up). The rest stay by update.
+  const reorderable = section === WRITING_PROJECTS && universeId !== undefined
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
   useDocumentTitle(heading)
@@ -49,13 +61,71 @@ export default function ProjectsPage({
   useEffect(() => {
     const controller = new AbortController()
     // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198).
-    listAllProjects(universeId ? { universeId } : {}, controller.signal)
-      .then((projects) => setState({ kind: 'ready', for: requested, projects }))
+    Promise.all([
+      listAllProjects(universeId ? { universeId } : {}, controller.signal),
+      reorderable && universeId ? listStories(universeId, controller.signal) : null,
+    ])
+      .then(([projects, stories]) =>
+        setState({
+          kind: 'ready',
+          for: requested,
+          projects: stories
+            ? inStoryOrder(
+                projects,
+                stories.map((story) => story.id),
+              )
+            : projects,
+        }),
+      )
       .catch(() => {
         if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })
       })
     return () => controller.abort()
-  }, [universeId, requested])
+  }, [universeId, requested, reorderable])
+
+  /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
+  async function move(project: ProjectDetail, by: -1 | 1) {
+    if (state?.kind !== 'ready' || !universeId || isMoving.current) return
+    const before = state.projects
+    const from = before.findIndex((candidate) => candidate.id === project.id)
+    const to = from + by
+    if (from < 0 || to < 0 || to >= before.length) return
+
+    const after = [...before]
+    after.splice(to, 0, ...after.splice(from, 1))
+    isMoving.current = true
+    setMoveError(null)
+    setState({ kind: 'ready', for: requested, projects: after })
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLElement>(
+          `[data-project-id="${project.id}"] [data-testid="story-actions"]`,
+        )
+        ?.focus(),
+    )
+    try {
+      const saved = await reorderStories(
+        universeId,
+        after.map((candidate) => candidate.storyId ?? candidate.id),
+      )
+      setState({
+        kind: 'ready',
+        for: requested,
+        projects: inStoryOrder(
+          after,
+          saved.map((story) => story.id),
+        ),
+      })
+      setAnnouncement(
+        t('stories.browse.moved', { title: project.name, n: to + 1, total: after.length }),
+      )
+    } catch (error: unknown) {
+      setState({ kind: 'ready', for: requested, projects: before })
+      setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
+    } finally {
+      isMoving.current = false
+    }
+  }
 
   if (state === null || state.for !== requested) {
     return <p className="projects__lede">{t('projects.list.loading')}</p>
@@ -93,6 +163,15 @@ export default function ProjectsPage({
         }
       />
 
+      <p className="visually-hidden" role="status" data-testid="projects-announcement">
+        {announcement}
+      </p>
+      {moveError ? (
+        <p className="form__message" role="alert" data-testid="projects-move-error">
+          {moveError}
+        </p>
+      ) : null}
+
       {shown.length === 0 ? (
         <EmptyState
           title={t('projects.list.empty')}
@@ -100,25 +179,72 @@ export default function ProjectsPage({
           testId="projects-empty"
         />
       ) : (
-        <ul className="projectlist" data-testid="projects-list">
-          {shown.map((project) => (
-            <li className="projectrow" key={project.id}>
+        <ul className="storylist" data-testid="projects-list">
+          {shown.map((project, index) => (
+            <li
+              className="storyrow"
+              key={project.id}
+              data-testid="projects-item"
+              data-project-id={project.id}
+            >
               <Link
-                className="projectrow__main"
+                className="storyrow__title"
                 to={projectRowPath(project)}
                 data-testid={`projects-row-${project.id}`}
               >
-                <span className="projectrow__title">{project.name}</span>
-                <span className="projectrow__meta">
-                  <span>{kindLabel(project.kind)}</span>
-                  <span>{lifecycleLabel(project.lifecycle)}</span>
-                </span>
-                <span className="projectrow__meta">{project.universe.name}</span>
+                <bdi>{project.name}</bdi>
               </Link>
+              <p className="storyrow__meta">
+                <span>{kindLabel(project.kind)}</span>
+                <span>{lifecycleLabel(project.lifecycle)}</span>
+                <span>{project.universe.name}</span>
+                {reorderable && access.editContent && shown.length > 1 ? (
+                  <ActionMenu
+                    className="storyrow__menu"
+                    label={t('stories.browse.moreActions', { title: project.name })}
+                    triggerTestId="story-actions"
+                  >
+                    {index > 0 ? (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        onClick={() => void move(project, -1)}
+                        data-testid="story-move-up"
+                      >
+                        <ActionIcon icon={ArrowUp} />
+                        {t('stories.browse.moveUp')}
+                      </button>
+                    ) : null}
+                    {index < shown.length - 1 ? (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        onClick={() => void move(project, 1)}
+                        data-testid="story-move-down"
+                      >
+                        <ActionIcon icon={ArrowDown} />
+                        {t('stories.browse.moveDown')}
+                      </button>
+                    ) : null}
+                  </ActionMenu>
+                ) : null}
+              </p>
+              {project.summary ? (
+                <p className="storyrow__premise prose">{project.summary}</p>
+              ) : null}
             </li>
           ))}
         </ul>
       )}
     </section>
   )
+}
+
+/** The projects in the order the stories are in; one with no story, or not named, goes last. */
+function inStoryOrder(projects: ProjectDetail[], storyIds: string[]) {
+  const rank = (project: ProjectDetail) => {
+    const at = storyIds.indexOf(project.storyId ?? project.id)
+    return at < 0 ? storyIds.length : at
+  }
+  return [...projects].sort((a, b) => rank(a) - rank(b))
 }

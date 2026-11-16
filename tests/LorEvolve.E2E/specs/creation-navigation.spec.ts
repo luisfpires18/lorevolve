@@ -169,4 +169,22 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(list).toContainText('Only Tale')
     await expect(list).not.toContainText('Quest')
   })
+
+  test('Writing keeps the stories order: Move down is kept across a reload', async ({ page }) => {
+    await signUp(page)
+    const id = await universe(page)
+    for (const title of ['First Tale', 'Second Tale']) {
+      await api(page, 'POST', `/api/universes/${id}/stories`, { title, premise: '', status: 1 })
+    }
+    await page.goto(`/app/universes/${id}/writing`)
+    const titles = page.locator('.storyrow__title')
+    await expect(titles).toHaveText(['First Tale', 'Second Tale'])
+
+    await page.getByTestId('story-actions').first().click()
+    await page.getByTestId('story-move-down').click()
+    await expect(titles).toHaveText(['Second Tale', 'First Tale'])
+
+    await page.reload()
+    await expect(titles).toHaveText(['Second Tale', 'First Tale'])
+  })
 })
