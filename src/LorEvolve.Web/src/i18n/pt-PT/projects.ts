@@ -34,12 +34,6 @@ const projects = {
   overview: {
     types: 'O que há neste projeto',
     noTypes: 'Ainda não há tipos, por isso não se conta nada aqui.',
-    recent: 'Trabalhado há menos tempo',
-    recentLede: 'As entradas alteradas mais recentemente, as mais recentes primeiro.',
-    noRecent: 'Ainda não foi escrito nada aqui.',
-    lore: 'Onde este projeto chega',
-    loreLede: 'O seu universo, e as suas próprias vistas.',
-    loreOf: 'Lore',
     failed: 'Parte deste projeto não pôde ser lida.',
     empty: 'Este projeto ainda não tem nada.',
     emptyHint:

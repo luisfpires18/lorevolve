@@ -225,7 +225,7 @@ test.describe('Project entities', () => {
     await expect(page.locator('main')).not.toContainText('Unit')
   })
 
-  test('a game overview says what is in the project, what was touched last, and the way into the rest', async ({
+  test('a game overview says what is in the project and nothing more, with the rest a tab or the sidebar away', async ({
     page,
   }) => {
     await signUp(page)
@@ -259,12 +259,11 @@ test.describe('Project entities', () => {
         summary: null,
       })
     }
-    const latest = await api<{ id: string; name: string }>(
-      page,
-      'POST',
-      `/api/projects/${project.id}/entities`,
-      { entityTypeId: map.id, name: 'Aback Flats', summary: null },
-    )
+    await api(page, 'POST', `/api/projects/${project.id}/entities`, {
+      entityTypeId: map.id,
+      name: 'Aback Flats',
+      summary: null,
+    })
 
     await page.goto(overview)
 
@@ -273,44 +272,29 @@ test.describe('Project entities', () => {
     await expect(counts.getByTestId(`project-overview-type-${unit.id}`)).toContainText('2 entries')
     await expect(counts.getByTestId(`project-overview-type-${map.id}`)).toContainText('1 entry')
 
-    // The newest first, which is the order the list has to be asked for: by name Aback Flats would lead anyway, so
-    // the assertion that carries weight is that the newest entry heads the list while two older ones exist.
-    const recent = page.getByTestId('project-overview-recent-list')
-    await expect(recent.locator('> li')).toHaveCount(3)
-    await expect(recent.locator('> li').first()).toContainText('Aback Flats')
+    // The overview is identity and counts only (#278): no recent list and no ways-out section.
+    await expect(page.getByTestId('project-overview-recent')).toHaveCount(0)
+    await expect(page.getByTestId('project-overview-links')).toHaveCount(0)
 
-    // Each one opens that entry: its type's list, on its own row, marked as the row in view.
-    await page.getByTestId(`project-overview-entry-${latest.id}`).click()
-    await expect(page.getByTestId('project-entries')).toContainText('Aback Flats')
-    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
-    // The address names it, so a direct load opens the same row rather than the top of the list.
-    const named = page.url()
-    await page.goto(named)
-    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
-
-    // The universe's lore and every other view this kind offers are a link away.
-    await page.goto(overview)
-    await expect(page.getByTestId('project-overview-lore')).toContainText(/\w/)
+    // Everything those sections linked to stays reachable: the tab bar, and the sidebar's Lore.
     for (const segment of ['entities', 'systems']) {
-      await expect(page.getByTestId(`project-overview-way-${segment}`)).toBeVisible()
+      await expect(page.getByTestId(`projecttab-${segment}`)).toBeVisible()
     }
-    await expect(page.getByTestId('project-overview-way-overview')).toHaveCount(0)
+    await page
+      .getByRole('navigation', { name: 'Universe', exact: true })
+      .getByRole('link', { name: 'Lore', exact: true })
+      .click()
+    await expect(page).toHaveURL(/\/lore$/)
   })
 
-  test('a game, a series and a film open a type as Lore does, edit types, and move between views at both widths', async ({
+  test('a game, a series, a film and a comic open a type as Lore does, edit types, and move between views at both widths', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
 
-    // 1 is Game, 2 Series and 3 Film. Series and Film have five views, whose tab bar used to widen a phone's page.
-    for (const kind of [1, 2, 3]) {
+    // 1 is Game, 2 Series, 3 Film and 4 Comic (#278 checks the shared overview on each). Series and Film have five views, whose tab bar used to widen a phone's page.
+    for (const kind of [1, 2, 3, 4]) {
       const project = await api<{ id: string }>(page, 'POST', '/api/projects', {
         name: unique('Low Tide '),
         kind,
@@ -351,6 +335,9 @@ test.describe('Project entities', () => {
       await expect(page.getByTestId('project-tabs')).toBeVisible()
       await page.getByTestId('projecttab-overview').click()
       await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
+      // Every kind shares the one overview: counts only, no recent list and no ways-out section (#278).
+      await expect(page.getByTestId('project-overview-recent')).toHaveCount(0)
+      await expect(page.getByTestId('project-overview-links')).toHaveCount(0)
       await page.getByTestId('projecttab-entities').click()
       await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
 
