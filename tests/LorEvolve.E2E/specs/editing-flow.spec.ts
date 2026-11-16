@@ -330,7 +330,7 @@ async function expectApart(first: Locator, second: Locator) {
 }
 
 test.describe('workspace navigation', () => {
-  test('Timeline sits between Stories and Ideas in the sidebar, the phone sheet and the Overview', async ({
+  test('Timeline sits between Maps and World Logic in the sidebar, the phone drawer and the Overview', async ({
     page,
   }) => {
     await signUp(page)
@@ -351,16 +351,7 @@ test.describe('workspace navigation', () => {
     const links = (await sections.getByRole('link').allTextContents()).map((text) => text.trim())
     expect(links.slice(2, 2 + world.length + writing.length)).toEqual([...world, ...writing])
 
-    const doorways = [
-      'lore',
-      'types',
-      'family-tree',
-      'maps',
-      'world-logic',
-      'stories',
-      'timeline',
-      'ideas',
-    ]
+    const doorways = ['lore', 'types', 'family-tree', 'maps', 'timeline', 'world-logic', 'ideas']
     const overview = await page
       .locator('[data-testid^="overview-"]')
       .evaluateAll((all) => all.map((one) => one.getAttribute('data-testid')))

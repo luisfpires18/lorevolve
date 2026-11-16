@@ -173,9 +173,9 @@ test.describe('Projects navigation', () => {
 
     // Both universes' projects, each naming the universe it belongs to.
     await expect(page.getByTestId(`projects-row-${here.id}`)).toContainText(here.name)
-    await expect(page.getByTestId(`projects-row-${here.id}`)).toContainText(first.name)
+    await expect(page.locator(`[data-project-id="${here.id}"]`)).toContainText(first.name)
     await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(there.name)
-    await expect(page.getByTestId(`projects-row-${there.id}`)).toContainText(second.name)
+    await expect(page.locator(`[data-project-id="${there.id}"]`)).toContainText(second.name)
 
     // No filter for projects without a universe, because there are none, and nothing here makes one.
     await expect(page.getByTestId('projects-filter-standalone')).toHaveCount(0)
@@ -233,7 +233,8 @@ test.describe('Projects navigation', () => {
     await page.goto('/app/projects')
     const row = page.getByTestId(`projects-row-${existing.id}`)
     await expect(row).toContainText(existing.title)
-    await expect(row).toContainText('Writing')
+    // The row's link carries the title; its kind sits in the line beneath it.
+    await expect(page.locator(`[data-project-id="${existing.id}"]`)).toContainText('Writing')
 
     // It opens the project shell, whose Structure is the story's own page: nothing of it was copied anywhere (#140),
     // and since #194 it is reached the way every other project is.

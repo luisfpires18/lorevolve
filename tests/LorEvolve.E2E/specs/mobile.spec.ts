@@ -134,7 +134,8 @@ test.describe('on a phone', () => {
     await toggle.click()
     await page.goBack()
     await expect(page.locator('.sidebar')).toBeHidden()
-    await page.goForward()
+    // Back on Lore, where the authoring below starts.
+    await page.waitForURL(/\/lore$/)
 
     // ---- Authoring, in the same column ----
 
