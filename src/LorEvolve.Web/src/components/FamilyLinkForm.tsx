@@ -170,15 +170,15 @@ export function FamilyLinkForm({
       ) : null}
 
       <div className="relform__grid">
-        <Field
-          label={t('places.linkForm.connection')}
-          id="family-link-kind"
-          error={fieldErrors.relationshiptypeid}
-        >
+        <Field label={t('places.linkForm.connection')} id="family-link-kind">
           {(control) => (
             <>
               <select
                 {...control}
+                aria-invalid={fieldErrors.relationshiptypeid ? true : undefined}
+                aria-describedby={
+                  fieldErrors.relationshiptypeid ? 'family-link-kind-error' : undefined
+                }
                 className="field__input field__input--select"
                 value={kind?.id ?? ''}
                 onChange={(event) => {
@@ -193,6 +193,11 @@ export function FamilyLinkForm({
                   </option>
                 ))}
               </select>
+              {fieldErrors.relationshiptypeid ? (
+                <p className="field__error" id="family-link-kind-error">
+                  {fieldErrors.relationshiptypeid}
+                </p>
+              ) : null}
               <button
                 className="button button--text button--sm familylink__newkind"
                 type="button"
