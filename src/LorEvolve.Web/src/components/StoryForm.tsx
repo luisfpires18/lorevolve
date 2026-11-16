@@ -158,7 +158,9 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
                 ? t('stories.storyForm.sending')
                 : t('stories.storyForm.sendSuggestion')
               : isSaving
-                ? t('stories.storyForm.saving')
+                ? story
+                  ? t('stories.storyForm.saving')
+                  : t('stories.storyForm.creating')
                 : story
                   ? t('stories.storyForm.save')
                   : t('stories.storyForm.create')}

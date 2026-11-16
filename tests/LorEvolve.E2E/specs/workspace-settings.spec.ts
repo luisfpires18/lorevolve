@@ -435,7 +435,7 @@ test.describe('Settings', () => {
     // Saving General leaves the colour alone.
     await page.getByRole('tab', { name: 'General' }).click()
     await page.getByLabel('Description').fill('Renamed notes.')
-    await page.getByRole('button', { name: 'Save changes' }).click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.getByTestId('settings-saved')).toBeVisible()
     let stored = await api<{ accentColor: string | null; description: string }>(
       page,
@@ -449,13 +449,13 @@ test.describe('Settings', () => {
     await page.getByRole('tab', { name: 'Appearance' }).click()
     await hex.fill('#12zz45')
     await expect(appearance.getByRole('alert')).toContainText('Use a colour like')
-    await appearance.getByRole('button', { name: 'Save colour' }).click()
+    await appearance.getByRole('button', { name: 'Save', exact: true }).click()
     stored = await api(page, 'GET', `/api/universes/${w.id}`)
     expect(stored.accentColor).toBe('#1f8f74')
 
     // Any colour, typed without its #, is kept as the author chose it; and the description is left alone.
     await hex.fill('8B3242')
-    await appearance.getByRole('button', { name: 'Save colour' }).click()
+    await appearance.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.getByTestId('settings-colour-saved')).toBeVisible()
     stored = await api(page, 'GET', `/api/universes/${w.id}`)
     expect(stored.accentColor).toBe('#8b3242')
@@ -463,7 +463,7 @@ test.describe('Settings', () => {
 
     // And none.
     await appearance.getByTestId('universe-colour-clear').click()
-    await appearance.getByRole('button', { name: 'Save colour' }).click()
+    await appearance.getByRole('button', { name: 'Save', exact: true }).click()
     await expect
       .poll(
         async () =>

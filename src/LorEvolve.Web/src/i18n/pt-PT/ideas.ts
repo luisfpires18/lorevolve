@@ -41,7 +41,7 @@ const ideas: Dictionary['ideas'] = {
     },
     inUniverse: 'Em {universe}',
     inThisUniverse: 'No universo desta ideia',
-    title: 'Adicionar uma referência',
+    title: 'Adicionar referência',
     whatToReference: 'O que referenciar',
     findByName: 'Procurar por nome',
     looking: 'A procurar…',
@@ -55,8 +55,8 @@ const ideas: Dictionary['ideas'] = {
   boardPicker: {
     inUniverse: 'Para um quadro em {universe}',
     inNoUniverse: 'Para um quadro sem universo',
-    addIdea: 'Adicionar uma ideia',
-    addEntry: 'Adicionar uma entrada de lore',
+    addIdea: 'Adicionar ideia',
+    addEntry: 'Adicionar entrada de lore',
     findByName: 'Procurar por nome',
     placeholderIdea: 'Palavras de uma ideia',
     placeholderEntry: 'Nome de uma entrada de lore',
@@ -336,7 +336,7 @@ const ideas: Dictionary['ideas'] = {
     alreadyJoined: 'Esses dois cartões já estão ligados.',
     linesFull: 'Um quadro suporta até {max} linhas.',
     joined: 'Ligaste “{from}” e “{to}”. Ainda não está guardado.',
-    lineRemoved: 'Removeste a linha. Ainda não está guardado.',
+    lineRemoved: 'Eliminaste a linha. Ainda não está guardado.',
     delete: {
       title: 'Eliminar “{title}”?',
       messageDirty:
@@ -418,7 +418,7 @@ const ideas: Dictionary['ideas'] = {
       between: 'Entre {from} e {to}.',
       label: 'Etiqueta',
       labelPlaceholder: 'Opcional: porquê?',
-      removeLine: 'Remover linha',
+      removeLine: 'Eliminar linha',
       hint: 'Escolhe um cartão para escrever nele, abrir aquilo para que aponta ou traçar uma linha a partir dele.',
     },
     recoveryWarning:

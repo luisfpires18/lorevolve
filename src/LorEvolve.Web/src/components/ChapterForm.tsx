@@ -143,7 +143,9 @@ export function ChapterForm({
         <>
           <button className="button" type="submit" disabled={isSaving} data-testid="save-chapter">
             {isSaving
-              ? t('stories.chapterForm.saving')
+              ? chapter
+                ? t('stories.chapterForm.saving')
+                : t('stories.chapterForm.adding')
               : chapter
                 ? t('stories.chapterForm.save')
                 : t('stories.chapterForm.add')}

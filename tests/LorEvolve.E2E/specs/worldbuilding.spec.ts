@@ -139,7 +139,7 @@ test.describe('worldbuilding workspaces', () => {
     // The drawer calls it a moment too.
     await page.getByTestId('new-moment').click()
     await expect(page.getByTestId('moment-form')).toContainText('New moment')
-    await expect(page.getByTestId('save-moment')).toHaveText('Create moment')
+    await expect(page.getByTestId('save-moment')).toHaveText('Add moment')
   })
 
   test("an idea's and a rule's Delete is in the menu beside its title, never beside Save", async ({

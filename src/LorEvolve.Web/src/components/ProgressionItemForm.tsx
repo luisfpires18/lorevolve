@@ -309,7 +309,13 @@ export function ProgressionItemForm({
             disabled={isSaving}
             data-testid={`save-${kind}`}
           >
-            {isSaving ? t('progression.item.saving') : item ? words.save : words.add}
+            {isSaving
+              ? item
+                ? t('progression.item.saving')
+                : t('progression.item.adding')
+              : item
+                ? words.save
+                : words.add}
           </button>
           <button className="button button--secondary" type="button" onClick={close}>
             {t('progression.item.cancel')}

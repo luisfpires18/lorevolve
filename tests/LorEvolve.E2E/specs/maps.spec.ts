@@ -259,7 +259,7 @@ test.describe('a map of the world', () => {
 
     await page.locator(`[data-testid="map-pin-row"][data-pin-title="${capital}"]`).click()
     await page.getByTestId('map-pin-remove').click()
-    await page.getByRole('button', { name: 'Remove pin' }).click()
+    await page.getByRole('button', { name: 'Delete pin' }).click()
     await expect(page.locator(`[data-testid="map-pin"][data-pin-title="${capital}"]`)).toHaveCount(
       0,
     )

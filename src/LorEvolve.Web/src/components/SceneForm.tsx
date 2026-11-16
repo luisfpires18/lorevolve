@@ -215,7 +215,9 @@ export function SceneForm({
                 ? t('stories.sceneForm.sending')
                 : t('stories.sceneForm.sendSuggestion')
               : isSaving
-                ? t('stories.sceneForm.saving')
+                ? scene
+                  ? t('stories.sceneForm.saving')
+                  : t('stories.sceneForm.adding')
                 : scene
                   ? t('stories.sceneForm.save')
                   : t('stories.sceneForm.add')}
