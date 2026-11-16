@@ -48,7 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-#248 UI consistency tracker running sequentially. #249 merged (PR #258). #250 first half (`Drawer.tsx` and 15 of 23 drawers) in PR #260; the other 8 (MapPinForm, EraForm, MapForm, FieldSectionsDialog, SceneForm, ProgressionItemForm, TimelineEntryForm, TypeFields) wait for a second Issue the owner creates. #250 stays open.
+#248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five.
 
 Previously: #238 (image fields with crop on project and Lore entry types) merged as PR #239 on 2026-11-16:
 migration `AddEntityFieldImages`, backup format 48. Owner check on DEV: upload and crop a real 2D drawing and a 3D render.

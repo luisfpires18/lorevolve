@@ -4,9 +4,10 @@ import { MomentPick } from './MomentPick'
 import { ScenePicks } from './ScenePicks'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
+import { payloadKey } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
+import { Drawer } from './Drawer'
 import {
   abilityInputOf,
   appearanceInputOf,
@@ -178,7 +179,6 @@ export function ProgressionItemForm({
   onSaved: (progression: Progression) => void
 }) {
   const { t } = useI18n()
-  const dialog = useRef<HTMLDialogElement>(null)
   const nameInput = useRef<HTMLInputElement>(null)
   const saveButton = useRef<HTMLButtonElement>(null)
   const words = wordsOf(kind)
@@ -191,16 +191,9 @@ export function ProgressionItemForm({
   const [conflict, setConflict] = useState(false)
 
   const isDirty = payloadKey(inputOf(draft, null)) !== payloadKey(inputOf(initial, null))
-  const { close, dialogProps } = useDrawerGuard(
-    isDirty,
-    item ? t('progression.item.unsavedExisting', { name: nameOf(item) }) : words.unsaved,
-    onClose,
-  )
-
   useReturnFocus()
 
   useEffect(() => {
-    dialog.current?.showModal()
     nameInput.current?.focus()
   }, [])
 
@@ -296,249 +289,19 @@ export function ProgressionItemForm({
   const unlockAt = base.eras.findIndex((era) => era.id === draft.unlockEraId)
 
   return (
-    <dialog
-      className="drawer"
-      ref={dialog}
-      aria-labelledby="item-heading"
-      {...dialogProps}
-      data-testid={`${kind}-form`}
-    >
-      <form
-        className="drawer__panel"
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <header className="drawer__head">
-          <p className="drawer__eyebrow">
-            {item ? words.eyebrow(entityName) : words.eyebrowNew(entityName)}
-          </p>
-          <h2 className="drawer__title" id="item-heading">
-            {heading}
-          </h2>
-        </header>
-
-        <div className="drawer__body">
-          {message ? (
-            <p className="form__message" role="alert" data-testid={`${kind}-error`}>
-              {message}
-            </p>
-          ) : null}
-
-          {conflict ? (
-            <EditConflict
-              what={t('progression.item.conflictWhat')}
-              read={() => getProgression(universeId, entityId)}
-              renderLatest={(latest) => (
-                <ul className="namelist">
-                  {listOf(latest, kind).map((one) => (
-                    <li key={one.id}>{nameOf(one)}</li>
-                  ))}
-                </ul>
-              )}
-              onKeepMine={(latest) => {
-                setBase(latest)
-                setConflict(false)
-                requestAnimationFrame(() => saveButton.current?.focus())
-              }}
-              onUseLatest={(latest) => {
-                setBase(latest)
-                const reread = listOf(latest, kind).find((one) => one.id === item?.id) ?? null
-                setDraft(draftOf(reread))
-                setInitial(draftOf(reread))
-                setConflict(false)
-                requestAnimationFrame(() => nameInput.current?.focus())
-              }}
-              testId={`${kind}-conflict`}
-            />
-          ) : null}
-
-          <div className="field">
-            <label className="field__label" htmlFor="item-name">
-              {isLook ? t('progression.item.label') : t('progression.item.name')}
-            </label>
-            <input
-              id="item-name"
-              ref={nameInput}
-              className="field__input"
-              dir="auto"
-              placeholder={
-                isLook
-                  ? t('progression.item.labelPlaceholder')
-                  : t('progression.item.namePlaceholder')
-              }
-              value={draft.name}
-              onChange={(event) => edit({ name: event.target.value })}
-              aria-invalid={errorOf('name') ? true : undefined}
-              aria-describedby={errorOf('name') ? 'item-name-error' : undefined}
-              data-testid={`${kind}-name-input`}
-            />
-            {errorOf('name') ? (
-              <p className="field__error" id="item-name-error">
-                {errorOf('name')}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="field">
-            <label className="field__label" htmlFor="item-description">
-              {isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
-            </label>
-            <p className="field__hint">
-              {kind === 'form'
-                ? t('progression.item.hint.form')
-                : kind === 'ability'
-                  ? t('progression.item.hint.ability')
-                  : t('progression.item.hint.appearance')}
-            </p>
-            <textarea
-              id="item-description"
-              className="field__input field__input--area"
-              rows={4}
-              dir="auto"
-              maxLength={DESCRIPTION_MAX}
-              value={draft.description}
-              onChange={(event) => edit({ description: event.target.value })}
-              aria-invalid={errorOf('description') ? true : undefined}
-              aria-describedby={errorOf('description') ? 'item-description-error' : undefined}
-              data-testid={`${kind}-description-input`}
-            />
-            {errorOf('description') ? (
-              <p className="field__error" id="item-description-error">
-                {errorOf('description')}
-              </p>
-            ) : null}
-          </div>
-
-          {isLook ? null : (
-            <fieldset className="itemunlock" data-testid={`${kind}-unlock`}>
-              <legend className="field__label">{t('progression.item.unlock.title')}</legend>
-              <p className="field__hint">{t('progression.item.unlock.hint')}</p>
-
-              <div className="field">
-                <label className="field__label" htmlFor="item-unlock-era">
-                  {t('progression.item.unlock.stage')}
-                </label>
-                <select
-                  id="item-unlock-era"
-                  className="field__input field__input--select"
-                  value={draft.unlockEraId}
-                  onChange={(event) => edit({ unlockEraId: event.target.value })}
-                  aria-invalid={errorOf('unlockEraId') ? true : undefined}
-                  data-testid={`${kind}-unlock-era`}
-                >
-                  <option value="">
-                    {base.eras.length === 0
-                      ? t('progression.item.unlock.noStages')
-                      : t('progression.item.unlock.notSaid')}
-                  </option>
-                  {base.eras.map((era) => (
-                    <option key={era.id} value={era.id}>
-                      {era.name}
-                    </option>
-                  ))}
-                </select>
-                {errorOf('unlockEraId') ? (
-                  <p className="field__error">{errorOf('unlockEraId')}</p>
-                ) : null}
-              </div>
-
-              <ScenePicks
-                universeId={universeId}
-                label={t('progression.item.unlock.scene')}
-                value={draft.unlockScene}
-                onChange={(unlockScene) => edit({ unlockScene })}
-                single
-                error={errorOf('unlockSceneId')}
-                testId={`${kind}-unlock-scene`}
-              />
-
-              <MomentPick
-                universeId={universeId}
-                label={t('progression.item.unlock.moment')}
-                value={draft.unlockMoment}
-                onChange={(unlockMoment) => edit({ unlockMoment })}
-                error={errorOf('unlockMomentId')}
-                testId={`${kind}-unlock-moment`}
-              />
-            </fieldset>
-          )}
-
-          {base.eras.length > 0 ? (
-            <fieldset className="itemeras" data-testid={`${kind}-eras`}>
-              <legend className="field__label">
-                {isLook ? t('progression.item.eras.titleLook') : t('progression.item.eras.title')}
-              </legend>
-              <p className="field__hint">
-                {isLook ? t('progression.item.eras.hintLook') : t('progression.item.eras.hint')}
-              </p>
-              {base.eras.map((era) => (
-                <label className="check" key={era.id}>
-                  <input
-                    type="checkbox"
-                    checked={draft.eraIds.includes(era.id)}
-                    onChange={(event) =>
-                      edit({ eraIds: toggle(draft.eraIds, era.id, event.target.checked) })
-                    }
-                    data-testid={`${kind}-era-${era.name}`}
-                  />
-                  {era.name}
-                </label>
-              ))}
-              {!isLook && unlockAt !== -1 ? (
-                <button
-                  type="button"
-                  className="button button--secondary button--sm"
-                  onClick={fromUnlockOn}
-                  data-testid={`${kind}-eras-from-unlock`}
-                >
-                  {t('progression.item.eras.fromUnlock', { name: base.eras[unlockAt].name })}
-                </button>
-              ) : null}
-              {errorOf('eraIds') ? <p className="field__error">{errorOf('eraIds')}</p> : null}
-            </fieldset>
-          ) : null}
-
-          <ScenePicks
-            universeId={universeId}
-            label={
-              isLook ? t('progression.item.scenes.labelLook') : t('progression.item.scenes.label')
-            }
-            hint={
-              isLook ? t('progression.item.scenes.hintLook') : t('progression.item.scenes.hint')
-            }
-            value={draft.scenes}
-            onChange={(scenes) => edit({ scenes })}
-            error={errorOf('sceneIds')}
-            testId={`${kind}-scenes`}
-          />
-
-          {kind !== 'form' && base.forms.length > 0 ? (
-            <fieldset className="itemeras" data-testid={`${kind}-forms`}>
-              <legend className="field__label">
-                {isLook ? t('progression.item.forms.titleLook') : t('progression.item.forms.title')}
-              </legend>
-              <p className="field__hint">{t('progression.item.forms.hint')}</p>
-              {base.forms.map((form) => (
-                <label className="check" key={form.id}>
-                  <input
-                    type="checkbox"
-                    checked={draft.formIds.includes(form.id)}
-                    onChange={(event) =>
-                      edit({ formIds: toggle(draft.formIds, form.id, event.target.checked) })
-                    }
-                    data-testid={`${kind}-form-${form.name}`}
-                  />
-                  {form.name}
-                </label>
-              ))}
-              {errorOf('formIds') ? <p className="field__error">{errorOf('formIds')}</p> : null}
-            </fieldset>
-          ) : null}
-        </div>
-
-        <footer className="drawer__actions">
+    <Drawer
+      testId={`${kind}-form`}
+      titleId="item-heading"
+      eyebrow={item ? words.eyebrow(entityName) : words.eyebrowNew(entityName)}
+      title={heading}
+      isDirty={isDirty}
+      leaveMessage={
+        item ? t('progression.item.unsavedExisting', { name: nameOf(item) }) : words.unsaved
+      }
+      onClose={onClose}
+      onSubmit={() => void save()}
+      actions={(close) => (
+        <>
           <button
             ref={saveButton}
             className="button"
@@ -551,8 +314,219 @@ export function ProgressionItemForm({
           <button className="button button--secondary" type="button" onClick={close}>
             {t('progression.item.cancel')}
           </button>
-        </footer>
-      </form>
-    </dialog>
+        </>
+      )}
+    >
+      {message ? (
+        <p className="form__message" role="alert" data-testid={`${kind}-error`}>
+          {message}
+        </p>
+      ) : null}
+
+      {conflict ? (
+        <EditConflict
+          what={t('progression.item.conflictWhat')}
+          read={() => getProgression(universeId, entityId)}
+          renderLatest={(latest) => (
+            <ul className="namelist">
+              {listOf(latest, kind).map((one) => (
+                <li key={one.id}>{nameOf(one)}</li>
+              ))}
+            </ul>
+          )}
+          onKeepMine={(latest) => {
+            setBase(latest)
+            setConflict(false)
+            requestAnimationFrame(() => saveButton.current?.focus())
+          }}
+          onUseLatest={(latest) => {
+            setBase(latest)
+            const reread = listOf(latest, kind).find((one) => one.id === item?.id) ?? null
+            setDraft(draftOf(reread))
+            setInitial(draftOf(reread))
+            setConflict(false)
+            requestAnimationFrame(() => nameInput.current?.focus())
+          }}
+          testId={`${kind}-conflict`}
+        />
+      ) : null}
+
+      <div className="field">
+        <label className="field__label" htmlFor="item-name">
+          {isLook ? t('progression.item.label') : t('progression.item.name')}
+        </label>
+        <input
+          id="item-name"
+          ref={nameInput}
+          className="field__input"
+          dir="auto"
+          placeholder={
+            isLook ? t('progression.item.labelPlaceholder') : t('progression.item.namePlaceholder')
+          }
+          value={draft.name}
+          onChange={(event) => edit({ name: event.target.value })}
+          aria-invalid={errorOf('name') ? true : undefined}
+          aria-describedby={errorOf('name') ? 'item-name-error' : undefined}
+          data-testid={`${kind}-name-input`}
+        />
+        {errorOf('name') ? (
+          <p className="field__error" id="item-name-error">
+            {errorOf('name')}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="field">
+        <label className="field__label" htmlFor="item-description">
+          {isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
+        </label>
+        <p className="field__hint">
+          {kind === 'form'
+            ? t('progression.item.hint.form')
+            : kind === 'ability'
+              ? t('progression.item.hint.ability')
+              : t('progression.item.hint.appearance')}
+        </p>
+        <textarea
+          id="item-description"
+          className="field__input field__input--area"
+          rows={4}
+          dir="auto"
+          maxLength={DESCRIPTION_MAX}
+          value={draft.description}
+          onChange={(event) => edit({ description: event.target.value })}
+          aria-invalid={errorOf('description') ? true : undefined}
+          aria-describedby={errorOf('description') ? 'item-description-error' : undefined}
+          data-testid={`${kind}-description-input`}
+        />
+        {errorOf('description') ? (
+          <p className="field__error" id="item-description-error">
+            {errorOf('description')}
+          </p>
+        ) : null}
+      </div>
+
+      {isLook ? null : (
+        <fieldset className="itemunlock" data-testid={`${kind}-unlock`}>
+          <legend className="field__label">{t('progression.item.unlock.title')}</legend>
+          <p className="field__hint">{t('progression.item.unlock.hint')}</p>
+
+          <div className="field">
+            <label className="field__label" htmlFor="item-unlock-era">
+              {t('progression.item.unlock.stage')}
+            </label>
+            <select
+              id="item-unlock-era"
+              className="field__input field__input--select"
+              value={draft.unlockEraId}
+              onChange={(event) => edit({ unlockEraId: event.target.value })}
+              aria-invalid={errorOf('unlockEraId') ? true : undefined}
+              data-testid={`${kind}-unlock-era`}
+            >
+              <option value="">
+                {base.eras.length === 0
+                  ? t('progression.item.unlock.noStages')
+                  : t('progression.item.unlock.notSaid')}
+              </option>
+              {base.eras.map((era) => (
+                <option key={era.id} value={era.id}>
+                  {era.name}
+                </option>
+              ))}
+            </select>
+            {errorOf('unlockEraId') ? (
+              <p className="field__error">{errorOf('unlockEraId')}</p>
+            ) : null}
+          </div>
+
+          <ScenePicks
+            universeId={universeId}
+            label={t('progression.item.unlock.scene')}
+            value={draft.unlockScene}
+            onChange={(unlockScene) => edit({ unlockScene })}
+            single
+            error={errorOf('unlockSceneId')}
+            testId={`${kind}-unlock-scene`}
+          />
+
+          <MomentPick
+            universeId={universeId}
+            label={t('progression.item.unlock.moment')}
+            value={draft.unlockMoment}
+            onChange={(unlockMoment) => edit({ unlockMoment })}
+            error={errorOf('unlockMomentId')}
+            testId={`${kind}-unlock-moment`}
+          />
+        </fieldset>
+      )}
+
+      {base.eras.length > 0 ? (
+        <fieldset className="itemeras" data-testid={`${kind}-eras`}>
+          <legend className="field__label">
+            {isLook ? t('progression.item.eras.titleLook') : t('progression.item.eras.title')}
+          </legend>
+          <p className="field__hint">
+            {isLook ? t('progression.item.eras.hintLook') : t('progression.item.eras.hint')}
+          </p>
+          {base.eras.map((era) => (
+            <label className="check" key={era.id}>
+              <input
+                type="checkbox"
+                checked={draft.eraIds.includes(era.id)}
+                onChange={(event) =>
+                  edit({ eraIds: toggle(draft.eraIds, era.id, event.target.checked) })
+                }
+                data-testid={`${kind}-era-${era.name}`}
+              />
+              {era.name}
+            </label>
+          ))}
+          {!isLook && unlockAt !== -1 ? (
+            <button
+              type="button"
+              className="button button--secondary button--sm"
+              onClick={fromUnlockOn}
+              data-testid={`${kind}-eras-from-unlock`}
+            >
+              {t('progression.item.eras.fromUnlock', { name: base.eras[unlockAt].name })}
+            </button>
+          ) : null}
+          {errorOf('eraIds') ? <p className="field__error">{errorOf('eraIds')}</p> : null}
+        </fieldset>
+      ) : null}
+
+      <ScenePicks
+        universeId={universeId}
+        label={isLook ? t('progression.item.scenes.labelLook') : t('progression.item.scenes.label')}
+        hint={isLook ? t('progression.item.scenes.hintLook') : t('progression.item.scenes.hint')}
+        value={draft.scenes}
+        onChange={(scenes) => edit({ scenes })}
+        error={errorOf('sceneIds')}
+        testId={`${kind}-scenes`}
+      />
+
+      {kind !== 'form' && base.forms.length > 0 ? (
+        <fieldset className="itemeras" data-testid={`${kind}-forms`}>
+          <legend className="field__label">
+            {isLook ? t('progression.item.forms.titleLook') : t('progression.item.forms.title')}
+          </legend>
+          <p className="field__hint">{t('progression.item.forms.hint')}</p>
+          {base.forms.map((form) => (
+            <label className="check" key={form.id}>
+              <input
+                type="checkbox"
+                checked={draft.formIds.includes(form.id)}
+                onChange={(event) =>
+                  edit({ formIds: toggle(draft.formIds, form.id, event.target.checked) })
+                }
+                data-testid={`${kind}-form-${form.name}`}
+              />
+              {form.name}
+            </label>
+          ))}
+          {errorOf('formIds') ? <p className="field__error">{errorOf('formIds')}</p> : null}
+        </fieldset>
+      ) : null}
+    </Drawer>
   )
 }

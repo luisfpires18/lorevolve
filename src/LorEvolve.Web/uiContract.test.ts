@@ -111,21 +111,13 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['unisearch__excerpttext', '#248'],
 ])
 
-// Files that write their own <dialog>. Only shrinks; the tracker ends at five (Drawer and the four that stay).
+// Files that write their own <dialog>. The five that stay: Drawer and four that are not drawers.
 const DIALOG_FILES = [
   'src/components/ConfirmDialog.tsx',
   'src/components/Drawer.tsx',
-  'src/components/EraForm.tsx',
   'src/components/FamilyMemberDetails.tsx',
-  'src/components/FieldSectionsDialog.tsx',
   'src/components/ImageCropDialog.tsx',
   'src/components/ImageViewer.tsx',
-  'src/components/MapForm.tsx',
-  'src/components/MapPinForm.tsx',
-  'src/components/ProgressionItemForm.tsx',
-  'src/components/SceneForm.tsx',
-  'src/components/TimelineEntryForm.tsx',
-  'src/components/TypeFields.tsx',
 ]
 
 // Files that write a field as label > span.field__label with no htmlFor. Only shrinks; the tracker ends at zero.
