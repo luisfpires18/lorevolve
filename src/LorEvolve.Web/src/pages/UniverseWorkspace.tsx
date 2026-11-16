@@ -138,6 +138,31 @@ function Workspace() {
   const [navOpenAt, setNavOpenAt] = useState<string | null>(null)
   const isNavOpen = navOpenAt === pathname
   const navId = useId()
+  const navRef = useRef<HTMLElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+
+  // Below 860px the open list is a drawer over the page (#274): focus goes into it, and back to the toggle when it
+  // closes, by the Sections toggle, Escape, the scrim, or a link pressed.
+  useEffect(() => {
+    if (!isNavOpen) return
+    const nav = navRef.current
+    const first =
+      nav?.querySelector<HTMLElement>('a[aria-current="page"]') ??
+      nav?.querySelector<HTMLElement>('a')
+    first?.focus()
+    const toggle = toggleRef.current
+    return () => toggle?.focus()
+  }, [isNavOpen])
+
+  // Resizing or rotating to the wide layout, where the list is always drawn, must not leave the page behind it inert.
+  useEffect(() => {
+    const wide = window.matchMedia('(min-width: 861px)')
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setNavOpenAt(null)
+    }
+    wide.addEventListener('change', onChange)
+    return () => wide.removeEventListener('change', onChange)
+  }, [])
 
   const load = useCallback(
     (signal?: AbortSignal) => {
@@ -386,6 +411,7 @@ function Workspace() {
         <button
           className="rail__toggle"
           type="button"
+          ref={toggleRef}
           aria-expanded={isNavOpen}
           aria-controls={navId}
           onClick={() => setNavOpenAt(isNavOpen ? null : pathname)}
@@ -413,8 +439,12 @@ function Workspace() {
       <nav
         className="sidebar"
         id={navId}
+        ref={navRef}
         data-open={isNavOpen ? 'true' : 'false'}
         aria-label={t('workspace.rail.universe')}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && isNavOpen) setNavOpenAt(null)
+        }}
       >
         <div className="sidebar__head">
           <Link className="sidebar__back" to="/app">
@@ -501,7 +531,16 @@ function Workspace() {
         </ul>
       </nav>
 
-      <div className="workspace__column">
+      {isNavOpen ? (
+        <div
+          className="sidebar__scrim"
+          aria-hidden="true"
+          onClick={() => setNavOpenAt(null)}
+          data-testid="workspace-nav-scrim"
+        />
+      ) : null}
+
+      <div className="workspace__column" inert={isNavOpen}>
         {/* The atmosphere: the world's own artwork behind the head of every screen, fading into the working surface.
             Decorative, out of the flow, never a target; the front page takes it taller. Nothing is drawn for a world
             without a picture (ADR 0068). */}
