@@ -36,12 +36,6 @@ const projects = {
   overview: {
     types: 'What is in this project',
     noTypes: 'No types yet, so nothing is counted here.',
-    recent: 'Last worked on',
-    recentLede: 'The entries changed most recently, newest first.',
-    noRecent: 'Nothing has been written here yet.',
-    lore: 'Where this project reaches',
-    loreLede: 'Its universe, and its own views.',
-    loreOf: 'Lore',
     failed: 'Some of this project could not be read.',
     empty: 'This project has nothing in it yet.',
     emptyHint:
