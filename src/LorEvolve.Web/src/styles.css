@@ -18691,9 +18691,6 @@ details.reviewsection > .reviewsection__list {
  */
 .projectframe {
   display: grid;
-  /* One column no wider than the screen: an auto column would take the tab bar's full width, and a Series' or a Film's
-     five tabs then widened a phone's page instead of scrolling inside their own bar. */
-  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   min-width: 0;
 }

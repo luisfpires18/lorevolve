@@ -303,14 +303,14 @@ test.describe('Project entities', () => {
     await expect(page.getByTestId('project-overview-way-overview')).toHaveCount(0)
   })
 
-  test('a series and a film open a type as Lore does: its name, Lore cards and a crumb back, on a phone too', async ({
+  test('a game, a series and a film open a type as Lore does, edit types, and move between views at both widths', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
 
-    // 2 is Series and 3 is Film: the two kinds with five views, whose tab bar used to widen a phone's page.
-    for (const kind of [2, 3]) {
+    // 1 is Game, 2 Series and 3 Film. Series and Film have five views, whose tab bar used to widen a phone's page.
+    for (const kind of [1, 2, 3]) {
       const project = await api<{ id: string }>(page, 'POST', '/api/projects', {
         name: unique('Low Tide '),
         kind,
@@ -325,20 +325,21 @@ test.describe('Project entities', () => {
         'POST',
         `/api/projects/${project.id}/template`,
       )
-      const character = types.find((type) => type.name === 'Character')!
+      const first = types[0]
       await api(page, 'POST', `/api/projects/${project.id}/entities`, {
-        entityTypeId: character.id,
+        entityTypeId: first.id,
         name: 'Mara Vell',
         summary: 'Comes back to the harbour.',
       })
+      const base = `/app/universes/${world.id}/projects/${project.id}`
 
       await page.setViewportSize({ width: 1280, height: 800 })
-      await page.goto(`/app/projects/${project.id}/entities?type=${character.id}`)
+      await page.goto(`${base}/entities?type=${first.id}`)
 
       // The type's own name heads its list and New is named for it, as above a Lore type's list.
       const entries = page.getByTestId('project-entries')
-      await expect(entries.getByRole('heading', { level: 2, name: 'Character' })).toBeVisible()
-      await expect(page.getByTestId('project-entry-add')).toHaveAccessibleName('New Character')
+      await expect(entries.getByRole('heading', { level: 2, name: first.name })).toBeVisible()
+      await expect(page.getByTestId('project-entry-add')).toHaveAccessibleName(`New ${first.name}`)
 
       // Its entries are Lore's cards.
       const card = page.getByTestId('project-entry-list').locator('.entitycard')
@@ -346,16 +347,41 @@ test.describe('Project entities', () => {
       await expect(card).toContainText('Mara Vell')
       await expect(card).toContainText('Comes back to the harbour.')
 
-      // On a phone the tabs scroll inside their own bar and the page stays the screen's width.
+      // On a wide screen the tab bar steps aside and the sidebar is the way between the views.
+      await expect(page.getByTestId('project-tabs')).toBeHidden()
+      await page.getByTestId(`project-overview-${project.id}`).click()
+      await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
+      await page.getByTestId(`project-entities-${project.id}`).click()
+      await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
+
+      // A type of the project's own, made in the Types screen's drawer, is on the cards when the crumb leads back.
+      await page.getByTestId('project-types-manage').click()
+      await page.getByTestId('project-type-add').click()
+      await page.getByTestId('type-name').fill('Rehearsal')
+      await page.getByTestId('save-type').click()
+      await expect(page.getByTestId('project-types')).toContainText('Rehearsal')
+      await page.getByTestId('project-entities-back').click()
+      await expect(page.getByTestId('project-entity-type-cards')).toContainText('Rehearsal')
+
+      // On a phone the tabs are the way between the views, scroll inside their own bar, and the page stays the
+      // screen's width.
       await page.setViewportSize({ width: 375, height: 740 })
       await expect(page.getByTestId('project-tabs')).toBeVisible()
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         375,
       )
-
-      // The crumb leads back to the type cards.
-      await page.getByTestId('project-entities-back').click()
-      await expect(page.getByTestId('project-entity-type-cards')).toBeVisible()
+      await page.getByTestId('projecttab-overview').click()
+      await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
+      await page.getByTestId('projecttab-entities').click()
+      await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
+      await expect(page.getByTestId('project-entity-type-cards')).toContainText('Rehearsal')
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        375,
+      )
     }
+
+    // The projects' own types stay theirs: the universe's Types screen shows none of them.
+    await page.goto(`/app/universes/${world.id}/types`)
+    await expect(page.locator('main')).not.toContainText('Rehearsal')
   })
 })
