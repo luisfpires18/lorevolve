@@ -15785,6 +15785,14 @@ body:has(.portal) {
   align-self: start;
 }
 
+/* The name above a fixed value that is shown, not chosen: it looks like a field label and names no control. */
+.knowledge__fixedlabel {
+  display: block;
+  margin: 1em 0 0.4rem;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
 .knowledge__fixed {
   margin: 0 0 var(--space-3);
   font-weight: 500;

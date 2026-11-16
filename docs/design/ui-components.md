@@ -11,6 +11,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | --- | --- |
 | Screen title, crumb, lede, actions | `components/PageHeader.tsx` |
 | A form field: label, hint, control, error | `components/Field.tsx`: an input, or any control through its slot; a group of buttons with `group`; a set of controls under a legend with `group: 'fieldset'` |
+| The name above a fixed value that is shown, not chosen, such as the knower in a knowledge form | `.knowledge__fixedlabel`; no `Field`, since it names no control |
 | A button or a link that looks like one | `.button` 519, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
 | An icon with a name | `.iconbutton` 696 |
 | Save with its status | `components/SaveAction.tsx` |

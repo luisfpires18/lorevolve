@@ -240,30 +240,29 @@ export function TypeDialog({
         <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
           {t('entityTypes.page.dialog.hierarchy')}
         </h3>
-        <div className="field">
-          <label className="field__label" htmlFor="type-parent">
-            {t('entityTypes.page.dialog.parent')}
-          </label>
-          <select
-            id="type-parent"
-            className="field__input field__input--select"
-            value={parentId ?? ''}
-            onChange={(event) => setParentId(event.target.value || null)}
-            aria-describedby="type-parent-hint"
-            data-testid="type-parent"
-          >
-            <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
-            {parents.map((node) => (
-              <option key={node.type.id} value={node.type.id}>
-                {typePathLabel(node)}
-              </option>
-            ))}
-          </select>
-          <p className="field__hint" id="type-parent-hint">
-            {parentHint ?? t('entityTypes.page.dialog.parentHint')}
-          </p>
-          {fieldErrors.parent ? <p className="field__error">{fieldErrors.parent}</p> : null}
-        </div>
+        <Field
+          label={t('entityTypes.page.dialog.parent')}
+          id="type-parent"
+          hint={parentHint ?? t('entityTypes.page.dialog.parentHint')}
+          error={fieldErrors.parent}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={parentId ?? ''}
+              onChange={(event) => setParentId(event.target.value || null)}
+              data-testid="type-parent"
+            >
+              <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
+              {parents.map((node) => (
+                <option key={node.type.id} value={node.type.id}>
+                  {typePathLabel(node)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       </section>
 
       {groups ? (

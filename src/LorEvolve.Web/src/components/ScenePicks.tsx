@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { useI18n } from '../i18n'
+import { Field } from './Field'
 import { getStory, listStories } from '../stories/api'
 import { readingOrder } from '../stories/structure'
 import type { StorySummary } from '../stories/types'
@@ -31,8 +32,7 @@ export function ScenePicks({
   const { t } = useI18n()
   const storyId = useId()
   const sceneId = useId()
-  const hintId = useId()
-  const errorId = useId()
+  const fieldId = useId()
   const [stories, setStories] = useState<StorySummary[] | null>(null)
   const [story, setStory] = useState('')
   const [scenes, setScenes] = useState<EraScene[] | null>(null)
@@ -71,17 +71,20 @@ export function ScenePicks({
   const chosen = new Set(value.map((scene) => scene.id))
   const offered = (scenes ?? []).filter((scene) => !chosen.has(scene.id))
   const describedBy =
-    [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
+    [hint ? `${fieldId}-hint` : null, error ? `${fieldId}-error` : null]
+      .filter(Boolean)
+      .join(' ') || undefined
 
   return (
-    <fieldset className="field storylinks scenepicks__group" data-testid={testId}>
-      <legend className="field__label">{label}</legend>
-      {hint ? (
-        <p className="field__hint" id={hintId}>
-          {hint}
-        </p>
-      ) : null}
-
+    <Field
+      label={label}
+      id={fieldId}
+      group="fieldset"
+      className="storylinks scenepicks__group"
+      data-testid={testId}
+      hint={hint}
+      error={error}
+    >
       {value.length > 0 ? (
         <ul className="storylinks__list">
           {value.map((scene) => (
@@ -166,12 +169,6 @@ export function ScenePicks({
           ))}
         </select>
       </div>
-
-      {error ? (
-        <p className="field__error" id={errorId}>
-          {error}
-        </p>
-      ) : null}
-    </fieldset>
+    </Field>
   )
 }

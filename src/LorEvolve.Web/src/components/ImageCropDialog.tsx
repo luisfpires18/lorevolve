@@ -5,6 +5,7 @@ import { Check, X } from 'lucide-react'
 import { ApiError } from '../lib/api'
 import type { ImageCrop } from '../lib/imageCrop'
 import { ActionIcon } from './ActionIcon'
+import { Field } from './Field'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 
@@ -251,22 +252,21 @@ export function ImageCropDialog({
         </div>
 
         <div className="cropper__controls">
-          <div className="cropper__zoom">
-            <label className="field__label" htmlFor={zoomId}>
-              {t('account.crop.zoom')}
-            </label>
-            <input
-              id={zoomId}
-              type="range"
-              min={MIN_ZOOM}
-              max={MAX_ZOOM}
-              step={0.01}
-              value={zoom}
-              disabled={loading || loadFailed || saving}
-              onChange={(event) => setZoom(Number(event.target.value))}
-              data-testid="image-crop-zoom"
-            />
-          </div>
+          <Field label={t('account.crop.zoom')} id={zoomId} className="cropper__zoom">
+            {(control) => (
+              <input
+                {...control}
+                type="range"
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step={0.01}
+                value={zoom}
+                disabled={loading || loadFailed || saving}
+                onChange={(event) => setZoom(Number(event.target.value))}
+                data-testid="image-crop-zoom"
+              />
+            )}
+          </Field>
 
           <div className="cropper__previews" aria-hidden="true">
             {frameLabel ? (

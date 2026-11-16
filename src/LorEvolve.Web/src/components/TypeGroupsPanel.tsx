@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { t as translate, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
+import { Field } from './Field'
 import {
   createEntityTypeGroup,
   deleteEntityTypeGroup,
@@ -172,39 +173,37 @@ export function TypeGroupsPanel({
     <section className="typegroups typegroups--panel" data-testid="type-groups-panel">
       <p className="typegroups__intro">{t('entityTypes.groupsPanel.intro')}</p>
       {canEdit ? (
-        <div className="field">
-          <label className="field__label" htmlFor={`${ids}-new`}>
-            {t('entityTypes.groupsPanel.newGroup')}
-          </label>
-          <div className="typegroups__newrow">
-            <input
-              id={`${ids}-new`}
-              className="field__input"
-              dir="auto"
-              value={newName}
-              placeholder={t('entityTypes.groupsPanel.namePlaceholder')}
-              onChange={(event) => setNewName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  void create()
-                }
-              }}
-              data-testid="type-group-create-name"
-            />
-            <button
-              className="button button--secondary button--sm"
-              type="button"
-              disabled={busy || !newName.trim()}
-              onClick={() => void create()}
-              data-testid="type-group-create"
-            >
-              <Plus aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              {t('entityTypes.groupsPanel.add')}
-            </button>
-          </div>
-          {newError ? <p className="field__error">{newError}</p> : null}
-        </div>
+        <Field label={t('entityTypes.groupsPanel.newGroup')} id={`${ids}-new`} error={newError}>
+          {(control) => (
+            <div className="typegroups__newrow">
+              <input
+                {...control}
+                className="field__input"
+                dir="auto"
+                value={newName}
+                placeholder={t('entityTypes.groupsPanel.namePlaceholder')}
+                onChange={(event) => setNewName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    void create()
+                  }
+                }}
+                data-testid="type-group-create-name"
+              />
+              <button
+                className="button button--secondary button--sm"
+                type="button"
+                disabled={busy || !newName.trim()}
+                onClick={() => void create()}
+                data-testid="type-group-create"
+              >
+                <Plus aria-hidden="true" focusable="false" strokeWidth={1.75} />
+                {t('entityTypes.groupsPanel.add')}
+              </button>
+            </div>
+          )}
+        </Field>
       ) : null}
       {groups.length === 0 ? (
         <p className="typegroups__empty" data-testid="type-groups-empty">
@@ -220,54 +219,55 @@ export function TypeGroupsPanel({
             data-testid="type-group-row"
           >
             {renaming === group.id ? (
-              <div className="field">
-                <label className="field__label" htmlFor={`${ids}-${group.id}`}>
-                  {tx('entityTypes.groupsPanel.newNameFor', { name: <bdi>{group.name}</bdi> })}
-                </label>
-                <div className="typegroups__newrow">
-                  <input
-                    id={`${ids}-${group.id}`}
-                    className="field__input"
-                    dir="auto"
-                    value={draft}
-                    autoFocus
-                    onChange={(event) => setDraft(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        void rename(group)
-                      } else if (event.key === 'Escape') {
-                        event.preventDefault()
-                        event.stopPropagation()
-                        setRenaming(null)
-                      }
-                    }}
-                    aria-describedby={`${ids}-${group.id}-hint`}
-                    data-testid="type-group-rename-input"
-                  />
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void rename(group)}
-                    data-testid="type-group-rename-save"
-                  >
-                    {t('entityTypes.groupsPanel.rename')}
-                  </button>
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    onClick={() => setRenaming(null)}
-                  >
-                    {t('entityTypes.groupsPanel.cancel')}
-                  </button>
-                </div>
-                <p className="field__hint" id={`${ids}-${group.id}-hint`}>
-                  {membersOf(group).length > 1
+              <Field
+                label={tx('entityTypes.groupsPanel.newNameFor', { name: <bdi>{group.name}</bdi> })}
+                id={`${ids}-${group.id}`}
+                hint={
+                  membersOf(group).length > 1
                     ? t('entityTypes.groupsPanel.renameHintMany', { used: usedBy(group) })
-                    : t('entityTypes.groupsPanel.renameHintOne', { used: usedBy(group) })}
-                </p>
-              </div>
+                    : t('entityTypes.groupsPanel.renameHintOne', { used: usedBy(group) })
+                }
+              >
+                {(control) => (
+                  <div className="typegroups__newrow">
+                    <input
+                      {...control}
+                      className="field__input"
+                      dir="auto"
+                      value={draft}
+                      autoFocus
+                      onChange={(event) => setDraft(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          void rename(group)
+                        } else if (event.key === 'Escape') {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setRenaming(null)
+                        }
+                      }}
+                      data-testid="type-group-rename-input"
+                    />
+                    <button
+                      className="button button--secondary button--sm"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void rename(group)}
+                      data-testid="type-group-rename-save"
+                    >
+                      {t('entityTypes.groupsPanel.rename')}
+                    </button>
+                    <button
+                      className="button button--text button--sm"
+                      type="button"
+                      onClick={() => setRenaming(null)}
+                    >
+                      {t('entityTypes.groupsPanel.cancel')}
+                    </button>
+                  </div>
+                )}
+              </Field>
             ) : (
               <div className="typegroups__row">
                 <span className="typegroups__name">

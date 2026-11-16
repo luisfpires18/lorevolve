@@ -170,74 +170,79 @@ export function FamilyLinkForm({
       ) : null}
 
       <div className="relform__grid">
-        <div className="field">
-          <label className="field__label" htmlFor="family-link-kind">
-            {t('places.linkForm.connection')}
-          </label>
-          <select
-            id="family-link-kind"
-            className="field__input field__input--select"
-            value={kind?.id ?? ''}
-            onChange={(event) => {
-              setKindId(event.target.value)
-              setFocalIsSource(true)
-            }}
-            data-testid="family-link-kind"
-          >
-            {kinds.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {kindOption(candidate)}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.relationshiptypeid ? (
-            <p className="field__error">{fieldErrors.relationshiptypeid}</p>
-          ) : null}
-          <button
-            className="button button--text button--sm familylink__newkind"
-            type="button"
-            onClick={() => setIsCreatingKind(true)}
-            data-testid="new-family-kind"
-          >
-            <ActionIcon icon={Plus} />
-            {t('places.linkForm.newKind')}
-          </button>
-        </div>
+        <Field
+          label={t('places.linkForm.connection')}
+          id="family-link-kind"
+          error={fieldErrors.relationshiptypeid}
+        >
+          {(control) => (
+            <>
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={kind?.id ?? ''}
+                onChange={(event) => {
+                  setKindId(event.target.value)
+                  setFocalIsSource(true)
+                }}
+                data-testid="family-link-kind"
+              >
+                {kinds.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {kindOption(candidate)}
+                  </option>
+                ))}
+              </select>
+              <button
+                className="button button--text button--sm familylink__newkind"
+                type="button"
+                onClick={() => setIsCreatingKind(true)}
+                data-testid="new-family-kind"
+              >
+                <ActionIcon icon={Plus} />
+                {t('places.linkForm.newKind')}
+              </button>
+            </>
+          )}
+        </Field>
 
         {isParentKind ? (
-          <div className="field">
-            <label className="field__label" htmlFor="family-link-side">
-              {t('places.linkForm.side')}
-            </label>
-            <select
-              id="family-link-side"
-              className="field__input field__input--select"
-              value={focalIsSource ? 'parent' : 'child'}
-              onChange={(event) => setFocalIsSource(event.target.value === 'parent')}
-              data-testid="family-link-side"
-            >
-              <option value="parent">
-                {t('places.linkForm.focalParent', { name: focal.name })}
-              </option>
-              <option value="child">{t('places.linkForm.focalChild', { name: focal.name })}</option>
-            </select>
-          </div>
+          <Field label={t('places.linkForm.side')} id="family-link-side">
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={focalIsSource ? 'parent' : 'child'}
+                onChange={(event) => setFocalIsSource(event.target.value === 'parent')}
+                data-testid="family-link-side"
+              >
+                <option value="parent">
+                  {t('places.linkForm.focalParent', { name: focal.name })}
+                </option>
+                <option value="child">
+                  {t('places.linkForm.focalChild', { name: focal.name })}
+                </option>
+              </select>
+            )}
+          </Field>
         ) : hasTwoReadings && kind ? (
-          <div className="field">
-            <label className="field__label" htmlFor="family-link-reading">
-              {t('places.linkForm.focalIs', { name: focal.name })}
-            </label>
-            <select
-              id="family-link-reading"
-              className="field__input field__input--select"
-              value={focalIsSource ? 'forward' : 'inverse'}
-              onChange={(event) => setFocalIsSource(event.target.value === 'forward')}
-              data-testid="family-link-reading"
-            >
-              <option value="forward">{kind.name}</option>
-              <option value="inverse">{kind.inverseName}</option>
-            </select>
-          </div>
+          <Field
+            label={t('places.linkForm.focalIs', { name: focal.name })}
+            id="family-link-reading"
+          >
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={focalIsSource ? 'forward' : 'inverse'}
+                onChange={(event) => setFocalIsSource(event.target.value === 'forward')}
+                data-testid="family-link-reading"
+              >
+                <option value="forward">{kind.name}</option>
+                <option value="inverse">{kind.inverseName}</option>
+              </select>
+            )}
+          </Field>
         ) : null}
 
         <EntityPicker
