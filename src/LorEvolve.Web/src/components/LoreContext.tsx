@@ -381,6 +381,12 @@ function LoreContextDrawer({
       dialogRef={dialog}
       eyebrow={t('lore.context.drawerEyebrow')}
       title={<bdi>{scene.title}</bdi>}
+      // In the head, which never scrolls: an absolutely placed span in the body could stretch the dialog.
+      context={
+        <p className="visually-hidden" role="status" data-testid="lore-context-announcer">
+          {announcement}
+        </p>
+      }
       // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
       onClose={onClose}
       actions={(close) => (
@@ -582,10 +588,6 @@ function LoreContextDrawer({
           </section>
         </>
       )}
-
-      <p className="visually-hidden" role="status" data-testid="lore-context-announcer">
-        {announcement}
-      </p>
     </Drawer>
   )
 }
