@@ -139,7 +139,7 @@ Running 136 tests using 2 workers
   ok 136 [chromium] › specs\types-and-trash.spec.ts:576:3 › moving Lore to the Trash together › from the keyboard, on a phone, in both themes and at 200%, with a right-to-left name (6.3s)
 
 
-  1) [chromium] › specs\timeline.spec.ts:919:3 › timeline › nothing about a moment reaches across a universe or an owner boundary 
+  1) [chromium] › specs\timeline.spec.ts:919:3 › timeline › nothing about a moment reaches across a universe or an owner boundary
 
     Error: expect(locator).toBeVisible() failed
 
@@ -174,5 +174,5 @@ Running 136 tests using 2 workers
     Error Context: test-results\timeline-timeline-nothing--8144f-iverse-or-an-owner-boundary-chromium\error-context.md
 
   1 failed
-    [chromium] › specs\timeline.spec.ts:919:3 › timeline › nothing about a moment reaches across a universe or an owner boundary 
+    [chromium] › specs\timeline.spec.ts:919:3 › timeline › nothing about a moment reaches across a universe or an owner boundary
   135 passed (6.1m)
