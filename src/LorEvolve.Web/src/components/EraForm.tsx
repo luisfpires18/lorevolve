@@ -15,6 +15,7 @@ import { payloadKey } from '../lib/drawerGuard'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
+import { Field } from './Field'
 import { emptyValue } from '../lore/document'
 import { renderFact } from '../lore/facts'
 import type { FieldDefinition, FieldValue, FieldValueInput } from '../lore/types'
@@ -333,55 +334,46 @@ export function EraForm({
         />
       ) : null}
 
-      <div className="field">
-        <label className="field__label" htmlFor="era-name">
-          {t('time.eraForm.name')}
-        </label>
-        <input
-          id="era-name"
-          ref={nameInput}
-          className="field__input"
-          dir="auto"
-          placeholder={t('time.eraForm.namePlaceholder')}
-          value={draft.name}
-          onChange={(event) => edit({ name: event.target.value })}
-          aria-invalid={errorOf('name') ? true : undefined}
-          aria-describedby={errorOf('name') ? 'era-name-error' : undefined}
-          data-testid="era-name-input"
-        />
-        {errorOf('name') ? (
-          <p className="field__error" id="era-name-error">
-            {errorOf('name')}
-          </p>
-        ) : null}
-      </div>
+      <Field id="era-name" label={t('time.eraForm.name')} error={errorOf('name')}>
+        {(control) => (
+          <input
+            {...control}
+            ref={nameInput}
+            className="field__input"
+            dir="auto"
+            placeholder={t('time.eraForm.namePlaceholder')}
+            value={draft.name}
+            onChange={(event) => edit({ name: event.target.value })}
+            data-testid="era-name-input"
+          />
+        )}
+      </Field>
 
-      <div className="field">
-        <label className="field__label" htmlFor="era-description">
-          {t('time.eraForm.happens')}
-        </label>
-        <p className="field__hint">{t('time.eraForm.happensHint', { name: entityName })}</p>
-        <textarea
-          id="era-description"
-          className="field__input field__input--area"
-          rows={4}
-          dir="auto"
-          value={draft.description}
-          onChange={(event) => edit({ description: event.target.value })}
-          aria-invalid={errorOf('description') ? true : undefined}
-          aria-describedby={errorOf('description') ? 'era-description-error' : undefined}
-          data-testid="era-description-input"
-        />
-        {errorOf('description') ? (
-          <p className="field__error" id="era-description-error">
-            {errorOf('description')}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        id="era-description"
+        label={t('time.eraForm.happens')}
+        hint={t('time.eraForm.happensHint', { name: entityName })}
+        error={errorOf('description')}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            dir="auto"
+            value={draft.description}
+            onChange={(event) => edit({ description: event.target.value })}
+            data-testid="era-description-input"
+          />
+        )}
+      </Field>
 
-      <fieldset className="scenechron">
-        <legend className="field__label">{t('time.eraForm.when')}</legend>
-        <p className="field__hint">{t('time.eraForm.whenHint')}</p>
+      <Field
+        group="fieldset"
+        className="scenechron"
+        label={t('time.eraForm.when')}
+        hint={t('time.eraForm.whenHint')}
+      >
         <EraPoint
           label={t('time.eraForm.from')}
           prefix="era-start"
@@ -400,7 +392,7 @@ export function EraForm({
           fieldErrors={fieldErrors}
           onChange={(end) => edit({ end })}
         />
-      </fieldset>
+      </Field>
 
       <EraStories
         universeId={universeId}
@@ -412,9 +404,13 @@ export function EraForm({
       />
 
       {definitions.length > 0 ? (
-        <fieldset className="erafields" data-testid="era-fields">
-          <legend className="field__label">{t('time.eraForm.details')}</legend>
-          <p className="field__hint">{t('time.eraForm.detailsHint', { name: entityName })}</p>
+        <Field
+          group="fieldset"
+          className="erafields"
+          label={t('time.eraForm.details')}
+          hint={t('time.eraForm.detailsHint', { name: entityName })}
+          data-testid="era-fields"
+        >
           {definitions.map((definition) => (
             <EraFieldRow
               key={definition.id}
@@ -430,7 +426,7 @@ export function EraForm({
               onChange={(change) => editField(definition.id, change)}
             />
           ))}
-        </fieldset>
+        </Field>
       ) : null}
     </Drawer>
   )
@@ -635,142 +631,145 @@ function EraStories({
 
   return (
     <>
-      <div className="field storylinks" data-testid="era-stories">
-        <label className="field__label" htmlFor={storySelect}>
-          {t('time.eraForm.stories')}
-        </label>
-        <p className="field__hint">{t('time.eraForm.storiesHint')}</p>
-        {stories.length > 0 ? (
-          <ul className="storylinks__list">
-            {stories.map((story) => (
-              <li className="token" key={story.id} data-testid="era-story">
-                <bdi>{story.title}</bdi>
-                {story.isTrashed ? (
-                  <span className="token__note"> {t('time.eraForm.storyInTrash')}</span>
-                ) : null}
-                <button
-                  type="button"
-                  className="token__remove"
-                  aria-label={t('time.eraForm.removeStory', { title: story.title })}
-                  onClick={() =>
-                    onChange(
-                      stories.filter((one) => one.id !== story.id),
-                      scenes.filter((scene) => scene.storyId !== story.id),
-                    )
-                  }
-                >
-                  &times;
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        <select
-          id={storySelect}
-          className="field__input field__input--select"
-          value=""
-          disabled={available === null || offeredStories.length === 0}
-          onChange={(event) => {
-            const story = offeredStories.find((one) => one.id === event.target.value)
-            if (story)
-              onChange([...stories, { id: story.id, title: story.title, isTrashed: false }], scenes)
-          }}
-          aria-invalid={storyError ? true : undefined}
-          aria-describedby={storyError ? `${storySelect}-error` : undefined}
-          data-testid="era-story-add"
-        >
-          <option value="">
-            {available === null
-              ? t('time.eraForm.readingStories')
-              : available.length === 0
-                ? t('time.eraForm.noStories')
-                : offeredStories.length === 0
-                  ? t('time.eraForm.allChosen')
-                  : t('time.eraForm.addStory')}
-          </option>
-          {offeredStories.map((story) => (
-            <option key={story.id} value={story.id}>
-              {story.title}
-            </option>
-          ))}
-        </select>
-        {storyError ? (
-          <p className="field__error" id={`${storySelect}-error`}>
-            {storyError}
-          </p>
-        ) : null}
-      </div>
+      <Field
+        id={storySelect}
+        className="storylinks"
+        label={t('time.eraForm.stories')}
+        hint={t('time.eraForm.storiesHint')}
+        error={storyError}
+        data-testid="era-stories"
+      >
+        {(control) => (
+          <>
+            {stories.length > 0 ? (
+              <ul className="storylinks__list">
+                {stories.map((story) => (
+                  <li className="token" key={story.id} data-testid="era-story">
+                    <bdi>{story.title}</bdi>
+                    {story.isTrashed ? (
+                      <span className="token__note"> {t('time.eraForm.storyInTrash')}</span>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="token__remove"
+                      aria-label={t('time.eraForm.removeStory', { title: story.title })}
+                      onClick={() =>
+                        onChange(
+                          stories.filter((one) => one.id !== story.id),
+                          scenes.filter((scene) => scene.storyId !== story.id),
+                        )
+                      }
+                    >
+                      &times;
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value=""
+              disabled={available === null || offeredStories.length === 0}
+              onChange={(event) => {
+                const story = offeredStories.find((one) => one.id === event.target.value)
+                if (story)
+                  onChange(
+                    [...stories, { id: story.id, title: story.title, isTrashed: false }],
+                    scenes,
+                  )
+              }}
+              data-testid="era-story-add"
+            >
+              <option value="">
+                {available === null
+                  ? t('time.eraForm.readingStories')
+                  : available.length === 0
+                    ? t('time.eraForm.noStories')
+                    : offeredStories.length === 0
+                      ? t('time.eraForm.allChosen')
+                      : t('time.eraForm.addStory')}
+              </option>
+              {offeredStories.map((story) => (
+                <option key={story.id} value={story.id}>
+                  {story.title}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </Field>
 
       {stories.length > 0 ? (
-        <div className="field storylinks" data-testid="era-scenes">
-          <label className="field__label" htmlFor={sceneSelect}>
-            {t('time.eraForm.scenes')}
-          </label>
-          <p className="field__hint">{t('time.eraForm.scenesHint')}</p>
-          {scenes.length > 0 ? (
-            <ul className="storylinks__list">
-              {scenes.map((scene) => (
-                <li className="token" key={scene.id} data-testid="era-scene">
-                  <bdi>{scene.title}</bdi>
-                  {scene.isTrashed ? (
-                    <span className="token__note"> {t('time.eraForm.sceneInTrash')}</span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="token__remove"
-                    aria-label={t('time.eraForm.removeScene', { title: scene.title })}
-                    onClick={() =>
-                      onChange(
-                        stories,
-                        scenes.filter((one) => one.id !== scene.id),
-                      )
-                    }
-                  >
-                    &times;
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <select
-            id={sceneSelect}
-            className="field__input field__input--select"
-            value=""
-            disabled={offeredScenes.length === 0}
-            onChange={(event) => {
-              const scene = offeredScenes.find((one) => one.id === event.target.value)
-              if (scene) onChange(stories, [...scenes, scene])
-            }}
-            aria-invalid={sceneError ? true : undefined}
-            aria-describedby={sceneError ? `${sceneSelect}-error` : undefined}
-            data-testid="era-scene-add"
-          >
-            <option value="">
-              {offeredScenes.length === 0
-                ? t('time.eraForm.noMoreScenes')
-                : t('time.eraForm.addScene')}
-            </option>
-            {stories.map((story) => {
-              const options = (storyScenes[story.id] ?? []).filter(
-                (scene) => !chosenScenes.has(scene.id),
-              )
-              return options.length === 0 ? null : (
-                <optgroup key={story.id} label={story.title}>
-                  {options.map((scene) => (
-                    <option key={scene.id} value={scene.id}>
-                      {scene.title}
-                    </option>
+        <Field
+          id={sceneSelect}
+          className="storylinks"
+          label={t('time.eraForm.scenes')}
+          hint={t('time.eraForm.scenesHint')}
+          error={sceneError}
+          data-testid="era-scenes"
+        >
+          {(control) => (
+            <>
+              {scenes.length > 0 ? (
+                <ul className="storylinks__list">
+                  {scenes.map((scene) => (
+                    <li className="token" key={scene.id} data-testid="era-scene">
+                      <bdi>{scene.title}</bdi>
+                      {scene.isTrashed ? (
+                        <span className="token__note"> {t('time.eraForm.sceneInTrash')}</span>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="token__remove"
+                        aria-label={t('time.eraForm.removeScene', { title: scene.title })}
+                        onClick={() =>
+                          onChange(
+                            stories,
+                            scenes.filter((one) => one.id !== scene.id),
+                          )
+                        }
+                      >
+                        &times;
+                      </button>
+                    </li>
                   ))}
-                </optgroup>
-              )
-            })}
-          </select>
-          {sceneError ? (
-            <p className="field__error" id={`${sceneSelect}-error`}>
-              {sceneError}
-            </p>
-          ) : null}
-        </div>
+                </ul>
+              ) : null}
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value=""
+                disabled={offeredScenes.length === 0}
+                onChange={(event) => {
+                  const scene = offeredScenes.find((one) => one.id === event.target.value)
+                  if (scene) onChange(stories, [...scenes, scene])
+                }}
+                data-testid="era-scene-add"
+              >
+                <option value="">
+                  {offeredScenes.length === 0
+                    ? t('time.eraForm.noMoreScenes')
+                    : t('time.eraForm.addScene')}
+                </option>
+                {stories.map((story) => {
+                  const options = (storyScenes[story.id] ?? []).filter(
+                    (scene) => !chosenScenes.has(scene.id),
+                  )
+                  return options.length === 0 ? null : (
+                    <optgroup key={story.id} label={story.title}>
+                      {options.map((scene) => (
+                        <option key={scene.id} value={scene.id}>
+                          {scene.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
+              </select>
+            </>
+          )}
+        </Field>
       ) : null}
     </>
   )

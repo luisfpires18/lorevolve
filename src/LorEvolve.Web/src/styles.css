@@ -3739,7 +3739,7 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 }
 
 .eras__order {
-  margin: 0 0 1rem;
+  margin: var(--text-sm) 0 1rem;
 }
 
 .eras__line {

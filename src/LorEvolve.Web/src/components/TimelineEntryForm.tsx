@@ -658,8 +658,6 @@ function StoryLinks({
 }) {
   useI18n()
   const selectId = useId()
-  const hintId = useId()
-  const errorId = useId()
   const [stories, setStories] = useState<StorySummary[] | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -679,73 +677,68 @@ function StoryLinks({
   const offered = (stories ?? []).filter((story) => !linked.has(story.id))
 
   return (
-    <div className="field storylinks" data-testid="moment-stories">
-      <label className="field__label" htmlFor={selectId}>
-        {t('time.momentForm.stories')}
-      </label>
-      <p className="field__hint" id={hintId}>
-        {t('time.momentForm.storiesHint')}
-      </p>
-
-      {value.length > 0 ? (
-        <ul className="storylinks__list">
-          {value.map((story) => (
-            <li className="token" key={story.storyId} data-testid="moment-story">
-              <bdi>{story.title}</bdi>
-              {story.isTrashed ? (
-                <span className="token__note"> {t('time.momentForm.storyInTrash')}</span>
-              ) : null}
-              <button
-                type="button"
-                className="token__remove"
-                aria-label={t('time.momentForm.unlink', { title: story.title })}
-                onClick={() => onChange(value.filter((one) => one.storyId !== story.storyId))}
-                data-testid={`moment-story-remove-${story.title}`}
-              >
-                &times;
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <select
-        id={selectId}
-        className="field__input field__input--select"
-        value=""
-        disabled={stories === null || offered.length === 0}
-        aria-describedby={error ? `${hintId} ${errorId}` : hintId}
-        aria-invalid={error ? true : undefined}
-        onChange={(event) => {
-          const story = offered.find((one) => one.id === event.target.value)
-          if (story)
-            onChange([...value, { storyId: story.id, title: story.title, isTrashed: false }])
-        }}
-        data-testid="moment-story-add"
-      >
-        <option value="">
-          {failed
-            ? t('time.momentForm.storiesFailed')
-            : stories === null
-              ? t('time.momentForm.readingStories')
-              : offered.length === 0
-                ? stories.length === 0
-                  ? t('time.momentForm.noStories')
-                  : t('time.momentForm.allLinked')
-                : t('time.momentForm.linkStory')}
-        </option>
-        {offered.map((story) => (
-          <option key={story.id} value={story.id}>
-            {story.title}
-          </option>
-        ))}
-      </select>
-
-      {error ? (
-        <p className="field__error" id={errorId}>
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <Field
+      id={selectId}
+      className="storylinks"
+      label={t('time.momentForm.stories')}
+      hint={t('time.momentForm.storiesHint')}
+      error={error}
+      data-testid="moment-stories"
+    >
+      {(control) => (
+        <>
+          {value.length > 0 ? (
+            <ul className="storylinks__list">
+              {value.map((story) => (
+                <li className="token" key={story.storyId} data-testid="moment-story">
+                  <bdi>{story.title}</bdi>
+                  {story.isTrashed ? (
+                    <span className="token__note"> {t('time.momentForm.storyInTrash')}</span>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="token__remove"
+                    aria-label={t('time.momentForm.unlink', { title: story.title })}
+                    onClick={() => onChange(value.filter((one) => one.storyId !== story.storyId))}
+                    data-testid={`moment-story-remove-${story.title}`}
+                  >
+                    &times;
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <select
+            {...control}
+            className="field__input field__input--select"
+            value=""
+            disabled={stories === null || offered.length === 0}
+            onChange={(event) => {
+              const story = offered.find((one) => one.id === event.target.value)
+              if (story)
+                onChange([...value, { storyId: story.id, title: story.title, isTrashed: false }])
+            }}
+            data-testid="moment-story-add"
+          >
+            <option value="">
+              {failed
+                ? t('time.momentForm.storiesFailed')
+                : stories === null
+                  ? t('time.momentForm.readingStories')
+                  : offered.length === 0
+                    ? stories.length === 0
+                      ? t('time.momentForm.noStories')
+                      : t('time.momentForm.allLinked')
+                    : t('time.momentForm.linkStory')}
+            </option>
+            {offered.map((story) => (
+              <option key={story.id} value={story.id}>
+                {story.title}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+    </Field>
   )
 }
