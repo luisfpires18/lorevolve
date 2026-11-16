@@ -71,6 +71,53 @@ public sealed class IdeaWithoutUniverseMigrationTests : IDisposable
         }
     }
 
+    [Fact]
+    public async Task A_deleted_idea_or_board_that_somehow_has_no_universe_cannot_be_restored()
+    {
+        Directory.CreateDirectory(_directory);
+        Guid ideaId;
+        Guid boardId;
+
+        await using (var host = new FileHost(DataSource))
+        {
+            var client = host.CreateHttpsClient();
+            (await client.PostAsJsonAsync(
+                "/api/auth/register",
+                new RegisterRequest("user-restorenouniverse", "user-restorenouniverse@example.test", Password)))
+                .EnsureSuccessStatusCode();
+
+            var universeId = (await CreateUniverse(client, "World restorenouniverse")).Id;
+            ideaId = (await IdeaTestClient.CreateIdea(client, "Orphan idea", "Body.", universeId)).Id;
+            var note = new IdeaBoardCardInput(Guid.NewGuid(), IdeaBoardCardKind.Note, 0, 0, 200, 120, "n", null, null);
+            var created = await client.PostAsJsonAsync("/api/idea-boards", new IdeaBoardRequest("Orphan board", universeId, [note], [], null));
+            created.EnsureSuccessStatusCode();
+            boardId = (await created.Content.ReadFromJsonAsync<IdeaBoardDetail>())!.Id;
+
+            (await client.DeleteAsync($"/api/ideas/{ideaId}")).EnsureSuccessStatusCode();
+            (await client.DeleteAsync($"/api/idea-boards/{boardId}")).EnsureSuccessStatusCode();
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        await using (var db = Context())
+        {
+            await db.Database.ExecuteSqlRawAsync("UPDATE Ideas SET UniverseId = NULL");
+            await db.Database.ExecuteSqlRawAsync("UPDATE IdeaBoards SET UniverseId = NULL");
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        await using (var host = new FileHost(DataSource))
+        {
+            var client = host.CreateHttpsClient();
+            (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("user-restorenouniverse", Password)))
+                .EnsureSuccessStatusCode();
+
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, (await client.PostAsync($"/api/ideas/{ideaId}/restore", null)).StatusCode);
+            Assert.Equal(System.Net.HttpStatusCode.NotFound, (await client.PostAsync($"/api/idea-boards/{boardId}/restore", null)).StatusCode);
+        }
+    }
+
     private static async Task CreateBoard(HttpClient client, string title, Guid universeId)
     {
         var note = new IdeaBoardCardInput(Guid.NewGuid(), IdeaBoardCardKind.Note, 0, 0, 200, 120, title, null, null);

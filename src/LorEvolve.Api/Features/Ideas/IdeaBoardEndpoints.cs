@@ -300,7 +300,8 @@ public static class IdeaBoardEndpoints
         var ownerId = principal.RequireUserId();
 
         var board = await db.IdeaBoards.FirstOrDefaultAsync(
-            candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt != null,
+            candidate => candidate.Id == id && candidate.OwnerId == ownerId && candidate.DeletedAt != null
+                && candidate.UniverseId != null,
             cancellationToken);
         if (board is null)
         {
