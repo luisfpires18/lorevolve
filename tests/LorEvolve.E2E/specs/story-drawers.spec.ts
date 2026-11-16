@@ -217,7 +217,7 @@ test.describe('story drawers', () => {
     await expect(form).toHaveCount(0)
     await expect(page.getByTestId('story-premise')).toHaveText('A siege, told backwards.')
     await page.goBack()
-    await page.waitForURL(/\/stories$/)
+    await page.waitForURL(/\/writing$/)
     await expect(page.getByTestId('story-row')).toBeVisible()
     await expect.poll(() => asked).toHaveLength(2)
 
@@ -231,7 +231,7 @@ test.describe('story drawers', () => {
     answer(true)
     await page.goBack()
     await expect.poll(() => asked.length).toBe(3)
-    await page.waitForURL(/\/stories$/)
+    await page.waitForURL(/\/writing$/)
     await expect(page.getByTestId('story-row')).toBeVisible()
     await expect(form).toHaveCount(0)
     await expect(page.getByTestId('story-row')).toHaveAttribute('data-title', 'The Long Winter')
@@ -287,7 +287,7 @@ test.describe('story drawers', () => {
     await expect(form).toHaveCount(0)
     await expect(chapter.getByTestId('chapter-summary')).toHaveText('Where it begins.')
     await page.goBack()
-    await page.waitForURL(/\/stories$/)
+    await page.waitForURL(/\/writing$/)
     await expect.poll(() => asked).toHaveLength(2)
 
     // A new chapter asks too, and discarding it creates nothing.

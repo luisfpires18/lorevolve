@@ -164,10 +164,12 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(list).toContainText('Serial')
     await expect(list).not.toContainText('Quest')
 
+    // Writing is the Stories experience (#277): its stories sit in `story-list`.
     await sidebar(page).getByTestId('workspace-writing').click()
-    await expect(list.getByRole('link')).toHaveCount(1)
-    await expect(list).toContainText('Only Tale')
-    await expect(list).not.toContainText('Quest')
+    const writing = page.getByTestId('story-list')
+    await expect(writing.getByRole('link')).toHaveCount(1)
+    await expect(writing).toContainText('Only Tale')
+    await expect(writing).not.toContainText('Quest')
   })
 
   test('Writing keeps the stories order: Move down is kept across a reload', async ({ page }) => {

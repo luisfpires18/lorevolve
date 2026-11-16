@@ -747,7 +747,7 @@ test.describe('text direction', () => {
     await storyTitle.pressSequentially(Text.numbers)
     expect(await computedDirection(storyTitle)).toBe('rtl')
     await page.getByTestId('save-story').click()
-    await page.waitForURL(/\/stories\/[0-9a-f-]+$/)
+    await page.waitForURL(/\/projects\/[0-9a-f-]+\/structure$/)
     await expectIsolated(page.getByTestId('story-title'), Text.numbers)
   })
 })
