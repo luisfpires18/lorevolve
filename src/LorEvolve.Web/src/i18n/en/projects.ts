@@ -79,6 +79,12 @@ const projects = {
     emptyComic: 'No comic projects yet.',
     emptyCategoryHint: 'Use New project to start one in this universe.',
   },
+  directory: {
+    lede: 'Pick a kind of project to see what you are making in this universe.',
+    none: 'No projects yet',
+    count: { one: '1 project', other: '{n} projects' },
+    loadFailed: 'Your projects could not be counted.',
+  },
   one: {
     title: 'Project',
     loading: 'Reading this project.',
