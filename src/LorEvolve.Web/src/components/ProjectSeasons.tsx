@@ -143,7 +143,7 @@ export function ProjectSeasons({
     <section className="projects" data-testid="project-seasons">
       <header className="projects__head">
         <div className="projects__headtext">
-          <h2>{say.title()}</h2>
+          <h2 className="sectionrule">{say.title()}</h2>
           <p className="projects__lede">{say.lede()}</p>
         </div>
         <button

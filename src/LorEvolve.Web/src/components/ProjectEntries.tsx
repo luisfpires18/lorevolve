@@ -219,7 +219,7 @@ export function ProjectEntries({
         </div>
       ) : null}
       <div className="projects__headtext">
-        <h2>{title}</h2>
+        <h2 className="sectionrule">{title}</h2>
       </div>
       {action}
     </header>
