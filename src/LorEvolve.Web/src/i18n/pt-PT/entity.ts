@@ -170,6 +170,15 @@ const entity: Dictionary['entity'] = {
       usePicture: 'Usar esta imagem',
     },
   },
+  fieldImage: {
+    reframe: 'Editar recorte',
+    uploadFailed: 'Não foi possível guardar a imagem de "{name}".',
+    crop: {
+      editTitle: 'Editar recorte',
+      frameTitle: 'Recortar a imagem',
+      saveCrop: 'Guardar recorte',
+    },
+  },
   picker: {
     placeholder: 'Pesquisar neste universo',
     change: 'Alterar',

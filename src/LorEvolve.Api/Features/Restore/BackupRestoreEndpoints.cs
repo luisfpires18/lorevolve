@@ -242,7 +242,8 @@ public static partial class BackupRestoreEndpoints
                 // artwork is not a Lore picture and does not count.
                 var imageBytes = restorable.Images.Values.Sum(image => image.ByteSize)
                     + (restorable.AppearanceImages?.Values.Sum(image => image.ByteSize) ?? 0)
-                    + (restorable.MapImages?.Values.Sum(image => image.ByteSize) ?? 0);
+                    + (restorable.MapImages?.Values.Sum(image => image.ByteSize) ?? 0)
+                    + (restorable.FieldImages?.Values.Sum(image => image.ByteSize) ?? 0);
                 StorageHold? hold = null;
 
                 if (imageBytes > 0)

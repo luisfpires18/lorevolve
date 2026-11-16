@@ -63,6 +63,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(image => image.Appearance!.Entity!.UniverseId == universeId)
             .Select(image => new { image.Id, image.Appearance!.EntityId, image.ContentType, image.OriginalKey })
             .ToListAsync(cancellationToken);
+        // Every image field's picture (Issue #238), originals only, Lore and project entries alike.
+        var fieldImages = (await db.EntityFieldImages.AsNoTracking().IgnoreQueryFilters()
+                .Where(image => image.Entity!.UniverseId == universeId)
+                .ToListAsync(cancellationToken))
+            .ToLookup(image => image.EntityId);
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
 
@@ -112,7 +117,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ErasAsync(universeId, cancellationToken),
             await EntityTypesAsync(universeId, cancellationToken),
             await TagsAsync(universeId, cancellationToken),
-            await EntitiesAsync(universeId, images, revisions, cancellationToken),
+            [.. (await EntitiesAsync(universeId, images, revisions, cancellationToken))
+                .Select(entity => entity with { FieldImages = FieldImagesOf(entity.Id, fieldImages) })],
             await RelationshipTypesAsync(universeId, cancellationToken),
             await RelationshipsAsync(universeId, cancellationToken),
             await TimelineAsync(universeId, cancellationToken),
@@ -127,7 +133,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             MapsOf(maps, calibrations),
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
             await CreativeProjectsAsync(universeId, cancellationToken),
-            await ProjectEntriesAsync(universeId, revisions, cancellationToken),
+            [.. (await ProjectEntriesAsync(universeId, revisions, cancellationToken))
+                .Select(entry => entry with { FieldImages = FieldImagesOf(entry.Id, fieldImages) })],
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
@@ -150,6 +157,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         BackupArchive.AppearanceMediaPathFor(image.EntityId, image.Id, image.ContentType),
                         image.OriginalKey,
                         image.ContentType)))
+                    .Concat(fieldImages.SelectMany(held => held).Select(image => new BackupMediaObject(
+                        image.EntityId,
+                        BackupArchive.FieldImageMediaPathFor(image.EntityId, image.FieldDefinitionId, image.ContentType),
+                        image.OriginalKey,
+                        image.ContentType)))
                     .Concat(artwork is null
                         ? []
                         : [new BackupMediaObject(null, BackupArchive.ArtworkPathFor(artwork.ContentType), artwork.OriginalKey, artwork.ContentType)])
@@ -164,6 +176,22 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     }
 
     // ---------- Media ----------
+
+    /// <summary>An entry's pictures in its image fields, by field id, or null when it has none.</summary>
+    private static IReadOnlyList<BackupFieldImage>? FieldImagesOf(Guid entityId, ILookup<Guid, EntityFieldImage> fieldImages) =>
+        fieldImages.Contains(entityId)
+            ? [.. fieldImages[entityId]
+                .OrderBy(image => image.FieldDefinitionId)
+                .Select(image => new BackupFieldImage(
+                    image.FieldDefinitionId,
+                    image.FileName,
+                    image.ContentType,
+                    image.Width,
+                    image.Height,
+                    image.ByteSize,
+                    BackupArchive.FieldImageMediaPathFor(image.EntityId, image.FieldDefinitionId, image.ContentType),
+                    new BackupImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight)))]
+            : null;
 
     /// <summary>
     /// Every entry's primary image, live and trashed alike - a trashed entry is authored lore
@@ -420,7 +448,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                             field.TargetEntityTypeId,
                             field.TargetGroupId,
                             field.ArchivedAt,
-                            field.SectionId)),
+                            field.SectionId,
+                            field.ImageShape)),
                 ]);
 
         // The hierarchy's own order, as the app lists it: a parent before its descendants, siblings by place, then name,

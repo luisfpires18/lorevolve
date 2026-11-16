@@ -20,14 +20,21 @@ import { ChangeList, EditConflict } from '../components/EditConflict'
 import { EntityHistory } from '../components/EntityHistory'
 import { EntityImageField, type PendingImage } from '../components/EntityImageField'
 import { FieldInput } from '../components/FieldInputs'
+import type { PendingFieldImage } from '../components/FieldImageInput'
 import { FieldSectionFold } from '../components/FieldSectionFold'
 import { ImageViewer } from '../components/ImageViewer'
 import { NameList } from '../components/NameList'
 import { ProgressionView } from '../components/ProgressionView'
 import { RelationshipSection } from '../components/RelationshipSection'
 import { getEntityArticle, saveEntityArticle, type EntityArticle } from '../lore/article'
-import { articleLinks, emptyValue, isEmptyDocument } from '../lore/document'
-import { entityDisplayUrl, entityImageUrl, setEntityImage } from '../lore/images'
+import { articleLinks, emptyValue, isEmptyDocument, valuedFields } from '../lore/document'
+import {
+  entityDisplayUrl,
+  entityImageUrl,
+  fieldImageUrl,
+  setEntityImage,
+  setFieldImage,
+} from '../lore/images'
 import { TokenInput } from '../components/TokenInput'
 import { TypeIcon } from '../components/TypeIcon'
 import { blockingFindingsOf } from '../canon/blocked'
@@ -279,6 +286,11 @@ function EntityScreen({ view }: { view: EntryView }) {
   // come back to clean up.
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
 
+  // The same wait for each Image field of a new entry, by field id.
+  const [pendingFieldImages, setPendingFieldImages] = useState<Record<string, PendingFieldImage>>(
+    {},
+  )
+
   // Bumped after every accepted write, so the history reloads without either component
   // holding the other's state.
   const [historyKey, setHistoryKey] = useState(0)
@@ -429,14 +441,15 @@ function EntityScreen({ view }: { view: EntryView }) {
   const isDirty = useMemo(() => {
     const baseline = isNew ? blankDraft : detail ? draftFromDetail(detail) : null
     if (!isFormOpen || draft === null || baseline === null) return false
-    if (isNew && pendingImage !== null) return true
+    if (isNew && (pendingImage !== null || Object.keys(pendingFieldImages).length > 0)) return true
     return comparable(draft, types) !== comparable(baseline, types)
-  }, [isFormOpen, isNew, blankDraft, detail, draft, types, pendingImage])
+  }, [isFormOpen, isNew, blankDraft, detail, draft, types, pendingImage, pendingFieldImages])
 
   /** Lets the form's changes go and closes it: Cancel, or the author choosing to leave. */
   const discard = useCallback(() => {
     setDraft(detail ? draftFromDetail(detail) : null)
     setPendingImage(null)
+    setPendingFieldImages({})
     setIsEditing(false)
     setIsSuggesting(false)
     setMessage(null)
@@ -497,7 +510,7 @@ function EntityScreen({ view }: { view: EntryView }) {
       canonStatus: draft.canonStatus,
       aliases: draft.aliases,
       tags: draft.tags,
-      fields: definitions.map(
+      fields: valuedFields(definitions).map(
         (definition) => draft.fields[definition.id] ?? emptyValue(definition),
       ),
       // The version the form was opened on - or the latest the author reviewed after a refusal.
@@ -536,6 +549,32 @@ function EntityScreen({ view }: { view: EntryView }) {
         }
       }
 
+      // Each Image field's held picture is a write of its own, for the same reason: the entry is stored either way.
+      let fieldImages = saved.fieldImages
+      if (isNew) {
+        for (const [fieldId, held] of Object.entries(pendingFieldImages)) {
+          try {
+            const uploaded = await setFieldImage(
+              universe.id,
+              saved.id,
+              fieldId,
+              held.file,
+              held.crop,
+            )
+            fieldImages = [...fieldImages.filter((one) => one.fieldId !== fieldId), uploaded]
+          } catch (failure: unknown) {
+            setMessage(
+              failure instanceof ApiError
+                ? (failure.fieldErrors.file ?? failure.message)
+                : t('entity.fieldImage.uploadFailed', {
+                    name: selectedType?.fields.find((one) => one.id === fieldId)?.name ?? '',
+                  }),
+            )
+          }
+        }
+        setPendingFieldImages({})
+      }
+
       // A copied article is the same kind of second write: the copy exists either way, and a refused article says so.
       // Its text is the one the copy panel showed, links and all, saved as the new entry's first version.
       if (isNew && copyArticle && source?.article) {
@@ -549,7 +588,7 @@ function EntityScreen({ view }: { view: EntryView }) {
         }
       }
 
-      const stored = { ...saved, image }
+      const stored = { ...saved, image, fieldImages }
 
       setDetail(stored)
       setDraft(draftFromDetail(stored))
@@ -610,6 +649,7 @@ function EntityScreen({ view }: { view: EntryView }) {
     entityId,
     navigate,
     pendingImage,
+    pendingFieldImages,
     detail,
     isSuggesting,
     copyArticle,
@@ -645,7 +685,7 @@ function EntityScreen({ view }: { view: EntryView }) {
         canonStatus: next,
         aliases: updated.aliases,
         tags: updated.tags,
-        fields: definitions.map(
+        fields: valuedFields(definitions).map(
           (definition) => updated.fields[definition.id] ?? emptyValue(definition),
         ),
         expectedVersion: detail?.version,
@@ -849,6 +889,29 @@ function EntityScreen({ view }: { view: EntryView }) {
               : current,
           )
         }
+        image={{
+          entityId: isNew ? null : (entityId ?? null),
+          stored: detail?.fieldImages.find((one) => one.fieldId === definition.id) ?? null,
+          pending: pendingFieldImages[definition.id] ?? null,
+          onPending: (held) =>
+            setPendingFieldImages((current) => {
+              const { [definition.id]: _dropped, ...rest } = current
+              return held ? { ...rest, [definition.id]: held } : rest
+            }),
+          onChanged: (picture) =>
+            setDetail((current) =>
+              current
+                ? {
+                    ...current,
+                    fieldImages: [
+                      ...current.fieldImages.filter((one) => one.fieldId !== definition.id),
+                      ...(picture ? [picture] : []),
+                    ],
+                  }
+                : current,
+            ),
+          disabled: isSaving,
+        }}
       />
       {fieldErrors[definition.id] ? (
         <p className="field__error">{fieldErrors[definition.id]}</p>
@@ -1385,6 +1448,30 @@ function EntityScreen({ view }: { view: EntryView }) {
               </div>
             ) : null}
 
+            {(detail?.fieldImages.length ?? 0) > 0 ? (
+              <div className="rail__block" data-testid="entry-field-images">
+                {detail!.fieldImages.map((picture) => {
+                  const name =
+                    selectedType?.fields.find((one) => one.id === picture.fieldId)?.name ?? ''
+                  return (
+                    <figure
+                      className="entry__fieldimage"
+                      key={picture.fieldId}
+                      data-testid={`entry-field-image-${picture.fieldId}`}
+                    >
+                      <figcaption className="rail__heading">{name}</figcaption>
+                      <img
+                        src={fieldImageUrl(universe.id, detail!.id, picture, 'crop')}
+                        alt={name}
+                        width={picture.width}
+                        height={picture.height}
+                      />
+                    </figure>
+                  )
+                })}
+              </div>
+            ) : null}
+
             {(detail?.tags.length ?? 0) > 0 ? (
               <div className="rail__block">
                 <h2 className="rail__heading">{t('entity.page.rail.tags')}</h2>
@@ -1564,7 +1651,9 @@ function comparable(draft: Draft, types: EntityType[]) {
   const definitions = types.find((type) => type.id === draft.entityTypeId)?.fields ?? []
   return JSON.stringify({
     ...draft,
-    fields: definitions.map((definition) => draft.fields[definition.id] ?? emptyValue(definition)),
+    fields: valuedFields(definitions).map(
+      (definition) => draft.fields[definition.id] ?? emptyValue(definition),
+    ),
   })
 }
 

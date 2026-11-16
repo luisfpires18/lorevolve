@@ -475,6 +475,23 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 48)
+        {
+            // Image fields came in version 48 (Issue #238): a field's crop shape and an entry's field pictures.
+            foreach (var type in payload["entityTypes"]?.AsArray() ?? [])
+            {
+                foreach (var field in type?["fields"]?.AsArray() ?? [])
+                {
+                    Drop(field, "imageShape");
+                }
+            }
+
+            foreach (var entity in (payload["entities"]?.AsArray() ?? []).Concat(payload["projectEntities"]?.AsArray() ?? []))
+            {
+                Drop(entity, "fieldImages");
+            }
+        }
+
         if (version < 47)
         {
             // An idea's project came in version 47 (#197).

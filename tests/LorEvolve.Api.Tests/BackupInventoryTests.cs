@@ -33,6 +33,7 @@ public sealed class BackupInventoryTests
         "EntityArticles",
         "EntityArticleRevisions",
         "EntityImages",
+        "EntityFieldImages",
         "EntityPrivateNotes",
         "EntityRevisions",
         "EntityRevisionAliases",

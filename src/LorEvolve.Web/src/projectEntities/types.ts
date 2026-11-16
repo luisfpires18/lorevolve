@@ -1,3 +1,5 @@
+import type { FieldImageRef, FieldImageShapeValue } from '../lore/types'
+
 /**
  * A project's own schema and entries (#144).
  *
@@ -13,6 +15,7 @@ export const FieldKind = {
   Select: 5,
   MultiSelect: 6,
   EntityReference: 7,
+  Image: 8,
 } as const
 
 export type FieldKindValue = (typeof FieldKind)[keyof typeof FieldKind]
@@ -30,6 +33,8 @@ export type ProjectField = {
   isRequired: boolean
   displayOrder: number
   options: ProjectFieldOption[]
+  /** For an Image field: the frame its picture is cropped to. Null for every other kind. */
+  imageShape: FieldImageShapeValue | null
 }
 
 export type ProjectEntityType = {
@@ -65,6 +70,8 @@ export type ProjectFieldInput = {
   kind: FieldKindValue
   isRequired: boolean | null
   options: string[] | null
+  /** Only for an Image field; left out for every other kind. */
+  imageShape?: FieldImageShapeValue | null
 }
 
 /** One value a save sends. Only the member the field's kind uses is filled in; the rest stay null. */
@@ -124,5 +131,6 @@ export type ProjectEntityDetail = {
   entityTypeId: string
   entityTypeName: string
   fields: FieldValue[]
+  fieldImages: FieldImageRef[]
   version: number
 }

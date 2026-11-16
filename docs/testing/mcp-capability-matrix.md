@@ -71,6 +71,7 @@ before proposing against them, which is the only read of them MCP offers.
 | What an entry knows | `knowledge` | `get_lore_entry` | `read-only-by-design` |
 | Maps and their pins | `maps` | `list_maps`, `search_map_locations`, `get_map_location`, `measure_map_distance` | `read-only-by-design` |
 | A map's picture | `maps/image` | `media-bytes` | `media-bytes` |
+| An entry's image field pictures | `entities/field-images` | `media-bytes` | `media-bytes` |
 | Collaborators | `collaborators` | `person-only` | `person-only` |
 | Invitations | `invitations` | `person-only` | `person-only` |
 | Lore references | `lore-references` | `get_lore_entry` | `read-only-by-design` |

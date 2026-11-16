@@ -6332,6 +6332,15 @@ html:has(.viewer[open]) {
   background: var(--paper);
 }
 
+/* An Image field's picture keeps the shape it was cropped to, up to a modest size. */
+.imagefield__preview--field {
+  width: auto;
+  height: auto;
+  max-width: 12rem;
+  max-height: 9rem;
+  object-fit: contain;
+}
+
 .imagefield__preview--blank {
   display: grid;
   place-items: center;

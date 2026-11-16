@@ -890,7 +890,7 @@ public static partial class EntityImageEndpoints
     }
 
     /// <summary>The crop form field, or null when it is not the four numbers a crop is.</summary>
-    private static EntityImageCrop? ReadCrop(string json)
+    internal static EntityImageCrop? ReadCrop(string json)
     {
         try
         {
@@ -902,17 +902,17 @@ public static partial class EntityImageEndpoints
         }
     }
 
-    private static IResult Invalid(string field, string message) =>
+    internal static IResult Invalid(string field, string message) =>
         Results.ValidationProblem(new Dictionary<string, string[]> { [field] = [message] });
 
     /// <summary>
     /// 503, whatever the store's reason. The detail is the exception's own message, which is
     /// always LorEvolve's sentence - never the provider's, which stays in the log.
     /// </summary>
-    private static IResult Unavailable(MediaStorageException exception) =>
+    internal static IResult Unavailable(MediaStorageException exception) =>
         MediaProblem.Unavailable(exception);
 
-    private static IResult Changed() =>
+    internal static IResult Changed() =>
         Results.Problem(
             title: "The picture changed while it was being framed.",
             detail: "This entry's image was replaced or reframed somewhere else. Open it again to choose the framing.",
@@ -920,14 +920,14 @@ public static partial class EntityImageEndpoints
             extensions: new Dictionary<string, object?> { ["code"] = ImageChangedCode });
 
     /// <summary>The entry's picture was replaced or removed while this upload was on its way. That one stands.</summary>
-    private static IResult ReplacedMeanwhile() =>
+    internal static IResult ReplacedMeanwhile() =>
         Results.Problem(
             title: "The picture changed while this one was uploading.",
             detail: "This entry's image was replaced or removed somewhere else, so this one was not kept. Open the entry again and choose the picture.",
             statusCode: StatusCodes.Status409Conflict,
             extensions: new Dictionary<string, object?> { ["code"] = ImageChangedCode });
 
-    private static IResult OriginalUnavailable() =>
+    internal static IResult OriginalUnavailable() =>
         Results.Problem(
             title: "The stored image could not be read.",
             detail: "Its thumbnail cannot be made again. Upload the picture again to replace it.",

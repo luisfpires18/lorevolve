@@ -342,6 +342,7 @@ internal sealed partial class UniverseRestore(
         {
             var images = await StoreImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
             await StoreAppearanceImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
+            await StoreFieldImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
             await StoreMapImagesAsync(backup, opened, ids, universeId, now, attempted, cancellationToken);
             var artwork = await StoreArtworkAsync(backup, opened, universeId, now, attempted, cancellationToken);
             return await WriteAsync(backup.Payload, ids, universeId, ownerId, name, now, images, artwork, hold, cancellationToken);
@@ -362,6 +363,73 @@ internal sealed partial class UniverseRestore(
 
     /// <summary>Appearance pictures written before the transaction, added by <see cref="AddProgression"/> with their looks.</summary>
     private readonly List<EntityAppearanceImage> _appearanceImages = [];
+
+    /// <summary>Image field pictures (Issue #238) written before the transaction, added after every entry and field.</summary>
+    private readonly List<EntityFieldImage> _fieldImages = [];
+
+    /// <summary>
+    /// Every image field's picture under the restored ids and new keys: the original from the archive and the crop validation
+    /// already cut, one at a time as the appearance pictures are. A failure sweeps everything attempted.
+    /// </summary>
+    private async Task StoreFieldImagesAsync(
+        RestorableBackup backup,
+        OpenedBackup opened,
+        RestoreIdentity ids,
+        Guid universeId,
+        DateTime now,
+        ConcurrentQueue<string> attempted,
+        CancellationToken cancellationToken)
+    {
+        var owners = backup.Payload.Entities.Select(entity => (entity.Id, entity.FieldImages))
+            .Concat((backup.Payload.ProjectEntities ?? []).Select(entry => (entry.Id, entry.FieldImages)));
+
+        foreach (var (sourceId, pictures) in owners)
+        {
+            foreach (var image in pictures ?? [])
+            {
+                var validated = backup.FieldImages![(sourceId, image.FieldDefinitionId)];
+                var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+                var entityId = ids.Map(sourceId);
+                var fieldId = ids.Map(image.FieldDefinitionId);
+                var assetId = Guid.NewGuid();
+                var cropId = Guid.NewGuid();
+                var originalKey = EntityFieldImageKeys.Original(universeId, entityId, fieldId, assetId, validated.Extension);
+                var cropKey = EntityFieldImageKeys.Crop(universeId, entityId, fieldId, assetId, cropId);
+
+                attempted.Enqueue(originalKey);
+                attempted.Enqueue(cropKey);
+
+                using var originalBytes = new MemoryStream(original, writable: false);
+                using var cropBytes = new MemoryStream(validated.Thumbnail, writable: false);
+                await MediaObjectWrites.PutAllAsync(
+                    store,
+                    cancellationToken,
+                    new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+                    new PendingMediaObject(cropKey, cropBytes, "image/webp"));
+
+                _fieldImages.Add(new EntityFieldImage
+                {
+                    EntityId = entityId,
+                    FieldDefinitionId = fieldId,
+                    AssetId = assetId,
+                    OriginalKey = originalKey,
+                    CropId = cropId,
+                    CropKey = cropKey,
+                    CropX = image.Crop.X,
+                    CropY = image.Crop.Y,
+                    CropWidth = image.Crop.Width,
+                    CropHeight = image.Crop.Height,
+                    ContentType = validated.ContentType,
+                    FileName = FileNameLabel(image.FileName),
+                    Width = validated.Width,
+                    Height = validated.Height,
+                    ByteSize = validated.ByteSize,
+                    UploadedAt = now,
+                });
+            }
+        }
+    }
 
     /// <summary>Maps whose pictures were written before the transaction, with their pins, added by <see cref="AddMaps"/>.</summary>
     private readonly List<UniverseMap> _maps = [];
@@ -822,6 +890,7 @@ internal sealed partial class UniverseRestore(
 
             AddLore(payload, ids, universeId, ownerId, images);
             AddMaps();
+            db.EntityFieldImages.AddRange(_fieldImages);
             AddStories(payload, ids, universeId);
             AddIdeas(payload, ids, universeId, ownerId);
             AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
@@ -1080,6 +1149,9 @@ internal sealed partial class UniverseRestore(
 
                     // Archived stays archived, with every value below it (Issue #39); null in a file before version 25.
                     ArchivedAt = field.ArchivedAt,
+
+                    // An image field's crop shape (version 48, Issue #238); free when the file names none.
+                    ImageShape = field.Kind == EntityFieldKind.Image ? field.ImageShape ?? FieldImageShape.Free : null,
                 });
 
                 foreach (var option in field.Options)

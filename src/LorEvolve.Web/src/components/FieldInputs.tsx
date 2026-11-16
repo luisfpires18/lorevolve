@@ -2,8 +2,26 @@ import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
-import { FieldKind, isYearMeaning, type FieldDefinition, type FieldValueInput } from '../lore/types'
+import {
+  FieldKind,
+  isYearMeaning,
+  type FieldDefinition,
+  type FieldImageRef,
+  type FieldValueInput,
+} from '../lore/types'
+import { FieldImageInput, type PendingFieldImage } from './FieldImageInput'
 import { EntityPicker, type EntityChoice, type QuickCreateOptions } from './EntityPicker'
+
+/** What an Image field needs beyond a value: the entry it belongs to, and its picture, stored or held until the entry exists. */
+export interface FieldImageBinding {
+  /** Null while the entry is new: the picture is held, and the page uploads it after the create call. */
+  entityId: string | null
+  stored: FieldImageRef | null
+  pending: PendingFieldImage | null
+  onPending: (pending: PendingFieldImage | null) => void
+  onChanged: (image: FieldImageRef | null) => void
+  disabled?: boolean
+}
 
 interface FieldInputProps {
   definition: FieldDefinition
@@ -27,6 +45,9 @@ interface FieldInputProps {
 
   /** A link field offers Quick Create with this (Issue #25): the entry form, for someone who may create Lore. */
   quickCreate?: QuickCreateOptions | null
+
+  /** Where an Image field keeps its picture. An Image field is not offered without it. */
+  image?: FieldImageBinding
 }
 
 /** Renders the one control the field's kind calls for. */
@@ -39,6 +60,7 @@ export function FieldInput({
   chronology,
   onChange,
   quickCreate = null,
+  image,
 }: FieldInputProps) {
   const { t } = useI18n()
   const id = `field-${definition.id}`
@@ -71,6 +93,24 @@ export function FieldInput({
       }
     />
   )
+
+  // A picture is not a value: it is its own write, and the field's definition only says how it is cropped.
+  if (definition.kind === FieldKind.Image) {
+    return image ? (
+      <FieldImageInput
+        universeId={universeId}
+        entityId={image.entityId}
+        fieldId={definition.id}
+        name={definition.name}
+        shape={definition.imageShape}
+        image={image.stored}
+        pending={image.pending}
+        onPending={image.onPending}
+        onChanged={image.onChanged}
+        disabled={image.disabled ?? false}
+      />
+    ) : null
+  }
 
   // A link is searched for rather than listed, and only among the entries the field allows: exactly its allowed type, or
   // any type when it has none. The API decides what is offered and checks what is saved.

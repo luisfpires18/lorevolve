@@ -183,7 +183,8 @@ public static class ProjectEntityTypeEndpoints
         [
             .. field.Options.OrderBy(option => option.DisplayOrder).ThenBy(option => option.Value, StringComparer.Ordinal)
                 .Select(option => new ProjectEntityFieldOptionResponse(option.Id, option.Value, option.DisplayOrder)),
-        ]);
+        ],
+        field.ImageShape);
 
     private static async Task<IResult> CreateAsync(
         Guid projectId,
@@ -476,6 +477,7 @@ public static class ProjectEntityTypeEndpoints
             Kind = request.Kind,
             IsRequired = request.IsRequired ?? false,
             DisplayOrder = fields.Count == 0 ? 0 : fields.Max(each => each.DisplayOrder) + 1,
+            ImageShape = request.Kind == EntityFieldKind.Image ? request.ImageShape ?? FieldImageShape.Free : null,
         };
 
         db.EntityFieldDefinitions.Add(field);
@@ -542,7 +544,8 @@ public static class ProjectEntityTypeEndpoints
 
         // The kind is locked once the field holds a value: reinterpreting a stored number as a date would not convert
         // the data, it would change what it means.
-        var held = await db.EntityFieldValues.CountAsync(value => value.FieldDefinitionId == fieldId, cancellationToken);
+        var held = await db.EntityFieldValues.CountAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+            + await db.EntityFieldImages.CountAsync(image => image.FieldDefinitionId == fieldId, cancellationToken);
 
         if (held > 0 && field.Kind != request.Kind)
         {
@@ -556,6 +559,9 @@ public static class ProjectEntityTypeEndpoints
         field.Name = name;
         field.Kind = request.Kind;
         field.IsRequired = request.IsRequired ?? false;
+
+        // A new shape keeps the stored pictures as they are; the next crop uses it (Issue #238).
+        field.ImageShape = request.Kind == EntityFieldKind.Image ? request.ImageShape ?? field.ImageShape ?? FieldImageShape.Free : null;
 
         // The options a save sends are the complete set. Removing one an entry has chosen is refused rather than
         // silently clearing that entry's value.
@@ -642,7 +648,9 @@ public static class ProjectEntityTypeEndpoints
 
         // Deleting a field that holds values would destroy what an author wrote, with nothing to undo it from. The
         // values are cleared first, entry by entry, which is a decision the author makes and sees.
-        if (await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken))
+        // A picture in an image field is its value (Issue #238), so it holds the field the same way.
+        if (await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+            || await db.EntityFieldImages.AnyAsync(image => image.FieldDefinitionId == fieldId, cancellationToken))
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status409Conflict,
@@ -862,6 +870,8 @@ public static class ProjectEntityTypeEndpoints
         {
             errors["options"] = ["Only a field of choices has choices."];
         }
+
+        LoreValidation.ValidateImageField(errors, request.Kind, request.ImageShape, request.IsRequired is true);
 
         return errors.Count == 0 ? null : errors;
     }

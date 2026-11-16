@@ -427,6 +427,7 @@ internal static class AiChangeCatalog
         EntityFieldKind.Date => "date (date)",
         EntityFieldKind.Select => "one_choice (optionIds, one)",
         EntityFieldKind.MultiSelect => "choices (optionIds)",
+        EntityFieldKind.Image => "image (read only: uploaded in LorEvolve, never set by a change)",
         _ => "link (entry)",
     };
 

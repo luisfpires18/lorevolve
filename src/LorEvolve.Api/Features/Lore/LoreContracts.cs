@@ -158,7 +158,8 @@ public sealed record FieldDefinitionRequest(
     EntityFieldSemantic? Semantic = null,
     Guid? TargetEntityTypeId = null,
     Guid? TargetGroupId = null,
-    int? ExpectedVersion = null);
+    int? ExpectedVersion = null,
+    FieldImageShape? ImageShape = null);
 
 public sealed record FieldOptionResponse(Guid Id, string Value, int DisplayOrder);
 
@@ -186,7 +187,8 @@ public sealed record FieldDefinitionResponse(
     int TrashedEntryCount = 0,
     bool UsedInHistory = false,
     int Version = 1,
-    Guid? SectionId = null);
+    Guid? SectionId = null,
+    FieldImageShape? ImageShape = null);
 
 /// <summary>
 /// Restoring an archived field. <paramref name="AsOptional"/> is the author's explicit choice to bring a required field back
@@ -373,6 +375,32 @@ public sealed record EntityImageCrop(double X, double Y, double Width, double He
 public sealed record EntityThumbnailRequest(Guid AssetId, EntityImageCrop? Crop);
 
 /// <summary>
+/// The picture an entry holds in one image field (Issue #238): served at <c>field-images/{fieldId}/{assetId}/original</c> and
+/// <c>.../{assetId}/crop/{cropId}</c>. <paramref name="Crop"/> is the frame the crop was cut from, as fractions of the original.
+/// </summary>
+public sealed record FieldImageRef(
+    Guid FieldId,
+    Guid AssetId,
+    Guid CropId,
+    int Width,
+    int Height,
+    EntityImageCrop Crop,
+    string? FileName)
+{
+    public static FieldImageRef Of(EntityFieldImage image) => new(
+        image.FieldDefinitionId,
+        image.AssetId,
+        image.CropId,
+        image.Width,
+        image.Height,
+        new EntityImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight),
+        image.FileName);
+}
+
+/// <summary>A new framing for an image field's picture; <paramref name="AssetId"/> as in <see cref="EntityThumbnailRequest"/>.</summary>
+public sealed record FieldImageCropRequest(Guid AssetId, EntityImageCrop? Crop);
+
+/// <summary>
 /// Card row. Carries enough to render a type-aware card, and no universe or owner id - and never an article.
 ///
 /// <paramref name="ArticleExcerpt"/> is set only on a search result whose article matched: a few words around the match,
@@ -422,7 +450,8 @@ public sealed record EntityDetail(
     DateTime UpdatedAt,
     bool HasFamilyConnections,
     int Version,
-    bool HasProgression = false);
+    bool HasProgression = false,
+    IReadOnlyList<FieldImageRef>? FieldImages = null);
 
 public sealed record EntityPage(
     IReadOnlyList<EntitySummary> Items,

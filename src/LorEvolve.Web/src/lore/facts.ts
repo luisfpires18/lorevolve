@@ -46,6 +46,9 @@ export function renderFact(
       return value.referencedEntityIsTrashed
         ? t('entity.fact.inTrash', { name: value.referencedEntityName })
         : value.referencedEntityName
+    case FieldKind.Image:
+      // A picture is drawn by the page from the entry's field images, never read as text.
+      return EMPTY_FACT
     default:
       return EMPTY_FACT
   }

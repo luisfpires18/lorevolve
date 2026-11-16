@@ -9,6 +9,7 @@ import type {
   EntityQuery,
   EntityType,
   EntityTypeGroup,
+  FieldImageShapeValue,
   FieldKindValue,
   FieldSemanticValue,
   TagSummary,
@@ -196,6 +197,9 @@ export interface FieldInput {
 
   /** A link field's group instead of a type, or null. Required for the same reason. Never sent beside a type. */
   targetGroupId: string | null
+
+  /** An Image field's crop shape; null for every other kind. */
+  imageShape?: FieldImageShapeValue | null
 
   /**
    * The field's version this edit was made over (ADR 0043). Required by an edit, which is refused (409, `FIELD_CHANGED_CODE`)

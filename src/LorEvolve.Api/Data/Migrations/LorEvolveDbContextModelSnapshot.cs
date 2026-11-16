@@ -988,6 +988,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<Guid>("EntityTypeId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ImageShape")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsRequired")
                         .HasColumnType("INTEGER");
 
@@ -1030,6 +1033,70 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasFilter("\"Semantic\" IS NOT NULL");
 
                     b.ToTable("EntityFieldDefinitions", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Lore.EntityFieldImage", b =>
+                {
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FieldDefinitionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CropHeight")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid>("CropId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CropKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CropWidth")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropX")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropY")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("EntityId", "FieldDefinitionId");
+
+                    b.HasIndex("FieldDefinitionId");
+
+                    b.ToTable("EntityFieldImages", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Lore.EntityFieldOption", b =>
@@ -4835,6 +4902,25 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("TargetEntityType");
 
                     b.Navigation("TargetGroup");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Lore.EntityFieldImage", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Lore.LoreEntity", "Entity")
+                        .WithMany()
+                        .HasForeignKey("EntityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Lore.EntityFieldDefinition", "FieldDefinition")
+                        .WithMany()
+                        .HasForeignKey("FieldDefinitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Entity");
+
+                    b.Navigation("FieldDefinition");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Lore.EntityFieldOption", b =>

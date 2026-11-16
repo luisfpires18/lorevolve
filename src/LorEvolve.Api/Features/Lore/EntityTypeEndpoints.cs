@@ -883,6 +883,7 @@ public static class EntityTypeEndpoints
             DefaultValue = LoreValidation.Normalize(request.DefaultValue),
             TargetEntityTypeId = request.TargetEntityTypeId,
             TargetGroupId = request.TargetGroupId,
+            ImageShape = request.Kind == EntityFieldKind.Image ? request.ImageShape ?? FieldImageShape.Free : null,
         };
 
         AddOptions(definition, request.Options);
@@ -1020,6 +1021,11 @@ public static class EntityTypeEndpoints
         definition.TargetGroupId = request.TargetGroupId;
         definition.Kind = request.Kind;
 
+        // A new shape keeps the stored pictures as they are; the next crop uses it (Issue #238).
+        definition.ImageShape = request.Kind == EntityFieldKind.Image
+            ? request.ImageShape ?? definition.ImageShape ?? FieldImageShape.Free
+            : null;
+
         // Meaning is metadata about the field, not about what is stored in it, so it may be
         // declared or withdrawn at any time - unlike the kind, which is frozen once values exist.
         definition.Semantic = request.Semantic;
@@ -1110,7 +1116,8 @@ public static class EntityTypeEndpoints
 
         // An era's override is a value of the field too (Issue #41).
         var hasValues = await db.EntityFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
-            || await db.EntityEraFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken);
+            || await db.EntityEraFieldValues.AnyAsync(value => value.FieldDefinitionId == fieldId, cancellationToken)
+            || await db.EntityFieldImages.AnyAsync(image => image.FieldDefinitionId == fieldId, cancellationToken);
 
         // Changing the kind would reinterpret every stored value, so it is refused while
         // any exist. Renaming and reordering stay safe. An older version's values count too: restoring
@@ -1283,6 +1290,10 @@ public static class EntityTypeEndpoints
             .Concat(db.EntityEraFieldValues.AsNoTracking()
                 .Where(value => value.FieldDefinitionId == fieldId)
                 .Select(value => new { value.EntityEra!.EntityId, Trashed = value.EntityEra.Entity!.DeletedAt != null }))
+            // An image field's picture is its value (Issue #238): never cascaded away with objects left in the bucket.
+            .Concat(db.EntityFieldImages.AsNoTracking()
+                .Where(image => image.FieldDefinitionId == fieldId)
+                .Select(image => new { image.EntityId, Trashed = image.Entity!.DeletedAt != null }))
             .ToListAsync(cancellationToken))
             .Distinct()
             .ToList();
@@ -1861,7 +1872,8 @@ public static class EntityTypeEndpoints
             0,
             false,
             field.Version,
-            field.SectionId);
+            field.SectionId,
+            field.ImageShape);
 
     /// <summary>
     /// The universe's types with their fields, sections and counts. The counts are read in three grouped queries over the
@@ -1937,6 +1949,9 @@ public static class EntityTypeEndpoints
                     value.EntityEra!.EntityId,
                     Trashed = value.EntityEra.Entity!.DeletedAt != null,
                 }))
+            .Union(db.EntityFieldImages
+                .Where(image => image.Entity!.UniverseId == universeId)
+                .Select(image => new { image.FieldDefinitionId, image.EntityId, Trashed = image.Entity!.DeletedAt != null }))
             .GroupBy(holder => holder.FieldDefinitionId)
             .Select(group => new { FieldId = group.Key, All = group.Count(), Trashed = group.Count(holder => holder.Trashed) })
             .ToDictionaryAsync(row => row.FieldId, cancellationToken);

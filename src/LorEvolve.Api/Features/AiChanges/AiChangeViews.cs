@@ -689,6 +689,7 @@ internal static class AiChangeViews
         EntityFieldKind.Date => "Date",
         EntityFieldKind.Select => "One choice",
         EntityFieldKind.MultiSelect => "Choices",
+        EntityFieldKind.Image => "Image",
         _ => "Link to an entry",
     };
 

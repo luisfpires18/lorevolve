@@ -116,6 +116,8 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<EntityAppearanceImage> EntityAppearanceImages => Set<EntityAppearanceImage>();
 
+    public DbSet<EntityFieldImage> EntityFieldImages => Set<EntityFieldImage>();
+
     public DbSet<UniverseMap> UniverseMaps => Set<UniverseMap>();
 
     public DbSet<MapPin> MapPins => Set<MapPin>();

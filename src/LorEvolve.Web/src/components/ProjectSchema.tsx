@@ -10,6 +10,12 @@ import {
   saveProjectType,
 } from '../projectEntities/api'
 import {
+  FIELD_IMAGE_SHAPE_LABELS,
+  FIELD_IMAGE_SHAPE_ORDER,
+  FieldImageShape,
+  type FieldImageShapeValue,
+} from '../lore/types'
+import {
   FieldKind,
   type FieldKindValue,
   type ProjectEntityType,
@@ -29,6 +35,7 @@ const KINDS: readonly { kind: FieldKindValue; label: () => string }[] = [
   { kind: FieldKind.Date, label: () => t('projects.schema.kind.date') },
   { kind: FieldKind.Select, label: () => t('projects.schema.kind.select') },
   { kind: FieldKind.MultiSelect, label: () => t('projects.schema.kind.multiSelect') },
+  { kind: FieldKind.Image, label: () => t('projects.schema.kind.image') },
 ]
 
 function kindLabel(kind: FieldKindValue) {
@@ -427,6 +434,7 @@ function FieldForm({
     kind: FieldKindValue
     isRequired: boolean | null
     options: string[] | null
+    imageShape: FieldImageShapeValue | null
   }) => void
   onCancel: () => void
 }) {
@@ -435,6 +443,8 @@ function FieldForm({
   const [kind, setKind] = useState<FieldKindValue>(FieldKind.ShortText)
   const [options, setOptions] = useState('')
   const [required, setRequired] = useState(false)
+  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(FieldImageShape.Free)
+  const isImage = kind === FieldKind.Image
   const choosing = kind === FieldKind.Select || kind === FieldKind.MultiSelect
 
   return (
@@ -447,7 +457,9 @@ function FieldForm({
         onSubmit({
           name,
           kind,
-          isRequired: required,
+          // A picture is optional by nature: the API refuses a required Image field.
+          isRequired: isImage ? false : required,
+          imageShape: isImage ? imageShape : null,
           options: choosing
             ? options
                 .split('\n')
@@ -496,17 +508,36 @@ function FieldForm({
         </label>
       ) : null}
 
-      <div className="field">
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={required}
-            onChange={(event) => setRequired(event.target.checked)}
-            data-testid="project-field-new-required"
-          />
-          <span>{t('projects.schema.fieldRequired')}</span>
+      {isImage ? (
+        <label className="field">
+          <span className="field__label">{t('projects.schema.imageShape')}</span>
+          <select
+            className="field__input"
+            value={imageShape}
+            onChange={(event) => setImageShape(Number(event.target.value) as FieldImageShapeValue)}
+            data-testid="project-field-new-image-shape"
+          >
+            {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+              <option key={each} value={each}>
+                {FIELD_IMAGE_SHAPE_LABELS[each]}
+              </option>
+            ))}
+          </select>
+          <span className="field__hint">{t('projects.schema.imageShapeHint')}</span>
         </label>
-      </div>
+      ) : (
+        <div className="field">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={required}
+              onChange={(event) => setRequired(event.target.checked)}
+              data-testid="project-field-new-required"
+            />
+            <span>{t('projects.schema.fieldRequired')}</span>
+          </label>
+        </div>
+      )}
 
       <div className="form__actions">
         <button

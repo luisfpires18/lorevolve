@@ -22,6 +22,18 @@ public enum EntityFieldKind
     Select = 5,
     MultiSelect = 6,
     EntityReference = 7,
+
+    /// <summary>One picture, framed to the field's <see cref="FieldImageShape"/> (Issue #238). Never an <see cref="EntityFieldValue"/>: its <see cref="EntityFieldImage"/> row is the value.</summary>
+    Image = 8,
+}
+
+/// <summary>The shape an <see cref="EntityFieldKind.Image"/> field's picture is cropped to. Free keeps the author's own ratio.</summary>
+public enum FieldImageShape
+{
+    Free = 0,
+    Square = 1,
+    FourByThree = 2,
+    SixteenByNine = 3,
 }
 
 /// <summary>
@@ -253,6 +265,9 @@ public sealed class EntityFieldDefinition
     public Guid? TargetGroupId { get; set; }
 
     public EntityTypeGroup? TargetGroup { get; set; }
+
+    /// <summary>For an <see cref="EntityFieldKind.Image"/> field, the crop shape of its picture; null on every other kind.</summary>
+    public FieldImageShape? ImageShape { get; set; }
 
     /// <summary>
     /// When the author archived this field, or null while it is active (Issue #39). Archiving hides a field and keeps it whole:

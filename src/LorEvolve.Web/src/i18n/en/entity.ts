@@ -166,6 +166,15 @@ const entity = {
       usePicture: 'Use this picture',
     },
   },
+  fieldImage: {
+    reframe: 'Edit crop',
+    uploadFailed: 'A picture for "{name}" could not be saved.',
+    crop: {
+      editTitle: 'Edit crop',
+      frameTitle: 'Crop the picture',
+      saveCrop: 'Save crop',
+    },
+  },
   picker: {
     placeholder: 'Search this universe',
     change: 'Change',

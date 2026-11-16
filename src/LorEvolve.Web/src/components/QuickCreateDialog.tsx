@@ -11,7 +11,7 @@ import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey, useDrawerGuard } from '../lib/drawerGuard'
-import { emptyValue } from '../lore/document'
+import { emptyValue, valuedFields } from '../lore/document'
 import { createEntity, listEntities, listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import { withInheritedFields } from '../lore/fieldInheritance'
 import { branchIds, buildTypeTree } from '../lore/typeTree'
@@ -232,7 +232,7 @@ export function QuickCreateDialog({
         aliases: [],
         tags: [],
         // Every active field, as the full form sends them: what was filled in here, the rest at its default.
-        fields: chosenType.fields.map(
+        fields: valuedFields(chosenType.fields).map(
           (definition) => values[definition.id] ?? emptyValue(definition),
         ),
       })

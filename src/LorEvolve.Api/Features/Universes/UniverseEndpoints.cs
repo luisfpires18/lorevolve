@@ -379,6 +379,12 @@ public static partial class UniverseEndpoints
                     .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                     .ToListAsync(cancellationToken))
                 .SelectMany(image => new[] { image.OriginalKey, image.ThumbnailKey, image.DisplayKey }.OfType<string>()))
+            // An image field's pictures (Issue #238), project entries' included: the entry filter is lifted.
+            .Concat((await db.EntityFieldImages.IgnoreQueryFilters()
+                    .Where(image => image.Entity!.UniverseId == universe.Id)
+                    .Select(image => new { image.OriginalKey, image.CropKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks
