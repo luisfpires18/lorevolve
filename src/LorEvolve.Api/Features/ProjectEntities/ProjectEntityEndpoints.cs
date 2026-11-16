@@ -232,10 +232,11 @@ public static class ProjectEntityEndpoints
         }
 
         // A picture in a field the new type lacks goes with the retype (Issue #238), its objects swept after the commit.
-        var dropped = entity.EntityTypeId == request.EntityTypeId
-            ? []
-            : await EntityFieldImageEndpoints.DropInapplicableAsync(
+        if (entity.EntityTypeId != request.EntityTypeId)
+        {
+            await EntityFieldImageEndpoints.DropInapplicableAsync(
                 db, project.UniverseId, entityId, request.EntityTypeId, projectId, cancellationToken);
+        }
 
         entity.EntityTypeId = request.EntityTypeId;
         entity.Name = request.Name!.Trim();
@@ -266,7 +267,7 @@ public static class ProjectEntityEndpoints
             db, entityId, EntityRevisionKind.Edited, restoredFromRevisionId: null, principal.RequireUserId(), cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
-        await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, dropped);
+        await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
 
         var detail = await EntityEndpoints.LoadDetailAsync(
             db, project.UniverseId, entityId, cancellationToken, liveOnly: false, projectId);
@@ -423,8 +424,8 @@ public static class ProjectEntityEndpoints
             return Results.NotFound();
         }
 
-        // An approved change that retypes the entry drops the pictures its new type has no field for; their objects stay
-        // behind as unreferenced litter, since this commit belongs to the proposal's transaction.
+        // An approved change that retypes the entry drops the pictures its new type has no field for; the approval route
+        // sweeps their objects after the proposal's commit.
         if (entity.EntityTypeId != typeId)
         {
             await EntityFieldImageEndpoints.DropInapplicableAsync(db, universeId, entityId, typeId, projectId, cancellationToken);

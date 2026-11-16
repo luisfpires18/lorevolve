@@ -604,20 +604,14 @@ public static class EntityEndpoints
             return refused;
         }
 
-        // A change of type drops the pictures of fields the new type lacks (Issue #238); their objects go once the save has
-        // committed, which the gate has done by the time it answers.
-        var held = await EntityFieldImageEndpoints.HeldKeysAsync(db, entityId, cancellationToken);
-
         var result = await gate.RunAsync(
             universeId,
             token => UpdateCoreAsync(universeId, entityId, request, principal.RequireUserId(), db, token),
             cancellationToken);
 
-        if (held.Length > 0)
-        {
-            var kept = await EntityFieldImageEndpoints.HeldKeysAsync(db, entityId, cancellationToken);
-            await EntityFieldImageEndpoints.SweepAsync(store, loggerFactory, held.Except(kept));
-        }
+        // A change of type drops the pictures of fields the new type lacks (Issue #238); their objects go now that the gate
+        // has committed.
+        await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
 
         return result;
     }
@@ -770,8 +764,8 @@ public static class EntityEndpoints
             .Where(value => value.EntityId == entityId && value.FieldDefinition!.ArchivedAt == null)
             .ExecuteDeleteAsync(cancellationToken);
 
-        // A picture in a field the new type lacks goes with the retype (Issue #238). The route sweeps its objects after the
-        // commit; another writer of a retype (an approved change, a restored version) leaves them as unreferenced litter.
+        // A picture in a field the new type lacks goes with the retype (Issue #238). Every route that comes through here sweeps
+        // its objects after its commit (EntityFieldImageEndpoints.SweepDroppedAsync).
         if (retyped)
         {
             await EntityFieldImageEndpoints.DropInapplicableAsync(db, universeId, entityId, request.EntityTypeId, projectId: null, cancellationToken);

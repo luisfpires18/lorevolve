@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -137,6 +139,8 @@ public static class AiChangeEndpoints
         CanonPromotionGate gate,
         AiChangeProgress progress,
         TimeProvider clock,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
@@ -144,7 +148,11 @@ public static class AiChangeEndpoints
             return denied;
         }
 
-        return await AiChangeCommit.ApproveAsync(db, gate, progress, clock, universeId, proposalId, principal.RequireUserId(), request, cancellationToken);
+        var result = await AiChangeCommit.ApproveAsync(db, gate, progress, clock, universeId, proposalId, principal.RequireUserId(), request, cancellationToken);
+
+        // An approved retype drops the pictures its new type has no field for (Issue #238): swept now that it has committed.
+        await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
+        return result;
     }
 
     /// <summary>

@@ -64,10 +64,11 @@ public static partial class EntityFieldImageEndpoints
 
     /// <summary>
     /// When an entry changes type, the pictures in fields its new type does not have (by the same lineage values use,
-    /// inherited fields included) are deleted with the rest of the save, and their keys are answered for the caller to sweep
-    /// once that save has committed. Archived fields of the new lineage keep their pictures, as they keep their values.
+    /// inherited fields included) are deleted with the rest of the save, and their keys are noted on the context for the
+    /// route to sweep once that save has committed (<see cref="SweepDroppedAsync"/>). Archived fields of the new lineage keep
+    /// their pictures, as they keep their values.
     /// </summary>
-    internal static async Task<string[]> DropInapplicableAsync(
+    internal static async Task DropInapplicableAsync(
         LorEvolveDbContext db,
         Guid universeId,
         Guid entityId,
@@ -82,11 +83,40 @@ public static partial class EntityFieldImageEndpoints
         var keys = await gone.Select(image => new { image.OriginalKey, image.CropKey }).ToListAsync(cancellationToken);
         if (keys.Count == 0)
         {
-            return [];
+            return;
         }
 
         await gone.ExecuteDeleteAsync(cancellationToken);
-        return [.. keys.SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
+        db.DroppedFieldImageKeys.AddRange(keys.SelectMany(key => new[] { key.OriginalKey, key.CropKey }));
+    }
+
+    /// <summary>
+    /// Sweeps the keys this request's saves dropped (<see cref="DropInapplicableAsync"/>), called by a route after its commit,
+    /// whichever path the save took: an entry edit, a restored version, an accepted suggestion, an approved AI change. A save
+    /// that rolled back names its pictures again, so any key still named is kept: only what nothing names is deleted.
+    /// </summary>
+    internal static async Task SweepDroppedAsync(
+        LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        if (db.DroppedFieldImageKeys.Count == 0)
+        {
+            return;
+        }
+
+        var dropped = db.DroppedFieldImageKeys.Distinct(StringComparer.Ordinal).ToList();
+        db.DroppedFieldImageKeys.Clear();
+
+        var named = (await db.EntityFieldImages.AsNoTracking()
+                .Where(image => dropped.Contains(image.OriginalKey) || dropped.Contains(image.CropKey))
+                .Select(image => new { image.OriginalKey, image.CropKey })
+                .ToListAsync(cancellationToken))
+            .SelectMany(key => new[] { key.OriginalKey, key.CropKey })
+            .ToHashSet(StringComparer.Ordinal);
+
+        await SweepAsync(store, loggerFactory, dropped.Where(key => !named.Contains(key)));
     }
 
     /// <summary>Deletes every picture of a field that is being deleted and answers their keys, to sweep after the commit.</summary>
@@ -102,14 +132,6 @@ public static partial class EntityFieldImageEndpoints
         await pictures.ExecuteDeleteAsync(cancellationToken);
         return [.. keys.SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
     }
-
-    /// <summary>Every object key the entry's field pictures name now: read before and after a save, the difference is litter.</summary>
-    internal static async Task<string[]> HeldKeysAsync(LorEvolveDbContext db, Guid entityId, CancellationToken cancellationToken) =>
-        [.. (await db.EntityFieldImages.AsNoTracking()
-                .Where(image => image.EntityId == entityId)
-                .Select(image => new { image.OriginalKey, image.CropKey })
-                .ToListAsync(cancellationToken))
-            .SelectMany(key => new[] { key.OriginalKey, key.CropKey })];
 
     /// <summary>Best-effort sweep of objects nothing names any more (ADR 0019), always after the commit that stopped naming them.</summary>
     internal static Task SweepAsync(IMediaObjectStore store, ILoggerFactory loggerFactory, IEnumerable<string> keys) =>

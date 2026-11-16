@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -133,6 +134,8 @@ public static class RevisionEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CanonPromotionGate gate,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ManageHistory, cancellationToken) is { } denied)
@@ -154,7 +157,7 @@ public static class RevisionEndpoints
 
         var request = RequestFrom(revision) with { ExpectedVersion = body?.ExpectedVersion };
 
-        return await gate.RunAsync(
+        var result = await gate.RunAsync(
             universeId,
             async token =>
                 await ArchivedFieldConflictAsync(db, entityId, revision, token)
@@ -168,6 +171,10 @@ public static class RevisionEndpoints
                     EntityRevisionKind.Restored,
                     revision.Id),
             cancellationToken);
+
+        // A version of another type drops the pictures that type has no field for (Issue #238): swept now it has committed.
+        await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
+        return result;
     }
 
     /// <summary>The marker on the 409 for a version whose archived fields' values differ from what the entry keeps now.</summary>

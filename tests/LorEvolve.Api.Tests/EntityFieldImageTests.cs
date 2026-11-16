@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.ProjectEntities;
@@ -353,6 +354,80 @@ public sealed class EntityFieldImageTests(LorEvolveApiFactory factory) : IClassF
     }
 
     [Fact]
+    public async Task A_restored_version_of_another_type_drops_the_picture_and_sweeps_its_keys()
+    {
+        var (client, u, character) = await World("fimgrevision");
+        var portrait = await LoreField(client, u, character, "Portrait", FieldImageShape.Square);
+        var other = await OtherType(client, u, character);
+
+        // Version 1 is of the other type; version 2 moves it to Character, which holds the picture.
+        var entry = await LoreEntry(client, u, other, "Alenna Vance");
+        await Retype(client, u, entry, character);
+        var stored = await Uploaded(client, u, entry, portrait.Id, Png(300, 300), null, "portrait.png");
+
+        var revisions = (await client.GetFromJsonAsync<List<EntityRevisionSummary>>($"/api/universes/{u}/entities/{entry}/revisions"))!;
+        var first = revisions.Single(revision => revision.Number == 1);
+        var version = (await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.Version;
+
+        var restored = await client.PostAsJsonAsync(
+            $"/api/universes/{u}/entities/{entry}/revisions/{first.Id}/restore", new EntityRevisionRestoreRequest(version));
+        Assert.True(restored.IsSuccessStatusCode, await restored.Content.ReadAsStringAsync());
+
+        Assert.Empty((await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.FieldImages!);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+    }
+
+    [Fact]
+    public async Task An_accepted_suggestion_of_another_type_drops_the_picture_and_sweeps_its_keys()
+    {
+        var (owner, u, character) = await World("fimgsuggest");
+        var portrait = await LoreField(owner, u, character, "Portrait", FieldImageShape.Square);
+        var other = await OtherType(owner, u, character);
+        var entry = await LoreEntry(owner, u, character, "Alenna Vance");
+        var stored = await Uploaded(owner, u, entry, portrait.Id, Png(300, 300), null, "portrait.png");
+
+        var (reviewer, reviewerId) = await Account(_factory, "fimgsuggest-reviewer");
+        await CollaborationTestClient.Join(_factory, u, reviewerId, UniverseRole.Reviewer);
+        var version = (await owner.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.Version;
+
+        var suggested = await reviewer.PostAsJsonAsync(
+            $"/api/universes/{u}/entities/{entry}/suggestions",
+            new EntityRequest(other, "Alenna Vance", null, CanonStatus.Idea, null, null, null, version));
+        Assert.True(suggested.IsSuccessStatusCode, await suggested.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await suggested.Content.ReadAsStringAsync());
+        var suggestionId = body.RootElement.GetProperty("id").GetGuid();
+
+        var accepted = await owner.PostAsync($"/api/universes/{u}/suggestions/{suggestionId}/accept", null);
+        Assert.True(accepted.IsSuccessStatusCode, await accepted.Content.ReadAsStringAsync());
+
+        Assert.Empty((await owner.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.FieldImages!);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+    }
+
+    [Fact]
+    public async Task An_approved_AI_change_that_moves_a_project_entry_drops_the_picture_and_sweeps_its_keys()
+    {
+        var (client, ownerId) = await Account(_factory, "fimgaimove");
+        var u = (await CreateUniverse(client, "World fimgaimove")).Id;
+        var (project, _, entry, art) = await ProjectWithImageField(client, u);
+        var stored = await Uploaded(client, u, entry, art, Png(400, 300), null, "unit.png");
+        var plain = await NewProjectType(client, project, "Terrain");
+
+        var proposal = await AiChangeTestClient.Staged(
+            _factory,
+            u,
+            ownerId,
+            new AiChangeOperationInput("move", "update", "project_entry", entry, ProjectEntry: new AiProjectEntryInput(TypeId: plain)));
+        await AiChangeTestClient.ApproveAll(client, u, proposal);
+
+        Assert.Empty((await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project}/entities/{entry}"))!.FieldImages!);
+        Assert.False(_factory.Media.Contains(OriginalKey(u, entry, stored)));
+        Assert.False(_factory.Media.Contains(CropKey(u, entry, stored)));
+    }
+
+    [Fact]
     public async Task A_project_entry_moved_to_a_type_without_the_field_loses_the_picture_and_still_backs_up()
     {
         var (client, u, _) = await World("fimgprojretype");
@@ -467,6 +542,20 @@ public sealed class EntityFieldImageTests(LorEvolveApiFactory factory) : IClassF
             new EntityRequest(typeId, name, null, CanonStatus.Idea, null, null, null));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<EntityDetail>())!.Id;
+    }
+
+    /// <summary>A root Lore type other than Character, so it neither has nor inherits Character's fields.</summary>
+    private static async Task<Guid> OtherType(HttpClient client, Guid u, Guid character) =>
+        (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{u}/entity-types"))!
+            .First(type => type.Id != character && type.ParentId is null).Id;
+
+    private static async Task Retype(HttpClient client, Guid u, Guid entry, Guid typeId)
+    {
+        var version = (await client.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{entry}"))!.Version;
+        var moved = await client.PutAsJsonAsync(
+            $"/api/universes/{u}/entities/{entry}",
+            new EntityRequest(typeId, "Alenna Vance", null, CanonStatus.Idea, null, null, null, version));
+        Assert.True(moved.IsSuccessStatusCode, await moved.Content.ReadAsStringAsync());
     }
 
     private static async Task<Guid> NewProject(HttpClient client, Guid u)

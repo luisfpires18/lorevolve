@@ -5,6 +5,7 @@ using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Comments;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Stories;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
@@ -489,6 +490,8 @@ public static class SuggestionEndpoints
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CanonPromotionGate gate,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.ResolveSuggestedChanges, cancellationToken) is { } denied)
@@ -511,7 +514,7 @@ public static class SuggestionEndpoints
 
         if (target.EntityId is { } entityId)
         {
-            return await gate.RunAsync(
+            var accepted = await gate.RunAsync(
                 universeId,
                 token => ApplyAsync<EntrySuggestion>(
                     db,
@@ -522,6 +525,10 @@ public static class SuggestionEndpoints
                     (proposal, version) => EntityEndpoints.UpdateCoreAsync(universeId, entityId, proposal.Request(version), userId, db, token),
                     token),
                 cancellationToken);
+
+            // A suggestion that retypes the entry drops the pictures its new type has no field for (Issue #238).
+            await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
+            return accepted;
         }
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
