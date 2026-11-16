@@ -104,6 +104,43 @@ internal static partial class AiChangeSnapshots
             fields);
     }
 
+    /// <summary>What a project's type holds now, or null when no type of that id belongs to a project of this universe.</summary>
+    public static Task<ProjectTypeValues?> ProjectTypeAsync(LorEvolveDbContext db, Guid universeId, Guid typeId, CancellationToken cancellationToken) =>
+        db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+            .Where(type => type.Id == typeId && type.ProjectId != null && type.UniverseId == universeId)
+            .Select(type => new ProjectTypeValues(
+                type.ProjectId!.Value,
+                type.Name,
+                type.Description,
+                type.Icon,
+                type.AccentColor,
+                type.ParentId == null ? null : new AiRef(type.ParentId, null)))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    /// <summary>What a field on a project's type holds now, or null when it is archived or not a project's of this universe.</summary>
+    public static async Task<ProjectSchemaFieldValues?> ProjectFieldAsync(LorEvolveDbContext db, Guid universeId, Guid fieldId, CancellationToken cancellationToken)
+    {
+        var row = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
+            .Where(field => field.Id == fieldId
+                && field.ArchivedAt == null
+                && field.EntityType!.ProjectId != null
+                && field.EntityType.UniverseId == universeId)
+            .Select(field => new
+            {
+                ProjectId = field.EntityType!.ProjectId!.Value,
+                field.EntityTypeId,
+                field.Name,
+                field.Kind,
+                field.IsRequired,
+                Options = field.Options.OrderBy(option => option.DisplayOrder).Select(option => option.Value).ToList(),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return row is null
+            ? null
+            : new ProjectSchemaFieldValues(row.ProjectId, AiRef.To(row.EntityTypeId), row.Name, row.Kind, row.IsRequired, row.Options);
+    }
+
     public static async Task<WorldRuleValues?> WorldRuleAsync(LorEvolveDbContext db, Guid universeId, Guid ruleId, CancellationToken cancellationToken)
     {
         var row = await db.WorldRules.AsNoTracking()

@@ -255,7 +255,7 @@ test.describe('Projects navigation', () => {
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),
     )
 
-    await expect(page.getByTestId('project-tabs')).toBeVisible()
+    await expect(page.getByTestId('project-tabs')).toBeAttached()
     await expect(page.getByTestId('story-title')).toHaveText(existing.title)
 
     // And in the universe's own sidebar, a row that expands like every other project's, to the story's three views.
@@ -306,7 +306,7 @@ test.describe('Projects navigation', () => {
     for (const [from, to] of cases) {
       await page.goto(from)
       await expect(page).toHaveURL(new RegExp(`${to}$`))
-      await expect(page.getByTestId('project-tabs')).toBeVisible()
+      await expect(page.getByTestId('project-tabs')).toBeAttached()
       await expect(page.getByTestId('story-title')).toHaveText(existing.title)
       await expect(page.getByTestId('project-breadcrumb-universe')).toHaveText(world.name)
       await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(existing.title)
@@ -327,11 +327,12 @@ test.describe('Projects navigation', () => {
     await page.goto(`${old}#scene-${scene.id}`)
     await expect(page).toHaveURL(new RegExp(`${next}/structure#scene-${scene.id}$`))
 
-    // The project's own tabs are the story's three views, and the story's page is the one it always was.
-    await page.getByTestId('projecttab-manuscript').click()
+    // The project's own views are the story's three, and the story's page is the one it always was. On a wide screen
+    // the sidebar lists them and the tab bar steps aside.
+    await page.getByTestId(`project-manuscript-${existing.id}`).click()
     await expect(page).toHaveURL(new RegExp(`${next}/manuscript/${scene.id}$`))
     await expect(page.getByTestId('manuscript-scene-title')).toHaveText(scene.title)
-    await page.getByTestId('projecttab-ideas').click()
+    await page.getByTestId(`project-ideas-${existing.id}`).click()
     await expect(page.getByTestId('ideas-empty')).toContainText('No ideas for this story yet.')
 
     // The bare project address, and a view a story does not have, land on the Structure.

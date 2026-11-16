@@ -48,7 +48,9 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
         + "get_project_entry reads one entry with its field values and the lore entry it stands for, when the author named one. "
         + "get_project_structure reads how a series, a film or a comic is laid out: seasons of episodes, sequences of scenes, or "
         + "volumes of chapters with pages and panels; get_project_script reads one episode's, scene's or chapter's script whole.  To change a project's entries, send propose_changes with projectEntry "
-        + "operations: nothing is applied until the person approves it in LorEvolve.";
+        + "operations. A project's types and their fields are proposed through propose_changes too, as project_type and "
+        + "project_field (create and update), in the same proposal as entries that use them: an entry names a new type with "
+        + "typeRef and a new field with fieldRef. Nothing is applied until the person approves it in LorEvolve.";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

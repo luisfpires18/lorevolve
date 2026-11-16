@@ -143,6 +143,8 @@ internal static class AiChangeJson
                 AiChangeResource.ProjectEntry => Read<ProjectEntryValues>(json),
                 AiChangeResource.SystemRule => Read<SystemRuleValues>(json),
                 AiChangeResource.LoreSystem => Read<LoreSystemValues>(json),
+                AiChangeResource.ProjectType => Read<ProjectTypeValues>(json),
+                AiChangeResource.ProjectField => Read<ProjectSchemaFieldValues>(json),
                 AiChangeResource.Idea => Read<IdeaValues>(json),
                 AiChangeResource.LoreType => Read<TypeValues>(json),
                 AiChangeResource.LoreField => Read<FieldValues>(json),
@@ -170,6 +172,8 @@ internal static class AiChangeJson
         (AiChangeResource.ProjectEntry, _) => Read<ProjectEntryValues>(json),
         (AiChangeResource.SystemRule, _) => Read<SystemRuleValues>(json),
         (AiChangeResource.LoreSystem, _) => Read<LoreSystemValues>(json),
+        (AiChangeResource.ProjectType, _) => Read<ProjectTypeValues>(json),
+        (AiChangeResource.ProjectField, _) => Read<ProjectSchemaFieldValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
         (AiChangeResource.LoreType, _) => Read<TypeValues>(json),
         (AiChangeResource.LoreField, _) => Read<FieldValues>(json),
@@ -510,6 +514,12 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                 case (AiChangeResource.LoreSystem, _):
                     await CheckLoreSystemAsync(work, cancellationToken);
                     break;
+                case (AiChangeResource.ProjectType, _):
+                    await CheckProjectTypeAsync(work, works, cancellationToken);
+                    break;
+                case (AiChangeResource.ProjectField, _):
+                    await CheckProjectFieldAsync(work, works, cancellationToken);
+                    break;
                 case (AiChangeResource.WorldRule, _):
                     await CheckWorldRuleAsync(work, cancellationToken);
                     break;
@@ -621,6 +631,14 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
         SystemRuleValues rule => rule.DependsOn.Select(dependency => (dependency, AiChangeResource.SystemRule, "dependsOn")),
         LoreSystemValues system => system.RuleIds.Select(rule => (rule, AiChangeResource.SystemRule, "ruleIds")),
+        ProjectEntryValues entry =>
+        [
+            .. entry.TypeRef is { } typeRef ? [(new AiRef(null, typeRef), AiChangeResource.ProjectType, "typeRef")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+            .. entry.Fields.Where(field => field.FieldRef is not null)
+                .Select(field => (new AiRef(null, field.FieldRef), AiChangeResource.ProjectField, "fields")),
+        ],
+        ProjectTypeValues type => type.Parent is { } parent ? [(parent, AiChangeResource.ProjectType, "parentId")] : [],
+        ProjectSchemaFieldValues field => [(field.Type, AiChangeResource.ProjectType, "typeId")],
         TypeValues type =>
         [
             .. type.Parent is { } parent ? [(parent, AiChangeResource.LoreType, "parent")] : Array.Empty<(AiRef, AiChangeResource, string)>(),

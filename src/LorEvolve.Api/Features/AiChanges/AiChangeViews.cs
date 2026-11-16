@@ -335,6 +335,31 @@ internal static class AiChangeViews
                     : $"Edit field {old?.Name ?? field.Name} on {names.TypeRef(field.Type)}", lines);
             }
 
+            case (ProjectTypeValues type, var before):
+            {
+                var old = before as ProjectTypeValues;
+                Line("Project", old is null ? null : names.Project(old.ProjectId), names.Project(type.ProjectId));
+                Line("Name", old?.Name, type.Name);
+                Line("Description", old?.Description, type.Description);
+                Line("Icon", old?.Icon, type.Icon);
+                Line("Colour", old?.AccentColor, type.AccentColor);
+                Line("Sits beneath", old is null ? null : names.ProjectParent(old.Parent), names.ProjectParent(type.Parent));
+                return (work.Action == AiChangeAction.Create ? $"New project type: {type.Name}" : $"Edit project type: {old?.Name ?? type.Name}", lines);
+            }
+
+            case (ProjectSchemaFieldValues field, var before):
+            {
+                var old = before as ProjectSchemaFieldValues;
+                Line("Type", old is null ? null : names.ProjectType(old.Type), names.ProjectType(field.Type));
+                Line("Name", old?.Name, field.Name);
+                Line("Kind", old is null ? null : FieldKind(old.Kind), FieldKind(field.Kind));
+                Line("Required", old is null ? null : YesNo(old.IsRequired), YesNo(field.IsRequired));
+                Line("Choices", Join(old?.Options), Join(field.Options));
+                return (work.Action == AiChangeAction.Create
+                    ? $"New field on {names.ProjectType(field.Type)}: {field.Name}"
+                    : $"Edit field {old?.Name ?? field.Name} on {names.ProjectType(field.Type)}", lines);
+            }
+
             case (GroupValues group, var before):
             {
                 var old = before as GroupValues;
@@ -706,6 +731,8 @@ internal static class AiChangeViews
         AiChangeResource.ProjectEntry => "project entry",
         AiChangeResource.SystemRule => "rule definition",
         AiChangeResource.LoreSystem => "System",
+        AiChangeResource.ProjectType => "project type",
+        AiChangeResource.ProjectField => "project field",
         _ => "item",
     };
 
@@ -748,6 +775,7 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _terms = [];
         private Dictionary<Guid, string> _groups = [];
         private Dictionary<Guid, string> _projects = [];
+        private Dictionary<Guid, string> _projectTypes = [];
         private Dictionary<Guid, string> _appearances = [];
         private Dictionary<Guid, string> _rules = [];
         private Dictionary<string, AiChangeWork> _pending = [];
@@ -781,6 +809,11 @@ internal static class AiChangeViews
                 _terms = await db.ValidationTerms.AsNoTracking().Where(term => term.UniverseId == universeId).ToDictionaryAsync(term => term.Id, term => term.Name, cancellationToken),
                 _groups = await db.EntityTypeGroups.AsNoTracking().Where(group => group.UniverseId == universeId).ToDictionaryAsync(group => group.Id, group => group.Name, cancellationToken),
                 _projects = await db.CreativeProjects.AsNoTracking().Where(project => project.UniverseId == universeId).ToDictionaryAsync(project => project.Id, project => project.Name, cancellationToken),
+
+                // A project's types are hidden from every ordinary read of the table, so they are read on their own.
+                _projectTypes = await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+                    .Where(type => type.UniverseId == universeId && type.ProjectId != null)
+                    .ToDictionaryAsync(type => type.Id, type => type.Name, cancellationToken),
                 _appearances = await db.EntityAppearances.AsNoTracking()
                     .Where(look => look.Entity!.UniverseId == universeId && ids.Contains(look.EntityId))
                     .ToDictionaryAsync(look => look.Id, look => look.Label, cancellationToken),
@@ -803,6 +836,11 @@ internal static class AiChangeViews
         public string Appearance(Guid id) => _appearances.GetValueOrDefault(id) ?? "that isn't there any more";
 
         public string Parent(AiRef? reference) => reference is null ? "Nothing (top level)" : TypeRef(reference);
+
+        /// <summary>A project's type an existing id names, or one this proposal creates.</summary>
+        public string ProjectType(AiRef reference) => Named(reference, _projectTypes, work => (work.Proposed as ProjectTypeValues)?.Name);
+
+        public string ProjectParent(AiRef? reference) => reference is null ? "Nothing (top level)" : ProjectType(reference);
 
         /// <summary>What a link field accepts, in words; null for a field that is not a link.</summary>
         public string? Links(FieldValues field) => field.Kind != EntityFieldKind.EntityReference
