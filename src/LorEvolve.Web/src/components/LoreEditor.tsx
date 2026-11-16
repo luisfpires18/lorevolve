@@ -1,9 +1,11 @@
 import Link from '@tiptap/extension-link'
 import { EditorContent, useEditor, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { ALLOWED_LINK_SCHEMES, isSafeHref } from '../lore/document'
+import { Drawer } from './Drawer'
+import { Field } from './Field'
 
 /**
  * ProseMirror builds DOM nodes from the schema rather than parsing HTML, so authored text
@@ -34,25 +36,82 @@ function parseDocument(json: string | null): object | string {
   }
 }
 
+/**
+ * Asks for a link address in the app's own drawer. An empty address removes the link; an unsafe one stays in the
+ * drawer as the field's error. Every way out gives the focus back to the editor from the unmount cleanup, after the
+ * modal has left the DOM and the editor is no longer inert behind it.
+ */
+function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }) {
+  const { t } = useI18n()
+  const input = useRef<HTMLInputElement>(null)
+  const [address, setAddress] = useState(
+    () => (editor.getAttributes('link').href as string | undefined) ?? 'https://',
+  )
+  const [error, setError] = useState<string | undefined>()
+
+  useEffect(() => {
+    input.current?.focus()
+  }, [])
+
+  useEffect(
+    () => () => {
+      editor.commands.focus()
+    },
+    [editor],
+  )
+
+  function apply() {
+    if (address.trim() === '') {
+      editor.chain().extendMarkRange('link').unsetLink().run()
+    } else if (!isSafeHref(address)) {
+      setError(t('lore.editor.linkUnsafe'))
+      input.current?.focus()
+      return
+    } else {
+      editor.chain().extendMarkRange('link').setLink({ href: address.trim() }).run()
+    }
+    onClose()
+  }
+
+  return (
+    <Drawer
+      testId="lore-link"
+      titleId="lore-link-title"
+      title={t('lore.editor.link')}
+      onClose={onClose}
+      onSubmit={apply}
+      actions={(close) => (
+        <>
+          <button className="button" type="submit">
+            {t('lore.editor.linkApply')}
+          </button>
+          <button className="button button--secondary" type="button" onClick={close}>
+            {t('lore.editor.linkCancel')}
+          </button>
+        </>
+      )}
+    >
+      <Field
+        label={t('lore.editor.linkPrompt')}
+        name="lore-link-address"
+        value={address}
+        error={error}
+        inputMode="url"
+        autoComplete="off"
+        spellCheck={false}
+        data-testid="lore-link-address"
+        onChange={(event) => {
+          setAddress(event.target.value)
+          setError(undefined)
+        }}
+      />
+    </Drawer>
+  )
+}
+
 function Toolbar({ editor }: { editor: Editor }) {
   const { t } = useI18n()
-  function promptForLink() {
-    const previous = editor.getAttributes('link').href as string | undefined
-    const entered = window.prompt(t('lore.editor.linkPrompt'), previous ?? 'https://')
-    if (entered === null) return
-
-    if (entered.trim() === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
-    }
-
-    if (!isSafeHref(entered)) {
-      window.alert(t('lore.editor.linkUnsafe'))
-      return
-    }
-
-    editor.chain().focus().extendMarkRange('link').setLink({ href: entered.trim() }).run()
-  }
+  const [isLinking, setIsLinking] = useState(false)
 
   const controls: { label: string; isActive: boolean; run: () => void }[] = [
     {
@@ -88,27 +147,30 @@ function Toolbar({ editor }: { editor: Editor }) {
   ]
 
   return (
-    <div className="editor__bar" role="toolbar" aria-label={t('lore.editor.formatting')}>
-      {controls.map((control) => (
+    <>
+      <div className="editor__bar" role="toolbar" aria-label={t('lore.editor.formatting')}>
+        {controls.map((control) => (
+          <button
+            key={control.label}
+            type="button"
+            className="editor__tool"
+            aria-pressed={control.isActive}
+            onClick={control.run}
+          >
+            {control.label}
+          </button>
+        ))}
         <button
-          key={control.label}
           type="button"
           className="editor__tool"
-          aria-pressed={control.isActive}
-          onClick={control.run}
+          aria-pressed={editor.isActive('link')}
+          onClick={() => setIsLinking(true)}
         >
-          {control.label}
+          {t('lore.editor.link')}
         </button>
-      ))}
-      <button
-        type="button"
-        className="editor__tool"
-        aria-pressed={editor.isActive('link')}
-        onClick={promptForLink}
-      >
-        {t('lore.editor.link')}
-      </button>
-    </div>
+      </div>
+      {isLinking ? <LinkDrawer editor={editor} onClose={() => setIsLinking(false)} /> : null}
+    </>
   )
 }
 

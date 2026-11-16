@@ -110,6 +110,8 @@ const lore: Dictionary['lore'] = {
   editor: {
     linkPrompt: 'Endereço da ligação',
     linkUnsafe: 'As ligações têm de ser endereços http, https ou mailto.',
+    linkApply: 'Aplicar ligação',
+    linkCancel: 'Cancelar',
     heading: 'Título',
     bold: 'Negrito',
     italic: 'Itálico',

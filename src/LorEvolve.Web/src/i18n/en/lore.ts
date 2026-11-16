@@ -108,6 +108,8 @@ const lore = {
   editor: {
     linkPrompt: 'Link address',
     linkUnsafe: 'Links must be http, https or mailto addresses.',
+    linkApply: 'Apply link',
+    linkCancel: 'Cancel',
     heading: 'Heading',
     bold: 'Bold',
     italic: 'Italic',
