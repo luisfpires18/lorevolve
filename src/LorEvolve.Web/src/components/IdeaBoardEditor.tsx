@@ -4,6 +4,7 @@ import { Lightbulb, List, Plus, Spline, StickyNote, Trash2, X } from 'lucide-rea
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
+import { Field } from './Field'
 import { IdeaBoardCanvas, type BoardSelection } from './IdeaBoardCanvas'
 import { IdeaBoardPicker, type PickedTarget } from './IdeaBoardPicker'
 import { Quoted } from './NameList'
@@ -765,58 +766,58 @@ export function IdeaBoardEditor({
       ) : null}
 
       <div className="board__fields">
-        <div className="field">
-          <label className="field__label" htmlFor={titleId}>
-            {t('ideas.board.fields.title')}
-          </label>
-          <input
-            id={titleId}
-            ref={titleInput}
-            className="field__input"
-            type="text"
-            dir="auto"
-            value={draft.title}
-            maxLength={BOARD_TITLE_MAX_LENGTH}
-            placeholder={t('ideas.board.fields.titlePlaceholder')}
-            readOnly={isHeld}
-            onChange={(event) => edit({ title: event.target.value })}
-            aria-invalid={fieldErrors.title ? true : undefined}
-            aria-describedby={fieldErrors.title ? `${titleId}-error` : undefined}
-            aria-required="true"
-            data-testid="board-title"
-          />
-          {fieldErrors.title ? (
-            <p className="field__error" id={`${titleId}-error`} data-testid="board-title-error">
-              {fieldErrors.title}
-            </p>
-          ) : null}
-        </div>
-        <div className="field">
-          <label className="field__label" htmlFor={universeFieldId}>
-            {t('ideas.board.fields.universe')}
-          </label>
-          <select
-            id={universeFieldId}
-            className="field__input field__input--select"
-            value={draft.universeId ?? ''}
-            disabled={isHeld}
-            onChange={(event) =>
-              void changeUniverse(event.target.value === '' ? null : event.target.value)
-            }
-            data-testid="board-universe"
-          >
-            {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
-              <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
-            ) : null}
-            {(universes ?? []).map((universe) => (
-              <option key={universe.id} value={universe.id}>
-                {universe.isArchived
-                  ? t('ideas.board.fields.archivedUniverse', { name: universe.name })
-                  : universe.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Field
+          id={titleId}
+          label={t('ideas.board.fields.title')}
+          error={
+            fieldErrors.title ? (
+              <span data-testid="board-title-error">{fieldErrors.title}</span>
+            ) : undefined
+          }
+        >
+          {(control) => (
+            <input
+              {...control}
+              ref={titleInput}
+              className="field__input"
+              type="text"
+              dir="auto"
+              value={draft.title}
+              maxLength={BOARD_TITLE_MAX_LENGTH}
+              placeholder={t('ideas.board.fields.titlePlaceholder')}
+              readOnly={isHeld}
+              onChange={(event) => edit({ title: event.target.value })}
+              aria-required="true"
+              data-testid="board-title"
+            />
+          )}
+        </Field>
+        <Field id={universeFieldId} label={t('ideas.board.fields.universe')}>
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={draft.universeId ?? ''}
+              disabled={isHeld}
+              onChange={(event) =>
+                void changeUniverse(event.target.value === '' ? null : event.target.value)
+              }
+              data-testid="board-universe"
+            >
+              {chosenUniverse &&
+              !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
+                <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
+              ) : null}
+              {(universes ?? []).map((universe) => (
+                <option key={universe.id} value={universe.id}>
+                  {universe.isArchived
+                    ? t('ideas.board.fields.archivedUniverse', { name: universe.name })
+                    : universe.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
       </div>
 
       <div className="board__toolbar" role="toolbar" aria-label={t('ideas.board.toolbar')}>
@@ -964,21 +965,20 @@ export function IdeaBoardEditor({
                   : BOARD_CARD_KIND_LABELS[selectedCard.kind]}
               </h2>
               {selectedCard.kind === BoardCardKind.Note ? (
-                <div className="field">
-                  <label className="field__label" htmlFor={`${inspectorId}-text`}>
-                    {t('ideas.board.inspector.note')}
-                  </label>
-                  <textarea
-                    id={`${inspectorId}-text`}
-                    className="field__input field__input--area"
-                    rows={5}
-                    value={selectedCard.text ?? ''}
-                    maxLength={BOARD_NOTE_MAX_LENGTH}
-                    readOnly={isHeld}
-                    onChange={(event) => editCard(selectedCard.id, { text: event.target.value })}
-                    data-testid="board-note-text"
-                  />
-                </div>
+                <Field id={`${inspectorId}-text`} label={t('ideas.board.inspector.note')}>
+                  {(control) => (
+                    <textarea
+                      {...control}
+                      className="field__input field__input--area"
+                      rows={5}
+                      value={selectedCard.text ?? ''}
+                      maxLength={BOARD_NOTE_MAX_LENGTH}
+                      readOnly={isHeld}
+                      onChange={(event) => editCard(selectedCard.id, { text: event.target.value })}
+                      data-testid="board-note-text"
+                    />
+                  )}
+                </Field>
               ) : (
                 <div className="board__target">
                   <p className="idearow__title">
@@ -1067,22 +1067,17 @@ export function IdeaBoardEditor({
                   to: <bdi>{cardName(cardsById.get(selectedLine.toCardId)!)}</bdi>,
                 })}
               </p>
-              <div className="field">
-                <label className="field__label" htmlFor={`${inspectorId}-label`}>
-                  {t('ideas.board.inspector.label')}
-                </label>
-                <input
-                  id={`${inspectorId}-label`}
-                  className="field__input"
-                  type="text"
-                  value={selectedLine.label ?? ''}
-                  maxLength={BOARD_LABEL_MAX_LENGTH}
-                  placeholder={t('ideas.board.inspector.labelPlaceholder')}
-                  readOnly={isHeld}
-                  onChange={(event) => editLine(selectedLine.id, event.target.value)}
-                  data-testid="board-line-label"
-                />
-              </div>
+              <Field
+                name={`${inspectorId}-label`}
+                label={t('ideas.board.inspector.label')}
+                type="text"
+                value={selectedLine.label ?? ''}
+                maxLength={BOARD_LABEL_MAX_LENGTH}
+                placeholder={t('ideas.board.inspector.labelPlaceholder')}
+                readOnly={isHeld}
+                onChange={(event) => editLine(selectedLine.id, event.target.value)}
+                data-testid="board-line-label"
+              />
               <button
                 className="button button--secondary"
                 type="button"

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Trash2, X } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { Field } from './Field'
 import { IdeaReferencePicker } from './IdeaReferencePicker'
 import { Quoted } from './NameList'
 import { RecoveredDraft } from './RecoveredDraft'
@@ -680,102 +681,106 @@ export function IdeaEditor({
         }}
         aria-describedby={offer ? recoveryId : undefined}
       >
-        <div className="field">
-          <label className="field__label" htmlFor={titleId}>
-            {t('ideas.editor.fields.title')}
-          </label>
-          <input
-            id={titleId}
-            ref={titleInput}
-            className="field__input field__input--title"
-            type="text"
-            dir="auto"
-            value={draft.title}
-            maxLength={IDEA_TITLE_MAX_LENGTH}
-            placeholder={t('ideas.editor.fields.titlePlaceholder')}
-            readOnly={isHeld}
-            onChange={(event) => edit({ title: event.target.value })}
-            aria-invalid={fieldErrors.title ? true : undefined}
-            aria-describedby={fieldErrors.title ? `${titleId}-error` : undefined}
-            aria-required="true"
-            data-testid="idea-title"
-          />
-          {fieldErrors.title ? (
-            <p className="field__error" id={`${titleId}-error`} data-testid="idea-title-error">
-              {fieldErrors.title}
-            </p>
-          ) : null}
-        </div>
+        <Field
+          id={titleId}
+          label={t('ideas.editor.fields.title')}
+          error={
+            fieldErrors.title ? (
+              <span data-testid="idea-title-error">{fieldErrors.title}</span>
+            ) : undefined
+          }
+        >
+          {(control) => (
+            <input
+              {...control}
+              ref={titleInput}
+              className="field__input field__input--title"
+              type="text"
+              dir="auto"
+              value={draft.title}
+              maxLength={IDEA_TITLE_MAX_LENGTH}
+              placeholder={t('ideas.editor.fields.titlePlaceholder')}
+              readOnly={isHeld}
+              onChange={(event) => edit({ title: event.target.value })}
+              aria-required="true"
+              data-testid="idea-title"
+            />
+          )}
+        </Field>
 
-        <div className="field">
-          <label className="field__label" htmlFor={bodyId}>
-            {t('ideas.editor.fields.body')}
-          </label>
-          <p className="field__hint" id={`${bodyId}-hint`}>
-            {t('ideas.editor.fields.bodyHint')}
-          </p>
-          <textarea
-            id={bodyId}
-            className="field__input field__input--area idea__body"
-            rows={10}
-            value={draft.body}
-            placeholder={t('ideas.editor.fields.bodyPlaceholder')}
-            readOnly={isHeld}
-            spellCheck
-            onChange={(event) => edit({ body: event.target.value })}
-            aria-invalid={isTooLong || fieldErrors.body ? true : undefined}
-            aria-describedby={[`${bodyId}-hint`, nearLimit ? bodyCountId : null]
-              .filter(Boolean)
-              .join(' ')}
-            data-testid="idea-body"
-          />
-          {nearLimit ? (
-            <p
-              className={isTooLong ? 'field__error' : 'field__hint idea__count'}
-              id={bodyCountId}
-              data-testid="idea-body-count"
+        <Field
+          id={bodyId}
+          label={t('ideas.editor.fields.body')}
+          hint={t('ideas.editor.fields.bodyHint')}
+          error={fieldErrors.body}
+        >
+          {(control) => (
+            <>
+              <textarea
+                {...control}
+                className="field__input field__input--area idea__body"
+                rows={10}
+                value={draft.body}
+                placeholder={t('ideas.editor.fields.bodyPlaceholder')}
+                readOnly={isHeld}
+                spellCheck
+                onChange={(event) => edit({ body: event.target.value })}
+                aria-invalid={isTooLong || fieldErrors.body ? true : undefined}
+                aria-describedby={[control['aria-describedby'], nearLimit ? bodyCountId : null]
+                  .filter(Boolean)
+                  .join(' ')}
+                data-testid="idea-body"
+              />
+              {nearLimit ? (
+                <p
+                  className={isTooLong ? 'field__error' : 'field__hint idea__count'}
+                  id={bodyCountId}
+                  data-testid="idea-body-count"
+                >
+                  {t(
+                    isTooLong ? 'ideas.editor.fields.bodyTooLong' : 'ideas.editor.fields.bodyCount',
+                    {
+                      used: count(draft.body.length),
+                      max: count(IDEA_BODY_MAX_LENGTH),
+                    },
+                  )}
+                </p>
+              ) : null}
+            </>
+          )}
+        </Field>
+
+        <Field
+          id={universeFieldId}
+          label={t('ideas.editor.fields.universe')}
+          hint={t('ideas.editor.fields.universeHint')}
+          error={fieldErrors.universeid}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select idea__universe"
+              value={draft.universeId ?? ''}
+              disabled={isHeld}
+              onChange={(event) =>
+                changeUniverse(event.target.value === '' ? null : event.target.value)
+              }
+              data-testid="idea-universe"
             >
-              {t(isTooLong ? 'ideas.editor.fields.bodyTooLong' : 'ideas.editor.fields.bodyCount', {
-                used: count(draft.body.length),
-                max: count(IDEA_BODY_MAX_LENGTH),
-              })}
-            </p>
-          ) : null}
-          {fieldErrors.body ? <p className="field__error">{fieldErrors.body}</p> : null}
-        </div>
-
-        <div className="field">
-          <label className="field__label" htmlFor={universeFieldId}>
-            {t('ideas.editor.fields.universe')}
-          </label>
-          <p className="field__hint" id={`${universeFieldId}-hint`}>
-            {t('ideas.editor.fields.universeHint')}
-          </p>
-          <select
-            id={universeFieldId}
-            className="field__input field__input--select idea__universe"
-            value={draft.universeId ?? ''}
-            disabled={isHeld}
-            onChange={(event) =>
-              changeUniverse(event.target.value === '' ? null : event.target.value)
-            }
-            aria-invalid={fieldErrors.universeid ? true : undefined}
-            aria-describedby={`${universeFieldId}-hint`}
-            data-testid="idea-universe"
-          >
-            {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
-              <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
-            ) : null}
-            {(universes ?? []).map((universe) => (
-              <option key={universe.id} value={universe.id}>
-                {universe.isArchived
-                  ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
-                  : universe.name}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.universeid ? <p className="field__error">{fieldErrors.universeid}</p> : null}
-        </div>
+              {chosenUniverse &&
+              !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
+                <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
+              ) : null}
+              {(universes ?? []).map((universe) => (
+                <option key={universe.id} value={universe.id}>
+                  {universe.isArchived
+                    ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
+                    : universe.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
 
         <section
           className="idea__references"
