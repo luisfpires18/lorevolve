@@ -29,6 +29,14 @@ import {
 import { documentTitle, useDocumentTitle, useWholeTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 
+/** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
+function kindFromParam(raw: string | null): ProjectKindValue {
+  const kind = Number(raw)
+  return raw !== null && KINDS.includes(kind as ProjectKindValue)
+    ? (kind as ProjectKindValue)
+    : ProjectKind.Writing
+}
+
 const KINDS: readonly ProjectKindValue[] = [
   ProjectKind.Writing,
   ProjectKind.Game,
@@ -62,7 +70,7 @@ function NewProject() {
   const [params] = useSearchParams()
   const universeId = params.get('universeId')
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<ProjectKindValue>(ProjectKind.Writing)
+  const [kind, setKind] = useState<ProjectKindValue>(kindFromParam(params.get('kind')))
   const [summary, setSummary] = useState('')
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
