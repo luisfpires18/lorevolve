@@ -4,9 +4,10 @@ import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
 import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
-import type { ProjectDetail } from '../projects/types'
+import type { ProjectDetail, ProjectKindValue } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
+import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 /**
@@ -25,14 +26,25 @@ type LoadState =
  * one universe (#172), so there is no filter for projects without one and no way to make one here. New project is
  * offered inside a universe, where the universe it belongs to is already known.
  */
-export default function ProjectsPage({ inUniverse = false }: { inUniverse?: boolean }) {
+export default function ProjectsPage({
+  inUniverse = false,
+  kinds,
+  section,
+}: {
+  inUniverse?: boolean
+  /** Only these kinds: the sidebar's Writing, Gaming, Cinema, Comic and Game Entities open this list narrowed (#272). */
+  kinds?: readonly ProjectKindValue[]
+  /** The sidebar section this list is the page of, which names it. */
+  section?: Section
+}) {
   useI18n()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? workspace?.universe.id : undefined
   const requested = universeId ?? 'all'
   const [state, setState] = useState<LoadState | null>(null)
 
-  useDocumentTitle(t('projects.list.title'))
+  const heading = section ? sectionLabel(section) : t('projects.list.title')
+  useDocumentTitle(heading)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -53,11 +65,15 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
     return <EmptyState title={t('projects.list.failed')} testId="projects-failed" />
   }
 
+  const shown = kinds
+    ? state.projects.filter((project) => kinds.includes(project.kind))
+    : state.projects
+
   return (
     <section className="projects" data-testid="projects-page">
       {/* The head every other workspace screen uses, so Projects reads as one of them (#184). */}
       <PageHeader
-        title={t('projects.list.title')}
+        title={heading}
         lede={t('projects.list.lede')}
         actions={
           /*
@@ -77,7 +93,7 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
         }
       />
 
-      {state.projects.length === 0 ? (
+      {shown.length === 0 ? (
         <EmptyState
           title={t('projects.list.empty')}
           hint={t('projects.list.emptyHint')}
@@ -85,7 +101,7 @@ export default function ProjectsPage({ inUniverse = false }: { inUniverse?: bool
         />
       ) : (
         <ul className="projectlist" data-testid="projects-list">
-          {state.projects.map((project) => (
+          {shown.map((project) => (
             <li className="projectrow" key={project.id}>
               <Link
                 className="projectrow__main"

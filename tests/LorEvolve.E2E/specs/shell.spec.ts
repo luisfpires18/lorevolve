@@ -71,14 +71,13 @@ test.describe('the shell', () => {
 
     const sections = page.getByRole('navigation', { name: 'Universe', exact: true })
     // The way up, then thirteen sections (#271): Overview, the seven World Building destinations, then Projects, AI Changes,
-    // Publish, Trash and Settings under Management. Creation is drawn but holds nothing yet, and no project has a row here.
+    // Publish, Trash and Settings under Management. Creation is hidden while the universe has no project, and no project has a row here.
     await expect(sections.getByRole('link')).toHaveCount(14)
     await expect(sections.getByRole('link').first()).toHaveText('All universes')
 
-    // The sidebar's four parts, in order (#271): Overview, World Building, Creation (labelled, empty), Management.
+    // The sidebar's four parts, in order (#271): Overview, World Building, Management (Creation only appears with a project, #272).
     await expect(sections.getByRole('heading', { level: 2 })).toHaveText([
       'World building',
-      'Creation',
       'Management',
     ])
     await expect(sections.getByTestId('sidebar-world-building').getByRole('link')).toHaveText([
@@ -90,8 +89,7 @@ test.describe('the shell', () => {
       'World Logic',
       'Ideas',
     ])
-    await expect(sections.getByTestId('sidebar-creation')).toBeVisible()
-    await expect(sections.getByTestId('sidebar-creation').getByRole('link')).toHaveCount(0)
+    await expect(sections.getByTestId('sidebar-creation')).toHaveCount(0)
     // Settings is the owner-kept existing link, last in Management (deferred owner check).
     await expect(sections.getByTestId('sidebar-upkeep').getByRole('link')).toHaveText([
       'Projects',
@@ -225,7 +223,7 @@ test.describe('the shell', () => {
       const at = async (testId: string) => (await page.getByTestId(testId).boundingBox())!
 
       // The world building group fills a column, top to bottom, not a zigzag across the two; where the columns break
-      // around the one-row Overview and the empty Creation group is the browser's balancing, so it is not pinned.
+      // around the one-row Overview is the browser's balancing, so it is not pinned.
       const lore = await at('workspace-lore')
       const maps = await at('workspace-maps')
       const ideas = await at('workspace-ideas')
@@ -250,7 +248,6 @@ test.describe('the shell', () => {
       // The same labels as the wide sidebar.
       await expect(page.locator('.sidebar').getByRole('heading', { level: 2 })).toHaveText([
         'World building',
-        'Creation',
         'Management',
       ])
 

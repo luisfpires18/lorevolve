@@ -48,7 +48,7 @@ deferred.
 
 One line per branch. Delete the line when it merges.
 
-#298 sidebar tracker (#271-#274) running sequentially. #271 done: sidebar is Overview, World Building, Creation (labelled, empty), Management (Projects, AI Changes, Publish, Trash, Settings in its old place); per-project views moved to the project tab bar (PR #315). Next: #272.
+#298 sidebar tracker (#271-#274) running sequentially. #271 done (PR #315). #272 done: Creation (Writing, Gaming, Cinema, Comic) and World Building Game Entities appear only when the universe has a project of that family (`needs` + `projectFamilies` + `offered()`); refreshed after story create, trash, restore (PR #317). Next: #273.
 
 #248 UI consistency tracker running sequentially. #249 merged (PR #258); #250 done: `Drawer.tsx` plus all 23 drawers (PR #260, then #261), `DIALOG_FILES` at five. #255 done: link `Drawer` replaces `window.prompt`/`alert`, `Avatar` default dropped, inline confirms stay inline and are listed in the catalogue (PR #263). #251 done: one `Field` markup (PR #264). #253 one set of verbs (PR #265). #254 done (PR #269, #306, #308, #307): every field is `Field`, and `uiContract.test.ts` checks `field__label` appears only in `Field.tsx`. #252 (project tabs are `.views`, crumb is `.pageheader__crumb`, panel heads are `.sectionrule`, one raised-card rule, cropper and finding on tokens, font-size ratchet 200) in PR #268, evidence in `docs/design/evidence/252/`.
 

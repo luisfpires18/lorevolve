@@ -5,6 +5,8 @@ import { AccountMenu } from '../components/AccountMenu'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
+import { listAllProjects } from '../projects/api'
+import { projectFamilies } from '../projects/sections'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
@@ -20,6 +22,7 @@ import {
   SECTION_GROUPS,
   sectionLabel,
   WORLD_BUILDING,
+  type ProjectFamily,
   type Section,
 } from '../universes/sections'
 import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
@@ -91,6 +94,8 @@ export interface WorkspaceContext {
   /** Reads both again. Rejects when the read fails; what was read before stays meanwhile and after a failure. */
   refreshTypes: () => Promise<void>
   revalidateTypes: () => void
+  /** Reads the universe's projects again, so the sidebar's project-bound sections follow a create, trash or restore (#272). */
+  refreshProjects: () => Promise<void>
 }
 
 /** The part of the URL below this universe, without its surrounding slashes. */
@@ -125,6 +130,9 @@ function Workspace() {
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [types, setTypes] = useState<EntityType[] | 'failed' | null>(null)
   const [typeGroups, setTypeGroups] = useState<EntityTypeGroup[] | 'failed' | null>(null)
+  // The families of project this universe has, which decide the sidebar's Creation and Game Entities (#272). Empty until read.
+  const [families, setFamilies] = useState<ReadonlySet<ProjectFamily>>(new Set())
+  const projectsRead = useRef<AbortController | null>(null)
   const typesRead = useRef<AbortController | null>(null)
   const typesClaimed = useRef(false)
 
@@ -194,6 +202,20 @@ function Workspace() {
     return readTypes()
   }, [readTypes])
 
+  // The latest read wins, as for the types. A failed read leaves what was read before.
+  const refreshProjects = useCallback(() => {
+    if (!id) return Promise.resolve()
+    projectsRead.current?.abort()
+    const controller = new AbortController()
+    projectsRead.current = controller
+    return listAllProjects({ universeId: id }, controller.signal).then(
+      (projects) => setFamilies(projectFamilies(projects)),
+      (error: unknown) => {
+        if (!controller.signal.aborted) throw error
+      },
+    )
+  }, [id])
+
   const revalidateTypes = useCallback(() => {
     if (!typesClaimed.current) {
       typesClaimed.current = true
@@ -207,11 +229,13 @@ function Workspace() {
     const controller = new AbortController()
     load(controller.signal)
     readTypes().catch(() => undefined)
+    refreshProjects().catch(() => undefined)
     return () => {
       controller.abort()
       typesRead.current?.abort()
+      projectsRead.current?.abort()
     }
-  }, [load, readTypes])
+  }, [load, readTypes, refreshProjects])
 
   // Once the universe is open and the browser has nothing better to do, every section's code and an entry's are fetched,
   // so the first visit to another one opens without a fallback.
@@ -327,11 +351,11 @@ function Workspace() {
   // What this account may do here, for what is drawn: the API decides every request on its own (ADR 0041).
   const access = capabilitiesOf(universe.accessRole)
   const shared = universe.accessRole !== UniverseRole.Owner
-  // Creation is drawn while it has nothing in it: it is a labelled place that later tasks fill (#271).
+  // A group with nothing offered is not drawn, Creation included: it has a destination only per kind of project (#272).
   const groups = SECTION_GROUPS.map((source) => ({
     source,
-    items: offered(source, access, universe.aiHelp),
-  })).filter(({ source, items }) => items.length > 0 || source === CREATION)
+    items: offered(source, access, universe.aiHelp, families),
+  })).filter(({ items }) => items.length > 0)
   const section = currentSection(pathname, id)
 
   return (
@@ -525,6 +549,7 @@ function Workspace() {
                   setGroups: setGroupList,
                   refreshTypes,
                   revalidateTypes,
+                  refreshProjects,
                 } satisfies WorkspaceContext
               }
             />

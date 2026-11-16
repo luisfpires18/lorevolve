@@ -192,7 +192,6 @@ test.describe('the sidebar, Chronology and the theme control (014 follow-up)', (
     ])
     await expect(sections.getByRole('heading', { level: 2 })).toHaveText([
       'World building',
-      'Creation',
       'Management',
     ])
     // Each label names its group's list for a screen reader.
