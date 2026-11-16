@@ -106,7 +106,7 @@ test.describe('Project seasons', () => {
     // Three episodes in the first season.
     const first = seasons.locator('> li').first()
     for (const title of ['Pilot', 'The Salt Road', 'Low Tide']) {
-      await first.getByRole('button', { name: 'Add an episode' }).click()
+      await first.getByRole('button', { name: 'Add episode' }).click()
       await page.getByTestId('project-episode-new-title').fill(title)
       await page.getByTestId('project-episode-new-save').click()
       await expect(first).toContainText(title)
@@ -163,7 +163,7 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-season-new-save').click()
 
     const sequence = page.getByTestId('project-season-list').locator('> li').first()
-    await sequence.getByRole('button', { name: 'Add a scene' }).click()
+    await sequence.getByRole('button', { name: 'Add scene' }).click()
     await page.getByTestId('project-episode-new-title').fill('The tide goes out')
     await page.getByTestId('project-episode-new-save').click()
 
@@ -212,7 +212,7 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-season-new-save').click()
 
     const volume = page.getByTestId('project-season-list').locator('> li').first()
-    await volume.getByRole('button', { name: 'Add a chapter' }).click()
+    await volume.getByRole('button', { name: 'Add chapter' }).click()
     await page.getByTestId('project-episode-new-title').fill('The tide goes out')
     await page.getByTestId('project-episode-new-save').click()
 
@@ -222,14 +222,14 @@ test.describe('Project seasons', () => {
     await volume.getByRole('button', { name: 'Open pages' }).click()
     await expect(volume).toContainText('No pages yet.')
 
-    await volume.getByRole('button', { name: 'Add a page' }).click()
+    await volume.getByRole('button', { name: 'Add page' }).click()
     await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
     await page.locator('[data-testid^="project-page-new-save-"]').first().click()
 
     const pageRow = volume.locator('[data-testid^="project-page-"]').first()
     await expect(pageRow).toContainText('No panels yet.')
 
-    await pageRow.getByRole('button', { name: 'Add a panel' }).click()
+    await pageRow.getByRole('button', { name: 'Add panel' }).click()
     await page.getByTestId('project-panel-new-description').fill('Wide on the saltflats')
     await page.getByTestId('project-panel-new-dialogue').fill('Nobody comes back twice.')
     await page.getByTestId('project-panel-new-save').click()
@@ -279,19 +279,19 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-season-new-save').click()
 
     const volume = page.getByTestId('project-season-list').locator('> li').first()
-    await volume.getByRole('button', { name: 'Add a chapter' }).click()
+    await volume.getByRole('button', { name: 'Add chapter' }).click()
     await page.getByTestId('project-episode-new-title').fill('The tide goes out')
     await page.getByTestId('project-episode-new-save').click()
 
     await volume.getByRole('button', { name: 'Open pages' }).click()
-    await volume.getByRole('button', { name: 'Add a page' }).click()
+    await volume.getByRole('button', { name: 'Add page' }).click()
     await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
     await page.locator('[data-testid^="project-page-new-save-"]').first().click()
 
     const pageRow = volume.locator('[data-testid^="project-page-"]').first()
 
     // A panel created with the entry chosen through the picker the rest of LorEvolve uses.
-    await pageRow.getByRole('button', { name: 'Add a panel' }).click()
+    await pageRow.getByRole('button', { name: 'Add panel' }).click()
     await page.getByTestId('project-panel-new-description').fill('Alenna, close')
 
     const picker = page.getByTestId('project-panel-new-shows')
@@ -326,7 +326,7 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-season-new-save').click()
 
     const season = page.getByTestId('project-season-list').locator('> li').first()
-    await season.getByRole('button', { name: 'Add an episode' }).click()
+    await season.getByRole('button', { name: 'Add episode' }).click()
     await page.getByTestId('project-episode-new-title').fill('Pilot')
     await page.getByTestId('project-episode-new-save').click()
     await expect(season).toContainText('Pilot')

@@ -36,7 +36,7 @@ const auth: Dictionary['auth'] = {
     password: 'Palavra-passe',
     confirmPassword: 'Confirmar a palavra-passe',
     submit: 'Criar conta',
-    submitting: 'A criar a conta',
+    submitting: 'A criar a conta…',
   },
   forgot: {
     heading: 'Esqueceste-te da palavra-passe?',
@@ -61,8 +61,8 @@ const auth: Dictionary['auth'] = {
     askAgain: 'Pedir de novo',
     newPassword: 'Nova palavra-passe',
     confirmPassword: 'Confirmar a nova palavra-passe',
-    submit: 'Guardar a nova palavra-passe',
-    submitting: 'A guardar',
+    submit: 'Guardar',
+    submitting: 'A guardar…',
   },
   invitation: {
     title: 'Convite',

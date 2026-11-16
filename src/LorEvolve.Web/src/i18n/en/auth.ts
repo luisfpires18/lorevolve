@@ -34,7 +34,7 @@ const auth = {
     password: 'Password',
     confirmPassword: 'Confirm password',
     submit: 'Create account',
-    submitting: 'Creating account',
+    submitting: 'Creating account…',
   },
   forgot: {
     heading: 'Forgot your password?',
@@ -59,8 +59,8 @@ const auth = {
     askAgain: 'Ask again',
     newPassword: 'New password',
     confirmPassword: 'Confirm new password',
-    submit: 'Save the new password',
-    submitting: 'Saving',
+    submit: 'Save',
+    submitting: 'Saving…',
   },
   invitation: {
     title: 'Invitation',

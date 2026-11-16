@@ -74,7 +74,7 @@ test.describe('universes', () => {
     const renamed = `${name} Redrawn`
     await page.getByLabel('Name').fill(renamed)
     await page.getByLabel('Description').fill('Now mapped.')
-    await page.getByRole('button', { name: 'Save changes' }).click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.getByTestId('settings-saved')).toBeVisible()
     await expect(page.getByTestId('workspace-name')).toHaveText(renamed)
 
