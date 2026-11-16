@@ -11,7 +11,7 @@ const workspace = {
     sharedAs: 'Shared as {role}',
     groups: {
       worldBuilding: 'World building',
-      projects: 'Projects',
+      creation: 'Creation',
       management: 'Management',
     },
   },
@@ -82,6 +82,10 @@ const workspace = {
     ideas: {
       label: 'Ideas',
       purpose: 'Possibilities, kept apart from the lore.',
+    },
+    projects: {
+      label: 'Projects',
+      purpose: 'The bodies of work written in this universe.',
     },
     aiChanges: {
       label: 'AI Changes',

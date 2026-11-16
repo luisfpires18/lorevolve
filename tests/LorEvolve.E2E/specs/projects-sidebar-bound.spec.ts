@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * Issue #231: the sidebar lists every project, with no All projects row, and folds the whole group from its heading.
- * Twelve projects is more than the old bound of eight (#198), so a returning bound would fail here.
+ * Issue #271: the sidebar carries no per-project rows however many projects there are. Projects is one entry under
+ * Management, and the Projects page lists every project. Twelve projects is more than the old bound of eight (#198).
  */
 
 const SEEDED = 12
@@ -55,40 +55,26 @@ async function seed(page: Page) {
   return { worldId: world.id, oldestFirst: projects }
 }
 
-const projectLinks = (page: Page) =>
-  page.getByTestId('sidebar-projects').locator('[data-testid^="project-link-"]')
-
-test.describe('Sidebar project list', () => {
-  test('the sidebar lists every project and has no All projects row', async ({ page }) => {
+test.describe('Sidebar and many projects', () => {
+  test('the sidebar has no project rows, and Projects lists them all', async ({ page }) => {
     await signUp(page)
     const { worldId, oldestFirst } = await seed(page)
 
     await page.goto(`/app/universes/${worldId}`)
-    await expect(projectLinks(page)).toHaveCount(SEEDED)
-    for (const shown of oldestFirst) {
-      await expect(page.getByTestId(`project-link-${shown.id}`)).toBeVisible()
-    }
+    const sidebar = page.getByRole('navigation', { name: 'Universe', exact: true })
+    await expect(sidebar.getByTestId('sidebar-upkeep').getByRole('link').first()).toHaveText(
+      'Projects',
+    )
+    await expect(sidebar.locator('[data-testid^="project-link-"]')).toHaveCount(0)
+    await expect(sidebar.locator('[data-testid^="project-toggle-"]')).toHaveCount(0)
+    await expect(page.getByTestId('projects-group-toggle')).toHaveCount(0)
     await expect(page.getByTestId('projects-all')).toHaveCount(0)
-  })
 
-  test('the projects group folds from its heading and says so', async ({ page }) => {
-    await signUp(page)
-    const { worldId } = await seed(page)
-
-    await page.goto(`/app/universes/${worldId}`)
-    const toggle = page.getByTestId('projects-group-toggle')
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    await expect(page.getByRole('heading', { name: 'Projects', exact: true })).toBeVisible()
-    await expect(projectLinks(page)).toHaveCount(SEEDED)
-
-    // A button, so the keyboard folds it with no key handling of our own.
-    await toggle.focus()
-    await page.keyboard.press('Enter')
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    await expect(projectLinks(page).first()).toBeHidden()
-
-    await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    await expect(projectLinks(page)).toHaveCount(SEEDED)
+    await sidebar.getByTestId('workspace-projects').click()
+    await expect(page).toHaveURL(`/app/universes/${worldId}/projects`)
+    await expect(sidebar.getByTestId('workspace-projects')).toHaveAttribute('aria-current', 'page')
+    for (const shown of oldestFirst) {
+      await expect(page.getByTestId(`projects-row-${shown.id}`)).toBeVisible()
+    }
   })
 })

@@ -14,8 +14,6 @@ const projects = {
   nav: {
     all: 'All projects',
     new: 'New project',
-    expand: 'Show this project',
-    collapse: 'Hide this project',
   },
   sections: {
     overview: 'Overview',

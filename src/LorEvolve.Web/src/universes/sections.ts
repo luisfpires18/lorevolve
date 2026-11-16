@@ -6,6 +6,7 @@ import {
   Compass,
   Feather,
   FileDiff,
+  FolderOpen,
   Globe,
   Hourglass,
   Library,
@@ -73,6 +74,7 @@ const IDEAS: Section = {
   icon: StickyNote,
   requires: 'keepIdeas',
 }
+const PROJECTS: Section = { segment: 'projects', testId: 'workspace-projects', icon: FolderOpen }
 const AI_CHANGES: Section = {
   segment: 'ai-changes',
   testId: 'workspace-ai-changes',
@@ -129,36 +131,26 @@ export const WORLD_BUILDING: readonly Section[] = [
 ]
 
 /**
- * Management, apart from the worldbuilding above it: what an AI proposed, the public presentation, recovery and
- * configuration. The sidebar sets it off under a rule, and a phone's Sections sheet gives it a row of its own at the foot.
+ * The sidebar's Creation group (#271): the place for what is made with the world. Labelled, and empty until later
+ * tasks add destinations to it.
  */
-export const MANAGEMENT: readonly Section[] = [AI_CHANGES, PUBLISH, TRASH, SETTINGS]
+export const CREATION: readonly Section[] = []
 
 /**
- * Sections with an address but no place in the sidebar (#191). Stories are listed as Writing Projects in the sidebar's
- * projects group, so a Stories entry beside them showed one body of work twice. Canon is not offered as a top-level
+ * Management, apart from the world building above it: the universe's projects, what an AI proposed, the public
+ * presentation, recovery and configuration. The sidebar sets it off under a rule, and a phone's Sections sheet gives it
+ * a row of its own at the foot.
+ */
+export const MANAGEMENT: readonly Section[] = [PROJECTS, AI_CHANGES, PUBLISH, TRASH, SETTINGS]
+
+/**
+ * Sections with an address but no place in the sidebar (#191). Stories are listed as Writing Projects under the
+ * Projects section, so a Stories entry beside it would show one body of work twice. Canon is not offered as a top-level
  * section any more. Both pages keep every address, and the Overview's contents page still links to them; they are
  * listed here only so the workspace can still name the page the author is on.
  */
 export const UNLISTED: readonly Section[] = [STORIES, CANON]
 
-/**
- * The sections a universe has, in the order the sidebar lists them, grouped as the sidebar draws them: the front page,
- * then the labelled World building group, then (drawn by its own component) Projects, then the labelled Management
- * group. Held as data rather than as markup because the narrow layout needs the same list twice: once as the list of
- * links, and once to name the section the author is currently in.
- *
- * Until #191 the worldbuilding groups carried no labels - the spacing said it. That decision is reversed on purpose:
- * the owner's target sidebar labels every group, because once projects joined the rail, space alone no longer told
- * the world, its projects and its management apart. Each label names its group for a screen reader too.
- *
- * One icon per section, none shared with an entry type's, each decorative: the label names the destination and is what a
- * screen reader reads.
- */
-/**
- * The sections a role is offered: those it needs nothing for, and those whose capability it has. AI Changes only while
- * the universe has AI help on.
- */
 /** Whether a section is at this address: its own segment, or one of the others it owns. */
 export function owns(section: Section, segment: string) {
   return section.segment === segment || (section.also?.includes(segment) ?? false)
@@ -181,6 +173,10 @@ export function sectionPurpose(section: Section) {
   return t(`workspace.sections.${sectionKey(section.segment)}.purpose` as never)
 }
 
+/**
+ * The sections a role is offered: those it needs nothing for, and those whose capability it has. AI Changes only while
+ * the universe has AI help on.
+ */
 export function offered(sections: readonly Section[], access: UniverseCapabilities, aiHelp = true) {
   return sections.filter(
     (section) =>
@@ -189,7 +185,22 @@ export function offered(sections: readonly Section[], access: UniverseCapabiliti
   )
 }
 
-export const SECTION_GROUPS: readonly (readonly Section[])[] = [FRONT, WORLD_BUILDING, MANAGEMENT]
+/**
+ * The sections a universe has, in the order the sidebar lists them, grouped as the sidebar draws them: the front page,
+ * then the labelled World building, Creation and Management groups (#271). Held as data rather than as markup because
+ * the narrow layout needs the same list twice: once as the list of links, and once to name the section the author is
+ * currently in.
+ *
+ * Every group but the front page is labelled, and each label names its group for a screen reader too. One icon per
+ * section, none shared with an entry type's, each decorative: the label names the destination and is what a screen
+ * reader reads.
+ */
+export const SECTION_GROUPS: readonly (readonly Section[])[] = [
+  FRONT,
+  WORLD_BUILDING,
+  CREATION,
+  MANAGEMENT,
+]
 
 /** Every section with an address, listed in the sidebar or not, for naming the one the author is on. */
 export const ALL_SECTIONS: readonly Section[] = [...SECTION_GROUPS.flat(), ...UNLISTED]
