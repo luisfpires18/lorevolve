@@ -108,6 +108,32 @@ test.describe('on a phone', () => {
     await expect(where).toContainText('Lore')
     await expectNoSidewaysScroll(page, 'lore browse')
 
+    // ---- The one navigation is a drawer over the page (#274) ----
+
+    await toggle.click()
+    await expect(page.locator('nav.sidebar')).toHaveCount(1)
+    await expect(page.locator('.sidebar')).toBeVisible()
+    await expect(page.locator('.workspace__column')).toHaveAttribute('inert', '')
+    await expect(page.getByTestId('sidebar-world-building')).toBeVisible()
+    // A new universe has no project, so Creation is not offered (#272).
+    await expect(page.getByTestId('sidebar-creation')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.sidebar')).toBeHidden()
+    await expect(toggle).toBeFocused()
+    await expect(page.locator('.workspace__column')).not.toHaveAttribute('inert', '')
+    // The scrim closes it too.
+    await toggle.click()
+    await page.getByTestId('workspace-nav-scrim').click({ position: { x: 370, y: 400 } })
+    await expect(page.locator('.sidebar')).toBeHidden()
+    // Back closes it: opened here, so not open on the route before.
+    await toggle.click()
+    await page.getByTestId('workspace-overview').click()
+    await page.waitForURL(/\/app\/universes\/[0-9a-f-]+$/)
+    await toggle.click()
+    await page.goBack()
+    await expect(page.locator('.sidebar')).toBeHidden()
+    await page.goForward()
+
     // ---- Authoring, in the same column ----
 
     await page.getByTestId('new-entity').click()

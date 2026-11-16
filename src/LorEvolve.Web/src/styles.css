@@ -2780,6 +2780,11 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   background: var(--paper);
 }
 
+/* Drawn only by the narrow layout, behind the open drawer (#274). */
+.sidebar__scrim {
+  display: none;
+}
+
 /* The world itself at the head of its sections: its artwork in miniature (the owner's, when there is one), then its
    name. */
 .sidebar__identity {
@@ -8743,10 +8748,42 @@ html:has(.viewer[open]) {
     margin-bottom: 0;
   }
 
+  /* The open list is a drawer over the page, under the bar (#274): the one nav, not a second one. The bar is the
+     touch control plus its padding, and the safe area above it. */
   .sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule);
-    padding: var(--space-3) var(--gutter) var(--space-4);
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + var(--control-touch) + 1rem);
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-drawer);
+    width: min(20rem, 85vw);
+    overflow-y: auto;
+    border-right: 1px solid var(--rule);
+    border-bottom: 0;
+    background: var(--raised);
+    box-shadow: var(--shadow-3);
+    padding: var(--space-3) var(--gutter) max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .sidebar__scrim {
+    display: block;
+    position: fixed;
+    inset: calc(env(safe-area-inset-top) + var(--control-touch) + 1rem) 0 0;
+    z-index: calc(var(--z-drawer) - 1);
+    background: var(--backdrop);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sidebar[data-open='true'] {
+      animation: sidebar-in var(--duration-3) var(--ease);
+    }
+  }
+
+  @keyframes sidebar-in {
+    from {
+      transform: translateX(-2rem);
+      opacity: 0;
+    }
   }
 
   .sidebar[data-open='false'] {
@@ -8770,26 +8807,20 @@ html:has(.viewer[open]) {
     min-height: var(--control-touch);
   }
 
-  /* Two columns filled top to bottom, each group kept whole, so the list reads down and not in a
-     zigzag: eleven sections in one column would be taller than the phone they are read on, and the
-     point of the panel is that it gets out of the way. */
+  /* One column, the groups in the desktop order. */
   .sidebar__nav {
     display: block;
-    columns: 2;
-    column-gap: var(--space-4);
     margin-top: 0;
     padding-top: 0;
     border-top: 0;
   }
 
   .sidebar__group {
-    break-inside: avoid;
     padding-bottom: var(--space-3);
   }
 
   /* The upkeep row spans the sheet under a rule, its three links side by side. */
   .sidebar__group--upkeep {
-    column-span: all;
     margin-top: 0;
     padding-top: var(--space-3);
     padding-bottom: 0;
