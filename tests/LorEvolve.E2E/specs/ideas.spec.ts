@@ -436,6 +436,18 @@ test.describe('ideas', () => {
     await expect(page.getByTestId('idea-elsewhere')).toContainText('belongs to no universe')
   })
 
+  test('the reference picker closes on a press on the backdrop', async ({ page }) => {
+    await signUp(page)
+    const world = await seedUniverse(page, unique('Ashen Vale '))
+
+    await page.goto(`/app/universes/${world}/ideas/new`)
+    await page.getByTestId('idea-add-reference').click()
+    const picker = page.getByTestId('idea-reference-picker')
+    await expect(picker).toBeVisible()
+    await page.mouse.click(5, 300)
+    await expect(picker).toHaveCount(0)
+  })
+
   test('a universe’s Ideas open only its own ideas: one started there but created elsewhere returns to all ideas', async ({
     page,
   }) => {
