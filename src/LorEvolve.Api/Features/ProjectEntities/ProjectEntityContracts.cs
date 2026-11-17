@@ -79,4 +79,5 @@ public sealed record ProjectEntitySummary(
     string? EntityTypeAccentColor,
     Guid? CanonEntityId,
     string? CanonEntityName,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    EntityImageRef? Image = null);

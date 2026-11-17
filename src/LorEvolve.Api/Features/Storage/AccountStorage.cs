@@ -182,7 +182,7 @@ public static partial class AccountStorage
     /// entries in the Trash alike, and whoever uploaded them. The one place another category would be added beside.
     /// </summary>
     private static IQueryable<long> LoreImageBytes(LorEvolveDbContext db, string ownerId) =>
-        db.EntityImages
+        db.EntityImages.IgnoreQueryFilters()
             .Where(image => image.Entity!.Universe!.OwnerId == ownerId)
             .Select(image => image.ByteSize);
 

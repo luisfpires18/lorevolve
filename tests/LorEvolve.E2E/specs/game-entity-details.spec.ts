@@ -160,6 +160,72 @@ test.describe('Game entity details', () => {
     }
   })
 
+  test("an editor adds the entry's own picture on its page, as on a Lore entry, and the card shows it", async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
+      name: unique('Detworld '),
+      description: null,
+    })
+    const alpha = await game(page, world.id, 'Alpha game', {
+      Units: [{ name: 'Bastion', summary: null }],
+    })
+    const entities = `/app/universes/${world.id}/projects/${alpha.id}/entities`
+    const entry = alpha.ids['Bastion']
+
+    await page.goto(`${entities}/${entry}`)
+    await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
+    // As on a Lore entry, the picture is changed while editing.
+    await expect(page.getByTestId('entity-image-input')).toHaveCount(0)
+    await page.getByTestId('project-entity-edit').click()
+    await page.getByTestId('entity-image-input').setInputFiles({
+      name: 'bastion.png',
+      mimeType: 'image/png',
+      buffer: png(400, 300, (x) => (x < 200 ? [200, 60, 40] : [40, 90, 200])),
+    })
+    const dialog = page.getByTestId('image-crop-dialog')
+    await expect(dialog.getByTestId('image-crop-confirm')).toBeEnabled()
+    await dialog.getByTestId('image-crop-confirm').click()
+    await expect(dialog).toHaveCount(0)
+
+    // The page draws it large, through Lore's own entry image route, and the control now offers Replace and Remove.
+    const picture = page.getByTestId('game-entity-image')
+    await expect(picture).toHaveAttribute('src', new RegExp(`/entities/${entry}/image/`))
+    await expect(page.getByTestId('entity-image-remove')).toBeVisible()
+
+    // Saving the rest of the entry after the picture changed is not a conflict.
+    await page
+      .getByTestId('project-entity-edit-drawer')
+      .getByRole('button', { name: 'Save' })
+      .click()
+    await expect(page.getByTestId('project-entity-edit-drawer')).toHaveCount(0)
+    await expect(page.getByTestId('project-entity-edit-notice')).toHaveCount(0)
+    await expect(picture).toBeVisible()
+
+    // The type's list shows it on the entry's card, as a Lore card does.
+    const types = await api<{ id: string; name: string }[]>(
+      page,
+      'GET',
+      `/api/projects/${alpha.id}/entity-types`,
+    )
+    await page.goto(`${entities}?type=${types.find((one) => one.name === 'Units')!.id}`)
+    await expect(page.getByTestId(`project-entry-${entry}`).locator('img')).toHaveAttribute(
+      'src',
+      new RegExp(`/entities/${entry}/image/`),
+    )
+
+    // Removed, it is gone from the page again.
+    await page.goto(`${entities}/${entry}`)
+    await page.getByTestId('project-entity-edit').click()
+    await page.getByTestId('entity-image-remove').click()
+    await page
+      .getByTestId('project-entity-edit-drawer')
+      .getByRole('button', { name: 'Cancel' })
+      .click()
+    await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
+  })
+
   test('an entry with an uploaded Image field picture shows it on the page', async ({ page }) => {
     await signUp(page)
     const world = await api<{ id: string }>(page, 'POST', '/api/universes', {

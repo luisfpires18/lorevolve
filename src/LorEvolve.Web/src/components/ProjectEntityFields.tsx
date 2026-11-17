@@ -13,6 +13,7 @@ import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import { t, useI18n } from '../i18n'
 import { Drawer } from './Drawer'
+import { EntityImageField } from './EntityImageField'
 import { ProjectEntryForm } from './ProjectEntries'
 
 /**
@@ -124,6 +125,18 @@ export function ProjectEntityFields({
               {failed}
             </p>
           ) : null}
+          {/* The entry's own picture, edited as a Lore entry's is: Lore's control and its routes (#286). */}
+          <section className="entryform__section">
+            <EntityImageField
+              universeId={universeId}
+              entityId={detail.id}
+              image={detail.image}
+              pending={null}
+              onPending={() => undefined}
+              onChanged={() => onSaved()}
+              disabled={false}
+            />
+          </section>
           <ProjectEntryForm
             projectId={projectId}
             universeId={universeId}

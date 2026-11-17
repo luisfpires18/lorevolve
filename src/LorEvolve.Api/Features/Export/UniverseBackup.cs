@@ -373,8 +373,12 @@ public sealed record UniverseBackup(
     /// 55 - Comic Volumes (#297). <see cref="BackupComicCollection.ProjectId"/> names the one Comic project a collection
     /// of kind <c>volume</c> belongs to. Not ignorable: a version 54 reader would drop the project and refuse the volume.
     /// A file at version 54 or earlier has no volume and no collection project.
+    ///
+    /// 56 - Project entry profile pictures (#286). <see cref="BackupProjectEntity.Image"/> carries a project entry's
+    /// picture exactly as <see cref="BackupEntity.Image"/>, its original in the archive. Not ignorable: a version 55
+    /// reader would restore the entry without its picture. A file at version 55 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 55;
+    public const int CurrentVersion = 56;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -1124,7 +1128,9 @@ public sealed record BackupProjectEntity(
     /// </summary>
     IReadOnlyList<BackupRevision>? Revisions = null,
     /// <summary>The entry's pictures in its image fields (since version 48, Issue #238), as <see cref="BackupEntity.FieldImages"/>.</summary>
-    IReadOnlyList<BackupFieldImage>? FieldImages = null);
+    IReadOnlyList<BackupFieldImage>? FieldImages = null,
+    /// <summary>The entry's profile picture (since version 56, Issue #286), as <see cref="BackupEntity.Image"/>.</summary>
+    BackupEntityImage? Image = null);
 
 public sealed record BackupFieldValue(
     Guid FieldDefinitionId,

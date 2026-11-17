@@ -203,7 +203,11 @@ internal static partial class BackupValidation
         BackupIssueList issues,
         CancellationToken cancellationToken)
     {
-        var withImages = payload.Entities.Where(entity => entity.Image is not null).ToList();
+        // A project entry's profile picture (version 56, #286) goes through the same gate as a lore entry's.
+        var withImages = payload.Entities.Select(entity => (entity.Id, Name: Entry(entity), entity.Image))
+            .Concat((payload.ProjectEntities ?? []).Select(entry => (entry.Id, Name: $"the project entry {Quote(entry.Name)}", entry.Image)))
+            .Where(owner => owner.Image is not null)
+            .ToList();
         var results = new Dictionary<Guid, ValidatedImage>();
         using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
 
@@ -235,15 +239,15 @@ internal static partial class BackupValidation
                 {
                     if (prepared is null)
                     {
-                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} could not be used: {rejection!.Message}");
+                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {entity.Name} could not be used: {rejection!.Message}");
                     }
                     else if (!string.Equals(prepared.ContentType, image.ContentType, StringComparison.Ordinal))
                     {
-                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} is not the kind of image the backup says it is.");
+                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {entity.Name} is not the kind of image the backup says it is.");
                     }
                     else if (bytes.Length != image.ByteSize)
                     {
-                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} is not the size the backup says it is.");
+                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {entity.Name} is not the size the backup says it is.");
                     }
                     else
                     {
@@ -566,7 +570,7 @@ internal static partial class BackupValidation
                 continue;
             }
 
-            count += 1 + (entry.FieldValues?.Count ?? 0) + (entry.FieldImages?.Count ?? 0);
+            count += 1 + (entry.FieldValues?.Count ?? 0) + (entry.FieldImages?.Count ?? 0) + (entry.Image is null ? 0 : 1);
 
             foreach (var revision in entry.Revisions ?? [])
             {
@@ -1814,6 +1818,11 @@ internal static partial class BackupValidation
 
                 CheckFieldImages(entry.Id, entry.EntityTypeId, entry.FieldImages, what);
 
+                if (entry.Image is { } image)
+                {
+                    CheckImage(entry.Id, $"the project entry {Quote(entry.Name)}", image, what);
+                }
+
                 // The entry's saved versions (version 42, #146). Each id is registered, as a lore entry's versions are,
                 // so a reference to one inside the file resolves and a duplicate is caught.
                 foreach (var revision in entry.Revisions ?? [])
@@ -1993,7 +2002,7 @@ internal static partial class BackupValidation
 
             if (entity.Image is { } image)
             {
-                CheckImage(entity, image, what);
+                CheckImage(entity.Id, Entry(entity), image, what);
             }
 
             CheckFieldImages(entity.Id, entity.EntityTypeId, entity.FieldImages, what);
@@ -2279,7 +2288,7 @@ internal static partial class BackupValidation
             }
         }
 
-        private void CheckImage(BackupEntity entity, BackupEntityImage image, string what)
+        private void CheckImage(Guid entityId, string name, BackupEntityImage image, string what)
         {
             if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
             {
@@ -2289,7 +2298,7 @@ internal static partial class BackupValidation
 
             // The path is not trusted as written: it has to be exactly the one LorEvolve would have built from the
             // entry's own id and the picture's kind, which also keeps every read inside the archive's media folder.
-            var expected = BackupArchive.MediaPathFor(entity.Id, image.ContentType);
+            var expected = BackupArchive.MediaPathFor(entityId, image.ContentType);
 
             if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
             {
@@ -2301,25 +2310,25 @@ internal static partial class BackupValidation
 
             if (opened.MediaLength(expected) is not { } length)
             {
-                Add(BackupIssueCodes.MissingMedia, $"The picture of {Entry(entity)} is missing from the archive.");
+                Add(BackupIssueCodes.MissingMedia, $"The picture of {name} is missing from the archive.");
                 return;
             }
 
             if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
             {
-                Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} is not the size the backup says it is.");
+                Add(BackupIssueCodes.InvalidImage, $"The picture of {name} is not the size the backup says it is.");
             }
 
             if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
             {
-                Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} has dimensions LorEvolve does not accept.");
+                Add(BackupIssueCodes.InvalidImage, $"The picture of {name} has dimensions LorEvolve does not accept.");
             }
 
-            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of the picture of {Entry(entity)}");
+            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of the picture of {name}");
 
             if (image.Crop is { } crop && ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height)) is { } badCrop)
             {
-                Add(BackupIssueCodes.InvalidImage, $"The thumbnail framing of {Entry(entity)} cannot be used: {badCrop}");
+                Add(BackupIssueCodes.InvalidImage, $"The thumbnail framing of {name} cannot be used: {badCrop}");
             }
         }
 

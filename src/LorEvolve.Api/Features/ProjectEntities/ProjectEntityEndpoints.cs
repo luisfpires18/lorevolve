@@ -144,7 +144,27 @@ public static class ProjectEntityEndpoints
                     .Where(canon => canon.Id == entry.CanonEntityId)
                     .Select(canon => canon.Name)
                     .FirstOrDefault(),
-                entry.UpdatedAt))
+                entry.UpdatedAt,
+                // The entry's own picture, as a Lore card reads it (#286).
+                entry.Image == null
+                    ? null
+                    : new EntityImageRef(
+                        entry.Image.AssetId,
+                        entry.Image.ThumbnailId,
+                        entry.Image.Width,
+                        entry.Image.Height,
+                        entry.Image.ContentType,
+                        entry.Image.FileName,
+                        entry.Image.ByteSize,
+                        entry.Image.UploadedAt,
+                        entry.Image.CropX == null
+                            ? null
+                            : new EntityImageCrop(
+                                entry.Image.CropX.Value,
+                                entry.Image.CropY!.Value,
+                                entry.Image.CropWidth!.Value,
+                                entry.Image.CropHeight!.Value),
+                        entry.Image.DisplayKey != null)))
             .ToListAsync(cancellationToken);
 
         _ = project;

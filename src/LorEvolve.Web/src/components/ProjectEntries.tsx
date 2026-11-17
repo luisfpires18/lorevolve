@@ -482,10 +482,10 @@ export function ProjectEntries({
               {/* Lore's card; with an `entryHref` the body is the link and the More menu stays outside it. */}
               <div className="entitycard entitycard--static">
                 {(() => {
-                  // No picture, so the tile draws the type's icon and never reads a universe.
+                  // The entry's own picture when it has one (#286), else the type's icon, exactly as Lore's card.
                   const body = (
                     <EntityCardBody
-                      universeId=""
+                      universeId={universeId}
                       entity={entry}
                       note={
                         entry.canonEntityName
