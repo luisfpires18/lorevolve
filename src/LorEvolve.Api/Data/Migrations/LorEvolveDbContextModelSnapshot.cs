@@ -644,9 +644,6 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ProjectId")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
@@ -664,8 +661,6 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ProjectId", "SortOrder");
 
                     b.HasIndex("UniverseId", "Kind", "SortOrder");
 
@@ -2710,7 +2705,15 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasMaxLength(400000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Caption")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Dialogue")
+                        .HasMaxLength(4000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Level")
@@ -2718,10 +2721,18 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Sfx")
+                        .HasMaxLength(4000)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SortOrder")
@@ -2748,6 +2759,65 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasIndex("ProjectId", "ParentId", "SortOrder");
 
                     b.ToTable("ProjectNodes", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectNodeImage", b =>
+                {
+                    b.Property<Guid>("NodeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CropHeight")
+                        .HasColumnType("REAL");
+
+                    b.Property<Guid>("CropId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CropKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CropWidth")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropX")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropY")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("NodeId");
+
+                    b.ToTable("ProjectNodeImages", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
@@ -4982,18 +5052,11 @@ namespace LorEvolve.Api.Data.Migrations
 
             modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollection", b =>
                 {
-                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
                         .WithMany()
                         .HasForeignKey("UniverseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Project");
 
                     b.Navigation("Universe");
                 });
@@ -6028,6 +6091,17 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Parent");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectNodeImage", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectNode", "Node")
+                        .WithOne()
+                        .HasForeignKey("LorEvolve.Api.Features.ProjectEntities.ProjectNodeImage", "NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Node");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
