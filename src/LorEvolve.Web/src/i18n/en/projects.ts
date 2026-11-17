@@ -246,6 +246,11 @@ const projects = {
       sequence: 'sequence',
       scene: 'scene',
       beat: 'beat',
+      issue: 'issue',
+      chapter: 'chapter',
+      page: 'page',
+      panel: 'panel',
+      episode: 'episode',
     },
   },
   volumes: {
