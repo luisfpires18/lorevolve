@@ -474,6 +474,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 52)
+        {
+            // A panel's script and a page's or panel's picture came in version 52 (#295).
+            foreach (var node in payload["projectNodes"]?.AsArray() ?? [])
+            {
+                Drop(node, "dialogue", "caption", "sfx", "notes", "image");
+            }
+        }
+
         if (version < 51)
         {
             // A project's structure nodes came in version 51 (#290).

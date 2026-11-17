@@ -395,6 +395,16 @@ public sealed record FieldImageRef(
         image.Height,
         new EntityImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight),
         image.FileName);
+
+    /// <summary>A comic page's or panel's picture (#295), in the same shape: <see cref="FieldId"/> is the node id.</summary>
+    public static FieldImageRef Of(ProjectEntities.ProjectNodeImage image) => new(
+        image.NodeId,
+        image.AssetId,
+        image.CropId,
+        image.Width,
+        image.Height,
+        new EntityImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight),
+        image.FileName);
 }
 
 /// <summary>A new framing for an image field's picture; <paramref name="AssetId"/> as in <see cref="EntityThumbnailRequest"/>.</summary>

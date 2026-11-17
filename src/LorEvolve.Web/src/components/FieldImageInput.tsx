@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Field } from './Field'
 import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import {
@@ -17,6 +17,7 @@ import {
   type FieldImageRef,
   type FieldImageShapeValue,
 } from '../lore/types'
+import { showsArt } from '../projectEntities/structureTree'
 import { ActionIcon } from './ActionIcon'
 import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
 import { useI18n } from '../i18n'
@@ -29,6 +30,17 @@ export interface PendingFieldImage {
   file: File
   crop: EntityImageCrop
   aspect: number
+}
+
+/**
+ * Where a picture other than an entry field's lives (#295: a comic page or panel). Without one the control talks to the
+ * entry field routes, as before.
+ */
+export interface FieldImageApi {
+  url: (image: FieldImageRef, variant: 'original' | 'crop') => string
+  set: (file: File, crop: EntityImageCrop) => Promise<FieldImageRef>
+  setCrop: (assetId: string, crop: EntityImageCrop) => Promise<FieldImageRef>
+  remove: () => Promise<void>
 }
 
 /** What the cropper is open on: a file just picked, or a stored picture reframed from its own original. */
@@ -74,6 +86,8 @@ export function FieldImageInput({
   onChanged,
   disabled,
   disabledHint,
+  api: given,
+  placeholder,
 }: {
   universeId: string
   entityId: string | null
@@ -87,6 +101,10 @@ export function FieldImageInput({
   disabled: boolean
   /** Why the control is disabled, when the reason is worth saying. */
   disabledHint?: string
+  /** Other routes for the picture; `entityId` is then only a "this exists" flag. */
+  api?: FieldImageApi
+  /** Shown when there is no picture, or the stored one fails to load. */
+  placeholder?: ReactNode
 }) {
   const { t } = useI18n()
   const inputId = useId()
@@ -94,6 +112,14 @@ export function FieldImageInput({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [framing, setFraming] = useState<Framing | null>(null)
+  const [brokenCrop, setBrokenCrop] = useState<string | null>(null)
+
+  const api: FieldImageApi = given ?? {
+    url: (stored, variant) => fieldImageUrl(universeId, entityId!, stored, variant),
+    set: (file, crop) => setFieldImage(universeId, entityId!, fieldId, file, crop),
+    setCrop: (assetId, crop) => setFieldImageCrop(universeId, entityId!, fieldId, assetId, crop),
+    remove: () => removeFieldImage(universeId, entityId!, fieldId),
+  }
 
   const frame = shape ?? FieldImageShape.Free
   const fixedAspect = aspectOfShape(frame)
@@ -162,7 +188,7 @@ export function FieldImageInput({
       setFraming({
         kind: 'stored',
         image,
-        source: fieldImageUrl(universeId, entityId, image, 'original'),
+        source: api.url(image, 'original'),
         aspect: fixedAspect ?? image.width / image.height,
       })
     }
@@ -173,13 +199,11 @@ export function FieldImageInput({
 
     if (framing.kind === 'stored') {
       // Only the frame is sent. The original stays exactly where it is.
-      onChanged(
-        await setFieldImageCrop(universeId, entityId!, fieldId, framing.image.assetId, crop),
-      )
+      onChanged(await api.setCrop(framing.image.assetId, crop))
     } else if (!entityId) {
       onPending({ file: framing.file, crop, aspect: framing.aspect })
     } else {
-      onChanged(await setFieldImage(universeId, entityId, fieldId, framing.file, crop))
+      onChanged(await api.set(framing.file, crop))
     }
 
     setFraming(null)
@@ -197,7 +221,7 @@ export function FieldImageInput({
 
     setBusy(true)
     try {
-      await removeFieldImage(universeId, entityId, fieldId)
+      await api.remove()
       onChanged(null)
     } catch {
       setError(t('entity.image.removeFailed'))
@@ -242,16 +266,19 @@ export function FieldImageInput({
                 crop={pending.crop}
                 testId={testId('preview')}
               />
-            ) : image && entityId ? (
+            ) : image && entityId && showsArt(image, brokenCrop) ? (
               <img
                 className="imagefield__preview imagefield__preview--field"
-                src={fieldImageUrl(universeId, entityId, image, 'crop')}
+                src={api.url(image, 'crop')}
                 alt={name}
                 width={image.width}
                 height={image.height}
+                onError={() => setBrokenCrop(image.cropId)}
                 data-testid={testId('preview')}
               />
-            ) : null}
+            ) : (
+              (placeholder ?? null)
+            )}
 
             <div className="imagefield__actions">
               {/* The input comes first so the label can be styled from its state. */}

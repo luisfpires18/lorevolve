@@ -357,6 +357,10 @@ internal static partial class BackupValidation
         var pictures = payload.Entities.Select(entity => (entity.Id, Name: Entry(entity), entity.FieldImages))
             .Concat((payload.ProjectEntities ?? []).Select(entry => (entry.Id, Name: $"the project entry {Quote(entry.Name)}", entry.FieldImages)))
             .SelectMany(owner => (owner.FieldImages ?? []).Select(image => (EntityId: owner.Id, owner.Name, Image: image)))
+            // A comic page's or panel's picture (#295): keyed by (node, node), its frame free.
+            .Concat((payload.ProjectNodes ?? [])
+                .Where(node => node?.Image is not null && node.Image.FieldDefinitionId == node.Id)
+                .Select(node => (EntityId: node.Id, Name: $"the {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}", Image: node.Image!)))
             .ToList();
         var results = new Dictionary<(Guid EntityId, Guid FieldId), ValidatedImage>();
         using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
@@ -618,7 +622,7 @@ internal static partial class BackupValidation
         count += (payload.TypeTemplates ?? []).Sum(template => template is null
             ? 0L
             : 1L + (template.Fields ?? []).Sum(field => field is null ? 0L : 1L + (field.Options?.Count ?? 0)));
-        count += payload.ProjectNodes?.Count ?? 0;
+        count += (payload.ProjectNodes ?? []).Sum(node => node?.Image is null ? 1L : 2L);
 
         return (int)Math.Min(count, int.MaxValue);
     }
@@ -1480,6 +1484,27 @@ internal static partial class BackupValidation
                 Text(node.Title, SeriesLimits.NameMaxLength, $"{what}'s title");
                 Text(node.Summary, SeriesLimits.SummaryMaxLength, $"{what}'s summary");
                 Text(node.Body, SeriesLimits.ScriptMaxLength, $"{what}'s text");
+                Text(node.Dialogue, StructureLimits.ScriptFieldMaxLength, $"{what}'s dialogue");
+                Text(node.Caption, StructureLimits.ScriptFieldMaxLength, $"{what}'s caption");
+                Text(node.Sfx, StructureLimits.ScriptFieldMaxLength, $"{what}'s sound effects");
+                Text(node.Notes, StructureLimits.ScriptFieldMaxLength, $"{what}'s notes");
+
+                if (node.Level != "panel" && (node.Dialogue ?? node.Caption ?? node.Sfx ?? node.Notes) is not null)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} holds script text, which only a panel holds.");
+                }
+
+                if (node.Image is { } image)
+                {
+                    if (!StructureLimits.ArtLevels.Contains(node.Level) || image.FieldDefinitionId != node.Id)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} holds a picture, which only a page or a panel holds.");
+                    }
+                    else
+                    {
+                        CheckStoredPicture(image, BackupArchive.NodeImageMediaPathFor(node.Id, image.ContentType), ImageFrame.FieldFree, what);
+                    }
+                }
             }
 
             foreach (var node in byId.Values)
@@ -2063,47 +2088,60 @@ internal static partial class BackupValidation
                     continue;
                 }
 
-                if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"{what} has a field picture of a kind LorEvolve does not store.");
-                    continue;
-                }
+                CheckStoredPicture(
+                    image,
+                    BackupArchive.FieldImageMediaPathFor(entityId, image.FieldDefinitionId, image.ContentType),
+                    EntityFieldImageEndpoints.FrameFor(shape),
+                    what);
+            }
+        }
 
-                var expected = BackupArchive.FieldImageMediaPathFor(entityId, image.FieldDefinitionId, image.ContentType);
-                if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"{what} names a field picture at a place LorEvolve would not have put it.");
-                    continue;
-                }
+        /// <summary>
+        /// One stored picture of the field image shape (an image field's, Issue #238, or a comic node's, #295): a kind LorEvolve
+        /// stores, at <paramref name="expected"/>, in the archive at the size the backup says, with sane dimensions and a frame
+        /// that fits <paramref name="frame"/>.
+        /// </summary>
+        private void CheckStoredPicture(BackupFieldImage image, string expected, ImageFrame frame, string what)
+        {
+            if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{what} has a field picture of a kind LorEvolve does not store.");
+                return;
+            }
 
-                _referencedMedia.Add(expected);
+            if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{what} names a field picture at a place LorEvolve would not have put it.");
+                return;
+            }
 
-                if (opened.MediaLength(expected) is not { } length)
-                {
-                    Add(BackupIssueCodes.MissingMedia, $"A field picture of {what} is missing from the archive.");
-                    continue;
-                }
+            _referencedMedia.Add(expected);
 
-                if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} is not the size the backup says it is.");
-                }
+            if (opened.MediaLength(expected) is not { } length)
+            {
+                Add(BackupIssueCodes.MissingMedia, $"A field picture of {what} is missing from the archive.");
+                return;
+            }
 
-                if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} has dimensions LorEvolve does not accept.");
-                }
+            if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} is not the size the backup says it is.");
+            }
 
-                Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of a field picture of {what}");
+            if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} has dimensions LorEvolve does not accept.");
+            }
 
-                if (image.Crop is not { } crop)
-                {
-                    Missing($"the crop of a field picture of {what}");
-                }
-                else if (ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height), EntityFieldImageEndpoints.FrameFor(shape)) is { } badCrop)
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"The crop of a field picture of {what} cannot be used: {badCrop}");
-                }
+            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of a field picture of {what}");
+
+            if (image.Crop is not { } crop)
+            {
+                Missing($"the crop of a field picture of {what}");
+            }
+            else if (ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height), frame) is { } badCrop)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"The crop of a field picture of {what} cannot be used: {badCrop}");
             }
         }
 

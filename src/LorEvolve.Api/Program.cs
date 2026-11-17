@@ -191,6 +191,7 @@ app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
 app.MapComicEndpoints();
 app.MapStructureEndpoints();
+app.MapNodeImageEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();

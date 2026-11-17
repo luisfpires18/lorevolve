@@ -6408,6 +6408,40 @@ html:has(.viewer[open]) {
   color: var(--muted);
 }
 
+/* A comic page's or panel's missing artwork (#295): the blank square with its words under the icon. */
+.comicart__placeholder {
+  gap: var(--space-1);
+  padding: var(--space-2);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+/* A page's panels, each a bordered block with its own Save (#295). */
+.comicpage {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.comicpage__panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+}
+
+.comicpage__title {
+  margin: 0;
+}
+
+.comicpage__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .imagefield__row {
   display: flex;
   flex-wrap: wrap;

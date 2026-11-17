@@ -3,11 +3,13 @@ import { ActionMenu } from './ActionMenu'
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
 import { Field } from './Field'
+import { ComicArt, ComicPageEditor, ScriptField } from './ComicPageEditor'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import { listSeasons } from '../projectEntities/seasons'
 import {
   addableLevels,
+  ART_LEVELS,
   childrenOf,
   createNode,
   deleteNode,
@@ -17,7 +19,10 @@ import {
   moveNode,
   moveTargets,
   NODE_CHANGED,
+  PANEL_SCRIPT,
   saveNode,
+  scriptOf,
+  type PanelScript,
   type ProjectNodeDetail,
   type ProjectNodeSummary,
   type ProjectStructureTree,
@@ -293,6 +298,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
           key={editing}
           projectId={projectId}
           nodeId={editing}
+          panels={childrenOf(tree, editing).filter((child) => child.level === 'panel')}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null)
@@ -316,15 +322,20 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   )
 }
 
-/** One node's title, summary and text, saved over the version it was opened at (ADR 0043). */
+/**
+ * One node's title, summary and text, saved over the version it was opened at (ADR 0043). A panel adds its script, a
+ * page or panel its artwork, and a page lists its panels to edit in place (#295).
+ */
 function NodeEditor({
   projectId,
   nodeId,
+  panels,
   onClose,
   onSaved,
 }: {
   projectId: string
   nodeId: string
+  panels: ProjectNodeSummary[]
   onClose: () => void
   onSaved: () => void
 }) {
@@ -332,6 +343,12 @@ function NodeEditor({
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [body, setBody] = useState('')
+  const [script, setScript] = useState<PanelScript>({
+    dialogue: '',
+    caption: '',
+    sfx: '',
+    notes: '',
+  })
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
 
@@ -343,6 +360,7 @@ function NodeEditor({
         setTitle(read.title ?? '')
         setSummary(read.summary ?? '')
         setBody(read.body ?? '')
+        setScript(scriptOf(read))
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
@@ -353,7 +371,10 @@ function NodeEditor({
 
   const isDirty =
     node !== null &&
-    (title !== (node.title ?? '') || summary !== (node.summary ?? '') || body !== (node.body ?? ''))
+    (title !== (node.title ?? '') ||
+      summary !== (node.summary ?? '') ||
+      body !== (node.body ?? '') ||
+      PANEL_SCRIPT.some((part) => script[part] !== (node[part] ?? '')))
 
   function save() {
     if (!node || saving) return
@@ -363,6 +384,10 @@ function NodeEditor({
       summary: summary || null,
       body: body || null,
       expectedVersion: node.version,
+      dialogue: script.dialogue || null,
+      caption: script.caption || null,
+      sfx: script.sfx || null,
+      notes: script.notes || null,
     })
       .then(onSaved)
       .catch((error: unknown) => {
@@ -437,7 +462,13 @@ function NodeEditor({
               />
             )}
           </Field>
-          <Field label={t('projects.structure.bodyLabel')}>
+          <Field
+            label={
+              node.level === 'panel'
+                ? t('projects.structure.panel.visualDescription')
+                : t('projects.structure.bodyLabel')
+            }
+          >
             {(control) => (
               <textarea
                 {...control}
@@ -450,6 +481,31 @@ function NodeEditor({
               />
             )}
           </Field>
+          {node.level === 'panel'
+            ? PANEL_SCRIPT.map((part) => (
+                <ScriptField
+                  key={part}
+                  part={part}
+                  value={script[part]}
+                  onChange={(value) => setScript({ ...script, [part]: value })}
+                  testId={`project-node-${part}`}
+                />
+              ))
+            : null}
+          {ART_LEVELS.includes(node.level) ? (
+            <ComicArt
+              projectId={projectId}
+              nodeId={node.id}
+              label={
+                node.level === 'page'
+                  ? t('projects.structure.art.pageArt')
+                  : t('projects.structure.art.panelArt')
+              }
+              image={node.image}
+              onChanged={(image) => setNode({ ...node, image })}
+            />
+          ) : null}
+          {node.level === 'page' ? <ComicPageEditor projectId={projectId} panels={panels} /> : null}
         </>
       ) : null}
     </Drawer>

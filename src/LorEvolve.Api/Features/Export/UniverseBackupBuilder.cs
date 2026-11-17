@@ -68,6 +68,10 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .Where(image => image.Entity!.UniverseId == universeId)
                 .ToListAsync(cancellationToken))
             .ToLookup(image => image.EntityId);
+        // Every comic page's and panel's picture (#295), originals only.
+        var nodeImages = await db.ProjectNodeImages.AsNoTracking()
+            .Where(image => image.Node!.Project!.UniverseId == universeId)
+            .ToDictionaryAsync(image => image.NodeId, cancellationToken);
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
 
@@ -139,7 +143,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await SystemRulesAsync(universeId, cancellationToken),
             await DismissedFindingsAsync(universeId, cancellationToken),
             await TypeTemplatesAsync(universeId, cancellationToken),
-            await ProjectNodesAsync(universeId, cancellationToken));
+            await ProjectNodesAsync(universeId, nodeImages, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -161,6 +165,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                     .Concat(fieldImages.SelectMany(held => held).Select(image => new BackupMediaObject(
                         image.EntityId,
                         BackupArchive.FieldImageMediaPathFor(image.EntityId, image.FieldDefinitionId, image.ContentType),
+                        image.OriginalKey,
+                        image.ContentType)))
+                    .Concat(nodeImages.Values.Select(image => new BackupMediaObject(
+                        null,
+                        BackupArchive.NodeImageMediaPathFor(image.NodeId, image.ContentType),
                         image.OriginalKey,
                         image.ContentType)))
                     .Concat(artwork is null
@@ -1353,8 +1362,9 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// <summary>Every structure node of every project of this universe, flat (version 51, #290).</summary>
     private async Task<IReadOnlyList<BackupProjectNode>> ProjectNodesAsync(
         Guid universeId,
+        Dictionary<Guid, ProjectEntities.ProjectNodeImage> nodeImages,
         CancellationToken cancellationToken) =>
-        await db.ProjectNodes.AsNoTracking()
+        [.. (await db.ProjectNodes.AsNoTracking()
             .Where(node => node.Project!.UniverseId == universeId)
             .OrderBy(node => node.ProjectId)
             .ThenBy(node => node.ParentId)
@@ -1369,8 +1379,27 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 node.Body,
                 node.SortOrder,
                 node.CreatedAt,
-                node.UpdatedAt))
-            .ToListAsync(cancellationToken);
+                node.UpdatedAt,
+                node.Dialogue,
+                node.Caption,
+                node.Sfx,
+                node.Notes,
+                null))
+            .ToListAsync(cancellationToken))
+            .Select(node => nodeImages.TryGetValue(node.Id, out var image)
+                ? node with
+                {
+                    Image = new BackupFieldImage(
+                        node.Id,
+                        image.FileName,
+                        image.ContentType,
+                        image.Width,
+                        image.Height,
+                        image.ByteSize,
+                        BackupArchive.NodeImageMediaPathFor(node.Id, image.ContentType),
+                        new BackupImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight)),
+                }
+                : node)];
 
     /// <summary>
     /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
