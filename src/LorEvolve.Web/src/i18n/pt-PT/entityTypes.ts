@@ -363,7 +363,10 @@ const entityTypes: Dictionary['entityTypes'] = {
         'Como as entradas se ligam: as duas leituras de cada tipo, as suas restrições de Cânone e o seu significado familiar.',
       events:
         'Os tipos e métodos de acontecimento que um acontecimento e a verificação de uma regra do mundo podem indicar.',
+      gaming: 'Tipos de {game}. Pertencem só a este jogo.',
     },
+    context: { label: 'Tipos de', lore: 'Lore', gaming: 'Jogos' },
+    game: { label: 'Jogo', loading: 'A carregar jogos…' },
     loadFailed: 'Não foi possível carregar os tipos.',
     movedToPlace: 'Tipo “{name}” movido para o lugar {place} de {total}.',
     moveFailed: 'Não foi possível mover esse tipo.',
