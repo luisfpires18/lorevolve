@@ -357,8 +357,12 @@ public sealed record UniverseBackup(
     /// 51 - A project with a rule-backed format holds a structure of nodes (#290): acts, sequences, scenes, beats.
     /// <see cref="UniverseBackupPayload.ProjectNodes"/> carries them flat, each naming its parent. Not ignorable: a
     /// version 50 reader would restore a feature film with no acts or scenes. A file at version 50 or earlier has none.
+    ///
+    /// 52 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
+    /// phases and the projects each phase holds, in order. Not ignorable: a version 51 reader would restore the universe
+    /// with no sagas. A file at version 51 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 51;
+    public const int CurrentVersion = 52;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -431,7 +435,30 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
     IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
-    IReadOnlyList<BackupProjectNode>? ProjectNodes = null);
+    IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
+    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
+
+/// <summary>
+/// One Cinema saga of this universe with its phases in order (since version 52, #289). A phase lists the projects it
+/// holds by this file's project ids, in release order: membership only, so the projects themselves travel as projects.
+/// </summary>
+public sealed record BackupCinemaSaga(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupCinemaPhase> Phases);
+
+public sealed record BackupCinemaPhase(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> ProjectIds);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its

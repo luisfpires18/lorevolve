@@ -111,6 +111,8 @@ public sealed class TrailerStructureTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal(["scene"], ProjectStructures.For("short-film")!.Roots);
         Assert.Equal(["scene"], ProjectStructures.For("special")!.Roots);
         Assert.Equal(["issue"], ProjectStructures.For("western-comic")!.Roots);
+        Assert.Equal(["season"], ProjectStructures.For("tv-show")!.Roots);
+        Assert.Equal(["episode"], ProjectStructures.For("limited-series")!.Roots);
         Assert.Equal(["segment"], ProjectStructures.For("trailer")!.Roots);
         Assert.Null(ProjectStructures.For("unknown-format"));
         Assert.Null(ProjectStructures.For(null));
