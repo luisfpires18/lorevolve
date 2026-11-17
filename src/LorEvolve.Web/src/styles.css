@@ -18484,6 +18484,90 @@ details.reviewsection > .reviewsection__list {
   color: var(--danger);
 }
 
+/* A System's machine (#358) draws on the board's canvas: states are .boardcard, transitions .boardline. These three
+   are its own: the handle a transition is drawn from, the label that opens one, and the arrowhead. */
+.machinecanvas__handle {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+  color: var(--accent);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.machinecanvas__handle svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.machinecanvas__handle:hover,
+.machinecanvas__handle[data-connecting-from] {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.machinecanvas__handle:focus-visible,
+.machinecanvas__label:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.machinecanvas__label {
+  position: absolute;
+  max-width: 10rem;
+  padding: 0.125rem var(--space-2);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.machinecanvas__label[data-empty] {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.machinecanvas__label[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.machinecanvas__head {
+  fill: var(--rule-strong);
+}
+
+.machinecanvas__head[data-selected] {
+  fill: var(--accent);
+}
+
+/* One group of rows under the machine's canvas: its heading, the rows and the button that adds one. */
+.machinepanel__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+}
+
+.machinepanel__group > .sectionrule,
+.machinepanel__group > .rulelist {
+  margin: 0;
+}
+
 .boardlist__cards {
   display: flex;
   flex-direction: column;

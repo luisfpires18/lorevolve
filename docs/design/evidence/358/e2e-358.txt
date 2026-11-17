@@ -1,0 +1,13 @@
+Issue #358, focused E2E, run in tests/LorEvolve.E2E on 2026-11-17.
+Ports 5173 and 5180 were held by another checkout's stack, so this run used its own API on 5280 and vite on 5273:
+LOREVOLVE_WEB_URL=http://localhost:5273 LOREVOLVE_API_URL=http://localhost:5280 LOREVOLVE_E2E_DB=App_Data/lorevolve.e2e.db npx playwright test specs/system-machine.spec.ts --retries=0 --workers=2   (exit 0)
+
+Running 7 tests using 2 workers
+  ok 2 [chromium] › specs\system-machine.spec.ts:220:3 › System machine › transitions are drawn from a handle, relabelled, re-guarded and deleted, and a reload keeps them (9.0s)
+  ok 1 [chromium] › specs\system-machine.spec.ts:164:3 › System machine › states are created, moved, renamed and deleted on the canvas, and a reload keeps them (9.2s)
+  ok 4 [chromium] › specs\system-machine.spec.ts:395:3 › System machine › at 375px the machine is edited from the rows with no sideways page scroll (3.8s)
+  ok 3 [chromium] › specs\system-machine.spec.ts:299:3 › System machine › everything the canvas does is done from the rows by keyboard alone (4.2s)
+  ok 6 [chromium] › specs\system-machine.spec.ts:475:3 › System machine › a refused save marks the row and the field it names (4.7s)
+  ok 5 [chromium] › specs\system-machine.spec.ts:437:3 › System machine › a save over a System changed elsewhere is refused and the drawing is kept (4.9s)
+  ok 7 [chromium] › specs\system-machine.spec.ts:506:3 › System machine › a name save after a machine save is not refused (4.5s)
+  7 passed (24.0s)

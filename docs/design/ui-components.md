@@ -36,6 +36,8 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | Sticky status and actions for a document or drawer | `.actionbar` 2568 |
 | A section heading with its rule | `.sectionrule` 1524 |
 | A loading placeholder | `.skeleton` 2585 |
+| A pan and zoom canvas of cards and lines | `usePanZoom` and `fitView` in `lib/usePanZoom.ts`, with `.boardcanvas*` 18314, `.boardline*` 18361 and `.boardcard*` 18390. Used by `IdeaBoardCanvas` and `SystemMachineCanvas` |
+| A state machine's handle, transition label and arrowhead | `.machinecanvas__handle` 18489, `.machinecanvas__label` 18522, `.machinecanvas__head` 18550, drawn by `SystemMachineCanvas`; a group of its rows under the canvas is `.machinepanel__group` 18559 |
 
 Form and button rules start with their own comments: forms at `styles.css:410`, buttons at `styles.css:508`.
 The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2511.
