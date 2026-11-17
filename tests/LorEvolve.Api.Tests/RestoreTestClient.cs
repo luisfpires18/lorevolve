@@ -474,6 +474,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 49)
+        {
+            // A project's format came in version 49 (#288).
+            foreach (var project in payload["creativeProjects"]?.AsArray() ?? [])
+            {
+                Drop(project, "format");
+            }
+        }
+
         if (version < 48)
         {
             // Image fields came in version 48 (Issue #238): a field's crop shape and an entry's field pictures.

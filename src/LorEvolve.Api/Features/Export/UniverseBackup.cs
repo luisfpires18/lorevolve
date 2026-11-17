@@ -344,8 +344,12 @@ public sealed record UniverseBackup(
     /// and <see cref="BackupEntity.FieldImages"/> and <see cref="BackupProjectEntity.FieldImages"/> each entry's pictures in
     /// those fields, each original in the archive with the crop the author chose. Not ignorable: a version 47 reader would
     /// restore an image field with no shape and its entries with no pictures. A file at version 47 or earlier has none.
+    ///
+    /// 49 - A project may have a production format (#288). <see cref="BackupCreativeProject.Format"/> carries its identifier.
+    /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
+    /// none, and every restored project has none.
     /// </summary>
-    public const int CurrentVersion = 48;
+    public const int CurrentVersion = 49;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -624,7 +628,8 @@ public sealed record BackupCreativeProject(
     string? Subtype,
     string Summary,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? Format = null);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
