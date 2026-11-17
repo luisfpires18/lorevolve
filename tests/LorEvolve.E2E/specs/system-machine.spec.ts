@@ -1146,3 +1146,315 @@ test.describe('Guard builder', () => {
     expect(await overflow()).toBeLessThanOrEqual(1)
   })
 })
+
+/**
+ * Machine findings and "Try an entry" (#360): the sweep reports an entry in an illegal state as an ordinary finding,
+ * the canvas counts a state's open ones, Integrity lists and decides them, and trying one entry marks every
+ * transition. Each test builds a Mood machine over Character, whose guards read a second text field, Rage.
+ */
+const selfIs = (attribute: string, value: string) => ({
+  kind: 'compare',
+  left: { attribute, of: SELF },
+  op: 'eq',
+  right: { literal: value, type: 'text' },
+})
+
+interface MoodWorld {
+  universeId: string
+  systemUrl: string
+  address: string
+  name: string
+  character: string
+  mood: string
+  rage: string
+  version: number
+}
+
+/**
+ * Calm (initial), Angry, Sad and Lost. Flare (Calm to Angry) holds when Rage is high, sink (Angry to Sad) when Rage
+ * is spent, drift (Sad to Lost) reads an attribute no entry has, and settle (Lost to Calm) compares text with a number.
+ */
+async function seedMoodMachine(page: Page): Promise<MoodWorld> {
+  await signUp(page)
+  const system = await seedSystem(page)
+  const types = await api<{ id: string; name: string }[]>(
+    page,
+    'GET',
+    `/api/universes/${system.universeId}/entity-types`,
+  )
+  const character = types.find((type) => type.name === 'Character')!.id
+  const field = async (name: string) =>
+    (
+      await api<{ fields: { id: string; name: string }[] }>(
+        page,
+        'POST',
+        `/api/universes/${system.universeId}/entity-types/${character}/fields`,
+        { name, kind: 0, isRequired: false },
+      )
+    ).fields.find((each) => each.name === name)!.id
+  const mood = await field('Mood')
+  const rage = await field('Rage')
+
+  const rule = async (title: string, condition: unknown) =>
+    (await seedConditionRule(page, system.universeId, title, condition)).id
+  const machine = await seedMachine(
+    page,
+    system.systemUrl,
+    [
+      { name: 'Calm', value: 'calm', initial: true, x: 0, y: 0 },
+      { name: 'Angry', value: 'angry', initial: false, x: 320, y: 0 },
+      { name: 'Sad', value: 'sad', initial: false, x: 640, y: 0 },
+      { name: 'Lost', value: 'lost', initial: false, x: 320, y: 220 },
+    ],
+    [
+      {
+        from: 0,
+        to: 1,
+        label: 'flare',
+        guard: await rule('Rage runs high', selfIs('Rage', 'high')),
+      },
+      {
+        from: 1,
+        to: 2,
+        label: 'sink',
+        guard: await rule('Rage is spent', selfIs('Rage', 'spent')),
+      },
+      {
+        from: 2,
+        to: 3,
+        label: 'drift',
+        guard: await rule('Purity floor', {
+          kind: 'compare',
+          left: { attribute: 'Purity', of: SELF },
+          op: 'gte',
+          right: { literal: 2, type: 'number' },
+        }),
+      },
+      {
+        from: 3,
+        to: 0,
+        label: 'settle',
+        guard: await rule('Mismatched', {
+          kind: 'compare',
+          left: { literal: 'two', type: 'text' },
+          op: 'gte',
+          right: { literal: 2, type: 'number' },
+        }),
+      },
+    ],
+  )
+  return { ...system, character, mood, rage, version: machine.version }
+}
+
+function entryBody(world: MoodWorld, name: string, mood: string | null, rage: string | null) {
+  const text = (fieldDefinitionId: string, value: string) => ({
+    fieldDefinitionId,
+    text: value,
+    number: null,
+    boolean: null,
+    date: null,
+    optionIds: null,
+    referencedEntityId: null,
+  })
+  return {
+    entityTypeId: world.character,
+    name,
+    summary: null,
+    canonStatus: 2,
+    aliases: [],
+    tags: [],
+    fields: [
+      ...(mood === null ? [] : [text(world.mood, mood)]),
+      ...(rage === null ? [] : [text(world.rage, rage)]),
+    ],
+  }
+}
+
+async function seedEntry(
+  page: Page,
+  world: MoodWorld,
+  name: string,
+  mood: string | null,
+  rage: string | null,
+) {
+  return (
+    await api<{ id: string }>(
+      page,
+      'POST',
+      `/api/universes/${world.universeId}/entities`,
+      entryBody(world, name, mood, rage),
+    )
+  ).id
+}
+
+function sweep(page: Page, world: MoodWorld) {
+  return api(page, 'POST', `/api/universes/${world.universeId}/world-logic/findings/evaluate`)
+}
+
+function label(page: Page, text: string) {
+  return page.getByTestId('machine-label').filter({ hasText: text })
+}
+
+function transitionRow(page: Page, text: string) {
+  return page.getByTestId('machine-transition-row').filter({ hasText: text })
+}
+
+async function tryEntry(page: Page, name: string) {
+  const group = page.getByTestId('machine-try')
+  await group.getByTestId('picker-input').fill(name)
+  await group.getByTestId(`picker-option-${name}`).click()
+}
+
+test.describe('Machine findings', () => {
+  test('a state shows its open finding count and loses it once the entry is fixed', async ({
+    page,
+  }) => {
+    const world = await seedMoodMachine(page)
+    // Angry, but Rage is low, so flare, the one way into Angry, does not hold for it.
+    const brannoc = await seedEntry(page, world, 'Brannoc', 'angry', 'low')
+    await sweep(page, world)
+
+    await page.goto(world.address)
+    await expect(card(page, 'Angry')).toHaveAccessibleName(
+      'State Angry, value angry, 1 open finding',
+    )
+    await expect(page.getByTestId('machine-state-findings')).toHaveCount(1)
+    await expect(page.getByTestId('machine-state-findings')).toHaveText('1 open finding')
+    const angryRow = page.getByTestId('machine-state-row').filter({ hasText: 'Angry' })
+    await expect(angryRow.getByTestId('machine-state-row-findings')).toHaveText('1 open finding')
+    await expect(card(page, 'Calm')).toHaveAccessibleName('Initial state Calm, value calm')
+
+    // A save answers the counts again, so a renamed state keeps its own.
+    await angryRow.getByTestId('machine-state-open').click()
+    await page.getByTestId('machine-state-name').fill('Furious')
+    await page.getByTestId('machine-state-apply').click()
+    expect((await saveMachine(page)).ok()).toBe(true)
+    await expect(card(page, 'Furious')).toHaveAccessibleName(
+      'State Furious, value angry, 1 open finding',
+    )
+
+    // Fixed in the lore and checked again, the finding closes and the count goes.
+    const entryUrl = `/api/universes/${world.universeId}/entities/${brannoc}`
+    const { version } = await api<{ version: number }>(page, 'GET', entryUrl)
+    await api(page, 'PUT', entryUrl, {
+      ...entryBody(world, 'Brannoc', 'angry', 'high'),
+      expectedVersion: version,
+    })
+    await sweep(page, world)
+    await page.reload()
+    await expect(card(page, 'Furious')).toHaveAccessibleName('State Furious, value angry')
+    await expect(page.getByTestId('machine-state-findings')).toHaveCount(0)
+    await expect(page.getByTestId('machine-state-row-findings')).toHaveCount(0)
+  })
+
+  test('a machine finding in Integrity is dismissed, taken up again and resolved', async ({
+    page,
+  }) => {
+    const world = await seedMoodMachine(page)
+    await seedEntry(page, world, 'Brannoc', 'angry', 'low')
+    await seedEntry(page, world, 'Odile', 'furious', 'low')
+    await sweep(page, world)
+
+    const address = `/app/universes/${world.universeId}/world-logic?tab=integrity`
+    await page.goto(address)
+    const rows = page.getByTestId('world-logic-finding-row')
+
+    // Titled by the System and its state, or as a value with no state; never by an empty rule.
+    const stuck = rows.filter({ hasText: `${world.name}, Angry` })
+    await expect(stuck).toHaveAttribute('data-check', 'no_transition_holds')
+    await expect(stuck.getByTestId('world-logic-finding-entry')).toHaveText('Entry Brannoc')
+    await expect(stuck).toContainText('No transition into this state holds for this entry.')
+    await expect(stuck.getByRole('link')).toHaveCount(0)
+
+    const undeclared = rows.filter({ hasText: `${world.name}, a value with no state` })
+    await expect(undeclared).toHaveAttribute('data-check', 'undeclared_state')
+    await expect(undeclared.getByTestId('world-logic-finding-entry')).toHaveText('Entry Odile')
+
+    await stuck.getByTestId('world-logic-finding-toggle').click()
+    await expect(stuck.getByTestId('world-logic-finding-version')).toHaveText(
+      `System version ${world.version}`,
+    )
+    await stuck.getByTestId('world-logic-finding-dismiss').click()
+    await expect(stuck.getByTestId('world-logic-finding-status')).toHaveText('Dismissed')
+    await expect(stuck.getByTestId('world-logic-finding-resolve')).toHaveCount(0)
+
+    await stuck.getByTestId('world-logic-finding-undismiss').click()
+    await expect(stuck.getByTestId('world-logic-finding-status')).toHaveText('Reviewing')
+
+    await stuck.getByTestId('world-logic-finding-resolve').click()
+    await expect(stuck.getByTestId('world-logic-finding-status')).toHaveText('Resolved')
+    await expect(stuck.getByTestId('world-logic-finding-history')).toContainText('Marked fixed')
+    await expect(stuck.getByTestId('world-logic-finding-dismiss')).toHaveCount(0)
+
+    await page.goto(address)
+    await expect(rows.filter({ hasText: `${world.name}, Angry` })).toHaveAttribute(
+      'data-status',
+      'resolved',
+    )
+
+    // A rule finding is offered the same Resolve.
+    const broken = rows.filter({ hasText: 'Mismatched' })
+    await broken.getByTestId('world-logic-finding-toggle').click()
+    await expect(broken.getByTestId('world-logic-finding-resolve')).toHaveText('Mark fixed')
+  })
+
+  test('trying an entry marks each transition holds, fails or unknown', async ({ page }) => {
+    const world = await seedMoodMachine(page)
+    await seedEntry(page, world, 'Brannoc', 'angry', 'high')
+    await seedEntry(page, world, 'Nameless', null, null)
+
+    await page.goto(world.address)
+    await expect(page.getByTestId('machine-mark')).toHaveCount(0)
+    await tryEntry(page, 'Brannoc')
+    await expect(page.getByTestId('machine-try-result')).toHaveText('Value found: angry')
+
+    await expect(label(page, 'flare')).toHaveAttribute('data-mark', 'holds')
+    await expect(label(page, 'flare')).toHaveAccessibleName(
+      'Transition flare, Calm to Angry, Holds',
+    )
+    await expect(label(page, 'sink')).toHaveAttribute('data-mark', 'fails')
+    await expect(label(page, 'sink').getByTestId('machine-mark')).toHaveText('Fails')
+    await expect(label(page, 'drift')).toHaveAttribute('data-mark', 'unknown')
+    await expect(label(page, 'drift').getByTestId('machine-mark')).toHaveText('Unknown')
+    // A broken guard proves nothing either way: unknown, with its code.
+    await expect(label(page, 'settle')).toHaveAttribute('data-mark', 'unknown')
+    await expect(label(page, 'settle').getByTestId('machine-mark')).toHaveText(
+      /^Unknown · Code \S+$/,
+    )
+
+    await expect(transitionRow(page, 'flare').getByTestId('machine-mark')).toHaveText('Holds')
+    await expect(transitionRow(page, 'sink').getByTestId('machine-mark')).toHaveText('Fails')
+    await expect(transitionRow(page, 'drift').getByTestId('machine-mark')).toHaveText('Unknown')
+
+    // An entry without the attribute is outside the machine, and the page says so.
+    await page.getByTestId('machine-try').getByTestId('picker-clear').click()
+    await tryEntry(page, 'Nameless')
+    await expect(page.getByTestId('machine-try-result')).toHaveText(
+      'This entry is outside the machine: it is of another type, or has no text value for the attribute.',
+    )
+  })
+
+  test('at 375px counts and marks read from the rows with no sideways page scroll', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    const world = await seedMoodMachine(page)
+    await seedEntry(page, world, 'Brannoc', 'angry', 'low')
+    await sweep(page, world)
+
+    await page.goto(world.address)
+    const overflow = () =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+    const angryRow = page.getByTestId('machine-state-row').filter({ hasText: 'Angry' })
+    await expect(angryRow.getByTestId('machine-state-row-findings')).toHaveText('1 open finding')
+    expect(await overflow()).toBeLessThanOrEqual(1)
+
+    await tryEntry(page, 'Brannoc')
+    await expect(transitionRow(page, 'flare').getByTestId('machine-mark')).toHaveText('Fails')
+    await expect(transitionRow(page, 'sink').getByTestId('machine-mark')).toHaveText('Fails')
+    await expect(transitionRow(page, 'settle').getByTestId('machine-mark')).toContainText('Unknown')
+    expect(await overflow()).toBeLessThanOrEqual(1)
+  })
+})

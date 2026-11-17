@@ -180,6 +180,20 @@ const canon: Dictionary['canon'] = {
         bindingUnset: 'Por definir',
         newState: 'Novo estado',
         newTransition: 'Nova transição',
+        openFindings: { one: '{count} resultado aberto', other: '{count} resultados abertos' },
+        try: {
+          title: 'Experimentar uma entrada',
+          entry: 'Entrada',
+          outside:
+            'Esta entrada está fora da máquina: é de outro tipo, ou não tem um valor de texto no atributo.',
+          value: 'Valor encontrado: {value}',
+          failed: 'Não foi possível experimentar a entrada. Tente outra vez.',
+          marks: {
+            holds: 'Cumpre',
+            fails: 'Falha',
+            unknown: 'Desconhecido',
+          },
+        },
         fields: {
           name: 'Nome',
           value: 'Valor',
@@ -411,6 +425,17 @@ const canon: Dictionary['canon'] = {
       },
       dismiss: 'Descartar',
       undismiss: 'Voltar a analisar',
+      resolve: 'Marcar como corrigido',
+      machine: {
+        title: '{system}, {state}',
+        undeclaredTitle: '{system}, um valor sem estado',
+        hints: {
+          undeclaredState: 'Esta entrada guarda um valor que nenhum estado da máquina declara.',
+          noTransitionHolds: 'Nenhuma transição para este estado se cumpre para esta entrada.',
+        },
+        entry: 'Entrada {name}',
+        systemVersion: 'Versão {version} do Sistema',
+      },
       deciding: 'A guardar…',
       decideFailed: 'Não foi possível guardar. Tente outra vez.',
       empty: {

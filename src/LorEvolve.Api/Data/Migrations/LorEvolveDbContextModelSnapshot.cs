@@ -4336,7 +4336,7 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("RuleId")
+                    b.Property<Guid?>("RuleId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("RuleVersion")
@@ -4427,6 +4427,34 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasKey("FindingId", "SortOrder");
 
                     b.ToTable("WorldLogicFindingEvidence", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingMachine", b =>
+                {
+                    b.Property<Guid>("FindingId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Check")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("StateId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SystemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FindingId");
+
+                    b.HasIndex("SystemId");
+
+                    b.ToTable("WorldLogicFindingMachines", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
@@ -6951,8 +6979,7 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "Rule")
                         .WithMany()
                         .HasForeignKey("RuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Project");
 
@@ -6979,6 +7006,25 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Finding");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFindingMachine", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.WorldLogicFinding", "Finding")
+                        .WithOne("Machine")
+                        .HasForeignKey("LorEvolve.Api.Features.Systems.WorldLogicFindingMachine", "FindingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.LoreSystem", "LoreSystem")
+                        .WithMany()
+                        .HasForeignKey("SystemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Finding");
+
+                    b.Navigation("LoreSystem");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>
@@ -7438,6 +7484,8 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Events");
 
                     b.Navigation("Evidence");
+
+                    b.Navigation("Machine");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Timeline.TimelineEntry", b =>

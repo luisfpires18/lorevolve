@@ -178,7 +178,7 @@ public sealed class CoverTests(LorEvolveApiFactory factory) : IClassFixture<LorE
 
         var archive = await PlotTestClient.RawArchive(owner, u);
         var backup = RestoreTestClient.BackupOf(archive);
-        Assert.Equal(58, backup.FormatVersion);
+        Assert.Equal(59, backup.FormatVersion);
         Assert.Equal(storyPng, RestoreTestClient.Entries(archive)[backup.Payload.Stories!.Single().Cover!.MediaPath]);
         Assert.Equal(projectPng, RestoreTestClient.Entries(archive)[backup.Payload.CreativeProjects!.Single(project => project.Id == second).Cover!.MediaPath]);
 

@@ -386,8 +386,15 @@ public sealed record UniverseBackup(
     /// project's own), its original in the archive; <see cref="BackupCreativeProject.SortOrder"/> is the project's place
     /// among the universe's projects. Not ignorable: a version 57 reader would restore no cover and lose the order. A file
     /// at version 57 or earlier has no cover, and its projects take the order they were listed in then, newest first.
+    ///
+    /// 59 - A universe carries the machine findings its author chose to live with (#360, ADR 0073).
+    /// <see cref="UniverseBackupPayload.DismissedMachineFindings"/> holds one record per dismissed machine finding: the
+    /// System, the scope, the check, the state, the subject and the value its fingerprint was taken over, with the
+    /// outcome, the versions, the trace and the evidence, ids translated on restore. Not ignorable, for the reason
+    /// version 46 is not: a version 58 reader would restore the universe and report each one again. A file at version
+    /// 58 or earlier has none, and restores with none.
     /// </summary>
-    public const int CurrentVersion = 58;
+    public const int CurrentVersion = 59;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -429,6 +436,9 @@ public sealed record UniverseBackup(
 /// <paramref name="DismissedFindings"/> is every World Logic finding the author dismissed (since version 46). Empty
 /// means none; absent means the same thing.
 ///
+/// <paramref name="DismissedMachineFindings"/> is every machine finding the author dismissed (since version 59). Empty
+/// means none; absent means the same thing.
+///
 /// <paramref name="CreativeProjects"/> is every project of the universe (since version 39). A universe owns its
 /// projects and deletes them with it (#171), so a backup that left them out would lose them, and the project-scoped
 /// entry types that name them could not come back in their own scope.
@@ -462,7 +472,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
     IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
     IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null,
-    IReadOnlyList<BackupComicCollection>? ComicCollections = null);
+    IReadOnlyList<BackupComicCollection>? ComicCollections = null,
+    IReadOnlyList<BackupDismissedMachineFinding>? DismissedMachineFindings = null);
 
 /// <summary>
 /// One Comic Story Arc, Event or Volume of this universe (since version 53, #296; volumes since 55, #297). It lists the nodes it references by this
@@ -1653,6 +1664,29 @@ public sealed record BackupDismissedFinding(
 /// else is carried through as it was.
 /// </summary>
 public sealed record BackupFindingEvidence(string Source, string Id, string Role);
+
+/// <summary>
+/// One machine finding the author chose to live with (since version 59, #360, ADR 0073). Carried as
+/// <see cref="BackupDismissedFinding"/> is, for the same reason: what its fingerprint was taken over, so the restore
+/// takes it again from the restored ids. <paramref name="StateId"/> keeps its id, as a machine's states do;
+/// <paramref name="SystemId"/> and <paramref name="SubjectId"/> are translated. <paramref name="SystemVersion"/> is
+/// the System's version when it was found.
+/// </summary>
+public sealed record BackupDismissedMachineFinding(
+    Guid SystemId,
+    Guid? ProjectId,
+    MachineCheck Check,
+    Guid? StateId,
+    Guid SubjectId,
+    string? Value,
+    WorldLogicFindingOutcome Outcome,
+    string? ErrorCode,
+    int SystemVersion,
+    int SchemaVersion,
+    string Rationale,
+    IReadOnlyList<BackupFindingEvidence> Evidence,
+    DateTime DetectedAt,
+    DateTime DismissedAt);
 
 public sealed record BackupDismissedConflict(
     string RuleCode,

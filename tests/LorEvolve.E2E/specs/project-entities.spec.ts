@@ -234,7 +234,7 @@ test.describe('Project entities', () => {
     const project = await game(page, world.id)
     const entities = `/app/universes/${world.id}/projects/${project.id}/entities`
 
-    // The bare address and /overview both land on the first view, Entities. A game has no overview of its own.
+    // The bare address and the retired /overview both land on the first view, Entities (#377).
     for (const address of [`/app/projects/${project.id}`, `/app/projects/${project.id}/overview`]) {
       await page.goto(address)
       await expect(page).toHaveURL(entities)
@@ -297,7 +297,7 @@ test.describe('Project entities', () => {
     await signUp(page)
     const world = await universe(page)
 
-    // 1 is Game, 2 Series, 3 Film and 4 Comic (#278 checks the shared overview on each). Series and Film have five views, whose tab bar used to widen a phone's page.
+    // 1 is Game, 2 Series, 3 Film and 4 Comic. Series and Film have five views, whose tab bar used to widen a phone's page.
     for (const kind of [1, 2, 3, 4]) {
       const project = await api<{ id: string }>(page, 'POST', '/api/projects', {
         name: unique('Low Tide '),
@@ -320,9 +320,8 @@ test.describe('Project entities', () => {
         summary: 'Comes back to the harbour.',
       })
       const base = `/app/universes/${world.id}/projects/${project.id}`
-      // A game has no overview: its other view beside Entities is Types (owner, 2026-11-17).
-      const isGame = kind === 1
-      const other = isGame ? 'types' : 'overview'
+      // No kind has an overview (#377): the other view beside Entities is Types on every kind.
+      const other = 'types'
 
       await page.setViewportSize({ width: 1280, height: 800 })
       await page.goto(`${base}/entities?type=${first.id}`)
@@ -342,30 +341,17 @@ test.describe('Project entities', () => {
       await expect(page.getByTestId('project-tabs')).toBeVisible()
       await page.getByTestId(`projecttab-${other}`).click()
       await expect(page).toHaveURL(new RegExp(`${base}/${other}$`))
-      if (!isGame) {
-        // The other kinds share the one overview: counts only, no recent list and no ways-out section (#278).
-        await expect(page.getByTestId('project-overview-recent')).toHaveCount(0)
-        await expect(page.getByTestId('project-overview-links')).toHaveCount(0)
-      }
       await page.getByTestId('projecttab-entities').click()
       await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
 
       // A type of the project's own, made in the Types screen's drawer, is on the cards when the crumb leads back.
-      // A game opens it from its Types tab, the other kinds from Manage types inside Entities.
-      if (isGame) {
-        await page.getByTestId('projecttab-types').click()
-      } else {
-        await page.getByTestId('project-types-manage').click()
-      }
+      // Every kind opens it from its Types tab.
+      await page.getByTestId('projecttab-types').click()
       await page.getByTestId('project-type-add').click()
       await page.getByTestId('type-name').fill('Rehearsal')
       await page.getByTestId('save-type').click()
       await expect(page.getByTestId('project-types')).toContainText('Rehearsal')
-      if (isGame) {
-        await page.getByTestId('projecttab-entities').click()
-      } else {
-        await page.getByTestId('project-entities-back').click()
-      }
+      await page.getByTestId('projecttab-entities').click()
       await expect(page.getByTestId('project-entity-type-cards')).toContainText('Rehearsal')
 
       // On a phone the tabs are the way between the views, scroll inside their own bar, and the page stays the

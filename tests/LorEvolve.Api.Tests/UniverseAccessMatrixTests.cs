@@ -212,6 +212,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("unlink system rule", Delete, $"{u}/systems/{any}/rules/{any}", May.Edit),
             new("system machine", Get, $"{u}/systems/{w.LoreSystem}/machine", May.Read),
             new("save system machine", Put, $"{u}/systems/{any}/machine", May.Edit, Json(new SystemMachineRequest(1, null, [], [], 1))),
+            new("try an entry on a system machine", Post, $"{u}/systems/{w.LoreSystem}/machine/evaluate/{w.Entry}", May.Read),
             new("rule definitions", Get, $"{u}/system-rules", May.Read),
             new("rule definition", Get, $"{u}/system-rules/{w.RuleDefinition}", May.Read),
             new("create rule definition", Post, $"{u}/system-rules", May.Edit, Json(new SystemRuleRequest("Age of majority", "Sixteen."))),

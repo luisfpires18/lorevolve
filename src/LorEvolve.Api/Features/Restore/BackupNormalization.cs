@@ -180,6 +180,9 @@ internal static class BackupNormalization
                 ? [.. payload.LoreSystems.Select(system => system is null ? null! : system with { Machine = null })]
                 : null,
 
+        // Dismissed machine findings arrived at version 59 (#360): an older file has none, even when it carries some.
+        DismissedMachineFindings = version >= 59 ? payload.DismissedMachineFindings : null,
+
         // Exceptions arrived at version 45. An older file carries a rule without them, and none is invented: a
         // restored rule simply excuses nothing, which is what the file says.
         SystemRules = version >= 45 || payload.SystemRules is null
@@ -313,6 +316,14 @@ internal static class BackupNormalization
             .. (payload.DismissedFindings ?? []).DistinctBy(
                 finding => (finding.RuleId, finding.ProjectId, finding.Outcome, finding.ErrorCode,
                     string.Join('', finding.Evidence.Select(item => $"{item.Source}:{item.Id}:{item.Role}")))),
+        ],
+
+        // The same for a machine dismissal (version 59): one per finding, by what its fingerprint is taken over.
+        DismissedMachineFindings =
+        [
+            .. (payload.DismissedMachineFindings ?? []).DistinctBy(
+                finding => (finding.SystemId, finding.ProjectId, finding.Check, finding.StateId, finding.Outcome,
+                    finding.ErrorCode, finding.SubjectId, finding.Value)),
         ],
         TimelineEntries =
         [

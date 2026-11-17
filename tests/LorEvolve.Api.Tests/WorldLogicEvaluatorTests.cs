@@ -531,7 +531,7 @@ public sealed class WorldLogicEvaluatorTests
     /// states one, so the edge-case document can hold a rule written against a version this build does not
     /// implement.
     /// </summary>
-    private static List<EvaluatedRule> Rules(JsonElement root)
+    internal static List<EvaluatedRule> Rules(JsonElement root)
     {
         var documentVersion = root.GetProperty("schemaVersion").GetInt32();
         var rules = new List<EvaluatedRule>();

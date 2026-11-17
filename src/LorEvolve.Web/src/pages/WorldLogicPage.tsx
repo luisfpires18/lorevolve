@@ -705,6 +705,18 @@ function outcomeLabel(outcome: WorldLogicFindingOutcome) {
   return t('canon.worldLogic.integrity.outcomes.unknown')
 }
 
+/** A rule finding is titled by its rule; a machine finding by its System and state, or as a value with no state. */
+function findingTitle(finding: WorldLogicFindingRow) {
+  const { machine } = finding
+  if (!machine) return finding.ruleTitle
+  return machine.stateName === null
+    ? t('canon.worldLogic.integrity.machine.undeclaredTitle', { system: machine.systemName })
+    : t('canon.worldLogic.integrity.machine.title', {
+        system: machine.systemName,
+        state: machine.stateName,
+      })
+}
+
 function outcomeHint(outcome: WorldLogicFindingOutcome) {
   if (outcome === 'violation') return t('canon.worldLogic.integrity.outcomeHints.violation')
   if (outcome === 'error') return t('canon.worldLogic.integrity.outcomeHints.error')
@@ -752,6 +764,9 @@ function historyLabel(action: string) {
  * <b>Dismissing and taking it up again.</b> Dismissal suppresses a problem that is still there. The way back is
  * `review`, which is the only transition out of a dismissal and says the author is looking at it again. A resolved
  * finding is settled and the API refuses both, so neither verb is offered for one.
+ *
+ * <b>Resolving.</b> An open or reviewing finding, of a rule or a machine, can be marked fixed (#360). A machine
+ * finding names its System, state and entry instead of a rule, and has no rule to link to.
  */
 function FindingRow({
   universeId,
@@ -771,6 +786,7 @@ function FindingRow({
   const [deciding, setDeciding] = useState(false)
   const [decideFailed, setDecideFailed] = useState(false)
   const panelId = useId()
+  const { machine } = finding
 
   useEffect(() => {
     if (!open || detail) return
@@ -788,7 +804,7 @@ function FindingRow({
     }
   }, [open, detail, universeId, finding.id])
 
-  async function decide(decision: 'review' | 'dismiss') {
+  async function decide(decision: 'review' | 'dismiss' | 'resolve') {
     setDeciding(true)
     setDecideFailed(false)
 
@@ -808,7 +824,8 @@ function FindingRow({
       data-testid="world-logic-finding-row"
       data-outcome={finding.outcome}
       data-status={finding.status}
-      data-rule={finding.ruleTitle}
+      data-rule={finding.ruleTitle ?? undefined}
+      data-check={machine?.check}
     >
       <button
         className="rulerow__title rulerow__toggle"
@@ -819,10 +836,18 @@ function FindingRow({
         data-testid="world-logic-finding-toggle"
       >
         <ActionIcon icon={open ? ChevronDown : ChevronRight} />
-        <bdi>{finding.ruleTitle}</bdi>
+        <bdi>{findingTitle(finding)}</bdi>
       </button>
 
-      <p className="rulerow__excerpt">{outcomeHint(finding.outcome)}</p>
+      <p className="rulerow__excerpt">
+        {machine
+          ? t(
+              machine.check === 'undeclared_state'
+                ? 'canon.worldLogic.integrity.machine.hints.undeclaredState'
+                : 'canon.worldLogic.integrity.machine.hints.noTransitionHolds',
+            )
+          : outcomeHint(finding.outcome)}
+      </p>
 
       <p className="rulerow__meta">
         <span className="rulerow__check" data-testid="world-logic-finding-outcome">
@@ -833,6 +858,14 @@ function FindingRow({
           {statusLabel(finding.status)}
         </span>
         {' · '}
+        {machine?.subjectName ? (
+          <>
+            <bdi data-testid="world-logic-finding-entry">
+              {t('canon.worldLogic.integrity.machine.entry', { name: machine.subjectName })}
+            </bdi>
+            {' · '}
+          </>
+        ) : null}
         {finding.errorCode ? (
           <>
             <span data-testid="world-logic-finding-code">
@@ -867,8 +900,15 @@ function FindingRow({
 
         {detail ? (
           <>
-            <p className="rulerow__meta">
-              {t('canon.worldLogic.integrity.ruleVersion', { version: detail.finding.ruleVersion })}
+            <p className="rulerow__meta" data-testid="world-logic-finding-version">
+              {/* A machine finding's version is its System's. */}
+              {machine
+                ? t('canon.worldLogic.integrity.machine.systemVersion', {
+                    version: detail.finding.ruleVersion,
+                  })
+                : t('canon.worldLogic.integrity.ruleVersion', {
+                    version: detail.finding.ruleVersion,
+                  })}
             </p>
 
             <h3 className="rulerow__meta">{t('canon.worldLogic.integrity.evidence')}</h3>
@@ -934,18 +974,32 @@ function FindingRow({
                       : t('canon.worldLogic.integrity.undismiss')}
                   </button>
                 ) : (
-                  <button
-                    className="button button--secondary"
-                    type="button"
-                    disabled={deciding}
-                    aria-busy={deciding}
-                    onClick={() => void decide('dismiss')}
-                    data-testid="world-logic-finding-dismiss"
-                  >
-                    {deciding
-                      ? t('canon.worldLogic.integrity.deciding')
-                      : t('canon.worldLogic.integrity.dismiss')}
-                  </button>
+                  <div className="form__actions">
+                    <button
+                      className="button button--secondary"
+                      type="button"
+                      disabled={deciding}
+                      aria-busy={deciding}
+                      onClick={() => void decide('resolve')}
+                      data-testid="world-logic-finding-resolve"
+                    >
+                      {deciding
+                        ? t('canon.worldLogic.integrity.deciding')
+                        : t('canon.worldLogic.integrity.resolve')}
+                    </button>
+                    <button
+                      className="button button--secondary"
+                      type="button"
+                      disabled={deciding}
+                      aria-busy={deciding}
+                      onClick={() => void decide('dismiss')}
+                      data-testid="world-logic-finding-dismiss"
+                    >
+                      {deciding
+                        ? t('canon.worldLogic.integrity.deciding')
+                        : t('canon.worldLogic.integrity.dismiss')}
+                    </button>
+                  </div>
                 )}
               </div>
             ) : null}

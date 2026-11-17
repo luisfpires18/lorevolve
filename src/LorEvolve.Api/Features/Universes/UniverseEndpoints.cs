@@ -370,6 +370,12 @@ public static partial class UniverseEndpoints
             .Where(board => board.UniverseId == universe.Id)
             .ExecuteDeleteAsync(cancellationToken);
 
+        // Machine findings (#360) reach the universe through no foreign key, unlike rule findings, so they go here,
+        // with their evidence, history and link (cascade), before the Systems they name.
+        await db.WorldLogicFindings
+            .Where(finding => finding.UniverseId == universe.Id && finding.RuleId == null)
+            .ExecuteDeleteAsync(cancellationToken);
+
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
         var pictureKeys = (await db.EntityImages.IgnoreQueryFilters()
                 .Where(image => image.Entity!.UniverseId == universe.Id)

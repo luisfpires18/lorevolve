@@ -133,7 +133,7 @@ test.describe('Projects navigation', () => {
       .getByRole('link')
       .click()
     await expect(page).toHaveURL(
-      new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/overview$`),
+      new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/structure$`),
     )
     await expect(page.getByTestId('project-name')).toContainText(inWorld.name)
 
@@ -206,7 +206,8 @@ test.describe('Projects navigation', () => {
     await page.goto('/app/projects')
     await page.getByTestId(`projects-row-${there.id}`).click()
     await expect(page.getByTestId('project-name')).toContainText(there.name)
-    await expect(page.getByTestId('project-breadcrumb-universe')).toContainText(second.name)
+    // No breadcrumb (#377): the workspace names the universe the project opened in.
+    await expect(page.getByTestId('workspace-name')).toContainText(second.name)
   })
 
   test('a project is made from the Projects page, and the list works at phone width', async ({
@@ -272,6 +273,9 @@ test.describe('Projects navigation', () => {
       'Structure',
       'Manuscript',
     ])
+    // The same chips every project's views are (#377).
+    await expect(page.getByTestId('story-view-scenes')).toHaveClass(/lorecatalog__group/)
+    await expect(page.getByTestId('story-view-manuscript')).toHaveClass(/lorecatalog__group/)
     await expect(page.locator('[data-testid^="project-link-"]')).toHaveCount(0)
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${existing.id}/structure`),

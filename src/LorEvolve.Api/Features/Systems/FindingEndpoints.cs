@@ -268,8 +268,10 @@ public static class FindingEndpoints
             .Select(Projection())
             .ToListAsync(cancellationToken);
 
+        var machines = await MachinesAsync(db, [.. rows.Where(row => row.RuleId is null).Select(row => row.Id)], cancellationToken);
+
         return Results.Ok(new WorldLogicPage<WorldLogicFindingRow>(
-            [.. rows.Select(Mapped)],
+            [.. rows.Select(row => Mapped(row, machines))],
             wantedPage,
             wantedSize,
             totalCount,
@@ -358,8 +360,10 @@ public static class FindingEndpoints
             .Select(entry => new { entry.Action, entry.ActorId, entry.Note, entry.At })
             .ToListAsync(cancellationToken);
 
+        var machines = await MachinesAsync(db, row.RuleId is null ? [row.Id] : [], cancellationToken);
+
         return new WorldLogicFindingDetail(
-            Mapped(row),
+            Mapped(row, machines),
             evidence,
             WorldLogicRationale.Read(row.Rationale),
             [
@@ -373,8 +377,8 @@ public static class FindingEndpoints
 
     private sealed record Row(
         Guid Id,
-        Guid RuleId,
-        string RuleTitle,
+        Guid? RuleId,
+        string? RuleTitle,
         Guid? ProjectId,
         WorldLogicFindingOutcome Outcome,
         WorldLogicFindingStatus Status,
@@ -391,7 +395,7 @@ public static class FindingEndpoints
     /// <summary>
     /// The rule's title comes through the navigation rather than from a second query: the finding's foreign key is
     /// required, so the rule is always there, and the global query filters on it follow the same universe the
-    /// finding was already restricted to.
+    /// finding was already restricted to. A machine finding has no rule, so its title reads null (#360).
     /// </summary>
     private static System.Linq.Expressions.Expression<Func<WorldLogicFinding, Row>> Projection() =>
         finding => new Row(
@@ -411,7 +415,54 @@ public static class FindingEndpoints
             finding.UpdatedAt,
             finding.ResolvedAt);
 
-    private static WorldLogicFindingRow Mapped(Row row) =>
+    /// <summary>
+    /// What each machine finding of a page is about, in one query: the System's name, the state's and the entry's
+    /// (#360). Keyed by finding id; a rule finding is never in it.
+    /// </summary>
+    private static async Task<Dictionary<Guid, WorldLogicFindingMachineRow>> MachinesAsync(
+        LorEvolveDbContext db,
+        List<Guid> findingIds,
+        CancellationToken cancellationToken)
+    {
+        if (findingIds.Count == 0)
+        {
+            return [];
+        }
+
+        var links = await db.WorldLogicFindingMachines.AsNoTracking()
+            .Where(link => findingIds.Contains(link.FindingId))
+            .Select(link => new
+            {
+                link.FindingId,
+                link.SystemId,
+                SystemName = link.LoreSystem!.Name,
+                link.Check,
+                link.StateId,
+                StateName = db.SystemStates
+                    .Where(state => state.SystemId == link.SystemId && state.Id == link.StateId)
+                    .Select(state => state.Name)
+                    .FirstOrDefault(),
+                link.SubjectId,
+                SubjectName = db.Entities
+                    .Where(entity => entity.Id == link.SubjectId)
+                    .Select(entity => entity.Name)
+                    .FirstOrDefault(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return links.ToDictionary(
+            link => link.FindingId,
+            link => new WorldLogicFindingMachineRow(
+                link.SystemId,
+                link.SystemName,
+                WorldLogicMachineCheck.Name(link.Check),
+                link.StateId,
+                link.StateName,
+                link.SubjectId,
+                link.SubjectName));
+    }
+
+    private static WorldLogicFindingRow Mapped(Row row, Dictionary<Guid, WorldLogicFindingMachineRow> machines) =>
         new(row.Id,
             row.RuleId,
             row.RuleTitle,
@@ -426,14 +477,15 @@ public static class FindingEndpoints
             row.EvidenceCount,
             Utc(row.CreatedAt),
             Utc(row.UpdatedAt),
-            row.ResolvedAt is { } resolved ? Utc(resolved) : null);
+            row.ResolvedAt is { } resolved ? Utc(resolved) : null,
+            machines.GetValueOrDefault(row.Id));
 
     /// <summary>
     /// Each enum as text, so adding a value never shifts an existing one's meaning on the wire. A violation is the
     /// specification's <c>false</c>, named here for what a finding asserts rather than for the logic that produced
     /// it, because a reader of a findings list is not reading a truth table.
     /// </summary>
-    private static string Outcome(WorldLogicFindingOutcome outcome) => outcome switch
+    internal static string Outcome(WorldLogicFindingOutcome outcome) => outcome switch
     {
         WorldLogicFindingOutcome.Violation => "violation",
         WorldLogicFindingOutcome.Unknown => "unknown",

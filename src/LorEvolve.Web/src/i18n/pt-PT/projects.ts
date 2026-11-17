@@ -123,7 +123,6 @@ const projects = {
     new: 'Novo projeto',
   },
   sections: {
-    overview: 'Resumo',
     structure: 'Estrutura',
     manuscript: 'Manuscrito',
     entities: 'Entidades',
@@ -131,24 +130,12 @@ const projects = {
     systems: 'Sistemas',
     ideas: 'Ideias',
   },
-  shell: {
-    breadcrumb: 'Caminho',
-  },
   tabs: {
     label: 'Vistas do projeto',
   },
   view: {
     empty: 'Ainda não há nada nesta vista.',
     emptyHint: 'Esta vista vai encher-se à medida que o projeto ganhar o que pertence aqui.',
-  },
-  overview: {
-    types: 'O que há neste projeto',
-    noTypes: 'Ainda não há tipos, por isso não se conta nada aqui.',
-    failed: 'Parte deste projeto não pôde ser lida.',
-    empty: 'Este projeto ainda não tem nada.',
-    emptyHint:
-      'Comece por lhe dar os tipos de coisa de que é feito, e depois acrescente entradas desses tipos.',
-    start: 'Definir os seus tipos',
   },
   ideas: {
     ownerOnly: 'As ideias aqui são do dono do universo.',
@@ -230,7 +217,6 @@ const projects = {
     failed: 'Não foi possível ler este projeto.',
     missing: 'Este projeto não está aqui.',
     missingHint: 'Pode ter sido removido, ou pertence a outra conta.',
-    noSummary: 'Ainda não há descrição.',
   },
   schema: {
     title: 'Tipos',
@@ -335,6 +321,31 @@ const projects = {
     addEpisode: 'Adicionar cena',
     deleteEpisode: 'Eliminar cena',
     moveToSeason: 'Mover para',
+  },
+  script: {
+    heading: 'Guião',
+    outline: 'Partes deste projeto',
+    parts: 'Partes',
+    closeParts: 'Fechar partes',
+    choose: 'Escolha uma parte',
+    position: '{level} {number} de {total}',
+    empty: 'Ainda não há onde escrever.',
+    emptyHint: 'Acrescente primeiro partes em {link} e depois escreva cada uma aqui.',
+    structureLink: 'Estrutura',
+    noFormat: 'Este projeto ainda não tem formato.',
+    noFormatHint: 'Escolha um formato e depois construa as suas partes em {link}.',
+    writeLabel: 'Texto de {name}',
+    readLabel: 'Texto de {name}',
+    placeholder: 'Escreva esta parte. Escreva @ para mencionar Lore.',
+    nothingYet: 'Ainda não há nada escrito aqui.',
+    hasText: 'Tem texto',
+    save: 'Guardar alterações',
+    saved: 'Guardado',
+    nothingSaved: 'Ainda não foi guardado',
+    unsaved: '{name} tem alterações por guardar.',
+    reload: 'Recarregar',
+    retry: 'Tentar de novo',
+    tooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
   },
   structure: {
     title: 'Estrutura',

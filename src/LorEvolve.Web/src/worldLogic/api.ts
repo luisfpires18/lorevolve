@@ -5,6 +5,7 @@ import type {
   SystemInput,
   SystemMachineDetail,
   SystemMachineInput,
+  SystemMachineTryResult,
   SystemRuleDetail,
   SystemRuleInput,
   SystemRuleSummary,
@@ -92,6 +93,22 @@ export function saveSystemMachine(universeId: string, id: string, input: SystemM
     method: 'PUT',
     body: JSON.stringify(input),
   })
+}
+
+/**
+ * "Try an entry" (#360): both machine checks for one entry, over the saved machine. Nothing is written, and an entry
+ * or System outside the universe is 404.
+ */
+export function evaluateSystemMachine(
+  universeId: string,
+  id: string,
+  subjectId: string,
+  signal?: AbortSignal,
+) {
+  return apiFetch<SystemMachineTryResult>(
+    `${base(universeId)}/systems/${id}/machine/evaluate/${subjectId}`,
+    { method: 'POST', signal },
+  )
 }
 
 /** One page of the universe's rule definitions, the only rules a guard may name. The API allows up to 100. */

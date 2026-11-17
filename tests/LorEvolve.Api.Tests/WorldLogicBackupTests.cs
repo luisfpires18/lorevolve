@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using LorEvolve.Api.Features.Export;
+using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Systems;
@@ -29,7 +30,7 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
     [Fact]
     public async Task The_format_is_at_the_world_logic_version()
     {
-        Assert.Equal(58, UniverseBackup.CurrentVersion);
+        Assert.Equal(59, UniverseBackup.CurrentVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, LorEvolve.Api.Features.Restore.BackupFormatSupport.MaxVersion);
     }
 
@@ -64,7 +65,7 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         var backup = await Backup(client, universe.Id);
         var payload = backup.Payload;
 
-        Assert.Equal(58, backup.FormatVersion);
+        Assert.Equal(59, backup.FormatVersion);
 
         var carriedSystem = Assert.Single(payload.LoreSystems!);
         Assert.Equal("Runeforging", carriedSystem.Name);
@@ -290,6 +291,103 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         Assert.Empty(read.States);
         Assert.Empty(read.Transitions);
     }
+
+    /// <summary>
+    /// A dismissed machine finding is carried as what its fingerprint was taken over (#360), and the restore takes
+    /// the fingerprint again from the restored System and entry: the sweep then matches its own finding to the
+    /// dismissal rather than opening a second one beside it.
+    /// </summary>
+    [Fact]
+    public async Task A_dismissed_machine_finding_survives_backup_and_restore()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmfbackup");
+        var (system, entry) = await WithDismissedMachineFinding(client, universe.Id);
+
+        var carried = Assert.Single((await Backup(client, universe.Id)).Payload.DismissedMachineFindings!);
+        Assert.Equal(system, carried.SystemId);
+        Assert.Equal(MachineCheck.UndeclaredState, carried.Check);
+        Assert.Null(carried.StateId);
+        Assert.Equal(entry, carried.SubjectId);
+        Assert.Equal("grandmaster", carried.Value);
+        Assert.Equal(WorldLogicFindingOutcome.Violation, carried.Outcome);
+
+        var restored = await RestoreArchive(client, await RawArchive(client, universe.Id), "World wlmfbackup restored");
+        var restoredSystem = (await client.GetFromJsonAsync<WorldLogicPage<SystemSummary>>(Systems(restored.Id)))!.Items.Single();
+
+        var row = Assert.Single(await Findings(client, restored.Id));
+        Assert.Equal("dismissed", row.Status);
+        Assert.Null(row.RuleId);
+        Assert.Equal(restoredSystem.Id, row.Machine!.SystemId);
+        Assert.NotEqual(entry, row.Machine.SubjectId);
+        Assert.Equal("Ilsa", row.Machine.SubjectName);
+        await AssertInvariant(restored.Id);
+
+        var sweep = await Sweep(client, restored.Id);
+        Assert.Equal(0, sweep.Created);
+        Assert.Equal(1, sweep.Persisted);
+        Assert.Equal("dismissed", Assert.Single(await Findings(client, restored.Id)).Status);
+    }
+
+    /// <summary>A file written before machine dismissals existed restores with none, and the next sweep finds it open.</summary>
+    [Fact]
+    public async Task A_version_58_file_restores_with_no_machine_dismissals()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmfbackupold");
+        await WithDismissedMachineFinding(client, universe.Id);
+
+        var older = Downgrade(await RawArchive(client, universe.Id), 58);
+        var restored = await RestoreArchive(client, older, "World wlmfbackupold restored");
+
+        Assert.Empty(await Findings(client, restored.Id));
+        Assert.Equal(1, (await Sweep(client, restored.Id)).Created);
+        Assert.Equal("open", Assert.Single(await Findings(client, restored.Id)).Status);
+        await AssertInvariant(restored.Id);
+    }
+
+    /// <summary>
+    /// A System whose machine binds Character.rank with one initial state, an entry holding a value that is no state,
+    /// and the one finding that produces, dismissed.
+    /// </summary>
+    private static async Task<(Guid System, Guid Entry)> WithDismissedMachineFinding(HttpClient client, Guid universeId)
+    {
+        var types = (await client.GetFromJsonAsync<List<EntityTypeResponse>>($"/api/universes/{universeId}/entity-types"))!;
+        var type = types.First(candidate => candidate.Name == "Character").Id;
+        var rank = (await AiChangeTestClient.Field(client, universeId, type,
+            new FieldDefinitionRequest("rank", EntityFieldKind.ShortText, false, null, null, null))).Id;
+        var entry = await PostJson<EntityDetail>(client, $"/api/universes/{universeId}/entities", new EntityRequest(
+            type, "Ilsa", null, CanonStatus.Canon, null, null, [new FieldValueInput(rank, "grandmaster", null, null, null, null, null)]));
+
+        var system = await PostJson<SystemDetail>(client, Systems(universeId), new SystemRequest("Rank", null));
+        await PutJson<SystemMachineDetail>(client, $"{System(universeId, system.Id)}/machine", new SystemMachineRequest(
+            1, new SystemMachineBinding("Character", "rank"), [new(Guid.NewGuid(), "Novice", "novice", true, 0, 0)], [], system.Version));
+
+        Assert.Equal(1, (await Sweep(client, universeId)).Created);
+        var finding = Assert.Single(await Findings(client, universeId));
+        (await client.PostAsJsonAsync(
+            $"/api/universes/{universeId}/world-logic/findings/{finding.Id}/dismiss",
+            new WorldLogicFindingDecisionRequest("A title, not a rank.")))
+            .EnsureSuccessStatusCode();
+
+        return (system.Id, entry.Id);
+    }
+
+    private static async Task<WorldLogicSweepResponse> Sweep(HttpClient client, Guid universeId)
+    {
+        var response = await client.PostAsync($"/api/universes/{universeId}/world-logic/findings/evaluate", null);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<WorldLogicSweepResponse>())!;
+    }
+
+    private static async Task<IReadOnlyList<WorldLogicFindingRow>> Findings(HttpClient client, Guid universeId) =>
+        (await client.GetFromJsonAsync<WorldLogicPage<WorldLogicFindingRow>>(
+            $"/api/universes/{universeId}/world-logic/findings"))!.Items;
+
+    /// <summary>Every finding of the universe names a rule or a machine, never both and never neither.</summary>
+    private async Task AssertInvariant(Guid universeId) =>
+        await WithDb(_factory, async db =>
+            Assert.Equal(0, await db.WorldLogicFindings
+                .Where(finding => finding.UniverseId == universeId)
+                .CountAsync(finding => (finding.RuleId == null) == (finding.Machine == null))));
 
     /// <summary>
     /// A file is held to the scope rule a save is: a universe System's machine cannot be guarded by a project's rule,

@@ -4,8 +4,10 @@ import { EmptyState } from './EmptyState'
 import { Field } from './Field'
 import { GuardBuilder } from './GuardBuilder'
 import { SaveAction } from './SaveAction'
+import { StatusBadge } from './StatusBadge'
 import { SystemMachineCanvas, type MachineSelection } from './SystemMachineCanvas'
-import { t, useI18n } from '../i18n'
+import { GuardMark, SystemMachineTry } from './SystemMachineTry'
+import { t, tn, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { confirmAction, confirmDiscard } from '../lib/confirm'
 import { isChangedElsewhere } from '../lib/editConflict'
@@ -39,7 +41,9 @@ import {
   addTransition,
   docOf,
   EMPTY_MACHINE,
+  guardMark,
   moveState,
+  openCount,
   problemAt,
   removeState,
   removeTransition,
@@ -57,7 +61,9 @@ import {
   MACHINE_MAX_STATES,
   MACHINE_MAX_TRANSITIONS,
   MACHINE_TEXT_MAX_LENGTH,
+  type SystemMachineDetail,
   type SystemMachineState,
+  type SystemMachineTryResult,
   type SystemRuleDetail,
   type SystemRuleSummary,
 } from '../worldLogic/types'
@@ -115,6 +121,9 @@ export function SystemMachinePanel({
   const [reads, setReads] = useState(0)
   const [stored, setStored] = useState<MachineDoc>(EMPTY_MACHINE)
   const [draft, setDraft] = useState<MachineDoc>(EMPTY_MACHINE)
+  // The server's counts, read with the machine and again with each save: a draft edit does not move them.
+  const [openFindings, setOpenFindings] = useState<SystemMachineDetail['openFindings']>([])
+  const [tried, setTried] = useState<SystemMachineTryResult | null>(null)
   const [rules, setRules] = useState<Rules>(null)
   const [selected, setSelected] = useState<MachineSelection>(null)
   const [connecting, setConnecting] = useState<string | null>(null)
@@ -139,6 +148,7 @@ export function SystemMachinePanel({
         const doc = docOf(detail)
         setStored(doc)
         setDraft(doc)
+        setOpenFindings(detail.openFindings)
         setLoad('ready')
         latest.current.onLoaded(detail.version)
       })
@@ -201,6 +211,7 @@ export function SystemMachinePanel({
       const saved = await saveSystemMachine(universeId, systemId, toRequest(sent, expectedVersion))
       const next = docOf(saved)
       setStored(next)
+      setOpenFindings(saved.openFindings)
       // Anything changed while the save was in flight is still unsaved, and stays.
       setDraft((current) => (sameMachine(current, sent) ? next : current))
       setSaves((total) => total + 1)
@@ -320,6 +331,8 @@ export function SystemMachinePanel({
   const stateName = new Map(draft.states.map((state) => [state.id, state.name]))
   const ruleList = Array.isArray(rules) ? rules : []
   const ruleTitle = new Map(ruleList.map((rule) => [rule.id, rule.title]))
+  const counts = new Map(draft.states.map((state) => [state.id, openCount(openFindings, state.id)]))
+  const marks = new Map((tried?.transitions ?? []).map((row) => [row.transitionId, guardMark(row)]))
   const pairName = (transition: MachineTransition) =>
     t(`${m}.transitionName`, {
       from: stateName.get(transition.fromStateId) ?? '',
@@ -406,6 +419,8 @@ export function SystemMachinePanel({
           onConnect={connect}
           onMove={(id, x, y) => edit((doc) => moveState(doc, id, x, y), id)}
           centreRef={centreRef}
+          counts={counts}
+          marks={marks}
         />
       ) : (
         <EmptyState
@@ -419,29 +434,42 @@ export function SystemMachinePanel({
         <h2 className="sectionrule">{t(`${m}.states`)}</h2>
         {draft.states.length > 0 ? (
           <ul className="rulelist" data-testid="machine-state-rows">
-            {draft.states.map((state) => (
-              <li
-                className="rulerow"
-                key={state.id}
-                data-testid="machine-state-row"
-                data-state-id={state.id}
-              >
-                <button
-                  className="rulerow__title rulerow__toggle"
-                  type="button"
-                  aria-label={t(`${m}.editState`, { name: state.name })}
-                  onClick={() => openItem({ kind: 'state', id: state.id })}
-                  data-testid="machine-state-open"
+            {draft.states.map((state) => {
+              const count = counts.get(state.id) ?? 0
+              return (
+                <li
+                  className="rulerow"
+                  key={state.id}
+                  data-testid="machine-state-row"
+                  data-state-id={state.id}
                 >
-                  <bdi>{state.name}</bdi>
-                </button>
-                <p className="rulerow__meta">
-                  {t(`${m}.value`, { value: state.value })}
-                  {state.initial ? ` · ${t(`${m}.initial`)}` : null}
-                </p>
-                {rowError(state.id)}
-              </li>
-            ))}
+                  <button
+                    className="rulerow__title rulerow__toggle"
+                    type="button"
+                    aria-label={t(`${m}.editState`, { name: state.name })}
+                    onClick={() => openItem({ kind: 'state', id: state.id })}
+                    data-testid="machine-state-open"
+                  >
+                    <bdi>{state.name}</bdi>
+                  </button>
+                  <p className="rulerow__meta">
+                    {t(`${m}.value`, { value: state.value })}
+                    {state.initial ? ` · ${t(`${m}.initial`)}` : null}
+                    {count ? (
+                      <>
+                        {' · '}
+                        <StatusBadge
+                          step={1}
+                          label={tn(`${m}.openFindings`, count, { count })}
+                          testId="machine-state-row-findings"
+                        />
+                      </>
+                    ) : null}
+                  </p>
+                  {rowError(state.id)}
+                </li>
+              )
+            })}
           </ul>
         ) : null}
         <div className="form__actions">
@@ -486,6 +514,12 @@ export function SystemMachinePanel({
                           title: ruleTitle.get(transition.guardRuleId) ?? t(`${m}.unknownGuard`),
                         })
                       : t(`${m}.noGuard`)}
+                    {marks.has(transition.id) ? (
+                      <>
+                        {' · '}
+                        <GuardMark mark={marks.get(transition.id)!} />
+                      </>
+                    ) : null}
                   </p>
                   {rowError(transition.id)}
                 </li>
@@ -533,6 +567,17 @@ export function SystemMachinePanel({
           </li>
         </ul>
       </section>
+
+      {/* It tries the saved machine, so it waits until there is one. */}
+      {stored.states.length > 0 ? (
+        <SystemMachineTry
+          universeId={universeId}
+          systemId={systemId}
+          refresh={saves}
+          result={tried}
+          onResult={setTried}
+        />
+      ) : null}
 
       <div className="manuscript__bar idea__bar">
         <div className="idea__actions">
