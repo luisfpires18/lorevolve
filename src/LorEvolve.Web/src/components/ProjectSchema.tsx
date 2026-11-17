@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Field } from './Field'
-import { ListTree, Pencil, Plus } from 'lucide-react'
+import { ListTree, Pencil, Plus, Shapes } from 'lucide-react'
 import {
   addProjectField,
   applyProjectTemplate,
@@ -29,6 +29,9 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
+import { TypeFromTemplateDrawer } from './TypeFromTemplateDrawer'
+import { listTypeTemplates } from '../typeTemplates/api'
+import type { TypeTemplate } from '../typeTemplates/types'
 import { TypeIcon } from './TypeIcon'
 import { t, tn, useI18n } from '../i18n'
 
@@ -63,6 +66,7 @@ export function ProjectSchema({
   reloadKey,
   onChanged,
   crumb,
+  universeId,
 }: {
   projectId: string
   /**
@@ -75,6 +79,8 @@ export function ProjectSchema({
   onChanged?: () => void
   /** The way back to the type cards, above the panel's name, when the panel is a screen of its own. */
   crumb?: ReactNode
+  /** When given, the universe's type templates are offered as a second way to make a type (#283). */
+  universeId?: string
 }) {
   useI18n()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
@@ -84,6 +90,8 @@ export function ProjectSchema({
   // The drawer: a type being edited, or 'new' (from the head, or a row's Add child, which sets `childOf`).
   const [editing, setEditing] = useState<ProjectEntityType | 'new' | null>(null)
   const [childOf, setChildOf] = useState<ProjectEntityType | null>(null)
+  const [templates, setTemplates] = useState<TypeTemplate[]>([])
+  const [fromTemplate, setFromTemplate] = useState(false)
   const [openTypeId, setOpenTypeId] = useState<string | null>(null)
   const [addingFieldTo, setAddingFieldTo] = useState<string | null>(null)
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
@@ -105,6 +113,16 @@ export function ProjectSchema({
       })
     return () => controller.abort()
   }, [projectId, reloadKey])
+
+  useEffect(() => {
+    if (!universeId) return
+    const controller = new AbortController()
+    // A failed read only hides the option; making a type by hand still works.
+    listTypeTemplates(universeId, controller.signal)
+      .then(setTemplates)
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [universeId])
 
   function after(read: ProjectEntityType[]) {
     setTypes(read)
@@ -154,7 +172,30 @@ export function ProjectSchema({
           <ActionIcon icon={Plus} />
           {t('entityTypes.page.newType')}
         </button>
+        {templates.length > 0 ? (
+          <button
+            className="button button--secondary"
+            type="button"
+            data-testid="project-type-from-template"
+            onClick={() => setFromTemplate(true)}
+          >
+            <ActionIcon icon={Shapes} />
+            {t('projects.schema.fromTemplate.button')}
+          </button>
+        ) : null}
       </header>
+
+      {fromTemplate ? (
+        <TypeFromTemplateDrawer
+          projectId={projectId}
+          templates={templates}
+          onClose={() => setFromTemplate(false)}
+          onSaved={() => {
+            setFromTemplate(false)
+            refresh()
+          }}
+        />
+      ) : null}
 
       {editing ? (
         <TypeDialog

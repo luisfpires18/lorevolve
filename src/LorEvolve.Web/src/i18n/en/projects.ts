@@ -111,6 +111,17 @@ const projects = {
     starterHint: 'A starting point. Rename them, delete them, or make your own.',
     starterApply: 'Add these types',
     starterApplying: 'Adding…',
+    fromTemplate: {
+      button: 'From a template',
+      title: 'New type from a template',
+      source: 'Template',
+      template: 'Template',
+      option: '{name} ({count} fields)',
+      copyHint: 'The game gets its own copy. Later changes to the template do not change it.',
+      nameHint: 'Leave empty to use the template name.',
+      detailsCreate: 'Check the highlighted field.',
+      failed: 'The type could not be created.',
+    },
     iconHint:
       'Optional, and only a picture: it marks the type on its card. Nothing is chosen for you from the name.',
     parentHint:

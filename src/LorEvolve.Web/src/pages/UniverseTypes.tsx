@@ -521,7 +521,9 @@ export default function UniverseTypes() {
           {t('entityTypes.page.game.loading')}
         </p>
       ) : null}
-      {gaming ? <ProjectSchema key={game.id} projectId={game.id} reloadKey={0} /> : null}
+      {gaming ? (
+        <ProjectSchema key={game.id} projectId={game.id} reloadKey={0} universeId={universe.id} />
+      ) : null}
       {templates ? <TypeTemplates universeId={universe.id} canEdit={access.editContent} /> : null}
 
       {editing ? (
