@@ -88,11 +88,8 @@ export function ProjectEntityDetailView({
   }
 
   const { entity } = read
-  // The first picture in the type's own field order, so which one leads never depends on upload order.
-  const image =
-    entity.fields
-      .map((field) => entity.fieldImages.find((one) => one.fieldId === field.fieldDefinitionId))
-      .find((one) => one !== undefined) ?? null
+  // The server returns fieldImages in the type's field order, archived fields left out, so the first leads.
+  const image = entity.fieldImages[0] ?? null
 
   return (
     <article className="projects" data-testid="game-entity-page">
