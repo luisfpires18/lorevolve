@@ -55,7 +55,7 @@ function Production({
 }
 
 /** Move up / Move down items for a row of an ordered list, as the seasons list has them. */
-function MoveItems({
+export function MoveItems({
   index,
   count,
   busy,

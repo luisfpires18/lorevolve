@@ -144,7 +144,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await DismissedFindingsAsync(universeId, cancellationToken),
             await TypeTemplatesAsync(universeId, cancellationToken),
             await ProjectNodesAsync(universeId, nodeImages, cancellationToken),
-            await CinemaSagasAsync(universeId, cancellationToken));
+            await CinemaSagasAsync(universeId, cancellationToken),
+            await ComicCollectionsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1353,6 +1354,25 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     }
 
     // ---------- Idea boards ----------
+
+    /// <summary>Comic story arcs and events (version 53, #296): see <see cref="BackupComicCollection"/>.</summary>
+    private async Task<IReadOnlyList<BackupComicCollection>> ComicCollectionsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ComicCollections.AsNoTracking()
+            .Where(collection => collection.UniverseId == universeId)
+            .OrderBy(collection => collection.Kind)
+            .ThenBy(collection => collection.SortOrder)
+            .Select(collection => new BackupComicCollection(
+                collection.Id,
+                collection.Kind,
+                collection.Name,
+                collection.Summary,
+                collection.SortOrder,
+                collection.CreatedAt,
+                collection.UpdatedAt,
+                collection.Entries.OrderBy(entry => entry.SortOrder).Select(entry => entry.NodeId).ToList()))
+            .ToListAsync(cancellationToken);
 
     /// <summary>Cinema sagas (version 52, #289): see <see cref="BackupCinemaSaga"/>.</summary>
     private async Task<IReadOnlyList<BackupCinemaSaga>> CinemaSagasAsync(

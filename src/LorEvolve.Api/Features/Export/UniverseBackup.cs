@@ -362,12 +362,15 @@ public sealed record UniverseBackup(
     /// phases and the projects each phase holds, in order. Not ignorable: a version 51 reader would restore the universe
     /// with no sagas. A file at version 51 or earlier has none.
     ///
-    /// 53 - A comic panel carries its script and a page or panel its artwork (#295). <see cref="BackupProjectNode.Dialogue"/>,
+    /// 53 - Comic Story Arcs and Events (#296). <see cref="UniverseBackupPayload.ComicCollections"/> carries each
+    /// collection with the nodes it references, in reading order. Not ignorable: a version 52 reader would restore the
+    /// universe with no arcs or events. A file at version 52 or earlier has none.
+    /// 54 - A comic panel carries its script and a page or panel its artwork (#295). <see cref="BackupProjectNode.Dialogue"/>,
     /// <c>Caption</c>, <c>Sfx</c> and <c>Notes</c> hold the panel's text, and <see cref="BackupProjectNode.Image"/> the picture,
-    /// its original in the archive. Not ignorable: a version 52 reader would restore panels without their script or art. A
-    /// file at version 52 or earlier has none.
+    /// its original in the archive. Not ignorable: a version 53 reader would restore panels without their script or art. A
+    /// file at version 53 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 53;
+    public const int CurrentVersion = 54;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -441,7 +444,22 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
     IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
     IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
-    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
+    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null,
+    IReadOnlyList<BackupComicCollection>? ComicCollections = null);
+
+/// <summary>
+/// One Comic Story Arc or Event of this universe (since version 53, #296). It lists the nodes it references by this
+/// file's node ids, in reading order: references only, so the nodes themselves travel as project nodes.
+/// </summary>
+public sealed record BackupComicCollection(
+    Guid Id,
+    string Kind,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> NodeIds);
 
 /// <summary>
 /// One Cinema saga of this universe with its phases in order (since version 52, #289). A phase lists the projects it
@@ -1063,7 +1081,7 @@ public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int Di
 /// <summary>
 /// One node of a project's structure (since version 51, #290), flat, naming its parent node (null for a root) by this
 /// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
-/// Since version 53 (#295) a panel's script and a page's or panel's picture; the picture's
+/// Since version 54 (#295) a panel's script and a page's or panel's picture; the picture's
 /// <see cref="BackupFieldImage.FieldDefinitionId"/> is the node's own id.
 /// </summary>
 public sealed record BackupProjectNode(

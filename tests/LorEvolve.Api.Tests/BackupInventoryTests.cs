@@ -119,6 +119,9 @@ public sealed class BackupInventoryTests
         "CinemaSagas",
         "CinemaPhases",
         "CinemaPhaseMemberships",
+        // A universe's Comic story arcs and events and the nodes each references (#296).
+        "ComicCollections",
+        "ComicCollectionEntries",
 
         // A comic chapter's pages and the panels on them (#147).
         "ProjectPages",

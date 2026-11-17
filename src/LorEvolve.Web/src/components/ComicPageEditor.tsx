@@ -17,6 +17,7 @@ import {
   type ProjectNodeSummary,
 } from '../projectEntities/structure'
 import { t } from '../i18n'
+import { useUniverseAccess } from '../universes/access'
 
 const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
   dialogue: 4,
@@ -31,11 +32,13 @@ export function ScriptField({
   value,
   onChange,
   testId,
+  readOnly = false,
 }: {
   part: (typeof PANEL_SCRIPT)[number]
   value: string
   onChange: (value: string) => void
   testId: string
+  readOnly?: boolean
 }) {
   return (
     <Field label={t(`projects.structure.panel.${part}`)}>
@@ -45,6 +48,7 @@ export function ScriptField({
           className="field__input"
           rows={SCRIPT_ROWS[part]}
           maxLength={4000}
+          readOnly={readOnly}
           value={value}
           placeholder={t(`projects.structure.panel.${part}Placeholder`)}
           onChange={(event) => onChange(event.target.value)}
@@ -72,6 +76,35 @@ export function ComicArt({
   image: FieldImageRef | null
   onChanged: (image: FieldImageRef | null) => void
 }) {
+  const canEdit = useUniverseAccess().editContent
+  const [broken, setBroken] = useState(false)
+  const placeholder = (
+    <span
+      className="imagefield__preview imagefield__preview--blank comicart__placeholder"
+      data-testid={`comic-art-placeholder-${nodeId}`}
+    >
+      <ActionIcon icon={ImageOff} />
+      {t('projects.structure.art.missing')}
+    </span>
+  )
+  // A reader who cannot edit sees the picture alone: upload, recrop and remove would only answer 403.
+  if (!canEdit)
+    return (
+      <figure className="imagefield__row" data-testid={`comic-art-readonly-${nodeId}`}>
+        {image && !broken ? (
+          <img
+            className="imagefield__preview imagefield__preview--field"
+            src={nodeImageApi(projectId, nodeId).url(image, 'crop')}
+            alt={label}
+            width={image.width}
+            height={image.height}
+            onError={() => setBroken(true)}
+          />
+        ) : (
+          placeholder
+        )}
+      </figure>
+    )
   return (
     <FieldImageInput
       universeId=""
@@ -85,15 +118,7 @@ export function ComicArt({
       onChanged={onChanged}
       disabled={false}
       api={nodeImageApi(projectId, nodeId)}
-      placeholder={
-        <span
-          className="imagefield__preview imagefield__preview--blank comicart__placeholder"
-          data-testid={`comic-art-placeholder-${nodeId}`}
-        >
-          <ActionIcon icon={ImageOff} />
-          {t('projects.structure.art.missing')}
-        </span>
-      }
+      placeholder={placeholder}
     />
   )
 }
@@ -142,6 +167,7 @@ function PanelCard({
   })
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
+  const canEdit = useUniverseAccess().editContent
 
   useEffect(() => {
     const controller = new AbortController()
@@ -161,7 +187,7 @@ function PanelCard({
   const testId = (part: string) => `comic-panel-${panelId}-${part}`
 
   function save() {
-    if (!node || saving) return
+    if (!node || saving || !canEdit) return
     setSaving(true)
     setStatus(null)
     saveNode(projectId, node.id, {
@@ -210,6 +236,7 @@ function PanelCard({
                 {...control}
                 className="field__input"
                 rows={3}
+                readOnly={!canEdit}
                 value={body}
                 placeholder={t('projects.structure.panel.visualPlaceholder')}
                 onChange={(event) => setBody(event.target.value)}
@@ -224,18 +251,21 @@ function PanelCard({
               value={script[part]}
               onChange={(value) => setScript({ ...script, [part]: value })}
               testId={testId(part)}
+              readOnly={!canEdit}
             />
           ))}
           <div className="comicpage__actions">
-            <button
-              className="button"
-              type="button"
-              disabled={saving}
-              onClick={save}
-              data-testid={testId('save')}
-            >
-              {saving ? t('projects.structure.saving') : t('projects.structure.panel.save')}
-            </button>
+            {canEdit ? (
+              <button
+                className="button"
+                type="button"
+                disabled={saving}
+                onClick={save}
+                data-testid={testId('save')}
+              >
+                {saving ? t('projects.structure.saving') : t('projects.structure.panel.save')}
+              </button>
+            ) : null}
             {status ? (
               <span role="status" data-testid={testId('status')}>
                 {status}

@@ -77,6 +77,7 @@ before proposing against them, which is the only read of them MCP offers.
 | Lore references | `lore-references` | `get_lore_entry` | `read-only-by-design` |
 | Type templates | `type-templates`, `type-templates/fields` | `person-only` | `person-only` |
 | Cinema sagas and their phases | `cinema-sagas`, `cinema-sagas/move`, `cinema-sagas/phases`, `cinema-sagas/phases/move`, `cinema-sagas/phases/members`, `cinema-sagas/phases/members/move` | `person-only` | `person-only` |
+| Comic story arcs and events | `comic-collections`, `comic-collections/move`, `comic-collections/entries`, `comic-collections/entries/move` | `person-only` | `person-only` |
 
 ## Inside a project
 
