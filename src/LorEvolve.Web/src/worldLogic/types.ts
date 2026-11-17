@@ -132,10 +132,26 @@ export type WorldLogicFindingSeverity = 'high' | 'medium' | 'low'
 /** Where the author has got to with a finding. `resolved` is settled; the other three are live. */
 export type WorldLogicFindingStatus = 'open' | 'reviewing' | 'resolved' | 'dismissed'
 
+/**
+ * What a machine finding is about (#360). `stateId` is null for `undeclared_state`, and a name is null when the state
+ * or the entry is no longer there.
+ */
+export interface WorldLogicFindingMachine {
+  systemId: string
+  systemName: string
+  check: 'undeclared_state' | 'no_transition_holds'
+  stateId: string | null
+  stateName: string | null
+  subjectId: string
+  subjectName: string | null
+}
+
+/** A machine finding has a null rule and names its System in `machine`; there `ruleVersion` is the System's version. */
 export interface WorldLogicFindingRow {
   id: string
-  ruleId: string
-  ruleTitle: string
+  ruleId: string | null
+  ruleTitle: string | null
+  machine: WorldLogicFindingMachine | null
   projectId: string | null
   outcome: WorldLogicFindingOutcome
   severity: WorldLogicFindingSeverity
@@ -237,6 +253,39 @@ export interface SystemMachineDetail {
   binding: SystemMachineBinding | null
   states: SystemMachineState[]
   transitions: SystemMachineTransition[]
+  /** Open and reviewing machine findings per state, in the System's own scope. A state with none is not listed. */
+  openFindings: { stateId: string; count: number }[]
+}
+
+/** One transition's guard for one entry. An exempt rule reads `true`; `none` is a transition with no guard. */
+export interface SystemMachineGuardRow {
+  transitionId: string
+  guard: 'true' | 'false' | 'unknown' | 'error' | 'none'
+  errorCode: string | null
+}
+
+/** One record a machine check produced for the entry, as specification section 5 writes it. */
+export interface SystemMachineRecordRow {
+  systemId: string
+  systemVersion: number
+  schemaVersion: number
+  check: WorldLogicFindingMachine['check']
+  stateId: string | null
+  subjectId: string
+  outcome: WorldLogicFindingOutcome
+  errorCode: string | null
+  evidence: ConditionEvidenceRow[]
+  rationale: string[]
+}
+
+/**
+ * "Try an entry": the entry's bound value, every transition's guard for it and the records both checks produce. A null
+ * `value` means the entry is outside the machine: of another type, or holding no text value for the attribute.
+ */
+export interface SystemMachineTryResult {
+  value: string | null
+  transitions: SystemMachineGuardRow[]
+  records: SystemMachineRecordRow[]
 }
 
 /** What a machine save sends: the whole document, under the System's version. An empty one removes the machine. */

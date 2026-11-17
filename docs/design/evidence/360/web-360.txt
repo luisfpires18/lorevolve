@@ -1,0 +1,8 @@
+Issue #360, web checks, run in src/LorEvolve.Web on 2026-11-17. Each command wrote to a file and echoed its exit code.
+
+npm test            exit=0   tests 69, pass 69, fail 0 (systemMachine.test.ts adds guardMark and openCount)
+npm run build       exit=0   tsc -b clean; vite: built in 1.02s
+npm run lint        exit=0   7 warnings, all in files this change does not touch (ProjectEntries.tsx, ProjectOutline.tsx, ProjectSchema.tsx, ShelfCard.tsx, LorePage.tsx); none in a touched file
+npm run format:check exit=0  All matched files use Prettier code style!
+npx prettier --check --config .prettierrc.json ../../tests/LorEvolve.E2E/specs/system-machine.spec.ts   All matched files use Prettier code style!
+impeccable detect --json on the four changed components   []

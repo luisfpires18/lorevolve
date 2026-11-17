@@ -37,8 +37,9 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | A section heading with its rule | `.sectionrule` 1524 |
 | A loading placeholder | `.skeleton` 2585 |
 | A pan and zoom canvas of cards and lines | `usePanZoom` and `fitView` in `lib/usePanZoom.ts`, with `.boardcanvas*` 18314, `.boardline*` 18361 and `.boardcard*` 18390. Used by `IdeaBoardCanvas` and `SystemMachineCanvas` |
-| A state machine's handle, transition label and arrowhead | `.machinecanvas__handle` 18489, `.machinecanvas__label` 18522, `.machinecanvas__head` 18550, drawn by `SystemMachineCanvas`; a group of its rows under the canvas is `.machinepanel__group` 18559 |
-| A condition built from blocks: groups, rows, read-only parts | `components/GuardBuilder.tsx` with `.guardbuilder` 18574 and `.guardblock*`; the tree logic is `worldLogic/guard.ts` and the closed sets `worldLogic/conditionSchema.ts`. Opened as a transition's guard by `GuardBuilderDrawer` in `SystemMachinePanel` |
+| A state machine's handle, transition label and arrowhead | `.machinecanvas__handle` 18489, `.machinecanvas__label` 18522, `.machinecanvas__head` 18550, drawn by `SystemMachineCanvas`; a group of its rows under the canvas is `.machinepanel__group` 18619 |
+| A state's open finding count, and a transition's mark after trying an entry | `.machinecanvas__findings` 18560, a `StatusBadge` on a pill on the state card's top edge, drawn by `SystemMachineCanvas` (a state row shows the same `StatusBadge`); `.machinecanvas__mark` 18573, holds, fails or unknown as a word and an icon, drawn by `GuardMark` on the label and the row. The "Try an entry" group is `components/SystemMachineTry.tsx`; the mark's words are `worldLogic/markText.ts` |
+| A condition built from blocks: groups, rows, read-only parts | `components/GuardBuilder.tsx` with `.guardbuilder` 18634 and `.guardblock*`; the tree logic is `worldLogic/guard.ts` and the closed sets `worldLogic/conditionSchema.ts`. Opened as a transition's guard by `GuardBuilderDrawer` in `SystemMachinePanel` |
 
 Form and button rules start with their own comments: forms at `styles.css:410`, buttons at `styles.css:508`.
 The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2511.
