@@ -395,6 +395,35 @@ internal static class LaterSchema
     ];
 
     /// <summary>
+    /// Cinema Sagas and Phases (AddCinemaSagas, 2026-11-17, #289): three tables, their keys' indexes and four indexes
+    /// of their own.
+    /// </summary>
+    private static readonly string[] CinemaSagas =
+    [
+        "IX_CinemaPhaseMemberships_PhaseId_SortOrder",
+        "IX_CinemaPhaseMemberships_ProjectId",
+        "IX_CinemaPhases_SagaId_SortOrder",
+        "IX_CinemaSagas_UniverseId_SortOrder",
+        "sqlite_autoindex_CinemaPhaseMemberships_1",
+        "sqlite_autoindex_CinemaPhases_1",
+        "sqlite_autoindex_CinemaSagas_1",
+    ];
+
+    /// <summary>
+    /// Comic Story Arcs and Events (AddComicCollections, 2026-11-17, #296): two tables, their keys' indexes and four
+    /// indexes of their own.
+    /// </summary>
+    private static readonly string[] ComicCollections =
+    [
+        "IX_ComicCollectionEntries_CollectionId_NodeId",
+        "IX_ComicCollectionEntries_CollectionId_SortOrder",
+        "IX_ComicCollectionEntries_NodeId",
+        "IX_ComicCollections_UniverseId_Kind_SortOrder",
+        "sqlite_autoindex_ComicCollectionEntries_1",
+        "sqlite_autoindex_ComicCollections_1",
+    ];
+
+    /// <summary>
     /// A project's seasons and episodes (AddProjectSeasons, 2026-11-15, #145): two tables, their keys' indexes and
     /// three indexes of their own.
     /// </summary>
@@ -503,43 +532,67 @@ internal static class LaterSchema
     ];
 
     /// <summary>
+    /// A universe's type templates (AddTypeTemplates, 2026-11-17, #281): three tables, their keys' autoindexes and
+    /// three indexes of their own. The migration only creates tables, so it rebuilds nothing.
+    /// </summary>
+    private static readonly string[] TypeTemplates =
+    [
+        "sqlite_autoindex_TypeTemplates_1",
+        "sqlite_autoindex_TypeTemplateFields_1",
+        "sqlite_autoindex_TypeTemplateFieldOptions_1",
+        "IX_TypeTemplates_UniverseId_Name",
+        "IX_TypeTemplateFields_TemplateId",
+        "IX_TypeTemplateFieldOptions_FieldId",
+    ];
+
+    /// <summary>
+    /// A project's structure nodes (AddProjectNodes, 2026-11-17, #290): one table, its key's autoindex and two indexes.
+    /// </summary>
+    private static readonly string[] Nodes =
+    [
+        "sqlite_autoindex_ProjectNodes_1",
+        "IX_ProjectNodes_ParentId",
+        "IX_ProjectNodes_ProjectId_ParentId_SortOrder",
+    ];
+
+    /// <summary>
     /// Whether an index or trigger name (or "name on table") predates creative projects, the newest migration. A test that
     /// rolls back to its own target rolls back past this one too, so what it added is not there to compare.
     /// </summary>
     public static bool BeforeProjects(string name) =>
-        !Projects.Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages)
+        !Projects.Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes)
             .Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates AI change pictures - and so everything after them.</summary>
     public static bool BeforeAiMedia(string name) =>
-        !AiMedia.Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !AiMedia.Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates semantic type groups.</summary>
     public static bool BeforeTypeGroups(string name) =>
-        !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TypeGroups.Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name (or "name on table") predates nested types - and so everything after them.</summary>
     public static bool BeforeNestedTypes(string name) =>
-        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages)
+        !NestedTypes.Concat(Memberships).Concat(ReferenceTargets).Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes)
             .Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates the link field's allowed type - and so everything after it.</summary>
     public static bool BeforeReferenceTargets(string name) =>
-        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !ReferenceTargets.Concat(TimelineStories).Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates a moment's stories - and so everything after it.</summary>
     public static bool BeforeTimelineStories(string name) =>
-        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !TimelineStories.Concat(Calendars).Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates custom calendars - and so everything after them.</summary>
     public static bool BeforeCalendars(string name) =>
-        !Calendars.Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Calendars.Concat(Storage).Concat(Comments).Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates review comments - and so everything after them.</summary>
     public static bool BeforeComments(string name) =>
-        !Comments.Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Comments.Concat(Suggestions).Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 
     /// <summary>Whether an index or trigger name predates suggested changes.</summary>
     public static bool BeforeSuggestions(string name) =>
-        !Suggestions.Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
+        !Suggestions.Concat(Mcp).Concat(TypeGroups).Concat(FieldHistory).Concat(AiChanges).Concat(LinkTrash).Concat(Progression).Concat(Periods).Concat(Forms).Concat(Looks).Concat(Sections).Concat(Notes).Concat(Knowledge).Concat(Admin).Concat(Maps).Concat(AiMedia).Concat(McpAlias).Concat(Boards).Concat(Feedback).Concat(AiHelp).Concat(StoryArcs).Concat(Projects).Concat(ProjectScopedTypes).Concat(ProjectEntities).Concat(Seasons).Concat(CinemaSagas).Concat(ComicCollections).Concat(Pages).Concat(WorldLogic).Concat(Findings).Concat(IdeaProjects).Concat(SemanticFindings).Concat(FieldImages).Concat(TypeTemplates).Concat(Nodes).Any(later => name == later || name.StartsWith($"{later} ", StringComparison.Ordinal));
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Field } from './Field'
-import { ListTree, Pencil, Plus } from 'lucide-react'
+import { ListTree, Pencil, Plus, Shapes } from 'lucide-react'
 import {
   addProjectField,
   applyProjectTemplate,
@@ -29,6 +29,9 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
+import { TypeFromTemplateDrawer } from './TypeFromTemplateDrawer'
+import { listTypeTemplates } from '../typeTemplates/api'
+import type { TypeTemplate } from '../typeTemplates/types'
 import { TypeIcon } from './TypeIcon'
 import { t, tn, useI18n } from '../i18n'
 
@@ -44,7 +47,7 @@ const KINDS: readonly { kind: FieldKindValue; label: () => string }[] = [
   { kind: FieldKind.Image, label: () => t('projects.schema.kind.image') },
 ]
 
-function kindLabel(kind: FieldKindValue) {
+export function kindLabel(kind: FieldKindValue) {
   return KINDS.find((each) => each.kind === kind)?.label() ?? ''
 }
 
@@ -63,6 +66,8 @@ export function ProjectSchema({
   reloadKey,
   onChanged,
   crumb,
+  universeId,
+  canEdit = false,
 }: {
   projectId: string
   /**
@@ -75,6 +80,10 @@ export function ProjectSchema({
   onChanged?: () => void
   /** The way back to the type cards, above the panel's name, when the panel is a screen of its own. */
   crumb?: ReactNode
+  /** When given, the universe's type templates are offered as a second way to make a type (#283). */
+  universeId?: string
+  /** Whether the reader may edit this universe's content: the template copy is offered only then. */
+  canEdit?: boolean
 }) {
   useI18n()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
@@ -84,6 +93,8 @@ export function ProjectSchema({
   // The drawer: a type being edited, or 'new' (from the head, or a row's Add child, which sets `childOf`).
   const [editing, setEditing] = useState<ProjectEntityType | 'new' | null>(null)
   const [childOf, setChildOf] = useState<ProjectEntityType | null>(null)
+  const [templates, setTemplates] = useState<TypeTemplate[]>([])
+  const [fromTemplate, setFromTemplate] = useState(false)
   const [openTypeId, setOpenTypeId] = useState<string | null>(null)
   const [addingFieldTo, setAddingFieldTo] = useState<string | null>(null)
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
@@ -105,6 +116,16 @@ export function ProjectSchema({
       })
     return () => controller.abort()
   }, [projectId, reloadKey])
+
+  useEffect(() => {
+    if (!universeId) return
+    const controller = new AbortController()
+    // A failed read only hides the option; making a type by hand still works.
+    listTypeTemplates(universeId, controller.signal)
+      .then(setTemplates)
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [universeId])
 
   function after(read: ProjectEntityType[]) {
     setTypes(read)
@@ -154,7 +175,30 @@ export function ProjectSchema({
           <ActionIcon icon={Plus} />
           {t('entityTypes.page.newType')}
         </button>
+        {canEdit && templates.length > 0 ? (
+          <button
+            className="button button--secondary"
+            type="button"
+            data-testid="project-type-from-template"
+            onClick={() => setFromTemplate(true)}
+          >
+            <ActionIcon icon={Shapes} />
+            {t('projects.schema.fromTemplate.button')}
+          </button>
+        ) : null}
       </header>
+
+      {fromTemplate ? (
+        <TypeFromTemplateDrawer
+          projectId={projectId}
+          templates={templates}
+          onClose={() => setFromTemplate(false)}
+          onSaved={() => {
+            setFromTemplate(false)
+            refresh()
+          }}
+        />
+      ) : null}
 
       {editing ? (
         <TypeDialog
@@ -426,12 +470,15 @@ export function ProjectSchema({
 }
 
 /** The form that adds one field. Choices are asked for only by the two kinds that have them. */
-function FieldForm({
+export function FieldForm({
   busy,
+  initial,
   onSubmit,
   onCancel,
 }: {
   busy: boolean
+  /** An existing field to edit: the form then starts from it and saves as an edit. */
+  initial?: ProjectField
   onSubmit: (input: {
     name: string
     kind: FieldKindValue
@@ -442,11 +489,15 @@ function FieldForm({
   onCancel: () => void
 }) {
   useI18n()
-  const [name, setName] = useState('')
-  const [kind, setKind] = useState<FieldKindValue>(FieldKind.ShortText)
-  const [options, setOptions] = useState('')
-  const [required, setRequired] = useState(false)
-  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(FieldImageShape.Free)
+  const [name, setName] = useState(initial?.name ?? '')
+  const [kind, setKind] = useState<FieldKindValue>(initial?.kind ?? FieldKind.ShortText)
+  const [options, setOptions] = useState(
+    initial?.options.map((each) => each.value).join('\n') ?? '',
+  )
+  const [required, setRequired] = useState(initial?.isRequired ?? false)
+  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(
+    initial?.imageShape ?? FieldImageShape.Free,
+  )
   const isImage = kind === FieldKind.Image
   const choosing = kind === FieldKind.Select || kind === FieldKind.MultiSelect
 
@@ -558,7 +609,11 @@ function FieldForm({
           disabled={busy}
           data-testid="project-field-new-save"
         >
-          {busy ? t('projects.schema.fieldSaving') : t('projects.schema.addField')}
+          {busy
+            ? t('projects.schema.fieldSaving')
+            : initial
+              ? t('projects.schema.saveField')
+              : t('projects.schema.addField')}
         </button>
         <button
           className="button button--secondary"

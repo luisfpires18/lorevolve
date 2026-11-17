@@ -137,7 +137,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
-            await DismissedFindingsAsync(universeId, cancellationToken));
+            await DismissedFindingsAsync(universeId, cancellationToken),
+            await TypeTemplatesAsync(universeId, cancellationToken),
+            await ProjectNodesAsync(universeId, cancellationToken),
+            await CinemaSagasAsync(universeId, cancellationToken),
+            await ComicCollectionsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1342,12 +1346,80 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
 
     // ---------- Idea boards ----------
 
+    /// <summary>Comic story arcs and events (version 53, #296): see <see cref="BackupComicCollection"/>.</summary>
+    private async Task<IReadOnlyList<BackupComicCollection>> ComicCollectionsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ComicCollections.AsNoTracking()
+            .Where(collection => collection.UniverseId == universeId)
+            .OrderBy(collection => collection.Kind)
+            .ThenBy(collection => collection.SortOrder)
+            .Select(collection => new BackupComicCollection(
+                collection.Id,
+                collection.Kind,
+                collection.Name,
+                collection.Summary,
+                collection.SortOrder,
+                collection.CreatedAt,
+                collection.UpdatedAt,
+                collection.Entries.OrderBy(entry => entry.SortOrder).Select(entry => entry.NodeId).ToList()))
+            .ToListAsync(cancellationToken);
+
+    /// <summary>Cinema sagas (version 52, #289): see <see cref="BackupCinemaSaga"/>.</summary>
+    private async Task<IReadOnlyList<BackupCinemaSaga>> CinemaSagasAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.CinemaSagas.AsNoTracking()
+            .Where(saga => saga.UniverseId == universeId)
+            .OrderBy(saga => saga.SortOrder)
+            .Select(saga => new BackupCinemaSaga(
+                saga.Id,
+                saga.Name,
+                saga.Summary,
+                saga.SortOrder,
+                saga.CreatedAt,
+                saga.UpdatedAt,
+                saga.Phases
+                    .OrderBy(phase => phase.SortOrder)
+                    .Select(phase => new BackupCinemaPhase(
+                        phase.Id,
+                        phase.Name,
+                        phase.Summary,
+                        phase.SortOrder,
+                        phase.CreatedAt,
+                        phase.UpdatedAt,
+                        phase.Members.OrderBy(member => member.SortOrder).Select(member => member.ProjectId).ToList()))
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every project of this universe, oldest first (version 39). A universe owns its projects and deletes them with
     /// it (#171), so they belong in its archive; the project-scoped entry types name them by the ids written here.
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>Every structure node of every project of this universe, flat (version 51, #290).</summary>
+    private async Task<IReadOnlyList<BackupProjectNode>> ProjectNodesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.Project!.UniverseId == universeId)
+            .OrderBy(node => node.ProjectId)
+            .ThenBy(node => node.ParentId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new BackupProjectNode(
+                node.Id,
+                node.ProjectId,
+                node.ParentId,
+                node.Level,
+                node.Title,
+                node.Summary,
+                node.Body,
+                node.SortOrder,
+                node.CreatedAt,
+                node.UpdatedAt))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
     /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.
@@ -1764,6 +1836,41 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .ThenBy(conflict => conflict.Fingerprint, StringComparer.Ordinal)
                 .Select(conflict => conflict with { DismissedAt = Utc(conflict.DismissedAt) }),
         ];
+    }
+
+    /// <summary>The universe's type templates (#281), by name, each with its fields and their choices in order.</summary>
+    private async Task<IReadOnlyList<BackupTypeTemplate>> TypeTemplatesAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var templates = await db.TypeTemplates.AsNoTracking()
+            .Where(template => template.UniverseId == universeId)
+            .Include(template => template.Fields)
+            .ThenInclude(field => field.Options)
+            .OrderBy(template => template.Name)
+            .ThenBy(template => template.Id)
+            .ToListAsync(cancellationToken);
+
+        return [.. templates.Select(template => new BackupTypeTemplate(
+            template.Id,
+            template.Name,
+            template.Description,
+            template.Icon,
+            template.AccentColor,
+            template.CreatedAt,
+            template.UpdatedAt,
+            [.. template.Fields
+                .OrderBy(field => field.DisplayOrder)
+                .ThenBy(field => field.Id)
+                .Select(field => new BackupTypeTemplateField(
+                    field.Id,
+                    field.Name,
+                    field.Kind,
+                    field.IsRequired,
+                    field.DisplayOrder,
+                    field.ImageShape,
+                    [.. field.Options
+                        .OrderBy(option => option.DisplayOrder)
+                        .ThenBy(option => option.Id)
+                        .Select(option => new BackupTypeTemplateFieldOption(option.Id, option.Value, option.DisplayOrder))]))]))];
     }
 
     /// <summary>

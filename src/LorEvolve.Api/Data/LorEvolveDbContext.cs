@@ -1,3 +1,6 @@
+using LorEvolve.Api.Features.TypeTemplates;
+using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.CanonIntegrity;
@@ -161,12 +164,32 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     /// <summary>The seasons of a Series project, and the episodes in them (#145).</summary>
     public DbSet<ProjectSeason> ProjectSeasons => Set<ProjectSeason>();
 
+    public DbSet<CinemaSaga> CinemaSagas => Set<CinemaSaga>();
+
+    public DbSet<CinemaPhase> CinemaPhases => Set<CinemaPhase>();
+
+    public DbSet<CinemaPhaseMembership> CinemaPhaseMemberships => Set<CinemaPhaseMembership>();
+
+    public DbSet<ComicCollection> ComicCollections => Set<ComicCollection>();
+
+    public DbSet<ComicCollectionEntry> ComicCollectionEntries => Set<ComicCollectionEntry>();
+
     public DbSet<ProjectEpisode> ProjectEpisodes => Set<ProjectEpisode>();
 
     /// <summary>The pages of a comic's chapter, and the panels on them (#147).</summary>
     public DbSet<ProjectPage> ProjectPages => Set<ProjectPage>();
 
     public DbSet<ProjectPanel> ProjectPanels => Set<ProjectPanel>();
+
+    /// <summary>A universe's reusable type templates, their fields and those fields' choices (#281).</summary>
+    public DbSet<TypeTemplate> TypeTemplates => Set<TypeTemplate>();
+
+    public DbSet<TypeTemplateField> TypeTemplateFields => Set<TypeTemplateField>();
+
+    public DbSet<TypeTemplateFieldOption> TypeTemplateFieldOptions => Set<TypeTemplateFieldOption>();
+
+    /// <summary>The rule-shaped structure of a project with a format (#290): acts, sequences, scenes, beats.</summary>
+    public DbSet<ProjectNode> ProjectNodes => Set<ProjectNode>();
 
     public DbSet<Story> Stories => Set<Story>();
 

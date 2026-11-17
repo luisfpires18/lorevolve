@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,9 @@ public static class ProjectEndpoints
 {
     /// <summary>The machine-readable marker on the 409 for a save written over a project that has since changed.</summary>
     public const string ChangedCode = "project_changed";
+    public const string InCinemaPhaseCode = "project_in_cinema_phase";
+
+    public const string InComicCollectionCode = "project_in_comic_collection";
 
     public static IEndpointRouteBuilder MapProjectEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -239,6 +243,28 @@ public static class ProjectEndpoints
             return refused;
         }
 
+        // A phase holds only this universe's films and series, so a move or kind change waits until it leaves the phase.
+        if ((project.UniverseId != request.UniverseId || !CinemaSagaLimits.Holds(request.Kind))
+            && await db.CinemaPhaseMemberships.AnyAsync(member => member.ProjectId == id, cancellationToken))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "In a Cinema phase",
+                detail: "This production is in a Cinema phase. Remove it from its phase first.",
+                extensions: new Dictionary<string, object?> { ["code"] = InCinemaPhaseCode });
+        }
+
+        // A story arc or event holds only this universe's comic parts, so a move or kind change waits until they leave it.
+        if ((project.UniverseId != request.UniverseId || request.Kind != ProjectKind.Comic)
+            && await db.ComicCollectionEntries.AnyAsync(entry => entry.Node!.ProjectId == id, cancellationToken))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "In a story arc or event",
+                detail: "Part of this comic is in a story arc or an event. Remove it there first.",
+                extensions: new Dictionary<string, object?> { ["code"] = InComicCollectionCode });
+        }
+
         var name = request.Name!.Trim();
         var subtype = Cleaned(request.Subtype);
         var format = Cleaned(request.Format);
@@ -250,6 +276,23 @@ public static class ProjectEndpoints
             && project.Format == format
             && project.Summary == summary
             && project.UniverseId == request.UniverseId!.Value;
+
+        // A Comic format change must not hide authored nodes (#294): refuse rather than convert or drop them.
+        if (project.Kind == ProjectKind.Comic && request.Kind == ProjectKind.Comic && project.Format != format
+            && !ProjectStructures.Fits(
+                ProjectStructures.For(format),
+                (await db.ProjectNodes
+                    .Where(node => node.ProjectId == id)
+                    .Select(node => new { node.Level, ParentLevel = node.Parent == null ? null : node.Parent.Level })
+                    .ToListAsync(cancellationToken))
+                .Select(node => (node.Level, node.ParentLevel))))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "The format cannot hold this project.",
+                detail: "This project has content that the new format cannot hold. Move or delete it first.",
+                extensions: new Dictionary<string, object?> { ["code"] = "project_structure_conflict" });
+        }
 
         if (!unchanged)
         {

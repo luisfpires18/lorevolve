@@ -32,6 +32,17 @@ export function createProjectType(projectId: string, input: ProjectTypeInput) {
   })
 }
 
+/** A copy of a universe type template as a new type of this project (#283). No link back to the template. */
+export function createProjectTypeFromTemplate(
+  projectId: string,
+  input: { templateId: string; name: string | null },
+) {
+  return apiFetch<ProjectEntityType>(`${base(projectId)}/entity-types/from-template`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
 export function saveProjectType(projectId: string, typeId: string, input: ProjectTypeInput) {
   return apiFetch<ProjectEntityType>(`${base(projectId)}/entity-types/${typeId}`, {
     method: 'PUT',
@@ -66,7 +77,14 @@ export function listProjectEntities(
   projectId: string,
   typeId?: string,
   signal?: AbortSignal,
-  page?: { skip: number; take: number; recent?: boolean },
+  page?: {
+    skip: number
+    take: number
+    recent?: boolean
+    q?: string
+    sort?: string
+    includeDescendants?: boolean
+  },
 ) {
   const params = new URLSearchParams()
   if (typeId) params.set('typeId', typeId)
@@ -74,6 +92,9 @@ export function listProjectEntities(
     params.set('skip', String(page.skip))
     params.set('take', String(page.take))
     if (page.recent) params.set('recent', 'true')
+    if (page.q) params.set('q', page.q)
+    if (page.sort) params.set('sort', page.sort)
+    if (page.includeDescendants) params.set('includeDescendants', 'true')
   }
   const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<ProjectEntitySummary[]>(`${base(projectId)}/entities${query}`, { signal })
