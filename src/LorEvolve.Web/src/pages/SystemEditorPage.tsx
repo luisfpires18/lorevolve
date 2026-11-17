@@ -26,8 +26,8 @@ type Load =
 /**
  * Creates a System, or edits and deletes a saved one, at `world-logic/systems/new` or `world-logic/systems/:systemId`.
  *
- * A System is a name and a summary; the rule definitions it references are written through MCP or the API until the
- * web has an editor for them. A save names the version it was written over, so a System changed meanwhile is refused
+ * A System is a name and a summary; the rule definitions it references are written through MCP or the API, and a
+ * transition's guard is built from blocks on the Machine tab (Issue #359). A save names the version it was written over, so a System changed meanwhile is refused
  * (`system_changed`) rather than overwritten, and the author reloads it. Its scope is fixed at creation, so this editor
  * only ever creates a universe-wide System.
  *

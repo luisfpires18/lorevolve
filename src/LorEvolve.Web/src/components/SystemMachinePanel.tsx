@@ -2,15 +2,38 @@ import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } fr
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
 import { Field } from './Field'
+import { GuardBuilder } from './GuardBuilder'
 import { SaveAction } from './SaveAction'
 import { SystemMachineCanvas, type MachineSelection } from './SystemMachineCanvas'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { confirmAction } from '../lib/confirm'
+import { confirmAction, confirmDiscard } from '../lib/confirm'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useReturnFocus } from '../lib/returnFocus'
-import { getSystemMachine, listSystemRules, saveSystemMachine } from '../worldLogic/api'
+import {
+  createSystemRule,
+  getSystemMachine,
+  getSystemRule,
+  listSystemRules,
+  saveSystemMachine,
+  saveSystemRule,
+} from '../worldLogic/api'
+import { CONDITION_CODES } from '../worldLogic/conditionSchema'
+import {
+  blockFor,
+  blockPaths,
+  checkComplete,
+  measure,
+  newGuard,
+  pathKey,
+  pathOf,
+  sameCondition,
+  toCreateRequest,
+  toUpdateRequest,
+  type Json,
+  type Problem,
+} from '../worldLogic/guard'
 import {
   addState,
   addTransition,
@@ -35,10 +58,12 @@ import {
   MACHINE_MAX_TRANSITIONS,
   MACHINE_TEXT_MAX_LENGTH,
   type SystemMachineState,
+  type SystemRuleDetail,
   type SystemRuleSummary,
 } from '../worldLogic/types'
 
 const SYSTEM_CHANGED = 'system_changed'
+const SYSTEM_RULE_CHANGED = 'system_rule_changed'
 
 type Open =
   | { kind: 'state'; id: string; place?: undefined }
@@ -53,6 +78,7 @@ type Errors = Record<string, Record<string, string>>
 type Rules = SystemRuleSummary[] | 'failed' | null
 
 const m = 'canon.worldLogic.systems.machine'
+const gb = `${m}.guardBuilder` as const
 
 /**
  * A System's machine on the System editor's Machine tab (ADR 0073): the canvas, the same states and transitions as
@@ -560,6 +586,19 @@ export function SystemMachinePanel({
           transition={openTransition ?? null}
           states={draft.states}
           rules={rules}
+          universeId={universeId}
+          projectId={projectId}
+          onRuleSaved={(rule) =>
+            setRules((current) =>
+              Array.isArray(current)
+                ? current.some((each) => each.id === rule.id)
+                  ? current.map((each) => (each.id === rule.id ? rule : each))
+                  : [...current, rule]
+                : current === null
+                  ? [rule]
+                  : current,
+            )
+          }
           errors={openTransition ? errors[openTransition.id] : undefined}
           onApply={(values) => {
             if (openTransition) {
@@ -828,6 +867,9 @@ function TransitionDrawer({
   transition,
   states,
   rules,
+  universeId,
+  projectId,
+  onRuleSaved,
   errors,
   onApply,
   onDelete,
@@ -836,6 +878,9 @@ function TransitionDrawer({
   transition: MachineTransition | null
   states: SystemMachineState[]
   rules: Rules
+  universeId: string
+  projectId: string | null
+  onRuleSaved: (rule: SystemRuleSummary) => void
   errors?: Record<string, string>
   onApply: (values: Omit<MachineTransition, 'id'>) => void
   onDelete?: () => void
@@ -850,6 +895,8 @@ function TransitionDrawer({
     guardRuleId: transition?.guardRuleId ?? '',
   }))
   const [form, setForm] = useState(initial)
+  // The guard builder open over this drawer: a new rule, or the chosen one.
+  const [building, setBuilding] = useState<{ ruleId: string | null } | null>(null)
   useDrawerFocus(dialog)
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(initial)
@@ -889,84 +936,423 @@ function TransitionDrawer({
     )
 
   return (
-    <Drawer
-      testId="machine-transition-drawer"
-      titleId={titleId}
-      title={
-        transition
-          ? transition.label.trim() ||
-            t(`${m}.transitionName`, {
-              from: states.find((state) => state.id === transition.fromStateId)?.name ?? '',
-              to: states.find((state) => state.id === transition.toStateId)?.name ?? '',
-            })
-          : t(`${m}.newTransition`)
+    <>
+      <Drawer
+        testId="machine-transition-drawer"
+        titleId={titleId}
+        title={
+          transition
+            ? transition.label.trim() ||
+              t(`${m}.transitionName`, {
+                from: states.find((state) => state.id === transition.fromStateId)?.name ?? '',
+                to: states.find((state) => state.id === transition.toStateId)?.name ?? '',
+              })
+            : t(`${m}.newTransition`)
+        }
+        dialogRef={dialog}
+        isDirty={isDirty}
+        leaveMessage={t(`${m}.leaveGuard`)}
+        onClose={onClose}
+        onSubmit={() =>
+          onApply({
+            fromStateId: form.fromStateId,
+            toStateId: form.toStateId,
+            label: form.label,
+            guardRuleId: form.guardRuleId === '' ? null : form.guardRuleId,
+          })
+        }
+        noValidate
+        actions={(close) => (
+          <DrawerActions
+            close={close}
+            isNew={!transition}
+            onDelete={onDelete ? () => void remove() : undefined}
+            testId="machine-transition"
+          />
+        )}
+      >
+        <Field label={t(`${m}.fields.from`)} error={errors?.fromstateid}>
+          {stateSelect('fromStateId', 'machine-transition-from')}
+        </Field>
+        <Field label={t(`${m}.fields.to`)} error={errors?.tostateid}>
+          {stateSelect('toStateId', 'machine-transition-to')}
+        </Field>
+        <Field label={t(`${m}.fields.label`)} error={errors?.label}>
+          {textInput(
+            form.label,
+            (label) => setForm((current) => ({ ...current, label })),
+            t(`${m}.placeholders.label`),
+            'machine-transition-label',
+          )}
+        </Field>
+        <Field
+          label={t(`${m}.fields.guard`)}
+          hint={rules === 'failed' ? t(`${m}.rulesFailed`) : t(`${m}.fields.guardHint`)}
+          error={errors?.guardruleid}
+        >
+          {(control) => (
+            <select
+              id={control.id}
+              className="field__input field__input--select"
+              value={form.guardRuleId}
+              disabled={rules === 'failed'}
+              onChange={(event) =>
+                setForm((current) => ({ ...current, guardRuleId: event.target.value }))
+              }
+              aria-invalid={control['aria-invalid']}
+              aria-describedby={control['aria-describedby']}
+              data-testid="machine-transition-guard"
+            >
+              <option value="">{t(`${m}.noGuard`)}</option>
+              {ruleList.map((rule) => (
+                <option key={rule.id} value={rule.id}>
+                  {rule.title}
+                </option>
+              ))}
+              {unknownGuard ? (
+                <option value={form.guardRuleId}>{t(`${m}.unknownGuard`)}</option>
+              ) : null}
+            </select>
+          )}
+        </Field>
+        <div className="form__actions">
+          <button
+            className="button button--secondary button--sm"
+            type="button"
+            onClick={() => setBuilding({ ruleId: null })}
+            data-testid="machine-transition-new-guard"
+          >
+            {t(`${gb}.newGuard`)}
+          </button>
+          <button
+            className="button button--secondary button--sm"
+            type="button"
+            disabled={form.guardRuleId === '' || unknownGuard}
+            onClick={() => setBuilding({ ruleId: form.guardRuleId })}
+            data-testid="machine-transition-edit-guard"
+          >
+            {t(`${gb}.editGuard`)}
+          </button>
+        </div>
+      </Drawer>
+      {/* A sibling, not a child: a form inside the transition's form would submit both. */}
+      {building ? (
+        <GuardBuilderDrawer
+          universeId={universeId}
+          projectId={projectId}
+          ruleId={building.ruleId}
+          rules={ruleList}
+          onSaved={(rule) => {
+            onRuleSaved(rule)
+            setForm((current) => ({ ...current, guardRuleId: rule.id }))
+            setBuilding(null)
+          }}
+          onClose={() => setBuilding(null)}
+        />
+      ) : null}
+    </>
+  )
+}
+
+/** A rule's list row, from the rule itself, so a guard just saved can be chosen without reading the list again. */
+function summaryOf(rule: SystemRuleDetail): SystemRuleSummary {
+  return {
+    id: rule.id,
+    title: rule.title,
+    excerpt: '',
+    isExcerptShortened: false,
+    scope: rule.scope,
+    projectId: rule.projectId,
+    hasCondition: rule.condition !== null && rule.condition !== undefined,
+    systemCount: rule.systems.length,
+    version: rule.version,
+    createdAt: rule.createdAt,
+    updatedAt: rule.updatedAt,
+  }
+}
+
+/**
+ * The guard builder, opened from a transition (Issue #359): a rule definition's title and its condition, built from
+ * blocks. "New guard" creates a rule in the System's scope; "Edit guard" reads the chosen one first. Saving sets it as
+ * the transition's guard, which reaches the machine only through the transition's Save and then Save changes.
+ *
+ * Nothing is sent while a limit or an unfinished part stands, and a save that changes nothing sends nothing. An update
+ * sends back the rule's description, exceptions and dependencies exactly as they were read: the builder edits neither.
+ */
+function GuardBuilderDrawer({
+  universeId,
+  projectId,
+  ruleId,
+  rules,
+  onSaved,
+  onClose,
+}: {
+  universeId: string
+  projectId: string | null
+  ruleId: string | null
+  rules: SystemRuleSummary[]
+  onSaved: (rule: SystemRuleSummary) => void
+  onClose: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const conditionId = useId()
+  const [load, setLoad] = useState<'loading' | 'ready' | 'error'>(ruleId ? 'loading' : 'ready')
+  const [detail, setDetail] = useState<SystemRuleDetail | null>(null)
+  const [initial, setInitial] = useState<{ title: string; condition: Json }>(() => ({
+    title: '',
+    condition: newGuard(),
+  }))
+  const [title, setTitle] = useState(initial.title)
+  const [condition, setCondition] = useState<Json>(initial.condition)
+  // A new reading of the rule redraws the blocks, so no control keeps text from before it.
+  const [reading, setReading] = useState(0)
+  const [problems, setProblems] = useState<Problem[]>([])
+  const [titleError, setTitleError] = useState<string | undefined>(undefined)
+  const [message, setMessage] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const inFlight = useRef(false)
+  const pendingFocus = useRef<string | null>(null)
+  useReturnFocus()
+
+  const titleOf = (id: string) => rules.find((rule) => rule.id === id)?.title
+  const isDirty = title !== initial.title || !sameCondition(condition, initial.condition)
+
+  function take(rule: SystemRuleDetail) {
+    const next = { title: rule.title, condition: (rule.condition as Json | null) ?? newGuard() }
+    setDetail(rule)
+    setInitial(next)
+    setTitle(next.title)
+    setCondition(next.condition)
+    setReading((count) => count + 1)
+    setLoad('ready')
+  }
+
+  useEffect(() => {
+    if (!ruleId) return
+    const controller = new AbortController()
+    getSystemRule(universeId, ruleId, controller.signal)
+      .then(take)
+      .catch(() => {
+        if (!controller.signal.aborted) setLoad('error')
+      })
+    return () => controller.abort()
+  }, [universeId, ruleId])
+
+  // The first field once there is one, and the block a refusal names once it is drawn.
+  useEffect(() => {
+    if (load === 'ready') dialog.current?.querySelector<HTMLElement>('input, select')?.focus()
+  }, [load])
+  useEffect(() => {
+    if (pendingFocus.current === null) return
+    const key = pendingFocus.current
+    pendingFocus.current = null
+    const target =
+      key === 'title'
+        ? dialog.current?.querySelector<HTMLElement>('[data-testid="guard-builder-title"]')
+        : dialog.current?.querySelector<HTMLElement>(
+            `[data-testid="guard-block"][data-path="${key}"]`,
+          )
+    target?.focus()
+  })
+
+  function edit(next: Json) {
+    setCondition(next)
+    setProblems([])
+  }
+
+  function refused(error: ApiError) {
+    const body = (error.problem ?? {}) as { code?: unknown; path?: unknown; message?: unknown }
+    if (typeof body.code === 'string' && typeof body.path === 'string') {
+      const known = (CONDITION_CODES as readonly string[]).includes(body.code)
+      const text = known
+        ? undefined
+        : typeof body.message === 'string'
+          ? body.message
+          : error.message
+      const path = pathOf(body.path)
+      if (path === null) {
+        setMessage(text ?? t(`${gb}.codes.${body.code}` as never))
+        return
       }
+      const block = blockFor(path, blockPaths(condition))
+      setProblems([{ key: `codes.${body.code}`, path: block, message: text }])
+      pendingFocus.current = pathKey(block)
+      return
+    }
+    if (error.fieldErrors.title) {
+      setTitleError(error.fieldErrors.title)
+      pendingFocus.current = 'title'
+    }
+    setMessage(Object.values(error.fieldErrors)[0] ?? error.message)
+  }
+
+  async function save(base: SystemRuleDetail | null) {
+    if (inFlight.current) return
+    const name = title.trim()
+    const local = checkComplete(condition)
+    const limit = measure(condition).problem
+    if (limit) local.push(limit)
+    setTitleError(name === '' ? t(`${gb}.required.title`) : undefined)
+    setProblems(local)
+    setMessage(local.length > 0 ? t(`${gb}.problems`) : null)
+    if (local.length > 0) {
+      pendingFocus.current = pathKey(blockFor(local[0].path, blockPaths(condition)))
+      return
+    }
+    if (name === '') {
+      pendingFocus.current = 'title'
+      return
+    }
+    if (base && name === base.title && sameCondition(condition, base.condition as Json)) {
+      onSaved(summaryOf(base))
+      return
+    }
+
+    inFlight.current = true
+    setSaving(true)
+    setConflict(false)
+    try {
+      const saved = base
+        ? await saveSystemRule(universeId, base.id, toUpdateRequest(base, name, condition))
+        : await createSystemRule(universeId, toCreateRequest(name, condition, projectId))
+      onSaved(summaryOf(saved))
+    } catch (error: unknown) {
+      if (isChangedElsewhere(error, SYSTEM_RULE_CHANGED)) {
+        setConflict(true)
+      } else if (error instanceof ApiError && error.status === 400) {
+        refused(error)
+      } else {
+        setMessage(t(`${gb}.saveFailed`))
+      }
+    } finally {
+      inFlight.current = false
+      setSaving(false)
+    }
+  }
+
+  /** Saves the guard over whatever is stored now: the rule is read again, then written over at its new version. */
+  async function keepMine() {
+    if (!detail) return
+    try {
+      const current = await getSystemRule(universeId, detail.id)
+      setDetail(current)
+      await save(current)
+    } catch {
+      setMessage(t(`${gb}.saveFailed`))
+    }
+  }
+
+  async function loadSaved() {
+    if (!detail || !(await confirmDiscard())) return
+    try {
+      take(await getSystemRule(universeId, detail.id))
+      setConflict(false)
+      setProblems([])
+      setMessage(null)
+      setTitleError(undefined)
+    } catch {
+      setMessage(t(`${gb}.loadFailed`))
+    }
+  }
+
+  return (
+    <Drawer
+      testId="guard-builder-drawer"
+      titleId={titleId}
+      title={ruleId ? t(`${gb}.editGuard`) : t(`${gb}.newGuard`)}
       dialogRef={dialog}
       isDirty={isDirty}
-      leaveMessage={t(`${m}.leaveGuard`)}
+      leaveMessage={t(`${gb}.leaveGuard`)}
       onClose={onClose}
-      onSubmit={() =>
-        onApply({
-          fromStateId: form.fromStateId,
-          toStateId: form.toStateId,
-          label: form.label,
-          guardRuleId: form.guardRuleId === '' ? null : form.guardRuleId,
-        })
-      }
+      onSubmit={() => void save(detail)}
       noValidate
+      busy={saving}
       actions={(close) => (
-        <DrawerActions
-          close={close}
-          isNew={!transition}
-          onDelete={onDelete ? () => void remove() : undefined}
-          testId="machine-transition"
-        />
+        <>
+          <button
+            className="button"
+            type="submit"
+            disabled={load !== 'ready' || saving}
+            data-testid="guard-builder-save"
+          >
+            {t(`${m}.save`)}
+          </button>
+          <button
+            className="button button--secondary"
+            type="button"
+            onClick={close}
+            data-testid="guard-builder-cancel"
+          >
+            {t(`${m}.cancel`)}
+          </button>
+        </>
       )}
     >
-      <Field label={t(`${m}.fields.from`)} error={errors?.fromstateid}>
-        {stateSelect('fromStateId', 'machine-transition-from')}
-      </Field>
-      <Field label={t(`${m}.fields.to`)} error={errors?.tostateid}>
-        {stateSelect('toStateId', 'machine-transition-to')}
-      </Field>
-      <Field label={t(`${m}.fields.label`)} error={errors?.label}>
-        {textInput(
-          form.label,
-          (label) => setForm((current) => ({ ...current, label })),
-          t(`${m}.placeholders.label`),
-          'machine-transition-label',
-        )}
-      </Field>
-      <Field
-        label={t(`${m}.fields.guard`)}
-        hint={rules === 'failed' ? t(`${m}.rulesFailed`) : t(`${m}.fields.guardHint`)}
-        error={errors?.guardruleid}
-      >
-        {(control) => (
-          <select
-            id={control.id}
-            className="field__input field__input--select"
-            value={form.guardRuleId}
-            disabled={rules === 'failed'}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, guardRuleId: event.target.value }))
-            }
-            aria-invalid={control['aria-invalid']}
-            aria-describedby={control['aria-describedby']}
-            data-testid="machine-transition-guard"
-          >
-            <option value="">{t(`${m}.noGuard`)}</option>
-            {ruleList.map((rule) => (
-              <option key={rule.id} value={rule.id}>
-                {rule.title}
-              </option>
-            ))}
-            {unknownGuard ? (
-              <option value={form.guardRuleId}>{t(`${m}.unknownGuard`)}</option>
-            ) : null}
-          </select>
-        )}
-      </Field>
+      {conflict ? (
+        <div className="callout callout--warning" role="alert" data-testid="guard-conflict">
+          <p className="callout__title">{t(`${gb}.conflict`)}</p>
+          <div className="manuscript__conflictactions">
+            <button
+              className="button button--secondary button--sm"
+              type="button"
+              disabled={saving}
+              onClick={() => void keepMine()}
+              data-testid="guard-keep-mine"
+            >
+              {t(`${m}.keepMine`)}
+            </button>
+            <button
+              className="button button--secondary button--sm"
+              type="button"
+              disabled={saving}
+              onClick={() => void loadSaved()}
+              data-testid="guard-load-saved"
+            >
+              {t(`${m}.loadSaved`)}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {message ? (
+        <p className="form__message" role="alert" data-testid="guard-builder-error">
+          {message}
+        </p>
+      ) : null}
+
+      {load === 'loading' ? (
+        <p className="notice" role="status">
+          {t(`${gb}.loading`)}
+        </p>
+      ) : null}
+      {load === 'error' ? (
+        <p className="form__message" role="alert" data-testid="guard-builder-unavailable">
+          {t(`${gb}.loadFailed`)}
+        </p>
+      ) : null}
+
+      {load === 'ready' ? (
+        <>
+          <Field label={t(`${gb}.fields.title`)} error={titleError}>
+            {textInput(title, setTitle, t(`${gb}.placeholders.title`), 'guard-builder-title', true)}
+          </Field>
+          <div className="drawer__group">
+            <h3 className="sectionrule" id={conditionId}>
+              {t(`${gb}.condition`)}
+            </h3>
+            <GuardBuilder
+              key={reading}
+              condition={condition}
+              onChange={edit}
+              problems={problems}
+              titleOf={titleOf}
+              labelledBy={conditionId}
+            />
+          </div>
+        </>
+      ) : null}
     </Drawer>
   )
 }

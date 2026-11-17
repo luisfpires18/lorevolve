@@ -1,9 +1,12 @@
 import { apiFetch } from '../lib/api'
 import type {
+  ConditionEvaluationResponse,
   SystemDetail,
   SystemInput,
   SystemMachineDetail,
   SystemMachineInput,
+  SystemRuleDetail,
+  SystemRuleInput,
   SystemRuleSummary,
   SystemSummary,
   WorldLogicFindingDetail,
@@ -98,6 +101,47 @@ export function listSystemRules(universeId: string, page: number, signal?: Abort
   return apiFetch<WorldLogicPage<SystemRuleSummary>>(
     `${base(universeId)}/system-rules?${params.toString()}`,
     { signal },
+  )
+}
+
+/** One rule definition, whole: its condition, exceptions and declared dependencies as stored. */
+export function getSystemRule(universeId: string, id: string, signal?: AbortSignal) {
+  return apiFetch<SystemRuleDetail>(`${base(universeId)}/system-rules/${id}`, { signal })
+}
+
+/** Creates a rule definition. A condition the schema does not describe is 400 with its code and path. */
+export function createSystemRule(universeId: string, input: SystemRuleInput) {
+  return apiFetch<SystemRuleDetail>(`${base(universeId)}/system-rules`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+/** Saves a rule definition whole. A stale `expectedVersion` is 409 `system_rule_changed`. */
+export function saveSystemRule(universeId: string, id: string, input: SystemRuleInput) {
+  return apiFetch<SystemRuleDetail>(`${base(universeId)}/system-rules/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+/**
+ * Evaluates one rule now and stores nothing. `targetId` is what `self` stands for; without it a rule written with
+ * `self` answers unknown.
+ */
+export function evaluateSystemRule(
+  universeId: string,
+  id: string,
+  options: { targetId?: string; projectId?: string } = {},
+) {
+  const params = new URLSearchParams()
+  if (options.targetId) params.set('targetId', options.targetId)
+  if (options.projectId) params.set('projectId', options.projectId)
+  const query = params.toString() ? `?${params.toString()}` : ''
+
+  return apiFetch<ConditionEvaluationResponse>(
+    `${base(universeId)}/system-rules/${id}/evaluate${query}`,
+    { method: 'POST' },
   )
 }
 

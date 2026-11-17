@@ -44,9 +44,10 @@ type View = 'rules' | 'systems' | 'integrity'
  * own address, so every link an author already has keeps working and nothing was migrated out from under them.
  *
  * <b>A System is written here; a rule definition is not.</b> A System is a name and a summary, so it has an editor
- * (`SystemEditorPage`). A world rule is written in its own editor; a rule definition is written through MCP or the API
- * until an editor for a condition tree exists, and pretending otherwise with a form that cannot express a condition
- * would be worse than saying so.
+ * (`SystemEditorPage`). A world rule is written in its own editor; a rule definition is written through MCP or the API,
+ * or built from blocks as a transition's guard on a System's Machine tab (Issue #359). There is no page here for a rule
+ * definition on its own, and pretending otherwise with a form that cannot express a condition would be worse than
+ * saying so.
  *
  * <b>Integrity keeps the three outcomes apart.</b> It lists what checking the rules found, newest first. A
  * contradiction, a rule the stored facts cannot answer and a rule that is itself broken are three different things

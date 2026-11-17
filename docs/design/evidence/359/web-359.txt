@@ -1,0 +1,42 @@
+Issue #359, web checks, run in src/LorEvolve.Web on 2026-11-17 after the last change.
+
+npm test > ../../.ai/tmp/wl359-web.out 2>&1   (exit 0)
+  > node --test devVersion.test.ts mentions.test.ts familyLayout.test.ts groupOrder.test.ts fieldInheritance.test.ts i18n.test.ts uiContract.test.ts structureTree.test.ts fieldRows.test.ts systemMachine.test.ts guardBuilder.test.ts
+  uiContract.test.ts:
+  ok every class a component uses has a rule in styles.css
+  ok no new hand-written <dialog>
+  ok no native prompt, alert or confirm
+  ok no field is written as label > span.field__label
+  ok field__label appears only in Field.tsx
+  ok Field renders label, hint, control, error in that order
+  ok literal font sizes in styles.css do not grow
+  guardBuilder.test.ts (new):
+  ok the closed sets and limits are the server's own
+  ok an edit to one block of every fixture rule keeps every other key
+  ok within, ruleHolds and always stay byte-equal after a sibling edit
+  ok unknown keys survive an edit
+  ok measure counts depth, nodes, clauses and size the way the server does
+  ok a refusal path finds the block it names
+  ok a part the builder cannot edit is kept, and a node it cannot read is read-only
+  ok only an event's subjects take includes, and they take nothing else
+  ok the defaults are unfinished until filled in
+  ok a read-only block says what it is
+  ok an untouched update sends exceptions and dependencies back as they were read
+  ok two conditions that differ only in key order are the same
+  tests 67
+  pass 67
+  fail 0
+
+npm run build > ../../.ai/tmp/wl359-build.out 2>&1   (exit 0)
+  tsc -b && vite build
+  built in 872ms
+
+npm run lint > ../../.ai/tmp/wl359-lint.out 2>&1   (exit 0)
+  oxlint: 6 warnings, 0 errors, none in a file this change touched
+  (LorePage.tsx, ProjectEntries.tsx x3, ProjectSchema.tsx, ProjectOutline.tsx, all present before)
+
+npm run format:check > ../../.ai/tmp/wl359-format.out 2>&1   (exit 0)
+  All matched files use Prettier code style!
+
+npx prettier --check --config .prettierrc.json ../../tests/LorEvolve.E2E/specs ../../tests/LorEvolve.E2E/playwright.config.ts   (exit 0, the CI step)
+  All matched files use Prettier code style!

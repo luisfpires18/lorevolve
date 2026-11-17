@@ -91,7 +91,7 @@ async function seedMachine(
   page: Page,
   systemUrl: string,
   states: Omit<MachineState, 'id'>[],
-  transitions: { from: number; to: number; label?: string }[] = [],
+  transitions: { from: number; to: number; label?: string; guard?: string }[] = [],
 ) {
   const { version } = await machineOf(page, systemUrl)
   const ids = states.map(() => crypto.randomUUID())
@@ -104,7 +104,7 @@ async function seedMachine(
       fromStateId: ids[transition.from],
       toStateId: ids[transition.to],
       label: transition.label ?? null,
-      guardRuleId: null,
+      guardRuleId: transition.guard ?? null,
     })),
     expectedVersion: version,
   })
@@ -522,5 +522,627 @@ test.describe('System machine', () => {
     await page.getByTestId('system-editor-tab-machine').click()
     await addStateFromRows(page, 'Awake', 'awake')
     expect((await saveMachine(page)).ok()).toBe(true)
+  })
+})
+
+/**
+ * The guard builder (#359): a transition's guard built from blocks in a drawer over the transition's own, saved as a
+ * rule definition. What these tests hold is that the builder writes only what the schema describes, never loses what
+ * it did not write, and stops a save it knows will be refused before sending anything.
+ */
+interface RuleDetail {
+  id: string
+  title: string
+  version: number
+  schemaVersion: number | null
+  condition: unknown
+  dependsOn: string[]
+  exceptions: unknown
+}
+
+const SELF = { subject: 'self' }
+
+function rulesUrl(universeId: string) {
+  return `/api/universes/${universeId}/system-rules`
+}
+
+/** A rule written over the API, as MCP writes one. */
+async function seedConditionRule(
+  page: Page,
+  universeId: string,
+  title: string,
+  condition: unknown,
+  extra: Record<string, unknown> = {},
+) {
+  return api<RuleDetail>(page, 'POST', rulesUrl(universeId), {
+    title,
+    description: 'Written over MCP.',
+    schemaVersion: 1,
+    condition,
+    ...extra,
+  })
+}
+
+/** A System with two states and one transition, guarded by `guard` when given, opened on its Machine tab. */
+async function openTransition(page: Page, guard?: (universeId: string) => Promise<string>) {
+  await signUp(page)
+  const system = await seedSystem(page)
+  const guardRuleId = guard ? await guard(system.universeId) : undefined
+  await seedMachine(
+    page,
+    system.systemUrl,
+    [
+      { name: 'Asleep', value: 'asleep', initial: true, x: 0, y: 0 },
+      { name: 'Awake', value: 'awake', initial: false, x: 320, y: 0 },
+    ],
+    [{ from: 0, to: 1, label: 'wake', guard: guardRuleId }],
+  )
+  await page.goto(system.address)
+  await page.getByTestId('machine-transition-open').click()
+  await expect(page.getByTestId('machine-transition-drawer')).toBeVisible()
+  return { ...system, guardRuleId }
+}
+
+function builder(page: Page) {
+  return page.getByTestId('guard-builder-drawer')
+}
+
+function block(page: Page, path: string) {
+  return builder(page).locator(`[data-testid="guard-block"][data-path="${path}"]`)
+}
+
+/** Every POST and PUT to the rule routes, so a test can say none was sent. */
+function ruleWrites(page: Page) {
+  const writes: string[] = []
+  page.on('request', (request) => {
+    if (
+      /\/system-rules(\/[^/?]+)?$/.test(new URL(request.url()).pathname) &&
+      ['POST', 'PUT'].includes(request.method())
+    ) {
+      writes.push(`${request.method()} ${request.url()}`)
+    }
+  })
+  return writes
+}
+
+/** Presses the builder's Save and waits for the rule write it sends. */
+async function saveGuard(page: Page, method: 'POST' | 'PUT') {
+  const answered = page.waitForResponse(
+    (response) =>
+      /\/system-rules(\/[^/?]+)?$/.test(new URL(response.url()).pathname) &&
+      response.request().method() === method,
+  )
+  await page.getByTestId('guard-builder-save').click()
+  return answered
+}
+
+async function optionsOf(select: ReturnType<Page['locator']>) {
+  return select
+    .locator('option')
+    .evaluateAll((options) => options.map((option) => (option as HTMLOptionElement).value))
+}
+
+/** Cancels a builder with edits in it, through the discard question. */
+async function discardBuilder(page: Page) {
+  await page.getByTestId('guard-builder-cancel').click()
+  await page.getByTestId('confirm-dialog-confirm').click()
+  await expect(builder(page)).toBeHidden()
+}
+
+const compareMood = (op = 'eq') => ({
+  kind: 'compare',
+  left: { attribute: 'mood', of: SELF },
+  op,
+  right: { literal: 'calm', type: 'text' },
+})
+
+test.describe('Guard builder', () => {
+  test('a guard built in the drawer saves as a schema version 1 condition and evaluates', async ({
+    page,
+  }) => {
+    const system = await openTransition(page)
+    await page.getByTestId('machine-transition-new-guard').click()
+    await expect(builder(page)).toBeVisible()
+    await expect(page.getByTestId('guard-builder-title')).toBeFocused()
+    await page.getByTestId('guard-builder-title').fill('Calm and rested')
+
+    // The new guard starts as one group holding one comparison.
+    await expect(block(page, 'root')).toHaveAttribute('data-kind', 'all')
+    await block(page, 'of.0').getByTestId('guard-attribute').fill('mood')
+    await block(page, 'of.0').getByTestId('guard-literal-value').fill('calm')
+
+    await page.getByTestId('guard-add').click()
+    const second = block(page, 'of.1')
+    await second.getByTestId('guard-attribute').fill('energy')
+    await second.getByTestId('guard-literal-type').selectOption('number')
+    await second.getByTestId('guard-literal-value').fill('3')
+    await second.getByTestId('guard-op').selectOption('gte')
+
+    await page.getByTestId('guard-add-kind').selectOption('exists')
+    await page.getByTestId('guard-add').click()
+    const exists = block(page, 'of.2')
+    await exists.getByTestId('guard-source').selectOption('events')
+    await exists.getByTestId('guard-add-clause').click()
+    await exists.getByTestId('guard-clause-value').fill('rest')
+
+    const created = await saveGuard(page, 'POST')
+    expect(created.status()).toBe(201)
+    const rule = (await created.json()) as RuleDetail
+    await expect(builder(page)).toBeHidden()
+    await expect(page.getByTestId('machine-transition-guard')).toHaveValue(rule.id)
+    await page.getByTestId('machine-transition-apply').click()
+    expect((await saveMachine(page)).ok()).toBe(true)
+
+    const machine = await machineOf(page, system.systemUrl)
+    expect(machine.transitions[0].guardRuleId).toBe(rule.id)
+    const stored = await api<RuleDetail>(page, 'GET', `${rulesUrl(system.universeId)}/${rule.id}`)
+    expect(stored.title).toBe('Calm and rested')
+    expect(stored.schemaVersion).toBe(1)
+    expect(stored.condition).toEqual({
+      kind: 'all',
+      of: [
+        compareMood(),
+        {
+          kind: 'compare',
+          left: { attribute: 'energy', of: SELF },
+          op: 'gte',
+          right: { literal: 3, type: 'number' },
+        },
+        {
+          kind: 'exists',
+          query: {
+            from: 'events',
+            where: [{ field: 'kind', op: 'eq', value: 'rest', type: 'text' }],
+          },
+        },
+      ],
+    })
+
+    // The existing route evaluates it: without an entry for `self` the honest answer is unknown, never an error.
+    const evaluated = await api<{ ruleId: string; schemaVersion: number; outcome: string }>(
+      page,
+      'POST',
+      `${rulesUrl(system.universeId)}/${rule.id}/evaluate`,
+    )
+    expect(evaluated.ruleId).toBe(rule.id)
+    expect(evaluated.schemaVersion).toBe(1)
+    expect(['true', 'false', 'unknown']).toContain(evaluated.outcome)
+  })
+
+  test('a condition written over MCP opens in the builder and saves unchanged', async ({
+    page,
+  }) => {
+    let seeded: RuleDetail | null = null
+    let dependency = ''
+    const named = crypto.randomUUID()
+    const within = {
+      kind: 'within',
+      point: { field: 'at', from: 'events', of: SELF },
+      from: { literal: 'year:1', type: 'timePoint' },
+      to: { literal: 'year:90', type: 'timePoint' },
+    }
+    const exceptions = [
+      { id: 'festival', scope: { kind: 'universe' }, when: { kind: 'always', value: 'false' } },
+    ]
+    const system = await openTransition(page, async (universeId) => {
+      dependency = (await seedConditionRule(page, universeId, 'Rested enough', compareMood())).id
+      seeded = await seedConditionRule(
+        page,
+        universeId,
+        'Every kind of node',
+        {
+          kind: 'all',
+          of: [
+            { ...compareMood(), note: 'kept by the builder' },
+            {
+              kind: 'not',
+              of: {
+                kind: 'exists',
+                query: {
+                  from: 'events',
+                  where: [
+                    { field: 'subjectIds', op: 'contains', operandValue: SELF },
+                    { field: 'at', op: 'gte', value: 'year:12', type: 'timePoint' },
+                  ],
+                },
+              },
+            },
+            {
+              kind: 'any',
+              of: [
+                { kind: 'related', relation: 'ally', from: SELF, to: { subject: named } },
+                {
+                  kind: 'compare',
+                  left: {
+                    count: {
+                      from: 'relations',
+                      where: [{ field: 'type', op: 'eq', value: 'ally', type: 'text' }],
+                    },
+                  },
+                  op: 'gte',
+                  right: { literal: 2, type: 'number' },
+                },
+              ],
+            },
+            within,
+            { kind: 'ruleHolds', ruleId: dependency },
+            { kind: 'always', value: 'true' },
+          ],
+        },
+        { dependsOn: [dependency], exceptions },
+      )
+      return seeded.id
+    })
+    const rule = seeded as unknown as RuleDetail
+    const ruleUrl = `${rulesUrl(system.universeId)}/${rule.id}`
+    const writes = ruleWrites(page)
+
+    await page.getByTestId('machine-transition-edit-guard').click()
+    await expect(page.getByTestId('guard-builder-title')).toHaveValue('Every kind of node')
+    await expect(block(page, 'of.3')).toHaveAttribute('data-kind', 'readonly')
+    await expect(block(page, 'of.3').getByTestId('guard-summary')).toHaveText('Within a period')
+    await expect(block(page, 'of.4').getByTestId('guard-summary')).toHaveText(
+      'Rule Rested enough holds',
+    )
+    await expect(block(page, 'of.5').getByTestId('guard-summary')).toHaveText('Always true')
+    // A named entry is kept as written, and the related row around it stays editable.
+    await expect(block(page, 'of.2.of.0')).toHaveAttribute('data-kind', 'related')
+    await expect(
+      block(page, 'of.2.of.0').locator('[data-side="to"]').getByTestId('guard-operand-kind'),
+    ).toHaveValue('kept')
+
+    // Saving without an edit sends nothing and keeps the version.
+    await page.getByTestId('guard-builder-save').click()
+    await expect(builder(page)).toBeHidden()
+    expect(writes).toEqual([])
+    expect((await api<RuleDetail>(page, 'GET', ruleUrl)).version).toBe(rule.version)
+
+    // One edit: everything it did not touch comes back as it was written.
+    await page.getByTestId('machine-transition-edit-guard').click()
+    await block(page, 'of.0').getByTestId('guard-op').selectOption('ne')
+    expect((await saveGuard(page, 'PUT')).ok()).toBe(true)
+    const stored = await api<RuleDetail>(page, 'GET', ruleUrl)
+    const before = rule.condition as { of: Record<string, unknown>[] }
+    const after = stored.condition as { of: Record<string, unknown>[] }
+    expect(after.of[0]).toEqual({ ...before.of[0], op: 'ne' })
+    expect(after.of.slice(1)).toEqual(before.of.slice(1))
+    expect(after.of[3]).toEqual(within)
+    expect(stored.exceptions).toEqual(exceptions)
+    expect(stored.dependsOn).toEqual([dependency])
+    expect(stored.version).toBe(rule.version + 1)
+  })
+
+  test('the builder offers only the closed sets', async ({ page }) => {
+    await openTransition(page)
+    await page.getByTestId('machine-transition-new-guard').click()
+    const first = block(page, 'of.0')
+
+    expect(await optionsOf(page.getByTestId('guard-group-kind'))).toEqual(['all', 'any'])
+    expect(await optionsOf(page.getByTestId('guard-add-kind'))).toEqual([
+      'all',
+      'any',
+      'not',
+      'compare',
+      'exists',
+      'related',
+    ])
+    expect(await optionsOf(first.getByTestId('guard-operand-kind').first())).toEqual([
+      'literal',
+      'attribute',
+      'self',
+      'count',
+    ])
+    expect(await optionsOf(first.getByTestId('guard-literal-type'))).toEqual([
+      'boolean',
+      'number',
+      'text',
+      'timePoint',
+    ])
+    // Text is not ordered; a number is.
+    expect(await optionsOf(first.getByTestId('guard-op'))).toEqual(['eq', 'ne'])
+    await first.getByTestId('guard-literal-type').selectOption('timePoint')
+    expect(await optionsOf(first.getByTestId('guard-literal-scope'))).toEqual([
+      'calendar',
+      'era',
+      'year',
+    ])
+    await first.getByTestId('guard-literal-type').selectOption('number')
+    expect(await optionsOf(first.getByTestId('guard-op'))).toEqual([
+      'eq',
+      'ne',
+      'lt',
+      'lte',
+      'gt',
+      'gte',
+    ])
+
+    await page.getByTestId('guard-add-kind').selectOption('exists')
+    await page.getByTestId('guard-add').click()
+    const exists = block(page, 'of.1')
+    expect(await optionsOf(exists.getByTestId('guard-source'))).toEqual([
+      'subjects',
+      'relations',
+      'events',
+    ])
+    const fields: Record<string, string[]> = {
+      subjects: ['id', 'type'],
+      relations: ['type', 'fromId', 'toId'],
+      events: ['id', 'kind', 'method', 'subjectIds', 'at', 'canon'],
+    }
+    for (const [source, names] of Object.entries(fields)) {
+      await exists.getByTestId('guard-source').selectOption(source)
+      await exists.getByTestId('guard-add-clause').click()
+      const clause = exists.getByTestId('guard-clause')
+      // Only the source's own fields: never an `attributes.<name>` (#210).
+      expect(await optionsOf(clause.getByTestId('guard-clause-field'))).toEqual(names)
+      for (const name of names) {
+        await clause.getByTestId('guard-clause-field').selectOption(name)
+        const operators = await optionsOf(clause.getByTestId('guard-clause-op'))
+        if (name === 'subjectIds') expect(operators).toEqual(['contains'])
+        else expect(operators).not.toContain('contains')
+      }
+    }
+  })
+
+  test('depth, node and clause limits stop the save before any request', async ({ page }) => {
+    let wide = ''
+    // Twelve nots and a group put a comparison at depth 14 and its attribute's entry at 16: the deepest a save takes.
+    let deep: unknown = { kind: 'all', of: [compareMood()] }
+    for (let level = 0; level < 12; level += 1) deep = { kind: 'not', of: deep }
+    await openTransition(page, async (universeId) => {
+      wide = (
+        await seedConditionRule(page, universeId, 'Wide', {
+          kind: 'any',
+          of: Array.from({ length: 255 }, () => ({ kind: 'always', value: 'false' })),
+        })
+      ).id
+      return (await seedConditionRule(page, universeId, 'Deep', deep)).id
+    })
+    const writes = ruleWrites(page)
+
+    // One more level under the deepest group passes the depth limit.
+    await page.getByTestId('machine-transition-edit-guard').click()
+    const groupPath = Array.from({ length: 12 }, () => 'of').join('.')
+    await expect(block(page, groupPath)).toContainText('All of these, level 13')
+    await block(page, groupPath).getByTestId('guard-add-kind').selectOption('not')
+    await block(page, groupPath).getByTestId('guard-add').click()
+    const added = `${groupPath}.of.1.of`
+    await block(page, added).getByTestId('guard-attribute').fill('mood')
+    await page.getByTestId('guard-builder-save').click()
+    await expect(block(page, added).getByTestId('guard-block-error')).toHaveText(
+      'This is nested too deeply. Take a level out.',
+    )
+    await expect(block(page, added)).toBeFocused()
+    await discardBuilder(page)
+
+    // Four more nodes beside 256 pass the node limit.
+    await page.getByTestId('machine-transition-guard').selectOption(wide)
+    await page.getByTestId('machine-transition-edit-guard').click()
+    await expect(block(page, 'of.254')).toBeVisible()
+    await page.getByTestId('guard-add').click()
+    await block(page, 'of.255').getByTestId('guard-attribute').fill('mood')
+    await page.getByTestId('guard-builder-save').click()
+    await expect(builder(page).getByTestId('guard-block-error')).toHaveText(
+      'This guard has too many parts. Remove some.',
+    )
+    await discardBuilder(page)
+
+    // A search stops taking conditions at eight.
+    await page.getByTestId('machine-transition-new-guard').click()
+    await page.getByTestId('guard-add-kind').selectOption('exists')
+    await page.getByTestId('guard-add').click()
+    const addClause = block(page, 'of.1').getByTestId('guard-add-clause')
+    for (let clause = 0; clause < 8; clause += 1) await addClause.click()
+    await expect(block(page, 'of.1').getByTestId('guard-clause')).toHaveCount(8)
+    await expect(addClause).toBeDisabled()
+
+    expect(writes).toEqual([])
+  })
+
+  test('a refused save marks the block it names', async ({ page }) => {
+    await openTransition(page)
+    const refusals = [
+      { code: 'type_mismatch', path: 'condition.of[1].right', message: 'Refused.' },
+      { code: 'node_arity', path: 'exceptions[0].when', message: 'Refused.' },
+    ]
+    await page.route('**/system-rules', async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback()
+      await route.fulfill({ status: 400, json: refusals.shift() })
+    })
+
+    await page.getByTestId('machine-transition-new-guard').click()
+    await page.getByTestId('guard-builder-title').fill('Refused')
+    await block(page, 'of.0').getByTestId('guard-attribute').fill('mood')
+    await page.getByTestId('guard-add').click()
+    await block(page, 'of.1').getByTestId('guard-attribute').fill('energy')
+
+    expect((await saveGuard(page, 'POST')).status()).toBe(400)
+    await expect(block(page, 'of.1').getByTestId('guard-block-error')).toHaveText(
+      'These two sides are of different types.',
+    )
+    await expect(block(page, 'of.1')).toBeFocused()
+    await expect(block(page, 'of.0').getByTestId('guard-block-error')).toHaveCount(0)
+
+    // A path outside the condition is said once, at the top.
+    expect((await saveGuard(page, 'POST')).status()).toBe(400)
+    await expect(page.getByTestId('guard-builder-error')).toHaveText(
+      'Something here is missing a part.',
+    )
+    await expect(builder(page).getByTestId('guard-block-error')).toHaveCount(0)
+  })
+
+  test('a guard rule changed elsewhere is refused and the edit is kept', async ({ page }) => {
+    const system = await openTransition(
+      page,
+      async (universeId) =>
+        (await seedConditionRule(page, universeId, 'Calm enough', compareMood())).id,
+    )
+    const ruleUrl = `${rulesUrl(system.universeId)}/${system.guardRuleId}`
+    const renameElsewhere = async (title: string) => {
+      const current = await api<RuleDetail>(page, 'GET', ruleUrl)
+      await api(page, 'PUT', ruleUrl, {
+        title,
+        description: 'Written over MCP.',
+        projectId: null,
+        schemaVersion: 1,
+        condition: current.condition,
+        dependsOn: [],
+        expectedVersion: current.version,
+      })
+    }
+
+    await page.getByTestId('machine-transition-edit-guard').click()
+    await block(page, 'root').getByTestId('guard-op').selectOption('ne')
+    await renameElsewhere('Calm enough, renamed')
+    expect((await saveGuard(page, 'PUT')).status()).toBe(409)
+    await expect(page.getByTestId('guard-conflict')).toBeVisible()
+    await expect(block(page, 'root').getByTestId('guard-op')).toHaveValue('ne')
+
+    // Save mine over it writes the edit over the newer version.
+    const answered = page.waitForResponse(
+      (response) => response.url().endsWith(ruleUrl) && response.request().method() === 'PUT',
+    )
+    await page.getByTestId('guard-keep-mine').click()
+    expect((await answered).ok()).toBe(true)
+    await expect(builder(page)).toBeHidden()
+    let stored = await api<RuleDetail>(page, 'GET', ruleUrl)
+    expect(stored.condition).toEqual(compareMood('ne'))
+    expect(stored.title).toBe('Calm enough')
+
+    // Load the saved version asks first, then lets the edit go.
+    await page.getByTestId('machine-transition-edit-guard').click()
+    await block(page, 'root').getByTestId('guard-op').selectOption('eq')
+    await renameElsewhere('Calm enough, again')
+    expect((await saveGuard(page, 'PUT')).status()).toBe(409)
+    await page.getByTestId('guard-load-saved').click()
+    await page.getByTestId('confirm-dialog-confirm').click()
+    await expect(page.getByTestId('guard-conflict')).toBeHidden()
+    await expect(page.getByTestId('guard-builder-title')).toHaveValue('Calm enough, again')
+    await expect(block(page, 'root').getByTestId('guard-op')).toHaveValue('ne')
+    stored = await api<RuleDetail>(page, 'GET', ruleUrl)
+    expect(stored.condition).toEqual(compareMood('ne'))
+  })
+
+  test('the guard is built by keyboard alone', async ({ page }) => {
+    const system = await openTransition(page)
+    await page.getByTestId('machine-transition-cancel').click()
+    await expect(page.getByTestId('machine-transition-drawer')).toBeHidden()
+
+    // Nothing below is a click: each step starts from a focused control and goes on by keys.
+    await page.getByTestId('machine-transition-open').focus()
+    await page.keyboard.press('Enter')
+    await page.getByTestId('machine-transition-new-guard').focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByTestId('guard-builder-title')).toBeFocused()
+    await page.keyboard.type('Typed guard')
+
+    await block(page, 'of.0').getByTestId('guard-attribute').focus()
+    await page.keyboard.type('mood')
+    await page.keyboard.press('Tab')
+    await expect(block(page, 'of.0').getByTestId('guard-op')).toBeFocused()
+    await page.keyboard.press('Tab')
+    await expect(block(page, 'of.0').getByTestId('guard-operand-kind').nth(1)).toBeFocused()
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Tab')
+    await expect(block(page, 'of.0').getByTestId('guard-literal-value')).toBeFocused()
+    await page.keyboard.type('calm')
+
+    // A second block: the kind is chosen with the arrow keys, then added with Enter.
+    await page.getByTestId('guard-add-kind').focus()
+    await page.keyboard.press('ArrowUp')
+    await expect(page.getByTestId('guard-add-kind')).toHaveValue('not')
+    await page.getByTestId('guard-add').focus()
+    await page.keyboard.press('Enter')
+    await block(page, 'of.1.of').getByTestId('guard-attribute').focus()
+    await page.keyboard.type('fear')
+
+    // Every control in the builder has a name a screen reader can say.
+    const unnamed = await builder(page).evaluate((dialog) =>
+      [...dialog.querySelectorAll<HTMLElement>('input, select, button')]
+        .filter(
+          (control) =>
+            !control.getAttribute('aria-label') &&
+            !(control as HTMLInputElement).labels?.length &&
+            !control.textContent?.trim(),
+        )
+        .map((control) => control.outerHTML),
+    )
+    expect(unnamed).toEqual([])
+
+    const created = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/system-rules') && response.request().method() === 'POST',
+    )
+    await page.getByTestId('guard-builder-save').focus()
+    await page.keyboard.press('Enter')
+    const rule = (await (await created).json()) as RuleDetail
+    await expect(builder(page)).toBeHidden()
+    await page.getByTestId('machine-transition-apply').focus()
+    await page.keyboard.press('Enter')
+    await page.getByTestId('machine-save').focus()
+    const answered = page.waitForResponse(
+      (response) => response.url().endsWith('/machine') && response.request().method() === 'PUT',
+    )
+    await page.keyboard.press('Enter')
+    expect((await answered).ok()).toBe(true)
+
+    expect((await machineOf(page, system.systemUrl)).transitions[0].guardRuleId).toBe(rule.id)
+    expect(rule.condition).toEqual({
+      kind: 'all',
+      of: [
+        compareMood(),
+        {
+          kind: 'not',
+          of: {
+            kind: 'compare',
+            left: { attribute: 'fear', of: SELF },
+            op: 'eq',
+            right: { literal: '', type: 'text' },
+          },
+        },
+      ],
+    })
+  })
+
+  test('at 375px a deep guard fits with no sideways page scroll', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 })
+    // Ten groups inside each other, each with a comparison: indenting stops at level 5.
+    let deep: Record<string, unknown> = compareMood()
+    for (let level = 0; level < 10; level += 1) {
+      deep = { kind: level % 2 === 0 ? 'all' : 'any', of: [compareMood(), deep] }
+    }
+    await openTransition(
+      page,
+      async (universeId) =>
+        (await seedConditionRule(page, universeId, 'A guard with a rather long title', deep)).id,
+    )
+    await page.getByTestId('machine-transition-edit-guard').click()
+    const deepest = Array.from({ length: 10 }, () => 'of.1').join('.')
+    await expect(block(page, deepest)).toHaveAttribute('data-kind', 'compare')
+    await expect(builder(page)).toContainText('level 10')
+
+    const overflow = () =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+    expect(await overflow()).toBeLessThanOrEqual(1)
+    const body = builder(page).locator('.drawer__body')
+    expect(
+      await body.evaluate((element) => element.scrollWidth - element.clientWidth),
+    ).toBeLessThanOrEqual(1)
+
+    // The deepest row's controls stay inside the drawer.
+    const drawer = (await builder(page).boundingBox())!
+    for (const control of await block(page, deepest).locator('input, select').all()) {
+      await control.scrollIntoViewIfNeeded()
+      const box = (await control.boundingBox())!
+      expect(box.x).toBeGreaterThanOrEqual(drawer.x)
+      expect(box.x + box.width).toBeLessThanOrEqual(drawer.x + drawer.width + 1)
+    }
+
+    // An edit down there saves like any other.
+    await block(page, deepest).getByTestId('guard-op').selectOption('ne')
+    expect((await saveGuard(page, 'PUT')).ok()).toBe(true)
+    expect(await overflow()).toBeLessThanOrEqual(1)
   })
 })

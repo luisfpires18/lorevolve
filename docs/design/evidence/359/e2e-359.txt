@@ -1,0 +1,26 @@
+Issue #359, focused E2E, run in tests/LorEvolve.E2E on 2026-11-17 after the last change.
+Ports 5173 and 5180 were free, so Playwright started its own API (dotnet run, Development, auth and public rate limits
+lifted by playwright.config.ts) and vite on the default ports, and stopped both when the run ended:
+LOREVOLVE_E2E_DB=App_Data/lorevolve.e2e.db npx playwright test specs/system-machine.spec.ts --retries=0 --workers=2   (exit 0)
+
+Running 15 tests using 2 workers
+  ok  2 [chromium] › specs\system-machine.spec.ts:220:3 › System machine › transitions are drawn from a handle, relabelled, re-guarded and deleted, and a reload keeps them (8.3s)
+  ok  1 [chromium] › specs\system-machine.spec.ts:164:3 › System machine › states are created, moved, renamed and deleted on the canvas, and a reload keeps them (8.6s)
+  ok  3 [chromium] › specs\system-machine.spec.ts:299:3 › System machine › everything the canvas does is done from the rows by keyboard alone (2.9s)
+  ok  4 [chromium] › specs\system-machine.spec.ts:395:3 › System machine › at 375px the machine is edited from the rows with no sideways page scroll (3.0s)
+  ok  5 [chromium] › specs\system-machine.spec.ts:437:3 › System machine › a save over a System changed elsewhere is refused and the drawing is kept (4.1s)
+  ok  6 [chromium] › specs\system-machine.spec.ts:475:3 › System machine › a refused save marks the row and the field it names (3.8s)
+  ok  7 [chromium] › specs\system-machine.spec.ts:506:3 › System machine › a name save after a machine save is not refused (3.9s)
+  ok  8 [chromium] › specs\system-machine.spec.ts:640:3 › Guard builder › a guard built in the drawer saves as a schema version 1 condition and evaluates (3.8s)
+  ok  9 [chromium] › specs\system-machine.spec.ts:712:3 › Guard builder › a condition written over MCP opens in the builder and saves unchanged (3.7s)
+  ok 10 [chromium] › specs\system-machine.spec.ts:815:3 › Guard builder › the builder offers only the closed sets (3.7s)
+  ok 12 [chromium] › specs\system-machine.spec.ts:942:3 › Guard builder › a refused save marks the block it names (3.4s)
+  ok 11 [chromium] › specs\system-machine.spec.ts:887:3 › Guard builder › depth, node and clause limits stop the save before any request (5.5s)
+  ok 13 [chromium] › specs\system-machine.spec.ts:974:3 › Guard builder › a guard rule changed elsewhere is refused and the edit is kept (4.2s)
+  ok 14 [chromium] › specs\system-machine.spec.ts:1026:3 › Guard builder › the guard is built by keyboard alone (3.2s)
+  ok 15 [chromium] › specs\system-machine.spec.ts:1107:3 › Guard builder › at 375px a deep guard fits with no sideways page scroll (3.5s)
+  15 passed (50.1s)
+
+Screenshots in this folder were taken against a separately started API on 5180 and vite on 5173 (same E2E database,
+same lifted limits), both stopped afterwards. before-transition-drawer-desktop.png was taken with the change stashed
+(git stash push -u on the changed paths, then git stash pop; git diff afterwards matched a backup taken first).
