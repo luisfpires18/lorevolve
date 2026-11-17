@@ -102,7 +102,7 @@ test.describe('Game Entities directory', () => {
     // Beta's category and entries are not part of Alpha's directory.
     await expect(page.getByText('Beasts')).toHaveCount(0)
 
-    await card.getByRole('link').first().click()
+    await card.click()
     await expect(page).toHaveURL(/[?&]type=/)
     await expect(page.getByText('Relics entry 1')).toBeVisible()
     await expect(page.getByText('Relics entry 2')).toBeVisible()

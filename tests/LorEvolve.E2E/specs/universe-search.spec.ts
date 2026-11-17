@@ -556,7 +556,7 @@ test.describe('universe search', () => {
   }) => {
     await signUp(page)
     const world = await seedWorld(page)
-    await page.goto(`/app/universes/${world.universeId}/stories`)
+    await page.goto(`/app/universes/${world.universeId}/writing`)
     const box = searchBox(page)
 
     // The answer to a half-typed word is held back; the word is finished before it arrives.

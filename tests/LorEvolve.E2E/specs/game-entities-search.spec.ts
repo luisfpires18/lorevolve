@@ -69,6 +69,8 @@ test.describe('Game Entities search', () => {
   test('search narrows one category, keeps to the URL, and Show more continues the filtered list', async ({
     page,
   }) => {
+    // Over a page of entries are created one request at a time, which alone takes most of the default 30 seconds.
+    test.slow()
     await signUp(page)
     const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
       name: unique('Searchworld '),
@@ -89,7 +91,12 @@ test.describe('Game Entities search', () => {
     await page.goto(`/app/universes/${world.id}/game-entities/${alpha.id}?type=${alphaUnits.id}`)
     await expect(page.getByTestId('project-entry-list')).toBeVisible()
 
+    // The unfiltered first page is as long as the filtered one, so wait for the filtered read itself.
+    const searched = page.waitForResponse((response) =>
+      /\/entities\?.*q=ember/.test(response.url()),
+    )
     await page.getByTestId('project-entries-search').fill('ember')
+    await searched
     await expect(page).toHaveURL(/[?&]q=ember/)
     await expect(page).toHaveURL(new RegExp(`type=${alphaUnits.id}`))
     await expect(page.getByText('Frost warden')).toHaveCount(0)
@@ -112,7 +119,7 @@ test.describe('Game Entities search', () => {
     await expect(page.getByTestId('project-entry-list').locator('li').first()).toContainText(
       'Ember 27',
     )
-    await page.getByTestId('project-entries-sort').selectOption('name')
+    await page.getByTestId('project-entries-sort').selectOption({ label: 'Name' })
     await expect(page.getByTestId('project-entry-list').locator('li').first()).toContainText(
       'Ember 00',
     )
@@ -124,7 +131,8 @@ test.describe('Game Entities search', () => {
       .first()
       .getByRole('button', { name: /more/i })
       .click()
-    await expect(page.getByRole('menuitem').first()).toBeVisible()
+    // ActionMenu has no menu role on purpose; its items are plain buttons.
+    await expect(page.locator('[data-testid^="project-entry-delete-"]:visible')).toHaveCount(1)
     await page.keyboard.press('Escape')
 
     // Nothing matches: a clear empty state, and Clear filters restores the list.
@@ -133,7 +141,9 @@ test.describe('Game Entities search', () => {
     await page.getByTestId('project-entries-clear').click()
     await expect(page.getByTestId('project-entries-search')).toHaveValue('')
     await expect(page.getByTestId('project-entries-no-match')).toHaveCount(0)
-    await expect(page.getByText('Frost warden')).toBeVisible()
+    // By name, Frost warden sorts after the first page of Embers, so the unfiltered first page is full again.
+    await expect(page.getByTestId('project-entry-list').locator('li')).toHaveCount(PAGE_SIZE)
+    await expect(page.getByTestId('project-entries-more')).toBeVisible()
   })
 
   test("the nested toggle includes a child type's entries", async ({ page }) => {
@@ -152,7 +162,9 @@ test.describe('Game Entities search', () => {
     await expect(page.getByText('Parent entry')).toBeVisible()
     await expect(page.getByText('Child entry')).toHaveCount(0)
 
-    await page.getByTestId('project-entries-nested').check()
+    // A click, not check(): the box follows the address, which a router transition updates a moment later.
+    await page.getByTestId('project-entries-nested').click()
+    await expect(page.getByTestId('project-entries-nested')).toBeChecked()
     await expect(page).toHaveURL(/[?&]nested=1/)
     await expect(page.getByText('Child entry')).toBeVisible()
     await expect(page.getByText('Parent entry')).toBeVisible()

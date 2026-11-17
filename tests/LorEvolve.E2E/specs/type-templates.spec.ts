@@ -90,7 +90,7 @@ test.describe('Types: Templates', () => {
 
     await add.click()
     await page.getByTestId('project-field-new-name').fill('Tier')
-    await page.getByTestId('project-field-new-kind').selectOption({ label: 'Select' })
+    await page.getByTestId('project-field-new-kind').selectOption({ label: 'One choice' })
     await page.getByTestId('project-field-new-options').fill('Low\nHigh')
     await page.getByTestId('project-field-new-save').click()
     await expect(row.getByText('Tier')).toBeVisible()
@@ -120,6 +120,8 @@ test.describe('Types: Templates', () => {
     await row.locator('[data-testid^="template-edit-"]').click()
     await page.getByTestId('type-name').fill(renamed)
     await page.getByTestId('save-type').click()
+    // The save lands before the reload, or the reload can drop it.
+    await expect(page.locator(`[data-template-name="${renamed}"]`)).toBeVisible()
     await page.reload()
     await expect(page.locator(`[data-template-name="${renamed}"]`)).toBeVisible()
     expect(await gameTypes()).toBe(before)
