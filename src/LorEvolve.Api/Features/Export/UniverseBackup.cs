@@ -348,8 +348,13 @@ public sealed record UniverseBackup(
     /// 49 - A project may have a production format (#288). <see cref="BackupCreativeProject.Format"/> carries its identifier.
     /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
     /// none, and every restored project has none.
+    ///
+    /// 50 - A universe keeps reusable type templates (#281). <see cref="UniverseBackupPayload.TypeTemplates"/> holds
+    /// each template with its fields and their choices, in order. Nothing refers to a template, so every id is new on
+    /// restore. Not ignorable: a version 49 reader would restore the universe without its templates. A file at version
+    /// 49 or earlier has none, and restores with none.
     /// </summary>
-    public const int CurrentVersion = 49;
+    public const int CurrentVersion = 50;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -420,7 +425,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
-    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null);
+    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
+    IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -994,6 +1000,28 @@ public sealed record BackupProjectPanel(
     int SortOrder,
     DateTime CreatedAt,
     DateTime UpdatedAt);
+
+/// <summary>A universe's reusable type template (since version 50, #281), with its fields in order.</summary>
+public sealed record BackupTypeTemplate(
+    Guid Id,
+    string Name,
+    string? Description,
+    string? Icon,
+    string? AccentColor,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupTypeTemplateField> Fields);
+
+public sealed record BackupTypeTemplateField(
+    Guid Id,
+    string Name,
+    EntityFieldKind Kind,
+    bool IsRequired,
+    int DisplayOrder,
+    FieldImageShape? ImageShape,
+    IReadOnlyList<BackupTypeTemplateFieldOption> Options);
+
+public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int DisplayOrder);
 
 public sealed record BackupProjectEntity(
     Guid Id,
