@@ -190,6 +190,7 @@ app.MapTypeTemplateEndpoints();
 app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
 app.MapComicEndpoints();
+app.MapStructureEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();
