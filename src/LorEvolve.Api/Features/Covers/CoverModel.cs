@@ -1,4 +1,5 @@
 using LorEvolve.Api.Features.Media;
+using LorEvolve.Api.Features.Projects;
 
 namespace LorEvolve.Api.Features.Covers;
 
@@ -46,7 +47,7 @@ public abstract class CoverImage
 /// <summary>A story's cover, cut to a 2:3 book cover (<see cref="CoverFrames.Story"/>).</summary>
 public sealed class StoryCover : CoverImage;
 
-/// <summary>A project's cover, cut to a 16:10 screen (<see cref="CoverFrames.Project"/>).</summary>
+/// <summary>A project's cover, cut to a 16:10 screen, or a 2:3 issue cover for a comic (<see cref="CoverFrames.For"/>).</summary>
 public sealed class ProjectCover : CoverImage;
 
 public static class CoverFrames
@@ -54,6 +55,9 @@ public static class CoverFrames
     internal static readonly ImageFrame Story = ImageFrame.BookCover;
 
     internal static readonly ImageFrame Project = ImageFrame.Card;
+
+    /// <summary>A comic's cover is an issue's, portrait like a book's; every other kind's is a 16:10 screen.</summary>
+    internal static ImageFrame For(ProjectKind kind) => kind == ProjectKind.Comic ? Story : Project;
 }
 
 /// <summary>

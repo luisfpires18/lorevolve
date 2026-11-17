@@ -29,10 +29,13 @@ export const storyCoverStore = (universeId: string, storyId: string): PictureSto
   words: 'stories.cover',
 })
 
-/** A project's cover is a console's screen: the same wide 16:10 frame as a universe's card. */
-export const projectCoverStore = (projectId: string): PictureStore => ({
+/**
+ * A project's cover is a screen's or a film frame's: the same wide 16:10 frame as a universe's card. A comic's is an
+ * issue's cover, portrait like a book's. The server picks the same frame by the project's kind.
+ */
+export const projectCoverStore = (projectId: string, kind?: number): PictureStore => ({
   path: `/api/projects/${projectId}/cover`,
-  aspect: CARD_ASPECT,
+  aspect: kind === 4 ? BOOK_ASPECT : CARD_ASPECT,
   words: 'projects.cover',
 })
 

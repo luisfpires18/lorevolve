@@ -3,17 +3,21 @@ import { png } from './support/png'
 import { post, signUp, world } from './support/trash'
 
 /**
- * The Gaming and Writing shelves (owner, 2026-11-17): a game is a card on a widescreen handheld, a story a book, each
- * with a picture added from the empty card or its ⋯ menu; games move up and down like stories, and the order is kept. Each test registers its own
- * account and builds its own universe through the API.
+ * The Creation shelves (owner, 2026-11-17): a game is a card on a widescreen handheld, a film or series a strip of film,
+ * a comic an issue, a story a book, each with a picture added from the empty card or its ⋯ menu; projects move up and
+ * down like stories, and the order is kept. Each test registers its own account and builds its own universe through the
+ * API.
  */
 
 const GAME = 1
+const SERIES = 2
+const FILM = 3
+const COMIC = 4
 
-function game(page: Page, universeId: string, name: string) {
+function game(page: Page, universeId: string, name: string, kind = GAME) {
   return post(page, '/api/projects', {
     name,
-    kind: GAME,
+    kind,
     lifecycle: 0,
     subtype: null,
     summary: '',
@@ -58,17 +62,17 @@ test.describe('shelf cards', () => {
     await expect.poll(() => names(page)).toEqual(['Alpha Quest', 'Beta Quest', 'Gamma Quest'])
 
     const first = page.getByTestId('projects-item').filter({ hasText: 'Alpha Quest' })
-    await first.getByTestId('game-actions').click()
-    await expect(first.getByTestId('game-move-up')).toHaveCount(0)
-    await first.getByTestId('game-move-down').click()
+    await first.getByTestId('shelf-actions').click()
+    await expect(first.getByTestId('shelf-move-up')).toHaveCount(0)
+    await first.getByTestId('shelf-move-down').click()
     await expect.poll(() => names(page)).toEqual(['Beta Quest', 'Alpha Quest', 'Gamma Quest'])
-    await expect(page.getByTestId('gaming-announcement')).toContainText('game 2 of 3')
+    await expect(page.getByTestId('shelf-announcement')).toContainText('2 of 3')
 
     const last = page.getByTestId('projects-item').filter({ hasText: 'Gamma Quest' })
-    await last.getByTestId('game-actions').click()
-    await expect(last.getByTestId('game-move-down')).toHaveCount(0)
-    await last.getByTestId('game-move-up').click()
-    await expect(page.getByTestId('gaming-announcement')).toContainText('game 2 of 3')
+    await last.getByTestId('shelf-actions').click()
+    await expect(last.getByTestId('shelf-move-down')).toHaveCount(0)
+    await last.getByTestId('shelf-move-up').click()
+    await expect(page.getByTestId('shelf-announcement')).toContainText('2 of 3')
 
     await page.reload()
     await expect.poll(() => names(page)).toEqual(['Beta Quest', 'Gamma Quest', 'Alpha Quest'])
@@ -94,8 +98,8 @@ test.describe('shelf cards', () => {
     await expect(card.getByTestId('shelf-add-picture')).toHaveCount(0)
     await page.reload()
     await expect(card.locator('.handheld__screen img')).toBeVisible()
-    await card.getByTestId('game-actions').click()
-    await expect(card.getByTestId('game-cover')).toHaveText('Change picture')
+    await card.getByTestId('shelf-actions').click()
+    await expect(card.getByTestId('shelf-cover')).toHaveText('Change picture')
 
     // The book takes one from its menu just as well.
     await page.goto(`/app/universes/${universeId}/writing`)
@@ -109,5 +113,61 @@ test.describe('shelf cards', () => {
     await expect(book.locator('.book__cover img')).toBeVisible()
     await page.reload()
     await expect(book.locator('.book__cover img')).toBeVisible()
+  })
+
+  test('cinema orders films and series each among their own kind, on strips of film', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const universeId = await world(page)
+    await game(page, universeId, 'Alpha Reel', FILM)
+    await game(page, universeId, 'Mid Serial', SERIES)
+    await game(page, universeId, 'Omega Reel', FILM)
+
+    await page.goto(`/app/universes/${universeId}/cinema`)
+    await expect.poll(() => names(page)).toEqual(['Alpha Reel', 'Mid Serial', 'Omega Reel'])
+    await expect(page.locator('.filmstrip__frame')).toHaveCount(3)
+
+    // The only series has no neighbour of its kind to pass.
+    const serial = page.getByTestId('projects-item').filter({ hasText: 'Mid Serial' })
+    await serial.getByTestId('shelf-actions').click()
+    await expect(serial.getByTestId('shelf-move-up')).toHaveCount(0)
+    await expect(serial.getByTestId('shelf-move-down')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+
+    // A film moves past the next film; the series keeps its place between them.
+    const first = page.getByTestId('projects-item').filter({ hasText: 'Alpha Reel' })
+    await first.getByTestId('shelf-actions').click()
+    await expect(first.getByTestId('shelf-move-up')).toHaveCount(0)
+    await first.getByTestId('shelf-move-down').click()
+    await expect.poll(() => names(page)).toEqual(['Omega Reel', 'Mid Serial', 'Alpha Reel'])
+    await expect(page.getByTestId('shelf-announcement')).toContainText('2 of 2')
+
+    await page.reload()
+    await expect.poll(() => names(page)).toEqual(['Omega Reel', 'Mid Serial', 'Alpha Reel'])
+  })
+
+  test('a comic takes a portrait picture as its issue cover', async ({ page }) => {
+    await signUp(page)
+    const universeId = await world(page)
+    await game(page, universeId, 'Inkfall', COMIC)
+
+    await page.goto(`/app/universes/${universeId}/comic`)
+    const card = page.getByTestId('projects-item')
+    await expect(card.locator('.comic__cover img')).toHaveCount(0)
+    await card.getByTestId('shelf-add-picture').click()
+    await setCover(page, 'issue.png')
+    const cover = card.locator('.comic__cover img')
+    await expect(cover).toBeVisible()
+    // Cut to the issue's 2:3, whatever the shape it came in (800 square here).
+    await expect
+      .poll(() =>
+        cover.evaluate((img: HTMLImageElement) =>
+          Math.round((img.naturalWidth / img.naturalHeight) * 300),
+        ),
+      )
+      .toBe(200)
+    await card.getByTestId('shelf-actions').click()
+    await expect(card.getByTestId('shelf-cover')).toHaveText('Change picture')
   })
 })
