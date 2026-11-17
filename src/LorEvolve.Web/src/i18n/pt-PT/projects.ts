@@ -86,6 +86,12 @@ const projects = {
     emptyComic: 'Ainda não há projetos de banda desenhada.',
     emptyCategoryHint: 'Use Novo projeto para começar um neste universo.',
   },
+  gameEntities: {
+    lede: 'As categorias deste jogo, cada uma com as entradas que contém.',
+    back: 'Entidades de jogo',
+    notFound: 'Este jogo não está neste universo.',
+    notFoundHint: 'Volte às Entidades de jogo e escolha um dos jogos.',
+  },
   directory: {
     lede: 'Escolha um tipo de projeto para ver o que está a fazer neste universo.',
     none: 'Ainda sem projetos',
@@ -123,6 +129,7 @@ const projects = {
     fields: 'Campos',
     noFields: 'Ainda não há campos.',
     addField: 'Adicionar campo',
+    saveField: 'Guardar campo',
     fieldName: 'Nome do campo',
     fieldKind: 'O que vai lá dentro?',
     fieldOptions: 'Opções, uma por linha',
