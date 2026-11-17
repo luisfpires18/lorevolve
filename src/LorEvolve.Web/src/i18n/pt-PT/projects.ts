@@ -98,6 +98,7 @@ const projects = {
     structure: 'Estrutura',
     manuscript: 'Manuscrito',
     entities: 'Entidades',
+    types: 'Tipos',
     systems: 'Sistemas',
     ideas: 'Ideias',
   },

@@ -13,6 +13,7 @@ import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
+import { ProjectSchema } from '../components/ProjectSchema'
 import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectOutline } from '../components/ProjectOutline'
@@ -378,6 +379,23 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
    * are the same kind of thing and now read as one stack, separated by a rule, at every width (#184).
    */
   const entitiesPath = projectPath(project.id, 'entities', project.universe.id)
+  const meta = (
+    <span className="projectmeta" data-testid="project-meta">
+      <span>{kindLabel(project.kind)}</span>
+      {project.format ? (
+        <span data-testid="project-format">{formatLabel(project.format)}</span>
+      ) : formatsFor(project.kind).length > 0 ? (
+        <span data-testid="project-format">{t('projects.format.unset')}</span>
+      ) : null}
+      <span>{lifecycleLabel(project.lifecycle)}</span>
+      {project.subtype ? <span>{project.subtype}</span> : null}
+    </span>
+  )
+  // A kind with no Overview (a Game, owner 2026-11-17) opens on its content; its facts and summary sit above the tabs.
+  const compact = !sections.some((candidate) => candidate.segment === 'overview')
+  const typesPath = sections.some((candidate) => candidate.segment === 'types')
+    ? projectPath(project.id, 'types', project.universe.id)
+    : undefined
   const body = entryId ? (
     <div className="projectbody">
       <ProjectEntityDetailView
@@ -391,38 +409,25 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     </div>
   ) : (
     <div className="projectbody">
-      <section className="projects" data-testid="project-page">
-        {/*
-         * The head every other workspace screen uses (#184): the project's facts as the lede, and the summary under it
-         * as the project's own words. The universe is named by the shell's breadcrumb above the tabs (#199).
-         */}
-        <PageHeader
-          title={project.name}
-          titleTestId="project-name"
-          lede={
-            <span className="projectmeta" data-testid="project-meta">
-              <span>{kindLabel(project.kind)}</span>
-              {project.format ? (
-                <span data-testid="project-format">{formatLabel(project.format)}</span>
-              ) : formatsFor(project.kind).length > 0 ? (
-                <span data-testid="project-format">{t('projects.format.unset')}</span>
-              ) : null}
-              <span>{lifecycleLabel(project.lifecycle)}</span>
-              {project.subtype ? <span>{project.subtype}</span> : null}
-            </span>
-          }
-        />
+      {compact ? null : (
+        <section className="projects" data-testid="project-page">
+          {/*
+           * The head every other workspace screen uses (#184): the project's facts as the lede, and the summary under it
+           * as the project's own words. The universe is named by the shell's breadcrumb above the tabs (#199).
+           */}
+          <PageHeader title={project.name} titleTestId="project-name" lede={meta} />
 
-        {project.summary ? (
-          <p className="prose" data-testid="project-summary">
-            {project.summary}
-          </p>
-        ) : (
-          <p className="projectcard__meta" data-testid="project-summary-empty">
-            {t('projects.one.noSummary')}
-          </p>
-        )}
-      </section>
+          {project.summary ? (
+            <p className="prose" data-testid="project-summary">
+              {project.summary}
+            </p>
+          ) : (
+            <p className="projectcard__meta" data-testid="project-summary-empty">
+              {t('projects.one.noSummary')}
+            </p>
+          )}
+        </section>
+      )}
 
       {/*
        * One panel per view (#193). The overview holds the project's own content, its counts and the ways into the rest
@@ -441,6 +446,14 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
           universeId={project.universe.id}
           reloadKey={schemaVersion}
           entryHref={(entry) => `${entitiesPath}/${entry.id}`}
+          typesHref={typesPath}
+          onChanged={() => setSchemaVersion((version) => version + 1)}
+        />
+      ) : section.segment === 'types' ? (
+        // The type editor, the same `ProjectSchema` Entities used to open behind "Manage types".
+        <ProjectSchema
+          projectId={project.id}
+          reloadKey={schemaVersion}
           onChanged={() => setSchemaVersion((version) => version + 1)}
         />
       ) : section.segment === 'structure' &&
@@ -498,6 +511,18 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       projectName={project.name}
       universe={project.universe}
       sections={sections}
+      meta={
+        compact ? (
+          <div className="projectframe__facts" data-testid="project-facts">
+            <p className="projects__lede">{meta}</p>
+            {project.summary ? (
+              <p className="prose" data-testid="project-summary">
+                {project.summary}
+              </p>
+            ) : null}
+          </div>
+        ) : undefined
+      }
     >
       {body}
     </ProjectShell>

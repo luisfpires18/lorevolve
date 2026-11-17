@@ -100,6 +100,7 @@ const projects = {
     structure: 'Structure',
     manuscript: 'Manuscript',
     entities: 'Entities',
+    types: 'Types',
     systems: 'Systems',
     ideas: 'Ideas',
   },
