@@ -26,7 +26,7 @@ import { ImageViewer } from '../components/ImageViewer'
 import { NameList } from '../components/NameList'
 import { ProgressionView } from '../components/ProgressionView'
 import { RelationshipSection } from '../components/RelationshipSection'
-import { getEntityArticle, saveEntityArticle, type EntityArticle } from '../lore/article'
+import { getEntityArticle, saveEntityArticle } from '../lore/article'
 import { articleLinks, emptyValue, isEmptyDocument, valuedFields } from '../lore/document'
 import {
   entityDisplayUrl,
@@ -39,11 +39,10 @@ import { TokenInput } from '../components/TokenInput'
 import { TypeIcon } from '../components/TypeIcon'
 import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
-import type { Chronology } from '../chronology/types'
 import { CanonBlockNotice } from '../components/CanonBlockNotice'
 import { ApiError } from '../lib/api'
 import { formatDate } from '../lib/dates'
-import { differing, isChangedElsewhere, type Change } from '../lib/editConflict'
+import { isChangedElsewhere } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { createEntity, deleteEntity, ENTRY_CHANGED, getEntity, updateEntity } from '../lore/api'
 import {
@@ -53,16 +52,9 @@ import {
   type CanonStatusValue,
   type EntityDetail,
   type FieldValue,
-  type FieldValueInput,
   CANON_KEYS,
 } from '../lore/types'
-import {
-  NO_TYPES,
-  type EntityType,
-  type FieldDefinition,
-  type FieldSection,
-} from '../lore/typeDefinitions'
-import { FieldKind } from '../lore/fieldKinds'
+import { NO_TYPES, type FieldDefinition, type FieldSection } from '../lore/typeDefinitions'
 import { renderFact } from '../lore/facts'
 import { groupBySection } from '../lore/fieldSections'
 import { typeChoices } from '../lore/typeTree'
@@ -74,93 +66,16 @@ import { EmptyState } from '../components/EmptyState'
 import { useStagePictures } from '../progression/stagePictures'
 import { confirmAction } from '../lib/confirm'
 import { t, tn, useI18n } from '../i18n'
-
-interface Draft {
-  entityTypeId: string
-  name: string
-  summary: string
-  canonStatus: CanonStatusValue
-  aliases: string[]
-  tags: string[]
-  fields: Record<string, FieldValueInput>
-}
-
-/** What the entry form edits, as an entry or a suggestion holds it (task 045). */
-type EntryFields = Pick<
-  EntityDetail,
-  | 'entityTypeId'
-  | 'entityTypeName'
-  | 'name'
-  | 'summary'
-  | 'canonStatus'
-  | 'aliases'
-  | 'tags'
-  | 'fields'
->
-
-function draftFromDetail(detail: EntryFields): Draft {
-  const fields: Record<string, FieldValueInput> = {}
-  for (const value of detail.fields) {
-    fields[value.fieldDefinitionId] = {
-      fieldDefinitionId: value.fieldDefinitionId,
-      text: value.text,
-      number: value.number,
-      boolean: value.boolean,
-      date: value.date,
-      optionIds: value.optionIds,
-      referencedEntityId: value.referencedEntityId,
-      eraId: value.eraId,
-    }
-  }
-
-  return {
-    entityTypeId: detail.entityTypeId,
-    name: detail.name,
-    summary: detail.summary ?? '',
-    canonStatus: detail.canonStatus,
-    aliases: detail.aliases,
-    tags: detail.tags,
-    fields,
-  }
-}
-
-/** The entry a new one is copied from, as read when the form opened, and its article if it has one (Issue #27). */
-interface CopySource {
-  detail: EntityDetail
-  article: EntityArticle | null
-}
-
-/**
- * A new entry's starting form when it is copied from another: the source's type, summary, tags and field values, named
- * as a copy and at the first Canon step. Its aliases and its links to other entries start out of it - the copy panel adds
- * them back on request - and nothing else of the source is read at all.
- */
-function copiedDraft(detail: EntityDetail, types: EntityType[]): Draft {
-  const draft = draftFromDetail(detail)
-  for (const value of detail.fields) {
-    if (value.kind === FieldKind.EntityReference) delete draft.fields[value.fieldDefinitionId]
-  }
-
-  return {
-    ...draft,
-    entityTypeId: types.some((type) => type.id === detail.entityTypeId)
-      ? detail.entityTypeId
-      : types[0].id,
-    name: t('entity.page.copyName', { name: detail.name }),
-    canonStatus: CanonStatus.Idea,
-    aliases: [],
-  }
-}
-
-/** The source's links to other entries the copy may take: each link field that points at an entry still out of the Trash. */
-function copyableReferences(detail: EntityDetail) {
-  return detail.fields.filter(
-    (value) =>
-      value.kind === FieldKind.EntityReference &&
-      value.referencedEntityId !== null &&
-      !value.referencedEntityIsTrashed,
-  )
-}
+import {
+  comparable,
+  copiedDraft,
+  copyableReferences,
+  draftFromDetail,
+  type CopySource,
+  type Draft,
+  type EntryFields,
+} from '../lore/entryDraft'
+import { entryChanges, heldReference } from '../lore/entryChanges'
 
 /** How long the article stays marked after a link lands on it - the story page's scene and beat mark, for the same reason. */
 const ARRIVAL_MS = 2400
@@ -1649,20 +1564,6 @@ function EntityScreen({ view }: { view: EntryView }) {
 }
 
 /**
- * A draft as the save would send it, as one string: every field its type defines, an untouched one as its empty
- * value. So a field typed into and cleared again compares equal to one never touched.
- */
-function comparable(draft: Draft, types: EntityType[]) {
-  const definitions = types.find((type) => type.id === draft.entityTypeId)?.fields ?? []
-  return JSON.stringify({
-    ...draft,
-    fields: valuedFields(definitions).map(
-      (definition) => draft.fields[definition.id] ?? emptyValue(definition),
-    ),
-  })
-}
-
-/**
  * What a copy takes from the entry it is made from (Issue #27), said above the new entry's form before anything is created.
  *
  * Aliases and links to other entries are offered and start off: an alias names the source, and a link field points at
@@ -1864,123 +1765,4 @@ function sectionMeta(items: FieldDefinition[], refused: number) {
 function pictureShape(image: { width: number; height: number }) {
   const ratio = image.width / image.height
   return ratio > 1.25 ? 'landscape' : ratio < 0.9 ? 'portrait' : 'square'
-}
-
-/**
- * The entry a link field held when the entry was read, named for the picker that shows it.
- *
- * An entry in the Trash is never offered by a search, so it is named as being there. Either way the stored id stays the
- * field's value until the author changes it, so saving any other field keeps the link.
- */
-function heldReference(detail: EntityDetail | null, fieldDefinitionId: string) {
-  const held = detail?.fields.find((value) => value.fieldDefinitionId === fieldDefinitionId)
-
-  if (!held?.referencedEntityId) {
-    return null
-  }
-
-  const name = held.referencedEntityName ?? t('entity.page.held.unavailable')
-
-  return {
-    id: held.referencedEntityId,
-    name: held.referencedEntityIsTrashed ? t('entity.page.held.inTrash', { name }) : name,
-  }
-}
-
-/** One field as the reader sees it: the same words for the saved value and the author's unsaved one. */
-function factText(value: Parameters<typeof renderFact>[0], chronology: Chronology) {
-  return String(renderFact({ ...value, optionValues: [...value.optionValues].sort() }, chronology))
-}
-
-/**
- * What differs between the latest saved entry and the form's unsaved changes, field by field, in the reader's words. A link
- * the author newly chose is named only if the page already knows the entry; the picker does not hand its name back.
- */
-function entryChanges(
-  latest: EntryFields,
-  draft: Draft,
-  types: EntityType[],
-  chronology: Chronology,
-  opened: EntryFields | null,
-): Change[] {
-  const sorted = (values: string[]) => [...values].sort().join(', ')
-  const rows: Change[] = [
-    { label: t('entity.page.changes.name'), latest: latest.name, mine: draft.name.trim() },
-    {
-      label: t('entity.page.changes.type'),
-      latest: latest.entityTypeName,
-      mine:
-        draft.entityTypeId === latest.entityTypeId
-          ? latest.entityTypeName
-          : (types.find((type) => type.id === draft.entityTypeId)?.name ?? ''),
-    },
-    {
-      label: t('entity.page.changes.status'),
-      latest: CANON_LABELS[latest.canonStatus],
-      mine: CANON_LABELS[draft.canonStatus],
-    },
-    {
-      label: t('entity.page.changes.summary'),
-      latest: latest.summary ?? '',
-      mine: draft.summary.trim(),
-    },
-    {
-      label: t('entity.page.changes.aliases'),
-      latest: sorted(latest.aliases),
-      mine: sorted(draft.aliases),
-    },
-    { label: t('entity.page.changes.tags'), latest: sorted(latest.tags), mine: sorted(draft.tags) },
-  ]
-
-  const definitions = types.find((type) => type.id === draft.entityTypeId)?.fields ?? []
-  for (const definition of definitions) {
-    const saved = latest.fields.find((value) => value.fieldDefinitionId === definition.id)
-    const mine = draft.fields[definition.id] ?? emptyValue(definition)
-    const known = [
-      saved,
-      opened?.fields.find((value) => value.fieldDefinitionId === definition.id),
-    ].find(
-      (value) =>
-        value?.referencedEntityId != null && value.referencedEntityId === mine.referencedEntityId,
-    )
-
-    rows.push({
-      label: definition.name,
-      latest: saved
-        ? factText(saved, chronology)
-        : factText({ ...emptyFact, kind: definition.kind }, chronology),
-      mine: factText(
-        {
-          kind: definition.kind,
-          text: mine.text,
-          number: mine.number,
-          eraId: mine.eraId,
-          boolean: mine.boolean,
-          date: mine.date,
-          optionValues: (mine.optionIds ?? []).map(
-            (id) => definition.options.find((option) => option.id === id)?.value ?? '',
-          ),
-          referencedEntityName:
-            mine.referencedEntityId === null
-              ? null
-              : (known?.referencedEntityName ?? t('entity.page.changes.anotherEntry')),
-          referencedEntityIsTrashed: known?.referencedEntityIsTrashed ?? false,
-        },
-        chronology,
-      ),
-    })
-  }
-
-  return differing(rows)
-}
-
-const emptyFact = {
-  text: null,
-  number: null,
-  eraId: null,
-  boolean: null,
-  date: null,
-  optionValues: [],
-  referencedEntityName: null,
-  referencedEntityIsTrashed: false,
 }
