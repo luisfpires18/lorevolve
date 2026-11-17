@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ActionMenu } from './ActionMenu'
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
@@ -22,33 +23,8 @@ import {
   type ProjectNodeSummary,
   type ProjectStructureTree,
 } from '../projectEntities/structure'
+import { capital, levelWord, nameOf } from '../projectEntities/levelWords'
 import { t, tn, useI18n } from '../i18n'
-
-/**
- * The words for each structure level (#290). The only part of this component a later format issue grows: #291 adds
- * season and episode, #292 segment and shot, #294 issue, chapter, page and panel. An unknown level shows its own word.
- */
-const LEVEL_WORDS: Record<string, () => string> = {
-  season: () => t('projects.structure.levels.season'),
-  episode: () => t('projects.structure.levels.episode'),
-  act: () => t('projects.structure.levels.act'),
-  sequence: () => t('projects.structure.levels.sequence'),
-  scene: () => t('projects.structure.levels.scene'),
-  beat: () => t('projects.structure.levels.beat'),
-  issue: () => t('projects.structure.levels.issue'),
-  chapter: () => t('projects.structure.levels.chapter'),
-  page: () => t('projects.structure.levels.page'),
-  panel: () => t('projects.structure.levels.panel'),
-  segment: () => t('projects.structure.levels.segment'),
-  shot: () => t('projects.structure.levels.shot'),
-}
-
-const levelWord = (level: string) => LEVEL_WORDS[level]?.() ?? level
-
-const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
-
-const nameOf = (node: { level: string; title: string | null }) =>
-  node.title ?? capital(t('projects.structure.untitled', { level: levelWord(node.level) }))
 
 /**
  * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
@@ -64,12 +40,16 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
+  // A link from a story arc or event (#296) names the node to open: read once on load, ignored when unknown.
+  const [params] = useSearchParams()
+  const [linked] = useState(() => params.get('node'))
 
   useEffect(() => {
     const controller = new AbortController()
     getStructure(projectId, controller.signal)
       .then((read) => {
         setTree(read)
+        if (linked && read.nodes.some((node) => node.id === linked)) setEditing(linked)
         return listSeasons(projectId, controller.signal).then((seasons) =>
           setHasLegacy(seasons.length > 0),
         )
@@ -83,7 +63,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
         setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
       })
     return () => controller.abort()
-  }, [projectId])
+  }, [projectId, linked])
 
   function refresh() {
     return getStructure(projectId).then((read) => {

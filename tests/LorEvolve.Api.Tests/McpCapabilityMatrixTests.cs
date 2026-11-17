@@ -160,6 +160,10 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
                 "cinema-sagas/phases/members", "cinema-sagas/phases/members/move",
             ],
             Why.PersonOnly),
+        Excepted(
+            "Comic story arcs and events",
+            ["comic-collections", "comic-collections/move", "comic-collections/entries", "comic-collections/entries/move"],
+            Why.PersonOnly),
     ];
 
     private static readonly Domain[] Project =

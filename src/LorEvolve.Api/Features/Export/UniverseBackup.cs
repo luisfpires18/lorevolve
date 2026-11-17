@@ -361,8 +361,12 @@ public sealed record UniverseBackup(
     /// 52 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
     /// phases and the projects each phase holds, in order. Not ignorable: a version 51 reader would restore the universe
     /// with no sagas. A file at version 51 or earlier has none.
+    ///
+    /// 53 - Comic Story Arcs and Events (#296). <see cref="UniverseBackupPayload.ComicCollections"/> carries each
+    /// collection with the nodes it references, in reading order. Not ignorable: a version 52 reader would restore the
+    /// universe with no arcs or events. A file at version 52 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 52;
+    public const int CurrentVersion = 53;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -436,7 +440,22 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
     IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
     IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
-    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
+    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null,
+    IReadOnlyList<BackupComicCollection>? ComicCollections = null);
+
+/// <summary>
+/// One Comic Story Arc or Event of this universe (since version 53, #296). It lists the nodes it references by this
+/// file's node ids, in reading order: references only, so the nodes themselves travel as project nodes.
+/// </summary>
+public sealed record BackupComicCollection(
+    Guid Id,
+    string Kind,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> NodeIds);
 
 /// <summary>
 /// One Cinema saga of this universe with its phases in order (since version 52, #289). A phase lists the projects it

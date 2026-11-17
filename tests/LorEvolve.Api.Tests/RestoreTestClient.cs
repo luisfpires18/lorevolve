@@ -474,6 +474,12 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 53)
+        {
+            // Comic story arcs and events came in version 53 (#296).
+            Drop(payload, "comicCollections");
+        }
+
         if (version < 52)
         {
             // Cinema sagas came in version 52 (#289).
