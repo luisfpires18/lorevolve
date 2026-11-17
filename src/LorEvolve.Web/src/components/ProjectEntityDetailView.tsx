@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fieldImageUrl } from '../lore/images'
+import { entityImageUrl, fieldImageUrl } from '../lore/images'
 import { getProjectEntity } from '../projectEntities/api'
 import type { ProjectEntityDetail } from '../projectEntities/types'
 import { ApiError } from '../lib/api'
@@ -91,8 +91,10 @@ export function ProjectEntityDetailView({
   }
 
   const { entity } = read
-  // The server returns fieldImages in the type's field order, archived fields left out, so the first leads.
-  const image = entity.fieldImages[0] ?? null
+  // The entry's own picture leads, as on a Lore entry's page; without one, the first Image field's picture (the server
+  // returns fieldImages in the type's field order, archived fields left out).
+  const portrait = entity.image
+  const fieldImage = entity.fieldImages[0] ?? null
 
   return (
     <article className="projects" data-testid="game-entity-page">
@@ -123,12 +125,26 @@ export function ProjectEntityDetailView({
       />
       <div className="entitydetail">
         <div className="entitydetail__media">
-          {image ? (
+          {portrait ? (
             <img
               className="tile"
-              src={fieldImageUrl(universeId, entity.id, image, 'crop')}
-              width={image.width}
-              height={image.height}
+              src={entityImageUrl(
+                universeId,
+                entity.id,
+                portrait,
+                portrait.hasDisplay ? 'display' : 'original',
+              )}
+              width={portrait.width}
+              height={portrait.height}
+              alt={t('projects.gameEntities.entity.imageAlt', { name: entity.name })}
+              data-testid="game-entity-image"
+            />
+          ) : fieldImage ? (
+            <img
+              className="tile"
+              src={fieldImageUrl(universeId, entity.id, fieldImage, 'crop')}
+              width={fieldImage.width}
+              height={fieldImage.height}
               alt={t('projects.gameEntities.entity.imageAlt', { name: entity.name })}
               data-testid="game-entity-image"
             />

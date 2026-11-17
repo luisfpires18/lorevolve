@@ -678,7 +678,11 @@ internal sealed partial class UniverseRestore(
         CancellationToken cancellationToken)
     {
         var rows = new ConcurrentDictionary<Guid, EntityImage>();
-        var withImages = backup.Payload.Entities.Where(entity => entity.Image is not null).ToList();
+        // Lore and project entries' profile pictures alike (version 56, #286).
+        var withImages = backup.Payload.Entities.Select(entity => (entity.Id, entity.Image))
+            .Concat((backup.Payload.ProjectEntities ?? []).Select(entry => (entry.Id, entry.Image)))
+            .Where(owner => owner.Image is not null)
+            .ToList();
 
         if (withImages.Count == 0)
         {
@@ -1373,6 +1377,11 @@ internal sealed partial class UniverseRestore(
 
             // The entry's history, through the same writer the lore's entries use (version 42, #146).
             AddRevisions(ids.Map(entry.Id), entry.Revisions ?? [], ids);
+
+            if (images.TryGetValue(entry.Id, out var entryImage))
+            {
+                db.EntityImages.Add(entryImage);
+            }
 
             foreach (var value in entry.FieldValues ?? [])
             {

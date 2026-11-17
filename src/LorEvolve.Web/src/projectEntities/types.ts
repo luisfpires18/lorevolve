@@ -1,4 +1,4 @@
-import type { FieldImageRef, FieldImageShapeValue } from '../lore/types'
+import type { EntityImageRef, FieldImageRef, FieldImageShapeValue } from '../lore/types'
 
 /**
  * A project's own schema and entries (#144).
@@ -106,6 +106,8 @@ export type ProjectEntitySummary = {
   canonEntityId: string | null
   canonEntityName: string | null
   updatedAt: string
+  /** The entry's own picture, as a Lore card shows it (#286). */
+  image: EntityImageRef | null
 }
 
 /** One value as the API reads it back. */
@@ -133,6 +135,8 @@ export type ProjectEntityDetail = {
   entityTypeName: string
   fields: FieldValue[]
   fieldImages: FieldImageRef[]
+  /** The entry's own picture, through Lore's entry image routes (#286). */
+  image: EntityImageRef | null
   version: number
   /** The lore entry this one is linked to (#287); an edit sends it back so the link is kept. */
   canonEntityId: string | null

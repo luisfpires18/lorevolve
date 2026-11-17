@@ -137,7 +137,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
             await CreativeProjectsAsync(universeId, cancellationToken),
             [.. (await ProjectEntriesAsync(universeId, revisions, cancellationToken))
-                .Select(entry => entry with { FieldImages = FieldImagesOf(entry.Id, fieldImages) })],
+                .Select(entry => entry with { FieldImages = FieldImagesOf(entry.Id, fieldImages), Image = Image(images, entry.Id) })],
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
@@ -216,7 +216,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     private async Task<Dictionary<Guid, EntityImage>> ImagesAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>
-        await db.EntityImages.AsNoTracking()
+        // IgnoreQueryFilters: project entries' pictures too (#286), which the entity filter hides.
+        await db.EntityImages.AsNoTracking().IgnoreQueryFilters()
             .Where(image => image.Entity!.UniverseId == universeId)
             .ToDictionaryAsync(image => image.EntityId, cancellationToken);
 

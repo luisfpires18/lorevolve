@@ -371,7 +371,7 @@ public static partial class UniverseEndpoints
             .ExecuteDeleteAsync(cancellationToken);
 
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
-        var pictureKeys = (await db.EntityImages
+        var pictureKeys = (await db.EntityImages.IgnoreQueryFilters()
                 .Where(image => image.Entity!.UniverseId == universe.Id)
                 .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                 .ToListAsync(cancellationToken))
