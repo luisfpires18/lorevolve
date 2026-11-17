@@ -353,7 +353,10 @@ const entityTypes = {
       relations:
         'How entries connect: each kind’s two readings, its Canon constraints and its family meaning.',
       events: 'The event kinds and methods a moment and a world rule’s check can name.',
+      gaming: 'Types of {game}. They belong to this game only.',
     },
+    context: { label: 'Types for', lore: 'Lore', gaming: 'Gaming' },
+    game: { label: 'Game', loading: 'Loading games…' },
     loadFailed: 'The types could not be loaded.',
     movedToPlace: 'Moved “{name}” to place {place} of {total}.',
     moveFailed: 'That type could not be moved.',
