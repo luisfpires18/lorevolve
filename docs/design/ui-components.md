@@ -9,7 +9,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 
 | Need | Use |
 | --- | --- |
-| Screen title, crumb, lede, actions | `components/PageHeader.tsx`. A crumb outside a header, or of several steps, is `.pageheader__crumb` around a `nav > ol`, as `ProjectShell` |
+| Screen title, crumb, lede, actions | `components/PageHeader.tsx`. A crumb outside a header, or of several steps, is `.pageheader__crumb` around a `nav > ol` |
 | A form field: label, hint, control, error | `components/Field.tsx`: an input, or any control through its slot; a group of buttons with `group`; a set of controls under a legend with `group: 'fieldset'` |
 | The name above a fixed value that is shown, not chosen, such as the knower in a knowledge form | `.knowledge__fixedlabel`; no `Field`, since it names no control |
 | A button or a link that looks like one | `.button` 519, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
@@ -20,7 +20,10 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | A status word with its glyph | `components/StatusBadge.tsx` |
 | An entry's picture or type icon | `components/EntityTile.tsx` |
 | Tabs on one screen | `QueryTabList` and `TabPanel` from `components/QueryTabs.tsx` |
-| Routed views of one object | `.views` 10009; a project's tabs are `.views` too |
+| Routed views of one object | `.views` 10119; project and story views are chips, below |
+| A project's or story-backed project's views as chips | `components/ViewChips.tsx`, on `.lorecatalog__groups` and `.lorecatalog__group`; `ProjectShell` heads every kind with it |
+| A project structure node in the Stories look: arc, chapter, scene card | `components/OutlineItem.tsx`, on `.plotarc`, `.chapter` and `.scene`; used by `ProjectOutline` and `ComicCollections` |
+| A list of parts beside a text editor | `components/ManuscriptParts.tsx`, on `.manuscript` and `.msoutline`; a story's Manuscript and a project's Script |
 | A raised card's surface | `.entitycard`, `.typecard`, `.projectcard` share one rule, first in "Shared surfaces" |
 | A sidebar group's head | `.sidebar__grouphead` |
 | The universe sidebar | Four parts from `SECTION_GROUPS` in `universes/sections.ts`, drawn by one loop in `pages/UniverseWorkspace.tsx`: Overview, World Building, Creation, Management. A destination is a section entry, never a new nav widget. A section tied to a kind of project carries `needs` and is offered by `offered()` only while the universe has a project of that family (#272); a group with nothing offered is hidden. Below 860px the same nav is an off-canvas drawer opened by the bar's Sections toggle; there is no second phone nav |
