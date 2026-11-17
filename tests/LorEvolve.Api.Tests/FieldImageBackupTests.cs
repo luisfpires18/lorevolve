@@ -49,7 +49,7 @@ public sealed class FieldImageBackupTests(LorEvolveApiFactory factory) : IClassF
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(57, backup.FormatVersion);
+        Assert.Equal(58, backup.FormatVersion);
 
         var fields = backup.Payload.EntityTypes.SelectMany(type => type.Fields).ToDictionary(field => field.Id);
         Assert.Equal(FieldImageShape.Square, fields[portrait].ImageShape);

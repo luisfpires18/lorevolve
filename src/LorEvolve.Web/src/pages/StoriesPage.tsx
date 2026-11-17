@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
-import { Link, useNavigate, useOutletContext } from 'react-router-dom'
+import { ArrowDown, ArrowUp, Plus, Image as ImageIcon } from 'lucide-react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
+import { CoverDrawer } from '../components/CoverDrawer'
+import { ShelfCard, shelfStep } from '../components/ShelfCard'
+import { pictureUrl, projectCoverStore, storyCoverStore } from '../covers/api'
 import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
 import { listAllProjects } from '../projects/api'
@@ -17,7 +20,6 @@ import { sceneCountLabel } from '../stories/format'
 import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 type LoadState =
@@ -49,6 +51,7 @@ export default function StoriesPage() {
   const [announcement, setAnnouncement] = useState('')
   const [moveError, setMoveError] = useState<string | null>(null)
   const isMoving = useRef(false)
+  const [covering, setCovering] = useState<StorySummary | null>(null)
 
   /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
   async function move(story: StorySummary, by: -1 | 1) {
@@ -159,27 +162,45 @@ export default function StoriesPage() {
       ) : null}
 
       {state.kind === 'ready' && state.stories.length > 0 ? (
-        <ul className="storylist" data-testid="story-list">
+        // Each story as a book on its shelf (owner, 2026-11-17); the Gaming page draws its games the same way.
+        <ul className="shelf" data-testid="story-list">
           {state.stories.map((story, index) => (
-            <li
-              className="storyrow"
+            <ShelfCard
               key={story.id}
-              data-testid="story-row"
-              data-title={story.title}
-              data-story-id={story.id}
-            >
-              <Link className="storyrow__title" to={storyProjectPath(universe.id, story.id)}>
-                <bdi>{story.title}</bdi>
-              </Link>
-              <p className="storyrow__meta">
-                <StatusBadge step={story.status} label={STORY_STATUS_LABELS[story.status]} />
+              frame="book"
+              href={storyProjectPath(universe.id, story.id)}
+              title={story.title}
+              description={story.premise}
+              step={story.status}
+              statusLabel={STORY_STATUS_LABELS[story.status]}
+              meta={
                 <span data-testid="story-scene-count">{sceneCountLabel(story.sceneCount)}</span>
-                {access.editContent && state.stories.length > 1 ? (
+              }
+              cover={
+                story.cover
+                  ? pictureUrl(storyCoverStore(universe.id, story.id), story.cover, 'card')
+                  : null
+              }
+              attrs={{
+                'data-testid': 'story-row',
+                'data-title': story.title,
+                'data-story-id': story.id,
+              }}
+              menu={
+                access.editContent ? (
                   <ActionMenu
-                    className="storyrow__menu"
                     label={t('stories.browse.moreActions', { title: story.title })}
                     triggerTestId="story-actions"
                   >
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      onClick={() => setCovering(story)}
+                      data-testid="story-cover"
+                    >
+                      <ActionIcon icon={ImageIcon} />
+                      {t('projects.common.cover')}
+                    </button>
                     {index > 0 ? (
                       <button
                         className="actionmenu__item"
@@ -203,28 +224,54 @@ export default function StoriesPage() {
                       </button>
                     ) : null}
                   </ActionMenu>
-                ) : null}
-              </p>
-              {story.premise ? <p className="storyrow__premise prose">{story.premise}</p> : null}
-            </li>
+                ) : null
+              }
+            />
           ))}
         </ul>
       ) : null}
 
+      {covering ? (
+        <CoverDrawer
+          universeId={universe.id}
+          name={covering.title}
+          cover={covering.cover ?? null}
+          store={storyCoverStore(universe.id, covering.id)}
+          onChanged={(cover) => {
+            setCovering({ ...covering, cover })
+            setState((current) =>
+              current.kind === 'ready'
+                ? {
+                    ...current,
+                    stories: current.stories.map((one) =>
+                      one.id === covering.id ? { ...one, cover } : one,
+                    ),
+                  }
+                : current,
+            )
+          }}
+          onClose={() => setCovering(null)}
+        />
+      ) : null}
+
       {state.kind === 'ready' && state.others.length > 0 ? (
-        <ul className="storylist" data-testid="writing-project-list">
+        <ul className="shelf" data-testid="writing-project-list">
           {state.others.map((project) => (
-            <li className="storyrow" key={project.id} data-testid="writing-project-row">
-              <Link className="storyrow__title" to={projectRowPath(project)}>
-                <bdi>{project.name}</bdi>
-              </Link>
-              <p className="storyrow__meta">
-                <span>{lifecycleLabel(project.lifecycle)}</span>
-              </p>
-              {project.summary ? (
-                <p className="storyrow__premise prose">{project.summary}</p>
-              ) : null}
-            </li>
+            <ShelfCard
+              key={project.id}
+              frame="book"
+              href={projectRowPath(project)}
+              title={project.name}
+              description={project.summary}
+              step={shelfStep(project.lifecycle)}
+              statusLabel={lifecycleLabel(project.lifecycle)}
+              cover={
+                project.cover
+                  ? pictureUrl(projectCoverStore(project.id), project.cover, 'card')
+                  : null
+              }
+              attrs={{ 'data-testid': 'writing-project-row' }}
+            />
           ))}
         </ul>
       ) : null}

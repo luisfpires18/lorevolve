@@ -556,6 +556,12 @@ internal static class LaterSchema
         "IX_ProjectNodes_ParentId",
         "IX_ProjectNodes_ProjectId_ParentId_SortOrder",
         "sqlite_autoindex_ProjectNodeImages_1",
+
+        // Story and project covers (AddStoryProjectCoversAndProjectOrder): two tables keyed by their subject, one index each.
+        "sqlite_autoindex_StoryCovers_1",
+        "sqlite_autoindex_ProjectCovers_1",
+        "IX_StoryCovers_UniverseId",
+        "IX_ProjectCovers_UniverseId",
     ];
 
     /// <summary>

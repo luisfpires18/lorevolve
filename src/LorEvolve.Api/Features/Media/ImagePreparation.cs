@@ -58,6 +58,9 @@ internal sealed record ImageFrame(int AspectWidth, int AspectHeight, int MaxWidt
     /// </summary>
     public static readonly ImageFrame Card = new(16, 10, 960, "card", "16:10");
 
+    /// <summary>2:3, a book cover: a story's cover card. 640 wide (960 tall) covers a card drawn up to 320 CSS pixels on a 2x screen.</summary>
+    public static readonly ImageFrame BookCover = new(2, 3, 640, "card", "2:3");
+
     /// <summary>
     /// An image field's picture (Issue #238), fitted within <see cref="ImagePreparation.DisplaySide"/> on its long side. Free
     /// has no aspect (0:0): <see cref="ImagePreparation.Place(ImageCrop?, int, int, ImageFrame)"/> skips only the shape rule.

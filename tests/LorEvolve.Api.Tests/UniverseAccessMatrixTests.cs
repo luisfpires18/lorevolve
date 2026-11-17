@@ -9,6 +9,7 @@ using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
 using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Publishing;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
@@ -259,6 +260,13 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("order stories", Put, $"{u}/stories/order", May.Edit, Json(new StoryOrderRequest([w.Story]))),
             new("edit story", Put, s, May.Edit, Json(new StoryRequest("The drowned heir", "Edited", StoryStatus.Drafting))),
             new("trash story", Delete, s, May.Edit),
+            new("story cover", Get, $"{s}/cover", May.Read),
+            new("upload story cover", Put, $"{s}/cover", May.Edit, PngForm),
+            new("reframe story cover", Put, $"{s}/cover/card", May.Edit, Json(new UniverseArtworkCardRequest(any, null))),
+            new("remove story cover", Delete, $"{s}/cover", May.Edit),
+            new("story cover original", Get, $"{s}/cover/{any}/original", May.Read),
+            new("story cover card", Get, $"{s}/cover/{any}/card/{any}", May.Read),
+            new("order projects", Put, $"{u}/projects/order", May.Edit, Json(new ProjectOrderRequest(ProjectKind.Game, []))),
             new("chapters", Get, $"{s}/chapters", May.Read),
             new("chapter", Get, $"{s}/chapters/{w.Chapter}", May.Read),
             new("create chapter", Post, $"{s}/chapters", May.Edit, Json(new ChapterRequest("High water", null, null))),
@@ -479,8 +487,9 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
                 var expected = call.Name is "type template" or "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "field picture original" or "field picture crop" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                    or "story cover original" or "story cover card"
                     ? HttpStatusCode.NotFound
-                    : HttpStatusCode.OK;
+                    : call.Name is "story cover" ? HttpStatusCode.NoContent : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
             }
         }

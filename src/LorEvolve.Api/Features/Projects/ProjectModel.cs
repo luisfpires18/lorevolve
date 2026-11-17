@@ -94,6 +94,9 @@ public sealed class CreativeProject
     /// <summary>What the project is, in the author's words. <c>""</c> when there is none; never read for meaning.</summary>
     public required string Summary { get; set; }
 
+    /// <summary>The project's place among its universe's projects, from 0: lists read in this order. A new project goes last.</summary>
+    public int SortOrder { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

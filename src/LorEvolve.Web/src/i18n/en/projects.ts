@@ -1,5 +1,26 @@
 /** Creative projects: the novels, games, series, films and comics an author is making (#138, #139). */
 const projects = {
+  cover: {
+    tooBig: 'Pictures must be {mb} MB or smaller.',
+    removeFailed: 'The cover could not be removed.',
+    cardAlt: 'The cover as the game card shows it',
+    empty: 'No cover yet',
+    replace: 'Replace cover',
+    upload: 'Upload cover',
+    editFraming: 'Edit framing',
+    editFramingTitle: 'Edit framing',
+    frameTitle: 'Frame the cover',
+    saveFraming: 'Save',
+    confirmUpload: 'Upload',
+    updatingCard: 'Updating cover',
+    processing: 'Processing picture',
+    cropHint:
+      'Drag the picture to place the frame, or select it and use the arrow keys. The whole picture is kept; the frame is what the card shows.',
+    removing: 'Removing…',
+    remove: 'Remove cover',
+    hint: 'One wide picture, framed 16:10 for the game card. JPEG, PNG or WebP, up to 8 MB.',
+    hintPublic: 'One wide picture, framed 16:10 for the game card. JPEG, PNG or WebP, up to 8 MB.',
+  },
   /*
    * The words every project panel shares (#184). One "Loading" rather than four sentences that say the same thing
    * about four different panels, one name for cancelling a form, and one name for a row's menu and its move items.
@@ -10,6 +31,12 @@ const projects = {
     more: 'More actions for {name}',
     moveUp: 'Move up',
     moveDown: 'Move down',
+    done: 'Done',
+    cover: 'Cover',
+  },
+  gaming: {
+    moved: '“{name}” is now game {n} of {total}.',
+    moveFailed: 'That game could not be moved. Try again.',
   },
   comics: {
     viewsLabel: 'Comic views',

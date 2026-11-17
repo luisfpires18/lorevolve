@@ -367,7 +367,17 @@ internal static partial class BackupValidation
             .Concat((payload.ProjectNodes ?? [])
                 .Where(node => node?.Image is not null && node.Image.FieldDefinitionId == node.Id)
                 .Select(node => (EntityId: node.Id, Name: $"the {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}", Image: node.Image!)))
+            // A story's or project's cover (version 58): keyed by (subject, subject), cut to the subject's frame.
+            .Concat((payload.Stories ?? [])
+                .Where(story => story?.Cover is not null && story.Cover.FieldDefinitionId == story.Id)
+                .Select(story => (EntityId: story.Id, Name: $"the story {Quote(story.Title)}", Image: story.Cover!)))
+            .Concat((payload.CreativeProjects ?? [])
+                .Where(project => project?.Cover is not null && project.Cover.FieldDefinitionId == project.Id)
+                .Select(project => (EntityId: project.Id, Name: $"the project {Quote(project.Name)}", Image: project.Cover!)))
             .ToList();
+        var coverFrames = (payload.Stories ?? []).Where(story => story?.Cover is not null).Select(story => (story.Id, Frame: Covers.CoverFrames.Story))
+            .Concat((payload.CreativeProjects ?? []).Where(project => project?.Cover is not null).Select(project => (project.Id, Frame: Covers.CoverFrames.Project)))
+            .ToDictionary(cover => cover.Id, cover => cover.Frame);
         var results = new Dictionary<(Guid EntityId, Guid FieldId), ValidatedImage>();
         using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
 
@@ -379,7 +389,9 @@ internal static partial class BackupValidation
                 var image = picture.Image;
                 var bytes = await opened.ReadMediaAsync(image.MediaPath, cancellationToken);
                 var crop = new ImageCrop(image.Crop.X, image.Crop.Y, image.Crop.Width, image.Crop.Height);
-                var frame = EntityFieldImageEndpoints.FrameFor(shapes.GetValueOrDefault(image.FieldDefinitionId));
+                var frame = coverFrames.TryGetValue(picture.EntityId, out var coverFrame)
+                    ? coverFrame
+                    : EntityFieldImageEndpoints.FrameFor(shapes.GetValueOrDefault(image.FieldDefinitionId));
 
                 using var stream = new MemoryStream(bytes, writable: false);
                 PreparedImage? prepared;
@@ -633,6 +645,10 @@ internal static partial class BackupValidation
             ? 0L
             : 1L + (template.Fields ?? []).Sum(field => field is null ? 0L : 1L + (field.Options?.Count ?? 0)));
         count += (payload.ProjectNodes ?? []).Sum(node => node?.Image is null ? 1L : 2L);
+
+        // Covers (version 58): one row each.
+        count += (payload.Stories ?? []).Count(story => story?.Cover is not null);
+        count += (payload.CreativeProjects ?? []).Count(project => project?.Cover is not null);
 
         // Cinema sagas (version 52): a saga, its phases and one membership row per project a phase holds.
         count += (payload.CinemaSagas ?? []).Sum(saga => saga is null
@@ -1304,6 +1320,8 @@ internal static partial class BackupValidation
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what} has a format that is not one for its kind.");
                 }
+
+                CheckCover(project.Cover, project.Id, BackupArchive.ProjectCoverMediaPathFor, Covers.CoverFrames.Project, what);
             }
         }
 
@@ -2668,9 +2686,27 @@ internal static partial class BackupValidation
             }
         }
 
+        /// <summary>A story's or project's cover (version 58): its id is its subject's, and it is checked as any stored picture.</summary>
+        private void CheckCover(BackupFieldImage? cover, Guid subjectId, Func<Guid, string, string> pathFor, ImageFrame frame, string what)
+        {
+            if (cover is null)
+            {
+                return;
+            }
+
+            if (cover.FieldDefinitionId != subjectId)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} holds a cover that names something else.");
+                return;
+            }
+
+            CheckStoredPicture(cover, pathFor(subjectId, cover.ContentType), frame, what);
+        }
+
         private void CheckStory(BackupStory story)
         {
             var what = $"The story {Quote(story.Title)}";
+            CheckCover(story.Cover, story.Id, BackupArchive.StoryCoverMediaPathFor, Covers.CoverFrames.Story, what);
             Text(story.Title, StoryLimits.TitleMaxLength, $"{what}'s title", required: true);
             Text(story.Premise, StoryLimits.PremiseMaxLength, $"{what}'s premise");
             Text(story.PublicSummary, PublicationLimits.SummaryMaxLength, $"{what}'s public summary");

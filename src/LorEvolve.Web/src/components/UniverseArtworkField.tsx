@@ -3,8 +3,15 @@ import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { IMAGE_ACCEPT, IMAGE_MAX_BYTES, type ImageCrop } from '../lib/imageCrop'
-import { artworkUrl, removeArtwork, setArtwork, setArtworkCard } from '../publishing/api'
-import { CARD_ASPECT, type UniverseArtworkRef } from '../publishing/types'
+import {
+  artworkStore,
+  pictureUrl,
+  removePicture,
+  setPicture,
+  setPictureCard,
+  type PictureStore,
+} from '../covers/api'
+import type { UniverseArtworkRef } from '../publishing/types'
 import { ActionIcon } from './ActionIcon'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
 
@@ -18,19 +25,28 @@ type Framing =
  * Every write is immediate, as a stored entry's picture is: a confirmed upload, a new framing and a removal are
  * saved when they are made, so there is nothing unsaved to guard. A public universe cannot lose its artwork -
  * the server refuses - so Remove is not offered while it is public; Replace always is.
+ *
+ * A story's or a project's cover is the same picture at a route of its own (`store`), with its own frame and words.
  */
 export function UniverseArtworkField({
   universeId,
   artwork,
   isPublic,
   onChanged,
+  store: given,
+  testId = 'artwork',
 }: {
   universeId: string
   artwork: UniverseArtworkRef | null
   isPublic: boolean
   onChanged: (next: UniverseArtworkRef | null) => void
+  /** Another picture of the same kind: a story's or a project's cover. Unset, the universe's artwork. */
+  store?: PictureStore
+  testId?: string
 }) {
   const { t } = useI18n()
+  const store = given ?? artworkStore(universeId)
+  const w = store.words
   const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -55,7 +71,7 @@ export function UniverseArtworkField({
     setError(null)
 
     if (file.size > IMAGE_MAX_BYTES) {
-      setError(t('universe.artwork.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
+      setError(t(`${w}.tooBig`, { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
       return
     }
 
@@ -67,11 +83,11 @@ export function UniverseArtworkField({
 
     if (framing.kind === 'stored') {
       report({ kind: 'working' })
-      onChanged(await setArtworkCard(universeId, framing.artwork.assetId, crop))
+      onChanged(await setPictureCard(store, framing.artwork.assetId, crop))
     } else {
       report({ kind: 'sending', ratio: 0 })
       onChanged(
-        await setArtwork(universeId, framing.file, crop, ({ ratio }) => {
+        await setPicture(store, framing.file, crop, ({ ratio }) => {
           report(ratio !== null && ratio >= 1 ? { kind: 'working' } : { kind: 'sending', ratio })
         }),
       )
@@ -84,33 +100,33 @@ export function UniverseArtworkField({
     setError(null)
     setBusy(true)
     try {
-      await removeArtwork(universeId)
+      await removePicture(store)
       onChanged(null)
     } catch (problem: unknown) {
-      setError(problem instanceof ApiError ? problem.message : t('universe.artwork.removeFailed'))
+      setError(problem instanceof ApiError ? problem.message : t(`${w}.removeFailed`))
     } finally {
       setBusy(false)
     }
   }
 
   const source = framing === null ? null : framing.kind === 'file' ? pickedSource : framing.source
-  const inputId = `artwork-input-${universeId}`
+  const inputId = `${testId}-input-${store.path}`
 
   return (
-    <div className="artwork" data-testid="artwork-field">
+    <div className="artwork" data-testid={`${testId}-field`}>
       <div className="artwork__frame">
         {artwork ? (
           <img
             className="artwork__card"
-            src={artworkUrl(universeId, artwork, 'card')}
-            alt={t('universe.artwork.cardAlt')}
-            width={960}
-            height={600}
-            data-testid="artwork-card"
+            src={pictureUrl(store, artwork, 'card')}
+            alt={t(`${w}.cardAlt`)}
+            width={store.aspect >= 1 ? 960 : 400}
+            height={store.aspect >= 1 ? 600 : 600}
+            data-testid={`${testId}-card`}
           />
         ) : (
-          <p className="artwork__empty" data-testid="artwork-empty">
-            {t('universe.artwork.empty')}
+          <p className="artwork__empty" data-testid={`${testId}-empty`}>
+            {t(`${w}.empty`)}
           </p>
         )}
       </div>
@@ -124,15 +140,15 @@ export function UniverseArtworkField({
           accept={IMAGE_ACCEPT}
           disabled={busy}
           onChange={(event) => choose(event.target.files?.[0])}
-          data-testid="artwork-input"
+          data-testid={`${testId}-input`}
         />
         <label
           className="button button--secondary avatar__pick"
           htmlFor={inputId}
-          data-testid="artwork-pick"
+          data-testid={`${testId}-pick`}
         >
           <ActionIcon icon={artwork ? ImageUp : ImagePlus} />
-          {artwork ? t('universe.artwork.replace') : t('universe.artwork.upload')}
+          {artwork ? t(`${w}.replace`) : t(`${w}.upload`)}
         </label>
 
         {artwork ? (
@@ -145,13 +161,13 @@ export function UniverseArtworkField({
               setFraming({
                 kind: 'stored',
                 artwork,
-                source: artworkUrl(universeId, artwork, 'original'),
+                source: pictureUrl(store, artwork, 'original'),
               })
             }}
-            data-testid="artwork-reframe"
+            data-testid={`${testId}-reframe`}
           >
             <ActionIcon icon={Crop} />
-            {t('universe.artwork.editFraming')}
+            {t(`${w}.editFraming`)}
           </button>
         ) : null}
 
@@ -161,20 +177,18 @@ export function UniverseArtworkField({
             type="button"
             disabled={busy}
             onClick={() => void remove()}
-            data-testid="artwork-remove"
+            data-testid={`${testId}-remove`}
           >
             <ActionIcon icon={ImageMinus} />
-            {busy ? t('universe.artwork.removing') : t('universe.artwork.remove')}
+            {busy ? t(`${w}.removing`) : t(`${w}.remove`)}
           </button>
         ) : null}
       </div>
 
-      <p className="field__hint">
-        {artwork && isPublic ? t('universe.artwork.hintPublic') : t('universe.artwork.hint')}
-      </p>
+      <p className="field__hint">{artwork && isPublic ? t(`${w}.hintPublic`) : t(`${w}.hint`)}</p>
 
       {error ? (
-        <p className="field__error" role="alert" data-testid="artwork-error">
+        <p className="field__error" role="alert" data-testid={`${testId}-error`}>
           {error}
         </p>
       ) : null}
@@ -183,24 +197,12 @@ export function UniverseArtworkField({
         <ImageCropDialog
           key={source}
           source={source}
-          aspect={CARD_ASPECT}
+          aspect={store.aspect}
           initialCrop={framing.kind === 'stored' ? framing.artwork.crop : null}
-          title={
-            framing.kind === 'stored'
-              ? t('universe.artwork.editFramingTitle')
-              : t('universe.artwork.frameTitle')
-          }
-          confirmLabel={
-            framing.kind === 'stored'
-              ? t('universe.artwork.saveFraming')
-              : t('universe.artwork.confirmUpload')
-          }
-          workingLabel={
-            framing.kind === 'stored'
-              ? t('universe.artwork.updatingCard')
-              : t('universe.artwork.processing')
-          }
-          hint={t('universe.artwork.cropHint')}
+          title={framing.kind === 'stored' ? t(`${w}.editFramingTitle`) : t(`${w}.frameTitle`)}
+          confirmLabel={framing.kind === 'stored' ? t(`${w}.saveFraming`) : t(`${w}.confirmUpload`)}
+          workingLabel={framing.kind === 'stored' ? t(`${w}.updatingCard`) : t(`${w}.processing`)}
+          hint={t(`${w}.cropHint`)}
           onConfirm={keep}
           onCancel={() => setFraming(null)}
         />

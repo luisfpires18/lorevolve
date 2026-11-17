@@ -53,3 +53,14 @@ export function createProject(input: ProjectInput) {
 export function saveProject(id: string, input: ProjectInput) {
   return apiFetch<ProjectDetail>(`${BASE}/${id}`, { method: 'PUT', body: JSON.stringify(input) })
 }
+
+/**
+ * Puts one universe's projects of one kind in the author's order (owner, 2026-11-17), as stories are ordered: the list
+ * names every live project of that kind once. The answer is the universe's projects in their new order.
+ */
+export function reorderProjects(universeId: string, kind: number, projectIds: string[]) {
+  return apiFetch<ProjectDetail[]>(`/api/universes/${universeId}/projects/order`, {
+    method: 'PUT',
+    body: JSON.stringify({ kind, projectIds }),
+  })
+}

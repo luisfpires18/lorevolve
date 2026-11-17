@@ -46,6 +46,14 @@ public static class BackupArchive
     public static string NodeImageMediaPathFor(Guid nodeId, string contentType) =>
         $"media/nodes/{nodeId:D}/original.{ExtensionFor(contentType)}";
 
+    /// <summary>The original of one story's cover, inside the archive (since version 58).</summary>
+    public static string StoryCoverMediaPathFor(Guid storyId, string contentType) =>
+        $"media/stories/{storyId:D}/cover/original.{ExtensionFor(contentType)}";
+
+    /// <summary>The original of one project's cover, inside the archive (since version 58).</summary>
+    public static string ProjectCoverMediaPathFor(Guid projectId, string contentType) =>
+        $"media/projects/{projectId:D}/cover/original.{ExtensionFor(contentType)}";
+
     /// <summary>The original of one map's picture, inside the archive (since version 34).</summary>
     public static string MapMediaPathFor(Guid mapId, string contentType) =>
         $"media/maps/{mapId:D}/original.{ExtensionFor(contentType)}";

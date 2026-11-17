@@ -2,6 +2,28 @@ import type { Dictionary } from '../en'
 
 /** Stories: the story page, its arcs, chapters and scenes, their forms and what each part publishes (#103). */
 const stories: Dictionary['stories'] = {
+  cover: {
+    tooBig: 'As imagens têm de ter {mb} MB ou menos.',
+    removeFailed: 'Não foi possível remover a capa.',
+    cardAlt: 'A capa tal como o livro a mostra',
+    empty: 'Ainda sem capa',
+    replace: 'Substituir capa',
+    upload: 'Carregar capa',
+    editFraming: 'Editar enquadramento',
+    editFramingTitle: 'Editar enquadramento',
+    frameTitle: 'Enquadrar a capa',
+    saveFraming: 'Guardar',
+    confirmUpload: 'Carregar',
+    updatingCard: 'A atualizar a capa',
+    processing: 'A processar a imagem',
+    cropHint:
+      'Arrasta a imagem para posicionar o enquadramento, ou seleciona-a e usa as setas do teclado. A imagem inteira é guardada; o enquadramento é o que o cartão mostra.',
+    removing: 'A remover…',
+    remove: 'Remover capa',
+    hint: 'Uma imagem alta, enquadrada em 2:3 para a capa do livro. JPEG, PNG ou WebP, até 8 MB.',
+    hintPublic:
+      'Uma imagem alta, enquadrada em 2:3 para a capa do livro. JPEG, PNG ou WebP, até 8 MB.',
+  },
   page: {
     opening: 'A abrir a história…',
     missing: {

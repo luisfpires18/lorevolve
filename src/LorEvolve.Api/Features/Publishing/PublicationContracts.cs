@@ -78,6 +78,18 @@ public sealed record UniverseArtworkRef(
         artwork.ByteSize,
         artwork.UploadedAt,
         new ImageCrop(artwork.CropX, artwork.CropY, artwork.CropWidth, artwork.CropHeight));
+
+    /// <summary>A story's or project's cover, in the same shape: it is stored exactly as artwork is.</summary>
+    public static UniverseArtworkRef Of(Covers.CoverImage cover) => new(
+        cover.AssetId,
+        cover.CardId,
+        cover.Width,
+        cover.Height,
+        cover.ContentType,
+        cover.FileName,
+        cover.ByteSize,
+        cover.UploadedAt,
+        new ImageCrop(cover.CropX, cover.CropY, cover.CropWidth, cover.CropHeight));
 }
 
 /// <summary>A new card frame for the artwork already stored; refused if the artwork was replaced since.</summary>

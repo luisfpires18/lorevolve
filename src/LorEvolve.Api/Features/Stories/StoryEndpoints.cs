@@ -69,10 +69,13 @@ public static class StoryEndpoints
                 story.Status,
                 story.Scenes.Count(scene => scene.DeletedAt == null),
                 story.CreatedAt,
-                story.UpdatedAt))
+                story.UpdatedAt,
+                null))
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(stories);
+        var covers = await Covers.CoverEndpoints.StoryCoversAsync(db, [.. stories.Select(story => story.Id)], cancellationToken);
+
+        return Results.Ok(stories.Select(story => story with { Cover = covers.GetValueOrDefault(story.Id) }).ToList());
     }
 
     private static async Task<IResult> GetAsync(
@@ -446,6 +449,7 @@ public static class StoryEndpoints
                 candidate.CreatedAt,
                 candidate.UpdatedAt,
                 candidate.Version,
+                Cover = db.StoryCovers.FirstOrDefault(cover => cover.SubjectId == candidate.Id),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -473,6 +477,7 @@ public static class StoryEndpoints
             scenes,
             story.CreatedAt,
             story.UpdatedAt,
-            story.Version);
+            story.Version,
+            story.Cover is null ? null : Publishing.UniverseArtworkRef.Of(story.Cover));
     }
 }

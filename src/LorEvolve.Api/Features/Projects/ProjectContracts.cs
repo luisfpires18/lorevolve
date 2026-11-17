@@ -55,4 +55,11 @@ public sealed record ProjectDetail(
     DateTime UpdatedAt,
     int Version,
     Guid? StoryId = null,
-    string? Format = null);
+    string? Format = null,
+    Publishing.UniverseArtworkRef? Cover = null);
+
+/// <summary>
+/// One kind of a universe's projects in a new order: <paramref name="ProjectIds"/> lists every project of
+/// <paramref name="Kind"/> in that universe, each once.
+/// </summary>
+public sealed record ProjectOrderRequest(ProjectKind? Kind, IReadOnlyList<Guid>? ProjectIds);

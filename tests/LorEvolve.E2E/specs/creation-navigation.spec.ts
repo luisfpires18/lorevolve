@@ -180,7 +180,7 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     }
     await project(page, id, 'Quest', GAME)
     await page.goto(`/app/universes/${id}/writing`)
-    const titles = page.locator('.storyrow__title')
+    const titles = page.locator('.shelfcard__title')
     await expect(titles).toHaveText(['First Tale', 'Second Tale'])
 
     await page.getByTestId('story-actions').first().click()

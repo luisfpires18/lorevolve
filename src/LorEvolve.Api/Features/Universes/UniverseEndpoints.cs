@@ -393,6 +393,17 @@ public static partial class UniverseEndpoints
                     .Select(image => new { image.OriginalKey, image.CropKey })
                     .ToListAsync(cancellationToken))
                 .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
+            // Story and project covers, going with their subjects in the cascade.
+            .Concat((await db.StoryCovers
+                    .Where(cover => cover.UniverseId == universe.Id)
+                    .Select(cover => new { cover.OriginalKey, cover.CardKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(cover => new[] { cover.OriginalKey, cover.CardKey }))
+            .Concat((await db.ProjectCovers
+                    .Where(cover => cover.UniverseId == universe.Id)
+                    .Select(cover => new { cover.OriginalKey, cover.CardKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(cover => new[] { cover.OriginalKey, cover.CardKey }))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks

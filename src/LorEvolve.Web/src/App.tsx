@@ -17,7 +17,7 @@ import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
 import { useI18n } from './i18n'
 import { ProjectKind } from './projects/types'
-import { CINEMA, COMIC, GAME_ENTITIES, GAMING } from './universes/sections'
+import { CINEMA, COMIC, GAME_ENTITIES } from './universes/sections'
 import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { StoryRedirect } from './components/StoryRedirect'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
@@ -35,6 +35,7 @@ import {
   FamilyTreePage,
   ForgotPasswordPage,
   GameEntitiesPage,
+  GamingPage,
   GameEntityPage,
   IdeaBoardPage,
   IdeaBoardsPage,
@@ -307,13 +308,7 @@ function Root() {
               <Route path="projects" element={asSection('projects', <ProjectsDirectory />)} />
               {/* The Creation and Game Entities destinations: the project list narrowed to their kinds (#272). */}
               <Route path="writing" element={asSection('stories', <StoriesPage />)} />
-              <Route
-                path="gaming"
-                element={asSection(
-                  'projects',
-                  <ProjectsPage inUniverse section={GAMING} kinds={[ProjectKind.Game]} />,
-                )}
-              />
+              <Route path="gaming" element={asSection('projects', <GamingPage />)} />
               <Route
                 path="cinema"
                 element={asSection(

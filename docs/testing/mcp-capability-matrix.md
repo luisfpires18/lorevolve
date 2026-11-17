@@ -63,6 +63,8 @@ before proposing against them, which is the only read of them MCP offers.
 | Scenes | `stories/scenes` | `get_scene` | `Scene` |
 | A scene's prose | `stories/scenes/manuscript` | `read_scene_manuscript`, `search_scene_manuscript` | `Manuscript` |
 | Plot arcs | `stories/plot-arcs` | `get_arc` | `PlotArc` |
+| A story's cover | `stories/cover` | `media-bytes` | `media-bytes` |
+| The order of the universe's projects | `projects` | `person-only` | `person-only` |
 | Review comments | `entities/comments`, `stories/comments`, `stories/scenes/comments`, `comment-threads` | `person-only` | `person-only` |
 | Suggested changes | `entities/suggestions`, `stories/suggestions`, `stories/scenes/suggestions`, `suggestions` | `person-only` | `person-only` |
 | The Trash | `trash` | `live-only` | `live-only` |
@@ -93,6 +95,7 @@ universe only.
 | A project's own types | `entity-types` | `get_project_schema` | `ProjectType`, `ProjectField` |
 | A project's structure | `seasons`, `structure`, `structure/move` | `get_project_structure` | `read-only-by-design` |
 | A comic page's or panel's picture | `structure/image` | `media-bytes` | `media-bytes` |
+| A project's cover | `cover` | `media-bytes` | `media-bytes` |
 
 ## The write path
 
