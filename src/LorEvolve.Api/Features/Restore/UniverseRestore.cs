@@ -2270,6 +2270,50 @@ internal sealed partial class UniverseRestore(
                     SavedAt = revision.SavedAt,
                 });
             }
+
+            // The machine (version 57, ADR 0073). State and transition ids are unique only inside one System, so they
+            // are kept as they are, as an idea board's card ids are; the guard is translated like every rule reference.
+            if (system.Machine is { } machine)
+            {
+                db.SystemMachines.Add(new SystemMachine
+                {
+                    SystemId = ids.Map(system.Id),
+                    SubjectType = machine.SubjectType,
+                    Attribute = machine.Attribute,
+                    SchemaVersion = machine.SchemaVersion,
+                });
+
+                var stateOrder = 0;
+                foreach (var state in machine.States)
+                {
+                    db.SystemStates.Add(new SystemState
+                    {
+                        SystemId = ids.Map(system.Id),
+                        Id = state.Id,
+                        Name = state.Name,
+                        Value = state.Value,
+                        IsInitial = state.Initial,
+                        X = state.X,
+                        Y = state.Y,
+                        SortOrder = stateOrder++,
+                    });
+                }
+
+                var transitionOrder = 0;
+                foreach (var transition in machine.Transitions)
+                {
+                    db.SystemTransitions.Add(new SystemTransition
+                    {
+                        SystemId = ids.Map(system.Id),
+                        Id = transition.Id,
+                        FromStateId = transition.FromStateId,
+                        ToStateId = transition.ToStateId,
+                        Label = transition.Label,
+                        GuardRuleId = ids.Map(transition.GuardRuleId),
+                        SortOrder = transitionOrder++,
+                    });
+                }
+            }
         }
     }
 

@@ -1717,6 +1717,37 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(revision => revision.LoreSystem!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
+        // The machines (version 57, ADR 0073), their states and transitions, each in its stored order.
+        var machines = await db.SystemMachines.AsNoTracking()
+            .Where(machine => machine.LoreSystem!.UniverseId == universeId)
+            .ToDictionaryAsync(machine => machine.SystemId, cancellationToken);
+
+        var states = await db.SystemStates.AsNoTracking()
+            .Where(state => state.Machine!.LoreSystem!.UniverseId == universeId)
+            .OrderBy(state => state.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        var transitions = await db.SystemTransitions.AsNoTracking()
+            .Where(transition => transition.FromState!.Machine!.LoreSystem!.UniverseId == universeId)
+            .OrderBy(transition => transition.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        BackupSystemMachine? Machine(Guid systemId) => machines.TryGetValue(systemId, out var machine)
+            ? new BackupSystemMachine(
+                machine.SchemaVersion,
+                machine.SubjectType,
+                machine.Attribute,
+                [
+                    .. states.Where(state => state.SystemId == systemId)
+                        .Select(state => new BackupSystemState(state.Id, state.Name, state.Value, state.IsInitial, state.X, state.Y)),
+                ],
+                [
+                    .. transitions.Where(transition => transition.SystemId == systemId)
+                        .Select(transition => new BackupSystemTransition(
+                            transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId)),
+                ])
+            : null;
+
         return
         [
             .. systems
@@ -1750,7 +1781,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                                 SchemaVersion: null,
                                 Condition: null,
                                 Utc(revision.SavedAt))),
-                    ])),
+                    ],
+                    Machine(system.Id))),
         ];
     }
 

@@ -170,6 +170,7 @@ app.MapFamilyTreeEndpoints();
 app.MapTimelineEndpoints();
 app.MapWorldRuleEndpoints();
 app.MapSystemEndpoints();
+app.MapSystemMachineEndpoints();
 app.MapSystemRuleEndpoints();
 app.MapWorldLogicFindingEndpoints();
 app.MapSemanticFindingEndpoints();

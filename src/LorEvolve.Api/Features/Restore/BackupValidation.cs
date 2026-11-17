@@ -613,7 +613,11 @@ internal static partial class BackupValidation
         // declared dependencies. Every one of them is a row the restore writes, so the limit has to bound it.
         count += (payload.LoreSystems ?? []).Sum(system => system is null
             ? 0L
-            : 1L + system.RuleIds.Count + system.Revisions.Count);
+            : 1L + system.RuleIds.Count + system.Revisions.Count
+                // Its machine (version 57): the machine row, its states and its transitions.
+                + (system.Machine is null
+                    ? 0L
+                    : 1L + (system.Machine.States?.Count ?? 0) + (system.Machine.Transitions?.Count ?? 0)));
         count += (payload.SystemRules ?? []).Sum(rule => rule is null
             ? 0L
             : 1L + rule.DependsOn.Count + rule.Revisions.Count);
@@ -3101,6 +3105,54 @@ internal static partial class BackupValidation
 
                     Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved name", required: true);
                     Text(revision.Body, WorldLogicLimits.SummaryMaxLength, $"{what}'s saved summary");
+                }
+
+                if (system.Machine is { } machine)
+                {
+                    CheckSystemMachine(machine, what);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A System's machine (version 57, ADR 0073), held to the same check a save is, and every guard a rule
+        /// definition this file holds.
+        /// </summary>
+        private void CheckSystemMachine(BackupSystemMachine machine, string what)
+        {
+            if (machine.States is null || machine.Transitions is null)
+            {
+                Missing($"the states or transitions of {what.ToLowerInvariant()}'s machine");
+                return;
+            }
+
+            var request = new SystemMachineRequest(
+                machine.SchemaVersion,
+                new SystemMachineBinding(machine.SubjectType, machine.Attribute),
+                [
+                    .. machine.States.Select(state => state is null
+                        ? null!
+                        : new SystemMachineState(state.Id, state.Name, state.Value, state.Initial, state.X, state.Y)),
+                ],
+                [
+                    .. machine.Transitions.Select(transition => transition is null
+                        ? null!
+                        : new SystemMachineTransition(
+                            transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId)),
+                ],
+                ExpectedVersion: null);
+
+            if (SystemMachineEndpoints.Problem(request) is { } problem)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s machine cannot be saved as it is: {problem.Message}");
+                return;
+            }
+
+            foreach (var transition in machine.Transitions)
+            {
+                if (transition.GuardRuleId is { } guard && !_systemRules.Contains(guard))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what}'s machine names a guard the backup does not hold.");
                 }
             }
         }

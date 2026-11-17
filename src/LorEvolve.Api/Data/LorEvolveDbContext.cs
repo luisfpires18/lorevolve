@@ -246,6 +246,13 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     /// <summary>Which rule definitions one rule's condition may reference.</summary>
     public DbSet<SystemRuleDependency> SystemRuleDependencies => Set<SystemRuleDependency>();
 
+    /// <summary>A System's state machine, its states and its transitions, saved whole (ADR 0073).</summary>
+    public DbSet<SystemMachine> SystemMachines => Set<SystemMachine>();
+
+    public DbSet<SystemState> SystemStates => Set<SystemState>();
+
+    public DbSet<SystemTransition> SystemTransitions => Set<SystemTransition>();
+
     /// <summary>
     /// What evaluating the rule definitions found, with the evidence each outcome depended on and the history of
     /// what the author did about it (ADR 0072, LOREX-020). Derived from the lore, apart from the dismissals.

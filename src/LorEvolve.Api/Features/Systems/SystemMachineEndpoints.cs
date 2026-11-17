@@ -1,0 +1,411 @@
+using System.Security.Claims;
+using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.CanonIntegrity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace LorEvolve.Api.Features.Systems;
+
+/// <summary>
+/// A System's state machine, read and saved as one document (ADR 0073, state machine specification, section 3).
+///
+/// <b>The access rule of the other <c>/systems</c> routes.</b> Every route passes <see cref="WorldLogicAccess"/> first,
+/// and finds the System only by its id and that universe together. A guard is resolved inside the universe, and inside
+/// the System's project when it has one.
+///
+/// <b>Saved whole, under the System's version.</b> There are no per-state routes. A save names the System's
+/// <c>version</c>; a stale one is refused with 409 <c>system_changed</c>, and a save that changes nothing writes nothing
+/// and leaves the version alone. A save writes no revision row: a machine is not part of a System's history, as its
+/// rule links are not.
+///
+/// <b>Refusals carry the specification's codes.</b> Each is a field-keyed problem with a <c>code</c> extension, and the
+/// first failure wins. Structural problems a client prevents on its own carry no code.
+///
+/// <b>Nothing here evaluates anything.</b> No route reads a subject, a fact or a finding.
+/// </summary>
+public static class SystemMachineEndpoints
+{
+    /// <summary>The one machine document version this build knows.</summary>
+    public const int SchemaVersion = 1;
+
+    public const string SchemaVersionUnsupportedCode = "schema_version_unsupported";
+
+    public const string StateLimitCode = "machine_state_limit";
+
+    public const string TransitionLimitCode = "machine_transition_limit";
+
+    public const string BindingRequiredCode = "binding_required";
+
+    public const string InitialStateRequiredCode = "initial_state_required";
+
+    public const string DuplicateStateValueCode = "duplicate_state_value";
+
+    public const string UnknownStateCode = "unknown_state";
+
+    public const string SelfTransitionCode = "self_transition";
+
+    public const string GuardRuleNotFoundCode = "guard_rule_not_found";
+
+    public const string GuardScopeMismatchCode = "guard_scope_mismatch";
+
+    public static IEndpointRouteBuilder MapSystemMachineEndpoints(this IEndpointRouteBuilder endpoints)
+    {
+        var group = endpoints.MapGroup("/api/universes/{universeId:guid}/systems")
+            .WithTags("World Logic systems")
+            .RequireAuthorization();
+
+        group.MapGet("/{id:guid}/machine", GetAsync).WithName("GetSystemMachine");
+        group.MapPut("/{id:guid}/machine", SaveAsync).WithName("SaveSystemMachine");
+
+        return endpoints;
+    }
+
+    /// <summary>The machine, or a null binding and empty lists when the System has none.</summary>
+    private static async Task<IResult> GetAsync(
+        Guid universeId,
+        Guid id,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await WorldLogicAccess.DenyReadAsync(db, universeId, principal, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var system = await db.LoreSystems.AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken);
+
+        if (system is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(await DetailAsync(db, system, cancellationToken));
+    }
+
+    /// <summary>Replaces the whole machine: checked as one document, then the stored rows deleted and the new ones written.</summary>
+    private static async Task<IResult> SaveAsync(
+        Guid universeId,
+        Guid id,
+        [FromBody] SystemMachineRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await WorldLogicAccess.DenyChangeAsync(db, universeId, principal, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (Problem(request) is { } problem)
+        {
+            return Refused(problem);
+        }
+
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var system = await db.LoreSystems
+            .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken);
+
+        if (system is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (request.ExpectedVersion != system.Version)
+        {
+            return SystemEndpoints.Changed();
+        }
+
+        var states = request.States ?? [];
+        var transitions = request.Transitions ?? [];
+
+        // A guard is a rule of this universe, and inside the System's project when the rule is project-scoped.
+        var guardIds = transitions.Where(transition => transition.GuardRuleId is not null)
+            .Select(transition => transition.GuardRuleId!.Value)
+            .Distinct()
+            .ToList();
+        var guards = await db.SystemRules.AsNoTracking()
+            .Where(rule => guardIds.Contains(rule.Id) && rule.UniverseId == universeId)
+            .Select(rule => new { rule.Id, rule.ProjectId })
+            .ToDictionaryAsync(rule => rule.Id, rule => rule.ProjectId, cancellationToken);
+
+        for (var index = 0; index < transitions.Count; index++)
+        {
+            if (transitions[index].GuardRuleId is not { } guardId)
+            {
+                continue;
+            }
+
+            var field = $"transitions[{index}].guardRuleId";
+            if (!guards.TryGetValue(guardId, out var guardProject))
+            {
+                return Refused((field, "The guard names no rule definition of this universe.", GuardRuleNotFoundCode));
+            }
+
+            if (guardProject is not null && guardProject != system.ProjectId)
+            {
+                return Refused((field, "The guard belongs to a project this System is not in.", GuardScopeMismatchCode));
+            }
+        }
+
+        var binding = request.Binding is null && states.Count == 0 ? null : request.Binding;
+        var normalizedStates = states.Select(state => state with { Name = state.Name!.Trim() }).ToList();
+        var stored = await DetailAsync(db, system, cancellationToken);
+
+        if (binding == stored.Binding
+            && normalizedStates.SequenceEqual(stored.States)
+            && transitions.SequenceEqual(stored.Transitions))
+        {
+            // A save that changes nothing writes nothing and leaves the version alone.
+            return Results.Ok(stored);
+        }
+
+        // The cascade takes the states and the transitions with the machine row.
+        await db.SystemMachines.Where(machine => machine.SystemId == system.Id).ExecuteDeleteAsync(cancellationToken);
+
+        if (binding is not null)
+        {
+            db.SystemMachines.Add(new SystemMachine
+            {
+                SystemId = system.Id,
+                SubjectType = binding.SubjectType!,
+                Attribute = binding.Attribute!,
+                SchemaVersion = SchemaVersion,
+            });
+
+            db.SystemStates.AddRange(normalizedStates.Select((state, order) => new SystemState
+            {
+                SystemId = system.Id,
+                Id = state.Id,
+                Name = state.Name!,
+                Value = state.Value!,
+                IsInitial = state.Initial,
+                X = state.X,
+                Y = state.Y,
+                SortOrder = order,
+            }));
+
+            db.SystemTransitions.AddRange(transitions.Select((transition, order) => new SystemTransition
+            {
+                SystemId = system.Id,
+                Id = transition.Id,
+                FromStateId = transition.FromStateId,
+                ToStateId = transition.ToStateId,
+                Label = transition.Label,
+                GuardRuleId = transition.GuardRuleId,
+                SortOrder = order,
+            }));
+        }
+
+        system.Version++;
+        system.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        return Results.Ok(await DetailAsync(db, system, cancellationToken));
+    }
+
+    /// <summary>
+    /// The first thing wrong with a machine document that needs no database to see, as the field it is at, a message
+    /// and the specification's code (null for a structural problem), or null when there is none. Pure, so a backup is
+    /// held to exactly what a save is.
+    /// </summary>
+    internal static (string Field, string Message, string? Code)? Problem(SystemMachineRequest request)
+    {
+        if (request.SchemaVersion != SchemaVersion)
+        {
+            return ("schemaVersion", "This machine is written for a version LorEvolve does not know.", SchemaVersionUnsupportedCode);
+        }
+
+        var states = request.States ?? [];
+        var transitions = request.Transitions ?? [];
+
+        if (states.Count > WorldLogicLimits.MaxStates)
+        {
+            return ("states", $"A machine has at most {WorldLogicAccess.Number(WorldLogicLimits.MaxStates)} states.", StateLimitCode);
+        }
+
+        if (transitions.Count > WorldLogicLimits.MaxTransitions)
+        {
+            return (
+                "transitions",
+                $"A machine has at most {WorldLogicAccess.Number(WorldLogicLimits.MaxTransitions)} transitions.",
+                TransitionLimitCode);
+        }
+
+        var limit = WorldLogicAccess.Number(WorldLogicLimits.NameMaxLength);
+        var ids = new HashSet<Guid>();
+
+        for (var index = 0; index < states.Count; index++)
+        {
+            var state = states[index];
+            var at = $"states[{index}]";
+
+            if (state is null)
+            {
+                return (at, "Insert a state.", null);
+            }
+
+            if (state.Id == Guid.Empty || !ids.Add(state.Id))
+            {
+                return ($"{at}.id", "Each state and transition needs an id of its own.", null);
+            }
+
+            if (string.IsNullOrWhiteSpace(state.Name))
+            {
+                return ($"{at}.name", "Insert a name.", null);
+            }
+
+            if (state.Name.Trim().Length > WorldLogicLimits.NameMaxLength)
+            {
+                return ($"{at}.name", $"A name is at most {limit} characters.", null);
+            }
+
+            if (string.IsNullOrWhiteSpace(state.Value))
+            {
+                return ($"{at}.value", "Insert a value.", null);
+            }
+
+            if (state.Value.Length > WorldLogicLimits.NameMaxLength)
+            {
+                return ($"{at}.value", $"A value is at most {limit} characters.", null);
+            }
+
+            if (!Coordinate(state.X) || !Coordinate(state.Y))
+            {
+                return ($"{at}.{(Coordinate(state.X) ? "y" : "x")}", "A state sits at a finite place on the canvas.", null);
+            }
+        }
+
+        for (var index = 0; index < transitions.Count; index++)
+        {
+            var transition = transitions[index];
+            var at = $"transitions[{index}]";
+
+            if (transition is null)
+            {
+                return (at, "Insert a transition.", null);
+            }
+
+            if (transition.Id == Guid.Empty || !ids.Add(transition.Id))
+            {
+                return ($"{at}.id", "Each state and transition needs an id of its own.", null);
+            }
+
+            if (transition.Label is { Length: > WorldLogicLimits.NameMaxLength })
+            {
+                return ($"{at}.label", $"A label is at most {limit} characters.", null);
+            }
+        }
+
+        if (request.Binding is { } binding)
+        {
+            if (string.IsNullOrWhiteSpace(binding.SubjectType))
+            {
+                return ("binding.subjectType", "Insert the type the machine covers.", BindingRequiredCode);
+            }
+
+            if (string.IsNullOrWhiteSpace(binding.Attribute))
+            {
+                return ("binding.attribute", "Insert the attribute that holds the state.", BindingRequiredCode);
+            }
+
+            if (binding.SubjectType.Length > WorldLogicLimits.NameMaxLength)
+            {
+                return ("binding.subjectType", $"A type is at most {limit} characters.", null);
+            }
+
+            if (binding.Attribute.Length > WorldLogicLimits.NameMaxLength)
+            {
+                return ("binding.attribute", $"An attribute is at most {limit} characters.", null);
+            }
+        }
+        else if (states.Count > 0)
+        {
+            return ("binding", "A machine with states names the type and attribute it covers.", BindingRequiredCode);
+        }
+
+        if (states.Count > 0 && states.Count(state => state.Initial) != 1)
+        {
+            return ("states", "Exactly one state is the initial one.", InitialStateRequiredCode);
+        }
+
+        var values = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < states.Count; index++)
+        {
+            if (!values.Add(states[index].Value!))
+            {
+                return ($"states[{index}].value", "Two states share this value.", DuplicateStateValueCode);
+            }
+        }
+
+        var stateIds = states.Select(state => state.Id).ToHashSet();
+        for (var index = 0; index < transitions.Count; index++)
+        {
+            var transition = transitions[index];
+
+            if (!stateIds.Contains(transition.FromStateId))
+            {
+                return ($"transitions[{index}].fromStateId", "The transition starts at a state this machine does not hold.", UnknownStateCode);
+            }
+
+            if (!stateIds.Contains(transition.ToStateId))
+            {
+                return ($"transitions[{index}].toStateId", "The transition ends at a state this machine does not hold.", UnknownStateCode);
+            }
+
+            if (transition.FromStateId == transition.ToStateId)
+            {
+                return ($"transitions[{index}].toStateId", "A transition joins two different states.", SelfTransitionCode);
+            }
+        }
+
+        return null;
+    }
+
+    internal static async Task<SystemMachineDetail> DetailAsync(
+        LorEvolveDbContext db,
+        LoreSystem system,
+        CancellationToken cancellationToken)
+    {
+        var machine = await db.SystemMachines.AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.SystemId == system.Id, cancellationToken);
+
+        if (machine is null)
+        {
+            return new SystemMachineDetail(system.Id, system.Version, SchemaVersion, null, [], []);
+        }
+
+        var states = await db.SystemStates.AsNoTracking()
+            .Where(state => state.SystemId == system.Id)
+            .OrderBy(state => state.SortOrder)
+            .Select(state => new SystemMachineState(state.Id, state.Name, state.Value, state.IsInitial, state.X, state.Y))
+            .ToListAsync(cancellationToken);
+
+        var transitions = await db.SystemTransitions.AsNoTracking()
+            .Where(transition => transition.SystemId == system.Id)
+            .OrderBy(transition => transition.SortOrder)
+            .Select(transition => new SystemMachineTransition(
+                transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId))
+            .ToListAsync(cancellationToken);
+
+        return new SystemMachineDetail(
+            system.Id,
+            system.Version,
+            machine.SchemaVersion,
+            new SystemMachineBinding(machine.SubjectType, machine.Attribute),
+            states,
+            transitions);
+    }
+
+    private static bool Coordinate(double value) =>
+        double.IsFinite(value) && Math.Abs(value) <= WorldLogicLimits.MaxCoordinate;
+
+    private static IResult Refused((string Field, string Message, string? Code) problem) =>
+        Problems.Field(
+            problem.Field,
+            problem.Message,
+            extensions: problem.Code is null ? null : new Dictionary<string, object?> { ["code"] = problem.Code });
+}

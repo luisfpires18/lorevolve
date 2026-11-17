@@ -388,6 +388,16 @@ public static class SystemRuleEndpoints
             .Select(link => new SystemReference(link.SystemId, link.LoreSystem!.Name))
             .ToListAsync(cancellationToken);
 
+        // A rule a machine's transition names as its guard is in use too (ADR 0073), and its System is named once.
+        var guarded = await db.SystemTransitions.AsNoTracking()
+            .Where(transition => transition.GuardRuleId == id)
+            .Select(transition => transition.SystemId)
+            .Distinct()
+            .Join(db.LoreSystems, systemId => systemId, system => system.Id, (_, system) => new SystemReference(system.Id, system.Name))
+            .ToListAsync(cancellationToken);
+
+        systems = [.. systems.Concat(guarded).DistinctBy(system => system.Id)];
+
         var dependents = await db.SystemRuleDependencies.AsNoTracking()
             .Where(dependency => dependency.DependsOnRuleId == id)
             .Select(dependency => dependency.RuleId)

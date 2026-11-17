@@ -175,3 +175,36 @@ public sealed record WorldLogicPage<T>(
     int PageSize,
     int TotalCount,
     int TotalPages);
+
+/// <summary>Which attribute of which subject type a machine's states are values of, compared as text (ADR 0073).</summary>
+public sealed record SystemMachineBinding(string? SubjectType, string? Attribute);
+
+/// <summary>
+/// One state of a machine. <paramref name="Id"/> is the client's, unique within the document.
+/// <paramref name="Name"/> is trimmed; <paramref name="Value"/> is stored exactly as sent.
+/// </summary>
+public sealed record SystemMachineState(Guid Id, string? Name, string? Value, bool Initial, double X, double Y);
+
+/// <summary>One transition, in declared order. <paramref name="GuardRuleId"/> names a rule definition, or is null.</summary>
+public sealed record SystemMachineTransition(Guid Id, Guid FromStateId, Guid ToStateId, string? Label, Guid? GuardRuleId);
+
+/// <summary>
+/// Saving a System's machine whole (state machine specification, section 3). An empty document - no binding, no
+/// states, no transitions - removes the machine. <paramref name="ExpectedVersion"/> is the System's version and
+/// behaves as it does for a System save.
+/// </summary>
+public sealed record SystemMachineRequest(
+    int SchemaVersion,
+    SystemMachineBinding? Binding,
+    IReadOnlyList<SystemMachineState>? States,
+    IReadOnlyList<SystemMachineTransition>? Transitions,
+    int? ExpectedVersion);
+
+/// <summary>A System's machine, whole, with the System's version. A System with none has a null binding and empty lists.</summary>
+public sealed record SystemMachineDetail(
+    Guid SystemId,
+    int Version,
+    int SchemaVersion,
+    SystemMachineBinding? Binding,
+    IReadOnlyList<SystemMachineState> States,
+    IReadOnlyList<SystemMachineTransition> Transitions);

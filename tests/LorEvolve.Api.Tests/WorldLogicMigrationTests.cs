@@ -169,6 +169,97 @@ public sealed class WorldLogicMigrationTests : IDisposable
         }
     }
 
+    /// <summary>The migration before the machine tables (#357): rolling back to it is rolling back exactly those.</summary>
+    private const string BeforeMachines = "20261117031631_AddComicVolumeProject";
+
+    private static readonly string[] MachineTables = ["SystemMachines", "SystemStates", "SystemTransitions"];
+
+    /// <summary>
+    /// The machine migration only adds three tables and their indexes, so rolling it back takes exactly those and
+    /// leaves the System, its rule and every other row standing, and up again the schema holds their delete actions.
+    /// </summary>
+    [Fact]
+    public async Task The_machine_tables_come_and_go_alone()
+    {
+        Directory.CreateDirectory(_directory);
+
+        await using (var host = new FileHost(DataSource))
+        {
+            var client = host.CreateHttpsClient();
+            (await client.PostAsJsonAsync(
+                "/api/auth/register",
+                new RegisterRequest("user-wlmachinemig", "user-wlmachinemig@example.test", Password)))
+                .EnsureSuccessStatusCode();
+
+            var universeId = (await CreateUniverse(client, "World wlmachinemig")).Id;
+            await CreateEntity(client, universeId, "Arlen");
+
+            var rule = await PostJson<SystemRuleDetail>(
+                client,
+                $"/api/universes/{universeId}/system-rules",
+                new SystemRuleRequest("Masterwork", null));
+            var system = await PostJson<SystemDetail>(
+                client,
+                $"/api/universes/{universeId}/systems",
+                new SystemRequest("Rank", null));
+
+            var novice = Guid.NewGuid();
+            var master = Guid.NewGuid();
+            await PutJson<SystemMachineDetail>(
+                client,
+                $"/api/universes/{universeId}/systems/{system.Id}/machine",
+                new SystemMachineRequest(
+                    1,
+                    new SystemMachineBinding("member", "rank"),
+                    [new(novice, "Novice", "novice", true, 0, 0), new(master, "Master", "master", false, 320, 0)],
+                    [new(Guid.NewGuid(), novice, master, "Raised", rule.Id)],
+                    system.Version));
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        await using (var db = Context())
+        {
+            var kept = await Rows(db);
+            var triggersBefore = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name");
+            Assert.Equal(1, await db.SystemTransitions.CountAsync());
+
+            await db.GetService<IMigrator>().MigrateAsync(BeforeMachines);
+
+            var tables = await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'table'");
+            Assert.All(MachineTables, table => Assert.DoesNotContain(table, tables));
+            Assert.All(WorldLogicTables, table => Assert.Contains(table, tables));
+
+            // Nothing else moved, triggers included, and the System and its rule are still there.
+            Assert.Equal(kept, await Rows(db));
+            Assert.Equal(
+                triggersBefore,
+                await Strings(db, "SELECT name AS Value FROM sqlite_master WHERE type = 'trigger' ORDER BY name"));
+            Assert.Empty(await Strings(db, "SELECT \"table\" AS Value FROM pragma_foreign_key_check"));
+            Assert.Equal(["Rank"], await Strings(db, "SELECT \"Name\" AS Value FROM \"LoreSystems\""));
+            Assert.Equal(["Masterwork"], await Strings(db, "SELECT \"Title\" AS Value FROM \"SystemRules\""));
+
+            await db.GetService<IMigrator>().MigrateAsync();
+
+            Assert.False(db.Database.HasPendingModelChanges());
+            Assert.Equal(0, await db.SystemMachines.CountAsync());
+            Assert.Equal(kept, await Rows(db));
+
+            // The delete actions SQLite itself holds, not the ones the model declares.
+            Assert.Equal(["LoreSystems.SystemId:CASCADE"], await ForeignKeys(db, "SystemMachines"));
+            Assert.Equal(["SystemMachines.SystemId:CASCADE"], await ForeignKeys(db, "SystemStates"));
+            Assert.Equal(
+                [
+                    "SystemRules.GuardRuleId:CASCADE",
+                    "SystemStates.FromStateId:CASCADE",
+                    "SystemStates.SystemId:CASCADE",
+                    "SystemStates.SystemId:CASCADE",
+                    "SystemStates.ToStateId:CASCADE",
+                ],
+                (await ForeignKeys(db, "SystemTransitions")).Order(StringComparer.Ordinal));
+        }
+    }
+
     /// <summary>The rows the rollback must not touch: the lore, the world rules and the universe itself.</summary>
     private static async Task<List<string>> Rows(LorEvolveDbContext db) =>
         await Strings(db, """

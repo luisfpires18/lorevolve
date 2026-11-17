@@ -100,6 +100,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
             ["systems", "system-rules", "world-logic/rules"],
             ["list_systems", "list_world_logic_rules", "get_world_logic_rule", "evaluate_world_logic_rule", "get_rule_impact"],
             ["SystemRule", "LoreSystem"]),
+        Excepted("A System's state machine", ["systems/machine"], "pending-lorex-075"),
         new(
             "Recorded World Logic findings",
             ["world-logic/findings"],
@@ -296,9 +297,9 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         var published = File.ReadAllText(Path.Combine(RepositoryRoot(), Path.Combine(Document)));
         var gaps = published[published.IndexOf("## Known gaps", StringComparison.Ordinal)..];
 
-        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. Nothing
-        // carries one now that every M3 child has merged. If a later milestone adds one, the prose has to name every
-        // prefix it covers, or a reader is told of fewer gaps than there are.
+        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. A System's
+        // state machine carries one until #361 gives it its tools. The prose has to name every prefix such a domain
+        // covers, or a reader is told of fewer gaps than there are.
         foreach (var domain in Universe.Concat(Project).Where(domain => domain.ReadWhy.StartsWith("pending-", StringComparison.Ordinal)))
         {
             foreach (var prefix in domain.Prefixes)

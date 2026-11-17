@@ -377,8 +377,12 @@ public sealed record UniverseBackup(
     /// 56 - Project entry profile pictures (#286). <see cref="BackupProjectEntity.Image"/> carries a project entry's
     /// picture exactly as <see cref="BackupEntity.Image"/>, its original in the archive. Not ignorable: a version 55
     /// reader would restore the entry without its picture. A file at version 55 or earlier has none.
+    ///
+    /// 57 - A System's state machine (#357, ADR 0073). <see cref="BackupLoreSystem.Machine"/> carries its binding, states
+    /// with their canvas positions and transitions with their guards. Not ignorable: a version 56 reader would restore the
+    /// System without its machine. A file at version 56 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 56;
+    public const int CurrentVersion = 57;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -1517,7 +1521,28 @@ public sealed record BackupLoreSystem(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<Guid> RuleIds,
-    IReadOnlyList<BackupWorldLogicRevision> Revisions);
+    IReadOnlyList<BackupWorldLogicRevision> Revisions,
+
+    /// <summary>The System's state machine (since version 57, ADR 0073), or null for a System with none.</summary>
+    BackupSystemMachine? Machine = null);
+
+/// <summary>
+/// A System's state machine (since version 57, ADR 0073): its binding, its states in order and its transitions in
+/// declared order. State and transition ids are the document's own, kept as they are on a restore because they are
+/// unique only inside one System; a guard is an id of this file's <see cref="UniverseBackupPayload.SystemRules"/>.
+/// </summary>
+public sealed record BackupSystemMachine(
+    int SchemaVersion,
+    string SubjectType,
+    string Attribute,
+    IReadOnlyList<BackupSystemState> States,
+    IReadOnlyList<BackupSystemTransition> Transitions);
+
+/// <summary>One state of a machine, with where the author put it on the canvas.</summary>
+public sealed record BackupSystemState(Guid Id, string Name, string Value, bool Initial, double X, double Y);
+
+/// <summary>One transition of a machine. <paramref name="GuardRuleId"/> is a rule definition of this file, or null.</summary>
+public sealed record BackupSystemTransition(Guid Id, Guid FromStateId, Guid ToStateId, string? Label, Guid? GuardRuleId);
 
 /// <summary>
 /// One reusable rule definition (since version 44, ADR 0072).
