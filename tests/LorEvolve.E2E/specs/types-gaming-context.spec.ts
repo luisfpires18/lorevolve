@@ -69,10 +69,10 @@ test.describe('Types: Lore and Gaming', () => {
     })
     const types = `/app/universes/${world.id}/types`
 
-    // No game: no switch, the tabs as before.
+    // No game: the tabs as before, and no Gaming option (the switch always offers Templates).
     await page.goto(types)
     await expect(page.getByTestId('types-tab-lore')).toBeVisible()
-    await expect(page.getByTestId('types-context')).toHaveCount(0)
+    await expect(page.getByTestId('types-context-gaming')).toHaveCount(0)
 
     const nameA = unique('Alpha ')
     const nameB = unique('Beta ')
