@@ -345,12 +345,16 @@ public sealed record UniverseBackup(
     /// those fields, each original in the archive with the crop the author chose. Not ignorable: a version 47 reader would
     /// restore an image field with no shape and its entries with no pictures. A file at version 47 or earlier has none.
     ///
-    /// 49 - A universe keeps reusable type templates (#281). <see cref="UniverseBackupPayload.TypeTemplates"/> holds
+    /// 49 - A project may have a production format (#288). <see cref="BackupCreativeProject.Format"/> carries its identifier.
+    /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
+    /// none, and every restored project has none.
+    ///
+    /// 50 - A universe keeps reusable type templates (#281). <see cref="UniverseBackupPayload.TypeTemplates"/> holds
     /// each template with its fields and their choices, in order. Nothing refers to a template, so every id is new on
-    /// restore. Not ignorable: a version 48 reader would restore the universe without its templates. A file at version
-    /// 48 or earlier has none, and restores with none.
+    /// restore. Not ignorable: a version 49 reader would restore the universe without its templates. A file at version
+    /// 49 or earlier has none, and restores with none.
     /// </summary>
-    public const int CurrentVersion = 49;
+    public const int CurrentVersion = 50;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -630,7 +634,8 @@ public sealed record BackupCreativeProject(
     string? Subtype,
     string Summary,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? Format = null);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
@@ -996,7 +1001,7 @@ public sealed record BackupProjectPanel(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-/// <summary>A universe's reusable type template (since version 49, #281), with its fields in order.</summary>
+/// <summary>A universe's reusable type template (since version 50, #281), with its fields in order.</summary>
 public sealed record BackupTypeTemplate(
     Guid Id,
     string Name,

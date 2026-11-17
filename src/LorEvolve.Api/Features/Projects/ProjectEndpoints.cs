@@ -176,6 +176,7 @@ public static class ProjectEndpoints
             Kind = request.Kind,
             Lifecycle = request.Lifecycle,
             Subtype = Cleaned(request.Subtype),
+            Format = Cleaned(request.Format),
             Name = request.Name!.Trim(),
             Summary = request.Summary ?? string.Empty,
             CreatedAt = now,
@@ -240,11 +241,13 @@ public static class ProjectEndpoints
 
         var name = request.Name!.Trim();
         var subtype = Cleaned(request.Subtype);
+        var format = Cleaned(request.Format);
         var summary = request.Summary ?? string.Empty;
         var unchanged = project.Name == name
             && project.Kind == request.Kind
             && project.Lifecycle == request.Lifecycle
             && project.Subtype == subtype
+            && project.Format == format
             && project.Summary == summary
             && project.UniverseId == request.UniverseId!.Value;
 
@@ -254,6 +257,7 @@ public static class ProjectEndpoints
             project.Kind = request.Kind;
             project.Lifecycle = request.Lifecycle;
             project.Subtype = subtype;
+            project.Format = format;
             project.Summary = summary;
             project.UniverseId = request.UniverseId!.Value;
             project.UpdatedAt = DateTime.UtcNow;
@@ -305,6 +309,10 @@ public static class ProjectEndpoints
             errors["subtype"] = [$"A subtype is at most {ProjectLimits.SubtypeMaxLength} characters."];
         }
 
+        if (Cleaned(request.Format) is { } format && !ProjectFormats.Allows(request.Kind, format))
+        {
+            errors["format"] = ["That is not a format for this kind of project."];
+        }
         if ((request.Summary?.Length ?? 0) > ProjectLimits.SummaryMaxLength)
         {
             errors["summary"] = [$"A summary is at most {ProjectLimits.SummaryMaxLength} characters."];
@@ -345,5 +353,6 @@ public static class ProjectEndpoints
             project.OwnerId == userId,
             Utc(project.CreatedAt),
             Utc(project.UpdatedAt),
-            project.Version);
+            project.Version,
+            Format: project.Format);
 }

@@ -84,6 +84,8 @@ public sealed class CreativeProject
     /// enum makes expensive to correct.
     /// </summary>
     public string? Subtype { get; set; }
+    /// <summary>The production format (#288), an identifier from <see cref="ProjectFormats"/>; null when none was chosen.</summary>
+    public string? Format { get; set; }
 
     public ProjectLifecycle Lifecycle { get; set; }
 

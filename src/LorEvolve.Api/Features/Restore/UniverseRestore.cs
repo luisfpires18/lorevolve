@@ -1015,6 +1015,7 @@ internal sealed partial class UniverseRestore(
                 Kind = project.Kind,
                 Lifecycle = project.Lifecycle,
                 Subtype = project.Subtype,
+                Format = project.Format,
                 Summary = project.Summary,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
@@ -2170,8 +2171,8 @@ internal sealed partial class UniverseRestore(
     /// The history entry carries no actor: no account did this, the restore did.
     /// </summary>
     /// <summary>
-    /// The universe's type templates (version 49, #281). Nothing refers to a template, so each row simply gets a new id;
-    /// a file from before version 49 has none.
+    /// The universe's type templates (version 50, #281). Nothing refers to a template, so each row simply gets a new id;
+    /// a file from before version 50 has none.
     /// </summary>
     private void AddTypeTemplates(UniverseBackupPayload payload, Guid universeId)
     {

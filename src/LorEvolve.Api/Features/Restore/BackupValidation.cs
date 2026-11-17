@@ -614,7 +614,7 @@ internal static partial class BackupValidation
             ? 0L
             : 2L + finding.Evidence.Count);
 
-        // Type templates (version 49): each template, its fields and their choices.
+        // Type templates (version 50): each template, its fields and their choices.
         count += (payload.TypeTemplates ?? []).Sum(template => template is null
             ? 0L
             : 1L + (template.Fields ?? []).Sum(field => field is null ? 0L : 1L + (field.Options?.Count ?? 0)));
@@ -694,7 +694,7 @@ internal static partial class BackupValidation
             var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
             var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
             var dismissedFindings = Required(payload.DismissedFindings, "the dismissed World Logic findings", since: 46);
-            var typeTemplates = Required(payload.TypeTemplates, "the list of type templates", since: 49);
+            var typeTemplates = Required(payload.TypeTemplates, "the list of type templates", since: 50);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -774,7 +774,7 @@ internal static partial class BackupValidation
             CheckArchiveHoldsOnlyPictures();
         }
 
-        // ---------- Type templates (version 49, #281) ----------
+        // ---------- Type templates (version 50, #281) ----------
 
         private void CheckTypeTemplates(IReadOnlyList<BackupTypeTemplate> templates)
         {
@@ -1247,6 +1247,10 @@ internal static partial class BackupValidation
                 if (!Enum.IsDefined(project.Lifecycle))
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what} is at a stage LorEvolve does not have.");
+                }
+                if (project.Format is { } format && !ProjectFormats.Allows(project.Kind, format))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has a format that is not one for its kind.");
                 }
             }
         }

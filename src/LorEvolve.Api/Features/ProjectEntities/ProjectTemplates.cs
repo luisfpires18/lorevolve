@@ -150,12 +150,12 @@ public static class ProjectTemplates
     /// without a template is not an error: it means an author of that kind defines every type themselves, which is
     /// also what happens to a kind whose template they decline.
     /// </summary>
-    public static Template For(ProjectKind kind, string? subtype = null) => kind switch
+    public static Template For(ProjectKind kind, string? subtype = null, string? format = null) => kind switch
     {
         ProjectKind.Game => GameTemplate,
         ProjectKind.Series => SeriesTemplate,
         ProjectKind.Film => FilmTemplate,
-        ProjectKind.Comic => Comic(subtype),
+        ProjectKind.Comic => Comic(subtype, format),
         _ => Empty,
     };
 
@@ -164,9 +164,10 @@ public static class ProjectTemplates
     /// it is matched loosely and anything unrecognised gets the plain comic one: a project called "graphic novel"
     /// should start somewhere rather than nowhere.
     /// </summary>
-    private static Template Comic(string? subtype)
+    private static Template Comic(string? subtype, string? format)
     {
-        var said = subtype?.Trim() ?? string.Empty;
+        // A chosen format (#293) wins; the subtype is only read when there is none, so older comics are unchanged.
+        var said = format switch { "manga" => "manga", "webcomic" => "webtoon", null => subtype?.Trim() ?? string.Empty, _ => string.Empty };
 
         if (said.Contains("manga", StringComparison.OrdinalIgnoreCase))
         {

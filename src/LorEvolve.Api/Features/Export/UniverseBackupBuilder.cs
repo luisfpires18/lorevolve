@@ -1472,7 +1472,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 project.Subtype,
                 project.Summary,
                 Utc(project.CreatedAt),
-                Utc(project.UpdatedAt)))
+                Utc(project.UpdatedAt),
+                project.Format))
             .ToListAsync(cancellationToken);
 
     /// <summary>

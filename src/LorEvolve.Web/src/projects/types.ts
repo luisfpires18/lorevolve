@@ -35,6 +35,8 @@ export interface ProjectDetail {
   kind: ProjectKindValue
   lifecycle: ProjectLifecycleValue
   subtype: string | null
+  /** The production format (#288), an id from `PROJECT_FORMATS`; null when none was chosen. */
+  format: string | null
   summary: string
   /** The universe the project belongs to. Every project belongs to exactly one (#172). */
   universe: ProjectUniverse
@@ -57,6 +59,11 @@ export interface ProjectInput {
   kind: ProjectKindValue
   lifecycle: ProjectLifecycleValue
   subtype: string | null
+  /**
+   * Required on purpose: a save stores exactly what it is sent, so a caller that edits another field must send the
+   * project's current `format` back or the save clears it (#288).
+   */
+  format: string | null
   summary: string
   universeId: string
   expectedVersion: number | null
