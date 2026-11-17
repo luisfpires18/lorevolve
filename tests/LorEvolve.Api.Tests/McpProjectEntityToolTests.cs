@@ -371,6 +371,47 @@ public sealed class McpProjectEntityToolTests(McpProjectEntityFixture fixture) :
         Assert.Equal("not_found", crossed.GetProperty("error").GetString());
     }
 
+    /// <summary>A film with a format lists its structure nodes (#290), and a node's text reads through the script tool.</summary>
+    [Fact]
+    public async Task A_film_s_structure_nodes_are_listed_and_a_node_s_text_is_read_whole()
+    {
+        var film = await McpProjectEntityFixture.PostJson<ProjectDetail>(
+            W.Owner,
+            "/api/projects",
+            new ProjectRequest("Salt Acts", ProjectKind.Film, ProjectLifecycle.Active, null, null, W.U, null, "feature-film"));
+        var act = await McpProjectEntityFixture.PostJson<ProjectNodeDetail>(
+            W.Owner,
+            $"/api/projects/{film.Id}/structure",
+            new ProjectNodeRequest("act", Title: "Act One"));
+        var scene = await McpProjectEntityFixture.PostJson<ProjectNodeDetail>(
+            W.Owner,
+            $"/api/projects/{film.Id}/structure",
+            new ProjectNodeRequest("scene", act.Id, "Arrival", Body: "EXT. SHORE - DAY"));
+
+        await using var client = await SdkClient(Api, W.U, fixture.Viewer.AccessToken);
+
+        var structure = await Call(
+            client,
+            LorEvolveMcpProjectEntityTools.StructureTool,
+            new() { ["projectId"] = film.Id.ToString() });
+
+        Assert.True(structure.GetProperty("hasStructure").GetBoolean());
+        var nodes = structure.GetProperty("nodes").EnumerateArray().ToList();
+        Assert.Equal(2, nodes.Count);
+        var listed = nodes.Single(node => node.GetProperty("id").GetGuid() == scene.Id);
+        Assert.Equal(act.Id, listed.GetProperty("parentId").GetGuid());
+        Assert.Equal("scene", listed.GetProperty("level").GetString());
+        Assert.Equal("EXT. SHORE - DAY".Length, listed.GetProperty("bodyLength").GetInt32());
+
+        var script = await Call(
+            client,
+            LorEvolveMcpProjectEntityTools.ScriptTool,
+            new() { ["projectId"] = film.Id.ToString(), ["unitId"] = scene.Id.ToString() });
+
+        Assert.Equal("EXT. SHORE - DAY", script.GetProperty("script").GetString());
+        Assert.Equal("scene", script.GetProperty("level").GetString());
+    }
+
     /// <summary>
     /// An entry stays in the project it was made in. The first review round of #148 found that a proposal could name
     /// another project on an update: the check let it through and the commit then refused it as a missing entry, so the

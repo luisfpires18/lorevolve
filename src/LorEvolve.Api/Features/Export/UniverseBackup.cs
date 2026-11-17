@@ -348,8 +348,12 @@ public sealed record UniverseBackup(
     /// 49 - A project may have a production format (#288). <see cref="BackupCreativeProject.Format"/> carries its identifier.
     /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
     /// none, and every restored project has none.
+    ///
+    /// 50 - A project with a rule-backed format holds a structure of nodes (#290): acts, sequences, scenes, beats.
+    /// <see cref="UniverseBackupPayload.ProjectNodes"/> carries them flat, each naming its parent. Not ignorable: a
+    /// version 49 reader would restore a feature film with no acts or scenes. A file at version 49 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 49;
+    public const int CurrentVersion = 50;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -420,7 +424,8 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
-    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null);
+    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
+    IReadOnlyList<BackupProjectNode>? ProjectNodes = null);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -991,6 +996,22 @@ public sealed record BackupProjectPanel(
     string? Description,
     string? Dialogue,
     Guid? CanonEntityId,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+/// <summary>
+/// One node of a project's structure (since version 50, #290), flat, naming its parent node (null for a root) by this
+/// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
+/// </summary>
+public sealed record BackupProjectNode(
+    Guid Id,
+    Guid ProjectId,
+    Guid? ParentId,
+    string Level,
+    string? Title,
+    string? Summary,
+    string? Body,
     int SortOrder,
     DateTime CreatedAt,
     DateTime UpdatedAt);

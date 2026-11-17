@@ -168,6 +168,9 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<ProjectPanel> ProjectPanels => Set<ProjectPanel>();
 
+    /// <summary>The rule-shaped structure of a project with a format (#290): acts, sequences, scenes, beats.</summary>
+    public DbSet<ProjectNode> ProjectNodes => Set<ProjectNode>();
+
     public DbSet<Story> Stories => Set<Story>();
 
     public DbSet<Chapter> Chapters => Set<Chapter>();

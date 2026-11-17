@@ -613,6 +613,8 @@ internal static partial class BackupValidation
             ? 0L
             : 2L + finding.Evidence.Count);
 
+        count += payload.ProjectNodes?.Count ?? 0;
+
         return (int)Math.Min(count, int.MaxValue);
     }
 
@@ -632,6 +634,9 @@ internal static partial class BackupValidation
     {
         private readonly HashSet<Guid> _ids = [];
         private readonly HashSet<Guid> _projects = [];
+
+        // Each project's structure rules (#290), null when its format has none, so its nodes can be checked.
+        private readonly Dictionary<Guid, ProjectStructures.Rules?> _projectRules = [];
 
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
@@ -702,6 +707,7 @@ internal static partial class BackupValidation
             RegisterEntities(entities);
             RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
             RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
+            RegisterProjectNodes(Required(payload.ProjectNodes, "the list of project structure nodes", since: 50));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
@@ -1136,6 +1142,9 @@ internal static partial class BackupValidation
                 var what = $"The project {Quote(project.Name)}";
                 Register(project.Id, what);
                 _projects.Add(project.Id);
+                _projectRules[project.Id] = project.Format is { } rulesFormat && ProjectFormats.Allows(project.Kind, rulesFormat)
+                    ? ProjectStructures.For(rulesFormat)
+                    : null;
 
                 if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
                 {
@@ -1348,6 +1357,73 @@ internal static partial class BackupValidation
         /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
         /// and one project's season names are unique among themselves, which is what the database says too.
         /// </summary>
+        /// <summary>
+        /// A project's structure nodes (version 50, #290): each in a project this file holds, its parent in the same
+        /// project, no cycle, and every level where the project format's rules allow it. A project whose format has no
+        /// rules holds no nodes.
+        /// </summary>
+        private void RegisterProjectNodes(IReadOnlyList<BackupProjectNode> nodes)
+        {
+            var byId = new Dictionary<Guid, BackupProjectNode>();
+
+            foreach (var node in nodes)
+            {
+                if (node is null)
+                {
+                    Missing("a project structure node");
+                    continue;
+                }
+
+                var what = $"The {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}";
+                Register(node.Id, what);
+                byId.TryAdd(node.Id, node);
+
+                if (!_projects.Contains(node.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} belongs to a project this file does not hold.");
+                }
+
+                Text(node.Level, StructureLimits.LevelMaxLength, $"{what}'s level", required: true);
+                Text(node.Title, SeriesLimits.NameMaxLength, $"{what}'s title");
+                Text(node.Summary, SeriesLimits.SummaryMaxLength, $"{what}'s summary");
+                Text(node.Body, SeriesLimits.ScriptMaxLength, $"{what}'s text");
+            }
+
+            foreach (var node in byId.Values)
+            {
+                var what = $"The {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}";
+                BackupProjectNode? parent = null;
+
+                if (node.ParentId is { } parentId
+                    && (!byId.TryGetValue(parentId, out parent) || parent.ProjectId != node.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} sits under a node its project does not hold.");
+                    continue;
+                }
+
+                // Walk up; more steps than there are nodes means the parents loop.
+                var steps = 0;
+                for (var at = parent; at is not null && steps <= byId.Count; steps++)
+                {
+                    at = at.ParentId is { } up && byId.TryGetValue(up, out var next) ? next : null;
+                }
+
+                if (steps > byId.Count)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} sits inside itself.");
+                    continue;
+                }
+
+                if (_projects.Contains(node.ProjectId)
+                    && (!_projectRules.TryGetValue(node.ProjectId, out var rules)
+                        || rules is null
+                        || !ProjectStructures.Allows(rules, parent?.Level, node.Level)))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a place its project's format does not allow.");
+                }
+            }
+        }
+
         private void RegisterProjectSeasons(IReadOnlyList<BackupProjectSeason> seasons)
         {
             var namesByProject = new Dictionary<Guid, HashSet<string>>();

@@ -137,7 +137,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
-            await DismissedFindingsAsync(universeId, cancellationToken));
+            await DismissedFindingsAsync(universeId, cancellationToken),
+            await ProjectNodesAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1348,6 +1349,28 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>Every structure node of every project of this universe, flat (version 50, #290).</summary>
+    private async Task<IReadOnlyList<BackupProjectNode>> ProjectNodesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.Project!.UniverseId == universeId)
+            .OrderBy(node => node.ProjectId)
+            .ThenBy(node => node.ParentId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new BackupProjectNode(
+                node.Id,
+                node.ProjectId,
+                node.ParentId,
+                node.Level,
+                node.Title,
+                node.Summary,
+                node.Body,
+                node.SortOrder,
+                node.CreatedAt,
+                node.UpdatedAt))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
     /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.

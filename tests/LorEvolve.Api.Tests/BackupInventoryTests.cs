@@ -119,6 +119,9 @@ public sealed class BackupInventoryTests
         "ProjectPages",
         "ProjectPanels",
 
+        // A project's structure nodes: acts, sequences, scenes, beats (#290).
+        "ProjectNodes",
+
         // World Logic (#150, ADR 0072): the universe's Systems and reusable rule definitions, the links between
         // them, the declared dependencies and both sets of saved states. All authored, so all carried; the ids
         // inside a stored condition are translated on restore like any other reference.

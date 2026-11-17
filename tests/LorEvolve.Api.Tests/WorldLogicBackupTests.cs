@@ -28,7 +28,7 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
     [Fact]
     public async Task The_format_is_at_the_world_logic_version()
     {
-        Assert.Equal(49, UniverseBackup.CurrentVersion);
+        Assert.Equal(50, UniverseBackup.CurrentVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, LorEvolve.Api.Features.Restore.BackupFormatSupport.MaxVersion);
     }
 
@@ -63,7 +63,7 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         var backup = await Backup(client, universe.Id);
         var payload = backup.Payload;
 
-        Assert.Equal(49, backup.FormatVersion);
+        Assert.Equal(50, backup.FormatVersion);
 
         var carriedSystem = Assert.Single(payload.LoreSystems!);
         Assert.Equal("Runeforging", carriedSystem.Name);
