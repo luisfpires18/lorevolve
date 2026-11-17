@@ -81,7 +81,10 @@ export default function ProjectsDirectory() {
           {t('projects.directory.loadFailed')}
         </p>
       ) : null}
-      <ul className="lorecatalog__grid lorecatalog__grid--rows" data-testid="projects-directory-cards">
+      <ul
+        className="lorecatalog__grid lorecatalog__grid--rows"
+        data-testid="projects-directory-cards"
+      >
         {CREATION.map((section) => {
           const Icon = section.icon
           const count =
