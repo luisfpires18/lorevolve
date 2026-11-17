@@ -7,7 +7,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
-import { FIELD_LAYOUT_CHANGED_CODE, saveFieldLayout } from '../lore/api'
+import { FIELD_LAYOUT_CHANGED_CODE, saveFieldLayout } from '../lore/fieldsApi'
 import type { EntityType } from '../lore/typeDefinitions'
 
 /** A section as the drawer edits it: `key` is its id, or a stand-in until a new one is saved. */

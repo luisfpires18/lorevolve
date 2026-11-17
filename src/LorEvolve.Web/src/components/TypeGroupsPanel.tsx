@@ -9,7 +9,7 @@ import {
   deleteEntityTypeGroup,
   renameEntityTypeGroup,
   reorderEntityTypeGroups,
-} from '../lore/api'
+} from '../lore/typesApi'
 import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 
 /**

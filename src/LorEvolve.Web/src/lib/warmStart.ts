@@ -1,13 +1,8 @@
 import { apiFetch, prime } from './api'
 import { getUniverse } from '../universes/api'
 import { getChronology } from '../chronology/api'
-import {
-  getEntity,
-  listEntities,
-  listEntityTypeGroups,
-  listEntityTypes,
-  readLorePageSize,
-} from '../lore/api'
+import { getEntity, listEntities, readLorePageSize } from '../lore/api'
+import { listEntityTypeGroups, listEntityTypes } from '../lore/typesApi'
 import { getEntityArticle } from '../lore/article'
 
 /**

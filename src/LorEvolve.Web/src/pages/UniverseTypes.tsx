@@ -30,7 +30,7 @@ import {
   moveEntityType,
   reorderEntityType,
   updateEntityType,
-} from '../lore/api'
+} from '../lore/typesApi'
 import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { buildTypeTree, branchIds, typePathLabel, type TypeNode } from '../lore/typeTree'
 import { PageHeader } from '../components/PageHeader'
