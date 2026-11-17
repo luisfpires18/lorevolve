@@ -50,6 +50,7 @@ deferred.
 - #303 M6 Comics tracker running; #293 done: Comic projects pick a format (western-comic, manga, graphic-novel, one-shot, webcomic) through the same `ProjectFormats` map; a set format drives the starter template, Subtype is the fallback.
 - #301 M4 GameEntity tracker running; #284 done: Game Entities picks a game (`game-entities`, one game skips it), `game-entities/:projectId` opens that game's category directory via `ProjectEntitiesView`; no API change.
 - #281 (tracker #300) `feat/type-templates-281`, PR #331: universe-scoped type templates, API + migration + backup format 50.
+- #282 (tracker #300) `feat/template-management-282`, PR #342 done: Types page `?context=templates` lists and manages the universe's templates (`TypeTemplates.tsx`, `typeTemplates/api.ts`); web only.
 
 One line per branch. Delete the line when it merges.
 

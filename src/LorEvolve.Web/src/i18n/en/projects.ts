@@ -129,6 +129,7 @@ const projects = {
     fields: 'Fields',
     noFields: 'No fields yet.',
     addField: 'Add field',
+    saveField: 'Save field',
     fieldName: 'Field name',
     fieldKind: 'What goes in it?',
     fieldOptions: 'Choices, one per line',
