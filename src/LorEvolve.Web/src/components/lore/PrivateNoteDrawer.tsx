@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
-import { EditConflict, LatestText } from '../EditConflict'
 import { SaveAction } from '../SaveAction'
 import { ApiError } from '../../lib/api'
 import { formatDateTime } from '../../lib/dates'
@@ -17,6 +16,7 @@ import { numberFormat } from '../../i18n/format'
 import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { PrivateNotesProps } from '../PrivateNotes'
+import { PrivateNoteConflict } from './PrivateNoteConflict'
 
 const count = (value: number) => numberFormat({}, 'en').format(value)
 
@@ -180,23 +180,11 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
           onKeyDown={onKeyDown}
         >
           {conflict ? (
-            <EditConflict
-              what={t('entity.privateNote.what')}
-              read={() => getPrivateNote(universeId, entityId)}
-              renderLatest={(latest) => (
-                <LatestText label={t('entity.privateNote.latestLabel')}>
-                  {latest.content === '' ? (
-                    <p className="entry__blank">{t('entity.privateNote.latestBlank')}</p>
-                  ) : (
-                    <div className="recovery__prose prose" dir="auto">
-                      {latest.content}
-                    </div>
-                  )}
-                </LatestText>
-              )}
-              onKeepMine={keepMine}
-              onUseLatest={reread}
-              testId="private-note-conflict"
+            <PrivateNoteConflict
+              universeId={universeId}
+              entityId={entityId}
+              keepMine={keepMine}
+              reread={reread}
             />
           ) : null}
 
