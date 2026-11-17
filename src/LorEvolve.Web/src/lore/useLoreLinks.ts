@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { type To } from 'react-router-dom'
+import type { To } from 'react-router-dom'
 import {
   FIELD_FILTER_PARAM,
   isValidFor,

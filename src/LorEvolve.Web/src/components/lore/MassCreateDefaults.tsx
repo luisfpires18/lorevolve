@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n'
 import { typeChoices } from '../../lore/typeTree'
 import { hasRequiredFields } from '../../lore/massCreate'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue } from '../../lore/types'
-import { type EntityType } from '../../lore/typeDefinitions'
+import type { EntityType } from '../../lore/typeDefinitions'
 import type { useMassRows } from '../../lore/useMassRows'
 
 type Rows = ReturnType<typeof useMassRows>

@@ -1,4 +1,4 @@
-import { type CanonStatusValue, type EntityPage, type EntitySort } from './types'
+import type { CanonStatusValue, EntityPage, EntitySort } from './types'
 
 export type LoadState =
   { kind: 'idle' } | { kind: 'loading' } | { kind: 'ready'; page: EntityPage } | { kind: 'error' }

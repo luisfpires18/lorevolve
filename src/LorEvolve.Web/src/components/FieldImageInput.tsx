@@ -9,7 +9,7 @@ import {
   setFieldImage,
   setFieldImageCrop,
 } from '../lore/images'
-import { type EntityImageCrop, type FieldImageRef } from '../lore/types'
+import type { EntityImageCrop, FieldImageRef } from '../lore/types'
 import {
   FIELD_IMAGE_SHAPE_LABELS,
   FieldImageShape,

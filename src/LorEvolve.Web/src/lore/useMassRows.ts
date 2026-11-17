@@ -10,8 +10,8 @@ import {
   type MassRowInput,
   type RowField,
 } from './massCreate'
-import { type CanonStatusValue } from './types'
-import { type EntityType } from './typeDefinitions'
+import type { CanonStatusValue } from './types'
+import type { EntityType } from './typeDefinitions'
 
 /** What the API said about one row of a refused batch. */
 export interface ServerProblem {

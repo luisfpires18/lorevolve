@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { type PendingImage } from '../components/EntityImageField'
+import type { PendingImage } from '../components/EntityImageField'
 import type { PendingFieldImage } from '../components/FieldImageInput'
 import type { CanonBlockingFinding } from '../canon/types'
-import { type EntityDetail } from './types'
-import { type CopySource, type Draft } from './entryDraft'
+import type { EntityDetail } from './types'
+import type { CopySource, Draft } from './entryDraft'
 
 /** Every state and shared ref of the entry screen, as one object, with the focus a refused save asks for. */
 export function useEntryState({ isNew }: { isNew: boolean }) {

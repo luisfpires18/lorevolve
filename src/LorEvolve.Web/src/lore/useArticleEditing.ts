@@ -1,4 +1,4 @@
-import { type EntityArticle } from './article'
+import type { EntityArticle } from './article'
 import { confirmDiscard } from '../lib/confirm'
 import { useI18n } from '../i18n'
 import type { EntityArticleSectionProps } from '../components/EntityArticle'

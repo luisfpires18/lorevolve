@@ -3,7 +3,7 @@ import { Link, useSearchParams, type To } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { useI18n } from '../i18n'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
-import { type TypeTree } from '../lore/typeTree'
+import type { TypeTree } from '../lore/typeTree'
 import { listedEntries, TypeCard, type CatalogType } from './lore/LoreTypeCard'
 
 /** How many card shapes stand in for the catalog while the types are read. */

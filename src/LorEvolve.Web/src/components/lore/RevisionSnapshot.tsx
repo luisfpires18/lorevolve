@@ -9,7 +9,7 @@ import {
 import { EraLabelPosition, type Chronology } from '../../chronology/types'
 import { formatDate } from '../../lib/dates'
 import { isEmptyDocument } from '../../lore/document'
-import { type EntityRevisionDetail, type RevisionFieldValue } from '../../lore/revisions'
+import type { EntityRevisionDetail, RevisionFieldValue } from '../../lore/revisions'
 import { CANON_LABELS } from '../../lore/types'
 import { FieldKind } from '../../lore/fieldKinds'
 import { t, useI18n } from '../../i18n'

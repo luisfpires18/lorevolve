@@ -1,7 +1,7 @@
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
 import { VersionActor } from './VersionActor'
-import { type Chronology } from '../chronology/types'
+import type { Chronology } from '../chronology/types'
 import { formatDateTime } from '../lib/dates'
 import { describeChanges, imagesNotRestored, RevisionKind } from '../lore/revisions'
 import { CANON_LABELS } from '../lore/types'

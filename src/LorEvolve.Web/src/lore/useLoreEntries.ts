@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { listEntities, readLorePageSize } from './api'
-import { type CanonStatusValue, type EntitySort } from './types'
+import type { CanonStatusValue, EntitySort } from './types'
 import type { EntityTypeGroup } from './typeDefinitions'
 import {
   FIELD_FILTER_PARAM,

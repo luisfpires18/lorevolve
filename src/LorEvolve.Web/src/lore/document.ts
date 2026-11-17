@@ -1,4 +1,4 @@
-import { type FieldValueInput } from './types'
+import type { FieldValueInput } from './types'
 import { FieldKind } from './fieldKinds'
 import type { FieldDefinition } from './typeDefinitions'
 

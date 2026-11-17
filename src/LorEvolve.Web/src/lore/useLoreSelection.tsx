@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { bulkTrashEntities } from './api'
-import { type EntityPage } from './types'
+import type { EntityPage } from './types'
 import { confirmAction } from '../lib/confirm'
 import type { Dispatch, SetStateAction } from 'react'
 
