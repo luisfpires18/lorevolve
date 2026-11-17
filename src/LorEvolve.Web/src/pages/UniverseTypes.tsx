@@ -522,7 +522,13 @@ export default function UniverseTypes() {
         </p>
       ) : null}
       {gaming ? (
-        <ProjectSchema key={game.id} projectId={game.id} reloadKey={0} universeId={universe.id} />
+        <ProjectSchema
+          key={game.id}
+          projectId={game.id}
+          reloadKey={0}
+          universeId={universe.id}
+          canEdit={access.editContent}
+        />
       ) : null}
       {templates ? <TypeTemplates universeId={universe.id} canEdit={access.editContent} /> : null}
 

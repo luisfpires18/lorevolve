@@ -67,6 +67,7 @@ export function ProjectSchema({
   onChanged,
   crumb,
   universeId,
+  canEdit = false,
 }: {
   projectId: string
   /**
@@ -81,6 +82,8 @@ export function ProjectSchema({
   crumb?: ReactNode
   /** When given, the universe's type templates are offered as a second way to make a type (#283). */
   universeId?: string
+  /** Whether the reader may edit this universe's content: the template copy is offered only then. */
+  canEdit?: boolean
 }) {
   useI18n()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
@@ -172,7 +175,7 @@ export function ProjectSchema({
           <ActionIcon icon={Plus} />
           {t('entityTypes.page.newType')}
         </button>
-        {templates.length > 0 ? (
+        {canEdit && templates.length > 0 ? (
           <button
             className="button button--secondary"
             type="button"
