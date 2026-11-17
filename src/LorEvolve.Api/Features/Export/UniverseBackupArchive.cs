@@ -42,6 +42,10 @@ public static class BackupArchive
     public static string FieldImageMediaPathFor(Guid entityId, Guid fieldId, string contentType) =>
         $"media/entities/{entityId:D}/fields/{fieldId:D}/original.{ExtensionFor(contentType)}";
 
+    /// <summary>The original of one comic page's or panel's picture, inside the archive (since version 54, #295).</summary>
+    public static string NodeImageMediaPathFor(Guid nodeId, string contentType) =>
+        $"media/nodes/{nodeId:D}/original.{ExtensionFor(contentType)}";
+
     /// <summary>The original of one map's picture, inside the archive (since version 34).</summary>
     public static string MapMediaPathFor(Guid mapId, string contentType) =>
         $"media/maps/{mapId:D}/original.{ExtensionFor(contentType)}";

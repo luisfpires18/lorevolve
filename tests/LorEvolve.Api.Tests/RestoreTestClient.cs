@@ -474,12 +474,21 @@ internal static partial class RestoreTestClient
             }
         }
 
-        if (version < 54)
+        if (version < 55)
         {
-            // A collection's project (Comic Volumes) came in version 54 (#297).
+            // A collection's project (Comic Volumes) came in version 55 (#297).
             foreach (var collection in payload["comicCollections"]?.AsArray() ?? [])
             {
                 Drop(collection, "projectId");
+            }
+        }
+
+        if (version < 54)
+        {
+            // A panel's script and a page's or panel's picture came in version 54 (#295).
+            foreach (var node in payload["projectNodes"]?.AsArray() ?? [])
+            {
+                Drop(node, "dialogue", "caption", "sfx", "notes", "image");
             }
         }
 

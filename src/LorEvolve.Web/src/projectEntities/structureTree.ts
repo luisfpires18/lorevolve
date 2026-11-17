@@ -1,6 +1,19 @@
 // The tree's shape and its pure helpers (#290), import-free so `node --test` can run them.
 
 /** A project's rule-shaped structure (#290): acts, sequences, scenes, beats, and the levels later formats add. */
+import type { FieldImageRef } from '../lore/types'
+
+/** The levels that may hold a picture (#295). */
+export const ART_LEVELS = ['page', 'panel']
+
+/** Whether a stored picture is drawn, or the placeholder stands in: no picture, or its crop failed to load. */
+export function showsArt(
+  image: { cropId: string } | null | undefined,
+  brokenCropId: string | null,
+) {
+  return Boolean(image) && image!.cropId !== brokenCropId
+}
+
 export type ProjectNodeSummary = {
   id: string
   parentId: string | null
@@ -11,6 +24,8 @@ export type ProjectNodeSummary = {
   bodyLength: number
   sortOrder: number
   version: number
+  /** A page's or panel's picture (#295); `fieldId` is the node id. */
+  image?: FieldImageRef | null
 }
 
 /** The tree with the rules that shape it, so the client never holds its own copy of them. */

@@ -6,6 +6,7 @@ import {
   childrenOf,
   descendantCount,
   moveTargets,
+  showsArt,
 } from './src/projectEntities/structureTree.ts'
 
 const node = (id: string, level: string, parentId: string | null, sortOrder = 0) => ({
@@ -82,4 +83,13 @@ test('a node moves only where its level is allowed, never into itself, and not t
     moveTargets(short, beat).map((each) => each?.id ?? 'root'),
     ['s2'],
   )
+})
+
+test('the art placeholder stands in for a missing picture and a crop that failed to load', () => {
+  assert.equal(showsArt(null, null), false)
+  assert.equal(showsArt(undefined, null), false)
+  assert.equal(showsArt({ cropId: 'a' }, null), true)
+  assert.equal(showsArt({ cropId: 'a' }, 'a'), false)
+  // A new crop after a failed one is tried again.
+  assert.equal(showsArt({ cropId: 'b' }, 'a'), true)
 })

@@ -452,7 +452,59 @@ internal sealed partial class UniverseRestore(
                 });
             }
         }
+
+        // A comic page's or panel's picture (#295), the same way, under the node's restored id.
+        foreach (var node in backup.Payload.ProjectNodes ?? [])
+        {
+            if (node.Image is not { } image)
+            {
+                continue;
+            }
+
+            var validated = backup.FieldImages![(node.Id, node.Id)];
+            var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+            var nodeId = ids.Map(node.Id);
+            var projectId = ids.Map(node.ProjectId);
+            var assetId = Guid.NewGuid();
+            var cropId = Guid.NewGuid();
+            var originalKey = ProjectNodeImageKeys.Original(universeId, projectId, nodeId, assetId, validated.Extension);
+            var cropKey = ProjectNodeImageKeys.Crop(universeId, projectId, nodeId, assetId, cropId);
+
+            attempted.Enqueue(originalKey);
+            attempted.Enqueue(cropKey);
+
+            using var originalBytes = new MemoryStream(original, writable: false);
+            using var cropBytes = new MemoryStream(validated.Thumbnail, writable: false);
+            await MediaObjectWrites.PutAllAsync(
+                store,
+                cancellationToken,
+                new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+                new PendingMediaObject(cropKey, cropBytes, "image/webp"));
+
+            _nodeImages.Add(new ProjectNodeImage
+            {
+                NodeId = nodeId,
+                AssetId = assetId,
+                OriginalKey = originalKey,
+                CropId = cropId,
+                CropKey = cropKey,
+                CropX = image.Crop.X,
+                CropY = image.Crop.Y,
+                CropWidth = image.Crop.Width,
+                CropHeight = image.Crop.Height,
+                ContentType = validated.ContentType,
+                FileName = ImagePreparation.TrimFileName(image.FileName),
+                Width = validated.Width,
+                Height = validated.Height,
+                ByteSize = validated.ByteSize,
+                UploadedAt = now,
+            });
+        }
     }
+
+    /// <summary>Comic node pictures (#295) written before the transaction, added after their nodes.</summary>
+    private readonly List<ProjectNodeImage> _nodeImages = [];
 
     /// <summary>Maps whose pictures were written before the transaction, with their pins, added by <see cref="AddMaps"/>.</summary>
     private readonly List<UniverseMap> _maps = [];
@@ -1061,12 +1113,18 @@ internal sealed partial class UniverseRestore(
                 Title = node.Title,
                 Summary = node.Summary,
                 Body = node.Body,
+                Dialogue = node.Dialogue,
+                Caption = node.Caption,
+                Sfx = node.Sfx,
+                Notes = node.Notes,
                 SortOrder = node.SortOrder,
                 CreatedAt = node.CreatedAt,
                 UpdatedAt = node.UpdatedAt,
                 Version = 1,
             });
         }
+
+        db.ProjectNodeImages.AddRange(_nodeImages);
 
         // The Cinema sagas, their phases and memberships (version 52, #289), after the projects they hold.
         foreach (var saga in payload.CinemaSagas ?? [])

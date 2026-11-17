@@ -337,6 +337,28 @@ const projects = {
     changed:
       'This was changed somewhere else after it was opened here. Nothing was overwritten. Close and open it again.',
     leave: 'Close without saving your changes?',
+    panel: {
+      visualDescription: 'Visual description',
+      visualPlaceholder: 'Insert what the panel shows',
+      dialogue: 'Dialogue',
+      dialoguePlaceholder: 'Insert the dialogue',
+      caption: 'Caption',
+      captionPlaceholder: 'Insert the caption',
+      sfx: 'Sound effects',
+      sfxPlaceholder: 'Insert the sound effects',
+      notes: 'Notes',
+      notesPlaceholder: 'Insert notes for the artist',
+      save: 'Save panel',
+      saved: 'Saved',
+      panels: 'Panels',
+      none: 'This page has no panels yet. Add them in the outline.',
+    },
+    art: {
+      label: 'Artwork',
+      missing: 'No artwork yet',
+      pageArt: 'Page artwork',
+      panelArt: 'Panel artwork',
+    },
     levels: {
       season: 'season',
       episode: 'episode',

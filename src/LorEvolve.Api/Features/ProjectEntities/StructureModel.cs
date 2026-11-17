@@ -37,6 +37,16 @@ public sealed class ProjectNode
     /// <summary>The node's text: a scene's script, a beat's description.</summary>
     public string? Body { get; set; }
 
+    /// <summary>A comic panel's script (#295): what is spoken, the caption box, sound effects, notes for the artist.
+    /// Only a panel holds them; <see cref="Body"/> is its visual description.</summary>
+    public string? Dialogue { get; set; }
+
+    public string? Caption { get; set; }
+
+    public string? Sfx { get; set; }
+
+    public string? Notes { get; set; }
+
     /// <summary>Its place among its siblings, renumbered 0, 1, 2 on every move.</summary>
     public int SortOrder { get; set; }
 
@@ -46,4 +56,57 @@ public sealed class ProjectNode
 
     /// <summary>The edit version (ADR 0043), as <see cref="ProjectEpisode.Version"/>.</summary>
     public int Version { get; set; } = 1;
+}
+
+/// <summary>
+/// The one picture of a comic page or panel (#295): the same columns and pipeline as
+/// <see cref="Lore.EntityFieldImage"/>, keyed by its node. Cascades with the node; the delete routes sweep its objects.
+/// </summary>
+public sealed class ProjectNodeImage
+{
+    public Guid NodeId { get; set; }
+
+    public ProjectNode? Node { get; set; }
+
+    public Guid AssetId { get; set; }
+
+    public required string OriginalKey { get; set; }
+
+    public Guid CropId { get; set; }
+
+    public required string CropKey { get; set; }
+
+    public double CropX { get; set; }
+
+    public double CropY { get; set; }
+
+    public double CropWidth { get; set; }
+
+    public double CropHeight { get; set; }
+
+    public required string ContentType { get; set; }
+
+    public string? FileName { get; set; }
+
+    public int Width { get; set; }
+
+    public int Height { get; set; }
+
+    public long ByteSize { get; set; }
+
+    public DateTime UploadedAt { get; set; }
+}
+
+/// <summary>Where a node's picture lives, by the rules of <see cref="Lore.EntityFieldImageKeys"/>.
+///   universes/{universeId}/projects/{projectId}/nodes/{nodeId}/{assetId}/original.{ext}, .../crop-{cropId}.webp</summary>
+public static class ProjectNodeImageKeys
+{
+    private static string Prefix(Guid universeId, Guid projectId, Guid nodeId, Guid assetId) =>
+        $"universes/{universeId:D}/projects/{projectId:D}/nodes/{nodeId:D}/{assetId:D}";
+
+    public static string Original(Guid universeId, Guid projectId, Guid nodeId, Guid assetId, string extension) =>
+        $"{Prefix(universeId, projectId, nodeId, assetId)}/original.{extension}";
+
+    public static string Crop(Guid universeId, Guid projectId, Guid nodeId, Guid assetId, Guid cropId) =>
+        $"{Prefix(universeId, projectId, nodeId, assetId)}/crop-{cropId:D}.webp";
 }

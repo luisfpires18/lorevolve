@@ -93,8 +93,8 @@ internal static class BackupNormalization
         // Cinema sagas arrived at version 52 (#289): an older file has none, even when it carries some.
         CinemaSagas = version >= 52 ? payload.CinemaSagas : null,
         // Comic collections arrived at version 53 (#296): an older file has none, even when it carries some.
-        // A collection's project arrived at version 54 (#297): below that it is dropped, so a volume there is refused.
-        ComicCollections = version >= 54 ? payload.ComicCollections
+        // A collection's project arrived at version 55 (#297): below that it is dropped, so a volume there is refused.
+        ComicCollections = version >= 55 ? payload.ComicCollections
             : version >= 53 ? payload.ComicCollections?.Select(collection => collection is null ? null! : collection with { ProjectId = null }).ToList()
             : null,
         // Project formats arrived at version 49 (#288): an older file has none, even when it carries one.
@@ -102,7 +102,14 @@ internal static class BackupNormalization
             ? payload.CreativeProjects
             : [.. payload.CreativeProjects.Select(project => project is null ? null! : project with { Format = null })],
         // Structure nodes arrived at version 51 (#290): an older file has none, even when it carries some.
-        ProjectNodes = version >= 51 ? payload.ProjectNodes : null,
+        // A panel's script and a page's or panel's picture arrived at version 54 (#295).
+        ProjectNodes = version >= 54 || payload.ProjectNodes is null
+            ? payload.ProjectNodes
+            : version >= 51
+                ? [.. payload.ProjectNodes.Select(node => node is null
+                    ? null!
+                    : node with { Dialogue = null, Caption = null, Sfx = null, Notes = null, Image = null })]
+                : null,
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
             : [.. payload.RelationshipTypes.Select(type => type is null ? null! : ProjectRelationshipType(type, version))],

@@ -1,4 +1,5 @@
 import { apiFetch } from '../lib/api'
+import type { FieldImageRef } from '../lore/types'
 import type { ProjectStructureTree } from './structureTree'
 
 export * from './structureTree'
@@ -14,6 +15,12 @@ export type ProjectNodeDetail = {
   createdAt: string
   updatedAt: string
   version: number
+  /** A panel's script (#295); null on every other level. */
+  dialogue: string | null
+  caption: string | null
+  sfx: string | null
+  notes: string | null
+  image: FieldImageRef | null
 }
 
 export type ProjectNodeInput = {
@@ -30,6 +37,10 @@ export type ProjectNodeUpdate = {
   summary: string | null
   body: string | null
   expectedVersion: number | null
+  dialogue?: string | null
+  caption?: string | null
+  sfx?: string | null
+  notes?: string | null
 }
 
 /** The code on the 409 a node save gets when it was saved somewhere else after it was opened here. */
@@ -73,3 +84,15 @@ export function moveNode(
     body: JSON.stringify(input),
   })
 }
+
+/** The script fields a panel holds besides its visual description (`body`), in the order they are written. */
+export const PANEL_SCRIPT = ['dialogue', 'caption', 'sfx', 'notes'] as const
+
+export type PanelScript = Record<(typeof PANEL_SCRIPT)[number], string>
+
+export const scriptOf = (node: ProjectNodeDetail): PanelScript => ({
+  dialogue: node.dialogue ?? '',
+  caption: node.caption ?? '',
+  sfx: node.sfx ?? '',
+  notes: node.notes ?? '',
+})

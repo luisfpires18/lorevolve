@@ -365,12 +365,16 @@ public sealed record UniverseBackup(
     /// 53 - Comic Story Arcs and Events (#296). <see cref="UniverseBackupPayload.ComicCollections"/> carries each
     /// collection with the nodes it references, in reading order. Not ignorable: a version 52 reader would restore the
     /// universe with no arcs or events. A file at version 52 or earlier has none.
+    /// 54 - A comic panel carries its script and a page or panel its artwork (#295). <see cref="BackupProjectNode.Dialogue"/>,
+    /// <c>Caption</c>, <c>Sfx</c> and <c>Notes</c> hold the panel's text, and <see cref="BackupProjectNode.Image"/> the picture,
+    /// its original in the archive. Not ignorable: a version 53 reader would restore panels without their script or art. A
+    /// file at version 53 or earlier has none.
     ///
-    /// 54 - Comic Volumes (#297). <see cref="BackupComicCollection.ProjectId"/> names the one Comic project a collection
-    /// of kind <c>volume</c> belongs to. Not ignorable: a version 53 reader would drop the project and refuse the volume.
-    /// A file at version 53 or earlier has no volume and no collection project.
+    /// 55 - Comic Volumes (#297). <see cref="BackupComicCollection.ProjectId"/> names the one Comic project a collection
+    /// of kind <c>volume</c> belongs to. Not ignorable: a version 54 reader would drop the project and refuse the volume.
+    /// A file at version 54 or earlier has no volume and no collection project.
     /// </summary>
-    public const int CurrentVersion = 54;
+    public const int CurrentVersion = 55;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -448,7 +452,7 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupComicCollection>? ComicCollections = null);
 
 /// <summary>
-/// One Comic Story Arc, Event or Volume of this universe (since version 53, #296; volumes since 54, #297). It lists the nodes it references by this
+/// One Comic Story Arc, Event or Volume of this universe (since version 53, #296; volumes since 55, #297). It lists the nodes it references by this
 /// file's node ids, in reading order: references only, so the nodes themselves travel as project nodes.
 /// </summary>
 public sealed record BackupComicCollection(
@@ -1082,6 +1086,8 @@ public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int Di
 /// <summary>
 /// One node of a project's structure (since version 51, #290), flat, naming its parent node (null for a root) by this
 /// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
+/// Since version 54 (#295) a panel's script and a page's or panel's picture; the picture's
+/// <see cref="BackupFieldImage.FieldDefinitionId"/> is the node's own id.
 /// </summary>
 public sealed record BackupProjectNode(
     Guid Id,
@@ -1093,7 +1099,12 @@ public sealed record BackupProjectNode(
     string? Body,
     int SortOrder,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? Dialogue = null,
+    string? Caption = null,
+    string? Sfx = null,
+    string? Notes = null,
+    BackupFieldImage? Image = null);
 
 public sealed record BackupProjectEntity(
     Guid Id,
