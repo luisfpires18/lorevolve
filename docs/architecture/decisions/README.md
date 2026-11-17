@@ -76,8 +76,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0070 | Arcs are story structure (Story, arcs, chapters, scenes) and beats belong to scenes; plot beats retired, supersedes 0026 | [0070-story-arcs-as-structure.md](0070-story-arcs-as-structure.md) |
 | 0071 | Interface languages: typed dictionaries in the web app (`src/i18n/`), chosen per browser; pt-PT unready until #107 | [0071-interface-languages.md](0071-interface-languages.md) |
 | 0072 | A World Logic rule carries a versioned, typed condition tree; a System is a named set of such rules ([spec](../world-logic-condition-spec.md)) | [0072-generic-condition-and-system-semantics.md](0072-generic-condition-and-system-semantics.md) |
+| 0073 | Proposed: a World system may carry one state machine, bound to one attribute, whose guards are existing rules ([spec](../world-logic-state-machine-spec.md)) | [0073-world-system-state-machines.md](0073-world-system-state-machines.md) |
 
-All accepted. Next number: `0073`.
+All accepted except 0073, which waits for the owner on #356. Next number: `0074`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's
@@ -112,4 +113,5 @@ the Trash restore that asks nothing for a story part, in 0039, and the Family Tr
 the Relation Kinds tab, and the relation editor that still links an entry of any type, in 0040, and the bucket objects no storage total counts and nothing reconciles, in 0042, and the whole-form save that keeping one's changes still is, and the editors that keep their own stale-save check or have none, in 0043, and the suggestion an intervening save to any field makes unacceptable, and the prose that cannot be suggested yet, in 0044, and what the universe assistant deliberately is not - a writer, a memory, a web search or a second search - and the universe content it sends to its provider, in 0045, and the clients MCP V1 cannot serve - custom-scheme redirects, signed client assertions, pre-registration, legacy SSE, server-to-client requests - and the plain error answer OpenIddict gives a request it refuses before its redirect is trusted, in 0046, and the edit that an intervening save makes unapplicable, the creates that cannot link to each other in one proposal, and the proposals no backup carries, in 0047, and the stored-form binding of arcs, beats, rules and ideas, the constraint rollback that waits for open proposals, and the trashed links and moments a rollback brings back live, in 0048, and the time points a condition cannot order across
 scopes or eras, the aggregation beyond a count that version 1 has none of, the quantifier a count of zero stands in for, the
 second relation hop a query cannot make on its own, the rationale trace no language but one ever gets, and the history a
-condition never sees, in 0072.
+condition never sees, in 0072, and the source state of a transition no check reads, the event order and timers a
+machine has none of, and the renamed field that unbinds a machine silently, in 0073.

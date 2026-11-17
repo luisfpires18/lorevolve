@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "scenario": "apprenticeship",
+  "description": "Ranks in a craft body. Covers both checks, two ways into one state, an unknown from a missing attribute, a subject outside the machine, a subject of another type and a non-text value.",
+  "facts": {
+    "subjects": [
+      { "id": "s.new", "type": "member", "attributes": { "rank": "novice" } },
+      { "id": "s.steady", "type": "member", "attributes": { "rank": "journeyman", "years": 5 } },
+      { "id": "s.rushed", "type": "member", "attributes": { "rank": "journeyman", "years": 1 } },
+      { "id": "s.unrecorded", "type": "member", "attributes": { "rank": "journeyman" } },
+      { "id": "s.maker", "type": "member", "attributes": { "rank": "master", "appointed": false } },
+      { "id": "s.appointee", "type": "member", "attributes": { "rank": "master", "appointed": true } },
+      { "id": "s.pretender", "type": "member", "attributes": { "rank": "master", "appointed": false } },
+      { "id": "s.halfknown", "type": "member", "attributes": { "rank": "master" } },
+      { "id": "s.titled", "type": "member", "attributes": { "rank": "grandmaster" } },
+      { "id": "s.outsider", "type": "member", "attributes": { "years": 9 } },
+      { "id": "s.numbered", "type": "member", "attributes": { "rank": 3 } },
+      { "id": "s.visitor", "type": "guest", "attributes": { "rank": "master" } }
+    ],
+    "relations": [],
+    "events": [
+      { "id": "e.masterwork", "kind": "presented", "method": "masterwork", "subjectIds": ["s.maker"], "at": "year:412", "canon": true }
+    ]
+  },
+  "rules": [
+    {
+      "id": "rule.served",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "years", "of": { "subject": "self" } },
+        "op": "gte",
+        "right": { "literal": 3, "type": "number" }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.masterwork",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "exists",
+        "query": {
+          "from": "events",
+          "where": [
+            { "field": "kind", "op": "eq", "value": "presented", "type": "text" },
+            { "field": "method", "op": "eq", "value": "masterwork", "type": "text" },
+            { "field": "subjectIds", "op": "contains", "operandValue": { "subject": "self" } }
+          ]
+        }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.appointed",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "appointed", "of": { "subject": "self" } },
+        "op": "eq",
+        "right": { "literal": true, "type": "boolean" }
+      },
+      "exceptions": []
+    }
+  ],
+  "machine": {
+    "schemaVersion": 1,
+    "binding": { "subjectType": "member", "attribute": "rank" },
+    "states": [
+      { "id": "st.novice", "name": "Novice", "value": "novice", "initial": true, "x": 0, "y": 0 },
+      { "id": "st.journeyman", "name": "Journeyman", "value": "journeyman", "initial": false, "x": 320, "y": 0 },
+      { "id": "st.master", "name": "Master", "value": "master", "initial": false, "x": 640, "y": 0 }
+    ],
+    "transitions": [
+      { "id": "t.advance", "fromStateId": "st.novice", "toStateId": "st.journeyman", "label": "Advanced", "guardRuleId": "rule.served" },
+      { "id": "t.raise", "fromStateId": "st.journeyman", "toStateId": "st.master", "label": "Raised", "guardRuleId": "rule.masterwork" },
+      { "id": "t.appoint", "fromStateId": "st.journeyman", "toStateId": "st.master", "label": "Appointed", "guardRuleId": "rule.appointed" }
+    ]
+  },
+  "cases": [
+    { "name": "a subject in the initial state is never checked", "subjectId": "s.new", "projectId": null, "expect": [] },
+    { "name": "a guard that holds leaves nothing to report", "subjectId": "s.steady", "projectId": null, "expect": [] },
+    {
+      "name": "the only way in fails, so the state is a proven violation",
+      "subjectId": "s.rushed",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.journeyman", "outcome": "violation", "errorCode": null, "transitions": ["t.advance:false"] } ]
+    },
+    {
+      "name": "a missing attribute makes the guard unknown, never a violation",
+      "subjectId": "s.unrecorded",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.journeyman", "outcome": "unknown", "errorCode": null, "transitions": ["t.advance:unknown"] } ]
+    },
+    { "name": "the first of two ways in holds and the second is never evaluated", "subjectId": "s.maker", "projectId": null, "expect": [] },
+    { "name": "the second of two ways in holds", "subjectId": "s.appointee", "projectId": null, "expect": [] },
+    {
+      "name": "neither way in holds",
+      "subjectId": "s.pretender",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.master", "outcome": "violation", "errorCode": null, "transitions": ["t.raise:false", "t.appoint:false"] } ]
+    },
+    {
+      "name": "false and unknown combine to unknown",
+      "subjectId": "s.halfknown",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.master", "outcome": "unknown", "errorCode": null, "transitions": ["t.raise:false", "t.appoint:unknown"] } ]
+    },
+    {
+      "name": "a value that is no declared state",
+      "subjectId": "s.titled",
+      "projectId": null,
+      "expect": [ { "check": "undeclared_state", "stateId": null, "outcome": "violation", "errorCode": null, "transitions": [] } ]
+    },
+    { "name": "a subject without the attribute is outside the machine", "subjectId": "s.outsider", "projectId": null, "expect": [] },
+    {
+      "name": "a non-text value is an error, not an undeclared state",
+      "subjectId": "s.numbered",
+      "projectId": null,
+      "expect": [ { "check": "undeclared_state", "stateId": null, "outcome": "error", "errorCode": "type_mismatch", "transitions": [] } ]
+    },
+    { "name": "a subject of another type is not covered", "subjectId": "s.visitor", "projectId": null, "expect": [] }
+  ]
+}
