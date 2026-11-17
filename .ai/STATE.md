@@ -45,6 +45,7 @@ example and Literata. Still open there: the step 4 screenshot shows an empty sce
 deferred.
 
 ## In flight
+- #300 M3 Types tracker running; #279 done: types audit in `docs/architecture/types-architecture.md` (one shared EntityTypes engine scoped by ProjectId; templates go in a new table pair).
 
 One line per branch. Delete the line when it merges.
 
