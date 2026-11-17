@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link, Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
@@ -38,12 +38,15 @@ export default function ProjectsPage({
   inUniverse = false,
   kinds,
   section,
+  rowPath = projectRowPath,
 }: {
   inUniverse?: boolean
   /** Only these kinds: the sidebar's Writing, Gaming, Cinema, Comic and Game Entities open this list narrowed (#272). */
   kinds?: readonly ProjectKindValue[]
   /** The sidebar section this list is the page of, which names it. */
   section?: Section
+  /** Where a row opens. Game Entities opens a game's directory instead of its project page (#284). */
+  rowPath?: (project: ProjectDetail) => string
 }) {
   useI18n()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
@@ -76,6 +79,11 @@ export default function ProjectsPage({
   const shown = kinds
     ? state.projects.filter((project) => kinds.includes(project.kind))
     : state.projects
+
+  // One game is no choice: go straight to it. `replace` keeps Back from landing on a picker that would bounce again.
+  if (rowPath !== projectRowPath && shown.length === 1) {
+    return <Navigate to={rowPath(shown[0])} replace />
+  }
 
   return (
     <section className="projects" data-testid="projects-page">
@@ -119,7 +127,7 @@ export default function ProjectsPage({
             >
               <Link
                 className="storyrow__title"
-                to={projectRowPath(project)}
+                to={rowPath(project)}
                 data-testid={`projects-row-${project.id}`}
               >
                 <bdi>{project.name}</bdi>

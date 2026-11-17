@@ -87,6 +87,12 @@ const projects = {
     emptyComic: 'No comic projects yet.',
     emptyCategoryHint: 'Use New project to start one in this universe.',
   },
+  gameEntities: {
+    lede: 'The categories of this game, each with the entries it holds.',
+    back: 'Game Entities',
+    notFound: 'This game is not in this universe.',
+    notFoundHint: 'Go back to Game Entities and pick one of its games.',
+  },
   directory: {
     lede: 'Pick a kind of project to see what you are making in this universe.',
     none: 'No projects yet',
