@@ -17,6 +17,9 @@ public sealed record ProjectEntityTypeRequest(
     string? AccentColor,
     Guid? ParentId = null);
 
+/// <summary>Copy a universe type template into a project as a new type (#283). The name defaults to the template's.</summary>
+public sealed record ProjectTypeFromTemplateRequest(Guid TemplateId, string? Name);
+
 /// <summary>One field on a project's type. The kinds are the lore's own <see cref="EntityFieldKind"/>, unchanged.</summary>
 public sealed record ProjectEntityFieldRequest(
     string? Name,
