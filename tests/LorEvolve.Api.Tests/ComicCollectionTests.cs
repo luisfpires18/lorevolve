@@ -170,7 +170,7 @@ public sealed class ComicCollectionTests(LorEvolveApiFactory factory) : IClassFi
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(53, backup.FormatVersion);
+        Assert.Equal(54, backup.FormatVersion);
         Assert.Equal([two, one], backup.Payload.ComicCollections!.Single().NodeIds);
 
         var restored = await RestoreArchive(client, archive, "Comic world restored");
@@ -214,29 +214,29 @@ public sealed class ComicCollectionTests(LorEvolveApiFactory factory) : IClassFi
         Assert.Equal("Issue", Assert.Single(Assert.Single((await List(client, restored.Id)).Collections).Entries).Title);
     }
 
-    private static string Base(Guid universeId) => $"/api/universes/{universeId}/comic-collections";
+    internal static string Base(Guid universeId) => $"/api/universes/{universeId}/comic-collections";
 
-    private static async Task<ComicCollectionsResponse> List(HttpClient client, Guid universeId) =>
+    internal static async Task<ComicCollectionsResponse> List(HttpClient client, Guid universeId) =>
         (await client.GetFromJsonAsync<ComicCollectionsResponse>(Base(universeId)))!;
 
-    private static async Task<Guid> Collection(HttpClient client, Guid universeId, string kind, string name)
+    internal static async Task<Guid> Collection(HttpClient client, Guid universeId, string kind, string name)
     {
         var response = await client.PostAsJsonAsync(Base(universeId), new ComicCollectionRequest(kind, name, null));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<ComicCollectionResponse>())!.Id;
     }
 
-    private static async Task<Guid> Node(HttpClient client, Guid projectId, string level, string? title, Guid? parentId = null)
+    internal static async Task<Guid> Node(HttpClient client, Guid projectId, string level, string? title, Guid? parentId = null)
     {
         var response = await client.PostAsJsonAsync($"/api/projects/{projectId}/structure", new ProjectNodeRequest(level, parentId, title));
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<ProjectNodeDetail>())!.Id;
     }
 
-    private static async Task<ProjectStructureTree> Structure(HttpClient client, Guid projectId) =>
+    internal static async Task<ProjectStructureTree> Structure(HttpClient client, Guid projectId) =>
         (await client.GetFromJsonAsync<ProjectStructureTree>($"/api/projects/{projectId}/structure"))!;
 
-    private static async Task<ProjectDetail> Project(HttpClient client, Guid universeId, string name, ProjectKind kind, string? format)
+    internal static async Task<ProjectDetail> Project(HttpClient client, Guid universeId, string name, ProjectKind kind, string? format)
     {
         var response = await client.PostAsJsonAsync(
             "/api/projects",
@@ -245,7 +245,7 @@ public sealed class ComicCollectionTests(LorEvolveApiFactory factory) : IClassFi
         return (await response.Content.ReadFromJsonAsync<ProjectDetail>())!;
     }
 
-    private static async Task AssertUnchanged(HttpClient client, ProjectDetail before)
+    internal static async Task AssertUnchanged(HttpClient client, ProjectDetail before)
     {
         var now = (await client.GetFromJsonAsync<ProjectDetail>($"/api/projects/{before.Id}"))!;
         Assert.Equal(before.Universe!.Id, now.Universe!.Id);

@@ -1118,6 +1118,7 @@ internal sealed partial class UniverseRestore(
                 Id = ids.Map(collection.Id),
                 UniverseId = universeId,
                 Kind = collection.Kind,
+                ProjectId = collection.ProjectId is { } projectId ? ids.Map(projectId) : null,
                 Name = collection.Name,
                 Summary = collection.Summary,
                 SortOrder = collection.SortOrder,

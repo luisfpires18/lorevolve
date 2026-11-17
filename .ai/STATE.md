@@ -45,6 +45,7 @@ example and Literata. Still open there: the step 4 screenshot shows an empty sce
 deferred.
 
 ## In flight
+- #303 M6 Comics tracker; #297 done: Comic Volumes are kind `volume` in `ComicCollections` with nullable `ProjectId` (cascade), listed via `?projectId=` on the project structure page, backup v54.
 - #300 M3 Types tracker running; #279 done: types audit in `docs/architecture/types-architecture.md` (one shared EntityTypes engine scoped by ProjectId; templates go in a new table pair); #280 done: Types page Lore/Gaming switch and game picker (`?context=gaming&game=`), no API change.
 - #302 M5 Cinema tracker running; #288 done: Film/Series projects have a selectable production format (`ProjectFormats` map, `CreativeProjects.Format`, backup v49); a project save must send the current format back. #290 done: generic `ProjectNodes` structure engine (`/api/projects/{id}/structure`, rule map `ProjectStructures`, `ProjectOutline.tsx`, backup v51); feature-film acts/sequences/scenes/beats, short-film and special root scenes.
 - #302 M5 Cinema tracker; #292 (PR #340) done: `trailer` rule entry (segment -> shot) in `ProjectStructures`, level words segment/shot in en and pt-PT; no schema change.

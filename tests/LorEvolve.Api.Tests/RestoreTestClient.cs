@@ -474,6 +474,15 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 54)
+        {
+            // A collection's project (Comic Volumes) came in version 54 (#297).
+            foreach (var collection in payload["comicCollections"]?.AsArray() ?? [])
+            {
+                Drop(collection, "projectId");
+            }
+        }
+
         if (version < 53)
         {
             // Comic story arcs and events came in version 53 (#296).

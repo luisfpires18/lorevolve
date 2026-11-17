@@ -1353,6 +1353,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         await db.ComicCollections.AsNoTracking()
             .Where(collection => collection.UniverseId == universeId)
             .OrderBy(collection => collection.Kind)
+            .ThenBy(collection => collection.ProjectId)
             .ThenBy(collection => collection.SortOrder)
             .Select(collection => new BackupComicCollection(
                 collection.Id,
@@ -1362,7 +1363,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 collection.SortOrder,
                 collection.CreatedAt,
                 collection.UpdatedAt,
-                collection.Entries.OrderBy(entry => entry.SortOrder).Select(entry => entry.NodeId).ToList()))
+                collection.Entries.OrderBy(entry => entry.SortOrder).Select(entry => entry.NodeId).ToList(),
+                collection.ProjectId))
             .ToListAsync(cancellationToken);
 
     /// <summary>Cinema sagas (version 52, #289): see <see cref="BackupCinemaSaga"/>.</summary>
