@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Field } from './Field'
-import { Link, useLocation } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { ListFilter, Plus, X } from 'lucide-react'
 import {
   createProjectEntity,
   deleteProjectEntity,
@@ -69,18 +69,56 @@ export function ProjectEntries({
 }) {
   useI18n()
   const { pathname } = useLocation()
+  // Search, sort and nesting live in the address beside `type`, so a filtered list is linkable (#285).
+  const [params, setParams] = useSearchParams()
+  const q = params.get('q') ?? ''
+  const sortParam = params.get('sort')
+  const sort =
+    sortParam === 'updated' || sortParam === 'name' || sortParam === 'created' ? sortParam : ''
+  const nested = params.get('nested') === '1'
+  const filtered = q !== '' || sort !== '' || nested
+  const [searchText, setSearchText] = useState(q)
+  const filter = { q, sort, includeDescendants: nested }
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [typeId, setTypeId] = useState<string | null>(fixedTypeId ?? null)
   const [entries, setEntries] = useState<ProjectEntitySummary[] | null>(null)
   const [more, setMore] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // The main read's controller: loadMore and refresh share its signal so a filter change cancels them too.
+  const readRef = useRef<AbortController | null>(null)
   const [name, setName] = useState('')
   const [summary, setSummary] = useState('')
   const [adding, setAdding] = useState(false)
   const [values, setValues] = useState<Record<string, FieldValueInput>>({})
   // An Image field's picture waits here until the entry exists, by field id: it is its own write after the create.
   const [pendingImages, setPendingImages] = useState<Record<string, PendingFieldImage>>({})
+
+  function setFilter(changes: Record<string, string | null>) {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        for (const [key, value] of Object.entries(changes)) {
+          if (value) next.set(key, value)
+          else next.delete(key)
+        }
+        return next
+      },
+      { replace: true },
+    )
+  }
+
+  function clearFilters() {
+    setSearchText('')
+    setFilter({ q: null, sort: null, nested: null })
+  }
+
+  // Typing waits for a pause before it reaches the address, and so the read, as Lore's search does.
+  useEffect(() => {
+    if (searchText === q) return
+    const timer = setTimeout(() => setFilter({ q: searchText.trim() || null }), 150)
+    return () => clearTimeout(timer)
+  }, [searchText, q])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -109,6 +147,7 @@ export function ProjectEntries({
     if (typeId === null) return
 
     const controller = new AbortController()
+    readRef.current = controller
 
     /*
      * The first page, or as many pages as it takes to include the entry the address names, so a link to an entry does
@@ -120,6 +159,7 @@ export function ProjectEntries({
       const first = await listProjectEntities(projectId, forType, signal, {
         skip: 0,
         take: ENTRY_PAGE_SIZE + 1,
+        ...filter,
       })
 
       if (!openEntryId) return { read: first, shown: ENTRY_PAGE_SIZE }
@@ -134,6 +174,7 @@ export function ProjectEntries({
         const next = await listProjectEntities(projectId, forType, signal, {
           skip: read.length,
           take: ENTRY_PAGE_SIZE + 1,
+          ...filter,
         })
         read = [...read.slice(0, shown), ...next]
         shown += ENTRY_PAGE_SIZE
@@ -149,7 +190,7 @@ export function ProjectEntries({
         setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
       })
     return () => controller.abort()
-  }, [projectId, typeId, reloadKey, openEntryId])
+  }, [projectId, typeId, reloadKey, openEntryId, q, sort, nested])
 
   /** One more row than is shown is asked for, so whether another page exists is known without a count. */
   function showing(read: ProjectEntitySummary[], shown: number) {
@@ -160,34 +201,43 @@ export function ProjectEntries({
   function loadMore() {
     if (typeId === null || entries === null) return
     setBusy(true)
-    listProjectEntities(projectId, typeId, undefined, {
+    // Tied to the main read's signal: a filter change aborts it, so a late page never lands on a newer list.
+    const signal = readRef.current?.signal
+    listProjectEntities(projectId, typeId, signal, {
       skip: entries.length,
       take: ENTRY_PAGE_SIZE + 1,
+      ...filter,
     })
       .then((read) => {
-        setEntries([...entries, ...read.slice(0, ENTRY_PAGE_SIZE)])
-        setMore(read.length > ENTRY_PAGE_SIZE)
         setBusy(false)
+        if (signal?.aborted) return
+        setEntries((current) => [...(current ?? []), ...read.slice(0, ENTRY_PAGE_SIZE)])
+        setMore(read.length > ENTRY_PAGE_SIZE)
       })
-      .catch(failing)
+      .catch((error: unknown) => failing(error, signal))
   }
 
   function refresh(notice: string | null = null) {
     if (typeId === null) return
     // A write re-reads as many rows as were already open, so the author keeps their place in a long list.
     const shown = Math.max(entries?.length ?? 0, ENTRY_PAGE_SIZE)
-    listProjectEntities(projectId, typeId, undefined, { skip: 0, take: shown + 1 })
+    const signal = readRef.current?.signal
+    listProjectEntities(projectId, typeId, signal, { skip: 0, take: shown + 1, ...filter })
       .then((read) => {
-        showing(read, shown)
         setBusy(false)
-        setFailed(notice)
+        // The write itself happened, so the parent is told even when a newer list has replaced this read.
+        if (!signal?.aborted) {
+          showing(read, shown)
+          setFailed(notice)
+        }
         onChanged?.()
       })
-      .catch(failing)
+      .catch((error: unknown) => failing(error, signal))
   }
 
-  function failing(error: unknown) {
+  function failing(error: unknown, signal?: AbortSignal) {
     setBusy(false)
+    if (signal?.aborted) return
     setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
   }
 
@@ -447,8 +497,77 @@ export function ProjectEntries({
         </form>
       ) : null}
 
+      {typeId !== null ? (
+        <div className="projects__filters" role="group" aria-label={t('lore.page.filtersGroup')}>
+          <div className="lore__search">
+            <label className="visually-hidden" htmlFor="project-entries-search">
+              {t('lore.page.filterEntries')}
+            </label>
+            <ListFilter
+              className="lore__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
+            <input
+              id="project-entries-search"
+              className="field__input lore__searchinput"
+              type="search"
+              placeholder={t('projects.entries.searchPlaceholder')}
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              data-testid="project-entries-search"
+            />
+          </div>
+          <div className="lore__pagesize">
+            <label className="lore__pagesizelabel" htmlFor="project-entries-sort">
+              {t('lore.page.sortBy')}
+            </label>
+            <select
+              id="project-entries-sort"
+              className="field__input lore__pagesizeselect"
+              value={sort}
+              onChange={(event) => setFilter({ sort: event.target.value || null })}
+              data-testid="project-entries-sort"
+            >
+              <option value="">{t('lore.page.sortName')}</option>
+              <option value="updated">{t('lore.page.sortUpdated')}</option>
+              <option value="created">{t('lore.page.sortCreated')}</option>
+            </select>
+          </div>
+          {type && buildTypeTree(types).byId.get(type.id)?.children.length ? (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={nested}
+                onChange={(event) => setFilter({ nested: event.target.checked ? '1' : null })}
+                data-testid="project-entries-nested"
+              />
+              <span>{t('projects.entries.nested')}</span>
+            </label>
+          ) : null}
+          {filtered ? (
+            <button
+              className="button button--text"
+              type="button"
+              onClick={clearFilters}
+              data-testid="project-entries-clear"
+            >
+              <ActionIcon icon={X} />
+              {t('lore.page.clearFilters')}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {typeId !== null && entries === null ? (
         <p className="projectcard__meta">{t('projects.common.loading')}</p>
+      ) : (entries ?? []).length === 0 && filtered ? (
+        <EmptyState
+          title={t('projects.entries.noMatch')}
+          hint={t('projects.entries.noMatchHint')}
+          testId="project-entries-no-match"
+        />
       ) : (entries ?? []).length === 0 ? (
         <EmptyState
           title={t('projects.entries.empty')}

@@ -77,7 +77,14 @@ export function listProjectEntities(
   projectId: string,
   typeId?: string,
   signal?: AbortSignal,
-  page?: { skip: number; take: number; recent?: boolean },
+  page?: {
+    skip: number
+    take: number
+    recent?: boolean
+    q?: string
+    sort?: string
+    includeDescendants?: boolean
+  },
 ) {
   const params = new URLSearchParams()
   if (typeId) params.set('typeId', typeId)
@@ -85,6 +92,9 @@ export function listProjectEntities(
     params.set('skip', String(page.skip))
     params.set('take', String(page.take))
     if (page.recent) params.set('recent', 'true')
+    if (page.q) params.set('q', page.q)
+    if (page.sort) params.set('sort', page.sort)
+    if (page.includeDescendants) params.set('includeDescendants', 'true')
   }
   const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<ProjectEntitySummary[]>(`${base(projectId)}/entities${query}`, { signal })

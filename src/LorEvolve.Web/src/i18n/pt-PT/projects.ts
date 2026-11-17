@@ -310,6 +310,10 @@ const projects = {
     manage: 'Gerir tipos',
   },
   entries: {
+    searchPlaceholder: 'Pesquisar por nome',
+    noMatch: 'Nenhuma entrada corresponde.',
+    noMatchHint: 'Altere ou limpe a pesquisa para ver mais.',
+    nested: 'Incluir tipos aninhados',
     more: 'Mostrar mais',
     title: 'Registos',
     failed: 'Não foi possível ler os registos deste projeto.',
