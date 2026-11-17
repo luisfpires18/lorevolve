@@ -51,6 +51,7 @@ deferred.
 - #301 M4 GameEntity tracker running; #284 done: Game Entities picks a game (`game-entities`, one game skips it), `game-entities/:projectId` opens that game's category directory via `ProjectEntitiesView`; no API change. #286 done: a game entry card opens `game-entities/:projectId/:entityId` (`ProjectEntityDetailView`: name, type, description, first Image field picture or placeholder; slot for #287 fields); game check shared as `useGameProject`; no API change.
 - #281 (tracker #300) `feat/type-templates-281`, PR #331: universe-scoped type templates, API + migration + backup format 50.
 - #282 (tracker #300) `feat/template-management-282`, PR #342 done: Types page `?context=templates` lists and manages the universe's templates (`TypeTemplates.tsx`, `typeTemplates/api.ts`); web only.
+- #283 (tracker #300) `feat/types-from-templates-283`, PR #345 done: `POST /api/projects/{id}/entity-types/from-template` copies a universe template into a game as an independent top-level type (no link, no schema change); Types page Gaming context gets a "From a template" drawer.
 
 One line per branch. Delete the line when it merges.
 
