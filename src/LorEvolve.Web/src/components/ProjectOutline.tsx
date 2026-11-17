@@ -1,13 +1,16 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ActionMenu } from './ActionMenu'
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
 import { Field } from './Field'
+import { ComicArt, ComicPageEditor, ScriptField } from './ComicPageEditor'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import { listSeasons } from '../projectEntities/seasons'
 import {
   addableLevels,
+  ART_LEVELS,
   childrenOf,
   createNode,
   deleteNode,
@@ -17,38 +20,17 @@ import {
   moveNode,
   moveTargets,
   NODE_CHANGED,
+  PANEL_SCRIPT,
   saveNode,
+  scriptOf,
+  type PanelScript,
   type ProjectNodeDetail,
   type ProjectNodeSummary,
   type ProjectStructureTree,
 } from '../projectEntities/structure'
+import { capital, levelWord, nameOf } from '../projectEntities/levelWords'
 import { t, tn, useI18n } from '../i18n'
-
-/**
- * The words for each structure level (#290). The only part of this component a later format issue grows: #291 adds
- * season and episode, #292 segment and shot, #294 issue, chapter, page and panel. An unknown level shows its own word.
- */
-const LEVEL_WORDS: Record<string, () => string> = {
-  season: () => t('projects.structure.levels.season'),
-  episode: () => t('projects.structure.levels.episode'),
-  act: () => t('projects.structure.levels.act'),
-  sequence: () => t('projects.structure.levels.sequence'),
-  scene: () => t('projects.structure.levels.scene'),
-  beat: () => t('projects.structure.levels.beat'),
-  issue: () => t('projects.structure.levels.issue'),
-  chapter: () => t('projects.structure.levels.chapter'),
-  page: () => t('projects.structure.levels.page'),
-  panel: () => t('projects.structure.levels.panel'),
-  segment: () => t('projects.structure.levels.segment'),
-  shot: () => t('projects.structure.levels.shot'),
-}
-
-const levelWord = (level: string) => LEVEL_WORDS[level]?.() ?? level
-
-const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
-
-const nameOf = (node: { level: string; title: string | null }) =>
-  node.title ?? capital(t('projects.structure.untitled', { level: levelWord(node.level) }))
+import { useUniverseAccess } from '../universes/access'
 
 /**
  * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
@@ -64,12 +46,16 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
+  // A link from a story arc or event (#296) names the node to open: read once on load, ignored when unknown.
+  const [params] = useSearchParams()
+  const [linked] = useState(() => params.get('node'))
 
   useEffect(() => {
     const controller = new AbortController()
     getStructure(projectId, controller.signal)
       .then((read) => {
         setTree(read)
+        if (linked && read.nodes.some((node) => node.id === linked)) setEditing(linked)
         return listSeasons(projectId, controller.signal).then((seasons) =>
           setHasLegacy(seasons.length > 0),
         )
@@ -83,7 +69,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
         setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
       })
     return () => controller.abort()
-  }, [projectId])
+  }, [projectId, linked])
 
   function refresh() {
     return getStructure(projectId).then((read) => {
@@ -296,6 +282,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
           key={editing}
           projectId={projectId}
           nodeId={editing}
+          panels={childrenOf(tree, editing).filter((child) => child.level === 'panel')}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null)
@@ -319,22 +306,34 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   )
 }
 
-/** One node's title, summary and text, saved over the version it was opened at (ADR 0043). */
+/**
+ * One node's title, summary and text, saved over the version it was opened at (ADR 0043). A panel adds its script, a
+ * page or panel its artwork, and a page lists its panels to edit in place (#295).
+ */
 function NodeEditor({
   projectId,
   nodeId,
+  panels,
   onClose,
   onSaved,
 }: {
   projectId: string
   nodeId: string
+  panels: ProjectNodeSummary[]
   onClose: () => void
   onSaved: () => void
 }) {
   const [node, setNode] = useState<ProjectNodeDetail | null>(null)
+  const canEdit = useUniverseAccess().editContent
   const [title, setTitle] = useState('')
   const [summary, setSummary] = useState('')
   const [body, setBody] = useState('')
+  const [script, setScript] = useState<PanelScript>({
+    dialogue: '',
+    caption: '',
+    sfx: '',
+    notes: '',
+  })
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
 
@@ -346,6 +345,7 @@ function NodeEditor({
         setTitle(read.title ?? '')
         setSummary(read.summary ?? '')
         setBody(read.body ?? '')
+        setScript(scriptOf(read))
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
@@ -356,16 +356,23 @@ function NodeEditor({
 
   const isDirty =
     node !== null &&
-    (title !== (node.title ?? '') || summary !== (node.summary ?? '') || body !== (node.body ?? ''))
+    (title !== (node.title ?? '') ||
+      summary !== (node.summary ?? '') ||
+      body !== (node.body ?? '') ||
+      PANEL_SCRIPT.some((part) => script[part] !== (node[part] ?? '')))
 
   function save() {
-    if (!node || saving) return
+    if (!node || saving || !canEdit) return
     setSaving(true)
     saveNode(projectId, node.id, {
       title: title || null,
       summary: summary || null,
       body: body || null,
       expectedVersion: node.version,
+      dialogue: script.dialogue || null,
+      caption: script.caption || null,
+      sfx: script.sfx || null,
+      notes: script.notes || null,
     })
       .then(onSaved)
       .catch((error: unknown) => {
@@ -393,14 +400,16 @@ function NodeEditor({
       busy={saving}
       actions={(close) => (
         <>
-          <button
-            className="button"
-            type="submit"
-            disabled={saving || !node}
-            data-testid="project-node-save"
-          >
-            {saving ? t('projects.structure.saving') : t('projects.structure.save')}
-          </button>
+          {canEdit ? (
+            <button
+              className="button"
+              type="submit"
+              disabled={saving || !node}
+              data-testid="project-node-save"
+            >
+              {saving ? t('projects.structure.saving') : t('projects.structure.save')}
+            </button>
+          ) : null}
           <button className="button button--secondary" type="button" onClick={close}>
             {t('projects.common.cancel')}
           </button>
@@ -421,6 +430,7 @@ function NodeEditor({
                 className="field__input"
                 value={title}
                 maxLength={200}
+                readOnly={!canEdit}
                 placeholder={t('projects.structure.titlePlaceholder')}
                 onChange={(event) => setTitle(event.target.value)}
                 data-testid="project-node-title"
@@ -434,18 +444,26 @@ function NodeEditor({
                 className="field__input"
                 value={summary}
                 maxLength={2000}
+                readOnly={!canEdit}
                 placeholder={t('projects.structure.summaryPlaceholder')}
                 onChange={(event) => setSummary(event.target.value)}
                 data-testid="project-node-summary"
               />
             )}
           </Field>
-          <Field label={t('projects.structure.bodyLabel')}>
+          <Field
+            label={
+              node.level === 'panel'
+                ? t('projects.structure.panel.visualDescription')
+                : t('projects.structure.bodyLabel')
+            }
+          >
             {(control) => (
               <textarea
                 {...control}
                 className="field__input"
                 rows={12}
+                readOnly={!canEdit}
                 value={body}
                 placeholder={t('projects.structure.bodyPlaceholder')}
                 onChange={(event) => setBody(event.target.value)}
@@ -453,6 +471,32 @@ function NodeEditor({
               />
             )}
           </Field>
+          {node.level === 'panel'
+            ? PANEL_SCRIPT.map((part) => (
+                <ScriptField
+                  key={part}
+                  part={part}
+                  value={script[part]}
+                  onChange={(value) => setScript({ ...script, [part]: value })}
+                  testId={`project-node-${part}`}
+                  readOnly={!canEdit}
+                />
+              ))
+            : null}
+          {ART_LEVELS.includes(node.level) ? (
+            <ComicArt
+              projectId={projectId}
+              nodeId={node.id}
+              label={
+                node.level === 'page'
+                  ? t('projects.structure.art.pageArt')
+                  : t('projects.structure.art.panelArt')
+              }
+              image={node.image}
+              onChanged={(image) => setNode({ ...node, image })}
+            />
+          ) : null}
+          {node.level === 'page' ? <ComicPageEditor projectId={projectId} panels={panels} /> : null}
         </>
       ) : null}
     </Drawer>

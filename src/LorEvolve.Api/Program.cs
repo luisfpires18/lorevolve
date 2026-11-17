@@ -1,5 +1,6 @@
 using LorEvolve.Api.Features.TypeTemplates;
 using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Admin;
 using LorEvolve.Api.Features.Feedback;
@@ -191,8 +192,10 @@ app.MapTypeTemplateEndpoints();
 app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
 app.MapCinemaSagaEndpoints();
+app.MapComicCollectionEndpoints();
 app.MapComicEndpoints();
 app.MapStructureEndpoints();
+app.MapNodeImageEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();

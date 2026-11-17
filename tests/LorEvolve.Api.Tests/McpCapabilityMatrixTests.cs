@@ -160,6 +160,10 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
                 "cinema-sagas/phases/members", "cinema-sagas/phases/members/move",
             ],
             Why.PersonOnly),
+        Excepted(
+            "Comic story arcs and events",
+            ["comic-collections", "comic-collections/move", "comic-collections/entries", "comic-collections/entries/move"],
+            Why.PersonOnly),
     ];
 
     private static readonly Domain[] Project =
@@ -169,6 +173,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Excepted("A project entry's history", ["entities/revisions"], Why.LiveOnly),
         Mapped("A project's own types", ["entity-types"], ["get_project_schema"], ["ProjectType", "ProjectField"]),
         ReadOnly("A project's structure", ["seasons", "structure", "structure/move"], ["get_project_structure"]),
+        Excepted("A comic page's or panel's picture", ["structure/image"], Why.MediaBytes),
     ];
 
     /// <summary>The proposal tools themselves: the one write path, and how an app finds and follows it.</summary>
