@@ -226,8 +226,8 @@ test.describe('Projects navigation', () => {
     await page.getByTestId('project-new-kind').selectOption('1')
     await page.getByTestId('project-new-save').click()
 
-    // A game opens on Entities: its name is the breadcrumb's, its facts sit under the tabs.
-    await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(name)
+    // A game opens on Entities, headed by its own name and facts.
+    await expect(page.getByTestId('project-name')).toHaveText(name)
     await expect(page.getByTestId('project-facts').getByTestId('project-meta')).toContainText(
       'Game',
     )

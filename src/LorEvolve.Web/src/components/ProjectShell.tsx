@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { PageHeader } from './PageHeader'
 import { projectPath, projectSectionLabel, type ProjectSection } from '../projects/sections'
 import { t } from '../i18n'
 
@@ -20,7 +21,7 @@ export function ProjectShell({
   universe,
   sections,
   story = false,
-  meta,
+  facts,
   children,
 }: {
   projectId: string
@@ -33,13 +34,47 @@ export function ProjectShell({
    * draws neither breadcrumb nor tabs: two bars of the same links were double navigation.
    */
   story?: boolean
-  /** The project's facts and summary, under the tabs' row, for a kind with no Overview to hold them (a Game). */
-  meta?: ReactNode
+  /**
+   * A kind with no Overview (a Game, owner 2026-11-17): the project heads its own page, its name over its facts and
+   * summary as Lore's page is headed, and its views are a row of Lore's group chips instead of a breadcrumb and tabs.
+   */
+  facts?: { lede: ReactNode; summary: ReactNode }
   children: ReactNode
 }) {
   return (
     <div className={story ? 'projectframe projectframe--story' : 'projectframe'}>
-      {story ? null : (
+      {facts ? (
+        <div className="projectframe__hero" data-testid="project-facts">
+          <PageHeader
+            title={<bdi>{projectName}</bdi>}
+            titleTestId="project-name"
+            lede={facts.lede}
+          />
+          {facts.summary}
+          <nav
+            className="lorecatalog__groups"
+            aria-label={t('projects.tabs.label')}
+            data-testid="project-tabs"
+          >
+            {sections.map((section) => (
+              <NavLink
+                key={section.segment}
+                className="lorecatalog__group"
+                to={projectPath(projectId, section.segment, universe.id)}
+                data-testid={`projecttab-${section.segment}`}
+              >
+                <section.icon
+                  className="lorecatalog__groupicon"
+                  aria-hidden="true"
+                  focusable="false"
+                  strokeWidth={1.75}
+                />
+                {projectSectionLabel(section)}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      ) : story ? null : (
         <div className="projectframe__head">
           <div className="pageheader__crumb">
             <nav aria-label={t('projects.shell.breadcrumb')} data-testid="project-breadcrumb">
@@ -72,7 +107,6 @@ export function ProjectShell({
           </nav>
         </div>
       )}
-      {meta}
       {children}
     </div>
   )
