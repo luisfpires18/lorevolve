@@ -18568,6 +18568,104 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
 }
 
+/* A guard built from blocks (GuardBuilder). Groups are a hairline and an indent, not boxes inside boxes; only a row
+   that says something (a comparison, a search, a read-only part) sits on the paper tint. Indenting stops at level 5,
+   so a deep guard still fits a phone; rows wrap rather than run off the drawer. */
+.guardbuilder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.guardblock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.guardblock:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.guardblock--indent {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--rule-strong);
+}
+
+.guardblock--leaf {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.guardblock--leaf.guardblock--indent {
+  border-left: 0;
+}
+
+.guardblock__head,
+.guardblock__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* A choice is as wide as its words; a typed value takes the rest of the row. */
+.guardblock__head > .field__input,
+.guardblock__row > .field__input {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.guardblock__row > input.field__input {
+  flex: 1 1 8rem;
+}
+
+.guardblock__children,
+.guardblock__slot,
+.guardblock__query {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.guardblock__kind,
+.guardblock__level {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.guardblock__remove {
+  margin-left: auto;
+}
+
+.guardblock__summary,
+.guardblock__fixed {
+  margin: 0;
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.guardblock__summary {
+  color: var(--muted);
+}
+
+.guardblock__clause {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule);
+}
+
+.guardblock .field__error {
+  margin: 0;
+}
+
 .boardlist__cards {
   display: flex;
   flex-direction: column;

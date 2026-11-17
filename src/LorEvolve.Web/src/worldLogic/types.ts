@@ -52,6 +52,50 @@ export interface SystemRuleSummary {
   updatedAt: string
 }
 
+/**
+ * One rule definition, whole. `condition` and `exceptions` are the stored JSON trees as they were written; the guard
+ * builder edits the condition and sends the exceptions back untouched.
+ */
+export interface SystemRuleDetail {
+  id: string
+  title: string
+  description: string
+  scope: WorldLogicScope
+  projectId: string | null
+  schemaVersion: number | null
+  condition: unknown
+  dependsOn: string[]
+  systems: { id: string; name: string }[]
+  version: number
+  createdAt: string
+  updatedAt: string
+  exceptions?: unknown
+}
+
+/** What a rule save sends. An update is whole, under `expectedVersion`; a stale one is 409 `system_rule_changed`. */
+export interface SystemRuleInput {
+  title: string
+  description: string
+  projectId: string | null
+  schemaVersion?: number
+  condition?: unknown
+  dependsOn?: string[]
+  exceptions?: unknown
+  expectedVersion?: number
+}
+
+/** What evaluating one rule answered. `outcome` is the evaluator's word; nothing is stored by asking. */
+export interface ConditionEvaluationResponse {
+  ruleId: string
+  ruleVersion: number
+  schemaVersion: number
+  outcome: string
+  errorCode: string | null
+  exemptionId: string | null
+  evidence: ConditionEvidenceRow[]
+  rationale: string[]
+}
+
 /** What a System save sends. `projectId` is the scope it was created in and never changes. */
 export interface SystemInput {
   name: string
