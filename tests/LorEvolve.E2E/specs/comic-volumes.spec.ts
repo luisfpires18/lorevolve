@@ -53,7 +53,7 @@ async function collection(page: Page, kind: string, name: string) {
   await expect(page.getByTestId('comic-collection-drawer')).toHaveCount(0)
   const card = page
     .getByTestId(`comic-collections-${kind}`)
-    .locator('li.projectcard', { hasText: name })
+    .locator('li[data-testid^="comic-collection-"]', { hasText: name })
   const testId = await card.getAttribute('data-testid')
   return testId!.replace('comic-collection-', '')
 }
@@ -91,12 +91,21 @@ test('a volume collects the chapters of a manga in an order that persists and le
 
   await add(page, volume, 'Manga - chapter Chapter one')
   await add(page, volume, 'Manga - chapter Chapter two')
-  const entries = page.getByTestId(`comic-collection-${volume}`).locator('li.fieldlist__row')
+  const entries = page
+    .getByTestId(`comic-collection-${volume}`)
+    .locator('li[data-testid^="comic-entry-"]')
   await page.getByTestId(`comic-entry-actions-${volume}-${two}`).click()
   await page.getByTestId(`comic-entry-${volume}-${two}-up`).click()
   await expect(entries).toHaveText([/Chapter two/, /Chapter one/])
   await page.reload()
   await expect(entries).toHaveText([/Chapter two/, /Chapter one/])
+
+  // A volume reads as a story's chapter and its entries as scene cards, under the outline on the same page (#377).
+  await expect(page.getByTestId('project-outline')).toBeVisible()
+  await expect(
+    page.getByTestId(`comic-collection-${volume}`).locator(':scope > section.chapter'),
+  ).toBeVisible()
+  await expect(entries.first()).toHaveClass(/\bscene\b/)
 
   await page.getByTestId(`comic-entry-actions-${volume}-${one}`).click()
   await page.getByTestId(`comic-entry-remove-${volume}-${one}`).click()

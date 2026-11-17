@@ -32,11 +32,12 @@ const projects = {
     moveUp: 'Move up',
     moveDown: 'Move down',
     done: 'Done',
-    cover: 'Cover',
+    addPicture: 'Add picture',
+    changePicture: 'Change picture',
   },
-  gaming: {
-    moved: '“{name}” is now game {n} of {total}.',
-    moveFailed: 'That game could not be moved. Try again.',
+  shelf: {
+    moved: '“{name}” is now {n} of {total}.',
+    moveFailed: 'That project could not be moved. Try again.',
   },
   comics: {
     viewsLabel: 'Comic views',
@@ -123,7 +124,6 @@ const projects = {
     new: 'New project',
   },
   sections: {
-    overview: 'Overview',
     structure: 'Structure',
     manuscript: 'Manuscript',
     entities: 'Entities',
@@ -131,24 +131,12 @@ const projects = {
     systems: 'Systems',
     ideas: 'Ideas',
   },
-  shell: {
-    breadcrumb: 'Breadcrumb',
-  },
   tabs: {
     label: 'Project views',
   },
   view: {
     empty: 'Nothing in this view yet.',
     emptyHint: 'This view will fill as the project gains what belongs here.',
-  },
-  overview: {
-    types: 'What is in this project',
-    noTypes: 'No types yet, so nothing is counted here.',
-    failed: 'Some of this project could not be read.',
-    empty: 'This project has nothing in it yet.',
-    emptyHint:
-      'Start by giving it the types of thing it is made of, then add entries of those types.',
-    start: 'Set up its types',
   },
   ideas: {
     ownerOnly: "Ideas here are the universe owner's.",
@@ -229,7 +217,6 @@ const projects = {
     failed: 'This project could not be read.',
     missing: 'This project is not here.',
     missingHint: 'It may have been removed, or it belongs to another account.',
-    noSummary: 'No summary yet.',
   },
   schema: {
     title: 'Types',
@@ -333,6 +320,31 @@ const projects = {
     addEpisode: 'Add scene',
     deleteEpisode: 'Delete scene',
     moveToSeason: 'Move to',
+  },
+  script: {
+    heading: 'Script',
+    outline: 'Parts of this project',
+    parts: 'Parts',
+    closeParts: 'Close parts',
+    choose: 'Choose a part',
+    position: '{level} {number} of {total}',
+    empty: 'Nothing to write in yet.',
+    emptyHint: 'Add parts in {link} first, then write each one here.',
+    structureLink: 'Structure',
+    noFormat: 'This project has no format yet.',
+    noFormatHint: 'Choose a format, then build its parts in {link}.',
+    writeLabel: 'Text of {name}',
+    readLabel: 'Text of {name}',
+    placeholder: 'Write this part. Type @ to mention Lore.',
+    nothingYet: 'Nothing written here yet.',
+    hasText: 'Has text',
+    save: 'Save changes',
+    saved: 'Saved',
+    nothingSaved: 'Not saved yet',
+    unsaved: '{name} has changes that are not saved.',
+    reload: 'Reload',
+    retry: 'Try again',
+    tooLong: 'Too long to save: {used} of {max} characters.',
   },
   structure: {
     title: 'Structure',
@@ -472,6 +484,7 @@ const projects = {
     values: 'Fields',
   },
   new: {
+    cinema: 'Cinema',
     title: 'New project',
     name: 'Name',
     kind: 'What kind of work is it?',

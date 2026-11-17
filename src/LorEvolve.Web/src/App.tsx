@@ -17,7 +17,8 @@ import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
 import { useI18n } from './i18n'
 import { ProjectKind } from './projects/types'
-import { CINEMA, COMIC, GAME_ENTITIES } from './universes/sections'
+import { CINEMA, COMIC, GAME_ENTITIES, GAMING } from './universes/sections'
+
 import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { StoryRedirect } from './components/StoryRedirect'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
@@ -35,7 +36,7 @@ import {
   FamilyTreePage,
   ForgotPasswordPage,
   GameEntitiesPage,
-  GamingPage,
+  CategoryShelfPage,
   GameEntityPage,
   IdeaBoardPage,
   IdeaBoardsPage,
@@ -69,6 +70,11 @@ import {
   WorldRulePage,
   WorldRulesPage,
 } from './screens'
+
+/** The kinds on each Creation shelf, kept stable so the shelf reads its projects once. */
+const GAMING_KINDS = [ProjectKind.Game]
+const CINEMA_KINDS = [ProjectKind.Film, ProjectKind.Series]
+const COMIC_KINDS = [ProjectKind.Comic]
 
 /**
  * Held while a whole screen's code is fetched. The same plate the session probe holds behind
@@ -308,15 +314,30 @@ function Root() {
               <Route path="projects" element={asSection('projects', <ProjectsDirectory />)} />
               {/* The Creation and Game Entities destinations: the project list narrowed to their kinds (#272). */}
               <Route path="writing" element={asSection('stories', <StoriesPage />)} />
-              <Route path="gaming" element={asSection('projects', <GamingPage />)} />
+              <Route
+                path="gaming"
+                element={asSection(
+                  'projects',
+                  <CategoryShelfPage
+                    key="gaming"
+                    section={GAMING}
+                    kinds={GAMING_KINDS}
+                    frame="console"
+                    empty="projects.list.emptyGame"
+                  />,
+                )}
+              />
               <Route
                 path="cinema"
                 element={asSection(
                   'projects',
-                  <ProjectsPage
-                    inUniverse
+                  <CategoryShelfPage
+                    key="cinema"
                     section={CINEMA}
-                    kinds={[ProjectKind.Film, ProjectKind.Series]}
+                    kinds={CINEMA_KINDS}
+                    frame="film"
+                    empty="projects.list.emptyCinema"
+                    view="sagas"
                   />,
                 )}
               />
@@ -324,7 +345,14 @@ function Root() {
                 path="comic"
                 element={asSection(
                   'projects',
-                  <ProjectsPage inUniverse section={COMIC} kinds={[ProjectKind.Comic]} />,
+                  <CategoryShelfPage
+                    key="comic"
+                    section={COMIC}
+                    kinds={COMIC_KINDS}
+                    frame="comic"
+                    empty="projects.list.emptyComic"
+                    view="arcs"
+                  />,
                 )}
               />
               <Route

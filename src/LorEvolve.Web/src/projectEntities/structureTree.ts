@@ -3,6 +3,9 @@
 /** A project's rule-shaped structure (#290): acts, sequences, scenes, beats, and the levels later formats add. */
 import type { FieldImageRef } from '../lore/types'
 
+/** The longest text one node may hold: the API's `SeriesLimits.ScriptMaxLength`, which refuses anything longer. */
+export const NODE_BODY_MAX_LENGTH = 400_000
+
 /** The levels that may hold a picture (#295). */
 export const ART_LEVELS = ['page', 'panel']
 

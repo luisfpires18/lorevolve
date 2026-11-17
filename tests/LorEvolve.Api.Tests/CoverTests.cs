@@ -206,6 +206,25 @@ public sealed class CoverTests(LorEvolveApiFactory factory) : IClassFixture<LorE
         Assert.All(olderProjects, project => Assert.Null(project.Cover));
     }
 
+    [Fact]
+    public async Task A_comic_cover_is_a_2_3_issue_cover()
+    {
+        var (owner, _) = await Account(_factory, "cover-comic");
+        var u = (await CreateUniverse(owner, "Comic covers")).Id;
+        var project = await Project(owner, u, "Inkfall", ProjectKind.Comic);
+        var route = $"/api/projects/{project}/cover";
+
+        var stored = await Uploaded(owner, route, Png(1200, 1200));
+        using (var card = Image.Load<Rgba32>(await Bytes(owner, $"{route}/{stored.AssetId}/card/{stored.CardId}")))
+        {
+            Assert.Equal((640, 960), (card.Width, card.Height));
+        }
+
+        var wide = await owner.PutAsJsonAsync($"{route}/card", new UniverseArtworkCardRequest(stored.AssetId, new ImageCrop(0, 0.1875, 1, 0.625)));
+        Assert.Equal(HttpStatusCode.BadRequest, wide.StatusCode);
+        Assert.Contains("2:3", await wide.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
+
     // ---------- Helpers ----------
 
     private static async Task<Guid> Project(HttpClient client, Guid u, string name, ProjectKind kind) =>

@@ -11,13 +11,12 @@ import {
 import { ComicCollections } from '../components/ComicCollections'
 import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
-import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { ProjectSchema } from '../components/ProjectSchema'
 import { useUniverseAccess } from '../universes/access'
 import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
-import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectOutline } from '../components/ProjectOutline'
+import { ProjectScript } from '../components/ProjectScript'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
 import { createProject, getProject, listProjects } from '../projects/api'
@@ -56,6 +55,24 @@ const KINDS: readonly ProjectKindValue[] = [
   ProjectKind.Film,
   ProjectKind.Comic,
 ]
+
+/** The kinds the form offers (owner, 2026-11-17): Film and Series are one choice, Cinema, told apart by the format. */
+const PICKED: readonly ProjectKindValue[] = [
+  ProjectKind.Writing,
+  ProjectKind.Game,
+  ProjectKind.Film,
+  ProjectKind.Comic,
+]
+
+const isCinema = (kind: ProjectKindValue) =>
+  kind === ProjectKind.Film || kind === ProjectKind.Series
+
+/** A kind's formats; Cinema's are the film formats then the series formats, and the one picked sets the kind. */
+function pickFormats(kind: ProjectKindValue) {
+  return isCinema(kind)
+    ? [...formatsFor(ProjectKind.Film), ...formatsFor(ProjectKind.Series)]
+    : formatsFor(kind)
+}
 
 /** One project: its own page, or the form that makes one. */
 export default function ProjectPage({
@@ -152,7 +169,7 @@ function NewProject() {
             <select
               {...control}
               className="field__input field__input--select"
-              value={kind}
+              value={isCinema(kind) ? ProjectKind.Film : kind}
               onChange={(event) => {
                 const next = Number(event.target.value) as ProjectKindValue
                 setKind(next)
@@ -160,26 +177,30 @@ function NewProject() {
               }}
               data-testid="project-new-kind"
             >
-              {KINDS.map((value) => (
+              {PICKED.map((value) => (
                 <option key={value} value={value}>
-                  {kindLabel(value)}
+                  {value === ProjectKind.Film ? t('projects.new.cinema') : kindLabel(value)}
                 </option>
               ))}
             </select>
           )}
         </Field>
 
-        {formatsFor(kind).length > 0 ? (
+        {pickFormats(kind).length > 0 ? (
           <Field label={t('projects.new.format')}>
             {(control) => (
               <select
                 {...control}
                 className="field__input field__input--select"
                 value={format ?? ''}
-                onChange={(event) => setFormat(event.target.value)}
+                onChange={(event) => {
+                  const picked = pickFormats(kind).find((one) => one.id === event.target.value)
+                  setFormat(event.target.value)
+                  if (picked && isCinema(kind)) setKind(picked.kind as ProjectKindValue)
+                }}
                 data-testid="project-new-format"
               >
-                {formatsFor(kind).map((option) => (
+                {pickFormats(kind).map((option) => (
                   <option key={option.id} value={option.id}>
                     {formatLabel(option.id)}
                   </option>
@@ -364,7 +385,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
    * One address per view (#199): `/app/universes/<universeId>/projects/<id>/<view>`, inside the universe the project
    * belongs to. The account-level address, a universe the project is not in, the bare address and any segment this
    * kind does not offer all land there, keeping the query and the hash, so an old or mistyped link opens the project
-   * rather than a failure (#192).
+   * rather than a failure (#192). `/overview` is a retired view (#377): it lands on the kind's first view the same way.
    */
   if (!inUniverse || universeId !== project.universe.id || !section) {
     const target = projectPath(
@@ -393,8 +414,6 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       {project.subtype ? <span>{project.subtype}</span> : null}
     </span>
   )
-  // A kind with no Overview (a Game, owner 2026-11-17) opens on its content; its facts and summary sit above the tabs.
-  const compact = !sections.some((candidate) => candidate.segment === 'overview')
   const typesPath = sections.some((candidate) => candidate.segment === 'types')
     ? projectPath(project.id, 'types', project.universe.id)
     : undefined
@@ -411,38 +430,15 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
     </div>
   ) : (
     <div className="projectbody">
-      {compact ? null : (
-        <section className="projects" data-testid="project-page">
-          {/*
-           * The head every other workspace screen uses (#184): the project's facts as the lede, and the summary under it
-           * as the project's own words. The universe is named by the shell's breadcrumb above the tabs (#199).
-           */}
-          <PageHeader title={project.name} titleTestId="project-name" lede={meta} />
-
-          {project.summary ? (
-            <p className="prose" data-testid="project-summary">
-              {project.summary}
-            </p>
-          ) : (
-            <p className="projectcard__meta" data-testid="project-summary-empty">
-              {t('projects.one.noSummary')}
-            </p>
-          )}
-        </section>
-      )}
-
       {/*
-       * One panel per view (#193). The overview holds the project's own content, its counts and the ways into the rest
-       * of it (#195), Entities the type cards, a type's entries and the type editor behind an action (#196), and
-       * Structure the structure. A view with no panel of its own yet says so rather than borrowing one.
+       * One panel per view (#193). Entities holds the type cards and a type's entries (#196), Types the type editor,
+       * Structure the structure and Script the text of its parts (#377). A view with no panel of its own yet says so rather than borrowing one.
        *
        * A schema write changes what the entries can offer - a new type is a type an entry can be of - so the editor and
        * the entries still share `schemaVersion`. It lives here, in the component that stays mounted while the author
        * moves between this project's views and between the Entities view's own screens.
        */}
-      {section.segment === 'overview' ? (
-        <ProjectOverview project={project} />
-      ) : section.segment === 'entities' ? (
+      {section.segment === 'entities' ? (
         <ProjectEntitiesView
           projectId={project.id}
           universeId={project.universe.id}
@@ -501,6 +497,11 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
             <ComicCollections universeId={project.universe.id} projectId={project.id} />
           ) : null}
         </>
+      ) : section.segment === 'script' &&
+        (project.kind === ProjectKind.Series ||
+          project.kind === ProjectKind.Film ||
+          project.kind === ProjectKind.Comic) ? (
+        <ProjectScript key={project.id} projectId={project.id} universeId={project.universe.id} />
       ) : (
         <EmptyState
           title={t('projects.view.empty')}
@@ -517,18 +518,14 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       projectName={project.name}
       universe={project.universe}
       sections={sections}
-      facts={
-        compact
-          ? {
-              lede: meta,
-              summary: project.summary ? (
-                <p className="prose" data-testid="project-summary">
-                  {project.summary}
-                </p>
-              ) : null,
-            }
-          : undefined
-      }
+      facts={{
+        lede: meta,
+        summary: project.summary ? (
+          <p className="prose" data-testid="project-summary">
+            {project.summary}
+          </p>
+        ) : null,
+      }}
     >
       {body}
     </ProjectShell>

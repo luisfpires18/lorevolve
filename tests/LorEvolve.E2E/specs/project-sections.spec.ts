@@ -162,7 +162,7 @@ test.describe('Project sections', () => {
       await expect(page.getByTestId('project-seasons')).toBeVisible()
       await expect(page.getByTestId('project-schema')).toHaveCount(0)
       await expect(page.getByTestId('project-entries')).toHaveCount(0)
-      for (const segment of ['overview', 'script', 'entities']) {
+      for (const segment of ['script', 'entities']) {
         await page.getByTestId(`projecttab-${segment}`).click()
         await expect(page).toHaveURL(new RegExp(`/${segment}$`))
         await expect(page.getByTestId('project-seasons')).toHaveCount(0)
@@ -178,10 +178,10 @@ test.describe('Project sections', () => {
     await signUp(page)
     const world = await universe(page)
     const cases: Array<[number, string[]]> = [
-      [0, ['overview', 'structure', 'manuscript', 'entities']],
-      [2, ['overview', 'structure', 'script', 'entities']],
-      [3, ['overview', 'structure', 'script', 'entities']],
-      [4, ['overview', 'structure', 'script', 'entities']],
+      [0, ['structure', 'manuscript', 'entities', 'types', 'systems']],
+      [2, ['structure', 'script', 'entities', 'types', 'systems']],
+      [3, ['structure', 'script', 'entities', 'types', 'systems']],
+      [4, ['structure', 'script', 'entities', 'types', 'systems']],
     ]
 
     for (const [kind, expected] of cases) {
@@ -192,6 +192,10 @@ test.describe('Project sections', () => {
         new RegExp(`/app/universes/${world.id}/projects/${one.id}/${expected[0]}$`),
       )
       expect(await tabSegments(page)).toEqual(expected)
+      // One head for every kind (#377): the project's facts, no breadcrumb and no overview.
+      await expect(page.getByTestId('project-facts')).toBeVisible()
+      await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
+      await expect(page.getByTestId('projecttab-overview')).toHaveCount(0)
 
       // The universe-scoped twin serves the same view.
       await page.goto(`/app/universes/${world.id}/projects/${one.id}/${expected[1]}`)
@@ -215,15 +219,84 @@ test.describe('Project sections', () => {
 
     await page.goto(`/app/projects/${book.id}/no-such-view`)
     await expect(page).toHaveURL(
-      new RegExp(`/app/universes/${world.id}/projects/${book.id}/overview$`),
+      new RegExp(`/app/universes/${world.id}/projects/${book.id}/structure$`),
     )
     await expect(page.getByTestId('project-name')).toContainText(book.name)
 
     // A view another kind offers is unknown to this one.
-    await page.goto(`/app/universes/${world.id}/projects/${book.id}/systems`)
+    await page.goto(`/app/universes/${world.id}/projects/${book.id}/script`)
     await expect(page).toHaveURL(
-      new RegExp(`/app/universes/${world.id}/projects/${book.id}/overview$`),
+      new RegExp(`/app/universes/${world.id}/projects/${book.id}/structure$`),
     )
+  })
+
+  test('every kind opens the same head and chips', async ({ page }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const cases: Array<[number, string[]]> = [
+      [0, ['structure', 'manuscript', 'entities', 'types', 'systems']],
+      [1, ['entities', 'types', 'systems']],
+      [2, ['structure', 'script', 'entities', 'types', 'systems']],
+      [3, ['structure', 'script', 'entities', 'types', 'systems']],
+      [4, ['structure', 'script', 'entities', 'types', 'systems']],
+    ]
+    await page.setViewportSize({ width: 375, height: 740 })
+
+    for (const [kind, expected] of cases) {
+      const one = await project(page, world.id, kind)
+      const base = `/app/universes/${world.id}/projects/${one.id}`
+      // The retired Overview lands on the kind's first view, keeping the query and the hash.
+      await page.goto(`${base}/overview?probe=1#top`)
+      await expect(page).toHaveURL(new RegExp(`${base}/${expected[0]}\\?probe=1#top$`))
+
+      await expect(page.getByTestId('project-facts')).toBeVisible()
+      await expect(page.getByTestId('project-name')).toHaveText(one.name)
+      await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
+      await expect(page.getByTestId('projecttab-overview')).toHaveCount(0)
+      expect(await tabSegments(page)).toEqual(expected)
+      await expect(page.getByTestId(`projecttab-${expected[0]}`)).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        375,
+      )
+    }
+  })
+
+  test('an old overview address redirects for every kind', async ({ page }) => {
+    await signUp(page)
+    const world = await universe(page)
+    const film = await project(page, world.id, 3)
+    const comic = await project(page, world.id, 4)
+    const game = await project(page, world.id, 1)
+    const series = await project(page, world.id, 2)
+    const story = await api<{ id: string }>(page, 'POST', `/api/universes/${world.id}/stories`, {
+      title: unique('Told '),
+      premise: null,
+      status: 0,
+    })
+    const at = (id: string) => `/app/universes/${world.id}/projects/${id}`
+
+    for (const [id, first] of [
+      [film.id, 'structure'],
+      [comic.id, 'structure'],
+      [game.id, 'entities'],
+    ]) {
+      await page.goto(`${at(id)}/overview`)
+      await expect(page).toHaveURL(new RegExp(`${at(id)}/${first}$`))
+      await expect(page.getByTestId(`projecttab-${first}`)).toHaveAttribute('aria-current', 'page')
+    }
+
+    // A story-backed project has the story's own chips.
+    await page.goto(`${at(story.id)}/overview`)
+    await expect(page).toHaveURL(new RegExp(`${at(story.id)}/structure$`))
+    await expect(page.getByTestId('story-view-scenes')).toHaveAttribute('aria-current', 'page')
+
+    // The account-level address keeps the query and the hash too.
+    await page.goto(`/app/projects/${series.id}/overview?x=1#h`)
+    await expect(page).toHaveURL(new RegExp(`${at(series.id)}/structure\\?x=1#h$`))
+    await expect(page.getByTestId('projecttab-structure')).toHaveAttribute('aria-current', 'page')
   })
 
   test('every project address resolves to one canonical address, under a breadcrumb', async ({

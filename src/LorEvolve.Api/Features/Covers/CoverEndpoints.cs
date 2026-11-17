@@ -17,7 +17,7 @@ namespace LorEvolve.Api.Features.Covers;
 /// design (<see cref="UniverseArtworkEndpoints"/>) on the shared image gate, with two differences: who may ask (anyone who
 /// can read the universe reads, anyone who can edit its content writes) and the account's storage, which an original
 /// counts against as every other authored picture does (ADR 0042). The frame is the subject's: a story's card is a 2:3
-/// book cover, a project's a 16:10 screen, and the server checks the crop against it on every route.
+/// book cover, a project's a 16:10 screen (a comic's a 2:3 issue cover), and the server checks the crop against it on every route.
 /// </summary>
 public static partial class CoverEndpoints
 {
@@ -155,7 +155,7 @@ public static partial class CoverEndpoints
             .Select(universe => universe.OwnerId)
             .FirstAsync(cancellationToken);
 
-        return (new Subject(project!.UniverseId, projectId, ownerId, CoverKeys.Projects, CoverFrames.Project), null);
+        return (new Subject(project!.UniverseId, projectId, ownerId, CoverKeys.Projects, CoverFrames.For(project.Kind)), null);
     }
 
     // ---------- The routes, for either kind of cover ----------
