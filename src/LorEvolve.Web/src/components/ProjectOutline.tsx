@@ -48,7 +48,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   const [editing, setEditing] = useState<string | null>(null)
   // A link from a story arc or event (#296), or a Volume on this same page (#297), names the node to open; ignored
   // when unknown.
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const linked = params.get('node')
 
   useEffect(() => {
@@ -74,12 +74,31 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   // Opens the linked node once the tree is read, and again only when the link itself changes.
   const opened = useRef<string | null>(null)
   useEffect(() => {
-    if (!linked || linked === opened.current || !tree || tree === 'none') return
+    if (!linked) {
+      opened.current = null
+      return
+    }
+    if (linked === opened.current || !tree || tree === 'none') return
     if (tree.nodes.some((node) => node.id === linked)) {
       opened.current = linked
       setEditing(linked)
     }
   }, [linked, tree])
+
+  // Closing drops the link too, so the same link opens the node again next time.
+  const closeEditor = () => {
+    setEditing(null)
+    if (linked) {
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          next.delete('node')
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }
 
   function refresh() {
     return getStructure(projectId).then((read) => {
@@ -293,9 +312,9 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
           projectId={projectId}
           nodeId={editing}
           panels={childrenOf(tree, editing).filter((child) => child.level === 'panel')}
-          onClose={() => setEditing(null)}
+          onClose={closeEditor}
           onSaved={() => {
-            setEditing(null)
+            closeEditor()
             void refresh().catch(failing)
           }}
         />
