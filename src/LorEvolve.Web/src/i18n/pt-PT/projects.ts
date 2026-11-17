@@ -332,7 +332,7 @@ const projects = {
     add: 'Adicionar registo',
     name: 'Nome',
     summary: 'Descrição',
-    saving: 'A adicionar…',
+    saving: 'A guardar…',
     saveEdit: 'Guardar alterações',
     delete: 'Mover para o Lixo',
     canon: 'No Lore: {name}',

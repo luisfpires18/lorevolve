@@ -332,7 +332,7 @@ const projects = {
     add: 'Add entry',
     name: 'Name',
     summary: 'Summary',
-    saving: 'Adding…',
+    saving: 'Saving…',
     delete: 'Move to Trash',
     saveEdit: 'Save changes',
     canon: 'In the lore: {name}',

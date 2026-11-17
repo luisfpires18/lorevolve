@@ -557,10 +557,6 @@ export function ProjectEntries({
 }
 
 /**
- * An entry's pictures, one per Image field of its type: read from the entry itself, because the list carries no
- * pictures. Each is the field's own control, so a picture can be replaced, recropped or removed where it is read.
- */
-/**
  * The one entry form (#287): New on the list, and Edit on an entry's own screen. Edit starts from the stored entry and
  * saves it with its version, so a change made elsewhere in between is refused rather than overwritten. The type is
  * never changed here. A picture is not a value: on New it waits for the entry to exist, on Edit it is stored in place.
@@ -724,6 +720,10 @@ export function ProjectEntryForm({
   )
 }
 
+/**
+ * An entry's pictures, one per Image field of its type: read from the entry itself, because the list carries no
+ * pictures. Each is the field's own control, so a picture can be replaced, recropped or removed where it is read.
+ */
 function EntryPictures({
   projectId,
   universeId,
