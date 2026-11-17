@@ -153,6 +153,16 @@ for (const file of tsxFiles) {
 
 const filesWith = (pattern: RegExp) => tsxFiles.filter((file) => pattern.test(read(file)))
 
+test('styles.css imports every file in src/styles/ once, in order', () => {
+  const imported = [...read('src/styles.css').matchAll(/^@import '\.\/styles\/(.+)';$/gm)].map(
+    (match) => match[1],
+  )
+  const onDisk = readdirSync(join(webRoot, 'src/styles'))
+    .filter((file) => file.endsWith('.css'))
+    .sort()
+  assert.deepEqual(imported, onDisk, 'a part left out of styles.css never reaches the page')
+})
+
 test('every class a component uses has a rule in src/styles/', () => {
   const missing = [...usedClasses]
     .filter(
