@@ -411,13 +411,14 @@ internal static class LaterSchema
 
     /// <summary>
     /// Comic Story Arcs and Events (AddComicCollections, 2026-11-17, #296): two tables, their keys' indexes and four
-    /// indexes of their own.
+    /// indexes of their own; plus the Volume project index (AddComicVolumeProject, #297).
     /// </summary>
     private static readonly string[] ComicCollections =
     [
         "IX_ComicCollectionEntries_CollectionId_NodeId",
         "IX_ComicCollectionEntries_CollectionId_SortOrder",
         "IX_ComicCollectionEntries_NodeId",
+        "IX_ComicCollections_ProjectId_SortOrder",
         "IX_ComicCollections_UniverseId_Kind_SortOrder",
         "sqlite_autoindex_ComicCollectionEntries_1",
         "sqlite_autoindex_ComicCollections_1",

@@ -1555,8 +1555,16 @@ internal static partial class BackupValidation
 
                 if (collection.Kind is null || !ComicCollectionKinds.Levels.ContainsKey(collection.Kind))
                 {
-                    Add(BackupIssueCodes.InvalidValue, $"{what} is neither a story arc nor an event.");
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is neither a story arc, an event nor a volume.");
                     continue;
+                }
+
+                // A volume (version 55, #297) belongs to one Comic project of this file; arcs and events to none.
+                if (collection.Kind == ComicCollectionKinds.Volume
+                    ? collection.ProjectId is not { } volumeProject || !_comicProjects.Contains(volumeProject)
+                    : collection.ProjectId is not null)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} must belong to one comic of this file only if it is a volume.");
                 }
 
                 var held = new HashSet<Guid>();
@@ -1570,6 +1578,10 @@ internal static partial class BackupValidation
                     else if (!_comicProjects.Contains(node.ProjectId) || !ComicCollectionKinds.Allows(collection.Kind, node.Level))
                     {
                         Add(BackupIssueCodes.InvalidValue, $"{what} references a part that is not an issue or a chapter of a comic.");
+                    }
+                    else if (collection.ProjectId is { } owner && node.ProjectId != owner)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} references a part of another comic.");
                     }
 
                     if (!held.Add(nodeId))

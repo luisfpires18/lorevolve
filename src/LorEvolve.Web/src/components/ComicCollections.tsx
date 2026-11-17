@@ -9,6 +9,7 @@ import { t, useI18n } from '../i18n'
 import { confirmAction } from '../lib/confirm'
 import { levelWord, nameOf } from '../projectEntities/levelWords'
 import { projectPath } from '../projects/sections'
+import { useUniverseAccess } from '../universes/access'
 import {
   addComicEntry,
   createComicCollection,
@@ -24,10 +25,29 @@ import {
   type ComicNode,
 } from '../projects/comicCollections'
 
-const KINDS: ComicCollectionKind[] = ['story-arc', 'event']
+const ARCS_AND_EVENTS: ComicCollectionKind[] = ['story-arc', 'event']
 
-const kindTitle = (kind: ComicCollectionKind) =>
-  t(kind === 'story-arc' ? 'projects.comics.storyArcs' : 'projects.comics.events')
+/** The words of each kind: its heading, new button, empty line and drawer eyebrow. */
+const WORDS = {
+  'story-arc': {
+    title: 'projects.comics.storyArcs',
+    add: 'projects.comics.newArc',
+    none: 'projects.comics.noArcs',
+    eyebrow: 'projects.comics.arcEyebrow',
+  },
+  event: {
+    title: 'projects.comics.events',
+    add: 'projects.comics.newEvent',
+    none: 'projects.comics.noEvents',
+    eyebrow: 'projects.comics.eventEyebrow',
+  },
+  volume: {
+    title: 'projects.comics.volumes',
+    add: 'projects.comics.newVolume',
+    none: 'projects.comics.noVolumes',
+    eyebrow: 'projects.comics.volumeEyebrow',
+  },
+} as const
 
 const nodeLabel = (node: ComicNode) =>
   `${node.projectName} - ${levelWord(node.level)} ${nameOf(node)}`
@@ -38,9 +58,17 @@ type Editing = { kind: ComicCollectionKind; collection: ComicCollection | null }
 /**
  * Comic Story Arcs and Events (#296): ordered references to issues and chapters across this universe's
  * comics. Every action here changes only the collection or an entry; an entry row opens the original node.
+ * With `projectId` it shows that Comic project's Volumes (#297) instead. Without edit access it only reads.
  */
-export function ComicCollections({ universeId }: { universeId: string }) {
+export function ComicCollections({
+  universeId,
+  projectId,
+}: {
+  universeId: string
+  projectId?: string
+}) {
   useI18n()
+  const canEdit = useUniverseAccess().editContent
   const [data, setData] = useState<Collections | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -49,16 +77,18 @@ export function ComicCollections({ universeId }: { universeId: string }) {
 
   useEffect(() => {
     const controller = new AbortController()
-    listComicCollections(universeId, controller.signal)
+    listComicCollections(universeId, controller.signal, projectId)
       .then(setData)
       .catch(() => {
         if (!controller.signal.aborted) setFailed(t('projects.comics.failed'))
       })
     return () => controller.abort()
-  }, [universeId])
+  }, [universeId, projectId])
+
+  const kinds: ComicCollectionKind[] = projectId ? ['volume'] : ARCS_AND_EVENTS
 
   function refresh() {
-    return listComicCollections(universeId).then((read) => {
+    return listComicCollections(universeId, undefined, projectId).then((read) => {
       setData(read)
       setBusy(false)
       setFailed(null)
@@ -91,28 +121,28 @@ export function ComicCollections({ universeId }: { universeId: string }) {
         </p>
       ) : null}
 
-      {KINDS.map((kind) => {
+      {kinds.map((kind) => {
         const ofKind = data.collections.filter((collection) => collection.kind === kind)
         return (
           <section key={kind} className="projects" data-testid={`comic-collections-${kind}`}>
             <header className="projects__head">
               <div className="projects__headtext">
-                <h2 className="sectionrule">{kindTitle(kind)}</h2>
+                <h2 className="sectionrule">{t(WORDS[kind].title)}</h2>
               </div>
-              <button
-                className="button button--secondary button--sm"
-                type="button"
-                data-testid={`comic-collection-add-${kind}`}
-                onClick={() => setEditing({ kind, collection: null })}
-              >
-                {t(kind === 'story-arc' ? 'projects.comics.newArc' : 'projects.comics.newEvent')}
-              </button>
+              {canEdit ? (
+                <button
+                  className="button button--secondary button--sm"
+                  type="button"
+                  data-testid={`comic-collection-add-${kind}`}
+                  onClick={() => setEditing({ kind, collection: null })}
+                >
+                  {t(WORDS[kind].add)}
+                </button>
+              ) : null}
             </header>
 
             {ofKind.length === 0 ? (
-              <p className="projectcard__meta">
-                {t(kind === 'story-arc' ? 'projects.comics.noArcs' : 'projects.comics.noEvents')}
-              </p>
+              <p className="projectcard__meta">{t(WORDS[kind].none)}</p>
             ) : (
               <ol className="projectcardlist">
                 {ofKind.map((collection, index) => (
@@ -125,55 +155,59 @@ export function ComicCollections({ universeId }: { universeId: string }) {
                       <h3 className="projectcard__title">
                         <bdi>{collection.name}</bdi>
                       </h3>
-                      <div className="projectcard__actions">
-                        <ActionMenu
-                          label={t('projects.common.more', { name: collection.name })}
-                          triggerTestId={`comic-collection-actions-${collection.id}`}
-                        >
-                          <MoveItems
-                            index={index}
-                            count={ofKind.length}
-                            busy={busy}
-                            testId={`comic-collection-${collection.id}`}
-                            onMove={(place) =>
-                              run(() => moveComicCollection(universeId, collection.id, place))
-                            }
-                          />
-                          <button
-                            className="actionmenu__item"
-                            type="button"
-                            data-testid={`comic-collection-entry-new-${collection.id}`}
-                            onClick={() => setAdding(collection)}
+                      {canEdit ? (
+                        <div className="projectcard__actions">
+                          <ActionMenu
+                            label={t('projects.common.more', { name: collection.name })}
+                            triggerTestId={`comic-collection-actions-${collection.id}`}
                           >
-                            {t('projects.comics.addEntry')}
-                          </button>
-                          <button
-                            className="actionmenu__item"
-                            type="button"
-                            data-testid={`comic-collection-edit-${collection.id}`}
-                            onClick={() => setEditing({ kind, collection })}
-                          >
-                            {t('projects.comics.edit')}
-                          </button>
-                          <button
-                            className="actionmenu__item actionmenu__item--danger"
-                            type="button"
-                            data-testid={`comic-collection-delete-${collection.id}`}
-                            onClick={() =>
-                              void confirmAction({
-                                title: t('projects.comics.deleteTitle', { name: collection.name }),
-                                message: t('projects.comics.deleteMessage'),
-                                confirmLabel: t('projects.comics.delete'),
-                                variant: 'destructive',
-                                action: () =>
-                                  deleteComicCollection(universeId, collection.id).then(refresh),
-                              })
-                            }
-                          >
-                            {t('projects.comics.delete')}
-                          </button>
-                        </ActionMenu>
-                      </div>
+                            <MoveItems
+                              index={index}
+                              count={ofKind.length}
+                              busy={busy}
+                              testId={`comic-collection-${collection.id}`}
+                              onMove={(place) =>
+                                run(() => moveComicCollection(universeId, collection.id, place))
+                              }
+                            />
+                            <button
+                              className="actionmenu__item"
+                              type="button"
+                              data-testid={`comic-collection-entry-new-${collection.id}`}
+                              onClick={() => setAdding(collection)}
+                            >
+                              {t('projects.comics.addEntry')}
+                            </button>
+                            <button
+                              className="actionmenu__item"
+                              type="button"
+                              data-testid={`comic-collection-edit-${collection.id}`}
+                              onClick={() => setEditing({ kind, collection })}
+                            >
+                              {t('projects.comics.edit')}
+                            </button>
+                            <button
+                              className="actionmenu__item actionmenu__item--danger"
+                              type="button"
+                              data-testid={`comic-collection-delete-${collection.id}`}
+                              onClick={() =>
+                                void confirmAction({
+                                  title: t('projects.comics.deleteTitle', {
+                                    name: collection.name,
+                                  }),
+                                  message: t('projects.comics.deleteMessage'),
+                                  confirmLabel: t('projects.comics.delete'),
+                                  variant: 'destructive',
+                                  action: () =>
+                                    deleteComicCollection(universeId, collection.id).then(refresh),
+                                })
+                              }
+                            >
+                              {t('projects.comics.delete')}
+                            </button>
+                          </ActionMenu>
+                        </div>
+                      ) : null}
                     </div>
                     {collection.summary ? <p className="prose">{collection.summary}</p> : null}
                     {collection.entries.length === 0 ? (
@@ -208,44 +242,46 @@ export function ComicCollections({ universeId }: { universeId: string }) {
                                   </span>
                                 </span>
                               )}
-                              <div className="fieldlist__actions">
-                                <ActionMenu
-                                  label={t('projects.common.more', { name: nameOf(entry) })}
-                                  triggerTestId={`comic-entry-actions-${id}`}
-                                >
-                                  {entry.available ? (
-                                    <MoveItems
-                                      index={entryIndex}
-                                      count={collection.entries.length}
-                                      busy={busy}
-                                      testId={`comic-entry-${id}`}
-                                      onMove={(place) =>
+                              {canEdit ? (
+                                <div className="fieldlist__actions">
+                                  <ActionMenu
+                                    label={t('projects.common.more', { name: nameOf(entry) })}
+                                    triggerTestId={`comic-entry-actions-${id}`}
+                                  >
+                                    {entry.available ? (
+                                      <MoveItems
+                                        index={entryIndex}
+                                        count={collection.entries.length}
+                                        busy={busy}
+                                        testId={`comic-entry-${id}`}
+                                        onMove={(place) =>
+                                          run(() =>
+                                            moveComicEntry(
+                                              universeId,
+                                              collection.id,
+                                              entry.nodeId,
+                                              place,
+                                            ),
+                                          )
+                                        }
+                                      />
+                                    ) : null}
+                                    <button
+                                      className="actionmenu__item"
+                                      type="button"
+                                      disabled={busy}
+                                      data-testid={`comic-entry-remove-${id}`}
+                                      onClick={() =>
                                         run(() =>
-                                          moveComicEntry(
-                                            universeId,
-                                            collection.id,
-                                            entry.nodeId,
-                                            place,
-                                          ),
+                                          removeComicEntry(universeId, collection.id, entry.nodeId),
                                         )
                                       }
-                                    />
-                                  ) : null}
-                                  <button
-                                    className="actionmenu__item"
-                                    type="button"
-                                    disabled={busy}
-                                    data-testid={`comic-entry-remove-${id}`}
-                                    onClick={() =>
-                                      run(() =>
-                                        removeComicEntry(universeId, collection.id, entry.nodeId),
-                                      )
-                                    }
-                                  >
-                                    {t('projects.comics.remove')}
-                                  </button>
-                                </ActionMenu>
-                              </div>
+                                    >
+                                      {t('projects.comics.remove')}
+                                    </button>
+                                  </ActionMenu>
+                                </div>
+                              ) : null}
                             </li>
                           )
                         })}
@@ -270,7 +306,7 @@ export function ComicCollections({ universeId }: { universeId: string }) {
                   ...input,
                   expectedVersion: collection.version,
                 })
-              : createComicCollection(universeId, { ...input, kind })
+              : createComicCollection(universeId, { ...input, kind, projectId })
             return work.then(refresh).then(() => setEditing(null))
           }}
         />
@@ -309,7 +345,6 @@ function CollectionDrawer({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isDirty = name !== (current?.name ?? '') || summary !== (current?.summary ?? '')
-  const arc = editing.kind === 'story-arc'
 
   function save() {
     setSaving(true)
@@ -324,12 +359,8 @@ function CollectionDrawer({
     <Drawer
       testId="comic-collection-drawer"
       titleId="comic-collection-drawer-heading"
-      eyebrow={t(arc ? 'projects.comics.arcEyebrow' : 'projects.comics.eventEyebrow')}
-      title={
-        current
-          ? t('projects.comics.edit')
-          : t(arc ? 'projects.comics.newArc' : 'projects.comics.newEvent')
-      }
+      eyebrow={t(WORDS[editing.kind].eyebrow)}
+      title={current ? t('projects.comics.edit') : t(WORDS[editing.kind].add)}
       isDirty={isDirty}
       leaveMessage={t('projects.comics.leave')}
       onClose={onClose}

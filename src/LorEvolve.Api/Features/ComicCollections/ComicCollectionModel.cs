@@ -1,4 +1,5 @@
 using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -19,6 +20,11 @@ public sealed class ComicCollection
 
     /// <summary>A key of <see cref="ComicCollectionKinds.Levels"/>; fixed once created.</summary>
     public required string Kind { get; set; }
+
+    /// <summary>The one project a Volume belongs to (#297); null for arcs and events. Fixed once created.</summary>
+    public Guid? ProjectId { get; set; }
+
+    public CreativeProject? Project { get; set; }
 
     public required string Name { get; set; }
 
@@ -58,11 +64,14 @@ public static class ComicCollectionKinds
 
     public const string Event = "event";
 
-    /// <summary>The node levels each kind may hold. #297 adds <c>volume</c> as one more entry.</summary>
+    public const string Volume = "volume";
+
+    /// <summary>The node levels each kind may hold. A Volume (#297) also holds one project's nodes only.</summary>
     public static readonly IReadOnlyDictionary<string, string[]> Levels = new Dictionary<string, string[]>
     {
         [StoryArc] = ["issue", "chapter"],
         [Event] = ["issue", "chapter"],
+        [Volume] = ["issue", "chapter"],
     };
 
     public static bool Allows(string kind, string level) =>
@@ -97,7 +106,14 @@ public sealed class ComicCollectionConfiguration : IEntityTypeConfiguration<Comi
             .HasForeignKey(collection => collection.UniverseId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Deleting the project deletes its Volumes and their entries.
+        builder.HasOne(collection => collection.Project)
+            .WithMany()
+            .HasForeignKey(collection => collection.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(collection => new { collection.UniverseId, collection.Kind, collection.SortOrder });
+        builder.HasIndex(collection => new { collection.ProjectId, collection.SortOrder });
     }
 }
 

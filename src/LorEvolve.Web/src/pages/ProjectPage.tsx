@@ -8,6 +8,7 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom'
+import { ComicCollections } from '../components/ComicCollections'
 import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
@@ -438,24 +439,30 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
          * when the tree read answers 404 (no format, or one without rules yet), and under "Earlier structure" while
          * legacy rows exist.
          */
-        <ProjectOutline
-          key={`${project.id}-${project.format ?? ''}`}
-          projectId={project.id}
-          legacy={
-            <ProjectSeasons
-              projectId={project.id}
-              universeId={project.universe.id}
-              words={
-                project.kind === ProjectKind.Film
-                  ? 'sequences'
-                  : project.kind === ProjectKind.Comic
-                    ? 'volumes'
-                    : 'seasons'
-              }
-              pages={project.kind === ProjectKind.Comic}
-            />
-          }
-        />
+        <>
+          <ProjectOutline
+            key={`${project.id}-${project.format ?? ''}`}
+            projectId={project.id}
+            legacy={
+              <ProjectSeasons
+                projectId={project.id}
+                universeId={project.universe.id}
+                words={
+                  project.kind === ProjectKind.Film
+                    ? 'sequences'
+                    : project.kind === ProjectKind.Comic
+                      ? 'volumes'
+                      : 'seasons'
+                }
+                pages={project.kind === ProjectKind.Comic}
+              />
+            }
+          />
+          {/* A Comic's Volumes (#297) collect its issues or chapters by reference, under the outline. */}
+          {project.kind === ProjectKind.Comic ? (
+            <ComicCollections universeId={project.universe.id} projectId={project.id} />
+          ) : null}
+        </>
       ) : (
         <EmptyState
           title={t('projects.view.empty')}

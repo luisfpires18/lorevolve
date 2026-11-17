@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ActionMenu } from './ActionMenu'
 import { Drawer } from './Drawer'
@@ -46,16 +46,16 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
-  // A link from a story arc or event (#296) names the node to open: read once on load, ignored when unknown.
-  const [params] = useSearchParams()
-  const [linked] = useState(() => params.get('node'))
+  // A link from a story arc or event (#296), or a Volume on this same page (#297), names the node to open; ignored
+  // when unknown.
+  const [params, setParams] = useSearchParams()
+  const linked = params.get('node')
 
   useEffect(() => {
     const controller = new AbortController()
     getStructure(projectId, controller.signal)
       .then((read) => {
         setTree(read)
-        if (linked && read.nodes.some((node) => node.id === linked)) setEditing(linked)
         return listSeasons(projectId, controller.signal).then((seasons) =>
           setHasLegacy(seasons.length > 0),
         )
@@ -69,7 +69,36 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
         setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
       })
     return () => controller.abort()
-  }, [projectId, linked])
+  }, [projectId])
+
+  // Opens the linked node once the tree is read, and again only when the link itself changes.
+  const opened = useRef<string | null>(null)
+  useEffect(() => {
+    if (!linked) {
+      opened.current = null
+      return
+    }
+    if (linked === opened.current || !tree || tree === 'none') return
+    if (tree.nodes.some((node) => node.id === linked)) {
+      opened.current = linked
+      setEditing(linked)
+    }
+  }, [linked, tree])
+
+  // Closing drops the link too, so the same link opens the node again next time.
+  const closeEditor = () => {
+    setEditing(null)
+    if (linked) {
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          next.delete('node')
+          return next
+        },
+        { replace: true },
+      )
+    }
+  }
 
   function refresh() {
     return getStructure(projectId).then((read) => {
@@ -283,9 +312,9 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
           projectId={projectId}
           nodeId={editing}
           panels={childrenOf(tree, editing).filter((child) => child.level === 'panel')}
-          onClose={() => setEditing(null)}
+          onClose={closeEditor}
           onSaved={() => {
-            setEditing(null)
+            closeEditor()
             void refresh().catch(failing)
           }}
         />

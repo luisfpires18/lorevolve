@@ -93,7 +93,10 @@ internal static class BackupNormalization
         // Cinema sagas arrived at version 52 (#289): an older file has none, even when it carries some.
         CinemaSagas = version >= 52 ? payload.CinemaSagas : null,
         // Comic collections arrived at version 53 (#296): an older file has none, even when it carries some.
-        ComicCollections = version >= 53 ? payload.ComicCollections : null,
+        // A collection's project arrived at version 55 (#297): below that it is dropped, so a volume there is refused.
+        ComicCollections = version >= 55 ? payload.ComicCollections
+            : version >= 53 ? payload.ComicCollections?.Select(collection => collection is null ? null! : collection with { ProjectId = null }).ToList()
+            : null,
         // Project formats arrived at version 49 (#288): an older file has none, even when it carries one.
         CreativeProjects = version >= 49 || payload.CreativeProjects is null
             ? payload.CreativeProjects

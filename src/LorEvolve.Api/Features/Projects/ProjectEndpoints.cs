@@ -254,14 +254,16 @@ public static class ProjectEndpoints
                 extensions: new Dictionary<string, object?> { ["code"] = InCinemaPhaseCode });
         }
 
-        // A story arc or event holds only this universe's comic parts, so a move or kind change waits until they leave it.
+        // A story arc, event or volume holds only this universe's comic parts, so a move or kind change waits until
+        // they leave it. A Volume (#297) belongs to its project, so even an empty one blocks the change.
         if ((project.UniverseId != request.UniverseId || request.Kind != ProjectKind.Comic)
-            && await db.ComicCollectionEntries.AnyAsync(entry => entry.Node!.ProjectId == id, cancellationToken))
+            && (await db.ComicCollectionEntries.AnyAsync(entry => entry.Node!.ProjectId == id, cancellationToken)
+                || await db.ComicCollections.AnyAsync(collection => collection.ProjectId == id, cancellationToken)))
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status409Conflict,
-                title: "In a story arc or event",
-                detail: "Part of this comic is in a story arc or an event. Remove it there first.",
+                title: "In a story arc, event or volume",
+                detail: "This comic has volumes, or part of it is in a story arc or an event. Remove them first.",
                 extensions: new Dictionary<string, object?> { ["code"] = InComicCollectionCode });
         }
 

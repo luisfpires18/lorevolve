@@ -1,7 +1,7 @@
 namespace LorEvolve.Api.Features.ComicCollections;
 
 /// <summary>A new collection's kind, name and summary. Kind is read on create only.</summary>
-public sealed record ComicCollectionRequest(string? Kind, string? Name, string? Summary, int? ExpectedVersion = null);
+public sealed record ComicCollectionRequest(string? Kind, string? Name, string? Summary, int? ExpectedVersion = null, Guid? ProjectId = null);
 
 public sealed record ComicEntryRequest(Guid NodeId);
 
@@ -14,6 +14,7 @@ public sealed record ComicCollectionsResponse(
 public sealed record ComicCollectionResponse(
     Guid Id,
     string Kind,
+    Guid? ProjectId,
     string Name,
     string? Summary,
     int SortOrder,

@@ -43,6 +43,7 @@ public static class ComicCollectionEndpoints
     /// <summary>Every collection in order with its entries, plus every node of the universe's Comic projects one can hold.</summary>
     private static async Task<IResult> ListAsync(
         Guid universeId,
+        Guid? projectId,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
         CancellationToken cancellationToken)
@@ -53,13 +54,14 @@ public static class ComicCollectionEndpoints
         }
 
         var collections = await db.ComicCollections.AsNoTracking()
-            .Where(collection => collection.UniverseId == universeId)
+            .Where(collection => collection.UniverseId == universeId && collection.ProjectId == projectId)
             .OrderBy(collection => collection.Kind)
             .ThenBy(collection => collection.SortOrder)
             .Select(collection => new
             {
                 collection.Id,
                 collection.Kind,
+                collection.ProjectId,
                 collection.Name,
                 collection.Summary,
                 collection.SortOrder,
@@ -84,7 +86,8 @@ public static class ComicCollectionEndpoints
         var candidates = await db.ProjectNodes.AsNoTracking()
             .Where(node => node.Project!.UniverseId == universeId
                 && node.Project.Kind == ProjectKind.Comic
-                && levels.Contains(node.Level))
+                && levels.Contains(node.Level)
+                && (projectId == null || node.ProjectId == projectId))
             .OrderBy(node => node.Project!.Name)
             .ThenBy(node => node.ProjectId)
             .ThenBy(node => node.SortOrder)
@@ -96,6 +99,7 @@ public static class ComicCollectionEndpoints
         var response = collections.Select(collection => new ComicCollectionResponse(
                 collection.Id,
                 collection.Kind,
+                collection.ProjectId,
                 collection.Name,
                 collection.Summary,
                 collection.SortOrder,
@@ -108,6 +112,7 @@ public static class ComicCollectionEndpoints
                         entry.Title,
                         entry.ProjectKind == ProjectKind.Comic
                             && entry.ProjectUniverseId == universeId
+                            && (collection.ProjectId == null || collection.ProjectId == entry.ProjectId)
                             && ComicCollectionKinds.Allows(collection.Kind, entry.Level)))
                     .ToList()))
             .ToList();
@@ -131,7 +136,13 @@ public static class ComicCollectionEndpoints
 
         if (request.Kind is null || !ComicCollectionKinds.Levels.ContainsKey(request.Kind))
         {
-            errors["kind"] = ["Choose a story arc or an event."];
+            errors["kind"] = ["Choose a story arc, an event or a volume."];
+        }
+        else if ((request.Kind == ComicCollectionKinds.Volume) != (request.ProjectId is not null))
+        {
+            errors["projectId"] = [request.Kind == ComicCollectionKinds.Volume
+                ? "Choose the comic this volume belongs to."
+                : "Only a volume belongs to one comic."];
         }
 
         if (errors.Count > 0)
@@ -141,6 +152,25 @@ public static class ComicCollectionEndpoints
 
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
+        if (request.ProjectId is { } projectId)
+        {
+            // Another universe's project is reported as unknown, so nothing about it leaks.
+            var projectKind = await db.CreativeProjects.AsNoTracking()
+                .Where(project => project.Id == projectId && project.UniverseId == universeId)
+                .Select(project => (ProjectKind?)project.Kind)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (projectKind is null)
+            {
+                return Results.NotFound();
+            }
+
+            if (projectKind != ProjectKind.Comic)
+            {
+                return Problems.Field("projectId", "Only a comic can have volumes.");
+            }
+        }
+
         if (await db.ComicCollections.CountAsync(collection => collection.UniverseId == universeId, cancellationToken)
             >= ComicCollectionLimits.MaxCollectionsPerUniverse)
         {
@@ -149,8 +179,7 @@ public static class ComicCollectionEndpoints
                 $"A universe can have at most {ComicCollectionLimits.MaxCollectionsPerUniverse} story arcs and events.");
         }
 
-        var sameKind = await db.ComicCollections
-            .CountAsync(collection => collection.UniverseId == universeId && collection.Kind == request.Kind, cancellationToken);
+        var sameKind = await SameKind(db, universeId, request.Kind!, request.ProjectId).CountAsync(cancellationToken);
 
         var now = DateTime.UtcNow;
         var collection = new ComicCollection
@@ -158,6 +187,7 @@ public static class ComicCollectionEndpoints
             Id = Guid.NewGuid(),
             UniverseId = universeId,
             Kind = request.Kind!,
+            ProjectId = request.ProjectId,
             Name = request.Name!.Trim(),
             Summary = LoreValidation.Normalize(request.Summary),
             SortOrder = sameKind,
@@ -244,7 +274,7 @@ public static class ComicCollectionEndpoints
         db.ComicCollections.Remove(collection);
         await db.SaveChangesAsync(cancellationToken);
 
-        var rest = await SameKind(db, universeId, collection.Kind).ToListAsync(cancellationToken);
+        var rest = await SameKind(db, universeId, collection.Kind, collection.ProjectId).ToListAsync(cancellationToken);
         await SeriesEndpoints.PlaceAsync(db, rest, item => item.SortOrder, (item, order) => item.SortOrder = order, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
@@ -266,14 +296,16 @@ public static class ComicCollectionEndpoints
 
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        var kind = await Find(db, universeId, collectionId).Select(collection => collection.Kind).FirstOrDefaultAsync(cancellationToken);
+        var found = await Find(db, universeId, collectionId)
+            .Select(collection => new { collection.Kind, collection.ProjectId })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (kind is null)
+        if (found is null)
         {
             return Results.NotFound();
         }
 
-        var collections = await SameKind(db, universeId, kind).ToListAsync(cancellationToken);
+        var collections = await SameKind(db, universeId, found.Kind, found.ProjectId).ToListAsync(cancellationToken);
         await PlaceAsync(db, collections, collection => collection.Id == collectionId, request.Place,
             collection => collection.SortOrder, (collection, order) => collection.SortOrder = order, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
@@ -296,17 +328,21 @@ public static class ComicCollectionEndpoints
 
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        var kind = await Find(db, universeId, collectionId).Select(collection => collection.Kind).FirstOrDefaultAsync(cancellationToken);
+        var target = await Find(db, universeId, collectionId)
+            .Select(collection => new { collection.Kind, collection.ProjectId })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (kind is null)
+        if (target is null)
         {
             return Results.NotFound();
         }
 
+        var kind = target.Kind;
+
         // Another universe's node is reported as unknown, so nothing about it leaks.
         var node = await db.ProjectNodes.AsNoTracking()
             .Where(candidate => candidate.Id == request.NodeId && candidate.Project!.UniverseId == universeId)
-            .Select(candidate => new { candidate.Level, candidate.Project!.Kind })
+            .Select(candidate => new { candidate.Level, candidate.ProjectId, candidate.Project!.Kind })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (node is null)
@@ -322,6 +358,11 @@ public static class ComicCollectionEndpoints
         if (!ComicCollectionKinds.Allows(kind, node.Level))
         {
             return Problems.Field("nodeId", "Only an issue or a chapter can be in a story arc or an event.");
+        }
+
+        if (target.ProjectId is { } volumeProject && node.ProjectId != volumeProject)
+        {
+            return Problems.Field("nodeId", "A volume holds parts of its own comic only.");
         }
 
         if (await db.ComicCollectionEntries.AnyAsync(
@@ -432,8 +473,11 @@ public static class ComicCollectionEndpoints
     private static IQueryable<ComicCollection> Find(LorEvolveDbContext db, Guid universeId, Guid collectionId) =>
         db.ComicCollections.Where(collection => collection.Id == collectionId && collection.UniverseId == universeId);
 
-    private static IQueryable<ComicCollection> SameKind(LorEvolveDbContext db, Guid universeId, string kind) =>
-        db.ComicCollections.Where(collection => collection.UniverseId == universeId && collection.Kind == kind)
+    /// <summary>Arcs and events are ordered per universe and kind; Volumes per project.</summary>
+    private static IQueryable<ComicCollection> SameKind(LorEvolveDbContext db, Guid universeId, string kind, Guid? projectId) =>
+        db.ComicCollections.Where(collection => collection.UniverseId == universeId
+                && collection.Kind == kind
+                && collection.ProjectId == projectId)
             .OrderBy(collection => collection.SortOrder);
 
     private static IQueryable<ComicCollectionEntry> Entries(LorEvolveDbContext db, Guid universeId, Guid collectionId) =>
@@ -487,7 +531,7 @@ public static class ComicCollectionEndpoints
     }
 
     private static ComicCollectionResponse Describe(ComicCollection collection) =>
-        new(collection.Id, collection.Kind, collection.Name, collection.Summary, collection.SortOrder, collection.Version, []);
+        new(collection.Id, collection.Kind, collection.ProjectId, collection.Name, collection.Summary, collection.SortOrder, collection.Version, []);
 
     private static IResult EntryExists() =>
         Results.Problem(
