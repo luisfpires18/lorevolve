@@ -1,90 +1,46 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Link,
-  NavLink,
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from 'react-router-dom'
-import { Check, Copy, FilePenLine, Maximize2, Network, Pencil, Trash, X } from 'lucide-react'
-import { ActionIcon } from '../components/ActionIcon'
-import { ActionMenu } from '../components/ActionMenu'
-import { ReviewComments } from '../components/ReviewComments'
-import { PrivateNotes } from '../components/PrivateNotes'
-import { KnowledgeView } from '../components/KnowledgeView'
-import { LoreOnMaps } from '../components/LoreOnMaps'
-import { ContentPublication } from '../components/ContentPublication'
-import { EntityArticleSection } from '../components/EntityArticle'
-import { ChangeList, EditConflict } from '../components/EditConflict'
-import { EntityHistory } from '../components/EntityHistory'
-import { EntityImageField, type PendingImage } from '../components/EntityImageField'
-import { FieldInput } from '../components/FieldInputs'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import type { PendingImage } from '../components/EntityImageField'
 import type { PendingFieldImage } from '../components/FieldImageInput'
-import { FieldSectionFold } from '../components/FieldSectionFold'
 import { ImageViewer } from '../components/ImageViewer'
-import { NameList } from '../components/NameList'
-import { ProgressionView } from '../components/ProgressionView'
-import { RelationshipSection } from '../components/RelationshipSection'
 import { getEntityArticle, saveEntityArticle } from '../lore/article'
-import { articleLinks, emptyValue, isEmptyDocument, valuedFields } from '../lore/document'
-import {
-  entityDisplayUrl,
-  entityImageUrl,
-  fieldImageUrl,
-  setEntityImage,
-  setFieldImage,
-} from '../lore/images'
-import { TokenInput } from '../components/TokenInput'
-import { TypeIcon } from '../components/TypeIcon'
+import { emptyValue, isEmptyDocument, valuedFields } from '../lore/document'
+import { entityDisplayUrl, entityImageUrl, setEntityImage, setFieldImage } from '../lore/images'
 import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
-import { CanonBlockNotice } from '../components/CanonBlockNotice'
 import { ApiError } from '../lib/api'
-import { formatDate } from '../lib/dates'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { createEntity, deleteEntity, ENTRY_CHANGED, getEntity, updateEntity } from '../lore/api'
-import {
-  CANON_LABELS,
-  CANON_ORDER,
-  CanonStatus,
-  type CanonStatusValue,
-  type EntityDetail,
-  type FieldValue,
-  CANON_KEYS,
-} from '../lore/types'
-import { NO_TYPES, type FieldDefinition, type FieldSection } from '../lore/typeDefinitions'
-import { renderFact } from '../lore/facts'
+import { CanonStatus, type CanonStatusValue, type EntityDetail } from '../lore/types'
+import { NO_TYPES, type FieldSection } from '../lore/typeDefinitions'
 import { groupBySection } from '../lore/fieldSections'
-import { typeChoices } from '../lore/typeTree'
-import { StatusBadge } from '../components/StatusBadge'
 import { suggestEntryChanges } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
-import { EmptyState } from '../components/EmptyState'
 import { useStagePictures } from '../progression/stagePictures'
 import { confirmAction } from '../lib/confirm'
-import { t, tn, useI18n } from '../i18n'
+import { useI18n } from '../i18n'
 import {
   comparable,
   copiedDraft,
-  copyableReferences,
   draftFromDetail,
   type CopySource,
   type Draft,
-  type EntryFields,
 } from '../lore/entryDraft'
-import { entryChanges, heldReference } from '../lore/entryChanges'
+import { EntryUnavailable } from '../components/lore/EntryUnavailable'
+import { EntryHeader } from '../components/lore/EntryHeader'
+import { EntryViewsNav } from '../components/lore/EntryViewsNav'
+import { EntryTools } from '../components/lore/EntryTools'
+import { EntryNotices } from '../components/lore/EntryNotices'
+import { EntryForm } from '../components/lore/EntryForm'
+import { EntryArticleView } from '../components/lore/EntryArticleView'
+import { EntryPicture } from '../components/lore/EntryPicture'
+import { EntryViewPanel, type EntryView } from '../components/lore/EntryViewPanel'
+import { EntryFormBar } from '../components/lore/EntryFormBar'
 
 /** How long the article stays marked after a link lands on it - the story page's scene and beat mark, for the same reason. */
 const ARRIVAL_MS = 2400
-
-/**
- * Which of the entry's three views is open. Read from the address and written back to it, never held
- * as page state: each one is a place, so it reloads, it is linkable, and Back leaves it (ADR 0028).
- */
-type EntryView = 'article' | 'progression' | 'relations' | 'history'
 
 /**
  * One entry, under one header, at three addresses.
@@ -119,7 +75,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 }
 
 function EntityScreen({ view }: { view: EntryView }) {
-  const { t, tx } = useI18n()
+  const { t } = useI18n()
   const { universe, chronology, entryTypes: typesFound } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const { entityId } = useParams<{ entityId: string }>()
@@ -694,71 +650,24 @@ function EntityScreen({ view }: { view: EntryView }) {
   // Order matters here. A load that failed leaves the draft null, so a loading guard placed
   // first would answer "Opening…" forever instead of saying what happened - which is now an
   // ordinary thing to hit, because a link to an entry since moved to the Trash answers 404.
+  const unavailable = { universe, access, setStatus, setReads }
   if (status === 'missing') {
-    return (
-      <EmptyState
-        testId="entity-missing"
-        title={t('entity.page.missing.title')}
-        hint={
-          <>
-            {access.manageTrash
-              ? tx('entity.page.missing.withTrash', {
-                  link: (
-                    <Link to={`/app/universes/${universe.id}/trash`}>
-                      {t('entity.page.missing.trashLink')}
-                    </Link>
-                  ),
-                })
-              : t('entity.page.missing.withoutTrash')}{' '}
-            <Link to={`/app/universes/${universe.id}/lore`}>{t('entity.page.missing.back')}</Link>
-          </>
-        }
-      />
-    )
+    return <EntryUnavailable reason="missing" {...unavailable} />
   }
 
   // Types are the author's, and a world may have none left. A new entry has to be one of them, so say so rather than
   // waiting for a type that will not come.
   if (isNew && typesRead && types.length === 0) {
-    return (
-      <EmptyState
-        testId="entity-no-types"
-        title={t('entity.page.noTypes.title')}
-        hint={t('entity.page.noTypes.hint')}
-        action={
-          <Link className="button" to={`/app/universes/${universe.id}/types`}>
-            {t('entity.page.noTypes.action')}
-          </Link>
-        }
-      />
-    )
+    return <EntryUnavailable reason="noTypes" {...unavailable} />
   }
 
   // Before the loading guard: a failed read leaves the draft null, and the guard would otherwise say "Opening…" for good.
   if (status === 'error') {
-    return (
-      <div className="notice notice--error" role="alert">
-        <p>{t('entity.page.openFailed')}</p>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={() => {
-            setStatus('loading')
-            setReads((count) => count + 1)
-          }}
-        >
-          {t('entity.page.retry')}
-        </button>
-      </div>
-    )
+    return <EntryUnavailable reason="error" {...unavailable} />
   }
 
   if (status === 'loading' || !draft) {
-    return (
-      <p className="notice" role="status">
-        {t('entity.page.opening')}
-      </p>
-    )
+    return <EntryUnavailable reason="loading" {...unavailable} />
   }
 
   const accent = selectedType?.accentColor ?? undefined
@@ -786,255 +695,74 @@ function EntityScreen({ view }: { view: EntryView }) {
     if (view !== 'article') void navigate(entryPath)
   }
 
-  const typeChanged =
-    !isNew && detail !== null && draft !== null && draft.entityTypeId !== detail.entityTypeId
-
-  /** One field's control in the form, with the refusal under it; `data-field-id` is where a refused save sends the focus. */
-  const fieldInput = (definition: FieldDefinition) => (
-    <div key={definition.id} data-field-id={definition.id}>
-      <FieldInput
-        definition={definition}
-        value={draft.fields[definition.id] ?? emptyValue(definition)}
-        universeId={universe.id}
-        excludeId={entityId}
-        heldReference={heldReference(detail ?? source?.detail ?? null, definition.id)}
-        chronology={chronology}
-        quickCreate={quickCreate}
-        onChange={(next) =>
-          setDraft((current) =>
-            current
-              ? { ...current, fields: { ...current.fields, [definition.id]: next } }
-              : current,
-          )
-        }
-        image={{
-          entityId: isNew ? null : (entityId ?? null),
-          stored: detail?.fieldImages.find((one) => one.fieldId === definition.id) ?? null,
-          pending: pendingFieldImages[definition.id] ?? null,
-          onPending: (held) =>
-            setPendingFieldImages((current) => {
-              const { [definition.id]: _dropped, ...rest } = current
-              return held ? { ...rest, [definition.id]: held } : rest
-            }),
-          onChanged: (picture) =>
-            setDetail((current) =>
-              current
-                ? {
-                    ...current,
-                    fieldImages: [
-                      ...current.fieldImages.filter((one) => one.fieldId !== definition.id),
-                      ...(picture ? [picture] : []),
-                    ],
-                  }
-                : current,
-            ),
-          // The picture belongs to the entry's saved type: none is created or changed while a type change is unsaved.
-          disabled: isSaving || typeChanged,
-          disabledHint: typeChanged ? t('entity.fieldImage.saveTypeFirst') : undefined,
-        }}
-      />
-      {fieldErrors[definition.id] ? (
-        <p className="field__error">{fieldErrors[definition.id]}</p>
-      ) : null}
-    </div>
-  )
-
-  const fact = (value: FieldValue) => (
-    <div className="facts__row" key={value.fieldDefinitionId}>
-      <dt className="facts__key">{value.name}</dt>
-      <dd className="facts__value prose">{renderFact(value, chronology)}</dd>
-    </div>
-  )
-
-  // The entry's picture, beside every view of it, not only the article.
-  const pictureFigure = picture ? (
-    <figure className="entry__media" data-testid="entry-image">
-      {stagePictures.length > 0 ? (
-        // One choice per stage with a picture, the main picture first when there is one: the article shows
-        // the entry as it looks then.
-        <div
-          className="entry__stages"
-          role="group"
-          aria-label={t('entity.page.picture.group')}
-          data-testid="entry-picture-stages"
-        >
-          {mainPicture ? (
-            <button
-              className="entry__stage"
-              type="button"
-              aria-pressed={picture === mainPicture}
-              onClick={() => setChosenPicture(null)}
-            >
-              {t('entity.page.picture.main')}
-            </button>
-          ) : null}
-          {stagePictures.map((one) => (
-            <button
-              key={one.id}
-              className="entry__stage"
-              type="button"
-              aria-pressed={picture === one}
-              onClick={() => setChosenPicture({ entityId, id: one.id })}
-              data-testid="entry-picture-stage"
-            >
-              <bdi>{one.name}</bdi>
-            </button>
-          ))}
-        </div>
-      ) : null}
-      <img
-        key={picture.src}
-        src={picture.src}
-        alt={detail?.name ?? ''}
-        // The page's largest paint: asked for first, ahead of the sections' code and the sidebar.
-        fetchPriority="high"
-        // The original's own dimensions, which give the browser the picture's shape before a byte
-        // of it has loaded: the space it will occupy is reserved from its own aspect ratio, so the
-        // article never jumps down the page as one arrives.
-        width={picture.width}
-        height={picture.height}
-        decoding="async"
-      />
-      <button
-        ref={expandButton}
-        className="iconbutton entry__expand"
-        type="button"
-        onClick={() => setIsViewing(true)}
-        aria-label={t('entity.page.picture.viewLabel')}
-        title={t('entity.page.picture.viewTitle')}
-        data-testid="entry-image-expand"
-      >
-        <Maximize2 aria-hidden="true" focusable="false" strokeWidth={1.75} />
-      </button>
-    </figure>
-  ) : null
+  const entry = {
+    universe,
+    chronology,
+    access,
+    entityId,
+    isNew,
+    sourceId,
+    types,
+    source,
+    copyArticle,
+    setCopyArticle,
+    detail,
+    setDetail,
+    draft,
+    setDraft,
+    isEditing,
+    suggesting,
+    sent,
+    fieldErrors,
+    message,
+    blocked,
+    conflict,
+    announcement,
+    isSaving,
+    saveButton,
+    setSectionOpen,
+    isSectionOpen,
+    isWritingArticle,
+    setIsWritingArticle,
+    articleSaved,
+    pendingImage,
+    setPendingImage,
+    pendingFieldImages,
+    setPendingFieldImages,
+    historyKey,
+    setHistoryKey,
+    setIsViewing,
+    stagePictures,
+    setChosenPicture,
+    mainPicture,
+    picture,
+    expandButton,
+    selectedType,
+    formSections,
+    factSections,
+    quickCreate,
+    offersFamilyTree,
+    isDirty,
+    discard,
+    save,
+    changeCanon,
+    keepMine,
+    takeLatest,
+    refreshDetail,
+    reloadAfterRestore,
+    moveToTrash,
+    entryPath,
+    startEditing,
+    startSuggesting,
+    view,
+  }
 
   return (
     <article
       className="entry"
       style={accent ? { ['--entry-accent' as string]: accent } : undefined}
     >
-      <header className="entry__head">
-        <div className="entry__kind">
-          <nav className="entry__crumbs" aria-label={t('entity.page.head.breadcrumb')}>
-            {/* Lore lists nothing until a type is chosen, so the way back is to this entry's own type. */}
-            <Link
-              to={`/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`}
-            >
-              {t('entity.page.head.lore')}
-            </Link>
-          </nav>
-
-          {isEditing ? (
-            <select
-              className="field__input field__input--select entry__typepick"
-              aria-label={t('entity.page.head.typeLabel')}
-              value={draft.entityTypeId}
-              onChange={(event) => {
-                setDraft({ ...draft, entityTypeId: event.target.value, fields: {} })
-                // Pictures held for the old type's fields belong to no field of the new one.
-                setPendingFieldImages({})
-              }}
-            >
-              {typeChoices(types).map(({ type, label }) => (
-                <option key={type.id} value={type.id}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          ) : (
-            // Back to the Lore list at this entry's type, by the type's id.
-            <Link
-              className="entry__type"
-              to={`/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`}
-              style={
-                selectedType?.accentColor
-                  ? { ['--type-accent' as string]: selectedType.accentColor }
-                  : undefined
-              }
-              data-testid="entry-type"
-            >
-              <TypeIcon iconKey={selectedType?.icon ?? null} className="entry__typeicon" />
-              <bdi>{detail?.entityTypeName ?? selectedType?.name}</bdi>
-            </Link>
-          )}
-
-          {/* How settled the entry is, changed in one press. A choice, not an action: the chosen step is
-              raised paper with its glyph and word, never a filled block louder than the name. */}
-          {access.editContent || isNew || suggesting ? (
-            <div className="canon" role="group" aria-label={t('entity.page.head.canonGroup')}>
-              {CANON_ORDER.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="canon__step"
-                  aria-pressed={draft.canonStatus === option}
-                  data-canon={option}
-                  disabled={isSaving}
-                  onClick={() => changeCanon(option)}
-                  data-testid={`canon-${CANON_KEYS[option]}`}
-                >
-                  {CANON_LABELS[option]}
-                </button>
-              ))}
-            </div>
-          ) : (
-            // Read only: the status, stated, with nothing to press.
-            <StatusBadge
-              step={draft.canonStatus}
-              label={CANON_LABELS[draft.canonStatus]}
-              testId="entry-canon-status"
-            />
-          )}
-        </div>
-
-        {isEditing ? (
-          // The screen still has its one heading while the name is a field.
-          <h1 className="visually-hidden">
-            {isNew
-              ? t('entity.page.head.newEntry')
-              : suggesting
-                ? tx('entity.page.head.suggesting', { name: <bdi>{detail?.name}</bdi> })
-                : tx('entity.page.head.editing', { name: <bdi>{detail?.name}</bdi> })}
-          </h1>
-        ) : null}
-        {isEditing ? (
-          <input
-            className="entry__nameinput"
-            aria-label={t('entity.page.head.nameLabel')}
-            placeholder={t('entity.page.head.namePlaceholder')}
-            dir="auto"
-            value={draft.name}
-            onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-          />
-        ) : (
-          <h1 className="entry__name titlerule" data-testid="entry-name">
-            <bdi>{detail?.name}</bdi>
-          </h1>
-        )}
-        {fieldErrors.name ? <p className="field__error">{fieldErrors.name}</p> : null}
-
-        {!isEditing && (detail?.aliases.length ?? 0) > 0 ? (
-          <p className="entry__aliases" data-testid="entry-aliases">
-            {tx('entity.page.head.alsoKnownAs', { names: <NameList names={detail!.aliases} /> })}
-          </p>
-        ) : null}
-
-        {isEditing ? (
-          <textarea
-            className="entry__summaryinput"
-            aria-label={t('entity.page.head.summaryLabel')}
-            rows={2}
-            placeholder={t('entity.page.head.summaryPlaceholder')}
-            value={draft.summary}
-            onChange={(event) => setDraft({ ...draft, summary: event.target.value })}
-          />
-        ) : detail?.summary ? (
-          <p className="entry__summary prose" data-testid="entry-summary">
-            {detail.summary}
-          </p>
-        ) : null}
-      </header>
+      <EntryHeader {...entry} />
 
       {/* One bar under the identity: where in the entry you are, and what you can do to the entry itself -
           Edit first, Family tree beside it, and everything that manages rather than reads in the ⋯ menu,
@@ -1043,512 +771,40 @@ function EntityScreen({ view }: { view: EntryView }) {
           phone's views line has room the tools line does not. */}
       {!isNew && !isEditing ? (
         <div className="entry__bar">
-          <div className="entry__lenses">
-            <nav
-              className="views"
-              aria-label={t('entity.page.views.label')}
-              data-testid="entry-views"
-            >
-              <NavLink to={entryPath} end className="views__link" data-testid="entry-view-article">
-                {t('entity.page.views.article')}
-              </NavLink>
-              {/* An entry's progression (Issue #30): offered to whoever can add to it, and to everyone once it has any. */}
-              {access.editContent || detail?.hasProgression ? (
-                <NavLink
-                  to={`${entryPath}/progression`}
-                  className="views__link"
-                  data-testid="entry-view-progression"
-                >
-                  {t('entity.page.views.progression')}
-                </NavLink>
-              ) : null}
-              <NavLink
-                to={`${entryPath}/relations`}
-                className="views__link"
-                data-testid="entry-view-relations"
-              >
-                {t('entity.page.views.relations')}
-              </NavLink>
-              {access.manageHistory ? (
-                <NavLink
-                  to={`${entryPath}/history`}
-                  className="views__link"
-                  data-testid="entry-view-history"
-                >
-                  {t('entity.page.views.history')}
-                </NavLink>
-              ) : null}
-            </nav>
-            {isWritingArticle ? null : (
-              <ReviewComments
-                universeId={universe.id}
-                subject={{ kind: 'entry', entityId: entityId! }}
-                subjectName={detail?.name ?? ''}
-                describeSuggestion={(before: EntryFields, proposed: EntryFields) =>
-                  entryChanges(before, draftFromDetail(proposed), types, chronology, proposed)
-                }
-                onSuggestionAccepted={() => void reloadAfterRestore()}
-                onSuggest={startSuggesting}
-              />
-            )}
-          </div>
+          <EntryViewsNav {...entry} />
 
-          {isWritingArticle ? null : (
-            <div className="entry__tools">
-              {/* Whether the entry is public, said in a word, and the way to change it - before Edit, because it is
-                  state the author should see on arrival, not a tool buried in the menu. */}
-              {access.publish ? (
-                <ContentPublication
-                  key={entityId}
-                  universeId={universe.id}
-                  kind="entry"
-                  id={entityId!}
-                  name={detail?.name ?? ''}
-                  placement="bar"
-                />
-              ) : null}
-              {access.editContent ? (
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  onClick={startEditing}
-                  disabled={isSaving}
-                  data-testid="edit-entity"
-                >
-                  <ActionIcon icon={Pencil} />
-                  {t('entity.page.tools.edit')}
-                </button>
-              ) : access.suggestChanges ? (
-                // A Reviewer's way into the same form, where an Editor's Edit stands. Its icon alone on a phone.
-                <button
-                  className="button button--secondary"
-                  type="button"
-                  onClick={startSuggesting}
-                  title={t('entity.page.tools.suggestTitle')}
-                  data-testid="suggest-entity"
-                >
-                  <ActionIcon icon={FilePenLine} />
-                  <span className="entry__toollabel">{t('entity.page.tools.suggestLabel')}</span>
-                </button>
-              ) : null}
-              {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
-                  already holding a family link - never decided by what the type is called (ADR 0040).
-                  Its icon alone on a phone, still named, so the tools keep to one line. */}
-              {offersFamilyTree ? (
-                <Link
-                  className="button button--text"
-                  to={`/app/universes/${universe.id}/family-tree/${entityId}`}
-                  title={t('entity.page.tools.familyTreeTitle')}
-                  data-testid="entity-family-tree"
-                >
-                  <ActionIcon icon={Network} />
-                  <span className="entry__toollabel">{t('entity.page.tools.familyTreeLabel')}</span>
-                </Link>
-              ) : null}
-              {/* The owner's private note on the entry (issue 23): a tool on the entry itself, offered to the owner alone,
-                  its icon alone on a phone like Family tree - the views line has no room for a second trigger at 390px. */}
-              {access.privateNotes ? (
-                <PrivateNotes
-                  universeId={universe.id}
-                  entityId={entityId!}
-                  entryName={detail?.name ?? ''}
-                />
-              ) : null}
-              {access.editContent || access.manageTrash ? (
-                <ActionMenu
-                  label={t('entity.page.tools.moreActions', {
-                    name: detail?.name ?? t('entity.page.tools.moreActionsFallback'),
-                  })}
-                  triggerTestId="entity-actions"
-                >
-                  {/* A new entry filled from this one, to change before it is created (Issue #27). */}
-                  {access.editContent ? (
-                    <Link
-                      className="actionmenu__item"
-                      to={`/app/universes/${universe.id}/lore/new?from=${entityId}`}
-                      data-testid="duplicate-entity"
-                    >
-                      <ActionIcon icon={Copy} />
-                      {t('entity.page.tools.duplicate')}
-                    </Link>
-                  ) : null}
-                  {access.manageTrash ? (
-                    <>
-                      <hr className="actionmenu__divider" />
-                      <button
-                        className="actionmenu__item actionmenu__item--danger"
-                        type="button"
-                        onClick={() => void moveToTrash()}
-                        disabled={isSaving}
-                        data-testid="trash-entity"
-                      >
-                        <ActionIcon icon={Trash} />
-                        {t('entity.page.tools.moveToTrash')}
-                      </button>
-                    </>
-                  ) : null}
-                </ActionMenu>
-              ) : null}
-            </div>
-          )}
+          {isWritingArticle ? null : <EntryTools {...entry} />}
         </div>
       ) : null}
 
-      {blocked ? (
-        // A blocked creation names an entry that was rolled back, so its ids lead
-        // nowhere. Only an edit of something already stored can be linked.
-        <CanonBlockNotice universeId={universe.id} findings={blocked} linkSubjects={!isNew} />
-      ) : null}
-
-      {message ? (
-        <p className="form__message" role="alert" data-testid="entry-error">
-          {message}
-        </p>
-      ) : null}
-
-      {sent && !isEditing ? (
-        <p className="callout" role="status" data-testid="suggestion-sent">
-          {t('entity.page.suggestionSent')}
-        </p>
-      ) : null}
-
-      {conflict && isEditing && !isNew && entityId !== undefined ? (
-        <EditConflict
-          what={t('entity.page.conflictWhat')}
-          read={() => getEntity(universe.id, entityId)}
-          renderLatest={(latest) => (
-            <ChangeList changes={entryChanges(latest, draft, types, chronology, detail)} />
-          )}
-          onKeepMine={keepMine}
-          onUseLatest={takeLatest}
-          testId="entry-conflict"
-          suggesting={suggesting}
-        />
-      ) : null}
-
-      <p className="visually-hidden" role="status" data-testid="entry-announcer">
-        {announcement}
-      </p>
+      <EntryNotices {...entry} />
 
       {isEditing ? (
-        <div className="entryform" data-testid="entry-form">
-          {isNew && sourceId !== null ? (
-            <CopyPanel
-              source={source}
-              draft={draft}
-              onDraft={(change) => setDraft((current) => change(current ?? draft))}
-              copyArticle={copyArticle}
-              onCopyArticle={setCopyArticle}
-            />
-          ) : null}
-
-          {suggesting ? (
-            <p className="callout" data-testid="entry-suggesting">
-              {t('entity.page.suggestingNote')}
-            </p>
-          ) : (
-            <section className="entryform__section">
-              <EntityImageField
-                universeId={universe.id}
-                entityId={isNew ? null : entityId}
-                image={detail?.image ?? null}
-                pending={pendingImage}
-                onPending={setPendingImage}
-                onChanged={(image) => {
-                  setDetail((current) => (current ? { ...current, image } : current))
-                  // An image change is a version like any other, so the history is read again
-                  // rather than left sitting one write behind.
-                  setHistoryKey((key) => key + 1)
-                }}
-                disabled={isSaving}
-              />
-            </section>
-          )}
-
-          <section className="entryform__section">
-            <h2 className="entryform__heading sectionrule sectionrule--accent">
-              {t('entity.page.form.namesAndTags')}
-            </h2>
-            <TokenInput
-              label={t('entity.page.form.aliases')}
-              name="aliases"
-              placeholder={t('entity.page.form.aliasesPlaceholder')}
-              values={draft.aliases}
-              onChange={(aliases) => setDraft({ ...draft, aliases })}
-            />
-            <TokenInput
-              label={t('entity.page.form.tags')}
-              name="tags"
-              placeholder={t('entity.page.form.tagsPlaceholder')}
-              values={draft.tags}
-              onChange={(tags) => setDraft({ ...draft, tags })}
-            />
-          </section>
-
-          {(selectedType?.fields.length ?? 0) > 0 ? (
-            <section className="entryform__section">
-              <h2 className="entryform__heading sectionrule sectionrule--accent">
-                {tx('entity.page.form.records', { type: <bdi>{selectedType?.name}</bdi> })}
-              </h2>
-              {formSections.ungrouped.length > 0 ? (
-                <div className="entryform__fields">{formSections.ungrouped.map(fieldInput)}</div>
-              ) : null}
-              {formSections.groups.map(({ section, items }) => {
-                const refused = items.filter((definition) => fieldErrors[definition.id]).length
-                return (
-                  <FieldSectionFold
-                    key={section.id}
-                    section={section}
-                    open={isSectionOpen(section)}
-                    onToggle={(open) =>
-                      setSectionOpen((current) => ({ ...current, [section.id]: open }))
-                    }
-                    attention={refused > 0}
-                    meta={sectionMeta(items, refused)}
-                  >
-                    <div className="entryform__fields">{items.map(fieldInput)}</div>
-                  </FieldSectionFold>
-                )
-              })}
-            </section>
-          ) : null}
-
-          {isNew ? (
-            <p className="entryform__note">
-              {copyArticle && source?.article
-                ? t('entity.page.form.noteCopied')
-                : t('entity.page.form.noteArticle')}
-            </p>
-          ) : null}
-        </div>
+        <EntryForm {...entry} />
       ) : view === 'article' ? (
         <div
           className="entry__layout"
           data-picture={picture ? 'true' : 'false'}
           data-shape={picture ? pictureShape(picture) : undefined}
         >
-          {pictureFigure}
+          <EntryPicture {...entry} />
 
-          <div className="entry__main">
-            {isNew ? null : (
-              <EntityArticleSection
-                key={entityId}
-                universeId={universe.id}
-                entityId={entityId}
-                entityName={detail?.name ?? ''}
-                canEdit={!isEditing}
-                onEditingChange={setIsWritingArticle}
-                onSaved={articleSaved}
-              />
-            )}
-          </div>
-
-          <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
-            {(detail?.fields.length ?? 0) > 0 && factSections.groups.length === 0 ? (
-              <dl className="facts" data-testid="entry-fields">
-                {detail!.fields.map(fact)}
-              </dl>
-            ) : null}
-
-            {factSections.groups.length > 0 ? (
-              <div className="facts__sections" data-testid="entry-fields">
-                {factSections.ungrouped.length > 0 ? (
-                  <dl className="facts">{factSections.ungrouped.map(fact)}</dl>
-                ) : null}
-                {factSections.groups.map(({ section, items }) => (
-                  <FieldSectionFold
-                    key={section.id}
-                    section={section}
-                    open={isSectionOpen(section)}
-                    onToggle={(open) =>
-                      setSectionOpen((current) => ({ ...current, [section.id]: open }))
-                    }
-                  >
-                    <dl className="facts">{items.map(fact)}</dl>
-                  </FieldSectionFold>
-                ))}
-              </div>
-            ) : null}
-
-            {(detail?.fieldImages.length ?? 0) > 0 ? (
-              <div className="rail__block" data-testid="entry-field-images">
-                {detail!.fieldImages.map((picture) => {
-                  const name =
-                    selectedType?.fields.find((one) => one.id === picture.fieldId)?.name ?? ''
-                  return (
-                    <figure
-                      className="entry__fieldimage"
-                      key={picture.fieldId}
-                      data-testid={`entry-field-image-${picture.fieldId}`}
-                    >
-                      <figcaption className="rail__heading">{name}</figcaption>
-                      <img
-                        src={fieldImageUrl(universe.id, detail!.id, picture, 'crop')}
-                        alt={name}
-                      />
-                    </figure>
-                  )
-                })}
-              </div>
-            ) : null}
-
-            {(detail?.tags.length ?? 0) > 0 ? (
-              <div className="rail__block">
-                <h2 className="rail__heading">{t('entity.page.rail.tags')}</h2>
-                <p className="dossier__tags" data-testid="entry-tags">
-                  {detail!.tags.map((tag) => (
-                    <span className="chip" key={tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </p>
-              </div>
-            ) : null}
-
-            {detail ? (
-              <LoreOnMaps key={detail.id} universeId={universe.id} entityId={detail.id} />
-            ) : null}
-
-            {detail ? (
-              <p className="rail__meta">
-                {t('entity.page.rail.created', { date: formatDate(detail.createdAt) })}
-                <br />
-                {t('entity.page.rail.lastChanged', { date: formatDate(detail.updatedAt) })}
-              </p>
-            ) : null}
-          </aside>
-        </div>
-      ) : view === 'progression' ? (
-        <div
-          className="entry__layout entry__layout--view"
-          data-picture={picture ? 'true' : 'false'}
-        >
-          {pictureFigure}
-          <div className="entry__main entry__view">
-            {detail ? (
-              <ProgressionView
-                key={detail.id}
-                universeId={universe.id}
-                entry={detail}
-                definitions={types.find((type) => type.id === detail.entityTypeId)?.fields ?? []}
-                chronology={chronology}
-                onChanged={() => void refreshDetail()}
-              />
-            ) : null}
-          </div>
-        </div>
-      ) : view === 'relations' ? (
-        <div
-          className="entry__layout entry__layout--view"
-          data-picture={picture ? 'true' : 'false'}
-        >
-          {pictureFigure}
-          <div className="entry__main entry__view">
-            <RelationshipSection
-              universeId={universe.id}
-              entityId={entityId!}
-              entityName={detail?.name ?? ''}
-              chronology={chronology}
-            />
-            {/* What the entry knows, and who knows about it (issue 15): under its relations, read by every member. A
-              fifth view would not fit the entry's bar on a phone, and knowledge is what this entry has with others. */}
-            <KnowledgeView
-              key={entityId}
-              universeId={universe.id}
-              entityId={entityId!}
-              entityName={detail?.name ?? ''}
-            />
-          </div>
+          <EntryArticleView {...entry} />
         </div>
       ) : (
         <div
           className="entry__layout entry__layout--view"
           data-picture={picture ? 'true' : 'false'}
         >
-          {pictureFigure}
-          <div className="entry__main entry__view">
-            <EntityHistory
-              universeId={universe.id}
-              entityId={entityId!}
-              chronology={chronology}
-              reloadKey={historyKey}
-              currentVersion={detail?.version ?? 0}
-              onRestored={() => void reloadAfterRestore()}
-            />
-          </div>
+          <EntryPicture {...entry} />
+          <EntryViewPanel {...entry} />
         </div>
       )}
 
       {/* The form's own bar: what state the form is in on the left, Save then Cancel on the right -
           primary first, as in every drawer and confirmation. It holds
           to the bottom of the screen while the form is longer than it, and settles at the form's end. */}
-      {isEditing ? (
-        <footer className="entry__actions actionbar">
-          <p className="actionbar__status" role="status" data-testid="entry-form-status">
-            {isDirty
-              ? suggesting
-                ? t('entity.page.bar.notSent')
-                : t('entity.page.bar.unsaved')
-              : isNew
-                ? t('entity.page.bar.newEntry')
-                : t('entity.page.bar.noChanges')}
-          </p>
-          <div className="actionbar__actions">
-            <button
-              ref={saveButton}
-              className="button"
-              type="button"
-              onClick={save}
-              disabled={isSaving || (suggesting && !isDirty)}
-              aria-busy={isSaving}
-              data-testid="save-entity"
-            >
-              <ActionIcon icon={suggesting ? FilePenLine : Check} />
-              {suggesting
-                ? isSaving
-                  ? t('entity.page.bar.sending')
-                  : t('entity.page.bar.send')
-                : isSaving
-                  ? t('entity.page.bar.saving')
-                  : isNew
-                    ? t('entity.page.bar.create')
-                    : t('entity.page.bar.save')}
-            </button>
-            {!isNew ? (
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={async () => {
-                  // Cancel is the choice to discard, so it asks once, and only when there is something to lose.
-                  if (
-                    isDirty &&
-                    !(await confirmAction({
-                      title: suggesting
-                        ? t('entity.page.bar.closeSuggestion.title')
-                        : t('entity.page.bar.closeEdit.title'),
-                      message: suggesting
-                        ? t('entity.page.bar.closeSuggestion.message')
-                        : t('entity.page.bar.closeEdit.message'),
-                      confirmLabel: suggesting
-                        ? t('entity.page.bar.closeSuggestion.confirm')
-                        : t('entity.page.bar.closeEdit.confirm'),
-                      cancelLabel: t('entity.page.bar.keepEditing'),
-                      variant: 'destructive',
-                    }))
-                  ) {
-                    return
-                  }
-                  discard()
-                }}
-                data-testid="cancel-entity"
-              >
-                <ActionIcon icon={X} />
-                {t('entity.page.bar.cancel')}
-              </button>
-            ) : null}
-          </div>
-        </footer>
-      ) : null}
+      {isEditing ? <EntryFormBar {...entry} /> : null}
 
       {isViewing && detail && picture ? (
         <ImageViewer
@@ -1560,201 +816,6 @@ function EntityScreen({ view }: { view: EntryView }) {
         />
       ) : null}
     </article>
-  )
-}
-
-/**
- * What a copy takes from the entry it is made from (Issue #27), said above the new entry's form before anything is created.
- *
- * Aliases and links to other entries are offered and start off: an alias names the source, and a link field points at
- * other entries. Their boxes read the form rather than state of their own, so taking one out of the form by hand clears its
- * box too. The article is offered, off, with every link it holds listed when it is chosen - it is copied with them, as
- * written. Everything else an entry has is named as not copied, never offered.
- */
-function CopyPanel({
-  source,
-  draft,
-  onDraft,
-  copyArticle,
-  onCopyArticle,
-}: {
-  source: CopySource | null
-  draft: Draft
-  onDraft: (change: (current: Draft) => Draft) => void
-  copyArticle: boolean
-  onCopyArticle: (copy: boolean) => void
-}) {
-  const { t, tn, tx } = useI18n()
-
-  if (!source) {
-    return (
-      <p className="callout callout--warning" role="status" data-testid="entry-copy-unavailable">
-        {t('entity.copy.unavailable')}
-      </p>
-    )
-  }
-
-  const { detail, article } = source
-  const aliases = detail.aliases
-  const references = copyableReferences(detail)
-  const sameType = draft.entityTypeId === detail.entityTypeId
-  const hasAliases = aliases.length > 0 && aliases.every((alias) => draft.aliases.includes(alias))
-  const hasReferences =
-    sameType &&
-    references.length > 0 &&
-    references.every(
-      (value) =>
-        draft.fields[value.fieldDefinitionId]?.referencedEntityId === value.referencedEntityId,
-    )
-  const links = copyArticle && article ? articleLinks(article.content) : []
-
-  function setAliases(copy: boolean) {
-    onDraft((current) => ({
-      ...current,
-      aliases: copy
-        ? [...current.aliases, ...aliases.filter((alias) => !current.aliases.includes(alias))]
-        : current.aliases.filter((alias) => !aliases.includes(alias)),
-    }))
-  }
-
-  function setReferences(copy: boolean) {
-    onDraft((current) => {
-      const fields = { ...current.fields }
-      for (const value of references) {
-        if (copy) {
-          fields[value.fieldDefinitionId] = {
-            fieldDefinitionId: value.fieldDefinitionId,
-            text: null,
-            number: null,
-            boolean: null,
-            date: null,
-            optionIds: null,
-            referencedEntityId: value.referencedEntityId,
-            eraId: null,
-          }
-        } else {
-          delete fields[value.fieldDefinitionId]
-        }
-      }
-      return { ...current, fields }
-    })
-  }
-
-  return (
-    <section
-      className="callout entrycopy"
-      aria-labelledby="entry-copy-title"
-      data-testid="entry-copy"
-    >
-      <p className="callout__title" id="entry-copy-title">
-        {/* Named, not linked: the new form and an entry are one page, and a link from one to the other would carry the open
-            form onto the source. */}
-        {tx('entity.copy.title', { name: <bdi>{detail.name}</bdi> })}
-      </p>
-      <p>{t('entity.copy.intro')}</p>
-
-      {aliases.length > 0 || references.length > 0 || article ? (
-        <fieldset className="entrycopy__options">
-          <legend>{t('entity.copy.also')}</legend>
-          <div className="choices">
-            {aliases.length > 0 ? (
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={hasAliases}
-                  onChange={(event) => setAliases(event.target.checked)}
-                  data-testid="entry-copy-aliases"
-                />
-                <span>{tx('entity.copy.aliases', { names: <NameList names={aliases} /> })}</span>
-              </label>
-            ) : null}
-            {references.length > 0 ? (
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={hasReferences}
-                  disabled={!sameType}
-                  onChange={(event) => setReferences(event.target.checked)}
-                  data-testid="entry-copy-references"
-                />
-                <span>
-                  {tx(sameType ? 'entity.copy.references' : 'entity.copy.referencesSameType', {
-                    names: (
-                      <NameList
-                        names={references.map((value) =>
-                          t('entity.copy.referenceItem', {
-                            field: value.name,
-                            entry: value.referencedEntityName ?? t('entity.copy.anotherEntry'),
-                          }),
-                        )}
-                      />
-                    ),
-                  })}
-                </span>
-              </label>
-            ) : null}
-            {article ? (
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={copyArticle}
-                  onChange={(event) => onCopyArticle(event.target.checked)}
-                  data-testid="entry-copy-article"
-                />
-                <span>{t('entity.copy.article')}</span>
-              </label>
-            ) : null}
-          </div>
-        </fieldset>
-      ) : null}
-
-      {copyArticle && article ? (
-        links.length === 0 ? (
-          <p data-testid="entry-copy-links">{t('entity.copy.noLinks')}</p>
-        ) : (
-          <div data-testid="entry-copy-links">
-            <p>{tn('entity.copy.linksCopied', links.length, { n: links.length })}</p>
-            <ul className="entrycopy__links">
-              {links.map((link, index) => (
-                <li key={index}>
-                  <bdi>{link.text}</bdi> &rarr;{' '}
-                  <span className="entrycopy__href">
-                    {link.href.startsWith('/') || link.href.startsWith('#')
-                      ? t('entity.copy.inside', { href: link.href })
-                      : link.href}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      ) : null}
-
-      <p className="entryform__note" data-testid="entry-copy-skipped">
-        {t('entity.copy.skipped')}
-      </p>
-    </section>
-  )
-}
-
-/**
- * What a folded section of the form holds (Issue #26): its fields, how many are required, and how many a refused save named -
- * so a required or refused field is never out of sight behind a fold.
- */
-function sectionMeta(items: FieldDefinition[], refused: number) {
-  const required = items.filter((definition) => definition.isRequired).length
-  const parts = [tn('entity.sections.fields', items.length, { n: items.length })]
-  if (required > 0) parts.push(t('entity.sections.required', { n: required }))
-  return (
-    <>
-      {parts.join(' · ')}
-      {refused > 0 ? (
-        <span className="fieldsection__alert">
-          {' · '}
-          {tn('entity.sections.attention', refused, { n: refused })}
-        </span>
-      ) : null}
-    </>
   )
 }
 
