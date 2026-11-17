@@ -1,12 +1,4 @@
-import {
-  Boxes,
-  Compass,
-  FileText,
-  ListTree,
-  Settings2,
-  Shapes,
-  type LucideIcon,
-} from 'lucide-react'
+import { Boxes, FileText, ListTree, Settings2, Shapes, type LucideIcon } from 'lucide-react'
 import { t } from '../i18n'
 import type { ProjectFamily } from '../universes/sections'
 import { ProjectKind, ProjectLifecycle, type ProjectDetail } from './types'
@@ -27,12 +19,6 @@ export interface ProjectSection {
   icon: LucideIcon
 }
 
-const overview: ProjectSection = {
-  segment: 'overview',
-  label: 'sections.overview',
-  testId: 'project-overview',
-  icon: Compass,
-}
 const structure: ProjectSection = {
   segment: 'structure',
   label: 'sections.structure',
@@ -74,19 +60,19 @@ const script: ProjectSection = {
   icon: FileText,
 }
 
-// Every kind opens on its overview and offers Entities, because the overview holds the project's schema and Entities
-// its entries until #196 moves the schema into Entities (#193): a kind without either would put a panel out of reach.
+// Every kind uses one layout, the Game's (#377): no kind has an overview, every project heads its own page, and the
+// first entry is the kind's opening view (Structure, or Entities for a Game, which has no structure).
+const rest = [entities, types, systems]
 const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]> = {
-  [ProjectKind.Writing]: [overview, structure, manuscript, entities],
-  // A Game opens on its Entities, Lore's way (owner, 2026-11-17): its kind and summary sit above the tabs instead.
-  [ProjectKind.Game]: [entities, types, systems],
-  [ProjectKind.Series]: [overview, structure, script, entities],
-  [ProjectKind.Film]: [overview, structure, script, entities],
-  [ProjectKind.Comic]: [overview, structure, script, entities],
+  [ProjectKind.Writing]: [structure, manuscript, ...rest],
+  [ProjectKind.Game]: rest,
+  [ProjectKind.Series]: [structure, script, ...rest],
+  [ProjectKind.Film]: [structure, script, ...rest],
+  [ProjectKind.Comic]: [structure, script, ...rest],
 }
 
-// A Story shown as a Writing Project has the story's own three views and nothing else: it is not a stored project, so
-// it holds no project types or entries, and its Overview would be a second header over the story's (#194).
+// A Story shown as a Writing Project has the story's own views and nothing else: it is not a stored project, so it
+// holds no project types or entries (#194).
 const STORY_SECTIONS: readonly ProjectSection[] = [structure, manuscript]
 
 /** The sections a project of this kind offers, in order; a story-backed project offers the story's views. */

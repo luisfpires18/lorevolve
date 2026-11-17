@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Plus } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
+import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
+import { OutlineItem } from './OutlineItem'
 import { Field } from './Field'
 import { ComicArt, ComicPageEditor, ScriptField } from './ComicPageEditor'
 import { ApiError } from '../lib/api'
@@ -34,7 +37,9 @@ import { useUniverseAccess } from '../universes/access'
 
 /**
  * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
- * rules allow, order moved one place at a time like the seasons list, and one node edited at a time in a drawer.
+ * rules allow, order moved one place at a time like the seasons list, and one node edited at a time in a drawer. It is
+ * drawn in the Stories look (#377): top nodes as arcs, nested groups as chapters, and a level with nothing under it as
+ * scene cards.
  *
  * A project whose format has no rules gets a 404 from the tree read, and `legacy` is drawn instead, unchanged. A
  * formatted project that still has legacy rows shows them below, under "Earlier structure".
@@ -158,122 +163,124 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   function addButtons(parent: ProjectNodeSummary | null) {
     const levels = addableLevels(tree as ProjectStructureTree, parent?.level ?? null)
     if (levels.length === 0) return null
-    return (
-      <div className="form__actions">
-        {levels.map((level) => (
-          <button
-            key={level}
-            className={parent ? 'button button--secondary button--sm' : 'button'}
-            type="button"
-            disabled={busy}
-            data-testid={
-              parent ? `project-node-add-${level}-${parent.id}` : `project-node-add-${level}`
-            }
-            onClick={() => add(level, parent?.id ?? null)}
-          >
-            {t('projects.structure.add', { level: levelWord(level) })}
-          </button>
-        ))}
-      </div>
-    )
+    const buttons = levels.map((level) => (
+      <button
+        key={level}
+        className={parent ? 'button button--text' : 'button'}
+        type="button"
+        disabled={busy}
+        data-testid={
+          parent ? `project-node-add-${level}-${parent.id}` : `project-node-add-${level}`
+        }
+        onClick={() => add(level, parent?.id ?? null)}
+      >
+        {parent ? <ActionIcon icon={Plus} /> : null}
+        {t('projects.structure.add', { level: levelWord(level) })}
+      </button>
+    ))
+    return parent ? buttons : <div className="form__actions">{buttons}</div>
   }
 
-  function branch(parentId: string | null): ReactNode {
+  function branch(parentId: string | null, depth = 0): ReactNode {
     const current = tree as ProjectStructureTree
     const nodes = childrenOf(current, parentId)
     if (nodes.length === 0) return null
     return (
-      <ol
-        className={parentId ? 'fieldlist' : 'projectcardlist'}
-        data-testid={`project-outline-list-${parentId ?? 'root'}`}
-      >
-        {nodes.map((node, index) => (
-          <li
-            key={node.id}
-            className={parentId ? 'fieldlist__row' : 'projectcard'}
-            data-testid={`project-node-${node.id}`}
-          >
-            <div className="projectcard__head">
-              <h3 className="projectcard__title">{nameOf(node)}</h3>
-              <p className="projectcard__meta">{capital(levelWord(node.level))}</p>
-              <div className="projectcard__actions">
-                <button
-                  className="button button--secondary button--sm"
-                  type="button"
-                  data-testid={`project-node-open-${node.id}`}
-                  onClick={() => setEditing(node.id)}
-                >
-                  {t('projects.structure.edit')}
-                </button>
-                <ActionMenu
-                  label={t('projects.common.more', { name: nameOf(node) })}
-                  triggerTestId={`project-node-actions-${node.id}`}
-                >
-                  {index === 0 ? null : (
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-node-up-${node.id}`}
-                      onClick={() =>
-                        run(moveNode(projectId, node.id, { place: index - 1, parentId }))
-                      }
-                    >
-                      {t('projects.common.moveUp')}
-                    </button>
-                  )}
-                  {index === nodes.length - 1 ? null : (
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-node-down-${node.id}`}
-                      onClick={() =>
-                        run(moveNode(projectId, node.id, { place: index + 1, parentId }))
-                      }
-                    >
-                      {t('projects.common.moveDown')}
-                    </button>
-                  )}
-                  {moveTargets(current, node).map((target) => (
-                    <button
-                      key={target?.id ?? 'root'}
-                      className="actionmenu__item"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-node-move-${node.id}-${target?.id ?? 'root'}`}
-                      onClick={() =>
-                        // Moved to the end of its new list; the server clamps the place.
-                        run(
-                          moveNode(projectId, node.id, {
-                            place: Number.MAX_SAFE_INTEGER,
-                            parentId: target?.id ?? null,
-                          }),
-                        )
-                      }
-                    >
-                      {target
-                        ? t('projects.structure.moveTo', { name: nameOf(target) })
-                        : t('projects.structure.moveToTop')}
-                    </button>
-                  ))}
+      <ol className="scenes" data-testid={`project-outline-list-${parentId ?? 'root'}`}>
+        {nodes.map((node, index) => {
+          const leaf = addableLevels(current, node.level).length === 0
+          return (
+            <OutlineItem
+              key={node.id}
+              variant={leaf ? 'card' : 'group'}
+              top={depth === 0}
+              number={index + 1}
+              name={nameOf(node)}
+              meta={capital(levelWord(node.level))}
+              summary={node.summary}
+              titleLevel={Math.min(3 + depth, 6) as 3 | 4 | 5 | 6}
+              testId={`project-node-${node.id}`}
+              foldLabel={nameOf(node)}
+              tools={
+                <>
+                  {leaf ? null : addButtons(node)}
                   <button
-                    className="actionmenu__item actionmenu__item--danger"
+                    className="button button--text"
                     type="button"
-                    disabled={busy}
-                    data-testid={`project-node-delete-${node.id}`}
-                    onClick={() => void remove(current, node)}
+                    data-testid={`project-node-open-${node.id}`}
+                    onClick={() => setEditing(node.id)}
                   >
-                    {t('projects.structure.delete')}
+                    {t('projects.structure.edit')}
                   </button>
-                </ActionMenu>
-              </div>
-            </div>
-            {node.summary ? <p className="prose">{node.summary}</p> : null}
-            {addButtons(node)}
-            {branch(node.id)}
-          </li>
-        ))}
+                  <ActionMenu
+                    label={t('projects.common.more', { name: nameOf(node) })}
+                    triggerTestId={`project-node-actions-${node.id}`}
+                  >
+                    {index === 0 ? null : (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        disabled={busy}
+                        data-testid={`project-node-up-${node.id}`}
+                        onClick={() =>
+                          run(moveNode(projectId, node.id, { place: index - 1, parentId }))
+                        }
+                      >
+                        {t('projects.common.moveUp')}
+                      </button>
+                    )}
+                    {index === nodes.length - 1 ? null : (
+                      <button
+                        className="actionmenu__item"
+                        type="button"
+                        disabled={busy}
+                        data-testid={`project-node-down-${node.id}`}
+                        onClick={() =>
+                          run(moveNode(projectId, node.id, { place: index + 1, parentId }))
+                        }
+                      >
+                        {t('projects.common.moveDown')}
+                      </button>
+                    )}
+                    {moveTargets(current, node).map((target) => (
+                      <button
+                        key={target?.id ?? 'root'}
+                        className="actionmenu__item"
+                        type="button"
+                        disabled={busy}
+                        data-testid={`project-node-move-${node.id}-${target?.id ?? 'root'}`}
+                        onClick={() =>
+                          // Moved to the end of its new list; the server clamps the place.
+                          run(
+                            moveNode(projectId, node.id, {
+                              place: Number.MAX_SAFE_INTEGER,
+                              parentId: target?.id ?? null,
+                            }),
+                          )
+                        }
+                      >
+                        {target
+                          ? t('projects.structure.moveTo', { name: nameOf(target) })
+                          : t('projects.structure.moveToTop')}
+                      </button>
+                    ))}
+                    <button
+                      className="actionmenu__item actionmenu__item--danger"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-node-delete-${node.id}`}
+                      onClick={() => void remove(current, node)}
+                    >
+                      {t('projects.structure.delete')}
+                    </button>
+                  </ActionMenu>
+                </>
+              }
+            >
+              {leaf ? null : branch(node.id, depth + 1)}
+            </OutlineItem>
+          )
+        })}
       </ol>
     )
   }

@@ -46,7 +46,7 @@ async function collection(page: Page, kind: string, name: string) {
   await expect(page.getByTestId('comic-collection-drawer')).toHaveCount(0)
   const card = page
     .getByTestId(`comic-collections-${kind}`)
-    .locator('li.projectcard', { hasText: name })
+    .locator('li[data-testid^="comic-collection-"]', { hasText: name })
   const testId = await card.getAttribute('data-testid')
   return testId!.replace('comic-collection-', '')
 }
@@ -80,7 +80,9 @@ test('an event spans two comics in an order that persists, and an entry opens th
   await add(page, event, 'Western - issue First issue')
   await add(page, event, 'Manga - chapter First chapter')
 
-  const entries = page.getByTestId(`comic-collection-${event}`).locator('li.fieldlist__row')
+  const entries = page
+    .getByTestId(`comic-collection-${event}`)
+    .locator('li[data-testid^="comic-entry-"]')
   await expect(entries).toHaveText([/First issue/, /First chapter/])
 
   await page.getByTestId(`comic-entry-actions-${event}-${chapter}`).click()

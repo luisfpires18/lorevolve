@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { BookPlus, FilePenLine, Hourglass, Layers, Pencil, Plus, Trash } from 'lucide-react'
 import {
-  Link,
-  NavLink,
-  useLocation,
-  useNavigate,
-  useOutletContext,
-  useParams,
-} from 'react-router-dom'
+  BookPlus,
+  FilePenLine,
+  FileText,
+  Hourglass,
+  Layers,
+  ListTree,
+  Pencil,
+  Plus,
+  Trash,
+} from 'lucide-react'
+import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { useI18n } from '../i18n'
+import { ViewChips } from '../components/ViewChips'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ArcSection } from '../components/ArcSection'
@@ -900,27 +904,25 @@ function StoryView({ view }: { view: StoryViewName }) {
         }
       >
         <div className="story__bar">
-          <nav
-            className="views story__views"
-            aria-label={t('stories.page.views')}
-            data-testid="story-views"
-          >
-            <NavLink
-              to={`${storyPath}/structure`}
-              end
-              className="views__link"
-              data-testid="story-view-scenes"
-            >
-              {t('stories.page.viewStructure')}
-            </NavLink>
-            <NavLink
-              to={`${storyPath}/manuscript`}
-              className="views__link"
-              data-testid="story-view-manuscript"
-            >
-              {t('stories.page.viewManuscript')}
-            </NavLink>
-          </nav>
+          <ViewChips
+            label={t('stories.page.views')}
+            testId="story-views"
+            items={[
+              {
+                to: `${storyPath}/structure`,
+                end: true,
+                label: t('stories.page.viewStructure'),
+                icon: ListTree,
+                testId: 'story-view-scenes',
+              },
+              {
+                to: `${storyPath}/manuscript`,
+                label: t('stories.page.viewManuscript'),
+                icon: FileText,
+                testId: 'story-view-manuscript',
+              },
+            ]}
+          />
 
           {/* Every view keeps a way to the story's world chronology here, the Manuscript view included, whose header has
               no line of facts to hold it. */}

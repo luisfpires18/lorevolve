@@ -1,6 +1,7 @@
-import { useId, useRef, useState, type ReactNode } from 'react'
-import { Link, Navigate, NavLink } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { Link, Navigate } from 'react-router-dom'
 import { ManuscriptEditor } from './ManuscriptEditor'
+import { ManuscriptParts } from './ManuscriptParts'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
 import { unchaptered as unchapteredLabel } from '../stories/format'
@@ -81,13 +82,6 @@ export function ManuscriptPanel({
   manuscriptPublication,
 }: ManuscriptPanelProps) {
   const { t, tx } = useI18n()
-  const listId = useId()
-  const toggle = useRef<HTMLButtonElement>(null)
-
-  // Opened "at" a scene rather than simply open, like the workspace's section list: arriving at another scene closes
-  // the list without an effect chasing the address.
-  const [openAt, setOpenAt] = useState<string | null>(null)
-
   const { arcs, chapters } = story
   const scenes = readingOrder(arcs, chapters, story.scenes)
   const choices = chapterChoices(arcs, chapters)
@@ -117,7 +111,6 @@ export function ManuscriptPanel({
   }
 
   const selected = scenes.find((scene) => scene.id === sceneId) ?? null
-  const isOpen = openAt === sceneId
   const unchaptered = scenesIn(scenes, null)
 
   const groups = hasChapters
@@ -136,125 +129,49 @@ export function ManuscriptPanel({
         })),
       ]
     : [{ key: 'story', label: null, scenes }]
-
-  /**
-   * On a narrow screen the list folds away once a scene is chosen, taking the link that held the focus with it, so the
-   * focus goes to the toggle - which now names the chosen scene - rather than to nowhere. On a wide screen the toggle is
-   * not shown and the focus stays on the link.
-   */
-  function chose() {
-    setOpenAt(null)
-    const button = toggle.current
-    if (button && button.offsetParent !== null) button.focus()
-  }
+  const parts = groups.map((group) => ({
+    key: group.key,
+    label: group.label,
+    parts: group.scenes.map((scene) => ({
+      id: scene.id,
+      title: scene.title,
+      to: `${storyPath}/manuscript/${scene.id}`,
+    })),
+  }))
 
   return (
-    <section className="manuscript" aria-labelledby="manuscript-heading" data-testid="manuscript">
-      <h2 className="visually-hidden" id="manuscript-heading">
-        {t('manuscript.panel.heading')}
-      </h2>
-
-      <div className="manuscript__layout">
-        <nav
-          className="msoutline"
-          aria-label={t('manuscript.panel.outline')}
-          data-testid="manuscript-outline"
-        >
-          <button
-            ref={toggle}
-            className="msoutline__toggle"
-            type="button"
-            aria-expanded={isOpen}
-            aria-controls={listId}
-            onClick={() => setOpenAt(isOpen ? null : sceneId)}
-            data-testid="manuscript-outline-toggle"
-          >
-            <span className="msoutline__togglelabel">
-              {isOpen ? t('manuscript.panel.closeScenes') : t('manuscript.panel.scenes')}
-            </span>
-            {/* Its own direction, not a <bdi>: the title is cut with an ellipsis, and the clipping
-                element's direction is what puts the cut at the end of a right-to-left title. */}
-            <span className="msoutline__current" dir="auto">
-              {selected?.title ?? t('manuscript.panel.chooseScene')}
-            </span>
-          </button>
-
-          <div
-            className="msoutline__body"
-            id={listId}
-            data-open={isOpen ? 'true' : 'false'}
-            data-testid="manuscript-outline-list"
-          >
-            {groups.map((group) => {
-              const headingId = `${listId}-${group.key}`
-              return (
-                <div
-                  className="msoutline__group"
-                  key={group.key}
-                  data-testid="manuscript-outline-group"
-                >
-                  {group.label ? (
-                    <p
-                      className="msoutline__heading"
-                      id={headingId}
-                      data-testid="manuscript-outline-heading"
-                    >
-                      {group.label}
-                    </p>
-                  ) : null}
-                  {group.scenes.length === 0 ? (
-                    <p className="msoutline__none">{t('manuscript.panel.noScenes')}</p>
-                  ) : (
-                    <ol
-                      className="msoutline__scenes"
-                      aria-labelledby={group.label ? headingId : undefined}
-                    >
-                      {group.scenes.map((scene) => (
-                        <li key={scene.id}>
-                          <NavLink
-                            to={`${storyPath}/manuscript/${scene.id}`}
-                            className="msoutline__link"
-                            onClick={chose}
-                            data-testid="manuscript-outline-scene"
-                            data-title={scene.title}
-                          >
-                            <bdi>{scene.title}</bdi>
-                          </NavLink>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </nav>
-
-        <div className="manuscript__main">
-          {selected ? (
-            <ManuscriptEditor
-              key={selected.id}
-              universeId={universeId}
-              storyId={story.id}
-              scene={selected}
-              chronology={chronology}
-              where={whereOf(labels, scenes, selected)}
-              onEditScene={onEditScene}
-              onSuggestScene={onSuggestScene}
-              chapters={chapters}
-              onSceneChanged={onSceneChanged}
-              onSceneSaved={onSceneSaved}
-              publication={manuscriptPublication?.(selected)}
-            />
-          ) : (
-            <EmptyState
-              testId="manuscript-scene-missing"
-              title={t('manuscript.panel.missing.title')}
-              hint={t('manuscript.panel.missing.hint')}
-            />
-          )}
-        </div>
-      </div>
-    </section>
+    <ManuscriptParts
+      groups={parts}
+      currentId={sceneId}
+      heading={t('manuscript.panel.heading')}
+      outlineLabel={t('manuscript.panel.outline')}
+      toggleLabel={t('manuscript.panel.scenes')}
+      closeLabel={t('manuscript.panel.closeScenes')}
+      chooseLabel={t('manuscript.panel.chooseScene')}
+      noneLabel={t('manuscript.panel.noScenes')}
+    >
+      {selected ? (
+        <ManuscriptEditor
+          key={selected.id}
+          universeId={universeId}
+          storyId={story.id}
+          scene={selected}
+          chronology={chronology}
+          where={whereOf(labels, scenes, selected)}
+          onEditScene={onEditScene}
+          onSuggestScene={onSuggestScene}
+          chapters={chapters}
+          onSceneChanged={onSceneChanged}
+          onSceneSaved={onSceneSaved}
+          publication={manuscriptPublication?.(selected)}
+        />
+      ) : (
+        <EmptyState
+          testId="manuscript-scene-missing"
+          title={t('manuscript.panel.missing.title')}
+          hint={t('manuscript.panel.missing.hint')}
+        />
+      )}
+    </ManuscriptParts>
   )
 }
