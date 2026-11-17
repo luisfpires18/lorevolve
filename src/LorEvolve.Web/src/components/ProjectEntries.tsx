@@ -46,6 +46,7 @@ export function ProjectEntries({
   reloadKey,
   onChanged,
   crumb,
+  entryHref,
 }: {
   projectId: string
   /** The universe the project belongs to: an entry's pictures are stored under it. */
@@ -63,6 +64,8 @@ export function ProjectEntries({
   onChanged?: () => void
   /** The way back to the type cards, which the type's ancestors follow as they do above a Lore type's list. */
   crumb?: ReactNode
+  /** Where an entry's card opens (#286); unset, a card is static as it was (#196). */
+  entryHref?: (entry: ProjectEntitySummary) => string
 }) {
   useI18n()
   const { pathname } = useLocation()
@@ -586,18 +589,33 @@ export function ProjectEntries({
                   : undefined
               }
             >
-              {/* Lore's card, without the link: an entry has no page of its own, so its one action is the menu. */}
+              {/* Lore's card; with an `entryHref` the body is the link and the More menu stays outside it. */}
               <div className="entitycard entitycard--static">
-                {/* No picture, so the tile draws the type's icon and never reads a universe. */}
-                <EntityCardBody
-                  universeId=""
-                  entity={entry}
-                  note={
-                    entry.canonEntityName
-                      ? t('projects.entries.canon', { name: entry.canonEntityName })
-                      : undefined
-                  }
-                />
+                {(() => {
+                  // No picture, so the tile draws the type's icon and never reads a universe.
+                  const body = (
+                    <EntityCardBody
+                      universeId=""
+                      entity={entry}
+                      note={
+                        entry.canonEntityName
+                          ? t('projects.entries.canon', { name: entry.canonEntityName })
+                          : undefined
+                      }
+                    />
+                  )
+                  return entryHref ? (
+                    <Link
+                      className="entitycard__link"
+                      to={entryHref(entry)}
+                      data-testid={`project-entry-open-${entry.id}`}
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    body
+                  )
+                })()}
                 <div className="entitycard__actions">
                   <ActionMenu
                     label={t('projects.common.more', { name: entry.name })}

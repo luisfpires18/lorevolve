@@ -92,6 +92,16 @@ const projects = {
     back: 'Game Entities',
     notFound: 'This game is not in this universe.',
     notFoundHint: 'Go back to Game Entities and pick one of its games.',
+    entity: {
+      loading: 'Reading this entity.',
+      failed: 'This entity could not be read.',
+      notFound: 'This entity could not be found.',
+      notFoundHint: 'It may have been deleted, or it is not part of this game.',
+      backToGame: 'Back to the game',
+      noImage: 'No image yet',
+      noDescription: 'No description yet.',
+      imageAlt: 'Picture of {name}',
+    },
   },
   directory: {
     lede: 'Pick a kind of project to see what you are making in this universe.',
