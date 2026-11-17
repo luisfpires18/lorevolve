@@ -5,7 +5,7 @@ Status: proposed (2026-11-17), ADR 0073. Normative for #357 to #361 once the own
 This document is the contract behind a state machine drawn on a World system. It builds on the condition
 specification (`world-logic-condition-spec.md`, ADR 0072) and changes nothing in it. Like that document it names no
 universe, world, game or story term: a machine knows subjects, one attribute, states, transitions and guard rules.
-The fixtures under `tests/LorEvolve.Api.Tests/Fixtures/WorldLogicMachines/` are instances of this schema.
+The fixtures under `tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/Machines/` are instances of this schema.
 
 ## 1. What a machine is, and what it is never
 
@@ -212,9 +212,9 @@ waits for #210.
 
 ## 13. Fixtures
 
-`tests/LorEvolve.Api.Tests/Fixtures/WorldLogicMachines/` holds one document per scenario. It is a folder of its own
-because `WorldLogicFixtureTests` requires `Fixtures/WorldLogic/` to hold the six condition scenarios and nothing
-else.
+`tests/LorEvolve.Api.Tests/Fixtures/WorldLogic/Machines/` holds one document per scenario. It is a subfolder
+because `WorldLogicFixtureTests` requires the top of `Fixtures/WorldLogic/` to hold the six condition scenarios and
+nothing else, and reads only that level.
 
 | File | Domain | What it is for |
 | --- | --- | --- |
