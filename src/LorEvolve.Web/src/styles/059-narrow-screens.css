@@ -1,0 +1,39 @@
+/* ---------- Narrow screens ---------- */
+
+@media (max-width: 1100px) {
+  /* One column: the picture first, bounded so the article still starts on the first screen of a
+     phone, then the article, then the facts. minmax(0, 1fr), not 1fr: one long unbroken word in an
+     article must not push the entry wider than the screen. */
+  .entry__layout,
+  .entry__layout[data-picture='true'][data-shape='portrait'],
+  .entry__layout[data-picture='true'][data-shape='square'],
+  .entry__layout[data-picture='true'][data-shape='landscape'] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'media'
+      'main'
+      'rail';
+  }
+
+  .entry__layout--view[data-picture='true'] {
+    grid-template-areas:
+      'media'
+      'main';
+  }
+
+  .entry__layout--view .entry__media {
+    position: relative;
+    top: auto;
+  }
+
+  .entry__media {
+    justify-self: center;
+    margin-inline: auto;
+  }
+
+  .entry__media img,
+  .entry__layout[data-shape='landscape'] .entry__media img {
+    max-height: min(22rem, 50vh);
+  }
+}

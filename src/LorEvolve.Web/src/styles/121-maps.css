@@ -1,0 +1,241 @@
+/* ---------- Maps (issue #52, ADR 0060) ----------
+
+   A picture of the world, panned and zoomed, with pins on it. The viewer is one transformed layer: the
+   picture at its displayed size, the pins at fractions of it, counter-scaled so they keep one size. */
+
+.maps__notice {
+  margin: 1.5rem 0 0;
+}
+
+.maps__notice p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.maplist {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-5);
+  margin: 2rem 0 0;
+  padding: 0;
+}
+
+.mapcard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.mapcard__link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.mapcard__picture {
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.mapcard__picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.mapcard__name {
+  font-family: var(--display);
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.mapcard__link:hover .mapcard__name,
+.mapcard__link:focus-visible .mapcard__name {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.mapcard__description {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mapcard__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* One map. */
+.mapscreen__review,
+.mapscreen__placing {
+  margin: var(--space-4) 0 0;
+}
+
+.mapscreen__placing .button--text {
+  padding: 0;
+  min-height: 0;
+  font-size: inherit;
+}
+
+.mapscreen__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--space-5);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+.mapscreen__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.mapscreen__pinsheading {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mapscreen__count {
+  font-weight: 400;
+}
+
+.mapscreen__empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* The viewer. */
+.mapviewer {
+  position: relative;
+  min-width: 0;
+}
+
+.mapviewer__stage {
+  position: relative;
+  height: min(70vh, 48rem);
+  min-height: 18rem;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mapviewer__stage:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.mapviewer__stage:active {
+  cursor: grabbing;
+}
+
+.mapviewer[data-placing] .mapviewer__stage {
+  cursor: crosshair;
+}
+
+.mapviewer__layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.mapviewer__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.mapviewer__controls {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  box-shadow: var(--shadow-2);
+}
+
+/* A pin: a button at a fraction of the picture, its foot on the point. Counter-scaled against the layer. */
+.mappin,
+.mapmarker {
+  position: absolute;
+  transform: translate(-50%, -100%) scale(calc(1 / var(--map-scale, 1)));
+  transform-origin: 50% 100%;
+}
+
+.mappin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.mappin__head {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50% 50% 50% 0;
+  background: var(--accent);
+  box-shadow:
+    0 0 0 2px var(--raised),
+    var(--shadow-2);
+  transform: rotate(-45deg);
+  transition: transform var(--duration-1) var(--ease);
+}
+
+.mappin__label {
+  max-width: 12rem;
+  padding: 0.0625rem var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity var(--duration-1) var(--ease);
+}

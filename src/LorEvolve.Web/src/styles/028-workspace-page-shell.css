@@ -1,0 +1,253 @@
+/* ---------- One workspace page shell (014, refined) ----------
+
+   Every workspace page - worldbuilding or configuration - starts at the same edge with the same PageHeader: there is one
+   outer shell. Content decides its own inner width: the Lore grid and Canon take the canvas, while the forms of Settings
+   and Publish keep a readable column, left-aligned under the title rather than centred away from it. */
+.settings__body,
+.publish__body {
+  max-width: 46rem;
+}
+
+.settings--tabbed .settings__section {
+  max-width: none;
+}
+
+/* Chronology is a worldbuilding section in the workspace's own frame, full width like World Rules; only its prose keeps
+   a reading measure. */
+.chronology > .settings__note,
+.chronology > .settings__caution {
+  max-width: 70ch;
+}
+
+/* The empty state sits under the Date periods heading, so it does not need an empty page's gap above it. */
+.chronology > .empty {
+  margin-top: var(--space-2);
+}
+
+/* The tab row: words under a hairline, the chosen one inked and underlined - never colour alone. On a phone the row
+   scrolls sideways inside itself rather than wrapping or widening the page. */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs__tab {
+  flex: none;
+  min-height: 2.75rem;
+  margin-bottom: -1px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-ui);
+  cursor: pointer;
+  transition:
+    color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease);
+}
+
+.tabs__tab:hover {
+  color: var(--ink);
+}
+
+.tabs__tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.tabs__tab:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.tabs__panel:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.tabs__panel > .settings__section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+@media (pointer: coarse) {
+  .tabs__tab {
+    min-height: var(--control-touch);
+  }
+}
+
+/* Publish: sections spaced and ruled like Settings', headed at the section size, status first. */
+.publish__section {
+  padding: var(--space-7) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.publish__section:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.publish__heading {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.publish__content {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Publish everything, under the counts: its note, its button and its confirmation, one after the other. */
+.publish__everything {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  margin-top: var(--space-5);
+}
+
+.publish__everything > .publication__confirm {
+  justify-self: stretch;
+}
+
+.publish__content li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-height: var(--control-md);
+}
+
+.publish__contentname {
+  font-weight: 600;
+}
+
+.publish__contentcount {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.settings__heading {
+  font-size: var(--text-body);
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+}
+
+.settings__note {
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-ui);
+  line-height: 1.6;
+}
+
+.settings__saved {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-ui);
+  color: var(--accent);
+}
+
+/* The one place in Settings where something cannot be taken back: its own ruled panel, set apart from
+   ordinary configuration by a hairline in the danger ink and a faint wash - restrained, never an alarm. The
+   first step is a quiet button in the danger ink; only the confirmation's last step is filled. */
+.settings__section--danger {
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--rule));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 4%, var(--surface));
+}
+
+.settings__section--danger .settings__heading {
+  color: var(--danger);
+}
+
+/* Attribution (ADR 0039): one checkbox, and the creator and work under it only when it is ticked. */
+.publication__attribution {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.publication__attributionfields {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--rule);
+}
+
+/* A story part's publication pill sits among a row's tools; its panel hangs from its end like the row's menu. */
+.partpub {
+  flex: none;
+}
+
+.contentpub__what {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* The prose's publication sits in the save bar, before Save; the bar holds to the screen's foot, so its panel opens
+   upward. Outside the text box's flow, so it never moves the first line of prose down. */
+.manuscript__publication {
+  margin-left: auto;
+}
+
+.manuscript__bar .contentpub__panel {
+  top: auto;
+  bottom: calc(100% + var(--space-1));
+}
+
+/* An inline confirmation: the question, what follows from it, and its choices - primary first. The same
+   bordered plate as Public portal's publish confirmation, never a side stripe (retired in 007). */
+.settings__confirm {
+  margin-top: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+}
+
+.settings__confirm:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.settings__section--danger .settings__confirm {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--rule));
+}
+
+.settings__confirmtitle {
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* A button that reads as a link inside a sentence. */
+.linkbutton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.settings__caution {
+  margin: 0 0 var(--space-4);
+  line-height: 1.55;
+}

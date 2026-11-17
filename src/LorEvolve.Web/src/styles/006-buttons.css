@@ -1,0 +1,239 @@
+/* ---------- Buttons ----------
+
+   One family, as classes on native `<button>` and `<a>` alike - never a component, so a link that
+   is an address stays a link. Primary is ink and means "the one thing this view is for"; secondary
+   is raised paper beside it; text is a quiet verb with no box; danger is only the final
+   confirmation of something destructive; `.iconbutton` is an icon with a name. The primary never
+   empties to an outline on hover and never marks where you are - that is the accent wash's job.
+
+   Sizing comes from padding, not from a minimum height, so a screen that re-skins a button into
+   a smaller thing (a row's quiet tools) keeps the size it asked for. 40px by default. */
+
+.button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: calc((var(--control-md) - 1.25rem - 2px) / 2) var(--space-4);
+  border: 1px solid var(--primary-bg);
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--primary-ink);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  line-height: 1.25rem;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease),
+    transform var(--duration-1) var(--ease);
+}
+
+/* A link dressed as a button reads as the button it looks like: no underline, no visited colour. */
+a.button,
+a.button:visited {
+  color: var(--primary-ink);
+  text-decoration: none;
+}
+
+/* Hover is for a pointer that hovers. Under a finger a tapped button would keep its hover fill until the next tap, so
+   the family's hover rules, and the cards that lift, wait for `(hover: hover)`; press states and focus rings do not. */
+@media (hover: hover) {
+  .button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--primary-bg) 86%, var(--surface));
+    border-color: color-mix(in srgb, var(--primary-bg) 86%, var(--surface));
+  }
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Unavailable is a quiet outline, never a heavy grey slab. */
+.button:disabled {
+  background: var(--raised);
+  border-color: var(--rule-strong);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* An explicit save (SaveAction): unavailable reads as the same quiet outline, but stays focusable, and the button keeps one
+   width through Save changes, Saving… and Saved. */
+.saveaction {
+  min-width: 8.5rem;
+}
+
+.saveaction[aria-disabled='true'],
+.saveaction[aria-disabled='true']:hover,
+.saveaction[aria-disabled='true']:active {
+  background: var(--raised);
+  border-color: var(--rule-strong);
+  color: var(--muted);
+  cursor: default;
+  transform: none;
+}
+
+.saveaction[data-state='saved'] {
+  color: var(--ink);
+}
+
+.button[aria-busy='true'] {
+  cursor: progress;
+}
+
+/* Secondary: an alternative beside a primary - Cancel, Try again, Restore. */
+.button--secondary {
+  background: var(--raised);
+  border-color: var(--border-control);
+  color: var(--ink);
+}
+
+a.button--secondary,
+a.button--secondary:visited {
+  color: var(--ink);
+}
+
+@media (hover: hover) {
+  .button--secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ink) 6%, var(--raised));
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+}
+
+.button--secondary:disabled {
+  background: var(--raised);
+  border-color: var(--rule);
+  opacity: 0.6;
+}
+
+/* Text: a per-item verb or a light action. No box until pointed at. */
+.button--text {
+  padding-inline: var(--space-2);
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+a.button--text,
+a.button--text:visited {
+  color: var(--muted);
+}
+
+@media (hover: hover) {
+  .button--text:hover:not(:disabled) {
+    background: var(--hover-wash);
+    border-color: transparent;
+    color: var(--ink);
+  }
+}
+
+.button--text:active:not(:disabled) {
+  background: var(--press-wash);
+  transform: none;
+}
+
+.button--text:disabled {
+  background: transparent;
+  border-color: transparent;
+  opacity: 0.5;
+}
+
+/* Only the last step of something that cannot be taken back. */
+.button--danger,
+a.button--danger,
+a.button--danger:visited {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--raised);
+}
+
+@media (hover: hover) {
+  .button--danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--danger) 86%, var(--surface));
+    border-color: color-mix(in srgb, var(--danger) 86%, var(--surface));
+  }
+}
+
+/* The first step of something that cannot be taken back: a secondary in the danger ink. The fill is kept for the
+   confirmation's last word. */
+.button--secondary.button--danger-quiet,
+.button--secondary.button--danger-quiet:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border-control));
+}
+
+/* The dense size, for a row's own tools (an era's Earlier and Later, a version's View and Restore); 44px under a
+   finger all the same. */
+.button--sm {
+  padding: calc((var(--control-sm) - 1.25rem - 2px) / 2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+/* A button that shows its action as well as naming it. The label stays and carries the name; the
+   icon only helps an eye scanning for it, so it is decorative, sized to the label and drawn in the
+   label's colour. The family is already a flex row; the class stays because screens name it. */
+.button__icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* An icon and nothing else: always an `aria-label` and a matching `title`. Square, a hover wash,
+   32px (44px under a finger). */
+.iconbutton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease);
+}
+
+@media (hover: hover) {
+  .iconbutton:hover:not(:disabled) {
+    background: var(--hover-wash);
+    color: var(--ink);
+  }
+}
+
+.iconbutton:active:not(:disabled),
+.iconbutton[aria-expanded='true'] {
+  background: var(--press-wash);
+  color: var(--ink);
+}
+
+.iconbutton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.iconbutton svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+@media (pointer: coarse) {
+  .button {
+    min-height: var(--control-touch);
+  }
+
+  .iconbutton {
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+}

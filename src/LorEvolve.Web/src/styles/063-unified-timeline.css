@@ -1,0 +1,72 @@
+/* ---------- The unified timeline (038) ----------
+
+   One spine for everything dated in the world. A row says what it is in a word beside its date - Moment, Scene,
+   Lore - never by colour alone, and only a moment opens here: a scene and an entry are links to where they live, so a
+   row never offers an edit it cannot make. A scene's mark is squared off, so a column of rows reads at a glance as the
+   world's own moments and the story's scenes interleaved. */
+
+.chron__controls {
+  margin-top: 1.5rem;
+}
+
+.chron__scope {
+  margin: 0 0 var(--space-4);
+  max-width: 62ch;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.moment__source {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.moment[data-source='1'] .moment__mark {
+  border-radius: 2px;
+}
+
+.moment__context {
+  --type-ink: color-mix(in srgb, var(--type-accent, var(--muted)) 65%, var(--ink));
+  margin: 0 0 0.4rem;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.moment__context a {
+  color: inherit;
+}
+
+.moment__context .lorechip__icon {
+  vertical-align: -0.125em;
+}
+
+.moment__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+/* Quiet until pointed at: the ways out of a row read as a line of facts, not a row of calls to action. Still
+   underlined, so a link never rests on colour alone. */
+.moment__links a {
+  color: var(--muted);
+  text-underline-offset: 0.2em;
+}
+
+.moment__links a:hover,
+.moment__links a:focus-visible {
+  color: var(--ink);
+}
+
+/* The story's way to its world chronology sits with its facts. */
+.story__timeline {
+  color: var(--muted);
+}
+
+.story__timeline:hover,
+.story__timeline:focus-visible {
+  color: var(--ink);
+}

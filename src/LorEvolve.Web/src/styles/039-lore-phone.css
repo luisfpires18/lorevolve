@@ -1,0 +1,180 @@
+/* ---------- Lore on a phone ---------- */
+
+@media (max-width: 640px) {
+  .lore {
+    /* Room under the last card and the pager for the create button at the bottom edge. */
+    padding-bottom: 4.5rem;
+  }
+
+  .lore .pageheader__main {
+    flex-wrap: nowrap;
+  }
+
+  .typeswitch {
+    display: none;
+  }
+
+  .typemenu {
+    display: inline-flex;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* The category menu and Filters share the first line; each level inside the category gets a full line beneath, in
+     order - so nothing wraps by accident and three buttons never crowd one line. */
+  .lore__nav {
+    flex-wrap: wrap;
+  }
+
+  .lore__filtertoggle {
+    order: 1;
+  }
+
+  .typemenu--sub {
+    order: 2;
+    flex-basis: 100%;
+  }
+
+  .typemenu__trigger {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .typemenu__chevron {
+    margin-left: auto;
+  }
+
+  .lore__filtertoggle {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .lore__filters[data-open='false'] {
+    display: none;
+  }
+
+  /* Filters folds only what narrows the list: the page size and Select stay on their own row, reachable however
+     Filters is set. */
+  .lore__controls {
+    margin-bottom: var(--space-4);
+  }
+
+  .lore__filters {
+    flex-basis: 100%;
+  }
+
+  .lore__search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  /* A phone: the editor stacks - name, how, value, then Apply - and every control takes the width; nothing is squeezed
+     onto one 360px line. A filter's remove button keeps a finger's size. */
+  .lore__fieldeditor {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .lore__fieldeditorop,
+  .lore__fieldeditorvalue {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .lore__removefilter {
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+
+  /* The header keeps the title and one icon action: Mass create keeps its name for assistive technology and its title. */
+  .lore__masscreate {
+    width: var(--control-touch);
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  .lore__masscreatelabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* One labelled "New …" at the bottom edge, clear of the home indicator - the header's own
+     button, moved, so there is never a second one. */
+  .lore__create {
+    position: fixed;
+    right: var(--gutter);
+    bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    z-index: var(--z-sticky);
+    max-width: calc(100vw - 2 * var(--gutter));
+    min-height: var(--control-touch);
+    padding-inline: var(--space-5);
+    box-shadow: var(--shadow-3);
+  }
+
+  .entitycard {
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .skeletoncard {
+    grid-template-columns: 4rem minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+
+  .lore__grid,
+  .lore__skeleton {
+    gap: var(--space-3);
+  }
+}
+
+.controls__filters {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.controls__filters .field {
+  min-width: 9rem;
+}
+
+.field__input--select {
+  padding-inline: 0.5rem;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* An entry's tags, on its page and in its history (the Lore card no longer shows them). */
+.dossier__tags {
+  margin: 0.5rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  padding: 0.0625rem var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}

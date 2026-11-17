@@ -1,0 +1,280 @@
+/* ---------- Projects (#139) ---------- */
+
+/* A sidebar group's head: the small muted capitals the type switcher's row labels use (#191). */
+.sidebar__grouphead {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The Projects screens: the list of projects, and one project. */
+.projects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.projects__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.projects__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* No Exact toggle here, so the input needs no room for it. */
+.projects__filters .lore__searchinput {
+  padding-right: 0.75rem;
+}
+
+/* A crumb over a panel's name takes a row of its own, as in `PageHeader`, so the head's action lines up with the name. */
+.projects__crumb {
+  flex-basis: 100%;
+}
+
+.projects__head:has(> .projects__crumb) {
+  row-gap: var(--space-2);
+}
+
+.projects__lede {
+  margin: 0;
+  color: var(--muted);
+}
+
+/*
+ * A panel's name and its lede, kept together so the panel's own primary action can sit opposite them on the same line
+ * and drop under them on a phone (#184).
+ */
+.projects__headtext {
+  display: grid;
+  flex: 1 1 20rem;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.projects__headtext > .sectionrule {
+  margin: 0;
+}
+
+.projects__filters {
+  margin: 0;
+}
+
+/*
+ * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
+ * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than
+ * being dealt into columns of unequal weight by the shell's grid (#184).
+ */
+.projectbody {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.projectbody > .projects + .projects {
+  padding-block-start: var(--space-6);
+  border-block-start: 1px solid var(--rule);
+}
+
+/*
+ * One project's frame (#192): its head and chips over the same destinations as its sidebar expansion (#377).
+ */
+.projectframe {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* Every project heads its own page, Lore's way: its name, facts and summary, then its views as chips (#377). */
+.projectframe__hero {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.projectframe__hero > .prose {
+  margin: 0;
+}
+
+.projectframe__hero .lorecatalog__group {
+  text-decoration: none;
+}
+
+/*
+ * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
+ * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.
+ */
+.projectmeta > span + span::before {
+  content: '\00b7';
+  margin: 0 var(--space-2);
+  color: var(--muted);
+}
+
+/*
+ * The panels on one project: its types and fields, its entries, its bands and units (#184). A card here is the same
+ * raised sheet a lore type's row already is, so a project reads as part of the app rather than as a second one that
+ * happens to live inside it. Its surface is the shared card rule in "Shared surfaces" (#252).
+ *
+ * The head keeps the title and the card's tools on one line and lets the tools drop under the title on a phone,
+ * rather than squeezing a name nobody can then read. A card's field list is the app's own `fieldlist`: the same rows
+ * the lore types screen draws, since they are the same thing.
+ */
+.projectcardlist {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.projectcard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.projectcard__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+
+.projectcard__title {
+  margin: 0;
+  font-size: var(--text-item);
+  line-height: 1.3;
+}
+
+/* What a card says about itself beside its name: a count, a kind, how many units a band holds. */
+.projectcard__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.projectcard__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
+ * What belongs under a row rather than beside it: a page's panels and the form that adds one. A `fieldlist__row` is a
+ * wrapping flex line, so a full-width item takes the next line of its own accord instead of being squeezed in beside
+ * the row's name and tools.
+ */
+.projectcard__under {
+  flex: 1 1 100%;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+/* A card's own sub-list: the units under a band, indented by a rule rather than by a second card inside the first. */
+.projectcard__inner {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  border-inline-start: 1px solid var(--rule);
+  list-style: none;
+}
+
+/*
+ * A form that answers one question in place of the row it replaces: the field and its two buttons on one line, each
+ * at its own width, and wrapping rather than overflowing when the name is long.
+ */
+.projectform--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.projectform--inline .field {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* Types: the Lore / Gaming switch and the game picker sit on one row above the tabs. */
+.types__context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.types__context .segmented {
+  align-self: flex-end;
+}
+
+/*
+ * Shelves (owner, 2026-11-17): the Creation pages draw what an author is making as the thing it will be, a game on a
+ * widescreen handheld, a film or series on a strip of film, a comic as an issue and a story as a book, in one grid that
+ * every page shares. The object carries the picture and is
+ * the one bold thing here; the title and status under it stay the app's quiet type, as a book's label would.
+ */
+.shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-7) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A handheld and a strip of film lie on their side, so their shelf has wider places. */
+.shelf--wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+}
+
+.shelfcard {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.shelfcard__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--text-item);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.shelfcard__link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The title's link covers the whole card, so the card is one target; the menu and Add picture sit above it. */
+.shelfcard__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--radius-md);
+}
+
+.shelfcard__link:focus-visible {
+  outline: none;
+}
+
+.shelfcard__link:focus-visible::after {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}

@@ -1,0 +1,37 @@
+/* ---------- Progress ---------- */
+
+/* One bar, two states, told apart by `data-state` rather than by two classes: `sending` fills to
+   the fraction of bytes that have left, `working` has no fraction and sweeps instead. The words
+   beside it are what actually say which - the movement is decoration, and under reduced motion
+   there is no movement at all. */
+.progressbar {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  background: var(--paper);
+}
+
+.progressbar__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+
+.progressbar[data-state='working'] .progressbar__fill {
+  width: 35%;
+  animation: progress-sweep 1.1s ease-in-out infinite;
+}
+
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(300%);
+  }
+}

@@ -1,0 +1,214 @@
+/* The type's picture in a medallion, gold-ringed like a doorway's; a nested type's a step smaller. */
+.types__icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--accent-rule);
+  background: color-mix(in srgb, var(--accent) 7%, var(--raised));
+  color: var(--accent);
+}
+
+.types__row[data-depth]:not([data-depth='0']) .types__icon {
+  width: 2rem;
+  height: 2rem;
+}
+
+.types__icon svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
+}
+
+.types__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.types__fieldcount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-full);
+  background: var(--paper);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.types__notice:empty {
+  display: none;
+}
+
+.types__notice {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-ui);
+}
+
+/* Why a type cannot be deleted, under it, with the way to fix it. */
+/* A type's semantic groups, in its editor (Issue #36): the chosen ones as chips, one select to add, and renaming and deleting
+   folded away beneath. */
+.typegroups__lede {
+  margin: calc(var(--space-3) * -1) 0 0;
+}
+
+.typegroups__chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.typegroups__new {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.typegroups__another {
+  align-self: flex-start;
+}
+
+.typegroups__newrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.typegroups__newrow .field__input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+/* The Groups tab of Types: a new group's name, then every group in its priority, numbered, each a row like a type's. */
+.typegroups--panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 48rem;
+}
+
+.typegroups__intro,
+.typegroups__empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.typegroups--panel .typegroups__list {
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  counter-reset: group-rank;
+}
+
+.typegroups--panel .typegroups__list:empty {
+  display: none;
+}
+
+.typegroups--panel .typegroups__item {
+  padding: var(--space-3) var(--space-4);
+  counter-increment: group-rank;
+}
+
+.typegroups--panel .typegroups__item + .typegroups__item {
+  border-top: 1px solid var(--rule);
+}
+
+.typegroups--panel .typegroups__name {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.typegroups--panel .typegroups__name::before {
+  content: counter(group-rank);
+  grid-row: span 2;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.typegroups--panel .typegroups__usage {
+  grid-column: 2;
+}
+
+.typegroups__move svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.typegroups__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.typegroups__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.typegroups__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.typegroups__usage {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.typegroups__actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.typegroups__delete:not(:disabled) {
+  color: var(--danger);
+}
+
+.typegroups__fields {
+  margin: var(--space-2) 0 0;
+  padding-inline-start: var(--space-5);
+}
+
+.types__blocked {
+  margin-top: var(--space-3);
+}
+
+.types__blockedtext {
+  margin: 0;
+}
+
+.types__blockedlinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0 0;
+}
+
+.types__blockedlinks:empty {
+  display: none;
+}
+
+/* In the type editor: the Family Tree choice's heading line. */
+.types__familylabel {
+  display: block;
+  font-weight: 600;
+}

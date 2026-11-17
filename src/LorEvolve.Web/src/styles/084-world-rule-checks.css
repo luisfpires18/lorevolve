@@ -1,0 +1,198 @@
+/* ---------- World rule checks ----------
+
+   Secondary to what a rule says, so quieter and below it, as a relation kind's Canon constraints are. The state of a saved check
+   is always a sentence with a label in words; the edge's colour and dashes only repeat it. */
+
+.rulerow__check {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.rule__check {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rule__legend {
+  width: 100%;
+  margin-bottom: 0.25rem;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--rule);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.rule__check > .field__hint {
+  margin: 0;
+}
+
+.rule__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rule__checkfields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.rule__max,
+.rule__checkwide {
+  grid-column: 1 / -1;
+}
+
+.rule__max .field__input {
+  max-width: 10rem;
+}
+
+.termselect__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.termselect__select,
+.termselect__name {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.termselect__new {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.termselect__new .field__error {
+  margin: 0;
+}
+
+/* The check's verdict as a callout: the accent when it holds, danger when it is broken, and the plain rule - dashed -
+   when it could not be decided. The words say which; the tone only backs them. */
+.rulecheck {
+  --callout-tone: var(--accent);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--callout-tone) 35%, var(--rule));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--callout-tone) 5%, var(--raised));
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.rulecheck[data-state='broken'] {
+  --callout-tone: var(--danger);
+}
+
+.rulecheck[data-state='incomplete'],
+.rulecheck[data-state='cannot'] {
+  --callout-tone: var(--muted);
+  border-style: dashed;
+}
+
+.rulecheck__state {
+  margin: 0;
+}
+
+.rulecheck__label {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.rulecheck__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.rulecheck__list li + li {
+  margin-top: 0.2rem;
+}
+
+.rulecheck__note {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* A moment's validation details: folded at the foot of the drawer, because most moments need none. */
+.moment__details {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+.moment__details > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.moment__details[open] > summary {
+  margin-bottom: 0.75rem;
+}
+
+.moment__detailscount {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.moment__detailsbody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.moment__detailsbody > .field__hint {
+  margin: 0;
+}
+
+.moment__validation {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.moment__validationlabel {
+  margin-right: 0.4rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* The vocabulary on the Types screen. */
+.terms__group {
+  margin-top: 1.25rem;
+}
+
+.terms__kind {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.terms__rename {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .rule__checkfields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

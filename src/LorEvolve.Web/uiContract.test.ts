@@ -19,7 +19,7 @@ const HOOK_ONLY = new Map<string, string>([
   ['moment__player', 'E2E timeline and text-direction specs read it'],
 ])
 
-// Classes used in a .tsx file with no rule in styles.css, mapped to the Issue that removes them.
+// Classes used in a .tsx file with no rule in src/styles/, mapped to the Issue that removes them.
 // Only shrinks. #248 means no child Issue removes it: owner decision at the end of the tracker.
 const UNDEFINED_TODAY = new Map<string, string>([
   ['aichange', '#248'],
@@ -119,7 +119,7 @@ const DIALOG_FILES = [
   'src/components/ImageViewer.tsx',
 ]
 
-// Font sizes written as a literal in styles.css instead of a --text-* token. Only goes down:
+// Font sizes written as a literal in src/styles/ instead of a --text-* token. Only goes down:
 // lower it when a screen's sizes move to tokens.
 const MAX_LITERAL_FONT_SIZES = 200
 
@@ -129,7 +129,12 @@ const tsxFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 
   .sort()
 
 const read = (file: string) => readFileSync(join(webRoot, file), 'utf8')
-const stylesheet = read('src/styles.css').replace(/\/\*[\s\S]*?\*\//g, '')
+const stylesheet = readdirSync(join(webRoot, 'src/styles'))
+  .filter((file) => file.endsWith('.css'))
+  .sort()
+  .map((file) => read('src/styles/' + file))
+  .join('\n')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
 
 const definedClasses = new Set(
   [...stylesheet.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)].map((match) => match[1]),
@@ -148,7 +153,7 @@ for (const file of tsxFiles) {
 
 const filesWith = (pattern: RegExp) => tsxFiles.filter((file) => pattern.test(read(file)))
 
-test('every class a component uses has a rule in styles.css', () => {
+test('every class a component uses has a rule in src/styles/', () => {
   const missing = [...usedClasses]
     .filter(
       ([name]) => !definedClasses.has(name) && !HOOK_ONLY.has(name) && !UNDEFINED_TODAY.has(name),
@@ -157,7 +162,7 @@ test('every class a component uses has a rule in styles.css', () => {
   assert.deepEqual(
     missing,
     [],
-    'Add a rule to styles.css, or reuse a class from docs/design/ui-components.md',
+    'Add a rule to src/styles/, or reuse a class from docs/design/ui-components.md',
   )
 
   const stale = [...HOOK_ONLY.keys(), ...UNDEFINED_TODAY.keys()].filter(
@@ -231,7 +236,7 @@ test('Field renders label, hint, control, error in that order', () => {
   )
 })
 
-test('literal font sizes in styles.css do not grow', () => {
+test('literal font sizes in src/styles/ do not grow', () => {
   let count = 0
   for (const match of stylesheet.matchAll(/(?<![-\w])font-size\s*:\s*([^;}]+)/g)) {
     const value = match[1].trim()

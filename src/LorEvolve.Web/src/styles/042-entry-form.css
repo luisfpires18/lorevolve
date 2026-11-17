@@ -1,0 +1,105 @@
+/* ---------- The entry's form ----------
+
+   One column at a form's measure, in the order an author thinks of an entry: the name and summary
+   in the header as they will be read, then the picture, then its other names and tags, then what its
+   type records. Headings and space group them; no box around each field. */
+
+.entryform {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  max-width: 46rem;
+  margin-top: var(--space-7);
+}
+
+/* Each part of the form on one quiet panel - a hairline and the faintest lift, the fields boxed inside it - so the
+   parts read as groups without a panel inside a panel. */
+.entryform__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--raised) 55%, transparent);
+}
+
+.entryform__heading {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .entryform__section {
+    padding: var(--space-4);
+  }
+}
+
+.entryform__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-5) var(--space-6);
+  align-items: start;
+}
+
+.entryform__note {
+  margin: 0;
+  font-size: var(--text-ui);
+  color: var(--muted);
+}
+
+/* What a copy takes from the entry it is made from (Issue #27), above the new entry's form. */
+.entrycopy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.entrycopy > p,
+.entrycopy__links {
+  margin: 0;
+}
+
+.entrycopy__options {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.entrycopy__options legend {
+  padding: 0;
+  margin-block-end: var(--space-1);
+  font-weight: 600;
+}
+
+.entrycopy__links {
+  padding-inline-start: 1.25rem;
+}
+
+.entrycopy__href {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* The form's bar: its state in words on the left, Cancel and Save on the right. It holds to the bottom
+   of the screen while the form is longer than it is, and settles at the form's end. */
+.entry__actions.actionbar {
+  max-width: 46rem;
+  margin-top: var(--space-7);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--rule));
+  border-radius: var(--radius-md);
+}
+
+.actionbar__status {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.actionbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: auto;
+}

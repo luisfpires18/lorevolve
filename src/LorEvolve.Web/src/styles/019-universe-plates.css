@@ -1,0 +1,227 @@
+/* ---------- Universe plates ---------- */
+
+.plates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
+}
+
+/* A world's card: its artwork across the head - or its own colour as a dusk - fading into the card, the spine in its
+   colour down the edge, then its name, its opening line and when it last changed. Under the pointer it rises, its
+   edge warms and the picture leans in a little. */
+.plate {
+  --plate-accent: var(--rule-strong);
+
+  position: relative;
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'spine art'
+    'spine body';
+  height: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color var(--duration-1) var(--ease),
+    box-shadow var(--duration-2) var(--ease),
+    transform var(--duration-2) var(--ease);
+}
+
+@media (hover: hover) {
+  .plate:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
+}
+
+.plate:focus-visible {
+  outline-offset: 3px;
+}
+
+.plate__art {
+  grid-area: art;
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 160% at 90% 0%,
+      color-mix(in srgb, var(--plate-accent) 45%, transparent),
+      transparent 65%
+    ),
+    radial-gradient(
+      90% 120% at 10% 100%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(160deg, color-mix(in srgb, var(--plate-accent) 18%, var(--paper)), var(--paper));
+}
+
+/* The picture's foot dissolves into the card, so the name reads as written under it rather than beside a photo. */
+.plate__art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to bottom,
+    transparent 55%,
+    color-mix(in srgb, var(--raised) 85%, transparent)
+  );
+}
+
+/* No artwork: the world's initial, large and faint, in the display face. Drawn here from the attribute, so it is never
+   part of the card's text. */
+.plate__art[data-initial]::after {
+  content: attr(data-initial);
+  position: absolute;
+  right: var(--space-5);
+  bottom: -0.35em;
+  font-family: var(--display);
+  font-size: 5.5rem;
+  line-height: 1;
+  color: var(--ink);
+  opacity: 0.2;
+}
+
+@media (max-width: 640px) {
+  .plate__art {
+    aspect-ratio: 16 / 6;
+  }
+}
+
+.plate__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-3) var(--ease);
+}
+
+@media (hover: hover) {
+  .plate:hover .plate__image {
+    transform: scale(1.03);
+  }
+}
+
+.plate__spine {
+  grid-area: spine;
+  background: var(--plate-accent);
+}
+
+.plate__body {
+  grid-area: body;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  min-width: 0;
+}
+
+.plate__name {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+
+.plate__description {
+  font-size: var(--text-ui);
+  line-height: 1.55;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.plate__description--empty {
+  color: var(--muted);
+}
+
+.plate__meta {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.plate__updated {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.plate__clock {
+  flex: none;
+  width: 0.9375rem;
+  height: 0.9375rem;
+}
+
+.plate__archived {
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-xs);
+  padding: 0.1rem var(--space-2);
+  font-size: var(--text-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate:hover,
+  .plate:hover .plate__image {
+    transform: none;
+  }
+}
+
+/* A shared universe's role, and its archive mark beside it: grouped at the meta line's end, wrapping before they crowd. */
+.plate__marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.plate__role {
+  padding: 0.1rem var(--space-2);
+  border: 1px solid var(--accent-rule);
+  border-radius: var(--radius-full);
+  color: var(--ink);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+/* A read-only collaborator's chronology (030): the period's name, and how its years run, without the form around it. */
+.era__readname {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* A world rule read, not edited (030): its words as written, line breaks kept. */
+.rule__reading {
+  max-width: 46rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rule__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}

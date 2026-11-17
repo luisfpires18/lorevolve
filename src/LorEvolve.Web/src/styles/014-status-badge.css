@@ -1,0 +1,43 @@
+/* ---------- Status badge ----------
+
+   `StatusBadge`: a drawn glyph and the word, in the metadata voice. Hollow, half, filled for the
+   three steps; the word says it too, so neither colour nor the glyph carries it alone. Compact and
+   borderless, so a status informs a card rather than headlining it. */
+
+.statusbadge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.35em;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.statusbadge::before {
+  content: '';
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border: 1.5px solid currentcolor;
+  border-radius: var(--radius-full);
+}
+
+.statusbadge[data-step='1'] {
+  color: var(--accent);
+}
+
+.statusbadge[data-step='1']::before {
+  background: linear-gradient(90deg, currentcolor 50%, transparent 50%);
+}
+
+.statusbadge[data-step='2'] {
+  color: var(--ink);
+}
+
+.statusbadge[data-step='2']::before {
+  background: currentcolor;
+}

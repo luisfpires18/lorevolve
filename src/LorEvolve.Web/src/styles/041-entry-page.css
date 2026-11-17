@@ -1,0 +1,291 @@
+/* ---------- The entry's page: article, picture, facts ----------
+
+   Desktop: the article at its reading measure on the left; on the right, the picture and then the facts, as
+   an infobox. The article column fills to its 46rem first; only then does the infobox column take what is left (#57),
+   so it widens with the content box - continuously, no breakpoint - and the page reaches its right edge with neither a
+   void between the text and its picture nor one after them, while the prose keeps its measure. A picture
+   wider than it is tall would be a strip in that column, so it spans the page
+   above both instead, bounded in height so it introduces the article rather than replacing it. The
+   picture is always the original, shown whole: only maxima are set, so nothing is cropped,
+   stretched or blown up past its own size, and its `width`/`height` reserve its shape before it
+   loads. No picture, no column - the facts take its place. */
+
+.entry__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 46rem) minmax(20rem, 1fr);
+  grid-template-areas: 'main rail';
+  align-items: start;
+  gap: var(--space-6) var(--space-7);
+  margin-top: var(--space-6);
+}
+
+.entry__layout[data-picture='true'] {
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'main media'
+    'main rail';
+}
+
+/* Progression, Relations and History: the view on the left, the picture held on the right while it scrolls,
+   whatever the picture's shape. No picture, the view takes the width. */
+.entry__layout.entry__layout--view {
+  grid-template-rows: none;
+  grid-template-areas: 'main media';
+}
+
+.entry__layout--view[data-picture='false'] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'main';
+}
+
+.entry__layout--view .entry__media {
+  position: sticky;
+  top: var(--space-6);
+}
+
+.entry__media {
+  grid-area: media;
+  justify-self: end;
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+}
+
+/* The picture in a frame: a raised mount with a hairline edge, the picture inset in it. */
+.entry__media {
+  padding: var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: calc(var(--radius-md) + 2px);
+  background: var(--raised);
+  box-shadow: var(--shadow-2);
+}
+
+/* A stage's picture, chosen above the frame's picture: a quiet row of choices, the shown one marked. */
+.entry__stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  max-width: 100%;
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+}
+
+.entry__stage {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.entry__stage:hover {
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+
+.entry__stage[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--ink);
+}
+
+@media (pointer: coarse) {
+  .entry__stage {
+    min-height: var(--control-touch);
+  }
+}
+
+.entry__media img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(36rem, 75vh);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.entry__layout[data-shape='landscape'] .entry__media img {
+  max-height: min(26rem, 52vh);
+}
+
+/* Over the picture's corner, on its own small plate so it reads on a light or a dark picture. */
+.entry__expand {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: color-mix(in srgb, var(--raised) 88%, transparent);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+
+/* With the stage choices across the frame's top, the expand button moves to the picture's foot. */
+.entry__media:has(.entry__stages) .entry__expand {
+  top: auto;
+  bottom: var(--space-4);
+}
+
+.entry__expand:hover:not(:disabled) {
+  background: var(--raised);
+}
+
+.entry__main {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+  min-width: 0;
+}
+
+.entry__rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Relations and History are the page when they are open, so the rule each one draws above itself -
+   which separated it from the article when all three were stacked - would only double the bar's. */
+.entry__view {
+  margin-top: 0.5rem;
+}
+
+.entry__view > .relations,
+.entry__view > .history {
+  margin-top: 1.5rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.entry__blank {
+  color: var(--muted);
+}
+
+.rail__block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rail__heading {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.rail__meta {
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* The facts a type records, on the sunken paper an infobox is set on. */
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.facts__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.facts__key {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.facts__value {
+  margin: 0;
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+/* An entry's facts in its type's sections (Issue #26): the ungrouped ones first, each section folded or open beneath. */
+.facts__sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* One section of a type's fields, in the entry form and on the entry: a native fold, named, saying what it holds. */
+.fieldsection {
+  border-top: 1px solid var(--rule);
+  padding-top: var(--space-3);
+}
+
+.fieldsection__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.fieldsection__summary::-webkit-details-marker {
+  display: none;
+}
+
+.fieldsection__chevron {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  align-self: center;
+  color: var(--muted);
+  transition: transform 120ms ease-out;
+}
+
+.fieldsection[open] > .fieldsection__summary .fieldsection__chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fieldsection__chevron {
+    transition: none;
+  }
+}
+
+.fieldsection__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fieldsection__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.fieldsection__alert {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.fieldsection[data-attention='true'] > .fieldsection__summary .fieldsection__name {
+  color: var(--danger);
+}
+
+.fieldsection[open] > .fieldsection__body {
+  margin-top: var(--space-4);
+}
+
+.entry__rail .fieldsection[open] > .fieldsection__body {
+  margin-top: var(--space-2);
+}

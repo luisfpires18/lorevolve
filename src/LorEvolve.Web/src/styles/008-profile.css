@@ -1,0 +1,18 @@
+/* ---------- Profile ---------- */
+
+/* The one centred column in LorEvolve. Every other screen reads from the left, but an account is
+   a single small thing about one person, and a portrait with its facts beneath it is the shape
+   that says so. Capped at a narrow measure so the facts stay under the circle on a wide
+   display instead of stretching away from it. */
+.profile {
+  max-width: 26rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.profile__title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 2.6vw, 2.1rem);
+  margin: 0 0 2rem;
+}

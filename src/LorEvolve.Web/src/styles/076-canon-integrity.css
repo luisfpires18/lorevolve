@@ -1,0 +1,205 @@
+/* ---------- Canon integrity ----------
+
+   A finding is an editorial objection, so it is set as marginalia rather than as a row.
+   The severity stands out in the margin the way the year does on the chronology, because
+   it is the one thing that decides whether this needs attention now, and the bar beside
+   it carries the same weight: solid for High, which refuses a save, a hairline for
+   Medium, dashed for Low, which is only a remark.
+
+   Findings that are no longer live - dismissed, or closed by evaluation - are set back in
+   the muted ink rather than hidden, so a list that has been worked through still reads as
+   one. */
+
+/* What blocking actually means, stated once and permanently, so nothing else on the
+   screen has to imply it. */
+.integrity__law {
+  margin: var(--space-6) 0 0;
+  max-width: 66ch;
+  font-size: var(--text-sm);
+}
+
+.integrity__law strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.integrity__run {
+  margin: 1.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.integrity__ledger {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+}
+
+.finding {
+  position: relative;
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  column-gap: var(--space-7);
+  padding-bottom: 2.5rem;
+}
+
+.finding:last-child {
+  padding-bottom: 0.5rem;
+}
+
+.finding__margin {
+  text-align: right;
+  padding-right: var(--space-5);
+}
+
+/* The bar stands in the gutter and runs the height of the note it marks, so severity is
+   legible before a word of it is read. */
+.finding__mark {
+  position: absolute;
+  left: 7.5rem;
+  top: 0.2rem;
+  bottom: 2.5rem;
+  width: 2px;
+  background: var(--rule);
+}
+
+.finding:last-child .finding__mark {
+  bottom: 0.5rem;
+}
+
+.finding[data-severity='2'] .finding__mark {
+  width: 3px;
+  background: var(--danger);
+}
+
+.finding[data-severity='1'] .finding__mark {
+  background: var(--rule-strong);
+}
+
+.finding[data-severity='0'] .finding__mark {
+  width: 0;
+  border-right: 1px dashed var(--rule-strong);
+}
+
+.finding__severity {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--text-body);
+  line-height: 1.2;
+}
+
+.finding[data-severity='2'] .finding__severity {
+  color: var(--danger);
+}
+
+.finding__rule {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.finding__body {
+  min-width: 0;
+}
+
+/* Settled business is set back, not removed. */
+.finding[data-status='1'] .finding__body,
+.finding[data-status='2'] .finding__body {
+  color: var(--muted);
+}
+
+.finding[data-status='1'] .finding__title,
+.finding[data-status='2'] .finding__title {
+  color: var(--muted);
+}
+
+.finding__stamp {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.7rem;
+  margin: 0;
+}
+
+.finding__status,
+.finding__when {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* Open is the only status worth marking, and only by weight; the closed ones stay quiet. */
+.finding[data-status='0'] .finding__status {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.finding__title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-item);
+  margin: 0.3rem 0 0.4rem;
+  overflow-wrap: anywhere;
+}
+
+.finding__account {
+  margin: 0 0 0.7rem;
+  max-width: 64ch;
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.finding__subjects {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem var(--space-5);
+  margin: 0 0 0.7rem;
+  padding: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* A subject named by a long unbroken word - a moment's title, say - wraps inside the column instead of widening it. */
+.finding__subjects > li {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.finding__role,
+.refusal__role {
+  display: inline-block;
+  margin-right: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.finding__role::first-letter,
+.refusal__role::first-letter {
+  text-transform: uppercase;
+}
+
+.finding__kind {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.finding__gone {
+  color: var(--muted);
+}
+
+.finding__tools {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+.finding__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  max-width: 52ch;
+}

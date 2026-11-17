@@ -1,0 +1,268 @@
+/* ---------- Connect to AI, the consent screen and Connected apps (ADR 0046) ----------
+   Connect to AI is a button beside the search, folding to its icon on a phone, with the moment drawer's frame,
+   holding the address with its copy button, the steps, and what the app may read. The consent screen
+   is one centred card (issue 38), not the sign-in plate: one part after another, each named by a small label; a caution
+   is the warning callout.
+   Connected apps are rows like the collaborators', each with its own inline confirmation. */
+
+.connect__body {
+  gap: var(--space-5);
+}
+
+.connect__copyrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.connect__input {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.connect__hint,
+.connect__status,
+.connect__manage {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.connect__status:empty {
+  display: none;
+}
+
+.connect__heading {
+  margin: 0 0 var(--space-2);
+  font-size: 0.925rem;
+  font-weight: 600;
+}
+
+.connect__steps,
+.connect__list,
+.consent__list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.connect__section .settings__note {
+  margin-top: var(--space-3);
+}
+
+/* The page is paper; the card is the surface. Auto margins centre it while it fits and let it start at the top, never
+   clipped, when it does not - a zoomed page or a long request simply scrolls. */
+.consent-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  padding: max(var(--space-7), env(safe-area-inset-top))
+    max(var(--space-4), env(safe-area-inset-right)) max(var(--space-7), env(safe-area-inset-bottom))
+    max(var(--space-4), env(safe-area-inset-left));
+}
+
+.consent-card {
+  width: 100%;
+  max-width: 32rem;
+  margin: auto;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-7) var(--space-7) var(--space-6);
+}
+
+.consent-card:focus {
+  outline: none;
+}
+
+.consent-card__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.consent-card__brand .brandmark {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.consent-card__heading {
+  font-size: 1.625rem;
+}
+
+.consent-card__intro {
+  margin: var(--space-1) 0 var(--space-5);
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.consent-card__footer {
+  margin: var(--space-4) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.consent {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.consent__part {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.consent__part + .consent__part {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+/* A label sits with its value rather than a gap's width away. */
+.consent__label + .consent__app,
+.consent__label + .consent__universe {
+  margin-top: calc(-1 * var(--space-1));
+}
+
+/* A part's name: sentence case, quiet, the metadata size - the letter-spaced capitals retired everywhere else (contract
+   section 8.2). */
+.consent__label {
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.consent__app,
+.consent__universe {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.consent__identity {
+  margin: 0;
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.consent .consent__list {
+  gap: 0.125rem;
+  font-size: var(--text-ui);
+}
+
+.consent__warning {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-ui);
+}
+
+.consent__part--notes .settings__note {
+  margin: 0;
+}
+
+/* Approve and Deny follow the request, and on a screen tall enough to spare the room they stay pinned to its foot while a
+   long request scrolls past, so the decision is never below the fold. A short or zoomed screen keeps them in the flow
+   instead, rather than give up a third of it to two buttons. */
+.consent__actions {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+@media (min-height: 34rem) {
+  .consent__actions {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    margin-bottom: calc(-1 * var(--space-4));
+  }
+}
+
+@media (max-width: 30rem) {
+  .consent-page {
+    padding-top: max(var(--space-4), env(safe-area-inset-top));
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .consent-card {
+    padding: var(--space-6) var(--space-5) var(--space-5);
+  }
+
+  .consent__actions .button {
+    flex: 1 1 6rem;
+  }
+}
+
+.connectedapps__list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.connectedapps__empty {
+  margin: var(--space-3) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+
+.connectedapps__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.connectedapps__who {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.connectedapps__name {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.connectedapps__meta,
+.connectedapps__status {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.connectedapps__status {
+  color: var(--ink);
+}
+
+.connectedapps__status--off {
+  color: var(--warning);
+}
+
+.connectedapps__confirm,
+.connectedapps__error {
+  flex: 1 1 100%;
+}
+
+.profile__subtitle:focus {
+  outline: none;
+}
+
+.profile__subtitle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

@@ -49,7 +49,7 @@ Owner decisions and pinned guarantees made before this audit. The contract works
 | The content column is never capped at page level; reading measures are local (article 62ch, summary 58ch, settings 34rem). | STATE: full-width workspace |
 | One entry header: type crumb, Canon control at the far end, name, aliases, summary; one bar with the three routed views (not a tablist) and the actions, all above the article at 390 and 1440. The picture sits in the article's column, bounded by `min(22rem, 45vh)`. | UX-001, ADR 0028 amendment |
 | A story's three views share one short header; at 390px the first scene and the manuscript text box are on the first screen. | Phase 2 closeout, `story-workspace.spec.ts` |
-| The primary action is ink, not accent. | `.button` rule in `styles.css` |
+| The primary action is ink, not accent. | `.button` rule in `styles/006-buttons.css` |
 | Every Lore type is reachable without scrolling the type bar (wrapping rows). Reopened only by Decision 1. | `fix/type-filter-wrap` |
 | Authored text: names in `<bdi>`, prose in `.prose`, `dir="auto"` only on title fields and on elements that cut with an ellipsis. | Passes 002-003, SYSTEMS |
 | One icon family (`lucide-react`). No new dependency, no UI framework, no Tailwind. | ADR 0020, task brief |
@@ -459,7 +459,7 @@ its icon.
 | Modal, ConfirmDialog | Destructive confirmation goes through `confirmAction` and `ConfirmHost` (ADR 0049). |
 | Tooltip | `title` plus `aria-label` covers icon buttons. |
 | Toasts | Save status lives in the ActionBar; no global notification system. |
-| A token pipeline, Storybook, splitting `styles.css` into many files | Custom properties stay in `styles.css`; shared patterns go in the "Shared surfaces" section. |
+| A token pipeline, Storybook | Custom properties stay in the foundation part, `styles/001-foundation.css`; shared patterns go in the "Shared surfaces" section. The file split itself was done by #391 under tracker #380: `styles.css` is now the ordered `@import` list of the files under `styles/`. |
 
 ---
 

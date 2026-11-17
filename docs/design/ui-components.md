@@ -3,7 +3,7 @@
 One page. Read it before any UI change, and reuse a row before writing something new.
 The design contract is `LOREVOLVE_VISUAL_REFACTOR.md` section 5. This page lists what exists.
 
-Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first rule in `styles.css`.
+Paths are under `src/LorEvolve.Web/src/`. A class names the file and line of its first rule under `styles/`.
 
 ## Need, use this
 
@@ -12,41 +12,41 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | Screen title, crumb, lede, actions | `components/PageHeader.tsx`. A crumb outside a header, or of several steps, is `.pageheader__crumb` around a `nav > ol` |
 | A form field: label, hint, control, error | `components/Field.tsx`: an input, or any control through its slot; a group of buttons with `group`; a set of controls under a legend with `group: 'fieldset'` |
 | The name above a fixed value that is shown, not chosen, such as the knower in a knowledge form | `.knowledge__fixedlabel`; no `Field`, since it names no control |
-| A button or a link that looks like one | `.button` 519, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
-| An icon with a name | `.iconbutton` 696 |
+| A button or a link that looks like one | `.button` in `styles/006-buttons.css:12`, with `--secondary`, `--text`, `--danger`, `--sm`; the icon inside is `components/ActionIcon.tsx` |
+| An icon with a name | `.iconbutton` in `styles/006-buttons.css:189` |
 | Save with its status | `components/SaveAction.tsx` |
 | Row tools behind a ⋯ | `components/ActionMenu.tsx` |
 | Empty list or view | `components/EmptyState.tsx` |
 | A status word with its glyph | `components/StatusBadge.tsx` |
 | An entry's picture or type icon | `components/EntityTile.tsx` |
 | Tabs on one screen | `QueryTabList` and `TabPanel` from `components/QueryTabs.tsx` |
-| Routed views of one object | `.views` 10119; project and story views are chips, below |
+| Routed views of one object | `.views` in `styles/070-view-switcher.css:9`; project and story views are chips, below |
 | A project's or story-backed project's views as chips | `components/ViewChips.tsx`, on `.lorecatalog__groups` and `.lorecatalog__group`; `ProjectShell` heads every kind with it |
 | A project structure node in the Stories look: arc, chapter, scene card | `components/OutlineItem.tsx`, on `.plotarc`, `.chapter` and `.scene`; used by `ProjectOutline` and `ComicCollections` |
 | A list of parts beside a text editor | `components/ManuscriptParts.tsx`, on `.manuscript` and `.msoutline`; a story's Manuscript and a project's Script |
 | A raised card's surface | `.entitycard`, `.typecard`, `.projectcard` share one rule, first in "Shared surfaces" |
 | A sidebar group's head | `.sidebar__grouphead` |
 | The universe sidebar | Four parts from `SECTION_GROUPS` in `universes/sections.ts`, drawn by one loop in `pages/UniverseWorkspace.tsx`: Overview, World Building, Creation, Management. A destination is a section entry, never a new nav widget. A section tied to a kind of project carries `needs` and is offered by `offered()` only while the universe has a project of that family (#272); a group with nothing offered is hidden. Below 860px the same nav is an off-canvas drawer opened by the bar's Sections toggle; there is no second phone nav |
-| A choice on the page | `.segmented` 1996 |
+| A choice on the page | `.segmented` in `styles/018-controls.css:168` |
 | Confirm a destructive step | `confirmAction` in `lib/confirm.ts:79`, drawn by `ConfirmHost` in `components/ConfirmDialog.tsx` (ADR 0049) |
 | Confirm leaving unsaved work | `confirmDiscard` in `lib/confirm.ts:91` |
 | A drawer: head, body, actions, Escape and backdrop guarded | `components/Drawer.tsx` |
 | Guard a drawer against a lost draft | `useDrawerGuard` in `lib/drawerGuard.ts:31`, used through `Drawer` |
-| A drawer's look | `.drawer*` 9276 |
+| A drawer's look | `.drawer*` in `styles/066-moment-drawer.css:3` |
 | Ask for one value, such as a link address | A Drawer with `onSubmit` and a `Field`, as `LinkDrawer` in `components/LoreEditor.tsx`; never `window.prompt` or `window.alert` |
-| A message box | `.callout` 2476, `.notice` 2438 |
-| A form's own message | `.form__message` 423 |
-| Sticky status and actions for a document or drawer | `.actionbar` 2568 |
-| A section heading with its rule | `.sectionrule` 1524 |
-| A loading placeholder | `.skeleton` 2585 |
-| A pan and zoom canvas of cards and lines | `usePanZoom` and `fitView` in `lib/usePanZoom.ts`, with `.boardcanvas*` 18314, `.boardline*` 18361 and `.boardcard*` 18390. Used by `IdeaBoardCanvas` and `SystemMachineCanvas` |
-| A state machine's handle, transition label and arrowhead | `.machinecanvas__handle` 18490, `.machinecanvas__label` 18523, `.machinecanvas__head` 18551, drawn by `SystemMachineCanvas`; a group of its rows under the canvas is `.machinepanel__group` 18620 |
-| A state's open finding count, and a transition's mark after trying an entry | `.machinecanvas__findings` 18561, a `StatusBadge` on a pill on the state card's top edge, drawn by `SystemMachineCanvas` (a state row shows the same `StatusBadge`); `.machinecanvas__mark` 18574, holds, fails or unknown as a word and an icon, drawn by `GuardMark` on the label and the row. The "Try an entry" group is `components/SystemMachineTry.tsx`; the mark's words are `worldLogic/markText.ts` |
-| A shelf of things an author is making, with a picture each: a game on a handheld (`console`), a film or series on a strip of film (`film`, 16:10), a comic as an issue (`comic`, 2:3), a story as a book (`book`) | `components/ShelfCard.tsx` with `.shelf` 19061; `frame` picks the object, `onAddPicture` offers Add picture on an empty one. Gaming, Cinema and Comic share `pages/CategoryShelfPage.tsx` (kinds, frame, empty words, second view); Writing is `StoriesPage`. `CoverDrawer` sets the picture, `projectCoverStore(id, kind)` its frame |
-| A condition built from blocks: groups, rows, read-only parts | `components/GuardBuilder.tsx` with `.guardbuilder` 18635 and `.guardblock*`; the tree logic is `worldLogic/guard.ts` and the closed sets `worldLogic/conditionSchema.ts`. Opened as a transition's guard by `GuardBuilderDrawer` in `SystemMachinePanel` |
+| A message box | `.callout` in `styles/021-states.css:41`, `.notice` in `styles/021-states.css:3` |
+| A form's own message | `.form__message` in `styles/005-forms.css:14` |
+| Sticky status and actions for a document or drawer | `.actionbar` in `styles/022-shared-surfaces.css:58` |
+| A section heading with its rule | `.sectionrule` in `styles/013-page-header.css:111` |
+| A loading placeholder | `.skeleton` in `styles/022-shared-surfaces.css:75` |
+| A pan and zoom canvas of cards and lines | `usePanZoom` and `fitView` in `lib/usePanZoom.ts`, with `.boardcanvas*` in `styles/124-idea-boards.css:74`, `.boardline*` in `styles/124-idea-boards.css:121` and `.boardcard*` in `styles/124-idea-boards.css:150`. Used by `IdeaBoardCanvas` and `SystemMachineCanvas` |
+| A state machine's handle, transition label and arrowhead | `.machinecanvas__handle` in `styles/125-idea-boards-2.css:3`, `.machinecanvas__label` in `styles/125-idea-boards-2.css:36`, `.machinecanvas__head` in `styles/125-idea-boards-2.css:64`, drawn by `SystemMachineCanvas`; a group of its rows under the canvas is `.machinepanel__group` in `styles/125-idea-boards-2.css:133` |
+| A state's open finding count, and a transition's mark after trying an entry | `.machinecanvas__findings` in `styles/125-idea-boards-2.css:74`, a `StatusBadge` on a pill on the state card's top edge, drawn by `SystemMachineCanvas` (a state row shows the same `StatusBadge`); `.machinecanvas__mark` in `styles/125-idea-boards-2.css:87`, holds, fails or unknown as a word and an icon, drawn by `GuardMark` on the label and the row. The "Try an entry" group is `components/SystemMachineTry.tsx`; the mark's words are `worldLogic/markText.ts` |
+| A shelf of things an author is making, with a picture each: a game on a handheld (`console`), a film or series on a strip of film (`film`, 16:10), a comic as an issue (`comic`, 2:3), a story as a book (`book`) | `components/ShelfCard.tsx` with `.shelf` in `styles/127-projects.css:229`; `frame` picks the object, `onAddPicture` offers Add picture on an empty one. Gaming, Cinema and Comic share `pages/CategoryShelfPage.tsx` (kinds, frame, empty words, second view); Writing is `StoriesPage`. `CoverDrawer` sets the picture, `projectCoverStore(id, kind)` its frame |
+| A condition built from blocks: groups, rows, read-only parts | `components/GuardBuilder.tsx` with `.guardbuilder` in `styles/125-idea-boards-2.css:148` and `.guardblock*`; the tree logic is `worldLogic/guard.ts` and the closed sets `worldLogic/conditionSchema.ts`. Opened as a transition's guard by `GuardBuilderDrawer` in `SystemMachinePanel` |
 
-Form and button rules start with their own comments: forms at `styles.css:410`, buttons at `styles.css:508`.
-The stylesheet keeps shared patterns in its "Shared surfaces" section, at line 2511.
+Form and button rules start with their own comments: forms in `styles/005-forms.css`, buttons in `styles/006-buttons.css`.
+The stylesheet keeps shared patterns in its "Shared surfaces" section, `styles/022-shared-surfaces.css`.
 
 ## Verbs
 
@@ -67,7 +67,7 @@ One word for one act, on every screen and in both languages.
 
 ## Tokens
 
-Custom properties of the first `:root` block (`styles.css:37-131`). Use these names, not literal values. Values are left out so this page does not drift when a colour moves.
+Custom properties of the first `:root` block (`styles/001-foundation.css:37-131`). Use these names, not literal values. Values are left out so this page does not drift when a colour moves.
 
 - Surfaces: `--paper`, `--surface`, `--raised`, `--plate`, `--plate-ink`, `--plate-muted`, `--plate-ink-accent`
 - Ink: `--ink`, `--muted`, `--accent`, `--danger`, `--warning`
@@ -89,4 +89,4 @@ Three screens confirm in place of their button instead of through `confirmAction
 
 Add a class or a component only when no row above fits. Add its row to this page in the same PR.
 
-`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule in `styles.css`, a new hand-written `<dialog`, a `label > span.field__label` field, a `field__label` outside `Field.tsx`, more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.
+`uiContract.test.ts` (run by `npm test`) holds the line. It fails on a class with no rule under `styles/`, a new hand-written `<dialog`, a `label > span.field__label` field, a `field__label` outside `Field.tsx`, more literal `font-size` values than the stylesheet has now, and any `window.prompt`, `window.alert` or `window.confirm` under `src/`. Its allowlists only shrink: fix a file, then remove it from the list.

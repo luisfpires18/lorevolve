@@ -1,0 +1,62 @@
+/* The beats in the scene drawer: one row per beat - its number, its title and note, and its tools at the end. */
+.scenebeats {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.scenebeats__list {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+  padding: 0;
+}
+
+.scenebeats__item {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  align-items: start;
+}
+
+.scenebeats__number {
+  padding-top: 0.55rem;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.scenebeats__fields {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.scenebeats__note {
+  font-size: var(--text-sm);
+}
+
+.scenebeats__tools {
+  display: flex;
+  gap: 0.1rem;
+  padding-top: 0.2rem;
+}
+
+.scenebeats__add {
+  justify-self: start;
+}
+
+@media (max-width: 640px) {
+  /* On a phone a beat's tools sit under its fields, so the title keeps the width. */
+  .scenebeats__item {
+    grid-template-columns: 1.4rem minmax(0, 1fr);
+  }
+
+  .scenebeats__tools {
+    grid-column: 2;
+    padding-top: 0;
+  }
+}

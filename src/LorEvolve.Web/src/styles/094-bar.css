@@ -1,0 +1,284 @@
+/* ---------- The bar ----------
+
+   Brand, the one destination the portal has, the search, and the way in - or back to the workspace. Solid,
+   with a hairline, above every portal page. On a tablet and down the search takes a row of its own. */
+.portal__bar {
+  position: relative;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  min-height: 4rem;
+  padding: 0 max(var(--portal-gutter), (100% - var(--portal-width)) / 2);
+  border-bottom: 1px solid var(--portal-line);
+  background: var(--portal-bar-bg);
+}
+
+.portal__bar .wordmark {
+  font-size: 1.5rem;
+}
+
+.portal__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+  color: var(--portal-ink);
+  text-decoration: none;
+}
+
+.portal__nav {
+  display: flex;
+  align-self: stretch;
+  gap: var(--space-5);
+}
+
+/* A destination: the page you are on is marked by a rule along the bar's foot, as well as by colour. */
+.portal__link {
+  display: inline-flex;
+  align-items: center;
+  color: rgb(var(--portal-ink-rgb) / 0.78);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.portal__link:hover {
+  color: var(--portal-ink);
+}
+
+.portal__link[aria-current='page'] {
+  color: var(--portal-ink);
+  box-shadow: inset 0 -2px 0 var(--portal-ink);
+}
+
+.portal__session {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+}
+
+/* Signed out, the theme is chosen here: a round control the size of the account avatar, in its place. */
+.portal__appearance {
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-md);
+  height: var(--control-md);
+  padding: 0;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--portal-ink);
+  cursor: pointer;
+}
+
+.portal__appearance:hover {
+  background: var(--hover-wash);
+}
+
+@media (pointer: coarse) {
+  .portal__appearance {
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+}
+
+.portal__appearancepanel {
+  min-width: 15rem;
+  padding: var(--space-3);
+}
+
+/* The way in and the way across: outlined, and the one filled pill for joining. */
+.portal__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: var(--control-md);
+  padding: 0 1.125rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: var(--radius-full);
+  color: var(--portal-ink);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease);
+}
+
+.portal__pill:hover {
+  border-color: rgb(var(--portal-ink-rgb) / 0.5);
+  background: var(--hover-wash);
+}
+
+.portal__pill--primary {
+  border-color: var(--portal-ink);
+  background: var(--portal-ink);
+  color: var(--primary-ink);
+}
+
+.portal__pill--primary:hover {
+  border-color: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
+  background: color-mix(in srgb, var(--portal-ink) 86%, var(--portal-bg));
+}
+
+/* Signed in, the account is the avatar alone: the bar is the portal's, and the name is in the menu. */
+.portal .accountmenu__name {
+  display: none;
+}
+
+.portal-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 24rem;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.portal-search__input {
+  width: 100%;
+  height: var(--control-md);
+  padding: 0 2.5rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: var(--radius-full);
+  background: rgb(var(--portal-ink-rgb) / 0.04);
+  color: var(--portal-ink);
+  font: inherit;
+  font-size: var(--text-ui);
+  transition:
+    border-color var(--duration-1) var(--ease),
+    background-color var(--duration-1) var(--ease);
+}
+
+.portal-search__input::placeholder {
+  color: rgb(var(--portal-ink-rgb) / 0.6);
+}
+
+.portal-search__input:hover {
+  border-color: rgb(var(--portal-ink-rgb) / 0.4);
+}
+
+.portal-search__input:focus-visible {
+  border-color: var(--accent);
+  background: rgb(var(--portal-ink-rgb) / 0.07);
+}
+
+.portal-search__input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.portal-search__icon {
+  position: absolute;
+  left: 0.875rem;
+  color: var(--portal-muted);
+  pointer-events: none;
+}
+
+.portal-search__clear {
+  position: absolute;
+  right: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--portal-muted);
+  cursor: pointer;
+}
+
+.portal-search__clear:hover {
+  background: var(--hover-wash);
+  color: var(--portal-ink);
+}
+
+.portal__body {
+  flex: 1;
+  width: 100%;
+}
+
+@media (max-width: 52rem) {
+  .portal__bar {
+    flex-wrap: wrap;
+    padding-block: var(--space-3);
+    padding-top: max(var(--space-3), env(safe-area-inset-top));
+  }
+
+  .portal__session {
+    margin-left: auto;
+  }
+
+  .portal-search {
+    order: 3;
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+
+  .portal__link[aria-current='page'] {
+    box-shadow: none;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+  }
+}
+
+/* No search (LorEvolve's home, 031): the way in keeps to the bar's end on its own. */
+.portal__nav + .portal__session {
+  margin-left: auto;
+}
+
+/* A phone: the brand and the way in share the first row; Explore - no longer the brand's destination (031) - opens the
+   second, beside the search where a page has one. A grid rather than wrapping, so Explore never lands on the first row
+   beside the account just because a short session left it room. */
+@media (max-width: 40rem) {
+  .portal__bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand . session'
+      'nav search search';
+    /* No column gap: the empty middle track already parts the brand from the session, and a gap on each side of it
+       would cost the narrowest phone its Create account. Row two's own space is the search's margin. */
+    gap: var(--space-2) 0;
+  }
+
+  .portal__brand {
+    grid-area: brand;
+  }
+
+  /* The brand's air, on every page: the home page's sibling rule above would otherwise make it auto, which a full row
+     resolves to nothing. */
+  .portal__session,
+  .portal__nav + .portal__session {
+    grid-area: session;
+    margin-left: var(--space-2);
+  }
+
+  .portal__nav {
+    grid-area: nav;
+  }
+
+  .portal-search {
+    grid-area: search;
+    margin-left: var(--space-3);
+  }
+
+  .portal__link {
+    min-height: var(--control-md);
+  }
+
+  .portal__bar .wordmark {
+    font-size: 1.2rem;
+  }
+
+  .portal__pill {
+    padding: 0 0.875rem;
+  }
+}

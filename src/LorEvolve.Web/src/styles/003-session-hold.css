@@ -1,0 +1,12 @@
+/* ---------- Session hold ---------- */
+
+.session-pending {
+  min-height: 100dvh;
+  background: var(--paper);
+}
+
+.session-pending--unreachable {
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}

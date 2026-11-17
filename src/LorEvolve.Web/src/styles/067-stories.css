@@ -1,0 +1,191 @@
+/* ---------- Stories ----------
+
+   A story is narrative, not lore, so it borrows the timeline's typography without its spine: a
+   ruled list, read top to bottom in the order the author tells it. The scene's number carries that
+   order; where the scene happens in the world is a small stamp above its title and never a heading,
+   because nothing on the page is arranged by it. */
+
+/* Read by assistive technology, not drawn. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.storylist {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+/* A story is a work, so its title leads in the display face and the facts follow it quietly. The whole row opens
+   the story: the title is the one link, and its box is stretched over the row, so the link's name stays the title. */
+.storyrow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem 1.5rem;
+  align-items: baseline;
+  padding: var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+  transition: background-color var(--duration-1) var(--ease);
+}
+
+.storyrow:hover {
+  background: var(--hover-wash);
+}
+
+.storyrow:active {
+  background: var(--press-wash);
+}
+
+.storyrow:has(.storyrow__title:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.storyrow__title {
+  font-family: var(--display);
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  line-height: 1.3;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.storyrow__title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.storyrow__title:focus-visible {
+  outline: none;
+}
+
+.storyrow__meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Above the title's stretched link, so the row's menu is its own target. */
+.storyrow__menu {
+  position: relative;
+  z-index: 1;
+}
+
+.storyrow__premise {
+  grid-column: 1 / -1;
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/*
+ * A story's header is shared by its three views and kept short, because on a phone every line of it sits between the
+ * author and the scenes, the plot or the prose: the title, one line of facts, the premise on Scenes alone, and then one
+ * bar holding the views and the story's own tools, drawn on the rule the current view underlines.
+ */
+.story .pageheader {
+  margin-bottom: 0;
+}
+
+.story__crumbs a {
+  color: var(--muted);
+}
+
+/* The views as the project's chips (#377) and the story's one menu at the end of the same line. On a 360px phone the
+   chips wrap, two lines at worst. */
+.story__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.story__menu {
+  align-self: center;
+}
+
+/* While writing, the header steps back to one line - "Stories / The title" - over the views, with no line of facts. */
+.story--manuscript .pageheader {
+  flex-flow: row wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.story--manuscript .pageheader__crumb {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.story--manuscript .pageheader__crumb::after {
+  content: '/';
+}
+
+.story--manuscript .pageheader__main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.story--manuscript .pageheader__slot {
+  flex: 1 1 100%;
+}
+
+.story--manuscript .pageheader__title {
+  font-size: var(--text-item);
+}
+
+.story__stale,
+.story__sent {
+  margin: 1rem 0 0;
+}
+
+/* A view's own tools - New scene, New arc - beside the one line saying how that view is ordered. */
+.story__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin: 1.5rem 0 0.25rem;
+}
+
+.story__toolbaractions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.story__aside {
+  margin: 0;
+}
+
+.empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}

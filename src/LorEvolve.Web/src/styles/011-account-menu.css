@@ -1,0 +1,213 @@
+/* ---------- The account menu ---------- */
+
+/* One component on two surfaces: the black rail down the side of a workspace, and the paper bar
+   above the universes. Only the colours and where the panel opens differ. */
+.accountmenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: none;
+}
+
+/* On a wide screen the rail is a column, and the account belongs at its foot - see the comment in
+   UniverseWorkspace. The narrow layer below turns the rail into a row and this back into nothing. */
+.accountmenu--rail {
+  margin-top: auto;
+}
+
+.accountmenu__name {
+  font-size: 0.925rem;
+  color: var(--muted);
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountmenu__trigger {
+  display: flex;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+
+/* The theme choice (013; redrawn in the 014 follow-up): its word on a line of its own, then one segmented control of two
+   equal halves across the whole width. The track is a faint tint of the ink over whatever surface holds it - a menu, a
+   page, light or dark - never a dark well; the chosen half is lifted onto the raised surface and ringed with the control
+   border, so the choice is a shape as well as a shade. Font weight never changes, so nothing shifts when it is pressed. */
+.themeswitch {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 18rem;
+}
+
+.themeswitch--menu {
+  max-width: none;
+}
+
+.themeswitch__label {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.themeswitch__track {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.themeswitch__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: calc(var(--control-sm) - 2px);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease),
+    box-shadow var(--duration-1) var(--ease);
+}
+
+.themeswitch__option:hover {
+  color: var(--ink);
+}
+
+.themeswitch__option[aria-pressed='true'] {
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--border-control),
+    var(--shadow-1);
+}
+
+.themeswitch__option:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.themeswitch__icon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (pointer: coarse) {
+  .themeswitch__option {
+    min-height: var(--control-touch);
+  }
+}
+
+.actionmenu__section {
+  margin: var(--space-1) 0;
+  padding: var(--space-2) var(--space-3);
+  border-block: 1px solid var(--rule);
+}
+
+/* The circle itself. Two sizes only - the rail's and the bar's are the same, because an avatar in
+   chrome is chrome. */
+.accountmenu__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  object-fit: cover;
+}
+
+.accountmenu__avatar--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+/* The rail is graphite in both schemes, so the circle on it is ruled and lettered in the plate's
+   own ink rather than in the page's. */
+.accountmenu--rail .accountmenu__avatar {
+  border-color: var(--plate-muted);
+  background: var(--plate);
+}
+
+.accountmenu--rail .accountmenu__avatar--blank {
+  color: var(--plate-ink);
+}
+
+.accountmenu--rail .accountmenu__trigger:hover .accountmenu__avatar {
+  border-color: var(--plate-ink);
+}
+
+/* Out of the rail sideways, aligned with its foot, so it never covers the rail it came from. */
+.accountmenu--rail .accountmenu__panel {
+  top: auto;
+  right: auto;
+  bottom: 0;
+  left: calc(100% + 0.5rem);
+}
+
+/* Doubled so it outranks the general panel's own width, which is declared further down. */
+.actionmenu__panel.accountmenu__panel {
+  min-width: 16rem;
+  max-width: min(20rem, calc(100vw - 2rem));
+}
+
+/* A name or an address longer than the panel wraps inside it rather than widening it: the address at its own breaks
+   (before the @ and each dot, see AccountMenu), and only a single part too long for a line is cut mid-word. */
+.accountmenu__username {
+  margin: 0;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.accountmenu__email {
+  margin: 0.15rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  text-align: start;
+  overflow-wrap: break-word;
+}
+
+.accountmenu__version {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  border-top: 1px solid var(--rule);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+/* "Go to": LorEvolve's places, under a caption of their own, ruled off from the account above and below. */
+.accountmenu__goto {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-1);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--rule);
+}
+
+.accountmenu__grouplabel {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}

@@ -1,0 +1,127 @@
+/* ---------- The avatar, and what can be done to it ---------- */
+
+.avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The circle is drawn by CSS and always occupies the same space, photo or no photo, so the page
+   does not jump when one arrives or goes. The stored square is cut square and only *drawn* round
+   here - nothing is ever cut to a circle, so the same avatar could be shown squared off later
+   without cutting it again. */
+.avatar__photo {
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+  object-fit: cover;
+}
+
+/* Ruled and papered like an input rather than filled with the accent: a monogram is a
+   placeholder, and it should not be the loudest thing on the page. */
+.avatar__photo--blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+/* The file input is the control; the label is what is seen. Hidden without `display: none`, so
+   it stays focusable and the label can be styled from its focus and disabled states. */
+.avatar__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.avatar__input:focus-visible + .avatar__pick {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.avatar__input:disabled + .avatar__pick {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Wrapping, centred, and under the circle: three short actions fit one row on a desktop and fold
+   to two on a phone without either being reached for sideways. */
+.avatar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.avatar__actions .button {
+  align-self: auto;
+}
+
+.avatar__pick {
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.avatar__hint {
+  margin: 0.75rem 0 0;
+  max-width: 24rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.profile__name {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  line-height: 1.25;
+  margin: 1.5rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.profile__facts {
+  margin: 2rem 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+/* Ruled rows, label left and value right, which is how every other list of facts in LorEvolve
+   reads. Left-aligned inside a centred column: a right-ragged column of emails would be
+   harder to read than the centring is worth. */
+.profile__fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+}
+
+.profile__label {
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.profile__value {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.925rem;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.profile__note {
+  margin: 1.5rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: left;
+}

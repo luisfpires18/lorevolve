@@ -1,0 +1,66 @@
+/* ---------- Tokens ---------- */
+
+.tokens {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  min-height: var(--control-md);
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  transition:
+    border-color var(--duration-1) var(--ease),
+    box-shadow var(--duration-1) var(--ease);
+}
+
+.tokens:hover:not(:focus-within) {
+  border-color: var(--ink);
+}
+
+.tokens:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-xs);
+  background: var(--accent-wash);
+  padding: 0.1rem 0.2rem 0.1rem 0.5rem;
+  font-size: var(--text-sm);
+}
+
+.token__remove {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0.25rem;
+}
+
+.token__remove:hover {
+  color: var(--danger);
+}
+
+.tokens__input {
+  flex: 1;
+  min-width: 7rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.15rem 0;
+}
+
+.tokens__input:focus {
+  outline: none;
+}
