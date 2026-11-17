@@ -52,6 +52,7 @@ deferred.
 - #281 (tracker #300) `feat/type-templates-281`, PR #331: universe-scoped type templates, API + migration + backup format 50.
 - #282 (tracker #300) `feat/template-management-282`, PR #342 done: Types page `?context=templates` lists and manages the universe's templates (`TypeTemplates.tsx`, `typeTemplates/api.ts`); web only.
 - #283 (tracker #300) `feat/types-from-templates-283`, PR #345 done: `POST /api/projects/{id}/entity-types/from-template` copies a universe template into a game as an independent top-level type (no link, no schema change); Types page Gaming context gets a "From a template" drawer.
+- #291 (tracker #302) `feat/tv-structures-291`, PR #339: `tv-show` and `limited-series` entries in `ProjectStructures` plus season/episode level words; no schema change.
 
 One line per branch. Delete the line when it merges.
 
