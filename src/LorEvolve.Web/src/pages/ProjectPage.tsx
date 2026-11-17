@@ -14,6 +14,7 @@ import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { ProjectSchema } from '../components/ProjectSchema'
+import { useUniverseAccess } from '../universes/access'
 import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectOutline } from '../components/ProjectOutline'
@@ -243,6 +244,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   const { search, hash } = useLocation()
   // The universe's workspace, when the route is inside one. The account-level route has none.
   const workspace = useOutletContext<WorkspaceContext | undefined>()
+  const access = useUniverseAccess()
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
@@ -452,6 +454,9 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       ) : section.segment === 'types' ? (
         // The type editor, the same `ProjectSchema` Entities used to open behind "Manage types".
         <ProjectSchema
+          asPage
+          universeId={project.universe.id}
+          canEdit={access.editContent}
           projectId={project.id}
           reloadKey={schemaVersion}
           onChanged={() => setSchemaVersion((version) => version + 1)}
@@ -511,17 +516,17 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       projectName={project.name}
       universe={project.universe}
       sections={sections}
-      meta={
-        compact ? (
-          <div className="projectframe__facts" data-testid="project-facts">
-            <p className="projects__lede">{meta}</p>
-            {project.summary ? (
-              <p className="prose" data-testid="project-summary">
-                {project.summary}
-              </p>
-            ) : null}
-          </div>
-        ) : undefined
+      facts={
+        compact
+          ? {
+              lede: meta,
+              summary: project.summary ? (
+                <p className="prose" data-testid="project-summary">
+                  {project.summary}
+                </p>
+              ) : null,
+            }
+          : undefined
       }
     >
       {body}

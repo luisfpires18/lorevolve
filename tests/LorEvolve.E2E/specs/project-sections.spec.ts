@@ -67,8 +67,10 @@ test.describe('Project sections', () => {
     // the tabs.
     await page.goto(base)
     await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
+    // A game heads its own page: its name and facts over its views as chips, with no breadcrumb (owner, 2026-11-17).
     await expect(page.getByTestId('project-facts')).toBeVisible()
-    await expect(page.getByTestId('project-name')).toHaveCount(0)
+    await expect(page.getByTestId('project-name')).toBeVisible()
+    await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
 
     // The tab bar lists the kind's views, in order, and the sidebar lists none of them.
     const expected = ['entities', 'types', 'systems']
@@ -243,16 +245,9 @@ test.describe('Project sections', () => {
     await page.goto(`/app/universes/${other.id}/projects/${game.id}/entities`)
     await expect(page).toHaveURL(new RegExp(`${canonical}$`))
 
-    // The breadcrumb names the universe and the project, and the universe crumb opens the universe.
-    const crumbs = page.getByTestId('project-breadcrumb')
-    await expect(crumbs).toHaveAttribute('aria-label', 'Breadcrumb')
-    await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(game.name)
-    await expect(page.getByTestId('project-breadcrumb-project')).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
-    await page.getByTestId('project-breadcrumb-universe').click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}$`))
+    // A game is headed by its own name rather than a breadcrumb; the sidebar is the way back to the universe.
+    await expect(page.getByTestId('project-name')).toHaveText(game.name)
+    await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
   })
 
   test('on a narrow screen the tab bar is still the only copy of the views', async ({ page }) => {

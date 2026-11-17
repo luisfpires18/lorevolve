@@ -28,6 +28,7 @@ import {
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
+import { PageHeader } from './PageHeader'
 import { TypeDialog } from './TypeDialog'
 import { TypeFromTemplateDrawer } from './TypeFromTemplateDrawer'
 import { listTypeTemplates } from '../typeTemplates/api'
@@ -68,6 +69,7 @@ export function ProjectSchema({
   crumb,
   universeId,
   canEdit = false,
+  asPage = false,
 }: {
   projectId: string
   /**
@@ -78,6 +80,8 @@ export function ProjectSchema({
   reloadKey: number
   /** Called after any write, so the entries panel beside this one re-reads the types it offers. */
   onChanged?: () => void
+  /** A project's own Types view (a Game): headed as the universe's Types page is, with its title and New type. */
+  asPage?: boolean
   /** The way back to the type cards, above the panel's name, when the panel is a screen of its own. */
   crumb?: ReactNode
   /** When given, the universe's type templates are offered as a second way to make a type (#283). */
@@ -157,36 +161,71 @@ export function ProjectSchema({
   return (
     <section className="projects" data-testid="project-schema">
       {/* The panel's own primary action sits in its head, where `PageHeader` and the lore screens put one (#184). */}
-      <header className="projects__head">
-        {crumb ? <div className="pageheader__crumb projects__crumb">{crumb}</div> : null}
-        <div className="projects__headtext">
-          <h2 className="sectionrule">{t('projects.schema.title')}</h2>
-          <p className="projects__lede">{t('projects.schema.lede')}</p>
-        </div>
-        <button
-          className="button"
-          type="button"
-          data-testid="project-type-add"
-          onClick={() => {
-            setChildOf(null)
-            setEditing('new')
-          }}
-        >
-          <ActionIcon icon={Plus} />
-          {t('entityTypes.page.newType')}
-        </button>
-        {canEdit && templates.length > 0 ? (
+      {asPage ? (
+        <PageHeader
+          title={t('entityTypes.page.title')}
+          titleTestId="project-types-title"
+          lede={t('projects.schema.lede')}
+          actions={
+            <>
+              <button
+                className="button"
+                type="button"
+                data-testid="project-type-add"
+                onClick={() => {
+                  setChildOf(null)
+                  setEditing('new')
+                }}
+              >
+                <ActionIcon icon={Plus} />
+                {t('entityTypes.page.newType')}
+              </button>
+              {canEdit && templates.length > 0 ? (
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  data-testid="project-type-from-template"
+                  onClick={() => setFromTemplate(true)}
+                >
+                  <ActionIcon icon={Shapes} />
+                  {t('projects.schema.fromTemplate.button')}
+                </button>
+              ) : null}
+            </>
+          }
+        />
+      ) : (
+        <header className="projects__head">
+          {crumb ? <div className="pageheader__crumb projects__crumb">{crumb}</div> : null}
+          <div className="projects__headtext">
+            <h2 className="sectionrule">{t('projects.schema.title')}</h2>
+            <p className="projects__lede">{t('projects.schema.lede')}</p>
+          </div>
           <button
-            className="button button--secondary"
+            className="button"
             type="button"
-            data-testid="project-type-from-template"
-            onClick={() => setFromTemplate(true)}
+            data-testid="project-type-add"
+            onClick={() => {
+              setChildOf(null)
+              setEditing('new')
+            }}
           >
-            <ActionIcon icon={Shapes} />
-            {t('projects.schema.fromTemplate.button')}
+            <ActionIcon icon={Plus} />
+            {t('entityTypes.page.newType')}
           </button>
-        ) : null}
-      </header>
+          {canEdit && templates.length > 0 ? (
+            <button
+              className="button button--secondary"
+              type="button"
+              data-testid="project-type-from-template"
+              onClick={() => setFromTemplate(true)}
+            >
+              <ActionIcon icon={Shapes} />
+              {t('projects.schema.fromTemplate.button')}
+            </button>
+          ) : null}
+        </header>
+      )}
 
       {fromTemplate ? (
         <TypeFromTemplateDrawer
