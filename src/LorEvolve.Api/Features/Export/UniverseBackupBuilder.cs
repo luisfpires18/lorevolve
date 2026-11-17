@@ -154,7 +154,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await TypeTemplatesAsync(universeId, cancellationToken),
             await ProjectNodesAsync(universeId, nodeImages, cancellationToken),
             await CinemaSagasAsync(universeId, cancellationToken),
-            await ComicCollectionsAsync(universeId, cancellationToken));
+            await ComicCollectionsAsync(universeId, cancellationToken),
+            await DismissedMachineFindingsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1985,9 +1986,11 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         Guid universeId,
         CancellationToken cancellationToken)
     {
+        // Rule findings only; a machine finding has no rule and travels in its own list (version 59).
         var dismissed = await db.WorldLogicFindings.AsNoTracking()
             .Where(finding => finding.UniverseId == universeId
-                && finding.Status == WorldLogicFindingStatus.Dismissed)
+                && finding.Status == WorldLogicFindingStatus.Dismissed
+                && finding.RuleId != null)
             .Select(finding => new
             {
                 finding.RuleId,
@@ -2012,8 +2015,64 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .. dismissed
                 .OrderBy(finding => finding.Fingerprint, StringComparer.Ordinal)
                 .Select(finding => new BackupDismissedFinding(
-                    finding.RuleId,
+                    finding.RuleId!.Value,
                     finding.ProjectId,
+                    finding.Outcome,
+                    finding.ErrorCode,
+                    finding.RuleVersion,
+                    finding.SchemaVersion,
+                    finding.Rationale,
+                    finding.Evidence,
+                    Utc(finding.CreatedAt),
+                    Utc(finding.UpdatedAt))),
+        ];
+    }
+
+    /// <summary>
+    /// The machine findings the author dismissed (version 59, #360), carried as the rule dismissals are: what the
+    /// fingerprint was taken over, so a restore can take it again from the restored ids.
+    /// </summary>
+    private async Task<IReadOnlyList<BackupDismissedMachineFinding>> DismissedMachineFindingsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken)
+    {
+        var dismissed = await db.WorldLogicFindingMachines.AsNoTracking()
+            .Where(link => link.Finding!.UniverseId == universeId
+                && link.Finding.Status == WorldLogicFindingStatus.Dismissed)
+            .Select(link => new
+            {
+                link.SystemId,
+                link.Finding!.ProjectId,
+                link.Check,
+                link.StateId,
+                link.SubjectId,
+                link.Value,
+                link.Finding.Outcome,
+                link.Finding.ErrorCode,
+                link.Finding.RuleVersion,
+                link.Finding.SchemaVersion,
+                link.Finding.Rationale,
+                link.Finding.Fingerprint,
+                link.Finding.CreatedAt,
+                link.Finding.UpdatedAt,
+                Evidence = link.Finding.Evidence
+                    .OrderBy(item => item.SortOrder)
+                    .Select(item => new BackupFindingEvidence(item.Source, item.SourceRowId, item.Role))
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. dismissed
+                .OrderBy(finding => finding.Fingerprint, StringComparer.Ordinal)
+                .Select(finding => new BackupDismissedMachineFinding(
+                    finding.SystemId,
+                    finding.ProjectId,
+                    finding.Check,
+                    finding.StateId,
+                    finding.SubjectId,
+                    finding.Value,
                     finding.Outcome,
                     finding.ErrorCode,
                     finding.RuleVersion,

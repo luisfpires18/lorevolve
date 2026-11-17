@@ -640,6 +640,11 @@ internal static partial class BackupValidation
             ? 0L
             : 2L + finding.Evidence.Count);
 
+        // Machine dismissals (version 59): the same, plus the machine link.
+        count += (payload.DismissedMachineFindings ?? []).Sum(finding => finding is null
+            ? 0L
+            : 3L + (finding.Evidence?.Count ?? 0));
+
         // Type templates (version 50): each template, its fields and their choices.
         count += (payload.TypeTemplates ?? []).Sum(template => template is null
             ? 0L
@@ -690,6 +695,9 @@ internal static partial class BackupValidation
 
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
+
+        /// <summary>The Systems of this file, so a dismissed machine finding can name one (version 59).</summary>
+        private readonly HashSet<Guid> _loreSystems = [];
 
         /// <summary>The project of each project-scoped rule definition, for the guard scope check a save makes (ADR 0073).</summary>
         private readonly Dictionary<Guid, Guid> _systemRuleProjects = [];
@@ -746,6 +754,8 @@ internal static partial class BackupValidation
             var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
             var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
             var dismissedFindings = Required(payload.DismissedFindings, "the dismissed World Logic findings", since: 46);
+            var dismissedMachineFindings = Required(
+                payload.DismissedMachineFindings, "the dismissed machine findings", since: 59);
             var typeTemplates = Required(payload.TypeTemplates, "the list of type templates", since: 50);
 
             // Everything that can be referenced is listed first, so a reference checked below can
@@ -822,6 +832,11 @@ internal static partial class BackupValidation
             foreach (var finding in dismissedFindings)
             {
                 CheckDismissedFinding(finding);
+            }
+
+            foreach (var finding in dismissedMachineFindings)
+            {
+                CheckDismissedMachineFinding(finding);
             }
 
             CheckTypeTemplates(typeTemplates);
@@ -3106,6 +3121,7 @@ internal static partial class BackupValidation
 
                 var what = $"The System {Quote(system.Name)}";
                 Register(system.Id, what);
+                _loreSystems.Add(system.Id);
 
                 if (Text(system.Name, WorldLogicLimits.NameMaxLength, $"{what}'s name", required: true)
                     && !names.Add(FormattableString.Invariant($"{system.ProjectId}|{system.Name}")))
@@ -3380,13 +3396,61 @@ internal static partial class BackupValidation
                 Add(BackupIssueCodes.InvalidValue, $"{what} is at a rule version below 1.");
             }
 
-            if (finding.Evidence is null)
+            CheckFindingEvidence(finding.Evidence, what);
+        }
+
+        /// <summary>
+        /// A dismissed machine finding (version 59, #360): a System this file holds, a defined check and outcome, a
+        /// state only on <c>no_transition_holds</c>, a value only on <c>undeclared_state</c>, and evidence within bounds.
+        /// Its subject may name an entry the file does not hold; the restore then leaves the dismissal out.
+        /// </summary>
+        private void CheckDismissedMachineFinding(BackupDismissedMachineFinding finding)
+        {
+            if (finding is null)
+            {
+                Missing("a dismissed machine finding");
+                return;
+            }
+
+            const string what = "A dismissed machine finding";
+
+            Defined(finding.Outcome, $"{what}'s outcome");
+            Defined(finding.Check, $"{what}'s check");
+            Reference(_loreSystems.Contains(finding.SystemId), $"{what} names a System the backup does not hold.");
+
+            if (finding.ProjectId is { } projectId)
+            {
+                Reference(_projects.Contains(projectId), $"{what} is in a project the backup does not hold.");
+            }
+
+            if ((finding.StateId is null) != (finding.Check == MachineCheck.UndeclaredState)
+                || (finding.Value is not null && finding.Check != MachineCheck.UndeclaredState))
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} names a state or a value its check does not have.");
+            }
+
+            Text(finding.Value, WorldLogicFindingLimits.MachineValueMaxLength, $"{what}'s value");
+            Text(finding.ErrorCode, WorldLogicFindingLimits.ErrorCodeMaxLength, $"{what}'s error code");
+            Text(finding.Rationale, WorldLogicFindingLimits.RationaleMaxLength, $"{what}'s rationale", required: true);
+
+            if (finding.SystemVersion < 1)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} is at a System version below 1.");
+            }
+
+            CheckFindingEvidence(finding.Evidence, what);
+        }
+
+        /// <summary>The evidence a dismissed finding of either kind carries, each piece within its column.</summary>
+        private void CheckFindingEvidence(IReadOnlyList<BackupFindingEvidence>? evidence, string what)
+        {
+            if (evidence is null)
             {
                 Missing($"the evidence of {what.ToLowerInvariant()}");
                 return;
             }
 
-            foreach (var item in finding.Evidence)
+            foreach (var item in evidence)
             {
                 if (item is null)
                 {

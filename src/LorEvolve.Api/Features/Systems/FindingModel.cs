@@ -137,12 +137,22 @@ public sealed class WorldLogicFinding
     /// The universe this was found in. Deliberately not a foreign key of its own: the finding reaches its universe
     /// through <see cref="Rule"/>, which cascades from the universe, so a second cascade path would buy nothing and
     /// the column exists to scope and index the review listing.
+    ///
+    /// A machine finding (#360) has no rule, and no foreign key path leads to it from its System or its universe: the
+    /// routes that delete either one delete its machine findings first, in the same transaction.
     /// </summary>
     public Guid UniverseId { get; set; }
 
-    public Guid RuleId { get; set; }
+    /// <summary>
+    /// The rule that produced this finding, or null for a machine finding, which <see cref="Machine"/> names instead.
+    /// A finding has exactly one of the two, never both and never neither (#360).
+    /// </summary>
+    public Guid? RuleId { get; set; }
 
     public SystemRule? Rule { get; set; }
+
+    /// <summary>The System, state and subject a machine check found, or null for a rule finding (#360, ADR 0073).</summary>
+    public WorldLogicFindingMachine? Machine { get; set; }
 
     /// <summary>
     /// The project the evaluation named, or null for one over the whole universe. A project-scoped exception applies
@@ -161,7 +171,10 @@ public sealed class WorldLogicFinding
     /// </summary>
     public string? ErrorCode { get; set; }
 
-    /// <summary>The rule's version when this was found, so the finding names exactly the rule that produced it.</summary>
+    /// <summary>
+    /// The rule's version when this was found, so the finding names exactly the rule that produced it. On a machine
+    /// finding it is the System's version instead.
+    /// </summary>
     public int RuleVersion { get; set; }
 
     /// <summary>The condition schema version the rule was written against.</summary>
@@ -250,4 +263,50 @@ public sealed class WorldLogicFindingEvent
     public required string Note { get; set; }
 
     public DateTime At { get; set; }
+}
+
+/// <summary>
+/// The two checks a machine makes (state machine specification, section 4). Stored as an int, so the names may be
+/// reordered only by never reusing a number; on the wire each is the specification's own word.
+/// </summary>
+public enum MachineCheck
+{
+    /// <summary>The subject's value is no state's value, or is not text.</summary>
+    UndeclaredState = 0,
+
+    /// <summary>The subject is in a state that is not initial and no transition into it holds.</summary>
+    NoTransitionHolds = 1,
+}
+
+/// <summary>
+/// What a machine finding is about, in place of the rule a rule finding names (#360, ADR 0073): the System, the
+/// check, the state and the subject. One row per finding at most, by its key.
+///
+/// <see cref="StateId"/> and <see cref="SubjectId"/> carry no foreign key, as evidence carries none: a state is
+/// unique only inside its System's machine and is replaced whole on every save, and a subject may be trashed, while
+/// the finding is regenerable and closes on the next sweep.
+/// </summary>
+public sealed class WorldLogicFindingMachine
+{
+    public Guid FindingId { get; set; }
+
+    public WorldLogicFinding? Finding { get; set; }
+
+    public Guid SystemId { get; set; }
+
+    public LoreSystem? LoreSystem { get; set; }
+
+    public MachineCheck Check { get; set; }
+
+    /// <summary>The state the subject is in, or null for <see cref="MachineCheck.UndeclaredState"/>.</summary>
+    public Guid? StateId { get; set; }
+
+    /// <summary>The entry the machine checked.</summary>
+    public Guid SubjectId { get; set; }
+
+    /// <summary>
+    /// The value found, for <see cref="MachineCheck.UndeclaredState"/> on a text value only, cut to the column. Part of
+    /// the fingerprint, so a restore can take the fingerprint again.
+    /// </summary>
+    public string? Value { get; set; }
 }

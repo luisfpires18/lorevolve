@@ -161,6 +161,9 @@ public sealed class BackupInventoryTests
         // re-applies it is a hash of those ids.
         "WorldLogicFindings",
         "WorldLogicFindingEvidence",
+
+        // A dismissed machine finding's System, state and subject (#360, version 59): what its fingerprint is taken over.
+        "WorldLogicFindingMachines",
     ];
 
     /// <summary>Not in the archive because LorEvolve produces it again from what is.</summary>

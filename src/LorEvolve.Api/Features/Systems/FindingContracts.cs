@@ -42,11 +42,15 @@ public enum WorldLogicFindingSort
 ///
 /// <paramref name="RuleVersion"/> and <paramref name="SchemaVersion"/> are what the rule was when the finding was
 /// produced, so the finding names exactly the rule that produced it.
+///
+/// A machine finding (#360) has a null <paramref name="RuleId"/> and <paramref name="RuleTitle"/>, names its System,
+/// state and subject in <paramref name="Machine"/> instead, and its <paramref name="RuleVersion"/> is the System's
+/// version. A rule finding has a null <paramref name="Machine"/>.
 /// </summary>
 public sealed record WorldLogicFindingRow(
     Guid Id,
-    Guid RuleId,
-    string RuleTitle,
+    Guid? RuleId,
+    string? RuleTitle,
     Guid? ProjectId,
     string Outcome,
     string Severity,
@@ -58,7 +62,22 @@ public sealed record WorldLogicFindingRow(
     int EvidenceCount,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    DateTime? ResolvedAt);
+    DateTime? ResolvedAt,
+    WorldLogicFindingMachineRow? Machine = null);
+
+/// <summary>
+/// What a machine finding is about. <paramref name="Check"/> is <c>undeclared_state</c> or
+/// <c>no_transition_holds</c>. <paramref name="StateId"/> is null for <c>undeclared_state</c>, and a name is null
+/// when the state or the entry is no longer there.
+/// </summary>
+public sealed record WorldLogicFindingMachineRow(
+    Guid SystemId,
+    string SystemName,
+    string Check,
+    Guid? StateId,
+    string? StateName,
+    Guid SubjectId,
+    string? SubjectName);
 
 /// <summary>
 /// One recorded finding, whole: its row, the ids the outcome depended on, the evaluator's trace and the history of

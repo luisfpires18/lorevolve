@@ -42,6 +42,9 @@ public static class WorldLogicFindingLimits
     /// reaches it reports itself truncated rather than filling the table.
     /// </summary>
     public const int MaxFindingsPerSweep = 2_000;
+
+    /// <summary>How much of an undeclared value a machine finding keeps, and hashes (#360).</summary>
+    public const int MachineValueMaxLength = 4_000;
 }
 
 public sealed class WorldLogicFindingConfiguration : IEntityTypeConfiguration<WorldLogicFinding>
@@ -67,11 +70,11 @@ public sealed class WorldLogicFindingConfiguration : IEntityTypeConfiguration<Wo
 
         // The finding reaches its universe through the rule, which cascades from the universe, so deleting a
         // universe deletes its findings without a second cascade path. Deleting one rule takes its findings with
-        // it: they are entirely that rule's answer, and nothing else can reproduce them.
+        // it: they are entirely that rule's answer, and nothing else can reproduce them. Optional since #360: a
+        // machine finding has no rule, and the System and universe delete routes remove it explicitly.
         builder.HasOne(finding => finding.Rule)
             .WithMany()
             .HasForeignKey(finding => finding.RuleId)
-            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         // A project-scoped finding goes with its project, for the same reason: the scope is part of what the
@@ -147,5 +150,37 @@ public sealed class WorldLogicFindingEventConfiguration : IEntityTypeConfigurati
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(entry => new { entry.FindingId, entry.At });
+    }
+}
+
+public sealed class WorldLogicFindingMachineConfiguration : IEntityTypeConfiguration<WorldLogicFindingMachine>
+{
+    public void Configure(EntityTypeBuilder<WorldLogicFindingMachine> builder)
+    {
+        builder.ToTable("WorldLogicFindingMachines");
+
+        // The key is the finding, so a finding has one machine link at most.
+        builder.HasKey(link => link.FindingId);
+
+        builder.Property(link => link.Check).HasConversion<int>();
+
+        builder.Property(link => link.Value)
+            .HasMaxLength(WorldLogicFindingLimits.MachineValueMaxLength);
+
+        builder.HasOne(link => link.Finding)
+            .WithOne(finding => finding.Machine)
+            .HasForeignKey<WorldLogicFindingMachine>(link => link.FindingId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Deleting a System deletes its machine findings first, explicitly; this cascade only keeps the link from
+        // outliving its System if a later path forgets to.
+        builder.HasOne(link => link.LoreSystem)
+            .WithMany()
+            .HasForeignKey(link => link.SystemId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(link => link.SystemId);
     }
 }

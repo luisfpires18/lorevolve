@@ -200,11 +200,50 @@ public sealed record SystemMachineRequest(
     IReadOnlyList<SystemMachineTransition>? Transitions,
     int? ExpectedVersion);
 
-/// <summary>A System's machine, whole, with the System's version. A System with none has a null binding and empty lists.</summary>
+/// <summary>
+/// A System's machine, whole, with the System's version. A System with none has a null binding and empty lists.
+/// <paramref name="OpenFindings"/> counts the open and reviewing machine findings per state, in the System's own
+/// scope (#360); a state with none is not listed.
+/// </summary>
 public sealed record SystemMachineDetail(
     Guid SystemId,
     int Version,
     int SchemaVersion,
     SystemMachineBinding? Binding,
     IReadOnlyList<SystemMachineState> States,
-    IReadOnlyList<SystemMachineTransition> Transitions);
+    IReadOnlyList<SystemMachineTransition> Transitions,
+    IReadOnlyList<SystemMachineOpenFindings> OpenFindings);
+
+public sealed record SystemMachineOpenFindings(Guid StateId, int Count);
+
+/// <summary>
+/// "Try an entry" (#360): the entry's bound value, every transition's guard for it, and the records both checks
+/// produce, in the shape of state machine specification section 5. Nothing is written.
+/// <paramref name="Value"/> is null when the entry is of another type, has no value, or holds one that is not text.
+/// </summary>
+public sealed record SystemMachineTryResponse(
+    string? Value,
+    IReadOnlyList<SystemMachineGuardRow> Transitions,
+    IReadOnlyList<SystemMachineRecordRow> Records);
+
+/// <summary>
+/// One transition's guard for the entry. <paramref name="Guard"/> is <c>true</c>, <c>false</c>, <c>unknown</c>,
+/// <c>error</c> or <c>none</c>; an exempt rule counts as met and reads <c>true</c>.
+/// </summary>
+public sealed record SystemMachineGuardRow(Guid TransitionId, string Guard, string? ErrorCode);
+
+/// <summary>
+/// One record, as section 5 writes it. <paramref name="Check"/> is <c>undeclared_state</c> or
+/// <c>no_transition_holds</c>, and <paramref name="Outcome"/> is <c>violation</c>, <c>unknown</c> or <c>error</c>.
+/// </summary>
+public sealed record SystemMachineRecordRow(
+    Guid SystemId,
+    int SystemVersion,
+    int SchemaVersion,
+    string Check,
+    Guid? StateId,
+    Guid SubjectId,
+    string Outcome,
+    string? ErrorCode,
+    IReadOnlyList<ConditionEvidenceRow> Evidence,
+    IReadOnlyList<string> Rationale);

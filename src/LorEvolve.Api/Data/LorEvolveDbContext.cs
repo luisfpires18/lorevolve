@@ -268,6 +268,9 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     public DbSet<WorldLogicFindingEvent> WorldLogicFindingEvents => Set<WorldLogicFindingEvent>();
 
+    /// <summary>The System, state and subject of each machine finding, which has no rule (#360, ADR 0073).</summary>
+    public DbSet<WorldLogicFindingMachine> WorldLogicFindingMachines => Set<WorldLogicFindingMachine>();
+
     /// <summary>
     /// What connected AI clients claimed about this universe's meaning, waiting for the author to accept or dismiss
     /// (ADR 0072, ADR 0046, LOREX-021). Deliberately a different table from <see cref="WorldLogicFindings"/>: nothing

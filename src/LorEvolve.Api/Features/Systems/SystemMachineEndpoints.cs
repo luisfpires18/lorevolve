@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.RuleValidation.Conditions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,9 @@ namespace LorEvolve.Api.Features.Systems;
 /// first failure wins. Structural problems a client prevents on its own carry no code.
 ///
 /// <b>Nothing here evaluates anything.</b> No route reads a subject, a fact or a finding.
+///
+/// Two exceptions since #360, both read-only: the machine's detail counts its open findings per state, and "Try an
+/// entry" runs both checks for one entry and writes nothing, with the read access the rule evaluate route takes.
 /// </summary>
 public static class SystemMachineEndpoints
 {
@@ -56,8 +60,72 @@ public static class SystemMachineEndpoints
 
         group.MapGet("/{id:guid}/machine", GetAsync).WithName("GetSystemMachine");
         group.MapPut("/{id:guid}/machine", SaveAsync).WithName("SaveSystemMachine");
+        group.MapPost("/{id:guid}/machine/evaluate/{subjectId:guid}", EvaluateAsync).WithName("EvaluateSystemMachine");
 
         return endpoints;
+    }
+
+    /// <summary>
+    /// "Try an entry" (#360): every transition's guard for one entry, and the records both checks produce for it, in
+    /// the System's own scope. 404 for a System or an entry outside the universe; empty lists for a System with no
+    /// machine. Nothing is written, so it takes read access, as evaluating one rule does.
+    /// </summary>
+    private static async Task<IResult> EvaluateAsync(
+        Guid universeId,
+        Guid id,
+        Guid subjectId,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await WorldLogicAccess.DenyReadAsync(db, universeId, principal, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        var system = await db.LoreSystems.AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken);
+
+        if (system is null
+            || !await db.Entities.AsNoTracking().AnyAsync(
+                entity => entity.Id == subjectId && entity.UniverseId == universeId && entity.DeletedAt == null,
+                cancellationToken))
+        {
+            return Results.NotFound();
+        }
+
+        if ((await WorldLogicMachineCheck.LoadAsync(db, universeId, id, cancellationToken)).FirstOrDefault() is not { } machine)
+        {
+            return Results.Ok(new SystemMachineTryResponse(null, [], []));
+        }
+
+        var facts = await UniverseConditionFacts.LoadAsync(db, universeId, cancellationToken);
+        var evaluator = new WorldLogicEvaluator(facts, await WorldLogicRuleSet.LoadAsync(db, universeId, cancellationToken));
+        var subject = subjectId.ToString();
+        var project = system.ProjectId?.ToString();
+
+        var guards = WorldLogicMachineCheck.Guards(machine, evaluator, subject, project);
+        var record = WorldLogicMachineCheck.Check(machine, facts, evaluator, subject, project);
+
+        return Results.Ok(new SystemMachineTryResponse(
+            WorldLogicMachineCheck.ValueOf(machine, facts, subject),
+            [.. guards.Select(guard => new SystemMachineGuardRow(Guid.Parse(guard.TransitionId), guard.Role, guard.ErrorCode))],
+            record is null
+                ? []
+                :
+                [
+                    new SystemMachineRecordRow(
+                        system.Id,
+                        record.SystemVersion,
+                        record.SchemaVersion,
+                        WorldLogicMachineCheck.Name(record.Check),
+                        record.StateId is null ? null : Guid.Parse(record.StateId),
+                        subjectId,
+                        FindingEndpoints.Outcome(record.Outcome),
+                        record.ErrorCode,
+                        [.. record.Evidence.Select(item => new ConditionEvidenceRow(item.Source, item.Id, item.Role))],
+                        record.Rationale),
+                ]));
     }
 
     /// <summary>The machine, or a null binding and empty lists when the System has none.</summary>
@@ -375,7 +443,7 @@ public static class SystemMachineEndpoints
 
         if (machine is null)
         {
-            return new SystemMachineDetail(system.Id, system.Version, SchemaVersion, null, [], []);
+            return new SystemMachineDetail(system.Id, system.Version, SchemaVersion, null, [], [], []);
         }
 
         var states = await db.SystemStates.AsNoTracking()
@@ -391,13 +459,26 @@ public static class SystemMachineEndpoints
                 transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId))
             .ToListAsync(cancellationToken);
 
+        // The open and reviewing machine findings per state, in the System's own scope (#360). A state the machine no
+        // longer holds is left out: its findings close on the next sweep.
+        var open = await db.WorldLogicFindingMachines.AsNoTracking()
+            .Where(link => link.SystemId == system.Id
+                && link.StateId != null
+                && link.Finding!.ProjectId == system.ProjectId
+                && (link.Finding.Status == WorldLogicFindingStatus.Open
+                    || link.Finding.Status == WorldLogicFindingStatus.Reviewing))
+            .GroupBy(link => link.StateId!.Value)
+            .Select(group => new SystemMachineOpenFindings(group.Key, group.Count()))
+            .ToListAsync(cancellationToken);
+
         return new SystemMachineDetail(
             system.Id,
             system.Version,
             machine.SchemaVersion,
             new SystemMachineBinding(machine.SubjectType, machine.Attribute),
             states,
-            transitions);
+            transitions,
+            [.. states.Select(state => open.FirstOrDefault(count => count.StateId == state.Id)).OfType<SystemMachineOpenFindings>()]);
     }
 
     private static bool Coordinate(double value) =>

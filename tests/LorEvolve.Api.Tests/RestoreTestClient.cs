@@ -474,6 +474,12 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 59)
+        {
+            // Dismissed machine findings came in version 59 (#360).
+            Drop(payload, "dismissedMachineFindings");
+        }
+
         if (version < 58)
         {
             // Story and project covers, and the projects' order, came in version 58.

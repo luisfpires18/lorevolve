@@ -44,6 +44,33 @@ public static class WorldLogicFingerprint
             ]);
 
     /// <summary>
+    /// The fingerprint of one machine record (state machine specification, section 6): the System, then the project
+    /// or empty, the check, the state or empty, the outcome, the error code or empty, the subject and, for
+    /// <c>undeclared_state</c> only, the value found. The System version, the rationale and the guard evidence are
+    /// out, so redrawing the canvas or rewording a guard refreshes a finding instead of opening a second one.
+    /// </summary>
+    public static string OfMachine(
+        Guid systemId,
+        Guid? projectId,
+        MachineCheck check,
+        Guid? stateId,
+        WorldLogicFindingOutcome outcome,
+        string? errorCode,
+        Guid subjectId,
+        string? value) =>
+        CanonFingerprint.From(
+            CanonFingerprint.Id(systemId),
+            [
+                projectId is { } project ? CanonFingerprint.Id(project) : string.Empty,
+                WorldLogicMachineCheck.Name(check),
+                stateId is { } state ? CanonFingerprint.Id(state) : string.Empty,
+                Name(outcome),
+                errorCode ?? string.Empty,
+                CanonFingerprint.Id(subjectId),
+                check == MachineCheck.UndeclaredState ? value ?? string.Empty : string.Empty,
+            ]);
+
+    /// <summary>
     /// The outcome as the specification writes it. Text rather than the enum's number, so adding an outcome later
     /// never shifts an existing finding's fingerprint.
     /// </summary>
