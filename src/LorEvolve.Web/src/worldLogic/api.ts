@@ -2,6 +2,9 @@ import { apiFetch } from '../lib/api'
 import type {
   SystemDetail,
   SystemInput,
+  SystemMachineDetail,
+  SystemMachineInput,
+  SystemRuleSummary,
   SystemSummary,
   WorldLogicFindingDetail,
   WorldLogicFindingRow,
@@ -70,6 +73,32 @@ export function saveSystem(universeId: string, id: string, input: SystemInput) {
 /** Deletes the System and its links, never a rule definition. There is no Trash for a System. */
 export function deleteSystem(universeId: string, id: string) {
   return apiFetch<void>(`${base(universeId)}/systems/${id}`, { method: 'DELETE' })
+}
+
+/** A System's machine, whole. A System with none answers a null binding and empty lists. */
+export function getSystemMachine(universeId: string, id: string, signal?: AbortSignal) {
+  return apiFetch<SystemMachineDetail>(`${base(universeId)}/systems/${id}/machine`, { signal })
+}
+
+/**
+ * Saves a System's machine whole. `expectedVersion` is the System's version, the same one a name save names, so a
+ * stale one is 409 `system_changed`; a save that changes nothing leaves the version alone.
+ */
+export function saveSystemMachine(universeId: string, id: string, input: SystemMachineInput) {
+  return apiFetch<SystemMachineDetail>(`${base(universeId)}/systems/${id}/machine`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  })
+}
+
+/** One page of the universe's rule definitions, the only rules a guard may name. The API allows up to 100. */
+export function listSystemRules(universeId: string, page: number, signal?: AbortSignal) {
+  const params = new URLSearchParams({ page: String(page), pageSize: '100' })
+
+  return apiFetch<WorldLogicPage<SystemRuleSummary>>(
+    `${base(universeId)}/system-rules?${params.toString()}`,
+    { signal },
+  )
 }
 
 function findings(universeId: string) {

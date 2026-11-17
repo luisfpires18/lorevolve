@@ -16,7 +16,7 @@ import {
   type BoardCard,
   type BoardConnection,
 } from '../ideas/boards'
-import { usePanZoom, ZOOM_STEP, type StageSize, type View } from '../lib/usePanZoom'
+import { fitView, usePanZoom, ZOOM_STEP } from '../lib/usePanZoom'
 import { useI18n } from '../i18n'
 
 /** What is chosen on a board: one card, one line, or nothing. */
@@ -25,7 +25,6 @@ export type BoardSelection = { kind: 'card'; id: string } | { kind: 'line'; id: 
 const PAN_STEP = 48
 const MOVE_STEP = 10
 const BIG_MOVE_STEP = 50
-const FIT_MARGIN = 48
 
 interface IdeaBoardCanvasProps {
   title: string
@@ -41,24 +40,6 @@ interface IdeaBoardCanvasProps {
   onMoveCard: (cardId: string, x: number, y: number) => void
   /** Set by the canvas: the board point at the centre of the view, where a new card goes. */
   centreRef: MutableRefObject<(() => { x: number; y: number }) | null>
-}
-
-function fitView(cards: BoardCard[], size: StageSize): View {
-  if (cards.length === 0) return { scale: 1, x: size.width / 2, y: size.height / 2 }
-  const left = Math.min(...cards.map((card) => card.x))
-  const top = Math.min(...cards.map((card) => card.y))
-  const right = Math.max(...cards.map((card) => card.x + card.width))
-  const bottom = Math.max(...cards.map((card) => card.y + card.height))
-  const scale = Math.min(
-    1,
-    (size.width - FIT_MARGIN * 2) / Math.max(right - left, 1),
-    (size.height - FIT_MARGIN * 2) / Math.max(bottom - top, 1),
-  )
-  return {
-    scale: Math.max(scale, 0.1),
-    x: size.width / 2 - ((left + right) / 2) * scale,
-    y: size.height / 2 - ((top + bottom) / 2) * scale,
-  }
 }
 
 /**

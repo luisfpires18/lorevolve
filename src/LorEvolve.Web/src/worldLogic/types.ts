@@ -153,3 +153,53 @@ export interface WorldLogicPage<T> {
   totalCount: number
   totalPages: number
 }
+
+/** The API's machine limits (ADR 0073). */
+export const MACHINE_MAX_STATES = 64
+export const MACHINE_MAX_TRANSITIONS = 256
+/** A state's name and value, a transition's label and each half of the binding. */
+export const MACHINE_TEXT_MAX_LENGTH = 200
+
+/** Which attribute of which subject type a machine's states are values of, compared as text. */
+export interface SystemMachineBinding {
+  subjectType: string
+  attribute: string
+}
+
+/** One state. `id` is the client's own, unique within the document; `x` and `y` place it on the canvas. */
+export interface SystemMachineState {
+  id: string
+  name: string
+  value: string
+  initial: boolean
+  x: number
+  y: number
+}
+
+/** One transition, in declared order. `guardRuleId` names a rule definition, or is null. */
+export interface SystemMachineTransition {
+  id: string
+  fromStateId: string
+  toStateId: string
+  label: string | null
+  guardRuleId: string | null
+}
+
+/** A System's machine, whole, with the System's version. A System with none has a null binding and empty lists. */
+export interface SystemMachineDetail {
+  systemId: string
+  version: number
+  schemaVersion: number
+  binding: SystemMachineBinding | null
+  states: SystemMachineState[]
+  transitions: SystemMachineTransition[]
+}
+
+/** What a machine save sends: the whole document, under the System's version. An empty one removes the machine. */
+export interface SystemMachineInput {
+  schemaVersion: number
+  binding: SystemMachineBinding | null
+  states: SystemMachineState[]
+  transitions: SystemMachineTransition[]
+  expectedVersion: number
+}
