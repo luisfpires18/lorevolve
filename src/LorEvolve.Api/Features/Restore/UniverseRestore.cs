@@ -1013,6 +1013,7 @@ internal sealed partial class UniverseRestore(
                 Kind = project.Kind,
                 Lifecycle = project.Lifecycle,
                 Subtype = project.Subtype,
+                Format = project.Format,
                 Summary = project.Summary,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,

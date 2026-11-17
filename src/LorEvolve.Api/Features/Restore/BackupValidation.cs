@@ -1154,6 +1154,10 @@ internal static partial class BackupValidation
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what} is at a stage LorEvolve does not have.");
                 }
+                if (project.Format is { } format && !ProjectFormats.Allows(project.Kind, format))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has a format that is not one for its kind.");
+                }
             }
         }
 

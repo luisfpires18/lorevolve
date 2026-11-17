@@ -3,7 +3,7 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
-import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
+import { formatLabel, kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
 import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
@@ -126,6 +126,9 @@ export default function ProjectsPage({
               </Link>
               <p className="storyrow__meta">
                 <span>{kindLabel(project.kind)}</span>
+                {project.format ? (
+                  <span data-testid="project-row-format">{formatLabel(project.format)}</span>
+                ) : null}
                 <span>{lifecycleLabel(project.lifecycle)}</span>
                 {inUniverse ? null : <span>{project.universe.name}</span>}
               </p>
