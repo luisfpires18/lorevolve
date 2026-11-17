@@ -2527,6 +2527,56 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("ProjectEpisodes", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectNode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Body")
+                        .HasMaxLength(400000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("ProjectId", "ParentId", "SortOrder");
+
+                    b.ToTable("ProjectNodes", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4019,6 +4069,103 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasIndex("StoryId");
 
                     b.ToTable("TimelineEntryStories", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AccentColor")
+                        .HasMaxLength(7)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UniverseId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("TypeTemplates", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplateField", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ImageShape")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId");
+
+                    b.ToTable("TypeTemplateFields", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplateFieldOption", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("FieldId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FieldId");
+
+                    b.ToTable("TypeTemplateFieldOptions", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Universes.Universe", b =>
@@ -5614,6 +5761,24 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Season");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectNode", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectNode", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Parent");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectEpisode", "Episode")
@@ -6264,6 +6429,39 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("TimelineEntry");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplate", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplateField", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.TypeTemplates.TypeTemplate", "Template")
+                        .WithMany("Fields")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplateFieldOption", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.TypeTemplates.TypeTemplateField", "Field")
+                        .WithMany("Options")
+                        .HasForeignKey("FieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Field");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Universes.Universe", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Auth.LorEvolveUser", "Owner")
@@ -6523,6 +6721,11 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Scenes");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectNode", b =>
+                {
+                    b.Navigation("Children");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.ProjectEntities.ProjectPage", b =>
                 {
                     b.Navigation("Panels");
@@ -6595,6 +6798,16 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("StoryLinks");
 
                     b.Navigation("Validation");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplate", b =>
+                {
+                    b.Navigation("Fields");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.TypeTemplates.TypeTemplateField", b =>
+                {
+                    b.Navigation("Options");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.WorldRules.WorldRule", b =>
