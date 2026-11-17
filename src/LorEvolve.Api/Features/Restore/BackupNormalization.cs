@@ -99,7 +99,14 @@ internal static class BackupNormalization
             ? payload.CreativeProjects
             : [.. payload.CreativeProjects.Select(project => project is null ? null! : project with { Format = null })],
         // Structure nodes arrived at version 51 (#290): an older file has none, even when it carries some.
-        ProjectNodes = version >= 51 ? payload.ProjectNodes : null,
+        // A panel's script and a page's or panel's picture arrived at version 54 (#295).
+        ProjectNodes = version >= 54 || payload.ProjectNodes is null
+            ? payload.ProjectNodes
+            : version >= 51
+                ? [.. payload.ProjectNodes.Select(node => node is null
+                    ? null!
+                    : node with { Dialogue = null, Caption = null, Sfx = null, Notes = null, Image = null })]
+                : null,
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
             : [.. payload.RelationshipTypes.Select(type => type is null ? null! : ProjectRelationshipType(type, version))],

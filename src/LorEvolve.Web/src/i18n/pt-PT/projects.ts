@@ -333,6 +333,28 @@ const projects = {
     changed:
       'Isto foi alterado noutro sítio depois de ser aberto aqui. Nada foi substituído. Feche e abra de novo.',
     leave: 'Fechar sem guardar as alterações?',
+    panel: {
+      visualDescription: 'Descrição visual',
+      visualPlaceholder: 'Insira o que a vinheta mostra',
+      dialogue: 'Diálogo',
+      dialoguePlaceholder: 'Insira o diálogo',
+      caption: 'Legenda',
+      captionPlaceholder: 'Insira a legenda',
+      sfx: 'Efeitos sonoros',
+      sfxPlaceholder: 'Insira os efeitos sonoros',
+      notes: 'Notas',
+      notesPlaceholder: 'Insira notas para o artista',
+      save: 'Guardar vinheta',
+      saved: 'Guardado',
+      panels: 'Vinhetas',
+      none: 'Esta página ainda não tem vinhetas. Adicione-as no esquema.',
+    },
+    art: {
+      label: 'Arte',
+      missing: 'Ainda sem arte',
+      pageArt: 'Arte da página',
+      panelArt: 'Arte da vinheta',
+    },
     levels: {
       season: 'temporada',
       episode: 'episódio',

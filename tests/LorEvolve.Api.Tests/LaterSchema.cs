@@ -547,12 +547,14 @@ internal static class LaterSchema
 
     /// <summary>
     /// A project's structure nodes (AddProjectNodes, 2026-11-17, #290): one table, its key's autoindex and two indexes.
+    /// A comic node's picture (AddComicPanelScripts, #295): one table keyed by its node, its autoindex only.
     /// </summary>
     private static readonly string[] Nodes =
     [
         "sqlite_autoindex_ProjectNodes_1",
         "IX_ProjectNodes_ParentId",
         "IX_ProjectNodes_ProjectId_ParentId_SortOrder",
+        "sqlite_autoindex_ProjectNodeImages_1",
     ];
 
     /// <summary>

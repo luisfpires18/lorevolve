@@ -1,3 +1,5 @@
+using LorEvolve.Api.Features.Lore;
+
 namespace LorEvolve.Api.Features.ProjectEntities;
 
 /// <summary>A new node: its level, the node it sits under (null for a root), and where among its siblings.</summary>
@@ -9,7 +11,16 @@ public sealed record ProjectNodeRequest(
     string? Body = null,
     int? Place = null);
 
-public sealed record ProjectNodeUpdate(string? Title, string? Summary, string? Body, int? ExpectedVersion = null);
+/// <summary>A node save. The four script fields belong to a panel only (#295); null leaves them empty.</summary>
+public sealed record ProjectNodeUpdate(
+    string? Title,
+    string? Summary,
+    string? Body,
+    int? ExpectedVersion = null,
+    string? Dialogue = null,
+    string? Caption = null,
+    string? Sfx = null,
+    string? Notes = null);
 
 /// <summary>Where a node goes: its parent (null = root) and its place there, clamped to the list.</summary>
 public sealed record ProjectNodeMove(int Place, Guid? ParentId = null);
@@ -23,8 +34,10 @@ public sealed record ProjectNodeSummary(
     string? Summary,
     int BodyLength,
     int SortOrder,
-    int Version);
+    int Version,
+    FieldImageRef? Image = null);
 
+/// <summary>One node in full. <see cref="FieldImageRef.FieldId"/> of <paramref name="Image"/> is the node id (#295).</summary>
 public sealed record ProjectNodeDetail(
     Guid Id,
     Guid? ParentId,
@@ -35,7 +48,12 @@ public sealed record ProjectNodeDetail(
     int SortOrder,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    int Version);
+    int Version,
+    string? Dialogue = null,
+    string? Caption = null,
+    string? Sfx = null,
+    string? Notes = null,
+    FieldImageRef? Image = null);
 
 /// <summary>The whole structure with the rules that shape it, so a client never holds its own copy of them.</summary>
 public sealed record ProjectStructureTree(

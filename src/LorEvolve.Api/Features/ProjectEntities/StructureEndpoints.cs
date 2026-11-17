@@ -3,6 +3,7 @@ using LorEvolve.Api.Common;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Lore;
+using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Projects;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -88,8 +89,18 @@ public static class StructureEndpoints
                 node.Summary,
                 node.Body != null ? node.Body.Length : 0,
                 node.SortOrder,
-                node.Version))
+                node.Version,
+                null))
             .ToListAsync(cancellationToken);
+
+        // A page's or panel's picture (#295), never its script: the tree stays small.
+        var images = await db.ProjectNodeImages.AsNoTracking()
+            .Where(image => image.Node!.ProjectId == projectId)
+            .ToDictionaryAsync(image => image.NodeId, cancellationToken);
+
+        nodes = [.. nodes.Select(node => images.TryGetValue(node.Id, out var image)
+            ? node with { Image = FieldImageRef.Of(image) }
+            : node)];
 
         return Results.Ok(new ProjectStructureTree(project!.Format!, rules!.Roots, rules.Children, nodes));
     }
@@ -111,7 +122,15 @@ public static class StructureEndpoints
         var node = await db.ProjectNodes.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.Id == nodeId && candidate.ProjectId == projectId, cancellationToken);
 
-        return node is null ? Results.NotFound() : Results.Ok(Describe(node));
+        if (node is null)
+        {
+            return Results.NotFound();
+        }
+
+        var image = await db.ProjectNodeImages.AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.NodeId == nodeId, cancellationToken);
+
+        return Results.Ok(Describe(node, image));
     }
 
     private static async Task<IResult> CreateNodeAsync(
@@ -192,7 +211,7 @@ public static class StructureEndpoints
 
         await transaction.CommitAsync(cancellationToken);
 
-        return Results.Created($"/api/projects/{projectId}/structure/{node.Id}", Describe(node));
+        return Results.Created($"/api/projects/{projectId}/structure/{node.Id}", Describe(node, null));
     }
 
     private static async Task<IResult> UpdateNodeAsync(
@@ -215,6 +234,19 @@ public static class StructureEndpoints
             return Results.ValidationProblem(errors);
         }
 
+        (string Field, string? Value)[] script =
+        [
+            ("dialogue", request.Dialogue),
+            ("caption", request.Caption),
+            ("sfx", request.Sfx),
+            ("notes", request.Notes),
+        ];
+
+        if (script.FirstOrDefault(part => part.Value is { Length: > StructureLimits.ScriptFieldMaxLength }) is { Field: { } tooLong })
+        {
+            return Problems.Field(tooLong, "That text is too long.");
+        }
+
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
         var node = await db.ProjectNodes
@@ -234,6 +266,16 @@ public static class StructureEndpoints
                 node.Version);
         }
 
+        if (node.Level != "panel"
+            && script.FirstOrDefault(part => LoreValidation.Normalize(part.Value) is not null) is { Field: { } misplaced })
+        {
+            return Problems.Field(misplaced, "Only a panel holds script text.");
+        }
+
+        node.Dialogue = LoreValidation.Normalize(request.Dialogue);
+        node.Caption = LoreValidation.Normalize(request.Caption);
+        node.Sfx = LoreValidation.Normalize(request.Sfx);
+        node.Notes = LoreValidation.Normalize(request.Notes);
         node.Title = LoreValidation.Normalize(request.Title);
         node.Summary = LoreValidation.Normalize(request.Summary);
         node.Body = LoreValidation.Normalize(request.Body);
@@ -243,7 +285,10 @@ public static class StructureEndpoints
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return Results.Ok(Describe(node));
+        var image = await db.ProjectNodeImages.AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.NodeId == nodeId, cancellationToken);
+
+        return Results.Ok(Describe(node, image));
     }
 
     /// <summary>Deletes the node and its whole subtree (the database cascade), then closes up its siblings.</summary>
@@ -252,6 +297,8 @@ public static class StructureEndpoints
         Guid nodeId,
         ClaimsPrincipal principal,
         LorEvolveDbContext db,
+        IMediaObjectStore store,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var (_, _, denied) = await HolderAsync(db, projectId, principal, write: true, cancellationToken);
@@ -271,12 +318,23 @@ public static class StructureEndpoints
             return Results.NotFound();
         }
 
+        // The subtree's pictures (#295), read while their rows exist and swept once the cascade has committed.
+        var subtree = await SubtreeAsync(db, projectId, nodeId, cancellationToken);
+        var pictureKeys = (await db.ProjectNodeImages
+                .Where(image => subtree.Contains(image.NodeId))
+                .Select(image => new { image.OriginalKey, image.CropKey })
+                .ToListAsync(cancellationToken))
+            .SelectMany(image => new[] { image.OriginalKey, image.CropKey })
+            .ToArray();
+
         db.ProjectNodes.Remove(node);
         await db.SaveChangesAsync(cancellationToken);
 
         var siblings = await Siblings(db, projectId, node.ParentId).ToListAsync(cancellationToken);
         await SeriesEndpoints.PlaceAsync(db, siblings, item => item.SortOrder, (item, order) => item.SortOrder = order, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        await MediaObjectWrites.SweepAsync(store, loggerFactory.CreateLogger(NodeImageEndpoints.LoggerName), pictureKeys);
 
         return Results.NoContent();
     }
@@ -374,7 +432,33 @@ public static class StructureEndpoints
             .Where(node => node.ProjectId == projectId && node.ParentId == parentId)
             .OrderBy(node => node.SortOrder);
 
-    private static ProjectNodeDetail Describe(ProjectNode node) => new(
+    /// <summary>The node and every node under it, by walking the project's parent links.</summary>
+    private static async Task<HashSet<Guid>> SubtreeAsync(
+        LorEvolveDbContext db,
+        Guid projectId,
+        Guid nodeId,
+        CancellationToken cancellationToken)
+    {
+        var links = await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.ProjectId == projectId && node.ParentId != null)
+            .Select(node => new { node.Id, Parent = node.ParentId!.Value })
+            .ToListAsync(cancellationToken);
+        var children = links.ToLookup(link => link.Parent, link => link.Id);
+
+        var subtree = new HashSet<Guid> { nodeId };
+        var pending = new Stack<Guid>([nodeId]);
+        while (pending.TryPop(out var current))
+        {
+            foreach (var child in children[current].Where(subtree.Add))
+            {
+                pending.Push(child);
+            }
+        }
+
+        return subtree;
+    }
+
+    private static ProjectNodeDetail Describe(ProjectNode node, ProjectNodeImage? image) => new(
         node.Id,
         node.ParentId,
         node.Level,
@@ -384,7 +468,12 @@ public static class StructureEndpoints
         node.SortOrder,
         node.CreatedAt,
         node.UpdatedAt,
-        node.Version);
+        node.Version,
+        node.Dialogue,
+        node.Caption,
+        node.Sfx,
+        node.Notes,
+        image is null ? null : FieldImageRef.Of(image));
 
     private static Dictionary<string, string[]>? ValidateText(string? title, string? summary, string? body)
     {

@@ -91,6 +91,7 @@ universe only.
 | A project entry's history | `entities/revisions` | `live-only` | `live-only` |
 | A project's own types | `entity-types` | `get_project_schema` | `ProjectType`, `ProjectField` |
 | A project's structure | `seasons`, `structure`, `structure/move` | `get_project_structure` | `read-only-by-design` |
+| A comic page's or panel's picture | `structure/image` | `media-bytes` | `media-bytes` |
 
 ## The write path
 

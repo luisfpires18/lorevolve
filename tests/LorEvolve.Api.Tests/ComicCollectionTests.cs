@@ -170,7 +170,7 @@ public sealed class ComicCollectionTests(LorEvolveApiFactory factory) : IClassFi
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(53, backup.FormatVersion);
+        Assert.Equal(54, backup.FormatVersion);
         Assert.Equal([two, one], backup.Payload.ComicCollections!.Single().NodeIds);
 
         var restored = await RestoreArchive(client, archive, "Comic world restored");

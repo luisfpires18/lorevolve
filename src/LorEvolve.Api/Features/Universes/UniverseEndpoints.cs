@@ -387,6 +387,12 @@ public static partial class UniverseEndpoints
                     .Select(image => new { image.OriginalKey, image.CropKey })
                     .ToListAsync(cancellationToken))
                 .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
+            // A comic page's or panel's picture (#295), going with its project in the cascade.
+            .Concat((await db.ProjectNodeImages
+                    .Where(image => image.Node!.Project!.UniverseId == universe.Id)
+                    .Select(image => new { image.OriginalKey, image.CropKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks
