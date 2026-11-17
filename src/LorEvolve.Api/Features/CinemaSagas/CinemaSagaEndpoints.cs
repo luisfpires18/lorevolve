@@ -20,7 +20,7 @@ public static class CinemaSagaEndpoints
 
     public const string PhaseChangedCode = "cinema_phase_changed";
 
-    public const string MembershipExistsCode = "cinema-membership-exists";
+    public const string MembershipExistsCode = "cinema_membership_exists";
 
     public static IEndpointRouteBuilder MapCinemaSagaEndpoints(this IEndpointRouteBuilder endpoints)
     {

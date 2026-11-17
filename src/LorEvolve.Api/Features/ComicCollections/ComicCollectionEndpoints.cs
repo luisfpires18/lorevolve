@@ -19,7 +19,7 @@ public static class ComicCollectionEndpoints
 {
     public const string CollectionChangedCode = "comic_collection_changed";
 
-    public const string EntryExistsCode = "comic-collection-entry-exists";
+    public const string EntryExistsCode = "comic_collection_entry_exists";
 
     public static IEndpointRouteBuilder MapComicCollectionEndpoints(this IEndpointRouteBuilder endpoints)
     {

@@ -129,7 +129,7 @@ test.describe('Game entity details', () => {
     const cover = withField.fields.find((one) => one.name === 'Cover')!.id
 
     // Same journey as project-field-images.spec.ts: the picture is held in the new entry form, then uploaded.
-    await page.goto(`/app/projects/${alpha.id}/entities?type=${typeId}`)
+    await page.goto(`/app/universes/${world.id}/game-entities/${alpha.id}?type=${typeId}`)
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Pictured')
     await page.getByTestId(`field-image-${cover}-input`).setInputFiles({

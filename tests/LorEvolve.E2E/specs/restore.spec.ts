@@ -15,9 +15,6 @@ import { entryText } from './support/zip'
  * world through the API and exports it for real, so the file uploaded is exactly the file LorEvolve writes.
  */
 
-/** The backup format the API writes today (`UniverseBackup.CurrentVersion`); a file one past it is from a newer LorEvolve. */
-const CURRENT_FORMAT_VERSION = 48
-
 function unique(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`
 }
@@ -197,7 +194,8 @@ test.describe('restore a backup', () => {
     await signUp(page)
     const source = await seedWorld(page, unique('Orlamund '))
     const archive = await exportBackup(page, source.universeId)
-    const sourcePayload = JSON.parse(entryText(archive, 'backup.json')).payload
+    const exported = JSON.parse(entryText(archive, 'backup.json'))
+    const sourcePayload = exported.payload
 
     await chooseAndCheck(page, {
       name: 'orlamund.zip',
@@ -210,7 +208,7 @@ test.describe('restore a backup', () => {
     await expect(preview).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Ready to restore' })).toBeFocused()
     await expect(page.getByTestId('restore-universe-name')).toHaveText(source.name)
-    await expect(preview).toContainText(`Version ${CURRENT_FORMAT_VERSION}`)
+    await expect(preview).toContainText(`Version ${exported.formatVersion}`)
     await expect(preview).toContainText('1 world rule')
     await expect(preview).toContainText('1 entry')
     await expect(preview).toContainText('1 picture')
@@ -341,7 +339,7 @@ test.describe('restore a backup', () => {
           name: 'future.json',
           mimeType: 'application/json',
           buffer: Buffer.from(
-            JSON.stringify({ ...document, formatVersion: CURRENT_FORMAT_VERSION + 1 }),
+            JSON.stringify({ ...document, formatVersion: document.formatVersion + 1 }),
           ),
         },
         /newer LorEvolve/,

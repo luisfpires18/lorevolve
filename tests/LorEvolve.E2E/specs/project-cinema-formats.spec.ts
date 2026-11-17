@@ -39,6 +39,8 @@ async function signUp(page: Page) {
 test('each Cinema and Comic format is chosen, kept after a reload, and drawn on the list and overview', async ({
   page,
 }) => {
+  // Eleven formats, each created, reloaded and found on the list, run past the default 30 seconds.
+  test.slow()
   await signUp(page)
   const response = await page.request.post('/api/universes', {
     data: { name: unique('Formatworld '), description: null },

@@ -304,8 +304,13 @@ public static class ProjectEntityEndpoints
 
         // The entry's history, through the same capture the lore uses (#146). Inside the transaction, so an edit that
         // fails leaves no version behind claiming it happened.
-        await EntityRevisions.CaptureAsync(
-            db, entityId, EntityRevisionKind.Edited, restoredFromRevisionId: null, principal.RequireUserId(), cancellationToken);
+        // A save that changed the entry moves its version on, as the lore's does, so a form opened before it is refused.
+        if (await EntityRevisions.CaptureAsync(
+            db, entityId, EntityRevisionKind.Edited, restoredFromRevisionId: null, principal.RequireUserId(), cancellationToken))
+        {
+            entity.Version++;
+            await db.SaveChangesAsync(cancellationToken);
+        }
 
         await transaction.CommitAsync(cancellationToken);
         await EntityFieldImageEndpoints.SweepDroppedAsync(db, store, loggerFactory, cancellationToken);
