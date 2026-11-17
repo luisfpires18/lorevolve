@@ -50,7 +50,7 @@ before proposing against them, which is the only read of them MCP offers.
 | The reckoning and its calendar | `chronology` | `get_change_options` | `Chronology` |
 | World Rules | `world-rules` | `get_change_options` | `WorldRule` |
 | World Logic Systems and rule definitions | `systems`, `system-rules`, `world-logic/rules` | `list_systems`, `list_world_logic_rules`, `get_world_logic_rule`, `evaluate_world_logic_rule`, `get_rule_impact` | `SystemRule`, `LoreSystem` |
-| A System's state machine | `systems/machine` | `pending-lorex-075` | `pending-lorex-075` |
+| A System's state machine | `systems/machine` | `get_system_machine`, `evaluate_world_logic_rule` | `SystemState`, `SystemTransition` |
 | Recorded World Logic findings | `world-logic/findings` | `list_world_logic_findings`, `get_world_logic_finding` | `person-only` |
 | An AI client's unverified claim | `world-logic/semantic-findings` | `person-only` | `submit_semantic_finding` |
 | The rule vocabulary | `validation-terms` | `get_change_options` | `ValidationTerm` |
@@ -150,6 +150,7 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `list_world_logic_rules` | World rules and rule definitions, both kinds, a page at a time. | implemented | |
 | `get_world_logic_rule` | One rule with its condition, exceptions and dependencies. | implemented | |
 | `list_systems` | The Systems and the rules each references, in order. | implemented | |
+| `get_system_machine` | One System's state machine: its binding, its states and its transitions with their guard rules. | implemented | Since #361. Unpaged: a machine holds at most 64 states and 256 transitions. "Try an entry" has no tool of its own; its guards are evaluated one at a time with `evaluate_world_logic_rule`. |
 | `evaluate_world_logic_rule` | Runs a rule's condition over the stored lore; records nothing. | implemented | |
 | `get_rule_impact` | What a change to a rule would touch. | implemented | |
 | `list_world_logic_findings` | The findings the author's sweeps recorded. | implemented | |
@@ -174,6 +175,8 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `propose_changes` `project_entry` | Create, update or remove an entry of one of the universe's projects. | implemented | |
 | `propose_changes` `system_rule` | Create or update a World Logic rule definition: title, description, condition, exceptions, dependencies. | implemented | Since the ADR 0072 addendum, 2026-11-15. Checked by the rule routes' own validation; an update is bound to the version read at staging. |
 | `propose_changes` `system` | Create or update a World Logic System and its whole ordered rule list. | implemented | Since the ADR 0072 addendum, 2026-11-15. The list is applied as link and unlink by difference; it may name a `system_rule` of the same proposal by its ref. |
+| `propose_changes` `system_state` | Create or update one state of a System's machine: name, value, whether it is initial, and on the first state the type and attribute the machine covers. | implemented | Since #361. Approval saves the machine whole through its own save and checks, under the System's current version; staging and every read check the machine with the proposal's earlier changes to it. |
+| `propose_changes` `system_transition` | Create or update one transition of a System's machine: the states it joins, its label and its guard rule. | implemented | Since #361. Its states and guard may be a `system_state` or `system_rule` of the same proposal, by ref. |
 | `propose_changes` `project_type` | Create or update a type of one of the universe's projects, such as a game's GameEntity, in the same proposal as its fields and entries. | implemented | No remove: a type in use cannot be deleted and there is no Trash. An entry names a new type with `typeRef`. |
 | `propose_changes` `project_field` | Create or update a field on a project's type, with its choices. | implemented | No remove. An entry names a new field with `fieldRef`. Changing the kind of a field that holds values, or dropping a choice an entry uses, is refused at approval, not at staging. |
 | `propose_changes` `lore_type` | Create or update a lore type. | implemented | Schema: a proposal of its own, where the connection allows schema. |
@@ -183,6 +186,7 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `propose_changes` `chronology` | Update the date periods and the calendar, written whole. | implemented | Schema. |
 | `propose_changes` `event_kind` | Create or update an event kind of the world rule vocabulary. | implemented | Schema. `method` is the same resource for a method. |
 | `remove` of a `system` or a `system_rule` | Delete a System or a rule definition. | missing | By design: a System delete is permanent and a rule definition has no Trash, while `remove` means the Trash. An author deletes them in LorEvolve. |
+| `remove` of a `system_state` or a `system_transition` | Delete a state or a transition of a System's machine. | missing | By design: neither has a Trash, and deleting a state takes its transitions with it. An author deletes them on the machine in LorEvolve. |
 | `sort` on `list_world_logic_findings` | Read the newest findings first. | missing | The route has had `sort=newest` since #209; the tool always reads the `attention` order. |
 | Reading back a submitted semantic finding | See what became of a claim this client submitted. | missing | No tool reads `world-logic/semantic-findings`; deliberate for now (#209). |
 | A condition naming a record the same proposal creates | Stage a `system_rule` whose condition names a lore entry or rule created in that proposal. | missing | A condition may name only records that already exist; propose the rest after the first proposal is approved. |
@@ -214,9 +218,6 @@ reaches; that one says who may reach it at all.
 Every child of milestone #135 has merged, so nothing from it carries a `pending-` code. What is left of it is the
 shape of the surface, not unfinished work.
 
-- **A System's state machine has no tool yet.** `systems/machine` (#357) is read and saved only in LorEvolve. Its
-  row is `pending-lorex-075` until #361 gives MCP a way to read it.
-
 - **A connected app never reads a canon finding.** `canon-conflicts` is `person-only`: the older Canon integrity
   queue is a person's to work through. World Logic's own findings (#153) *are* readable, by
   `list_world_logic_findings` and `get_world_logic_finding`, so the two integrity surfaces answer differently. Worth
@@ -234,6 +235,12 @@ shape of the surface, not unfinished work.
   addendum). Neither can be removed through review: a System delete is permanent and a rule definition has no Trash,
   so an author deletes them in LorEvolve. A condition may name only records that already exist, not ones the same
   proposal creates.
+- **A machine's states and transitions are proposed one at a time, never removed, and best approved together.**
+  `get_system_machine` reads a System's machine and `propose_changes` stages a `system_state` or a
+  `system_transition` (create and update, #361). Each is bound to the System's version at staging, and every machine
+  save bumps it, so approving some machine changes of one System now and the rest later fails the rest as
+  `changed_since`: approve them together, or ask for the rest again. "Try an entry" on `systems/machine` has no tool;
+  a client evaluates a transition's guard with `evaluate_world_logic_rule`.
 - **The matrix is domain-level, and a nested family inherits its parent's answer.** A row covers a family of routes
   sharing a prefix, and one row may hold several: World Logic's rules are read through the single row that covers
   `systems`, `system-rules` and `world-logic/rules` together. A route whose first segment is new fails the route test

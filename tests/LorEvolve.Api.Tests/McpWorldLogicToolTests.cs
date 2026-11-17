@@ -49,6 +49,7 @@ public sealed class McpWorldLogicToolTests(McpWorldLogicFixture fixture) : IClas
         Assert.Contains(LorEvolveMcpWorldLogicTools.ListFindingsTool, tools);
         Assert.Contains(LorEvolveMcpWorldLogicTools.GetFindingTool, tools);
         Assert.Contains(LorEvolveMcpWorldLogicTools.ImpactTool, tools);
+        Assert.Contains(LorEvolveMcpWorldLogicTools.GetMachineTool, tools);
 
         Assert.DoesNotContain(LorEvolveMcpWorldLogicTools.SubmitTool, tools);
 
@@ -141,6 +142,103 @@ public sealed class McpWorldLogicToolTests(McpWorldLogicFixture fixture) : IClas
 
         var named = Assert.Single(rule.GetProperty("systems").EnumerateArray());
         Assert.Equal(W.LoreSystem, named.GetProperty("id").GetGuid());
+    }
+
+    // ---------- A System's state machine (#361) ----------
+
+    [Fact]
+    public async Task A_machine_is_read_with_its_binding_states_transitions_and_guard_titles()
+    {
+        var (system, calm, stormy, rising) = await NewMachineAsync("Weather at sea", fixture.ConditionRule);
+        await using var client = await SdkClient(Api, W.U, fixture.ReadOnly.AccessToken);
+
+        var machine = await Call(client, LorEvolveMcpWorldLogicTools.GetMachineTool, new() { ["systemId"] = system.ToString() });
+
+        Assert.Equal(system, machine.GetProperty("systemId").GetGuid());
+        Assert.Equal("Weather at sea", machine.GetProperty("name").GetString());
+        Assert.Equal(2, machine.GetProperty("version").GetInt32());
+        Assert.Equal(SystemMachineEndpoints.SchemaVersion, machine.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal("Sea", machine.GetProperty("binding").GetProperty("subjectType").GetString());
+        Assert.Equal("Weather", machine.GetProperty("binding").GetProperty("attribute").GetString());
+
+        // In declared order, with the initial flag and the open findings each state has.
+        var states = machine.GetProperty("states").EnumerateArray().ToList();
+        Assert.Equal([calm, stormy], states.Select(state => state.GetProperty("id").GetGuid()));
+        Assert.Equal(["calm", "stormy"], states.Select(state => state.GetProperty("value").GetString()));
+        Assert.Equal([true, false], states.Select(state => state.GetProperty("initial").GetBoolean()));
+        Assert.All(states, state => Assert.Equal(0, state.GetProperty("openFindings").GetInt32()));
+
+        var transition = Assert.Single(machine.GetProperty("transitions").EnumerateArray());
+        Assert.Equal(rising, transition.GetProperty("id").GetGuid());
+        Assert.Equal(calm, transition.GetProperty("fromStateId").GetGuid());
+        Assert.Equal(stormy, transition.GetProperty("toStateId").GetGuid());
+        Assert.Equal("Rising wind", transition.GetProperty("label").GetString());
+        Assert.Equal(fixture.ConditionRule, transition.GetProperty("guardRuleId").GetGuid());
+        Assert.Equal("A wyvern is on record", transition.GetProperty("guardTitle").GetString());
+    }
+
+    [Fact]
+    public async Task A_system_without_a_machine_reads_with_no_binding_and_empty_lists()
+    {
+        var system = (await PostJson<SystemDetail>(W.Owner, $"/api/universes/{W.U}/systems", new SystemRequest("No machine yet", null))).Id;
+        await using var client = await SdkClient(Api, W.U, fixture.ReadOnly.AccessToken);
+
+        var machine = await Call(client, LorEvolveMcpWorldLogicTools.GetMachineTool, new() { ["systemId"] = system.ToString() });
+
+        Assert.Equal(system, machine.GetProperty("systemId").GetGuid());
+        Assert.False(machine.TryGetProperty("binding", out var binding) && binding.ValueKind != JsonValueKind.Null);
+        Assert.Empty(machine.GetProperty("states").EnumerateArray());
+        Assert.Empty(machine.GetProperty("transitions").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Another_universe_s_system_or_a_non_id_reads_as_not_found()
+    {
+        await using var client = await SdkClient(Api, W.U, fixture.ReadOnly.AccessToken);
+
+        foreach (var systemId in new[] { fixture.ElsewhereSystem.ToString(), Guid.NewGuid().ToString(), "not-an-id" })
+        {
+            var refused = await CallRaw(client, LorEvolveMcpWorldLogicTools.GetMachineTool, new() { ["systemId"] = systemId });
+            Assert.True(refused.IsError);
+            Assert.Equal("not_found", refused.Error);
+        }
+    }
+
+    [Fact]
+    public async Task List_systems_says_which_systems_have_a_machine()
+    {
+        var (withMachine, _, _, _) = await NewMachineAsync("Tides of the bay", null);
+        var without = (await PostJson<SystemDetail>(W.Owner, $"/api/universes/{W.U}/systems", new SystemRequest("Tides without a machine", null))).Id;
+        await using var client = await SdkClient(Api, W.U, fixture.ReadOnly.AccessToken);
+
+        var systems = (await Call(client, LorEvolveMcpWorldLogicTools.ListSystemsTool, new() { ["pageSize"] = 100 }))
+            .GetProperty("systems").EnumerateArray().ToList();
+
+        Assert.True(Assert.Single(systems, row => row.GetProperty("id").GetGuid() == withMachine).GetProperty("hasMachine").GetBoolean());
+        Assert.False(Assert.Single(systems, row => row.GetProperty("id").GetGuid() == without).GetProperty("hasMachine").GetBoolean());
+    }
+
+    [Fact]
+    public async Task A_revoked_connection_cannot_read_a_machine()
+    {
+        var (system, _, _, _) = await NewMachineAsync("Weather of the revoked", null);
+        var owner = await SignIn(Api, "user-mcpworldlogic-owner");
+        var connection = await Connect(Api, owner, W.U);
+        object Read() => new
+        {
+            jsonrpc = "2.0",
+            id = 3,
+            method = "tools/call",
+            @params = new { name = LorEvolveMcpWorldLogicTools.GetMachineTool, arguments = new { systemId = system.ToString() } },
+        };
+
+        Assert.Equal(HttpStatusCode.OK, (await Post(Api.CreateClient(), W.U, connection.AccessToken, Read())).StatusCode);
+
+        // The owner's only connection: revoking it ends it at once, as it ends every other tool.
+        var app = Assert.Single((await owner.GetFromJsonAsync<List<ConnectedApp>>("/api/profile/connected-apps"))!);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/profile/connected-apps/{app.Id}")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Post(Api.CreateClient(), W.U, connection.AccessToken, Read())).StatusCode);
     }
 
     /// <summary>
@@ -507,6 +605,22 @@ public sealed class McpWorldLogicToolTests(McpWorldLogicFixture fixture) : IClas
     }
 
     // ---------- Helpers ----------
+
+    /// <summary>A new System with a machine saved through its route: calm (initial) and stormy, joined by one transition.</summary>
+    private async Task<(Guid System, Guid Calm, Guid Stormy, Guid Rising)> NewMachineAsync(string name, Guid? guard)
+    {
+        var system = (await PostJson<SystemDetail>(W.Owner, $"/api/universes/{W.U}/systems", new SystemRequest(name, null))).Id;
+        var (calm, stormy, rising) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        (await W.Owner.PutAsJsonAsync(
+            $"/api/universes/{W.U}/systems/{system}/machine",
+            new SystemMachineRequest(
+                SystemMachineEndpoints.SchemaVersion,
+                new SystemMachineBinding("Sea", "Weather"),
+                [new SystemMachineState(calm, "Calm", "calm", true, 0, 0), new SystemMachineState(stormy, "Stormy", "stormy", false, 240, 0)],
+                [new SystemMachineTransition(rising, calm, stormy, "Rising wind", guard)],
+                1))).EnsureSuccessStatusCode();
+        return (system, calm, stormy, rising);
+    }
 
     private async Task<int> WaitingAsync()
     {

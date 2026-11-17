@@ -14,8 +14,8 @@ using static LorEvolve.Api.Features.Mcp.McpResults;
 namespace LorEvolve.Api.Features.Mcp;
 
 /// <summary>
-/// The MCP World Logic tools (#154, ADR 0072): a connected AI client reads the universe's rules and Systems,
-/// evaluates one deterministically, reads the evidence a finding cited, asks what a rule change would touch, and
+/// The MCP World Logic tools (#154, ADR 0072): a connected AI client reads the universe's rules and Systems and a
+/// System's state machine (#361), evaluates one deterministically, reads the evidence a finding cited, asks what a rule change would touch, and
 /// submits an observation of its own for the author to review.
 ///
 /// <para><b>Two kinds of answer, and they never mix.</b> <c>evaluate_world_logic_rule</c> and
@@ -30,7 +30,7 @@ namespace LorEvolve.Api.Features.Mcp;
 /// client cannot read another one's rules, findings or evidence, and a claim cannot cite a record this universe does
 /// not hold.</para>
 ///
-/// <para><b>Nothing here changes the universe.</b> Six of the seven tools only read. The seventh writes one row of
+/// <para><b>Nothing here changes the universe.</b> Every tool but one only reads. That one writes one row of
 /// review state and says so: it creates no lore, changes no rule, records no violation and approves nothing. A rule
 /// change still goes through <c>get_change_options</c> and <c>propose_changes</c>, which are untouched by this
 /// issue.</para>
@@ -41,6 +41,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
     public const string ListRulesTool = "list_world_logic_rules";
     public const string GetRuleTool = "get_world_logic_rule";
     public const string ListSystemsTool = "list_systems";
+    public const string GetMachineTool = "get_system_machine";
     public const string EvaluateTool = "evaluate_world_logic_rule";
     public const string ListFindingsTool = "list_world_logic_findings";
     public const string GetFindingTool = "get_world_logic_finding";
@@ -69,7 +70,10 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
         + "change a rule, use get_change_options and propose_changes as for anything else; nothing here edits the universe. "
         + "A rule definition (system_rule) and a System (system) are proposed there too: create or update, never remove, and "
         + "a System's rule list can name a rule the same proposal creates by its ref. A condition may name only records that "
-        + "already exist.";
+        + "already exist. get_system_machine reads a System's state machine: the type and attribute it covers, its states and "
+        + "its transitions with their guard rules. Its states (system_state) and transitions (system_transition) are proposed "
+        + "through propose_changes too, create or update, never remove; each names its System, and a transition can name a "
+        + "state or a guard rule the same proposal creates by its ref.";
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -168,7 +172,8 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
 
     [McpServerTool(Name = ListSystemsTool, Title = "List the universe's Systems", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("The named sets of rules this universe has - a magic system, a succession law, a trial protocol - each with its id, "
-        + "name, summary, how many rule definitions it references and whether it covers the whole universe or one project. A System "
+        + "name, summary, how many rule definitions it references, whether it has a state machine (get_system_machine reads it) "
+        + "and whether it covers the whole universe or one project. A System "
         + "is a set, not a container: one rule may belong to several, and get_world_logic_rule reads a rule whatever set it is in.")]
     public async Task<CallToolResult> ListSystemsAsync(
         [Description("Optional: only the Systems scoped to this project of the universe, plus the universe-wide ones.")] string? projectId = null,
@@ -207,6 +212,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 name = system.Name,
                 summary = system.Summary,
                 ruleCount = system.Rules.Count,
+                hasMachine = db.SystemMachines.Any(machine => machine.SystemId == system.Id),
                 scope = system.Scope,
                 projectId = system.ProjectId,
                 updatedAt = system.UpdatedAt,
@@ -226,6 +232,7 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 system.name,
                 system.summary,
                 system.ruleCount,
+                system.hasMachine,
                 scope = system.scope == WorldLogicScope.Project ? "project" : "universe",
                 system.projectId,
                 updatedAt = Utc(system.updatedAt),
@@ -317,6 +324,68 @@ public sealed class LorEvolveMcpWorldLogicTools(LorEvolveDbContext db, McpCaller
                 // there is nothing here for evaluate_world_logic_rule to run.
                 hasCondition = false,
             }, Json);
+    }
+
+    [McpServerTool(Name = GetMachineTool, Title = "Read a System's state machine", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Reads one System's state machine. Never changes it; propose states and transitions with propose_changes. "
+        + "It returns the type and attribute the machine covers (binding), its states with their values, which one is initial "
+        + "and how many open findings each has, and its transitions with the guard rule each needs, all in declared order. A "
+        + "System with no machine has no binding and empty lists.")]
+    public async Task<CallToolResult> GetMachineAsync(
+        [Description("The System's id, exactly as list_systems gave it.")] string systemId,
+        CancellationToken cancellationToken)
+    {
+        if (Guard(caller) is { } refused)
+        {
+            return refused;
+        }
+
+        if (!Guid.TryParse(systemId, out var id))
+        {
+            return NotFound();
+        }
+
+        // Another universe's System reads as one that was never there.
+        var system = await db.LoreSystems.AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == caller.UniverseId, cancellationToken);
+        if (system is null)
+        {
+            return NotFound();
+        }
+
+        // Unpaged, as a rule is: a machine is capped at 64 states and 256 transitions.
+        var machine = await SystemMachineEndpoints.DetailAsync(db, system, cancellationToken);
+        var guardIds = machine.Transitions.Select(transition => transition.GuardRuleId).OfType<Guid>().Distinct().ToList();
+        var titles = await db.SystemRules.AsNoTracking()
+            .Where(rule => rule.UniverseId == caller.UniverseId && guardIds.Contains(rule.Id))
+            .ToDictionaryAsync(rule => rule.Id, rule => rule.Title, cancellationToken);
+
+        return Result(new
+        {
+            universe = caller.UniverseName,
+            systemId = system.Id,
+            name = system.Name,
+            version = machine.Version,
+            schemaVersion = machine.SchemaVersion,
+            binding = machine.Binding is { } binding ? new { subjectType = binding.SubjectType, attribute = binding.Attribute } : null,
+            states = machine.States.Select(state => new
+            {
+                id = state.Id,
+                name = state.Name,
+                value = state.Value,
+                initial = state.Initial,
+                openFindings = machine.OpenFindings.FirstOrDefault(count => count.StateId == state.Id)?.Count ?? 0,
+            }),
+            transitions = machine.Transitions.Select(transition => new
+            {
+                id = transition.Id,
+                fromStateId = transition.FromStateId,
+                toStateId = transition.ToStateId,
+                label = transition.Label,
+                guardRuleId = transition.GuardRuleId,
+                guardTitle = transition.GuardRuleId is { } guard ? titles.GetValueOrDefault(guard) : null,
+            }),
+        }, Json);
     }
 
     // ---------- Evaluating ----------

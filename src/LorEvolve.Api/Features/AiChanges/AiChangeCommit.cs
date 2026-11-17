@@ -487,6 +487,47 @@ internal static class AiChangeCommit
                     : saved;
             }
 
+            case SystemStateValues or SystemTransitionValues:
+            {
+                // The machine's own save (#361): the machine as it is now with this one change in it, saved whole through
+                // the route's checks. Staleness was checked before anything here was written, and an earlier change of
+                // this approval may have saved the machine since, so it is saved under the System's current version.
+                var systemId = Id(work.Proposed is SystemStateValues state ? state.System : ((SystemTransitionValues)work.Proposed).System);
+                var system = await db.LoreSystems.AsNoTracking()
+                    .FirstOrDefaultAsync(candidate => candidate.Id == systemId && candidate.UniverseId == universeId, cancellationToken);
+                if (system is null)
+                {
+                    return Done(Results.NotFound(), null);
+                }
+
+                var itemId = work.Action == AiChangeAction.Create ? Guid.NewGuid() : target!.Value;
+                var (document, problem) = AiChangeChecker.Machine(
+                    AiChangeChecker.MachineDocument(await SystemMachineEndpoints.DetailAsync(db, system, cancellationToken)),
+                    work.Action,
+                    itemId,
+                    work.Proposed,
+                    Id);
+                if (problem is { } refused)
+                {
+                    return Done(Problems.Field(refused.Field, refused.Message), null);
+                }
+
+                var saved = Done(
+                    await SystemMachineEndpoints.SaveCoreAsync(db, universeId, systemId, document! with { ExpectedVersion = system.Version }, cancellationToken),
+                    itemId);
+
+                // The save deletes the stored rows past the change tracker and writes them back under the same ids; let go
+                // of what it tracked, so a later change of this approval can save the same machine again.
+                foreach (var tracked in db.ChangeTracker.Entries()
+                             .Where(row => row.Entity is SystemMachine or SystemState or SystemTransition)
+                             .ToList())
+                {
+                    tracked.State = EntityState.Detached;
+                }
+
+                return saved;
+            }
+
             // A project's own schema, through the project Types screen's write paths, never the lore's.
             case ProjectTypeValues projectType:
             {

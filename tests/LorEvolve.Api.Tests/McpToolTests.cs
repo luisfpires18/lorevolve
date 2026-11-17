@@ -51,7 +51,7 @@ public sealed class McpToolTests(McpToolFixture fixture) : IClassFixture<McpTool
         "browse_timeline", "evaluate_world_logic_rule", "get_arc", "get_lore_entry", "get_lore_image",
         "get_lore_relationships", "get_map_location", "get_project",
         "get_project_entry", "get_project_schema", "get_project_script", "get_project_structure", "get_rule_impact",
-        "get_scene", "get_story",
+        "get_scene", "get_story", "get_system_machine",
         "get_timeline_moment", "get_universe_overview", "get_world_logic_finding", "get_world_logic_rule",
         "list_lore_images", "list_maps", "list_project_entries", "list_projects", "list_systems",
         "list_world_logic_findings", "list_world_logic_rules",
