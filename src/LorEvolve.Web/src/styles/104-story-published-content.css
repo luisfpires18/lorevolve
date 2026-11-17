@@ -1,0 +1,165 @@
+/* ---------- A story's published content (ADR 0039) ----------
+   A reader, not the workspace: the manuscript in a serif reading column, the outline and the plot as quiet ordered
+   lists. Only sections with something in them are drawn; nothing numbers what a reader cannot see. */
+
+.pstory__sections ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pstory__section {
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  border-bottom: 1px solid var(--portal-line);
+  scroll-margin-top: var(--space-6);
+}
+
+.pstory__heading {
+  margin: 0 0 var(--space-5);
+  color: var(--portal-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pstory__toc ol {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-7);
+  padding-left: 1.5rem;
+  color: var(--portal-muted);
+  font-size: var(--text-ui);
+}
+
+.pstory__toc a {
+  overflow-wrap: anywhere;
+}
+
+.pstory__part {
+  max-width: 40rem;
+  scroll-margin-top: var(--space-6);
+}
+
+.pstory__part + .pstory__part {
+  margin-top: clamp(2.5rem, 6vw, 4rem);
+}
+
+.pstory__parttitle,
+.pstory__arctitle {
+  margin: 0 0 var(--space-4);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.875rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* The author's prose, exactly as written: one paragraph per blank line, its own line breaks kept, each paragraph in
+   the direction of its own first letter. */
+.pstory__prose {
+  color: rgb(var(--portal-ink-rgb) / 0.92);
+  font-family: var(--display);
+  font-size: clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem);
+  line-height: 1.8;
+}
+
+.pstory__prose p {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+}
+
+.pstory__prose p + p {
+  margin-top: 1.1em;
+}
+
+.pstory__scenes {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 44rem;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.pstory__scenes li::marker {
+  color: var(--portal-muted);
+  font-size: var(--text-ui);
+}
+
+.pstory__scenetitle {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.pstory__scenesummary,
+.pstory__arcdescription {
+  margin: var(--space-2) 0 0;
+  color: rgb(var(--portal-ink-rgb) / 0.86);
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  unicode-bidi: plaintext;
+}
+
+.pstory__arc + .pstory__arc {
+  margin-top: clamp(2rem, 5vw, 3rem);
+}
+
+.pstory__arcdescription {
+  max-width: 44rem;
+  margin: 0 0 var(--space-5);
+}
+
+/* Who a world is by. A world based on someone else's work credits that creator first, its LorEvolve author as curator,
+   and says - once, quietly - that it is unofficial. */
+.attribution p {
+  margin: 0;
+}
+
+.attribution__original {
+  color: var(--portal-ink);
+}
+
+.attribution__creator {
+  font-weight: 600;
+}
+
+.attribution__work {
+  font-style: italic;
+}
+
+.attribution .attribution__curator {
+  margin-top: var(--space-1);
+}
+
+.attribution .attribution__note {
+  margin-top: var(--space-2);
+  color: var(--portal-muted);
+  font-size: var(--text-sm);
+}
+
+.worldcard__original {
+  min-width: 0;
+  margin: auto 0 var(--space-1);
+  overflow: hidden;
+  color: rgb(var(--portal-ink-rgb) / 0.86);
+  font-size: var(--text-ui);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worldcard__original + .worldcard__byline {
+  margin-top: 0;
+}

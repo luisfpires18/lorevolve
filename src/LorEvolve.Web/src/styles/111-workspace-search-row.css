@@ -1,0 +1,15 @@
+/* ---------- The search row above a workspace ----------
+
+   The search keeps the row's width; anything beside it sits after it. The web assistant's button stood here until M4
+   (issue #157) retired it, and Connect to AI below kept the shape it set. */
+
+.workspace__top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.workspace__top .unisearch {
+  flex: 1 1 auto;
+  min-width: 0;
+}

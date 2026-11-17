@@ -1,0 +1,280 @@
+/* ---------- The workspace on a narrow screen ----------
+
+   The desktop shell is a permanent 19rem of chrome down the left edge. Folded into a
+   single column that chrome becomes a permanent band across the top instead, and on a
+   phone the section list plus the universe head cost around a third of the viewport on
+   every screen before a word of lore appears.
+
+   So below this width the chrome collapses to one sticky bar - the mark, where you are,
+   and a labelled disclosure - and the section list becomes a panel that is closed until
+   asked for and closes itself again on arrival. Nothing above this width changes. */
+
+@media (max-width: 860px) {
+  /* The bar and the sheet take their own height; only the screen below grows, so a short page
+     never stretches the bar to fill the viewport. */
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-drawer);
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 1rem;
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .rail__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+
+  .rail__seal {
+    flex: none;
+  }
+
+  .rail__where {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    color: var(--plate-muted);
+    white-space: nowrap;
+  }
+
+  /* The universe name is what gives way when the bar runs out of room: the section is
+     short, and losing it would be losing the answer to "where am I". */
+  .rail__universe {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--plate-ink);
+  }
+
+  .rail__section {
+    flex: none;
+    font-family: var(--display);
+    font-size: 0.85rem;
+    color: var(--plate-muted);
+  }
+
+  .rail__section::before {
+    content: '·';
+    margin-right: 0.4rem;
+  }
+
+  .rail__archived {
+    flex: none;
+    border: 1px solid var(--plate-muted);
+    border-radius: var(--radius-xs);
+    padding: 0 0.3rem;
+    font-size: var(--text-xs);
+  }
+
+  .rail__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    min-height: 2.25rem;
+    padding: 0.25rem 0.8rem;
+    border: 1px solid var(--plate-muted);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--plate-ink);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  /* Open is a state of the bar, not an action: a wash of the plate's ink, not a filled block. */
+  .rail__toggle[aria-expanded='true'] {
+    background: color-mix(in srgb, var(--plate-ink) 16%, transparent);
+    border-color: var(--plate-ink);
+  }
+
+  /* The rail is a row here, so the foot of a column means nothing: the same node lands at the
+     right-hand end of the bar, which is where a thumb is. */
+  .accountmenu--rail {
+    margin-top: 0;
+  }
+
+  .accountmenu--rail .accountmenu__panel {
+    bottom: auto;
+    left: auto;
+    right: 0;
+    top: calc(100% + 0.5rem);
+  }
+
+  /* The bar has the wordmark, the count and the menu to fit; a username as well would be the
+     thing that pushed it sideways. The panel carries it, where there is room. */
+  .accountmenu__name {
+    display: none;
+  }
+
+  /* The plate is a band across the top here, and the mark sits in the row rather than above
+     a column of text, so it comes down to the wordmark's own size. */
+  .brandmark--plate {
+    width: 2.5rem;
+    margin-bottom: 0;
+  }
+
+  /* The open list is a drawer over the page, under the bar (#274): the one nav, not a second one. The bar is the
+     touch control plus its padding, and the safe area above it. */
+  .sidebar {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + var(--control-touch) + 1rem);
+    bottom: 0;
+    left: 0;
+    z-index: var(--z-drawer);
+    width: min(20rem, 85vw);
+    overflow-y: auto;
+    border-right: 1px solid var(--rule);
+    border-bottom: 0;
+    background: var(--raised);
+    box-shadow: var(--shadow-3);
+    padding: var(--space-3) var(--gutter) max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .sidebar__scrim {
+    display: block;
+    position: fixed;
+    inset: calc(env(safe-area-inset-top) + var(--control-touch) + 1rem) 0 0;
+    z-index: calc(var(--z-drawer) - 1);
+    background: var(--backdrop);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sidebar[data-open='true'] {
+      animation: sidebar-in var(--duration-3) var(--ease);
+    }
+  }
+
+  @keyframes sidebar-in {
+    from {
+      transform: translateX(-2rem);
+      opacity: 0;
+    }
+  }
+
+  .sidebar[data-open='false'] {
+    display: none;
+  }
+
+  /* The bar already carries the name and the archived mark. The way back to the universes stays here, at the head of
+     the sheet: the bar's mark is LorEvolve's and leads to the portal (014). */
+  .sidebar__head {
+    margin: 0 0 var(--space-3);
+    padding: 0;
+    border: 0;
+  }
+
+  .sidebar__identity,
+  .sidebar__archived {
+    display: none;
+  }
+
+  .sidebar__back {
+    min-height: var(--control-touch);
+  }
+
+  /* One column, the groups in the desktop order. */
+  .sidebar__nav {
+    display: block;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .sidebar__group {
+    padding-bottom: var(--space-3);
+  }
+
+  /* The upkeep row spans the sheet under a rule, its three links side by side. */
+  .sidebar__group--upkeep {
+    margin-top: 0;
+    padding-top: var(--space-3);
+    padding-bottom: 0;
+  }
+
+  .sidebar__group--upkeep .sidebar__links {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+
+  .sidebar__link {
+    min-height: var(--control-touch);
+  }
+
+  .canvas {
+    padding: var(--space-3) var(--gutter) var(--space-8);
+  }
+
+  /* The search keeps a row of its own under the bar: a real box, never folded into an icon. A compact
+     one, and the screen starts close beneath it, so the row costs a phone's first screen almost
+     nothing - the manuscript's text box is still on it. A touch screen gets the taller box below. Its
+     list takes the whole width, and stacks the kind above the title. */
+  .workspace__top {
+    padding: var(--space-2) var(--gutter) 0;
+  }
+
+  .unisearch {
+    max-width: none;
+  }
+
+  .unisearch__input {
+    min-height: 2.25rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .unisearch__panel {
+    max-height: min(60vh, 30rem);
+  }
+
+  .unisearch__option {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.65rem 0.9rem 0.7rem 0.75rem;
+  }
+
+  .unisearch__kind {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 860px) and (pointer: coarse) {
+  .unisearch__input {
+    min-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Colour still answers a hover or a press; nothing moves. */
+  .button:active,
+  .doorway:hover,
+  .doorway:active {
+    transform: none;
+  }
+
+  /* Work under way is still shown - the bar stands part-filled - without sweeping. */
+  .progressbar[data-state='working'] .progressbar__fill {
+    animation: none;
+  }
+}

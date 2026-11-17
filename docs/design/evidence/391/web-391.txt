@@ -1,0 +1,46 @@
+#391 (LOREX-078) split styles.css into src/styles/NNN-area.css. Run 2026-11-17 on config/split-styles-css.
+All commands from src/LorEvolve.Web. Original saved first: git show dev:src/LorEvolve.Web/src/styles.css > <scratch>/styles.orig.css (19668 lines).
+
+== 4a. Source join (parts joined in @import order with one blank line between files, against the saved original)
+$ node -e "...plan 4a check..." <scratch>/styles.orig.css
+129 parts, 129 files, IDENTICAL
+exit 0
+
+== 4b. Built CSS, before (unchanged tree) and after (split), npm run build each time
+before  bb44dd85ac194ba37d6b93a748cec93417572160681ff6b7aa79354a054c1995  index-DOV0OIaf.css (269804 bytes)
+after   bb44dd85ac194ba37d6b93a748cec93417572160681ff6b7aa79354a054c1995  index-DOV0OIaf.css
+before  7e132b12374b4f240d26be3b9107da5755a5f8133a5d7801df33ece9806aee6c  ImageCropDialog-BY2xzm8t.css (1050 bytes)
+after   7e132b12374b4f240d26be3b9107da5755a5f8133a5d7801df33ece9806aee6c  ImageCropDialog-BY2xzm8t.css
+$ cmp before/index-DOV0OIaf.css dist/assets/index-DOV0OIaf.css            -> no output, exit 0 (identical)
+$ cmp before/ImageCropDialog-BY2xzm8t.css dist/assets/ImageCropDialog-BY2xzm8t.css -> no output, exit 0 (identical)
+Same hashed file names, same bytes. No fallback needed.
+
+== 4c. Dev server (vite on port 5193)
+$ curl -s "http://localhost:5193/src/styles.css?direct" > served.css    -> exit 0, 432984 bytes
+@import directives left (lines starting with @import): 0
+"@import" as text: 1 match, the word inside styles.css's own leading comment ("Only @import lines here"), not a directive.
+First rule of the original (@font-face, line 21) present: yes. Last rule of the original (.shelfcard ... { transform: none; }) present: yes.
+Non-blank lines of the served sheet after that comment equal the original's non-blank lines: yes (Vite drops blank lines between the inlined parts).
+
+== 4d. Screenshots: 16 before (unchanged tree), 16 after (split), same local stack, account and universe
+Stack: own API on port 5185 (scratch SQLite DB) and vite on port 5193, so another checkout's stack on 5180/5173 was left alone.
+Playwright (tests/LorEvolve.E2E's install), desktop 1440x900, phone 375x812 (isMobile, hasTouch, scale 2), emulated prefers-color-scheme, no saved theme, reduced motion, each page visited twice.
+A second "before" run gave the same bytes for all 16 files, so the capture is deterministic.
+cmp before-X.png after-X.png: identical for all 16 pairs (signin, universes, overview, entry x desktop, phone x light, dark).
+
+== Verification
+npm run typecheck      exit 0
+npm run lint           exit 0 (7 warnings, all in files this change does not touch, 0 errors)
+npm run format:check   exit 0  "All matched files use Prettier code style!"
+npm test               exit 0  tests 69, pass 69, fail 0 (MAX_LITERAL_FONT_SIZES still 200)
+npm run lines          exit 0  tests 3, pass 3, fail 0
+npm run build          exit 0
+npx prettier --check src/styles.css src/styles   exit 0  "All matched files use Prettier code style!"
+node lineLimit.test.ts --write   -> lineLimit.allow.json loses "styles.css": 19668, gains nothing
+
+== Part sizes
+$ wc -l src/styles/*.css | sort -n | tail -3
+   298 src/styles/085-family-tree.css
+   299 src/styles/113-pending-ai-changes.css
+ 19540 total
+Smallest: 064-moment-stories.css (10 lines). styles.css: 134 lines (4 comment lines, 1 blank, 129 @import lines).

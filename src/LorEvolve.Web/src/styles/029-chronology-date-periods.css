@@ -1,0 +1,134 @@
+/* ---------- Chronology: date periods ----------
+
+   One card per date period (stored as an era), in the order the periods run, its place in that
+   order as a quiet numeral in the gutter. The four settings of a period sit two by two when there
+   is room and stack when there is not - the grid decides, not a breakpoint - so a phone never gets
+   a sideways form and a list of several periods stays one column to scan. Above them, when there
+   are two or more, the order itself as one line of names. No range is drawn anywhere: a period has
+   no set length. */
+
+.eras {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.era {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 1rem;
+  padding: 0.9rem 1rem 0.75rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.era__ordinal {
+  min-width: 1.25rem;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.era__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0.9rem 1.25rem;
+}
+
+.era__fields .field__hint {
+  margin: var(--space-2) 0 0;
+}
+
+/* The run itself, drawn: the numbers a period's years pass through, then one plain sentence. */
+.era__sequence {
+  display: block;
+  font-family: var(--display);
+  font-size: var(--text-ui);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* A period with no short label is written by its full name, which may be long: its two examples
+   wrap inside their halves rather than widening the card. */
+.era .segmented__option {
+  max-width: 100%;
+  text-align: start;
+  overflow-wrap: anywhere;
+}
+
+.era__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-top: 0.85rem;
+}
+
+.era__use {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.era__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Earlier, Later and Remove stay focusable when they cannot act (`aria-disabled`), so the focus is not
+   dropped when a period reaches the end of the list; they read as the same quiet outline as a disabled
+   button. */
+.era__tools .button[aria-disabled='true'],
+.era__tools .button[aria-disabled='true']:hover,
+.era__tools .button[aria-disabled='true']:active {
+  background: var(--raised);
+  border-color: var(--rule-strong);
+  color: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.eras__order {
+  margin: var(--text-sm) 0 1rem;
+}
+
+.eras__line {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.6rem;
+  font-family: var(--display);
+  font-size: 1.05rem;
+}
+
+.eras__line li {
+  overflow-wrap: anywhere;
+}
+
+.eras__line li + li::before {
+  content: '\2192';
+  margin-right: 0.6rem;
+  font-family: var(--ui);
+  font-size: 0.8rem;
+  color: var(--rule-strong);
+}
+
+.eras__actions {
+  margin-top: 1.25rem;
+}
+
+/* On a phone the numeral sits above the fields rather than taking a column from them. */
+@media (max-width: 30rem) {
+  .era {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

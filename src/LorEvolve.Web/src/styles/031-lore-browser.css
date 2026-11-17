@@ -1,0 +1,283 @@
+/* ---------- Lore browser ----------
+
+   Where the author is comes first and stays small: the type as the page title, the types beside
+   each other as local navigation, one filter field and a status choice in a single row. Then the
+   cards, which are the page. On a phone the types fold into one "Type" button, the filters into
+   one "Filters" button, and "New …" waits at the bottom edge in reach of a thumb. */
+
+.lore .pageheader {
+  margin-bottom: var(--space-4);
+}
+
+.lore__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* Select acts on the list on screen, so it sits with the list's controls, never in the types' row: a button that comes
+   and goes there would narrow the row and move types from one line to another. */
+.lore__select {
+  flex: none;
+}
+
+/* On while selecting: the accent wash of a chosen state, not the ink of an action. */
+.lore__select[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.lore__selectbar {
+  margin-top: var(--space-6);
+}
+
+.lore__trashfailure {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+/* While selecting, the selection bar holds the foot of a phone's screen; New waits until it is done. */
+@media (max-width: 640px) {
+  .lore[data-selecting='true'] .lore__create {
+    display: none;
+  }
+}
+
+.lore__filtertoggle {
+  display: none;
+}
+
+.lore__filtercount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-full);
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+/* The list's controls, under the types: what narrows the list, then - at the row's far end - what acts on it. One row
+   when there is room; on a narrower one the actions wrap under the filters, still at the end. */
+.lore__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.lore__controls[hidden] {
+  display: none;
+}
+
+.lore__filters {
+  display: flex;
+  flex: 1 1 32rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+
+.lore__resultactions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-left: auto;
+  /* With the first row of filters, however many field filters wrap beneath it. */
+  align-self: flex-start;
+}
+
+/* Entries per page, its word beside the select. */
+.lore__pagesize {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lore__pagesizelabel {
+  font-size: var(--text-ui);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.lore__pagesizeselect {
+  width: auto;
+  min-width: 5rem;
+}
+
+/* The Lore grid's own card width: as many columns as the width holds at 16.5rem or more - three on a 1440 laptop, four
+   at 1536, five at 1920 - so a wide monitor gets more cards per row rather than stretched ones, and a card never drops
+   below about 264px, where its square and two lines of summary still read. The skeleton is cut the same way, so nothing
+   jumps when the entries arrive. The page size is the author's choice (Items per page); the columns are the width's. */
+.lore__grid,
+.lore__skeleton {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
+}
+
+.lore__search {
+  position: relative;
+  flex: 1 1 18rem;
+  max-width: 28rem;
+}
+
+.lore__searchicon {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.lore__searchinput {
+  padding-left: 2.25rem;
+  padding-right: 6.75rem;
+}
+
+/* Exact name: a small toggle at the search's own end, so it costs the row nothing. Quiet until pressed, then the accent's
+   "selected". The browser's clear button sits before it, inside the input's padding. */
+.lore__exact {
+  position: absolute;
+  top: 50%;
+  right: 0.375rem;
+  transform: translateY(-50%);
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease);
+}
+
+@media (hover: hover) {
+  .lore__exact:hover {
+    background: var(--hover-wash);
+    color: var(--ink);
+  }
+}
+
+.lore__exact[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+.lore .segmented {
+  align-self: center;
+}
+
+/* Field filters (034): Add field filter beside search and status, quieter than either; the filters in force and the open
+   editor on a row of their own beneath, read as short sentences rather than as a query. */
+.lore__addfilter {
+  display: flex;
+  align-items: center;
+}
+
+.lore__addfiltertrigger {
+  min-height: var(--control-sm);
+  padding-block: 0;
+  font-size: var(--text-ui);
+}
+
+.lore__filterlimit {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* Clear filters sits with search and status, on their row; the filters in force and the notes about them come after
+   (Issue #49). */
+.lore__clearfilters {
+  min-height: var(--control-sm);
+  padding-block: 0;
+  font-size: var(--text-ui);
+}
+
+.lore__fieldhint {
+  flex: 1 1 100%;
+  order: 2;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.lore__fieldfilters {
+  order: 1;
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.lore__activefilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lore__activefilter {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: var(--control-sm);
+  padding-left: var(--space-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.lore__activefiltertext {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.lore__removefilter {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  margin-left: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.lore__removefilter svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.lore__removefilter:hover {
+  color: var(--ink);
+  background: var(--paper);
+}

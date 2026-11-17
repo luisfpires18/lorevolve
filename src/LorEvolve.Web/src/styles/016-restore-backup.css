@@ -1,0 +1,139 @@
+/* ---------- Restore a backup ---------- */
+
+/* The universes header holds two actions now: making a world and restoring one. They wrap
+   under the title together rather than one being pushed off a narrow screen. */
+.home__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* A button starts itself at the top of its row; here the primary and the quiet one share a centre line. */
+.home__actions .button {
+  align-self: center;
+}
+
+/* The composer's shape, and a measure: a preview is read, not scanned across a wide display. */
+.restore {
+  max-width: 44rem;
+}
+
+.restore__lead {
+  margin: -0.75rem 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.925rem;
+}
+
+/* A native file input, so the keyboard, a screen reader and dropping a file on it all work as the
+   platform makes them work. Only its size and its button are brought in line with the rest. */
+.restore__file {
+  max-width: 100%;
+  font: inherit;
+  font-size: 0.925rem;
+  color: var(--ink);
+}
+
+.restore__file::file-selector-button {
+  margin-right: 0.9rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border-control);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.restore__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 28rem;
+}
+
+.restore__stage,
+.restore__note,
+.restore__more {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.restore__heading {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.1rem;
+  margin: 0 0 0.9rem;
+}
+
+.restore__refused {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.restore__refused .restore__heading {
+  margin: 0;
+}
+
+/* Long and unbroken text - a name in another script, a pasted path - wraps inside the panel. */
+.restore__issues {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.restore__facts {
+  margin: 0 0 0.9rem;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.45rem 1.25rem;
+}
+
+.restore__fact {
+  display: contents;
+}
+
+.restore__fact dt {
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  padding-top: 0.1rem;
+}
+
+.restore__fact dd {
+  margin: 0;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .restore__facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem;
+  }
+
+  .restore__fact dd {
+    margin-bottom: 0.55rem;
+  }
+}
+
+.field__input--area {
+  resize: vertical;
+  line-height: 1.6;
+  padding: 0.6rem 0.75rem;
+}
+
+/* Three rows is a paragraph on a desktop and a keyhole on a phone, where the same text
+   wraps to eight or nine lines. The box is given a height worth writing in; it is still
+   resizable. */
+@media (max-width: 640px) {
+  .field__input--area,
+  .entry__summaryinput {
+    min-height: 8rem;
+  }
+}

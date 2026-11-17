@@ -1,0 +1,80 @@
+/* One line on a wide screen: the field's name, how, the value, Apply. Wraps when it must, the value taking the width. */
+.lore__fieldeditor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  max-width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+}
+
+.lore__fieldeditorname {
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.lore__fieldeditorop {
+  width: auto;
+}
+
+.lore__fieldeditorop--fixed {
+  font-size: var(--text-ui);
+  color: var(--muted);
+}
+
+.lore__fieldeditorvalue {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.lore__fieldeditorvalue .field {
+  margin: 0;
+}
+
+/* The field's name already labels the row; the picker keeps its label for assistive technology only. */
+.lore__fieldeditorvalue .field__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.lore__fieldeditoractions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* The one line of the create label that can grow with an author's type name: cut, whole in the
+   button's accessible name. */
+.lore__createlabel {
+  max-width: 18ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The secondary way in keeps its words on one line. On a phone it is its icon alone, with its name kept (below). */
+.lore__masscreate {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* After a mass create: one quiet line where the author lands, in the ink of a done thing. Gone once they move on. */
+.lore__created {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-ui);
+  color: var(--ink);
+}
+
+.lore__created .button__icon {
+  color: var(--accent);
+}

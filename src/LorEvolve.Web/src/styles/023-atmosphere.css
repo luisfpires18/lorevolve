@@ -1,0 +1,71 @@
+/* ---------- Atmosphere ----------
+
+   A world's artwork as its environment, not its decoration: the universe's own card, laid behind the head of the
+   screen and fading into the working surface - down, and in from the reading edge - under a veil of the canvas
+   itself, so a title over it reads as it would over plain canvas. Drawn only when the world has a card (ADR 0068):
+   the shell renders the element with `--atmosphere-image` set inline and never without one, so there is no stock
+   fallback. One element, out of the flow, never a target; the image is fetched once and cached. Its parent is the
+   stacking context (`isolation`), so it paints above the parent's ground and below everything in it. */
+
+.atmosphere {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: clamp(15rem, 30vw, 26rem);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.atmosphere::before,
+.atmosphere::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.atmosphere::before {
+  background: var(--atmosphere-image) 68% 38% / cover no-repeat;
+  opacity: var(--atmosphere-opacity);
+}
+
+/* The veil: the canvas over the picture, thin at the top right where the picture lives, whole at the foot and at the
+   start edge where the title and the work begin. */
+.atmosphere::after {
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--atmosphere-veil) 20%, transparent) 0%,
+      color-mix(in srgb, var(--atmosphere-veil) 62%, transparent) 55%,
+      var(--atmosphere-veil) 100%
+    ),
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--atmosphere-veil) 92%, transparent) 0%,
+      color-mix(in srgb, var(--atmosphere-veil) 55%, transparent) 40%,
+      transparent 78%
+    );
+}
+
+/* A universe's front page takes it as its hero: taller, and the world showing through more. */
+.atmosphere[data-size='hero'] {
+  height: clamp(19rem, 40vw, 34rem);
+}
+
+.atmosphere[data-size='hero']::before {
+  opacity: calc(var(--atmosphere-opacity) * 1.35);
+}
+
+/* A narrow screen: a shorter band, the picture's centre rather than its edge. */
+@media (max-width: 640px) {
+  .atmosphere {
+    height: 13rem;
+  }
+
+  .atmosphere[data-size='hero'] {
+    height: 17rem;
+  }
+
+  .atmosphere::before {
+    background-position: 62% 40%;
+  }
+}

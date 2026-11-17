@@ -1,0 +1,74 @@
+/* ---------- States ---------- */
+
+.notice {
+  margin: 2rem 0;
+  color: var(--muted);
+}
+
+/* A failure is a danger callout: the sentence, then Try again. */
+.notice--error {
+  color: var(--danger);
+}
+
+/* Every message box shares one shape - a tinted panel, no side stripe - and differs only in its tone: danger by
+   default, warning for a caution or a conflict, the accent for information. */
+.notice--error,
+.callout,
+.form__message,
+.article__conflict,
+.recovery,
+.chron__caution,
+.manuscript__conflict,
+.editconflict,
+.idea__elsewhere {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--callout-tone, var(--danger)) 35%, var(--rule));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--callout-tone, var(--danger)) 5%, var(--raised));
+}
+
+.notice--error p {
+  margin: 0 0 var(--space-2);
+}
+
+.notice--error p:last-child {
+  margin-bottom: 0;
+}
+
+/* `.callout`: a tinted message with a tone - info, warning or danger - an optional title and an
+   optional action. No side stripe. Screens adopt it as their tasks reach them (Canon refusals,
+   rule checks, the family circle, the settings caution). */
+.callout {
+  --callout-tone: var(--accent);
+
+  color: var(--ink);
+  font-size: var(--text-ui);
+}
+
+.callout--warning {
+  --callout-tone: var(--warning);
+}
+
+.callout__title {
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+  color: var(--callout-tone);
+}
+
+/* `EmptyState`: a line, a hint, one way to begin. No illustration and no panel around it. */
+.empty {
+  margin: var(--space-8) 0;
+  max-width: 34rem;
+}
+
+.empty__line {
+  font-family: var(--display);
+  font-size: var(--text-section);
+  line-height: 1.25;
+  margin: 0 0 var(--space-2);
+}
+
+.empty__hint {
+  margin: 0;
+  color: var(--muted);
+}

@@ -1,0 +1,42 @@
+/* ---------- Relation form ---------- */
+
+.relform {
+  margin: 1.25rem 0 0;
+  padding: 1.25rem;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.relform__reads {
+  margin: 0;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--display);
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.relform__verb {
+  color: var(--muted);
+}
+
+.relform__object {
+  border-bottom: 1px solid var(--border-control);
+}
+
+.relform__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.relform__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}

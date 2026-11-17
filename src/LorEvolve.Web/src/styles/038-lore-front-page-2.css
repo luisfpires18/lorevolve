@@ -1,0 +1,161 @@
+/* One type: its icon on a tinted well, its name in the display face, where it sits, what it is and how many entries its
+   list holds. The whole card is the link. */
+.typecard {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  width: 100%;
+  min-height: 6.5rem;
+  padding: var(--space-4) var(--space-5);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-1) var(--ease),
+    box-shadow var(--duration-2) var(--ease),
+    transform var(--duration-2) var(--ease);
+}
+
+@media (hover: hover) {
+  .typecard:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
+}
+
+.typecard:active {
+  box-shadow: var(--shadow-1);
+  transform: none;
+  transition-duration: 80ms;
+}
+
+.typecard:focus-visible {
+  outline-offset: 2px;
+  border-color: var(--rule-strong);
+}
+
+.typecard__icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--type-accent, var(--muted)) 12%, var(--surface));
+  color: var(--type-ink);
+}
+
+.typecard__icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.typecard__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.typecard__name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-family: var(--display);
+  font-size: var(--text-item);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.typecard__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.typecard__path,
+.typecard__meta {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.typecard__meta {
+  font-variant-numeric: tabular-nums;
+}
+
+.typecard__description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--ink);
+  font-size: var(--text-ui);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.typecard--skeleton {
+  box-shadow: none;
+}
+
+.typecard--skeleton .skeletoncard__line {
+  height: 0.85rem;
+}
+
+@media (pointer: coarse) {
+  .lorecatalog__group {
+    min-height: var(--control-touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typecard:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* One line of groups that scrolls inside itself, so many groups never push the cards a screen down; the page itself
+     never scrolls sideways. */
+  .lorecatalog__groups {
+    flex-wrap: nowrap;
+    width: 100%;
+    padding-bottom: var(--space-1);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .lorecatalog__groups::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lorecatalog__group {
+    flex: none;
+    max-width: 16rem;
+  }
+
+  .lorecatalog__grid {
+    gap: var(--space-3);
+  }
+
+  .typecard {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: var(--space-3);
+    min-height: 0;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .typecard__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

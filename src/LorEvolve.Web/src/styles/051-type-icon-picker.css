@@ -1,0 +1,245 @@
+/* ---------- Type icon picker ----------
+
+   Every choice shows its picture and says what it is, in a grid that wraps to the width it has - never a row of
+   unexplained circles. The native radio stays in the tab order and the accessibility tree; the whole chip is its label.
+   Chosen: an ink edge, the words in weight and a check mark, so the choice does not rest on colour. */
+
+.iconpicker {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.iconpicker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.25rem), 1fr));
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.iconpicker__choice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  min-height: var(--control-md);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-1) var(--ease),
+    background-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease);
+}
+
+.iconpicker__choice:hover {
+  border-color: var(--border-control);
+  color: var(--ink);
+}
+
+.iconpicker__choice:has(.iconpicker__input:checked) {
+  border-color: var(--ink);
+  background: var(--accent-wash);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.iconpicker__choice:has(.iconpicker__input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The radio is drawn by the chip it sits in. */
+.iconpicker__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.iconpicker__glyph {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.iconpicker__name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+
+.iconpicker__check {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--accent);
+}
+
+.iconpicker:disabled .iconpicker__choice {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The semantic groups a type is in, beside its name, each with the layers mark so a group is never read as a type. */
+.types__groups {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.types__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.types__group svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.types__count {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What a type is for, under its name: aligned with the name, past the grip and the medallion. */
+.types__description {
+  margin: var(--space-1) 0 0;
+  padding-inline-start: calc(2.25rem + var(--space-3));
+  font-size: var(--text-ui);
+  color: var(--muted);
+}
+
+.types__head:has(.types__handle) ~ .types__description {
+  padding-inline-start: calc(2rem - var(--space-2) + var(--space-3) + 2.25rem + var(--space-3));
+}
+
+@media (max-width: 640px) {
+  .types__description,
+  .types__head:has(.types__handle) ~ .types__description {
+    padding-inline-start: 0;
+  }
+}
+
+.types__fields {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
+/* A type's fields (Issue #39): one row each, the name over a quiet line of what it is, Edit and a menu at the end. On a
+   phone the actions drop under the text rather than squeezing it. Archived fields fold away beneath, in the same rows. */
+/* A nested type's inherited fields, read-only above its own, each block named for the type that owns them. */
+.fieldlist__inherited {
+  margin-block-end: var(--space-4);
+}
+
+.fieldlist__inherited .fieldlist__row {
+  opacity: 0.85;
+}
+
+.fieldlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldlist__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.fieldlist__row:first-child {
+  padding-top: 0;
+}
+
+.fieldlist__text {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fieldlist__name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.fieldlist__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.fieldlist__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.fieldlist__delete:not(:disabled) {
+  color: var(--danger);
+}
+
+.fieldlist__note {
+  flex-basis: 100%;
+}
+
+.fieldlist__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-4) 0 0;
+}
+
+/* A type's section on the Types screen (Issue #26): its name over its fields, the ungrouped ones above it. */
+.fieldgroup {
+  margin-top: var(--space-5);
+}
+
+.fieldgroup__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-ui);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.fieldgroup__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}

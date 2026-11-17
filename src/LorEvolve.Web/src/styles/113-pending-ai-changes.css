@@ -1,0 +1,299 @@
+/* ---------- Pending AI Changes (ADR 0047) ---------- */
+
+.aichanges__list,
+.aichange__list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aichanges__item,
+.aichangeitem {
+  display: grid;
+  gap: 0.375rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  min-width: 0;
+}
+
+.aichanges__link {
+  color: var(--ink);
+  font-size: var(--text-item);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.aichanges__link:hover {
+  text-decoration: underline;
+}
+
+.aichanges__link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.aichanges__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.aichanges__status {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.aichanges__status[data-status='0'] {
+  color: var(--accent);
+}
+
+.aichanges__status[data-status='3'],
+.aichanges__status[data-status='4'] {
+  color: var(--muted);
+}
+
+.aichange__note {
+  margin-block: 1rem;
+}
+
+.aichange__toolbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-block: 1rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.aichange__chosen {
+  margin: 0;
+  font-size: var(--text-ui);
+}
+
+.aichange__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* A running approval's count under the buttons: the shared bar, sweeping while the changes are checked, then filling as
+   each one is applied. */
+.aichange__progress {
+  display: flex;
+  flex: 1 0 100%;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.aichange__count {
+  flex: none;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.aichangeitem > .button {
+  justify-self: start;
+}
+
+.aichangeitem__issues.callout {
+  list-style: none;
+  padding: 0.5rem 0.75rem;
+}
+
+.aichangeitem[data-status='1'] {
+  border-color: var(--accent-rule);
+}
+
+.aichangeitem[data-status='2'] {
+  opacity: 0.75;
+}
+
+.aichangeitem[data-conflict='true'] {
+  border-color: var(--warning);
+}
+
+.aichangeitem__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.aichangeitem__check {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+}
+
+.aichangeitem__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.aichangeitem__action {
+  display: inline-block;
+  margin-bottom: 0.125rem;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.aichangeitem__action[data-action='2'] {
+  color: var(--danger);
+}
+
+.aichangeitem__title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.aichangeitem__outcome {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.aichangeitem__lines {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+.aichangeitem__line {
+  display: grid;
+  grid-template-columns: minmax(6rem, 10rem) minmax(0, 1fr);
+  gap: 0.75rem;
+  font-size: var(--text-ui);
+}
+
+.aichangeitem__line dt {
+  color: var(--muted);
+}
+
+.aichangeitem__line dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.aichangeitem__before {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.aichangeitem__arrow {
+  margin-inline: 0.375rem;
+  color: var(--muted);
+}
+
+.aichangeitem__after {
+  font-weight: 600;
+}
+
+.aichangeitem__impact,
+.aichangeitem__issues {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+  font-size: var(--text-sm);
+}
+
+.aichangeitem__deps {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+/* A picture change's hand-over (ADR 0062): the quarantined preview, and the file input that supplies it. */
+.aichangeitem__media {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.aichangeitem__picture {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.aichangeitem__picture img {
+  width: 10rem;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--rule);
+}
+
+.aichangeprose {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.aichangeprose__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.aichangeprose__same {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+.aichangeprose__text {
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.5rem 0.75rem;
+  border-inline-start: 3px solid var(--rule-strong);
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  font-family: var(--display);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.aichangeprose__text--added {
+  border-inline-start-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.aichangeprose__text--removed {
+  border-inline-start-color: var(--danger);
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.aichangeedit {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius-sm);
+}

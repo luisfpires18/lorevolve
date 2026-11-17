@@ -1,0 +1,279 @@
+/* ---------- Explore: the worlds ---------- */
+
+/* Four across at a laptop and up, as the reference has it - large enough for the artwork to lead - then three,
+   two and one. Steps rather than auto-fill, so a wide screen never shrinks the cards to fit a fifth. */
+.explore-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1rem, 1.6vw, 1.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.worldcard {
+  min-width: 0;
+}
+
+@media (min-width: 34rem) {
+  .explore-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 56rem) {
+  .explore-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75rem) {
+  .explore-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* One dark panel: the author's whole 16:10 picture across the top, fading into the panel, the name set over the
+   picture's lower edge, then the genres and the byline. The name is the card's link, stretched over the panel so the
+   whole card is one target; the author's name is a second link laid above it (Task 011) - two links, never nested. */
+.worldcard__panel {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--portal-radius);
+  background: var(--portal-card);
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--portal-ink-rgb) / 0.07),
+    0 12px 30px -20px rgb(var(--portal-drop-rgb) / 0.9);
+  color: inherit;
+  text-decoration: none;
+  transition: box-shadow var(--duration-3) var(--ease);
+}
+
+@media (hover: hover) {
+  .worldcard__panel:hover {
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--portal-ink-rgb) / 0.2),
+      0 18px 40px -20px rgb(var(--portal-drop-rgb) / 1);
+  }
+}
+
+.worldcard__panel:has(.worldcard__link:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.worldcard__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.worldcard__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.worldcard__link:focus-visible {
+  outline: none;
+}
+
+.worldcard__authorlink {
+  position: relative;
+  z-index: 2;
+  color: inherit;
+  text-decoration: none;
+}
+
+.worldcard__authorlink:hover,
+.worldcard__authorlink:focus-visible {
+  color: var(--portal-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+/* Below the panel's own content, so the text can overlap its lower edge without being positioned itself - which
+   keeps the panel, not the text, the box the name's link is stretched over. */
+.worldcard__art {
+  position: relative;
+  z-index: -1;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--portal-surface);
+}
+
+.worldcard__art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    var(--portal-card) 0,
+    rgb(var(--portal-panel-rgb) / 0.72) 22%,
+    rgb(var(--portal-panel-rgb) / 0) 55%
+  );
+  pointer-events: none;
+}
+
+/* In the light the name is graphite over the picture's foot, so the fade into the panel starts lower and holds more:
+   the picture still carries the card, the name still reads. */
+:root[data-theme='light'] .worldcard__art::after {
+  background: linear-gradient(
+    to top,
+    var(--portal-card) 0,
+    rgb(var(--portal-panel-rgb) / 0.9) 26%,
+    rgb(var(--portal-panel-rgb) / 0.55) 42%,
+    rgb(var(--portal-panel-rgb) / 0) 66%
+  );
+}
+
+.worldcard__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.worldcard__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 42%, var(--portal-raised), var(--portal-surface) 70%);
+}
+
+.worldcard__mark {
+  width: 3rem;
+  height: 3rem;
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.worldcard__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: -2.75rem;
+  padding: 0 1.125rem 1rem;
+}
+
+.worldcard__name {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--portal-ink);
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 14px rgb(var(--portal-glow-rgb) / 0.7);
+}
+
+.worldcard__panel:hover .worldcard__name bdi {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+.worldcard__genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A genre, tinted by which one it is - a hint of colour, with the word always there. */
+.genrechip {
+  --tint: 150 150 150;
+
+  padding: 0.1875rem 0.625rem;
+  border-radius: var(--radius-full);
+  background: rgb(var(--tint) / 0.24);
+  box-shadow: inset 0 0 0 1px rgb(var(--tint) / 0.34);
+  color: rgb(var(--portal-ink-rgb) / 0.95);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.genrechip[data-genre='fantasy'] {
+  --tint: 104 132 230;
+}
+
+.genrechip[data-genre='science-fiction'] {
+  --tint: 80 168 214;
+}
+
+.genrechip[data-genre='adventure'] {
+  --tint: 206 150 72;
+}
+
+.genrechip[data-genre='horror'] {
+  --tint: 214 84 74;
+}
+
+.genrechip[data-genre='mystery'] {
+  --tint: 152 110 214;
+}
+
+.genrechip[data-genre='historical'] {
+  --tint: 190 150 96;
+}
+
+.genrechip[data-genre='romance'] {
+  --tint: 222 110 150;
+}
+
+.genrechip[data-genre='thriller'] {
+  --tint: 140 150 168;
+}
+
+.genrechip[data-genre='supernatural'] {
+  --tint: 124 104 220;
+}
+
+.genrechip[data-genre='post-apocalyptic'] {
+  --tint: 200 112 70;
+}
+
+.genrechip[data-genre='contemporary'] {
+  --tint: 104 170 146;
+}
+
+/* Who made it, and what kind of property it is - where a streaming card would put its numbers. */
+.worldcard__byline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: auto 0 0;
+  font-size: var(--text-ui);
+  line-height: 1.4;
+}
+
+.worldcard__author {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--portal-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.worldcard__category {
+  flex: none;
+  color: rgb(var(--portal-ink-rgb) / 0.86);
+  font-weight: 500;
+  white-space: nowrap;
+}

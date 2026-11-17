@@ -1,0 +1,152 @@
+/* ---------- Entity picker ---------- */
+
+.picker {
+  position: relative;
+}
+
+.picker__chosen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.35rem 0 0.4rem;
+  border-bottom: 1px solid var(--border-control);
+}
+
+.picker__chosenname {
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  overflow-wrap: anywhere;
+}
+
+.picker__list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* A fixed 15rem is most of a phone in portrait, and the field it drops out of is often
+     the last one in a drawer. Capped against the viewport the list can still be seen
+     whole once it has been scrolled to, which is what the picker does on opening. */
+  max-height: min(15rem, 45dvh);
+  overflow-y: auto;
+  background: var(--raised);
+  border: 1px solid var(--rule-strong);
+  border-top: 0;
+}
+
+.picker__option {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.7rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker__option[aria-selected='true'] {
+  background: var(--paper);
+}
+
+.picker__name {
+  overflow-wrap: anywhere;
+}
+
+.picker__kind {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.picker__none {
+  padding: 0.5rem 0.7rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* Quick Create (Issue #25): the last row of a picker that offers it, ruled off from the matches and in the accent, so
+   it reads as an action rather than one more entry. The note under a choice it made, and its small form. */
+.picker__create {
+  border-top: 1px solid var(--rule);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.picker__created:empty {
+  display: none;
+}
+
+.picker__created {
+  margin: var(--space-2) 0 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+/* The form's fields as one group that a pending create disables at once; a group in layout only, never a box. */
+.quickcreate__inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.quickcreate__pending:empty {
+  display: none;
+}
+
+.quickcreate__pending,
+.quickcreate__note,
+.quickcreate__type {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  overflow-wrap: anywhere;
+}
+
+.quickcreate__type bdi {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.quickcreate__similar p {
+  margin: 0 0 var(--space-2);
+}
+
+.quickcreate__matches {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.quickcreate__matches li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.quickcreate__match {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.quickcreate__fields {
+  display: grid;
+  gap: var(--space-4);
+}

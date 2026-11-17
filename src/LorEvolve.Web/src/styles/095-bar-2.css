@@ -1,0 +1,58 @@
+/* The narrower phones: brand and the two ways in still share one row, with air between them - measured from 360px to
+   430px, touch-sized controls included, and with Linux's wider fallback faces (CI has neither Inter nor Segoe). */
+@media (max-width: 27rem) {
+  .portal__brand {
+    gap: 0.45rem;
+  }
+
+  .portal__bar .brandmark {
+    width: 1.625rem;
+    height: 1.625rem;
+  }
+
+  /* LorEvolve is nine letters where LoreX was five: tracked as wide as the desktop bar's, it pushed a 360px page 20px
+     sideways in CI's wider fallback faces. This size and tracking win back about 25px (ADR 0067). Literata sets the
+     word wider than the system serifs did, which put a 360px page 5px sideways; the smaller word and the pills'
+     tighter padding win back about 19px. */
+  .portal__bar .wordmark {
+    font-size: 0.8125rem;
+    letter-spacing: 0.01em;
+  }
+
+  .portal__session {
+    gap: 0.375rem;
+  }
+
+  .portal__pill {
+    padding: 0 0.5rem;
+    font-size: var(--text-sm);
+  }
+}
+
+/* Phones, at the universe workspace rail's width: the portal's bar, and My workspace's and Admin's, stay at the top as
+   solid bands, as the rail does. iOS 26 Safari tints its status area from a fixed or sticky bar at the top of the page;
+   with none, it blurs whatever scrolls under it, which read as a soft header on these screens only (#28). */
+@media (max-width: 860px) {
+  .portal__bar,
+  .workspacebar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+  }
+
+  .workspacebar {
+    background: var(--surface);
+  }
+}
+
+@media (pointer: coarse) {
+  .portal__pill,
+  .portal-search__input {
+    min-height: var(--control-touch);
+  }
+
+  .portal-search__clear {
+    width: var(--control-md);
+    height: var(--control-md);
+  }
+}

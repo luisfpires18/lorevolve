@@ -1,0 +1,55 @@
+@media (max-width: 640px) {
+  .storyrow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .storyrow__meta {
+    justify-content: flex-start;
+  }
+
+  .scene {
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    column-gap: 0.6rem;
+  }
+
+  /* A phone keeps the column for the scene: its two controls sit under it, at the end. */
+  .scene__tools {
+    grid-column: 2;
+  }
+
+  .chapter__head,
+  .plotarc__head {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The heading and its summary read as one unit; the tools follow them. */
+  .chapter__summary,
+  .plotarc__description {
+    grid-row: 2;
+  }
+
+  .chapter__tools,
+  .plotarc__tools {
+    grid-row: 3;
+    margin-top: var(--space-1);
+  }
+
+  /* The view's one creating action sits at the thumb, labelled, as Lore's does. */
+  .story__create .button {
+    position: fixed;
+    right: var(--gutter);
+    bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    z-index: var(--z-sticky);
+    min-height: var(--control-touch);
+    padding-inline: var(--space-5);
+    box-shadow: var(--shadow-3);
+  }
+
+  .story__scenes {
+    padding-bottom: 5rem;
+  }
+
+  .scene__number {
+    font-size: 1.2rem;
+  }
+}
