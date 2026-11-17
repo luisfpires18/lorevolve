@@ -680,6 +680,114 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(["Cairn"], ofType.Select(entry => entry.Name));
     }
 
+    [Fact]
+    public async Task The_entry_list_searches_names_inside_its_own_game_only()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "entrysearch");
+        var first = await NewProject(client, universe.Id, "First Game");
+        var second = await NewProject(client, universe.Id, "Second Game");
+        var firstUnits = await NewType(client, first.Id, "Unit");
+        var secondUnits = await NewType(client, second.Id, "Unit");
+
+        await NewEntry(client, first.Id, firstUnits.Id, "Ember Knight");
+        await NewEntry(client, first.Id, firstUnits.Id, "Tall EMBER");
+        await NewEntry(client, first.Id, firstUnits.Id, "Frost 100% Mage");
+        await NewEntry(client, first.Id, firstUnits.Id, "Frost 100x Mage");
+        await NewEntry(client, first.Id, firstUnits.Id, "snake_case");
+        await NewEntry(client, first.Id, firstUnits.Id, "snakeXcase");
+        await NewEntry(client, second.Id, secondUnits.Id, "Ember Other Game");
+
+        Assert.Equal(["Ember Knight", "Tall EMBER"], await Names(client, first.Id, $"q=ember"));
+        Assert.Equal(["Ember Knight"], await Names(client, first.Id, $"typeId={firstUnits.Id}&q=%20knight%20"));
+        Assert.Equal(["Frost 100% Mage"], await Names(client, first.Id, "q=" + Uri.EscapeDataString("100%")));
+        Assert.Equal(["snake_case"], await Names(client, first.Id, "q=" + Uri.EscapeDataString("e_c")));
+        Assert.Equal(6, (await Names(client, first.Id, "q=%20%20")).Count);
+        Assert.Empty(await Names(client, first.Id, "q=zzz"));
+
+        // Another game's type id finds nothing here, with or without a search.
+        Assert.Empty(await Names(client, first.Id, $"typeId={secondUnits.Id}&q=ember"));
+        Assert.Empty(await Names(client, first.Id, $"typeId={secondUnits.Id}"));
+        Assert.Equal(["Ember Other Game"], await Names(client, second.Id, "q=ember"));
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            (await client.GetAsync($"/api/projects/{first.Id}/entities?q={new string('a', 201)}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task The_entry_list_sorts_deterministically_and_pages_through_a_filtered_list_without_gaps()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "entrysort");
+        var project = await NewProject(client, universe.Id, "Sorted");
+        var units = await NewType(client, project.Id, "Unit");
+
+        // Equal names differ only in case, so the id has to break the tie; every entry matches "mark".
+        foreach (var name in new[] { "mark d", "Mark b", "mark b", "Mark a", "Mark c", "other" })
+        {
+            await NewEntry(client, project.Id, units.Id, name);
+        }
+
+        var byName = await Names(client, project.Id, "q=mark&sort=name");
+        Assert.Equal(["mark a", "mark b", "mark b", "mark c", "mark d"], byName.Select(name => name.ToLowerInvariant()));
+        Assert.Equal(byName, await Names(client, project.Id, "q=mark"));
+        Assert.Equal(byName, await Names(client, project.Id, "q=mark&sort=name"));
+        Assert.Equal(5, (await Names(client, project.Id, "q=mark&sort=created")).Count);
+
+        foreach (var sort in new[] { "name", "created", "updated" })
+        {
+            var all = await Names(client, project.Id, $"q=mark&sort={sort}");
+            var paged = new List<string>();
+            for (var skip = 0; skip < all.Count; skip += 2)
+            {
+                paged.AddRange(await Names(client, project.Id, $"q=mark&sort={sort}&skip={skip}&take=2"));
+            }
+
+            Assert.Equal(all, paged);
+        }
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            (await client.GetAsync($"/api/projects/{project.Id}/entities?sort=status")).StatusCode);
+    }
+
+    [Fact]
+    public async Task The_entry_list_includes_nested_types_only_when_asked()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "entrynested");
+        var project = await NewProject(client, universe.Id, "Nested");
+        var parent = await NewType(client, project.Id, "Creature");
+        var child = (await (await client.PostAsJsonAsync(
+            $"/api/projects/{project.Id}/entity-types",
+            new ProjectEntityTypeRequest("Beast", null, null, null, parent.Id))).Content
+            .ReadFromJsonAsync<ProjectEntityTypeResponse>())!;
+        var grandchild = (await (await client.PostAsJsonAsync(
+            $"/api/projects/{project.Id}/entity-types",
+            new ProjectEntityTypeRequest("Wolf", null, null, null, child.Id))).Content
+            .ReadFromJsonAsync<ProjectEntityTypeResponse>())!;
+        var other = await NewType(client, project.Id, "Item");
+
+        await NewEntry(client, project.Id, parent.Id, "A parent");
+        await NewEntry(client, project.Id, child.Id, "B child");
+        await NewEntry(client, project.Id, grandchild.Id, "C grandchild");
+        await NewEntry(client, project.Id, other.Id, "D item");
+
+        Assert.Equal(["A parent"], await Names(client, project.Id, $"typeId={parent.Id}"));
+        Assert.Equal(
+            ["A parent", "B child", "C grandchild"],
+            await Names(client, project.Id, $"typeId={parent.Id}&includeDescendants=true"));
+        Assert.Equal(
+            ["C grandchild"],
+            await Names(client, project.Id, $"typeId={parent.Id}&includeDescendants=true&q=grand"));
+        Assert.Equal(
+            ["B child", "C grandchild"],
+            await Names(client, project.Id, $"typeId={child.Id}&includeDescendants=true"));
+    }
+
+    private static async Task<List<string>> Names(HttpClient client, Guid projectId, string query) =>
+        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>($"/api/projects/{projectId}/entities?{query}"))!
+            .Select(entry => entry.Name)
+            .ToList();
+
     private static async Task<List<ProjectEntitySummary>> Recent(HttpClient client, Guid projectId, int take) =>
         (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
             $"/api/projects/{projectId}/entities?recent=true&skip=0&take={take}"))!;

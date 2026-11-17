@@ -35,6 +35,8 @@ public static class ProjectEntityEndpoints
     /// </summary>
     public const int ListMaxTake = 500;
 
+    private const int MaxSearchLength = 200;
+
     public static IEndpointRouteBuilder MapProjectEntityEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/projects/{projectId:guid}/entities")
@@ -59,7 +61,10 @@ public static class ProjectEntityEndpoints
         [FromQuery] Guid? typeId = null,
         [FromQuery] int skip = 0,
         [FromQuery] int take = ListMaxTake,
-        [FromQuery] bool recent = false)
+        [FromQuery] bool recent = false,
+        [FromQuery] string? q = null,
+        [FromQuery] string? sort = null,
+        [FromQuery] bool includeDescendants = false)
     {
         var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
 
@@ -75,20 +80,53 @@ public static class ProjectEntityEndpoints
                 skip < 0 ? "Skip cannot be negative." : $"Take must be between 1 and {ListMaxTake}.");
         }
 
+        if (sort is not (null or "updated" or "name" or "created"))
+        {
+            return Problems.Field("sort", "Sort by updated, name or created.");
+        }
+
+        if (q is { Length: > MaxSearchLength })
+        {
+            return Problems.Field("q", $"Search can be at most {MaxSearchLength} characters.");
+        }
+
+        // The project id stays in the base predicate, before any filter, so no search or type id reaches another game.
         var matching = db.Entities.AsNoTracking().IgnoreQueryFilters()
-            .Where(entry => entry.ProjectId == projectId
-                && entry.DeletedAt == null
-                && (typeId == null || entry.EntityTypeId == typeId));
+            .Where(entry => entry.ProjectId == projectId && entry.DeletedAt == null);
+
+        if (typeId is { } wanted && includeDescendants)
+        {
+            // The type and every type nested beneath it, from this project's own small type graph (as Lore's list does).
+            var parentOf = await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
+                .Where(type => type.UniverseId == project!.UniverseId && type.ProjectId == projectId)
+                .ToDictionaryAsync(type => type.Id, type => type.ParentId, cancellationToken);
+            var branch = EntityTypeHierarchy.Branch(parentOf, wanted).ToList();
+            matching = matching.Where(entry => branch.Contains(entry.EntityTypeId));
+        }
+        else if (typeId is { } exact)
+        {
+            matching = matching.Where(entry => entry.EntityTypeId == exact);
+        }
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var text = EntityFieldFilters.AsciiLower(q.Trim());
+            matching = matching.Where(entry => entry.Name.ToLower().Contains(text));
+        }
 
         // The id breaks ties, so a page boundary never repeats or drops a row. By name is this list's own order, the
         // one the Entities view reads a type a page at a time in. `recent` asks for the newest first instead, for the
         // project's overview (#195): the only way to answer "what was touched last" without reading every row and
         // sorting in the client, which is what the issue's one-request-per-list rule forbids.
-        var ordered = recent
-            ? matching.OrderByDescending(entry => entry.UpdatedAt).ThenBy(entry => entry.Id)
-            : matching.OrderBy(entry => entry.Name).ThenBy(entry => entry.Id);
+        var ordered = (sort ?? (recent ? "updated" : "name")) switch
+        {
+            "updated" => matching.OrderByDescending(entry => entry.UpdatedAt),
+            "created" => matching.OrderByDescending(entry => entry.CreatedAt),
+            _ => matching.OrderBy(entry => EF.Functions.Collate(entry.Name, "NOCASE")),
+        };
 
         var rows = await ordered
+            .ThenBy(entry => entry.Id)
             .Skip(skip)
             .Take(take)
             .Select(entry => new ProjectEntitySummary(
