@@ -75,6 +75,8 @@ before proposing against them, which is the only read of them MCP offers.
 | Collaborators | `collaborators` | `person-only` | `person-only` |
 | Invitations | `invitations` | `person-only` | `person-only` |
 | Lore references | `lore-references` | `get_lore_entry` | `read-only-by-design` |
+| Type templates | `type-templates`, `type-templates/fields` | `person-only` | `person-only` |
+| Cinema sagas and their phases | `cinema-sagas`, `cinema-sagas/move`, `cinema-sagas/phases`, `cinema-sagas/phases/move`, `cinema-sagas/phases/members`, `cinema-sagas/phases/members/move` | `person-only` | `person-only` |
 
 ## Inside a project
 
@@ -87,7 +89,7 @@ universe only.
 | A project's entries | `entities` | `list_project_entries`, `get_project_entry` | `ProjectEntry` |
 | A project entry's history | `entities/revisions` | `live-only` | `live-only` |
 | A project's own types | `entity-types` | `get_project_schema` | `ProjectType`, `ProjectField` |
-| A project's structure | `seasons` | `get_project_structure` | `read-only-by-design` |
+| A project's structure | `seasons`, `structure`, `structure/move` | `get_project_structure` | `read-only-by-design` |
 
 ## The write path
 

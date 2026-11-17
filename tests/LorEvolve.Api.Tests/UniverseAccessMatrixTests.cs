@@ -1,11 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using LorEvolve.Api.Features.Chronology;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Comments;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Publishing;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
@@ -110,6 +112,28 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("rename type group", Put, $"{u}/entity-type-groups/{any}", May.Edit, Json(new EntityTypeGroupRenameRequest("Renamed group"))),
             new("delete type group", Delete, $"{u}/entity-type-groups/{any}", May.Edit),
             new("type group family tree", Put, $"{u}/entity-type-groups/{any}/family-tree", May.Edit, Json(new EntityTypeGroupFamilyTreeRequest(true))),
+
+            new("type templates", Get, $"{u}/type-templates", May.Read),
+            new("type template", Get, $"{u}/type-templates/{any}", May.Read),
+            new("create type template", Post, $"{u}/type-templates", May.Edit, Json(new ProjectEntityTypeRequest("Matrix template", null, null, null))),
+            new("edit type template", Put, $"{u}/type-templates/{any}", May.Edit, Json(new ProjectEntityTypeRequest("Matrix template", null, null, null))),
+            new("delete type template", Delete, $"{u}/type-templates/{any}", May.Edit),
+            new("add type template field", Post, $"{u}/type-templates/{any}/fields", May.Edit, Json(new ProjectEntityFieldRequest("Motto", EntityFieldKind.ShortText))),
+            new("edit type template field", Put, $"{u}/type-templates/{any}/fields/{any}", May.Edit, Json(new ProjectEntityFieldRequest("Motto", EntityFieldKind.ShortText))),
+            new("delete type template field", Delete, $"{u}/type-templates/{any}/fields/{any}", May.Edit),
+
+            new("cinema sagas", Get, $"{u}/cinema-sagas", May.Read),
+            new("create cinema saga", Post, $"{u}/cinema-sagas", May.Edit, Json(new CinemaGroupRequest("Matrix saga", null))),
+            new("edit cinema saga", Put, $"{u}/cinema-sagas/{any}", May.Edit, Json(new CinemaGroupRequest("Matrix saga", null))),
+            new("delete cinema saga", Delete, $"{u}/cinema-sagas/{any}", May.Edit),
+            new("move cinema saga", Post, $"{u}/cinema-sagas/{any}/move", May.Edit, Json(new CinemaPlaceRequest(0))),
+            new("create cinema phase", Post, $"{u}/cinema-sagas/{any}/phases", May.Edit, Json(new CinemaGroupRequest("Matrix phase", null))),
+            new("edit cinema phase", Put, $"{u}/cinema-sagas/{any}/phases/{any}", May.Edit, Json(new CinemaGroupRequest("Matrix phase", null))),
+            new("delete cinema phase", Delete, $"{u}/cinema-sagas/{any}/phases/{any}", May.Edit),
+            new("move cinema phase", Post, $"{u}/cinema-sagas/{any}/phases/{any}/move", May.Edit, Json(new CinemaPlaceRequest(0))),
+            new("add cinema phase member", Post, $"{u}/cinema-sagas/{any}/phases/{any}/members", May.Edit, Json(new CinemaMemberRequest(any))),
+            new("remove cinema phase member", Delete, $"{u}/cinema-sagas/{any}/phases/{any}/members/{any}", May.Edit),
+            new("move cinema phase member", Post, $"{u}/cinema-sagas/{any}/phases/{any}/members/{any}/move", May.Edit, Json(new CinemaPlaceRequest(0))),
 
             new("image original", Get, $"{e}/image/{w.Image.AssetId}/original", May.Read),
             new("image thumbnail", Get, $"{e}/image/{w.Image.AssetId}/thumbnail/{w.Image.ThumbnailId}", May.Read),
@@ -441,7 +465,7 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "field picture original" or "field picture crop" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                var expected = call.Name is "type template" or "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "field picture original" or "field picture crop" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
                     ? HttpStatusCode.NotFound
                     : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
