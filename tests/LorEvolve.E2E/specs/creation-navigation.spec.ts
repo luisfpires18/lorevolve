@@ -69,7 +69,7 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(sidebar(page).getByTestId('workspace-game-entities')).toHaveCount(0)
   })
 
-  test('a Game project with no entities offers Gaming and Game Entities, the latter right after Types', async ({
+  test('a Game project offers Gaming, and World building no Game Entities (owner, 2026-11-17)', async ({
     page,
   }) => {
     await signUp(page)
@@ -80,7 +80,6 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(sidebar(page).getByTestId('sidebar-world-building').getByRole('link')).toHaveText([
       'Lore',
       'Types',
-      'Game Entities',
       'Family Tree',
       'Maps',
       'Timeline',
@@ -245,7 +244,7 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     ])
   })
 
-  test('a Game project adds Game Entities after Types, and Gaming alone under Creation', async ({
+  test('a Game project adds Gaming alone under Creation, and no Game Entities card', async ({
     page,
   }) => {
     await signUp(page)
@@ -254,7 +253,7 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     await page.goto(`/app/universes/${id}`)
     await expect(overviewHeadings(page)).toHaveText(['World building', 'Creation', 'Management'])
     const ids = await overviewIds(page)
-    expect(ids.indexOf('overview-game-entities')).toBe(ids.indexOf('overview-types') + 1)
+    expect(ids).not.toContain('overview-game-entities')
     await expect(page.locator('.contents--creation [data-testid^="overview-"]')).toHaveText([
       /Gaming/,
     ])

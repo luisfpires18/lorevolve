@@ -474,6 +474,7 @@ const projects = {
     values: 'Campos',
   },
   new: {
+    cinema: 'Cinema',
     title: 'Novo projeto',
     name: 'Nome',
     kind: 'Que tipo de trabalho é?',

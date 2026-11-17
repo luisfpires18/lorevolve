@@ -52,7 +52,8 @@ test('each Cinema and Comic format is chosen, kept after a reload, and drawn on 
     const name = unique(`${format.id} `)
     await page.goto(`/app/projects/new?universeId=${world.id}`)
     await page.getByTestId('project-new-name').fill(name)
-    await page.getByTestId('project-new-kind').selectOption(format.kind)
+    // Film and Series are one choice, Cinema (value 3); a series format makes it a series.
+    await page.getByTestId('project-new-kind').selectOption(format.kind === '2' ? '3' : format.kind)
     await page.getByTestId('project-new-format').selectOption(format.id)
     await page.getByTestId('project-new-save').click()
 
@@ -75,4 +76,24 @@ test('a project of another kind has no format choice', async ({ page }) => {
   await page.goto(`/app/projects/new?universeId=${world.id}`)
   await page.getByTestId('project-new-kind').selectOption('1')
   await expect(page.getByTestId('project-new-format')).toHaveCount(0)
+})
+
+test('Cinema is the one choice for films and series', async ({ page }) => {
+  await signUp(page)
+  const response = await page.request.post('/api/universes', {
+    data: { name: unique('Formatworld '), description: null },
+  })
+  const world = (await response.json()) as { id: string }
+  await page.goto(`/app/projects/new?universeId=${world.id}`)
+  const kinds = page.getByTestId('project-new-kind').locator('option')
+  await expect(kinds).toHaveText(['Writing', 'Game', 'Cinema', 'Comic'])
+  await page.getByTestId('project-new-kind').selectOption('3')
+  await expect(page.getByTestId('project-new-format').locator('option')).toHaveText([
+    'Feature Film / Movie',
+    'Short Film',
+    'Special',
+    'Trailer',
+    'TV Show',
+    'Limited Series',
+  ])
 })
