@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using LorEvolve.Api.Features.Export;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Systems;
 using Microsoft.EntityFrameworkCore;
@@ -288,6 +289,30 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         Assert.Null(read.Binding);
         Assert.Empty(read.States);
         Assert.Empty(read.Transitions);
+    }
+
+    /// <summary>
+    /// A file is held to the scope rule a save is: a universe System's machine cannot be guarded by a project's rule,
+    /// however the file came to say so.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_whose_machine_names_a_guard_from_another_project_is_refused()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmachinescope");
+        await WithMachine(client, universe.Id);
+
+        var project = (await PostJson<ProjectDetail>(
+            client,
+            "/api/projects",
+            new ProjectRequest("Side", ProjectKind.Game, ProjectLifecycle.Planning, null, null, universe.Id, null))).Id;
+        var foreign = await PostJson<SystemRuleDetail>(client, Rules(universe.Id), new SystemRuleRequest("Local", null, project));
+
+        var crafted = Rewrite(
+            await RawArchive(client, universe.Id),
+            root => Payload(root)["loreSystems"]![0]!["machine"]!["transitions"]![0]!["guardRuleId"] = foreign.Id);
+
+        var refusal = await Refused(await Validate(client, crafted));
+        Assert.Contains(refusal.Issues, issue => issue.Message.Contains("a guard from another project", StringComparison.Ordinal));
     }
 
     /// <summary>A rule, a System, and a two-state machine on it whose one transition the rule guards.</summary>

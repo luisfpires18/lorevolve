@@ -674,6 +674,9 @@ internal static partial class BackupValidation
 
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
+
+        /// <summary>The project of each project-scoped rule definition, for the guard scope check a save makes (ADR 0073).</summary>
+        private readonly Dictionary<Guid, Guid> _systemRuleProjects = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
@@ -2979,6 +2982,11 @@ internal static partial class BackupValidation
                 Register(rule.Id, what);
                 _systemRules.Add(rule.Id);
 
+                if (rule.ProjectId is { } ruleProject)
+                {
+                    _systemRuleProjects[rule.Id] = ruleProject;
+                }
+
                 Text(rule.Title, WorldLogicLimits.NameMaxLength, $"{what}'s title", required: true);
 
                 if (rule.Description is null)
@@ -3109,16 +3117,16 @@ internal static partial class BackupValidation
 
                 if (system.Machine is { } machine)
                 {
-                    CheckSystemMachine(machine, what);
+                    CheckSystemMachine(machine, system.ProjectId, what);
                 }
             }
         }
 
         /// <summary>
         /// A System's machine (version 57, ADR 0073), held to the same check a save is, and every guard a rule
-        /// definition this file holds.
+        /// definition this file holds that is the universe's or the System's own project's.
         /// </summary>
-        private void CheckSystemMachine(BackupSystemMachine machine, string what)
+        private void CheckSystemMachine(BackupSystemMachine machine, Guid? systemProject, string what)
         {
             if (machine.States is null || machine.Transitions is null)
             {
@@ -3150,9 +3158,18 @@ internal static partial class BackupValidation
 
             foreach (var transition in machine.Transitions)
             {
-                if (transition.GuardRuleId is { } guard && !_systemRules.Contains(guard))
+                if (transition.GuardRuleId is not { } guard)
+                {
+                    continue;
+                }
+
+                if (!_systemRules.Contains(guard))
                 {
                     Add(BackupIssueCodes.MissingReference, $"{what}'s machine names a guard the backup does not hold.");
+                }
+                else if (_systemRuleProjects.TryGetValue(guard, out var guardProject) && guardProject != systemProject)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what}'s machine names a guard from another project.");
                 }
             }
         }
