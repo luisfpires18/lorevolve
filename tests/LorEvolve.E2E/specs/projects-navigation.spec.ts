@@ -226,8 +226,11 @@ test.describe('Projects navigation', () => {
     await page.getByTestId('project-new-kind').selectOption('1')
     await page.getByTestId('project-new-save').click()
 
-    await expect(page.getByTestId('project-name')).toContainText(name)
-    await expect(page.getByTestId('project-meta')).toContainText('Game')
+    // A game opens on Entities: its name is the breadcrumb's, its facts sit under the tabs.
+    await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(name)
+    await expect(page.getByTestId('project-facts').getByTestId('project-meta')).toContainText(
+      'Game',
+    )
 
     // Nothing in the list pushes the phone's viewport sideways.
     await page.goto('/app/projects')

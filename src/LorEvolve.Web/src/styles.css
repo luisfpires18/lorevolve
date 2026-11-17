@@ -18744,6 +18744,17 @@ details.reviewsection > .reviewsection__list {
   overflow-wrap: anywhere;
 }
 
+/* A Game's facts and summary under its tabs, where its Overview used to hold them (owner, 2026-11-17). */
+.projectframe__facts {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.projectframe__facts > p {
+  margin: 0;
+}
+
 /*
  * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
  * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.

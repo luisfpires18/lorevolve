@@ -20,6 +20,7 @@ export function ProjectShell({
   universe,
   sections,
   story = false,
+  meta,
   children,
 }: {
   projectId: string
@@ -32,6 +33,8 @@ export function ProjectShell({
    * draws neither breadcrumb nor tabs: two bars of the same links were double navigation.
    */
   story?: boolean
+  /** The project's facts and summary, under the tabs' row, for a kind with no Overview to hold them (a Game). */
+  meta?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -69,6 +72,7 @@ export function ProjectShell({
           </nav>
         </div>
       )}
+      {meta}
       {children}
     </div>
   )

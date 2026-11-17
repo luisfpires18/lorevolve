@@ -1,4 +1,12 @@
-import { Boxes, Compass, FileText, ListTree, Settings2, type LucideIcon } from 'lucide-react'
+import {
+  Boxes,
+  Compass,
+  FileText,
+  ListTree,
+  Settings2,
+  Shapes,
+  type LucideIcon,
+} from 'lucide-react'
 import { t } from '../i18n'
 import type { ProjectFamily } from '../universes/sections'
 import { ProjectKind, ProjectLifecycle, type ProjectDetail } from './types'
@@ -43,6 +51,13 @@ const entities: ProjectSection = {
   testId: 'project-entities',
   icon: Boxes,
 }
+// A project's own types, a view of their own (owner, 2026-11-17) rather than a screen inside Entities.
+const types: ProjectSection = {
+  segment: 'types',
+  label: 'sections.types',
+  testId: 'project-types',
+  icon: Shapes,
+}
 const systems: ProjectSection = {
   segment: 'systems',
   label: 'sections.systems',
@@ -63,7 +78,8 @@ const script: ProjectSection = {
 // its entries until #196 moves the schema into Entities (#193): a kind without either would put a panel out of reach.
 const SECTIONS_BY_KIND: Record<ProjectDetail['kind'], readonly ProjectSection[]> = {
   [ProjectKind.Writing]: [overview, structure, manuscript, entities],
-  [ProjectKind.Game]: [overview, entities, systems],
+  // A Game opens on its Entities, Lore's way (owner, 2026-11-17): its kind and summary sit above the tabs instead.
+  [ProjectKind.Game]: [entities, types, systems],
   [ProjectKind.Series]: [overview, structure, script, entities],
   [ProjectKind.Film]: [overview, structure, script, entities],
   [ProjectKind.Comic]: [overview, structure, script, entities],

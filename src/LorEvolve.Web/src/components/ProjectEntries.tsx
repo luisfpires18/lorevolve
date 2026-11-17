@@ -50,6 +50,7 @@ export function ProjectEntries({
   onChanged,
   crumb,
   entryHref,
+  startAdding = false,
 }: {
   projectId: string
   /** The universe the project belongs to: an entry's pictures are stored under it. */
@@ -69,6 +70,8 @@ export function ProjectEntries({
   crumb?: ReactNode
   /** Where an entry's card opens (#286); unset, a card is static as it was (#196). */
   entryHref?: (entry: ProjectEntitySummary) => string
+  /** Open the new entry form at once: the Entities screen's New entry chose this type (`&add=1`). */
+  startAdding?: boolean
 }) {
   useI18n()
   const { pathname } = useLocation()
@@ -90,7 +93,7 @@ export function ProjectEntries({
   const [busy, setBusy] = useState(false)
   // The main read's controller: loadMore and refresh share its signal so a filter change cancels them too.
   const readRef = useRef<AbortController | null>(null)
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState(startAdding)
 
   function setFilter(changes: Record<string, string | null>) {
     setParams(

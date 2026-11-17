@@ -125,10 +125,11 @@ test.describe('Game entity details', () => {
     })
     const entities = `/app/universes/${world.id}/projects/${alpha.id}/entities`
 
-    // Overview's type cards are Lore's cards, and they open the type's entries.
+    // A game has no overview: its address lands on Entities, whose type cards are Lore's cards.
     await page.goto(`/app/universes/${world.id}/projects/${alpha.id}/overview`)
+    await expect(page).toHaveURL(entities)
     await page
-      .getByTestId('project-overview-type-counts')
+      .getByTestId('lore-type-cards')
       .getByTestId('lore-type-card')
       .filter({ hasText: 'Units' })
       .click()
@@ -147,7 +148,7 @@ test.describe('Game entity details', () => {
     )
 
     // Only `entities/<entryId>` is a sub-address. A deeper one, an empty one, or one under another view falls back to
-    // the project's first view, as any unknown address always has (#192).
+    // the project's first view, as any unknown address always has (#192): Entities for a game.
     const overview = `/app/universes/${world.id}/projects/${alpha.id}/overview`
     for (const wrong of [
       `${entities}/${alpha.ids['Bastion']}/more`,
@@ -155,7 +156,7 @@ test.describe('Game entity details', () => {
       `${overview}/${alpha.ids['Bastion']}`,
     ]) {
       await page.goto(wrong)
-      await expect(page).toHaveURL(overview)
+      await expect(page).toHaveURL(entities)
       await expect(page.getByTestId('game-entity-page')).toHaveCount(0)
     }
   })
