@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "scenario": "case-review",
+  "description": "A review workflow with no fantasy term anywhere. Covers an unguarded transition, a state nothing leads to, exempt counting as met, error over false and over unknown, and a transition into the initial state.",
+  "facts": {
+    "subjects": [
+      { "id": "s.a", "type": "submission", "attributes": { "stage": "received" } },
+      { "id": "s.b", "type": "submission", "attributes": { "stage": "screened" } },
+      { "id": "s.c", "type": "submission", "attributes": { "stage": "approved", "score": 80, "legacyCode": 0 } },
+      { "id": "s.d", "type": "submission", "attributes": { "stage": "approved", "score": 40, "legacyCode": 1, "waived": false } },
+      { "id": "s.e", "type": "submission", "attributes": { "stage": "approved", "score": 40, "legacyCode": 0, "waived": false } },
+      { "id": "s.f", "type": "submission", "attributes": { "stage": "approved", "score": 40, "legacyCode": 0, "waived": true } },
+      { "id": "s.g", "type": "submission", "attributes": { "stage": "approved", "score": 40, "legacyCode": "L-1", "waived": false } },
+      { "id": "s.h", "type": "submission", "attributes": { "stage": "approved", "legacyCode": 0 } },
+      { "id": "s.i", "type": "submission", "attributes": { "stage": "approved", "legacyCode": "L-1" } },
+      { "id": "s.j", "type": "submission", "attributes": { "stage": "archived" } },
+      { "id": "s.k", "type": "submission", "attributes": { "stage": "returned", "flagged": true } },
+      { "id": "s.l", "type": "submission", "attributes": { "stage": true } }
+    ],
+    "relations": [],
+    "events": []
+  },
+  "rules": [
+    {
+      "id": "rule.scored",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "score", "of": { "subject": "self" } },
+        "op": "gte",
+        "right": { "literal": 60, "type": "number" }
+      },
+      "exceptions": [
+        {
+          "id": "ex.waiver",
+          "scope": { "kind": "universe" },
+          "when": {
+            "kind": "compare",
+            "left": { "attribute": "waived", "of": { "subject": "self" } },
+            "op": "eq",
+            "right": { "literal": true, "type": "boolean" }
+          }
+        }
+      ]
+    },
+    {
+      "id": "rule.legacy",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "legacyCode", "of": { "subject": "self" } },
+        "op": "eq",
+        "right": { "literal": 1, "type": "number" }
+      },
+      "exceptions": []
+    },
+    {
+      "id": "rule.flagged",
+      "version": 1,
+      "scope": { "kind": "universe" },
+      "dependsOn": [],
+      "condition": {
+        "kind": "compare",
+        "left": { "attribute": "flagged", "of": { "subject": "self" } },
+        "op": "eq",
+        "right": { "literal": true, "type": "boolean" }
+      },
+      "exceptions": []
+    }
+  ],
+  "machine": {
+    "schemaVersion": 1,
+    "binding": { "subjectType": "submission", "attribute": "stage" },
+    "states": [
+      { "id": "st.received", "name": "Received", "value": "received", "initial": true, "x": 0, "y": 0 },
+      { "id": "st.screened", "name": "Screened", "value": "screened", "initial": false, "x": 320, "y": 0 },
+      { "id": "st.approved", "name": "Approved", "value": "approved", "initial": false, "x": 640, "y": 0 },
+      { "id": "st.returned", "name": "Returned", "value": "returned", "initial": false, "x": 640, "y": 200 },
+      { "id": "st.archived", "name": "Archived", "value": "archived", "initial": false, "x": 960, "y": 0 }
+    ],
+    "transitions": [
+      { "id": "t.screen", "fromStateId": "st.received", "toStateId": "st.screened", "label": "Screened", "guardRuleId": null },
+      { "id": "t.approve", "fromStateId": "st.screened", "toStateId": "st.approved", "label": "Approved", "guardRuleId": "rule.scored" },
+      { "id": "t.approve-legacy", "fromStateId": "st.screened", "toStateId": "st.approved", "label": "Approved under the old scheme", "guardRuleId": "rule.legacy" },
+      { "id": "t.return", "fromStateId": "st.screened", "toStateId": "st.returned", "label": "Returned", "guardRuleId": "rule.flagged" },
+      { "id": "t.resubmit", "fromStateId": "st.returned", "toStateId": "st.received", "label": "Resubmitted", "guardRuleId": null }
+    ]
+  },
+  "cases": [
+    { "name": "the initial state is never checked, even with a transition into it", "subjectId": "s.a", "projectId": null, "expect": [] },
+    { "name": "a transition with no guard always holds", "subjectId": "s.b", "projectId": null, "expect": [] },
+    { "name": "the first guard holds", "subjectId": "s.c", "projectId": null, "expect": [] },
+    { "name": "the second guard holds after the first fails", "subjectId": "s.d", "projectId": null, "expect": [] },
+    {
+      "name": "both guards fail",
+      "subjectId": "s.e",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.approved", "outcome": "violation", "errorCode": null, "transitions": ["t.approve:false", "t.approve-legacy:false"] } ]
+    },
+    { "name": "an exempt guard counts as met", "subjectId": "s.f", "projectId": null, "expect": [] },
+    {
+      "name": "an error wins over a false",
+      "subjectId": "s.g",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.approved", "outcome": "error", "errorCode": "type_mismatch", "transitions": ["t.approve:false", "t.approve-legacy:error"] } ]
+    },
+    {
+      "name": "an unknown and a false combine to unknown",
+      "subjectId": "s.h",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.approved", "outcome": "unknown", "errorCode": null, "transitions": ["t.approve:unknown", "t.approve-legacy:false"] } ]
+    },
+    {
+      "name": "an error wins over an unknown",
+      "subjectId": "s.i",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.approved", "outcome": "error", "errorCode": "type_mismatch", "transitions": ["t.approve:unknown", "t.approve-legacy:error"] } ]
+    },
+    {
+      "name": "a state nothing leads to is a violation for every subject in it",
+      "subjectId": "s.j",
+      "projectId": null,
+      "expect": [ { "check": "no_transition_holds", "stateId": "st.archived", "outcome": "violation", "errorCode": null, "transitions": [] } ]
+    },
+    { "name": "a guarded transition that holds", "subjectId": "s.k", "projectId": null, "expect": [] },
+    {
+      "name": "a boolean where a state value belongs",
+      "subjectId": "s.l",
+      "projectId": null,
+      "expect": [ { "check": "undeclared_state", "stateId": null, "outcome": "error", "errorCode": "type_mismatch", "transitions": [] } ]
+    }
+  ]
+}
