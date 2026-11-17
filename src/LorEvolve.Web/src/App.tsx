@@ -35,6 +35,7 @@ import {
   FamilyTreePage,
   ForgotPasswordPage,
   GameEntitiesPage,
+  GameEntityPage,
   IdeaBoardPage,
   IdeaBoardsPage,
   IdeaPage,
@@ -348,6 +349,10 @@ function Root() {
               <Route
                 path="game-entities/:projectId"
                 element={asSection('projects', <GameEntitiesPage />)}
+              />
+              <Route
+                path="game-entities/:projectId/:entityId"
+                element={asSection('projects', <GameEntityPage />)}
               />
               <Route
                 path="projects/:projectId/*"
