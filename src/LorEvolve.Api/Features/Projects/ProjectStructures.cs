@@ -53,6 +53,12 @@ public static class ProjectStructures
         }),
         ["short-film"] = SceneBeat,
         ["special"] = SceneBeat,
+        // Trailer and Teaser share one format (#292): segments of shots.
+        ["trailer"] = new(["segment"], new Dictionary<string, string[]>
+        {
+            ["segment"] = ["shot"],
+            ["shot"] = [],
+        }),
         ["tv-show"] = new(["season"], new Dictionary<string, string[]>(EpisodeLevels) { ["season"] = ["episode"] }),
         ["limited-series"] = new(["episode"], EpisodeLevels),
     };

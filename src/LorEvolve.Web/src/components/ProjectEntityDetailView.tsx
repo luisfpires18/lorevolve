@@ -8,6 +8,7 @@ import { t, useI18n } from '../i18n'
 import { EmptyState } from './EmptyState'
 import { EntityTile } from './EntityTile'
 import { PageHeader } from './PageHeader'
+import { ProjectEntityFields } from './ProjectEntityFields'
 import { TypeIcon } from './TypeIcon'
 
 type LoadState =
@@ -19,7 +20,7 @@ type LoadState =
  * The one detail screen of a project's entry (#286), the same for every type: its name, type, picture and full
  * description. The caller has already checked that `projectId` is a Game of this universe, and names it here for the
  * crumbs; this view reads the entry by project and id together, so another project's entry is a 404, shown as not found
- * without saying why. Field values (#287) go in the marked slot after the description.
+ * without saying why. Field values and Edit (#287) follow the description.
  */
 export function ProjectEntityDetailView({
   projectId,
@@ -37,6 +38,8 @@ export function ProjectEntityDetailView({
 }) {
   useI18n()
   const [state, setState] = useState<LoadState | null>(null)
+  // Bumped after an edit: the entry is read again, so every part of the screen shows what was saved (#287).
+  const [reloadKey, setReloadKey] = useState(0)
   const read = state !== null && state.for === entityId ? state : null
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export function ProjectEntityDetailView({
         }
       })
     return () => controller.abort()
-  }, [projectId, entityId])
+  }, [projectId, entityId, reloadKey])
 
   if (read === null) {
     return (
@@ -155,7 +158,12 @@ export function ProjectEntityDetailView({
               {t('projects.gameEntities.entity.noDescription')}
             </p>
           )}
-          {/* Slot for #287: the entry's field values are drawn here, after the description. */}
+          <ProjectEntityFields
+            projectId={projectId}
+            universeId={universeId}
+            detail={entity}
+            onSaved={() => setReloadKey((key) => key + 1)}
+          />
         </div>
       </div>
     </article>

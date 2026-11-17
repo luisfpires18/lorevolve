@@ -121,6 +121,7 @@ export type FieldValue = {
   optionValues: string[]
   referencedEntityId: string | null
   referencedEntityName: string | null
+  referencedEntityIsTrashed: boolean
   eraId: string | null
 }
 
@@ -133,4 +134,6 @@ export type ProjectEntityDetail = {
   fields: FieldValue[]
   fieldImages: FieldImageRef[]
   version: number
+  /** The lore entry this one is linked to (#287); an edit sends it back so the link is kept. */
+  canonEntityId: string | null
 }

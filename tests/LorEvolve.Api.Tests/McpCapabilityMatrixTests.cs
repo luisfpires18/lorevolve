@@ -152,7 +152,18 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Excepted("Collaborators", ["collaborators"], Why.PersonOnly),
         Excepted("Invitations", ["invitations"], Why.PersonOnly),
         ReadOnly("Lore references", ["lore-references"], ["get_lore_entry"]),
-        Excepted("Comic story arcs and events (#296)", ["comic-collections"], Why.PersonOnly),
+        Excepted("Type templates", ["type-templates", "type-templates/fields"], Why.PersonOnly),
+        Excepted(
+            "Cinema sagas and their phases",
+            [
+                "cinema-sagas", "cinema-sagas/move", "cinema-sagas/phases", "cinema-sagas/phases/move",
+                "cinema-sagas/phases/members", "cinema-sagas/phases/members/move",
+            ],
+            Why.PersonOnly),
+        Excepted(
+            "Comic story arcs and events",
+            ["comic-collections", "comic-collections/move", "comic-collections/entries", "comic-collections/entries/move"],
+            Why.PersonOnly),
     ];
 
     private static readonly Domain[] Project =
@@ -161,7 +172,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("A project's entries", ["entities"], ["list_project_entries", "get_project_entry"], ["ProjectEntry"]),
         Excepted("A project entry's history", ["entities/revisions"], Why.LiveOnly),
         Mapped("A project's own types", ["entity-types"], ["get_project_schema"], ["ProjectType", "ProjectField"]),
-        ReadOnly("A project's structure", ["seasons"], ["get_project_structure"]),
+        ReadOnly("A project's structure", ["seasons", "structure", "structure/move"], ["get_project_structure"]),
     ];
 
     /// <summary>The proposal tools themselves: the one write path, and how an app finds and follows it.</summary>

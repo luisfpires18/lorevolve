@@ -282,7 +282,13 @@ public static class ProjectEntityEndpoints
         // The client sends the complete set of values it wants stored, so the old rows go first, straight against the
         // database: EF does not promise to order deletes ahead of inserts within one SaveChanges, and re-saving an
         // unchanged value would then collide with the row still in the table.
-        await db.EntityFieldValues.Where(value => value.EntityId == entityId).ExecuteDeleteAsync(cancellationToken);
+        // Only active fields' values are replaced: an archived field is in no form, so nothing sends its value back, and it
+        // stays until the field is restored (Issue #39). The definitions are read past the type filter, which hides a project's.
+        await db.EntityFieldValues
+            .Where(value => value.EntityId == entityId
+                && !db.EntityFieldDefinitions.IgnoreQueryFilters()
+                    .Any(field => field.Id == value.FieldDefinitionId && field.ArchivedAt != null))
+            .ExecuteDeleteAsync(cancellationToken);
 
         var prepared = await EntityEndpoints.PrepareFieldValuesAsync(
             db, project.UniverseId, entityId, Lore(request), cancellationToken, projectId);
@@ -472,7 +478,13 @@ public static class ProjectEntityEndpoints
         entity.CanonEntityId = canonEntityId;
         entity.UpdatedAt = DateTime.UtcNow;
 
-        await db.EntityFieldValues.Where(value => value.EntityId == entityId).ExecuteDeleteAsync(cancellationToken);
+        // Only active fields' values are replaced: an archived field is in no form, so nothing sends its value back, and it
+        // stays until the field is restored (Issue #39). The definitions are read past the type filter, which hides a project's.
+        await db.EntityFieldValues
+            .Where(value => value.EntityId == entityId
+                && !db.EntityFieldDefinitions.IgnoreQueryFilters()
+                    .Any(field => field.Id == value.FieldDefinitionId && field.ArchivedAt != null))
+            .ExecuteDeleteAsync(cancellationToken);
 
         var prepared = await EntityEndpoints.PrepareFieldValuesAsync(
             db,
