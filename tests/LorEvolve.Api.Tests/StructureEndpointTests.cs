@@ -286,6 +286,116 @@ public sealed class StructureEndpointTests(LorEvolveApiFactory factory) : IClass
         Assert.Equal(50, older.Preview.FormatVersion);
     }
 
+    [Fact]
+    public async Task A_tv_show_orders_seasons_and_episodes_and_an_episode_holds_acts_scenes_and_beats()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "tvshow");
+        var show = await NewProject(client, universe.Id, ProjectKind.Series, "tv-show");
+        var other = await NewProject(client, universe.Id, ProjectKind.Series, "tv-show", "Other show");
+        var theirs = await Add(client, other.Id, "season", title: "Theirs");
+
+        var one = await Add(client, show.Id, "season", title: "One");
+        await Add(client, show.Id, "season", title: "Two");
+        var three = await Add(client, show.Id, "season", title: "Three");
+        await Move(client, show.Id, three.Id, new ProjectNodeMove(0));
+
+        var tree = await Tree(client, show.Id);
+        Assert.Equal(["season"], tree.Roots);
+        Assert.Equal(["Three", "One", "Two"], Ordered(tree, null).Select(node => node.Title));
+
+        var episodes = new List<ProjectNodeDetail>();
+        foreach (var title in new[] { "Pilot", "Second", "Third" })
+            episodes.Add(await Add(client, show.Id, "episode", one.Id, title));
+        var elsewhere = await Add(client, show.Id, "episode", three.Id, "Alone");
+        await Move(client, show.Id, episodes[2].Id, new ProjectNodeMove(0, one.Id));
+
+        tree = await Tree(client, show.Id);
+        Assert.Equal(["Third", "Pilot", "Second"], Ordered(tree, one.Id).Select(node => node.Title));
+        Assert.Equal([0, 1, 2], Ordered(tree, one.Id).Select(node => node.SortOrder));
+        Assert.Equal([elsewhere.Id], Ordered(tree, three.Id).Select(node => node.Id));
+        Assert.All(tree.Nodes.Where(node => node.Level == "episode"), node => Assert.NotNull(node.ParentId));
+        Assert.Equal(1, (await Tree(client, other.Id)).Nodes.Count);
+        Assert.Equal(theirs.Id, Assert.Single((await Tree(client, other.Id)).Nodes).Id);
+
+        // An act is optional: one episode has an act with a scene, a scene beside it, another has a scene only.
+        var pilot = episodes[0];
+        var act = await Add(client, show.Id, "act", pilot.Id);
+        var inAct = await Add(client, show.Id, "scene", act.Id);
+        var direct = await Add(client, show.Id, "scene", pilot.Id, body: "INT. KITCHEN");
+        await Add(client, show.Id, "beat", direct.Id);
+        await Add(client, show.Id, "scene", episodes[1].Id);
+        Assert.Equal([act.Id, direct.Id], Ordered(await Tree(client, show.Id), pilot.Id).Select(node => node.Id));
+
+        await AssertField(await Post(client, show.Id, new ProjectNodeRequest("beat", pilot.Id)), "level");
+        await AssertField(await Post(client, show.Id, new ProjectNodeRequest("beat", act.Id)), "level");
+        await AssertField(await Post(client, show.Id, new ProjectNodeRequest("episode")), "level");
+        await AssertField(await Post(client, show.Id, new ProjectNodeRequest("season", one.Id)), "level");
+        await AssertField(await Post(client, show.Id, new ProjectNodeRequest("scene", one.Id)), "level");
+        Assert.NotEqual(Guid.Empty, inAct.Id);
+    }
+
+    [Fact]
+    public async Task A_limited_series_starts_at_episodes_and_refuses_seasons()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "limseries");
+        var series = await NewProject(client, universe.Id, ProjectKind.Series, "limited-series");
+
+        var first = await Add(client, series.Id, "episode", title: "Part One");
+        await Add(client, series.Id, "episode", title: "Part Two");
+        var scene = await Add(client, series.Id, "scene", first.Id);
+        await Add(client, series.Id, "beat", scene.Id);
+
+        var tree = await Tree(client, series.Id);
+        Assert.Equal(["episode"], tree.Roots);
+        Assert.DoesNotContain(tree.Children.Keys, key => key == "season");
+        Assert.Equal(["Part One", "Part Two"], Ordered(tree, null).Select(node => node.Title));
+        await AssertField(await Post(client, series.Id, new ProjectNodeRequest("season")), "level");
+    }
+
+    [Fact]
+    public async Task The_film_rules_and_a_series_without_a_format_are_unchanged()
+    {
+        Assert.Equal(["act"], ProjectStructures.For("feature-film")!.Roots);
+        Assert.Equal(["scene"], ProjectStructures.For("short-film")!.Roots);
+        Assert.Equal(["scene"], ProjectStructures.For("special")!.Roots);
+        Assert.Equal(["sequence", "scene"], ProjectStructures.For("feature-film")!.Children["act"]);
+        Assert.Null(ProjectStructures.For(null));
+
+        var (client, universe) = await SignedInWithUniverse(_factory, "serieslegacy");
+        var legacy = await NewProject(client, universe.Id, ProjectKind.Series, null);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/projects/{legacy.Id}/structure")).StatusCode);
+        var season = await client.PostAsJsonAsync($"/api/projects/{legacy.Id}/seasons", new ProjectSeasonRequest("Season 1", null));
+        Assert.Equal(HttpStatusCode.Created, season.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_tv_show_backup_round_trip_keeps_the_tree_and_a_limited_series_root_season_is_refused()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "tvbackup");
+        var show = await NewProject(client, universe.Id, ProjectKind.Series, "tv-show");
+        var season = await Add(client, show.Id, "season", title: "S One");
+        var episode = await Add(client, show.Id, "episode", season.Id, "Pilot", body: "Cold open");
+        await Add(client, show.Id, "scene", episode.Id, "Opening");
+
+        var archive = await RawArchive(client, universe.Id);
+        var restored = await RestoreArchive(client, archive, "Show restored");
+
+        await WithDb(_factory, async db =>
+        {
+            var copy = await db.CreativeProjects.AsNoTracking().SingleAsync(each => each.UniverseId == restored.Id);
+            var nodes = await db.ProjectNodes.AsNoTracking().Where(node => node.ProjectId == copy.Id).ToListAsync();
+            Assert.Equal(3, nodes.Count);
+            var copiedEpisode = nodes.Single(node => node.Level == "episode");
+            Assert.Equal("Cold open", copiedEpisode.Body);
+            Assert.Equal(nodes.Single(node => node.Level == "season").Id, copiedEpisode.ParentId);
+        });
+
+        // The same tree under a limited series has a season at its root, which that format does not allow.
+        var refused = await Refused(await Validate(client, Rewrite(archive, root =>
+            Payload(root)["creativeProjects"]!.AsArray()[0]!["format"] = "limited-series")));
+        Assert.Contains(BackupIssueCodes.InvalidValue, refused.IssueCodes);
+    }
+
     // ---------- helpers ----------
 
     private static async Task<ProjectDetail> NewProject(

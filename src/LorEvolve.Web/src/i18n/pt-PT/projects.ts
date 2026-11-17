@@ -252,6 +252,8 @@ const projects = {
       'Isto foi alterado noutro sítio depois de ser aberto aqui. Nada foi substituído. Feche e abra de novo.',
     leave: 'Fechar sem guardar as alterações?',
     levels: {
+      season: 'temporada',
+      episode: 'episódio',
       act: 'ato',
       sequence: 'sequência',
       scene: 'cena',
@@ -260,7 +262,6 @@ const projects = {
       chapter: 'capítulo',
       page: 'página',
       panel: 'vinheta',
-      episode: 'episódio',
     },
   },
   volumes: {

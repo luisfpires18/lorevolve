@@ -252,6 +252,8 @@ const projects = {
       'This was changed somewhere else after it was opened here. Nothing was overwritten. Close and open it again.',
     leave: 'Close without saving your changes?',
     levels: {
+      season: 'season',
+      episode: 'episode',
       act: 'act',
       sequence: 'sequence',
       scene: 'scene',
@@ -260,7 +262,6 @@ const projects = {
       chapter: 'chapter',
       page: 'page',
       panel: 'panel',
-      episode: 'episode',
     },
   },
   volumes: {
