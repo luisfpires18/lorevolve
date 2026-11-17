@@ -1,0 +1,458 @@
+import { useEffect, useState, type ReactNode } from 'react'
+import { ActionMenu } from './ActionMenu'
+import { Drawer } from './Drawer'
+import { EmptyState } from './EmptyState'
+import { Field } from './Field'
+import { ApiError } from '../lib/api'
+import { confirmAction } from '../lib/confirm'
+import { listSeasons } from '../projectEntities/seasons'
+import {
+  addableLevels,
+  childrenOf,
+  createNode,
+  deleteNode,
+  descendantCount,
+  getNode,
+  getStructure,
+  moveNode,
+  moveTargets,
+  NODE_CHANGED,
+  saveNode,
+  type ProjectNodeDetail,
+  type ProjectNodeSummary,
+  type ProjectStructureTree,
+} from '../projectEntities/structure'
+import { t, tn, useI18n } from '../i18n'
+
+/**
+ * The words for each structure level (#290). The only part of this component a later format issue grows: #291 adds
+ * season and episode, #292 segment and shot, #294 issue, chapter, page and panel. An unknown level shows its own word.
+ */
+const LEVEL_WORDS: Record<string, () => string> = {
+  season: () => t('projects.structure.levels.season'),
+  episode: () => t('projects.structure.levels.episode'),
+  act: () => t('projects.structure.levels.act'),
+  sequence: () => t('projects.structure.levels.sequence'),
+  scene: () => t('projects.structure.levels.scene'),
+  beat: () => t('projects.structure.levels.beat'),
+  issue: () => t('projects.structure.levels.issue'),
+  chapter: () => t('projects.structure.levels.chapter'),
+  page: () => t('projects.structure.levels.page'),
+  panel: () => t('projects.structure.levels.panel'),
+}
+
+const levelWord = (level: string) => LEVEL_WORDS[level]?.() ?? level
+
+const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+
+const nameOf = (node: { level: string; title: string | null }) =>
+  node.title ?? capital(t('projects.structure.untitled', { level: levelWord(node.level) }))
+
+/**
+ * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
+ * rules allow, order moved one place at a time like the seasons list, and one node edited at a time in a drawer.
+ *
+ * A project whose format has no rules gets a 404 from the tree read, and `legacy` is drawn instead, unchanged. A
+ * formatted project that still has legacy rows shows them below, under "Earlier structure".
+ */
+export function ProjectOutline({ projectId, legacy }: { projectId: string; legacy: ReactNode }) {
+  useI18n()
+  const [tree, setTree] = useState<ProjectStructureTree | 'none' | null>(null)
+  const [hasLegacy, setHasLegacy] = useState(false)
+  const [failed, setFailed] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getStructure(projectId, controller.signal)
+      .then((read) => {
+        setTree(read)
+        return listSeasons(projectId, controller.signal).then((seasons) =>
+          setHasLegacy(seasons.length > 0),
+        )
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+        if (error instanceof ApiError && error.status === 404) {
+          setTree('none')
+          return
+        }
+        setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+      })
+    return () => controller.abort()
+  }, [projectId])
+
+  function refresh() {
+    return getStructure(projectId).then((read) => {
+      setTree(read)
+      setBusy(false)
+      setFailed(null)
+    })
+  }
+
+  function failing(error: unknown) {
+    setBusy(false)
+    setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+  }
+
+  function run(work: Promise<unknown>) {
+    setBusy(true)
+    work.then(refresh).catch(failing)
+  }
+
+  function add(level: string, parentId: string | null) {
+    setBusy(true)
+    createNode(projectId, { level, parentId })
+      .then((created) => refresh().then(() => setEditing(created.id)))
+      .catch(failing)
+  }
+
+  async function remove(current: ProjectStructureTree, node: ProjectNodeSummary) {
+    const inside = descendantCount(current, node.id)
+    if (
+      !(await confirmAction({
+        title: t('projects.structure.deleteTitle', { name: nameOf(node) }),
+        message:
+          inside === 0
+            ? t('projects.structure.deleteEmpty')
+            : tn('projects.structure.deleteMessage', inside),
+        confirmLabel: t('projects.structure.delete'),
+        variant: 'destructive',
+      }))
+    ) {
+      return
+    }
+    run(deleteNode(projectId, node.id))
+  }
+
+  if (tree === 'none') return <>{legacy}</>
+
+  if (tree === null) {
+    return failed ? (
+      <p role="alert" data-testid="project-outline-failed">
+        {failed}
+      </p>
+    ) : (
+      <p className="projectcard__meta">{t('projects.common.loading')}</p>
+    )
+  }
+
+  function addButtons(parent: ProjectNodeSummary | null) {
+    const levels = addableLevels(tree as ProjectStructureTree, parent?.level ?? null)
+    if (levels.length === 0) return null
+    return (
+      <div className="form__actions">
+        {levels.map((level) => (
+          <button
+            key={level}
+            className={parent ? 'button button--secondary button--sm' : 'button'}
+            type="button"
+            disabled={busy}
+            data-testid={
+              parent ? `project-node-add-${level}-${parent.id}` : `project-node-add-${level}`
+            }
+            onClick={() => add(level, parent?.id ?? null)}
+          >
+            {t('projects.structure.add', { level: levelWord(level) })}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
+  function branch(parentId: string | null): ReactNode {
+    const current = tree as ProjectStructureTree
+    const nodes = childrenOf(current, parentId)
+    if (nodes.length === 0) return null
+    return (
+      <ol
+        className={parentId ? 'fieldlist' : 'projectcardlist'}
+        data-testid={`project-outline-list-${parentId ?? 'root'}`}
+      >
+        {nodes.map((node, index) => (
+          <li
+            key={node.id}
+            className={parentId ? 'fieldlist__row' : 'projectcard'}
+            data-testid={`project-node-${node.id}`}
+          >
+            <div className="projectcard__head">
+              <h3 className="projectcard__title">{nameOf(node)}</h3>
+              <p className="projectcard__meta">{capital(levelWord(node.level))}</p>
+              <div className="projectcard__actions">
+                <button
+                  className="button button--secondary button--sm"
+                  type="button"
+                  data-testid={`project-node-open-${node.id}`}
+                  onClick={() => setEditing(node.id)}
+                >
+                  {t('projects.structure.edit')}
+                </button>
+                <ActionMenu
+                  label={t('projects.common.more', { name: nameOf(node) })}
+                  triggerTestId={`project-node-actions-${node.id}`}
+                >
+                  {index === 0 ? null : (
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-node-up-${node.id}`}
+                      onClick={() =>
+                        run(moveNode(projectId, node.id, { place: index - 1, parentId }))
+                      }
+                    >
+                      {t('projects.common.moveUp')}
+                    </button>
+                  )}
+                  {index === nodes.length - 1 ? null : (
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-node-down-${node.id}`}
+                      onClick={() =>
+                        run(moveNode(projectId, node.id, { place: index + 1, parentId }))
+                      }
+                    >
+                      {t('projects.common.moveDown')}
+                    </button>
+                  )}
+                  {moveTargets(current, node).map((target) => (
+                    <button
+                      key={target?.id ?? 'root'}
+                      className="actionmenu__item"
+                      type="button"
+                      disabled={busy}
+                      data-testid={`project-node-move-${node.id}-${target?.id ?? 'root'}`}
+                      onClick={() =>
+                        // Moved to the end of its new list; the server clamps the place.
+                        run(
+                          moveNode(projectId, node.id, {
+                            place: Number.MAX_SAFE_INTEGER,
+                            parentId: target?.id ?? null,
+                          }),
+                        )
+                      }
+                    >
+                      {target
+                        ? t('projects.structure.moveTo', { name: nameOf(target) })
+                        : t('projects.structure.moveToTop')}
+                    </button>
+                  ))}
+                  <button
+                    className="actionmenu__item actionmenu__item--danger"
+                    type="button"
+                    disabled={busy}
+                    data-testid={`project-node-delete-${node.id}`}
+                    onClick={() => void remove(current, node)}
+                  >
+                    {t('projects.structure.delete')}
+                  </button>
+                </ActionMenu>
+              </div>
+            </div>
+            {node.summary ? <p className="prose">{node.summary}</p> : null}
+            {addButtons(node)}
+            {branch(node.id)}
+          </li>
+        ))}
+      </ol>
+    )
+  }
+
+  return (
+    <>
+      <section className="projects" data-testid="project-outline">
+        <header className="projects__head">
+          <div className="projects__headtext">
+            <h2 className="sectionrule">{t('projects.structure.title')}</h2>
+            <p className="projects__lede">{t('projects.structure.lede')}</p>
+          </div>
+          {addButtons(null)}
+        </header>
+
+        {failed ? (
+          <p role="alert" data-testid="project-outline-failed">
+            {failed}
+          </p>
+        ) : null}
+
+        {tree.nodes.length === 0 ? (
+          <EmptyState
+            title={t('projects.structure.empty')}
+            hint={t('projects.structure.emptyHint')}
+            testId="project-outline-empty"
+          />
+        ) : null}
+
+        {branch(null)}
+      </section>
+
+      {editing ? (
+        <NodeEditor
+          key={editing}
+          projectId={projectId}
+          nodeId={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            void refresh().catch(failing)
+          }}
+        />
+      ) : null}
+
+      {hasLegacy ? (
+        <section className="projects" data-testid="project-outline-earlier">
+          <header className="projects__head">
+            <div className="projects__headtext">
+              <h2 className="sectionrule">{t('projects.structure.earlier')}</h2>
+              <p className="projects__lede">{t('projects.structure.earlierHint')}</p>
+            </div>
+          </header>
+          {legacy}
+        </section>
+      ) : null}
+    </>
+  )
+}
+
+/** One node's title, summary and text, saved over the version it was opened at (ADR 0043). */
+function NodeEditor({
+  projectId,
+  nodeId,
+  onClose,
+  onSaved,
+}: {
+  projectId: string
+  nodeId: string
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [node, setNode] = useState<ProjectNodeDetail | null>(null)
+  const [title, setTitle] = useState('')
+  const [summary, setSummary] = useState('')
+  const [body, setBody] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [failed, setFailed] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getNode(projectId, nodeId, controller.signal)
+      .then((read) => {
+        setNode(read)
+        setTitle(read.title ?? '')
+        setSummary(read.summary ?? '')
+        setBody(read.body ?? '')
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+      })
+    return () => controller.abort()
+  }, [projectId, nodeId])
+
+  const isDirty =
+    node !== null &&
+    (title !== (node.title ?? '') || summary !== (node.summary ?? '') || body !== (node.body ?? ''))
+
+  function save() {
+    if (!node || saving) return
+    setSaving(true)
+    saveNode(projectId, node.id, {
+      title: title || null,
+      summary: summary || null,
+      body: body || null,
+      expectedVersion: node.version,
+    })
+      .then(onSaved)
+      .catch((error: unknown) => {
+        setSaving(false)
+        setFailed(
+          error instanceof ApiError && error.code === NODE_CHANGED
+            ? t('projects.structure.changed')
+            : error instanceof Error
+              ? error.message
+              : t('projects.structure.failed'),
+        )
+      })
+  }
+
+  return (
+    <Drawer
+      testId="project-node-editor"
+      titleId="project-node-editor-title"
+      eyebrow={node ? capital(levelWord(node.level)) : null}
+      title={node ? nameOf(node) : t('projects.common.loading')}
+      isDirty={isDirty}
+      leaveMessage={t('projects.structure.leave')}
+      onClose={onClose}
+      onSubmit={save}
+      busy={saving}
+      actions={(close) => (
+        <>
+          <button
+            className="button"
+            type="submit"
+            disabled={saving || !node}
+            data-testid="project-node-save"
+          >
+            {saving ? t('projects.structure.saving') : t('projects.structure.save')}
+          </button>
+          <button className="button button--secondary" type="button" onClick={close}>
+            {t('projects.common.cancel')}
+          </button>
+        </>
+      )}
+    >
+      {failed ? (
+        <p role="alert" data-testid="project-node-editor-failed">
+          {failed}
+        </p>
+      ) : null}
+      {node ? (
+        <>
+          <Field label={t('projects.structure.titleLabel')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={title}
+                maxLength={200}
+                placeholder={t('projects.structure.titlePlaceholder')}
+                onChange={(event) => setTitle(event.target.value)}
+                data-testid="project-node-title"
+              />
+            )}
+          </Field>
+          <Field label={t('projects.structure.summaryLabel')}>
+            {(control) => (
+              <input
+                {...control}
+                className="field__input"
+                value={summary}
+                maxLength={2000}
+                placeholder={t('projects.structure.summaryPlaceholder')}
+                onChange={(event) => setSummary(event.target.value)}
+                data-testid="project-node-summary"
+              />
+            )}
+          </Field>
+          <Field label={t('projects.structure.bodyLabel')}>
+            {(control) => (
+              <textarea
+                {...control}
+                className="field__input"
+                rows={12}
+                value={body}
+                placeholder={t('projects.structure.bodyPlaceholder')}
+                onChange={(event) => setBody(event.target.value)}
+                data-testid="project-node-body"
+              />
+            )}
+          </Field>
+        </>
+      ) : null}
+    </Drawer>
+  )
+}

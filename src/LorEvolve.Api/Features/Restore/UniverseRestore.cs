@@ -1,6 +1,8 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using System.Collections.Concurrent;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -106,6 +108,21 @@ internal sealed class RestoreIdentity
             foreach (var revision in entry.Revisions ?? [])
             {
                 yield return revision.Id;
+            }
+        }
+
+        foreach (var node in payload.ProjectNodes ?? [])
+        {
+            yield return node.Id;
+        }
+
+        foreach (var saga in payload.CinemaSagas ?? [])
+        {
+            yield return saga.Id;
+
+            foreach (var phase in saga.Phases ?? [])
+            {
+                yield return phase.Id;
             }
         }
 
@@ -886,6 +903,7 @@ internal sealed partial class UniverseRestore(
             AddWorldRules(payload, ids, universeId);
             AddWorldLogic(payload, ids, universeId);
             AddDismissedFindings(payload, ids, universeId);
+            AddTypeTemplates(payload, universeId);
             AddRuleValidation(payload, ids, universeId);
 
             await db.SaveChangesAsync(cancellationToken);
@@ -1018,6 +1036,72 @@ internal sealed partial class UniverseRestore(
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
             });
+        }
+
+        // The projects' structure nodes (version 51, #290), parents before children so every parent row exists first.
+        var nodesById = (payload.ProjectNodes ?? []).ToDictionary(node => node.Id);
+
+        int Depth(BackupProjectNode node) =>
+            node.ParentId is { } parentId && nodesById.TryGetValue(parentId, out var parent) ? 1 + Depth(parent) : 0;
+
+        foreach (var node in nodesById.Values.OrderBy(Depth))
+        {
+            db.ProjectNodes.Add(new ProjectNode
+            {
+                Id = ids.Map(node.Id),
+                ProjectId = ids.Map(node.ProjectId),
+                ParentId = node.ParentId is { } parentId ? ids.Map(parentId) : null,
+                Level = node.Level,
+                Title = node.Title,
+                Summary = node.Summary,
+                Body = node.Body,
+                SortOrder = node.SortOrder,
+                CreatedAt = node.CreatedAt,
+                UpdatedAt = node.UpdatedAt,
+                Version = 1,
+            });
+        }
+
+        // The Cinema sagas, their phases and memberships (version 52, #289), after the projects they hold.
+        foreach (var saga in payload.CinemaSagas ?? [])
+        {
+            db.CinemaSagas.Add(new CinemaSaga
+            {
+                Id = ids.Map(saga.Id),
+                UniverseId = universeId,
+                Name = saga.Name,
+                Summary = saga.Summary,
+                SortOrder = saga.SortOrder,
+                CreatedAt = saga.CreatedAt,
+                UpdatedAt = saga.UpdatedAt,
+            });
+
+            foreach (var phase in saga.Phases ?? [])
+            {
+                db.CinemaPhases.Add(new CinemaPhase
+                {
+                    Id = ids.Map(phase.Id),
+                    SagaId = ids.Map(saga.Id),
+                    Name = phase.Name,
+                    Summary = phase.Summary,
+                    SortOrder = phase.SortOrder,
+                    CreatedAt = phase.CreatedAt,
+                    UpdatedAt = phase.UpdatedAt,
+                });
+
+                var place = 0;
+
+                foreach (var projectId in phase.ProjectIds ?? [])
+                {
+                    db.CinemaPhaseMemberships.Add(new CinemaPhaseMembership
+                    {
+                        Id = Guid.NewGuid(),
+                        PhaseId = ids.Map(phase.Id),
+                        ProjectId = ids.Map(projectId),
+                        SortOrder = place++,
+                    });
+                }
+            }
         }
 
         // The projects' seasons and episodes (version 41, #145), after the projects they belong to.
@@ -2142,6 +2226,57 @@ internal sealed partial class UniverseRestore(
     }
 
     // ---------- Canon ----------
+
+    /// <summary>
+    /// The universe's type templates (version 50, #281). Nothing refers to a template, so each row simply gets a new id;
+    /// a file from before version 50 has none.
+    /// </summary>
+    private void AddTypeTemplates(UniverseBackupPayload payload, Guid universeId)
+    {
+        foreach (var template in payload.TypeTemplates ?? [])
+        {
+            var templateId = Guid.NewGuid();
+
+            db.TypeTemplates.Add(new TypeTemplate
+            {
+                Id = templateId,
+                UniverseId = universeId,
+                Name = template.Name.Trim(),
+                Description = template.Description,
+                Icon = template.Icon,
+                AccentColor = template.AccentColor,
+                CreatedAt = template.CreatedAt,
+                UpdatedAt = template.UpdatedAt,
+            });
+
+            foreach (var field in template.Fields)
+            {
+                var fieldId = Guid.NewGuid();
+
+                db.TypeTemplateFields.Add(new TypeTemplateField
+                {
+                    Id = fieldId,
+                    TemplateId = templateId,
+                    Name = field.Name.Trim(),
+                    Kind = field.Kind,
+                    IsRequired = field.IsRequired,
+                    DisplayOrder = field.DisplayOrder,
+                    ImageShape = field.ImageShape,
+                });
+
+                foreach (var option in field.Options)
+                {
+                    db.TypeTemplateFieldOptions.Add(new TypeTemplateFieldOption
+                    {
+                        Id = Guid.NewGuid(),
+                        FieldId = fieldId,
+                        Value = option.Value,
+                        DisplayOrder = option.DisplayOrder,
+                    });
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Conflicts are derived (ADR 0010), so they are found again over the restored lore rather than copied. A dismissal

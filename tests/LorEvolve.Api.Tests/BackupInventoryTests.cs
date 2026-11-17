@@ -115,9 +115,22 @@ public sealed class BackupInventoryTests
         "ProjectSeasons",
         "ProjectEpisodes",
 
+        // A universe's Cinema sagas, their phases and which projects each phase holds (#289).
+        "CinemaSagas",
+        "CinemaPhases",
+        "CinemaPhaseMemberships",
+
         // A comic chapter's pages and the panels on them (#147).
         "ProjectPages",
         "ProjectPanels",
+
+        // A universe's reusable type templates, their fields and those fields' choices (#281).
+        "TypeTemplates",
+        "TypeTemplateFields",
+        "TypeTemplateFieldOptions",
+
+        // A project's structure nodes: acts, sequences, scenes, beats (#290).
+        "ProjectNodes",
 
         // World Logic (#150, ADR 0072): the universe's Systems and reusable rule definitions, the links between
         // them, the declared dependencies and both sets of saved states. All authored, so all carried; the ids

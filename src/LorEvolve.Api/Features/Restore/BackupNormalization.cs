@@ -90,10 +90,14 @@ internal static class BackupNormalization
         ProjectEntities = version >= 48 || payload.ProjectEntities is null
             ? payload.ProjectEntities
             : [.. payload.ProjectEntities.Select(entry => entry is null ? null! : entry with { FieldImages = null })],
+        // Cinema sagas arrived at version 52 (#289): an older file has none, even when it carries some.
+        CinemaSagas = version >= 52 ? payload.CinemaSagas : null,
         // Project formats arrived at version 49 (#288): an older file has none, even when it carries one.
         CreativeProjects = version >= 49 || payload.CreativeProjects is null
             ? payload.CreativeProjects
             : [.. payload.CreativeProjects.Select(project => project is null ? null! : project with { Format = null })],
+        // Structure nodes arrived at version 51 (#290): an older file has none, even when it carries some.
+        ProjectNodes = version >= 51 ? payload.ProjectNodes : null,
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
             : [.. payload.RelationshipTypes.Select(type => type is null ? null! : ProjectRelationshipType(type, version))],

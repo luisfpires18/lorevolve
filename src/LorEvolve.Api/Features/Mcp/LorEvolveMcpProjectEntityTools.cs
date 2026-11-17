@@ -279,7 +279,8 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
     [Description("How a project is laid out, in the author's order: a series' seasons and episodes, a film's sequences and "
         + "scenes, or a comic's volumes and chapters with the pages and panels beneath them. Says whether an episode or scene "
         + "has a script and how long it is, rather than sending the whole script: read one with get_project_script. A project "
-        + "of a kind with no such structure, a novel or a game, says so and lists nothing.")]
+        + "of a kind with no such structure, a novel or a game, says so and lists nothing. A film with a format also lists its "
+        + "nodes: acts, sequences, scenes and beats, each naming its parent; read a node's text with get_project_script.")]
     public async Task<CallToolResult> GetProjectStructureAsync(
         [Description("The project's id, from list_projects.")] string projectId,
         CancellationToken cancellationToken)
@@ -335,6 +336,23 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             })
             .ToListAsync(cancellationToken);
 
+        // The rule-shaped structure (#290), flat in the author's order; bodies are sized, not sent.
+        var nodes = await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.ProjectId == project.Id)
+            .OrderBy(node => node.ParentId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new
+            {
+                node.Id,
+                node.ParentId,
+                node.Level,
+                node.Title,
+                node.Summary,
+                bodyLength = node.Body != null ? node.Body.Length : 0,
+                order = node.SortOrder,
+            })
+            .ToListAsync(cancellationToken);
+
         // The words a client should use back, so it describes the project the way the author's screen does.
         var (band, unit) = project.Kind switch
         {
@@ -350,13 +368,14 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             kind = project.Kind,
             bandName = band,
             unitName = unit,
-            hasStructure = bands.Count > 0,
+            hasStructure = bands.Count > 0 || nodes.Count > 0,
             bands,
+            nodes,
         });
     }
 
     [McpServerTool(Name = ScriptTool, Title = "Read a script", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("One episode's, scene's or chapter's script, whole, as the author wrote it. The structure tool says which of "
+    [Description("One episode's, scene's, chapter's or structure node's script, whole, as the author wrote it. The structure tool says which of "
         + "them have one and how long each is; this reads one. A unit with no script yet answers with none rather than an error.")]
     public async Task<CallToolResult> GetProjectScriptAsync(
         [Description("The project's id, from list_projects.")] string projectId,
@@ -388,19 +407,40 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return unit is null
-            ? NotFound(NoSuchId)
-            : Result(new
-            {
-                projectId = project.Id,
-                kind = project.Kind,
-                unitId = unit.Id,
-                title = unit.Title,
-                unit.Synopsis,
-                band = unit.Band,
-                hasScript = unit.Script is not null,
-                script = unit.Script,
-            });
+        if (unit is null)
+        {
+            // A structure node (#290), tried after the legacy lookup misses.
+            var node = await db.ProjectNodes.AsNoTracking()
+                .Where(candidate => candidate.Id == id && candidate.ProjectId == project.Id)
+                .Select(candidate => new { candidate.Id, candidate.Level, candidate.Title, candidate.Summary, candidate.Body })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return node is null
+                ? NotFound(NoSuchId)
+                : Result(new
+                {
+                    projectId = project.Id,
+                    kind = project.Kind,
+                    unitId = node.Id,
+                    level = node.Level,
+                    title = node.Title,
+                    synopsis = node.Summary,
+                    hasScript = node.Body is not null,
+                    script = node.Body,
+                });
+        }
+
+        return Result(new
+        {
+            projectId = project.Id,
+            kind = project.Kind,
+            unitId = unit.Id,
+            title = unit.Title,
+            unit.Synopsis,
+            band = unit.Band,
+            hasScript = unit.Script is not null,
+            script = unit.Script,
+        });
     }
 
     // ---------- Reading ----------
