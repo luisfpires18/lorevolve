@@ -91,7 +91,13 @@ public sealed class ProjectTypeFromTemplateTests(LorEvolveApiFactory factory) : 
             $"/api/projects/{game}/entity-types", new ProjectEntityTypeRequest("Unit", null, null, null)));
         await client.PostAsJsonAsync(
             $"/api/projects/{game}/entity-types/{existing.Id}/fields", new ProjectEntityFieldRequest("Speed", EntityFieldKind.Number));
-        await Send<EntityDetail>(client.PostAsJsonAsync($"/api/projects/{game}/entities", new ProjectEntityRequest(existing.Id, "Scout", null)));
+        var speed = (await Types(client, game)).Single().Fields.Single(field => field.Name == "Speed");
+        var entry = await Send<EntityDetail>(client.PostAsJsonAsync(
+            $"/api/projects/{game}/entities",
+            new ProjectEntityRequest(existing.Id, "Scout", null, Fields: [new FieldValueInput(speed.Id, null, 7, null, null, null, null)])));
+        var entryUrl = $"/api/projects/{game}/entities/{entry.Id}";
+        var entryBefore = await client.GetStringAsync(entryUrl);
+        Assert.Contains("7", entryBefore);
         var before = await Snapshot(client, game);
 
         var template = await FullTemplate(client, universe.Id, "unit");
@@ -101,6 +107,7 @@ public sealed class ProjectTypeFromTemplateTests(LorEvolveApiFactory factory) : 
         Assert.Equal(HttpStatusCode.BadRequest, clash.StatusCode);
         Assert.Contains("already has a type", await clash.Content.ReadAsStringAsync());
         Assert.Equal(before, await Snapshot(client, game));
+        Assert.Equal(entryBefore, await client.GetStringAsync(entryUrl));
 
         // A copy under another name only adds; the entry and the older type are untouched.
         await Copy(client, game, template.Id, "Unit two");
@@ -108,6 +115,7 @@ public sealed class ProjectTypeFromTemplateTests(LorEvolveApiFactory factory) : 
         Assert.Equal(2, after.Count);
         Assert.Equal(1, after.Single(type => type.Id == existing.Id).EntryCount);
         Assert.Equal(["Speed"], after.Single(type => type.Id == existing.Id).Fields.Select(field => field.Name));
+        Assert.Equal(entryBefore, await client.GetStringAsync(entryUrl));
 
         // A template of another universe, or a missing one, is not found.
         var foreign = await Send<TypeTemplateResponse>(client.PostAsJsonAsync(
