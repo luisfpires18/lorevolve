@@ -59,6 +59,11 @@ const projects = {
     trailer: 'Trailer',
     'tv-show': 'Série de TV',
     'limited-series': 'Minissérie',
+    'western-comic': 'Banda desenhada ocidental',
+    manga: 'Manga',
+    'graphic-novel': 'Novela gráfica',
+    'one-shot': 'One-shot',
+    webcomic: 'Webcomic / Webtoon',
     unset: 'Formato por definir',
   },
   lifecycle: {
