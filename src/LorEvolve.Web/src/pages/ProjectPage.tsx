@@ -57,6 +57,24 @@ const KINDS: readonly ProjectKindValue[] = [
   ProjectKind.Comic,
 ]
 
+/** The kinds the form offers (owner, 2026-11-17): Film and Series are one choice, Cinema, told apart by the format. */
+const PICKED: readonly ProjectKindValue[] = [
+  ProjectKind.Writing,
+  ProjectKind.Game,
+  ProjectKind.Film,
+  ProjectKind.Comic,
+]
+
+const isCinema = (kind: ProjectKindValue) =>
+  kind === ProjectKind.Film || kind === ProjectKind.Series
+
+/** A kind's formats; Cinema's are the film formats then the series formats, and the one picked sets the kind. */
+function pickFormats(kind: ProjectKindValue) {
+  return isCinema(kind)
+    ? [...formatsFor(ProjectKind.Film), ...formatsFor(ProjectKind.Series)]
+    : formatsFor(kind)
+}
+
 /** One project: its own page, or the form that makes one. */
 export default function ProjectPage({
   isNew = false,
@@ -152,7 +170,7 @@ function NewProject() {
             <select
               {...control}
               className="field__input field__input--select"
-              value={kind}
+              value={isCinema(kind) ? ProjectKind.Film : kind}
               onChange={(event) => {
                 const next = Number(event.target.value) as ProjectKindValue
                 setKind(next)
@@ -160,26 +178,30 @@ function NewProject() {
               }}
               data-testid="project-new-kind"
             >
-              {KINDS.map((value) => (
+              {PICKED.map((value) => (
                 <option key={value} value={value}>
-                  {kindLabel(value)}
+                  {value === ProjectKind.Film ? t('projects.new.cinema') : kindLabel(value)}
                 </option>
               ))}
             </select>
           )}
         </Field>
 
-        {formatsFor(kind).length > 0 ? (
+        {pickFormats(kind).length > 0 ? (
           <Field label={t('projects.new.format')}>
             {(control) => (
               <select
                 {...control}
                 className="field__input field__input--select"
                 value={format ?? ''}
-                onChange={(event) => setFormat(event.target.value)}
+                onChange={(event) => {
+                  const picked = pickFormats(kind).find((one) => one.id === event.target.value)
+                  setFormat(event.target.value)
+                  if (picked && isCinema(kind)) setKind(picked.kind as ProjectKindValue)
+                }}
                 data-testid="project-new-format"
               >
-                {formatsFor(kind).map((option) => (
+                {pickFormats(kind).map((option) => (
                   <option key={option.id} value={option.id}>
                     {formatLabel(option.id)}
                   </option>

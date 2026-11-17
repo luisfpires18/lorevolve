@@ -473,6 +473,7 @@ const projects = {
     values: 'Fields',
   },
   new: {
+    cinema: 'Cinema',
     title: 'New project',
     name: 'Name',
     kind: 'What kind of work is it?',
