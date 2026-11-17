@@ -1,4 +1,4 @@
-// Run with `node --test lineLimit.test.ts` (Node 22.18+ strips the types itself).
+// Run with `npm run lines` (Node 22.18+ strips the types itself). CI runs it as "Line limit".
 //
 // No web source file goes over 300 lines. lineLimit.allow.json holds the files that were already
 // over on 2026-11-17, each with its line count then. The list only shrinks: a listed file may not

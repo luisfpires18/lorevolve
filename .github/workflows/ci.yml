@@ -108,6 +108,10 @@ jobs:
       - name: Version rule
         run: npm test
 
+      # No web source file over 300 lines; lineLimit.allow.json only shrinks (#380).
+      - name: Line limit
+        run: npm run lines
+
       # The E2E project has no Prettier of its own: its specs are held to these settings, and
       # Prettier has to be pointed at this config explicitly to read them from outside the tree.
       - name: Format (end-to-end specs)
