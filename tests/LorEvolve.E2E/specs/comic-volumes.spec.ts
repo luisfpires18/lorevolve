@@ -94,6 +94,7 @@ test('a volume collects the chapters of a manga in an order that persists and le
   const entries = page.getByTestId(`comic-collection-${volume}`).locator('li.fieldlist__row')
   await page.getByTestId(`comic-entry-actions-${volume}-${two}`).click()
   await page.getByTestId(`comic-entry-${volume}-${two}-up`).click()
+  await expect(entries).toHaveText([/Chapter two/, /Chapter one/])
   await page.reload()
   await expect(entries).toHaveText([/Chapter two/, /Chapter one/])
 
@@ -109,8 +110,10 @@ test('a volume collects the chapters of a manga in an order that persists and le
 
   await page.goto(`/app/universes/${world.id}/projects/${manga}/structure`)
   await page.getByTestId(`comic-entry-link-${volume}-${two}`).click()
-  await expect(page).toHaveURL(new RegExp(`${manga}/structure\?node=${two}`))
+  await expect(page).toHaveURL(new RegExp(`${manga}/structure\\?node=${two}`))
   await expect(page.locator('#project-node-editor-title')).toHaveText('Chapter two')
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByTestId('project-node-editor')).toHaveCount(0)
 
   await page.getByTestId(`comic-collection-actions-${volume}`).click()
   await page.getByTestId(`comic-collection-delete-${volume}`).click()

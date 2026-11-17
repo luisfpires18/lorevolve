@@ -85,6 +85,8 @@ test('an event spans two comics in an order that persists, and an entry opens th
 
   await page.getByTestId(`comic-entry-actions-${event}-${chapter}`).click()
   await page.getByTestId(`comic-entry-${event}-${chapter}-up`).click()
+  // Wait for the move to land before reloading, or the reload can race it.
+  await expect(entries).toHaveText([/First chapter/, /First issue/])
   await page.reload()
   await expect(entries).toHaveText([/First chapter/, /First issue/])
 
