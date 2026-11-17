@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Field } from './Field'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { ListFilter, Plus, X } from 'lucide-react'
@@ -82,6 +82,8 @@ export function ProjectEntries({
   const [more, setMore] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // The main read's controller: loadMore and refresh share its signal so a filter change cancels them too.
+  const readRef = useRef<AbortController | null>(null)
   const [name, setName] = useState('')
   const [summary, setSummary] = useState('')
   const [adding, setAdding] = useState(false)
@@ -142,6 +144,7 @@ export function ProjectEntries({
     if (typeId === null) return
 
     const controller = new AbortController()
+    readRef.current = controller
 
     /*
      * The first page, or as many pages as it takes to include the entry the address names, so a link to an entry does
@@ -195,35 +198,43 @@ export function ProjectEntries({
   function loadMore() {
     if (typeId === null || entries === null) return
     setBusy(true)
-    listProjectEntities(projectId, typeId, undefined, {
+    // Tied to the main read's signal: a filter change aborts it, so a late page never lands on a newer list.
+    const signal = readRef.current?.signal
+    listProjectEntities(projectId, typeId, signal, {
       skip: entries.length,
       take: ENTRY_PAGE_SIZE + 1,
       ...filter,
     })
       .then((read) => {
-        setEntries([...entries, ...read.slice(0, ENTRY_PAGE_SIZE)])
-        setMore(read.length > ENTRY_PAGE_SIZE)
         setBusy(false)
+        if (signal?.aborted) return
+        setEntries((current) => [...(current ?? []), ...read.slice(0, ENTRY_PAGE_SIZE)])
+        setMore(read.length > ENTRY_PAGE_SIZE)
       })
-      .catch(failing)
+      .catch((error: unknown) => failing(error, signal))
   }
 
   function refresh(notice: string | null = null) {
     if (typeId === null) return
     // A write re-reads as many rows as were already open, so the author keeps their place in a long list.
     const shown = Math.max(entries?.length ?? 0, ENTRY_PAGE_SIZE)
-    listProjectEntities(projectId, typeId, undefined, { skip: 0, take: shown + 1, ...filter })
+    const signal = readRef.current?.signal
+    listProjectEntities(projectId, typeId, signal, { skip: 0, take: shown + 1, ...filter })
       .then((read) => {
-        showing(read, shown)
         setBusy(false)
-        setFailed(notice)
+        // The write itself happened, so the parent is told even when a newer list has replaced this read.
+        if (!signal?.aborted) {
+          showing(read, shown)
+          setFailed(notice)
+        }
         onChanged?.()
       })
-      .catch(failing)
+      .catch((error: unknown) => failing(error, signal))
   }
 
-  function failing(error: unknown) {
+  function failing(error: unknown, signal?: AbortSignal) {
     setBusy(false)
+    if (signal?.aborted) return
     setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
   }
 
