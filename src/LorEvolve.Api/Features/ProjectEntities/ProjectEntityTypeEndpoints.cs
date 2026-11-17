@@ -732,7 +732,7 @@ public static class ProjectEntityTypeEndpoints
             return denied;
         }
 
-        var template = ProjectTemplates.For(project!.Kind, project.Subtype);
+        var template = ProjectTemplates.For(project!.Kind, project.Subtype, project.Format);
         var applied = await db.EntityTypes.IgnoreQueryFilters()
             .AnyAsync(type => type.ProjectId == projectId, cancellationToken);
 
@@ -774,7 +774,7 @@ public static class ProjectEntityTypeEndpoints
         var now = DateTime.UtcNow;
         var order = 0;
 
-        foreach (var starter in ProjectTemplates.For(project!.Kind, project.Subtype).Types)
+        foreach (var starter in ProjectTemplates.For(project!.Kind, project.Subtype, project.Format).Types)
         {
             var type = new EntityType
             {
