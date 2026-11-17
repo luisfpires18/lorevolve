@@ -8,6 +8,8 @@ import {
 } from 'react'
 import { Maximize, Plus, ZoomIn, ZoomOut } from 'lucide-react'
 import { fitView, usePanZoom, ZOOM_STEP } from '../lib/usePanZoom'
+import { StatusBadge } from './StatusBadge'
+import { GuardMark } from './SystemMachineTry'
 import { useI18n } from '../i18n'
 import {
   edgePoint,
@@ -17,6 +19,7 @@ import {
   type MachineTransition,
   type Point,
 } from '../worldLogic/machine'
+import { markText, type GuardMarkValue } from '../worldLogic/markText'
 import type { SystemMachineState } from '../worldLogic/types'
 
 /** What is chosen on the canvas: one state, one transition, or nothing. */
@@ -43,6 +46,10 @@ interface SystemMachineCanvasProps {
   onMove: (stateId: string, x: number, y: number) => void
   /** Set by the canvas: the canvas point at the centre of the view, where a new state goes. */
   centreRef: MutableRefObject<(() => Point) | null>
+  /** Each state's open and reviewing findings, as the server last counted them. */
+  counts: Map<string, number>
+  /** Each transition's mark for the entry being tried; empty when none is. */
+  marks: Map<string, GuardMarkValue>
 }
 
 function rectOf(state: SystemMachineState) {
@@ -72,8 +79,10 @@ export function SystemMachineCanvas({
   onConnect,
   onMove,
   centreRef,
+  counts,
+  marks,
 }: SystemMachineCanvasProps) {
-  const { t } = useI18n()
+  const { t, tn } = useI18n()
   const stage = useRef<HTMLDivElement>(null)
   const hintId = useId()
   // An SVG marker is named by url(#id); React's ids carry characters a fragment reference need not accept.
@@ -355,6 +364,10 @@ export function SystemMachineCanvas({
                 : 'canon.worldLogic.systems.machine.state',
               { name: state.name, value: state.value },
             )
+            const count = counts.get(state.id) ?? 0
+            const findings = count
+              ? tn('canon.worldLogic.systems.machine.openFindings', count, { count })
+              : null
             return [
               <button
                 key={state.id}
@@ -366,7 +379,7 @@ export function SystemMachineCanvas({
                   width: `${STATE_WIDTH}px`,
                   height: `${STATE_HEIGHT}px`,
                 }}
-                aria-label={label}
+                aria-label={findings ? `${label}, ${findings}` : label}
                 aria-pressed={isSelected}
                 data-connecting-from={connecting === state.id || undefined}
                 data-dragging={dragging?.id === state.id || undefined}
@@ -389,6 +402,17 @@ export function SystemMachineCanvas({
                   <bdi>{state.name}</bdi>
                 </span>
               </button>,
+              // Outside the card, which clips, and named by the card's own label, so hidden here.
+              findings ? (
+                <span
+                  key={`${state.id}-findings`}
+                  className="machinecanvas__findings"
+                  style={{ left: `${state.x + STATE_WIDTH - 12}px`, top: `${state.y}px` }}
+                  aria-hidden="true"
+                >
+                  <StatusBadge step={1} label={findings} testId="machine-state-findings" />
+                </span>
+              ) : null,
               <button
                 key={`${state.id}-handle`}
                 type="button"
@@ -422,19 +446,22 @@ export function SystemMachineCanvas({
           {lines.map(({ transition, start, end, from, to }) => {
             const isSelected = selected?.kind === 'transition' && selected.id === transition.id
             const text = transition.label.trim()
+            const mark = marks.get(transition.id)
+            const name = t('canon.worldLogic.systems.machine.transition', {
+              label: text || t('canon.worldLogic.systems.machine.noLabel'),
+              from,
+              to,
+            })
             return (
               <button
                 key={transition.id}
                 type="button"
                 className="machinecanvas__label"
                 style={{ left: `${(start.x + end.x) / 2}px`, top: `${(start.y + end.y) / 2}px` }}
-                aria-label={t('canon.worldLogic.systems.machine.transition', {
-                  label: text || t('canon.worldLogic.systems.machine.noLabel'),
-                  from,
-                  to,
-                })}
+                aria-label={mark ? `${name}, ${markText(mark)}` : name}
                 aria-pressed={isSelected}
                 data-empty={text === '' || undefined}
+                data-mark={mark?.kind}
                 data-testid="machine-label"
                 data-transition-id={transition.id}
                 onPointerDown={(event) =>
@@ -450,6 +477,7 @@ export function SystemMachineCanvas({
                 }}
               >
                 <bdi>{text || t('canon.worldLogic.systems.machine.noLabel')}</bdi>
+                {mark ? <GuardMark mark={mark} /> : null}
               </button>
             )
           })}

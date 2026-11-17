@@ -177,6 +177,20 @@ const canon = {
         bindingUnset: 'Not set',
         newState: 'New state',
         newTransition: 'New transition',
+        openFindings: { one: '{count} open finding', other: '{count} open findings' },
+        try: {
+          title: 'Try an entry',
+          entry: 'Entry',
+          outside:
+            'This entry is outside the machine: it is of another type, or has no text value for the attribute.',
+          value: 'Value found: {value}',
+          failed: 'The entry could not be tried. Try again.',
+          marks: {
+            holds: 'Holds',
+            fails: 'Fails',
+            unknown: 'Unknown',
+          },
+        },
         fields: {
           name: 'Name',
           value: 'Value',
@@ -405,6 +419,17 @@ const canon = {
       },
       dismiss: 'Dismiss',
       undismiss: 'Take it up again',
+      resolve: 'Mark fixed',
+      machine: {
+        title: '{system}, {state}',
+        undeclaredTitle: '{system}, a value with no state',
+        hints: {
+          undeclaredState: 'This entry holds a value that no state of the machine declares.',
+          noTransitionHolds: 'No transition into this state holds for this entry.',
+        },
+        entry: 'Entry {name}',
+        systemVersion: 'System version {version}',
+      },
       deciding: 'Saving…',
       decideFailed: 'That could not be saved. Try again.',
       empty: {

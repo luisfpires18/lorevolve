@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.RuleValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -330,6 +331,8 @@ public static class SystemEndpoints
             return denied;
         }
 
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
         var system = await db.LoreSystems
             .FirstOrDefaultAsync(candidate => candidate.Id == id && candidate.UniverseId == universeId, cancellationToken);
 
@@ -338,8 +341,15 @@ public static class SystemEndpoints
             return Results.NotFound();
         }
 
+        // Its machine findings first (#360): no foreign key leads to them from the System, so the cascade alone would
+        // leave each one naming neither a rule nor a machine. Evidence, history and the link go with the finding.
+        await db.WorldLogicFindings
+            .Where(finding => finding.UniverseId == universeId && finding.Machine!.SystemId == system.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+
         db.LoreSystems.Remove(system);
         await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return Results.NoContent();
     }

@@ -1049,6 +1049,7 @@ internal sealed partial class UniverseRestore(
             AddWorldRules(payload, ids, universeId);
             AddWorldLogic(payload, ids, universeId);
             AddDismissedFindings(payload, ids, universeId);
+            AddDismissedMachineFindings(payload, ids, universeId);
             AddTypeTemplates(payload, universeId);
             AddRuleValidation(payload, ids, universeId);
 
@@ -2579,6 +2580,86 @@ internal sealed partial class UniverseRestore(
                     SortOrder = order++,
                     Source = item.Source,
                     SourceRowId = item.Id,
+                    Role = item.Role,
+                });
+            }
+
+            finding.Events.Add(new WorldLogicFindingEvent
+            {
+                Id = Guid.NewGuid(),
+                FindingId = finding.Id,
+                Action = WorldLogicFindingAction.Dismissed,
+                ActorId = null,
+                Note = string.Empty,
+                At = dismissed.DismissedAt,
+            });
+
+            db.WorldLogicFindings.Add(finding);
+        }
+    }
+
+    /// <summary>
+    /// Writes back the machine findings the author chose to live with (version 59, #360), as
+    /// <see cref="AddDismissedFindings"/> writes the rule ones: dismissed, with the fingerprint taken again from the
+    /// restored ids. The state keeps its id, as the machine's states do. A dismissal about an entry the file does not
+    /// hold is left out: no sweep of the restored universe can produce it again.
+    /// </summary>
+    private void AddDismissedMachineFindings(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
+    {
+        foreach (var dismissed in payload.DismissedMachineFindings ?? [])
+        {
+            if (ids.Known(dismissed.SubjectId) is not { } subjectId)
+            {
+                continue;
+            }
+
+            var systemId = ids.Map(dismissed.SystemId);
+            var projectId = ids.Map(dismissed.ProjectId);
+
+            var finding = new WorldLogicFinding
+            {
+                Id = Guid.NewGuid(),
+                UniverseId = universeId,
+                RuleId = null,
+                ProjectId = projectId,
+                Outcome = dismissed.Outcome,
+                ErrorCode = dismissed.ErrorCode,
+                RuleVersion = dismissed.SystemVersion,
+                SchemaVersion = dismissed.SchemaVersion,
+                Fingerprint = WorldLogicFingerprint.OfMachine(
+                    systemId,
+                    projectId,
+                    dismissed.Check,
+                    dismissed.StateId,
+                    dismissed.Outcome,
+                    dismissed.ErrorCode,
+                    subjectId,
+                    dismissed.Value),
+                Status = WorldLogicFindingStatus.Dismissed,
+                Rationale = dismissed.Rationale,
+                CreatedAt = dismissed.DetectedAt,
+                UpdatedAt = dismissed.DismissedAt,
+            };
+
+            finding.Machine = new WorldLogicFindingMachine
+            {
+                FindingId = finding.Id,
+                SystemId = systemId,
+                Check = dismissed.Check,
+                StateId = dismissed.StateId,
+                SubjectId = subjectId,
+                Value = dismissed.Value,
+            };
+
+            var order = 0;
+            foreach (var item in dismissed.Evidence)
+            {
+                finding.Evidence.Add(new WorldLogicFindingEvidence
+                {
+                    FindingId = finding.Id,
+                    SortOrder = order++,
+                    Source = item.Source,
+                    SourceRowId = Translated(item.Id, ids),
                     Role = item.Role,
                 });
             }

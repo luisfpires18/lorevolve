@@ -121,7 +121,7 @@ public sealed class ComicVolumeTests(LorEvolveApiFactory factory) : IClassFixtur
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(58, backup.FormatVersion);
+        Assert.Equal(59, backup.FormatVersion);
         Assert.Equal(manga.Id, backup.Payload.ComicCollections!.Single().ProjectId);
 
         var restored = await RestoreArchive(client, archive, "Volume world restored");

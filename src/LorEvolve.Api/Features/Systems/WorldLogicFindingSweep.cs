@@ -90,10 +90,58 @@ public sealed partial class WorldLogicFindingSweep(
 
             // Ordinal order, so a truncated sweep records the same subset every time rather than a different one
             // per run; TryAdd because one rule and one scope produce one result, so a repeat would be the same row.
-            found.TryAdd(fingerprint, new Detection(ruleId, outcome, fingerprint, result));
+            found.TryAdd(fingerprint, new Detection(
+                ruleId,
+                null,
+                outcome,
+                fingerprint,
+                result.RuleVersion,
+                result.SchemaVersion,
+                result.ErrorCode,
+                result.Evidence,
+                result.Rationale));
         }
 
-        var truncated = found.Count > WorldLogicFindingLimits.MaxFindingsPerSweep;
+        // The machines (#360, ADR 0073), in every scope as the rules are. Their records join the same set, so the
+        // cap, the reconcile and the close loop below treat a machine finding exactly as a rule finding.
+        var machines = await WorldLogicMachineCheck.LoadAsync(db, universeId, null, cancellationToken);
+        var run = WorldLogicMachineCheck.Run(machines, facts, rules, projectId?.ToString());
+
+        foreach (var record in run.Records)
+        {
+            var link = new WorldLogicFindingMachine
+            {
+                SystemId = Guid.Parse(record.SystemId),
+                Check = record.Check,
+                StateId = record.StateId is null ? null : Guid.Parse(record.StateId),
+                SubjectId = Guid.Parse(record.SubjectId),
+                Value = record.Value is null ? null : Fit(record.Value, WorldLogicFindingLimits.MachineValueMaxLength),
+            };
+
+            var fingerprint = WorldLogicFingerprint.OfMachine(
+                link.SystemId,
+                projectId,
+                link.Check,
+                link.StateId,
+                record.Outcome,
+                record.ErrorCode,
+                link.SubjectId,
+                link.Value);
+
+            found.TryAdd(fingerprint, new Detection(
+                null,
+                link,
+                record.Outcome,
+                fingerprint,
+                record.SystemVersion,
+                record.SchemaVersion,
+                record.ErrorCode,
+                record.Evidence,
+                record.Rationale));
+        }
+
+        // A machine whose type has more subjects than one run reads did not see them all, so it is truncated too.
+        var truncated = found.Count > WorldLogicFindingLimits.MaxFindingsPerSweep || run.IsTruncated;
         var detections = truncated
             ? found.OrderBy(pair => pair.Key, StringComparer.Ordinal)
                 .Take(WorldLogicFindingLimits.MaxFindingsPerSweep)
@@ -111,11 +159,20 @@ public sealed partial class WorldLogicFindingSweep(
         return summary;
     }
 
+    /// <summary>
+    /// One thing found, rule or machine. Exactly one of <paramref name="RuleId"/> and <paramref name="Machine"/> is
+    /// set. <paramref name="Version"/> is the rule's version, or the System's for a machine record.
+    /// </summary>
     private sealed record Detection(
-        Guid RuleId,
+        Guid? RuleId,
+        WorldLogicFindingMachine? Machine,
         WorldLogicFindingOutcome Outcome,
         string Fingerprint,
-        ConditionResult Result);
+        int Version,
+        int SchemaVersion,
+        string? ErrorCode,
+        IReadOnlyList<ConditionEvidence> Evidence,
+        IReadOnlyList<string> Rationale);
 
     /// <summary>
     /// The outcome a finding records, or null for one it does not. <c>true</c> is nothing to report, and
@@ -143,6 +200,16 @@ public sealed partial class WorldLogicFindingSweep(
         var stored = existing.ToDictionary(finding => finding.Fingerprint, StringComparer.Ordinal);
         var now = DateTime.UtcNow;
 
+        // A machine finding's guard evidence is not in its fingerprint (specification section 6), so a refresh has to
+        // bring it up to date; a rule finding's evidence is in its fingerprint and cannot differ, so it is not loaded.
+        var machineEvidence = (await db.WorldLogicFindingEvidence
+                .Where(item => item.Finding!.UniverseId == universeId
+                    && item.Finding.ProjectId == projectId
+                    && item.Finding.RuleId == null)
+                .ToListAsync(cancellationToken))
+            .GroupBy(item => item.FindingId)
+            .ToDictionary(group => group.Key, group => group.OrderBy(item => item.SortOrder).ToList());
+
         int created = 0, reopened = 0, persisted = 0, closed = 0;
 
         foreach (var detection in detections.Values)
@@ -155,6 +222,11 @@ public sealed partial class WorldLogicFindingSweep(
             }
 
             var changed = Refresh(finding, detection);
+
+            if (detection.Machine is not null)
+            {
+                changed |= RefreshEvidence(finding, detection, machineEvidence.GetValueOrDefault(finding.Id) ?? []);
+            }
 
             if (finding.Status == WorldLogicFindingStatus.Resolved)
             {
@@ -224,18 +296,25 @@ public sealed partial class WorldLogicFindingSweep(
             RuleId = detection.RuleId,
             ProjectId = projectId,
             Outcome = detection.Outcome,
-            ErrorCode = detection.Result.ErrorCode,
-            RuleVersion = detection.Result.RuleVersion,
-            SchemaVersion = detection.Result.SchemaVersion,
+            ErrorCode = detection.ErrorCode,
+            RuleVersion = detection.Version,
+            SchemaVersion = detection.SchemaVersion,
             Fingerprint = detection.Fingerprint,
             Status = WorldLogicFindingStatus.Open,
-            Rationale = WorldLogicRationale.Store(detection.Result.Rationale),
+            Rationale = WorldLogicRationale.Store(detection.Rationale),
             CreatedAt = now,
             UpdatedAt = now,
         };
 
+        // A machine finding names its System, state and subject in place of a rule: one or the other, never both.
+        if (detection.Machine is { } link)
+        {
+            link.FindingId = finding.Id;
+            finding.Machine = link;
+        }
+
         var order = 0;
-        foreach (var item in detection.Result.Evidence)
+        foreach (var item in detection.Evidence)
         {
             finding.Evidence.Add(new WorldLogicFindingEvidence
             {
@@ -258,14 +337,67 @@ public sealed partial class WorldLogicFindingSweep(
     /// </summary>
     private static bool Refresh(WorldLogicFinding finding, Detection detection)
     {
-        var rationale = WorldLogicRationale.Store(detection.Result.Rationale);
-        var changed = finding.RuleVersion != detection.Result.RuleVersion
-            || finding.SchemaVersion != detection.Result.SchemaVersion
+        var rationale = WorldLogicRationale.Store(detection.Rationale);
+        var changed = finding.RuleVersion != detection.Version
+            || finding.SchemaVersion != detection.SchemaVersion
             || !string.Equals(finding.Rationale, rationale, StringComparison.Ordinal);
 
-        finding.RuleVersion = detection.Result.RuleVersion;
-        finding.SchemaVersion = detection.Result.SchemaVersion;
+        finding.RuleVersion = detection.Version;
+        finding.SchemaVersion = detection.SchemaVersion;
         finding.Rationale = rationale;
+        return changed;
+    }
+
+    /// <summary>
+    /// Brings a machine finding's stored evidence in line with the record that produced it again, row by row in the
+    /// same order, and says whether anything changed. A row that already matches is left untouched, so a sweep over
+    /// unchanged data writes nothing.
+    /// </summary>
+    private bool RefreshEvidence(
+        WorldLogicFinding finding,
+        Detection detection,
+        List<WorldLogicFindingEvidence> current)
+    {
+        var changed = false;
+        var wanted = detection.Evidence;
+
+        for (var order = 0; order < wanted.Count; order++)
+        {
+            var source = Fit(wanted[order].Source, WorldLogicFindingLimits.SourceMaxLength);
+            var id = Fit(wanted[order].Id, WorldLogicFindingLimits.SourceRowIdMaxLength);
+            var role = Fit(wanted[order].Role, WorldLogicFindingLimits.RoleMaxLength);
+
+            if (order < current.Count)
+            {
+                var row = current[order];
+                if (row.Source != source || row.SourceRowId != id || row.Role != role)
+                {
+                    row.Source = source;
+                    row.SourceRowId = id;
+                    row.Role = role;
+                    changed = true;
+                }
+
+                continue;
+            }
+
+            db.WorldLogicFindingEvidence.Add(new WorldLogicFindingEvidence
+            {
+                FindingId = finding.Id,
+                SortOrder = order,
+                Source = source,
+                SourceRowId = id,
+                Role = role,
+            });
+            changed = true;
+        }
+
+        foreach (var extra in current.Skip(wanted.Count))
+        {
+            db.WorldLogicFindingEvidence.Remove(extra);
+            changed = true;
+        }
+
         return changed;
     }
 

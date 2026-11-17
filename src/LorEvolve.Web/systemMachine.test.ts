@@ -7,9 +7,11 @@ import {
   advanceVersions,
   edgePoint,
   EMPTY_MACHINE,
+  guardMark,
   LINE_GAP,
   lineOffsets,
   moveState,
+  openCount,
   problemAt,
   removeState,
   removeTransition,
@@ -179,4 +181,34 @@ test('advanceVersions moves the other base only when it was the version the save
     details: 5,
     machine: 5,
   })
+})
+
+test('guardMark gives three marks, and an error guard is unknown with its code', () => {
+  const row = (
+    guard: 'true' | 'false' | 'unknown' | 'error' | 'none',
+    errorCode = null as string | null,
+  ) => ({
+    transitionId: 't',
+    guard,
+    errorCode,
+  })
+  assert.deepEqual(guardMark(row('true')), { kind: 'holds', code: null })
+  assert.deepEqual(guardMark(row('none')), { kind: 'holds', code: null })
+  assert.deepEqual(guardMark(row('false')), { kind: 'fails', code: null })
+  assert.deepEqual(guardMark(row('unknown')), { kind: 'unknown', code: null })
+  assert.deepEqual(guardMark(row('error', 'type_mismatch')), {
+    kind: 'unknown',
+    code: 'type_mismatch',
+  })
+})
+
+test('openCount reads a state count, and a state not listed has none', () => {
+  const open = [
+    { stateId: 'a', count: 2 },
+    { stateId: 'c', count: 1 },
+  ]
+  assert.equal(openCount(open, 'a'), 2)
+  assert.equal(openCount(open, 'c'), 1)
+  assert.equal(openCount(open, 'b'), 0)
+  assert.equal(openCount([], 'a'), 0)
 })

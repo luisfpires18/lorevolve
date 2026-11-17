@@ -1,5 +1,6 @@
 import type {
   SystemMachineDetail,
+  SystemMachineGuardRow,
   SystemMachineInput,
   SystemMachineState,
   SystemMachineTransition,
@@ -213,6 +214,27 @@ export function lineOffsets(transitions: MachineTransition[]) {
     })
   }
   return offsets
+}
+
+/** How many open or reviewing findings a state has, from the machine's `openFindings`; a state not listed has none. */
+export function openCount(openFindings: SystemMachineDetail['openFindings'], stateId: string) {
+  return openFindings.find((each) => each.stateId === stateId)?.count ?? 0
+}
+
+/** The three marks "Try an entry" puts on a transition. */
+export type GuardMarkKind = 'holds' | 'fails' | 'unknown'
+
+/**
+ * One guard's answer for the tried entry, as a mark. No guard and an exempt rule both hold; an `error` guard shows as
+ * unknown with its code, because the author is told three marks and a broken guard proves nothing either way.
+ */
+export function guardMark(row: SystemMachineGuardRow): {
+  kind: GuardMarkKind
+  code: string | null
+} {
+  if (row.guard === 'true' || row.guard === 'none') return { kind: 'holds', code: null }
+  if (row.guard === 'false') return { kind: 'fails', code: null }
+  return { kind: 'unknown', code: row.errorCode }
 }
 
 /** The two versions the System editor's saves are written over: its name save's and its machine save's. */
