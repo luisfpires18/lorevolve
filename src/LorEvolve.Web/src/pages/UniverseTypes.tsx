@@ -473,7 +473,7 @@ export default function UniverseTypes() {
               ))}
             </div>
             {gaming ? (
-              <Field label={t('entityTypes.page.game.label')} className="types__game">
+              <Field label={t('entityTypes.page.game.label')}>
                 {(control) => (
                   <select
                     {...control}
