@@ -88,18 +88,23 @@ export function projectSectionLabel(section: ProjectSection) {
 }
 
 /** What kind of work this is, in the current language. */
-/** The Cinema formats (#288) and the kind each belongs to; the ids are the API's `ProjectFormats`, first of a kind is its default. */
-export const CINEMA_FORMATS = [
+/** The Cinema (#288) and Comic (#293) formats and the kind each belongs to; the ids are the API's `ProjectFormats`, first of a kind is its default. */
+export const PROJECT_FORMATS = [
   { id: 'feature-film', kind: ProjectKind.Film },
   { id: 'short-film', kind: ProjectKind.Film },
   { id: 'special', kind: ProjectKind.Film },
   { id: 'trailer', kind: ProjectKind.Film },
   { id: 'tv-show', kind: ProjectKind.Series },
   { id: 'limited-series', kind: ProjectKind.Series },
+  { id: 'western-comic', kind: ProjectKind.Comic },
+  { id: 'manga', kind: ProjectKind.Comic },
+  { id: 'graphic-novel', kind: ProjectKind.Comic },
+  { id: 'one-shot', kind: ProjectKind.Comic },
+  { id: 'webcomic', kind: ProjectKind.Comic },
 ] as const
 
 export function formatsFor(kind: ProjectDetail['kind']) {
-  return CINEMA_FORMATS.filter((format) => format.kind === kind)
+  return PROJECT_FORMATS.filter((format) => format.kind === kind)
 }
 
 export function formatLabel(id: string) {
@@ -116,6 +121,16 @@ export function formatLabel(id: string) {
       return t('projects.format.tv-show')
     case 'limited-series':
       return t('projects.format.limited-series')
+    case 'western-comic':
+      return t('projects.format.western-comic')
+    case 'manga':
+      return t('projects.format.manga')
+    case 'graphic-novel':
+      return t('projects.format.graphic-novel')
+    case 'one-shot':
+      return t('projects.format.one-shot')
+    case 'webcomic':
+      return t('projects.format.webcomic')
     default:
       return id
   }
