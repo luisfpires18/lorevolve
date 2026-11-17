@@ -38,6 +38,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the line of its first ru
 | A loading placeholder | `.skeleton` 2585 |
 | A pan and zoom canvas of cards and lines | `usePanZoom` and `fitView` in `lib/usePanZoom.ts`, with `.boardcanvas*` 18314, `.boardline*` 18361 and `.boardcard*` 18390. Used by `IdeaBoardCanvas` and `SystemMachineCanvas` |
 | A state machine's handle, transition label and arrowhead | `.machinecanvas__handle` 18489, `.machinecanvas__label` 18522, `.machinecanvas__head` 18550, drawn by `SystemMachineCanvas`; a group of its rows under the canvas is `.machinepanel__group` 18559 |
+| A shelf of things an author is making, with a picture each: a game on a handheld, a story as a book | `components/ShelfCard.tsx` with `.shelf` 19061; `frame` picks the object, `onAddPicture` offers Add picture on an empty one. Used by `GamingPage` and `StoriesPage`, with `CoverDrawer` for the picture |
 | A condition built from blocks: groups, rows, read-only parts | `components/GuardBuilder.tsx` with `.guardbuilder` 18574 and `.guardblock*`; the tree logic is `worldLogic/guard.ts` and the closed sets `worldLogic/conditionSchema.ts`. Opened as a transition's guard by `GuardBuilderDrawer` in `SystemMachinePanel` |
 
 Form and button rules start with their own comments: forms at `styles.css:410`, buttons at `styles.css:508`.

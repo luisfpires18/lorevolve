@@ -19054,9 +19054,9 @@ details.reviewsection > .reviewsection__list {
 }
 
 /*
- * Shelves (owner, 2026-11-17): Gaming and Writing draw what an author is making as the thing it will be, a game in a
- * handheld console and a story as a book, in one grid that both pages share. The frames are the one bold thing here;
- * the text under them stays the app's quiet type. Every frame part is drawn in CSS from the theme's own tokens.
+ * Shelves (owner, 2026-11-17): Gaming and Writing draw what an author is making as the thing it will be, a game on a
+ * widescreen handheld and a story as a book, in one grid that both pages share. The object carries the picture and is
+ * the one bold thing here; the title and status under it stay the app's quiet type, as a book's label would.
  */
 .shelf {
   display: grid;
@@ -19065,6 +19065,11 @@ details.reviewsection > .reviewsection__list {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* A handheld lies on its side, so its shelf has wider places. */
+.shelf--wide {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
 }
 
 .shelfcard {
@@ -19088,7 +19093,7 @@ details.reviewsection > .reviewsection__list {
   text-decoration: none;
 }
 
-/* The title's link covers the whole card, so the card is one target; the menu sits above it. */
+/* The title's link covers the whole card, so the card is one target; the menu and Add picture sit above it. */
 .shelfcard__link::after {
   content: '';
   position: absolute;
@@ -19106,20 +19111,52 @@ details.reviewsection > .reviewsection__list {
   outline-offset: 4px;
 }
 
+/* The ⋯ rests on the picture, on a frosted chip so it reads on any picture, light or dark. */
 .shelfcard__menu {
   position: absolute;
   top: var(--space-2);
-  right: var(--space-2);
+  right: calc(var(--space-2) + 7px);
   z-index: 2;
 }
 
-/* On a console the ⋯ sits where Start and Select do, between the d-pad and the buttons, not on the dark bezel. */
 .shelfcard--console .shelfcard__menu {
-  top: auto;
-  right: auto;
-  bottom: var(--space-4);
-  left: 50%;
-  translate: -50% 0;
+  top: calc(var(--handheld-pad) + 0.5rem);
+  right: calc(var(--handheld-grip) + 0.5rem);
+}
+
+.shelfcard__menu .iconbutton {
+  background: color-mix(in oklab, var(--paper) 82%, transparent);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(6px);
+}
+
+.shelfcard__empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.shelfcard__emptyicon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+/*
+ * The object is drawn above the card's link so its lift on hover never buries Add picture under it, and lets every
+ * press through to the link but the button's own.
+ */
+.handheld,
+.book {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.shelfcard__add {
+  pointer-events: auto;
 }
 
 .shelfcard__text {
@@ -19151,113 +19188,140 @@ details.reviewsection > .reviewsection__list {
   -webkit-line-clamp: 3;
 }
 
-/* The handheld: a moulded shell with the long bottom-right curve, a dark bezel with its power light, the cover on the
-   screen, then the title and status where a label would sit, and the pad and buttons below. */
-/* Every console in a row is the same height, so the controls (and the ⋯ between them) line up. */
+/*
+ * The handheld: a moulded shell in the theme's ink-blue, a grip at each end with an analog stick, a pad on the left and
+ * four face buttons on the right, and the picture full-bleed on a glass screen in its black bezel. The shell stays dark
+ * in both themes, as the hardware would; a rim of light keeps its edge on a dark page.
+ */
 .shelfcard--console {
-  align-content: stretch;
+  --handheld-pad: 0.7rem;
+  --handheld-grip: 17%;
 }
 
-.shelfcard--console .shelfcard__text {
-  align-content: start;
-}
-
-.console {
+.handheld {
+  --shell: color-mix(in oklab, var(--accent) 38%, black);
+  --shell-hi: color-mix(in oklab, var(--accent) 55%, #2a2f3a);
+  position: relative;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) var(--space-5);
-  border: 1px solid var(--rule-strong);
-  border-radius: 1rem 1rem 3.25rem 1rem;
-  background: linear-gradient(
-    170deg,
-    color-mix(in oklab, var(--raised) 88%, var(--ink) 12%),
-    var(--raised) 55%
-  );
+  grid-template-columns: var(--handheld-grip) 1fr var(--handheld-grip);
+  align-items: center;
+  padding: var(--handheld-pad) 0;
+  border-radius: 2.75rem / 50%;
+  background:
+    radial-gradient(
+      120% 90% at 50% -20%,
+      color-mix(in oklab, white 14%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--shell-hi), var(--shell));
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--ink) 10%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent),
+    inset 0 -3px 6px color-mix(in oklab, black 35%, transparent),
+    0 0 0 1px color-mix(in oklab, white 6%, transparent),
     var(--shadow-2);
   transition:
     transform var(--duration-2) var(--ease),
     box-shadow var(--duration-2) var(--ease);
 }
 
-.console__bezel {
-  position: relative;
-  padding: var(--space-3) var(--space-5) var(--space-4);
-  border-radius: 0.5rem 0.5rem 1.75rem 0.5rem;
-  background: color-mix(in oklab, var(--paper) 55%, black 45%);
+.handheld__grip {
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  padding: 0.2rem 0;
 }
 
-.console__led {
-  position: absolute;
-  top: 45%;
-  left: 0.6rem;
-  width: 0.45rem;
-  height: 0.45rem;
+/* An analog stick: a domed cap in its well. */
+.handheld__stick {
+  width: 1.55rem;
+  height: 1.55rem;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0.5rem var(--accent);
+  background: radial-gradient(circle at 40% 35%, #4a4f5c, #15171d 70%);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, black 45%, transparent),
+    inset 0 1px 1px color-mix(in oklab, white 25%, transparent);
 }
 
-.console__screen {
+.handheld__dpad {
+  --key: #12141a;
+  width: 1.2rem;
+  height: 1.2rem;
+  background:
+    linear-gradient(var(--key), var(--key)) center / 100% 36% no-repeat,
+    linear-gradient(var(--key), var(--key)) center / 36% 100% no-repeat;
+  filter: drop-shadow(0 1px 0 color-mix(in oklab, white 18%, transparent));
+}
+
+/* Four face buttons in a diamond; one is lit in the accent. */
+.handheld__face {
+  display: grid;
+  grid-template-areas:
+    '. n .'
+    'w . e'
+    '. s .';
+  gap: 0.1rem;
+}
+
+.handheld__face > span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #12141a;
+  box-shadow: 0 1px 0 color-mix(in oklab, white 18%, transparent);
+}
+
+.handheld__face > span:nth-child(1) {
+  grid-area: n;
+}
+
+.handheld__face > span:nth-child(2) {
+  grid-area: e;
+  background: color-mix(in oklab, var(--accent) 45%, white);
+}
+
+.handheld__face > span:nth-child(3) {
+  grid-area: s;
+}
+
+.handheld__face > span:nth-child(4) {
+  grid-area: w;
+}
+
+.handheld__screen {
+  position: relative;
   display: grid;
   place-items: center;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--accent) 14%, var(--paper));
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, black 40%, transparent);
+  border-radius: 0.45rem;
+  background: color-mix(in oklab, var(--accent) 16%, var(--paper));
+  box-shadow:
+    0 0 0 4px #0b0c10,
+    0 0 0 5px color-mix(in oklab, white 10%, transparent);
 }
 
-.console__screen img {
-  display: block;
+/* The glass: a faint sheen across the top left, over the picture. */
+.handheld__screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    125deg,
+    color-mix(in oklab, white 16%, transparent) 0%,
+    transparent 38%
+  );
+}
+
+.handheld__screen img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.console__empty,
-.book__empty {
-  width: 2.75rem;
-  height: 2.75rem;
-  color: var(--muted);
-  opacity: 0.6;
-}
-
-.console__controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-2) 0;
-}
-
-.console__dpad {
-  --pad: color-mix(in oklab, var(--paper) 60%, black 40%);
-  width: 2.6rem;
-  height: 2.6rem;
-  background:
-    linear-gradient(var(--pad), var(--pad)) center / 100% 34% no-repeat,
-    linear-gradient(var(--pad), var(--pad)) center / 34% 100% no-repeat;
-  filter: drop-shadow(0 1px 0 color-mix(in oklab, var(--ink) 12%, transparent));
-}
-
-.console__ab {
-  display: flex;
-  gap: 0.55rem;
-  transform: rotate(-24deg);
-}
-
-.console__ab > span {
-  width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 50%;
-  background: color-mix(in oklab, var(--accent) 70%, var(--paper));
-  box-shadow: inset 0 -2px 0 color-mix(in oklab, black 30%, transparent);
-}
-
-/* The book: the cover, a spine shadow down its left edge, the page block showing on the right, and the title on a
-   plate across the foot of the cover. */
+/* The book: the cover, a spine shadow down its left edge and the page block showing on the right. */
 .book {
   position: relative;
   aspect-ratio: 2 / 3;
@@ -19318,11 +19382,13 @@ details.reviewsection > .reviewsection__list {
 }
 
 /* The one hover: the object lifts off the shelf, as a thing picked up does. */
-.shelfcard:hover .console,
-.shelfcard:focus-within .console {
-  transform: translateY(-3px);
+.shelfcard:hover .handheld,
+.shelfcard:focus-within .handheld {
+  transform: translateY(-3px) rotate(0.6deg);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--ink) 10%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent),
+    inset 0 -3px 6px color-mix(in oklab, black 35%, transparent),
+    0 0 0 1px color-mix(in oklab, white 6%, transparent),
     var(--shadow-3);
 }
 
@@ -19332,13 +19398,13 @@ details.reviewsection > .reviewsection__list {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .console,
+  .handheld,
   .book {
     transition: none;
   }
 
-  .shelfcard:hover .console,
-  .shelfcard:focus-within .console,
+  .shelfcard:hover .handheld,
+  .shelfcard:focus-within .handheld,
   .shelfcard:hover .book,
   .shelfcard:focus-within .book {
     transform: none;

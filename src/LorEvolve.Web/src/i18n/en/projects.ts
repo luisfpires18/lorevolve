@@ -32,7 +32,8 @@ const projects = {
     moveUp: 'Move up',
     moveDown: 'Move down',
     done: 'Done',
-    cover: 'Cover',
+    addPicture: 'Add picture',
+    changePicture: 'Change picture',
   },
   gaming: {
     moved: '“{name}” is now game {n} of {total}.',
