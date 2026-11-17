@@ -2,6 +2,7 @@ using LorEvolve.Api.Features.TypeTemplates;
 using System.Text.RegularExpressions;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -626,6 +627,9 @@ internal static partial class BackupValidation
             ? 0L
             : 1L + (saga.Phases ?? []).Sum(phase => phase is null ? 0L : 1L + (phase.ProjectIds ?? []).Count));
 
+        // Comic collections (version 53): a collection and one entry row per node it references.
+        count += (payload.ComicCollections ?? []).Sum(collection => collection is null ? 0L : 1L + (collection.NodeIds ?? []).Count);
+
         return (int)Math.Min(count, int.MaxValue);
     }
 
@@ -651,6 +655,10 @@ internal static partial class BackupValidation
 
         /// <summary>The Film and Series projects of this file: the only ones a Cinema phase may hold (#289).</summary>
         private readonly HashSet<Guid> _cinemaProjects = [];
+
+        /// <summary>The Comic projects of this file and every node's level by id, so a story arc entry can be checked (#296).</summary>
+        private readonly HashSet<Guid> _comicProjects = [];
+        private readonly Dictionary<Guid, BackupProjectNode> _nodes = [];
 
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
@@ -724,6 +732,7 @@ internal static partial class BackupValidation
             RegisterCinemaSagas(Required(payload.CinemaSagas, "the list of Cinema sagas", since: 52));
             RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
             RegisterProjectNodes(Required(payload.ProjectNodes, "the list of project structure nodes", since: 51));
+            RegisterComicCollections(Required(payload.ComicCollections, "the list of Comic story arcs and events", since: 53));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
@@ -1254,6 +1263,11 @@ internal static partial class BackupValidation
                     _cinemaProjects.Add(project.Id);
                 }
 
+                if (project.Kind == ProjectKind.Comic)
+                {
+                    _comicProjects.Add(project.Id);
+                }
+
                 if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
                 {
                     Add(BackupIssueCodes.Duplicate, $"Two projects are both called {Quote(project.Name)}.");
@@ -1520,6 +1534,48 @@ internal static partial class BackupValidation
         /// project, no cycle, and every level where the project format's rules allow it. A project whose format has no
         /// rules holds no nodes.
         /// </summary>
+        private void RegisterComicCollections(IReadOnlyList<BackupComicCollection> collections)
+        {
+            foreach (var collection in collections)
+            {
+                if (collection is null)
+                {
+                    Missing("a Comic story arc or event");
+                    continue;
+                }
+
+                var what = $"The story arc or event {Quote(collection.Name)}";
+                Register(collection.Id, what);
+                Text(collection.Name, ComicCollectionLimits.NameMaxLength, $"{what}'s name", required: true);
+                Text(collection.Summary, ComicCollectionLimits.SummaryMaxLength, $"{what}'s summary");
+
+                if (collection.Kind is null || !ComicCollectionKinds.Levels.ContainsKey(collection.Kind))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is neither a story arc nor an event.");
+                    continue;
+                }
+
+                var held = new HashSet<Guid>();
+
+                foreach (var nodeId in collection.NodeIds ?? [])
+                {
+                    if (!_nodes.TryGetValue(nodeId, out var node))
+                    {
+                        Add(BackupIssueCodes.MissingReference, $"{what} references a part this file does not hold.");
+                    }
+                    else if (!_comicProjects.Contains(node.ProjectId) || !ComicCollectionKinds.Allows(collection.Kind, node.Level))
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} references a part that is not an issue, chapter or episode of a comic.");
+                    }
+
+                    if (!held.Add(nodeId))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} references the same part twice.");
+                    }
+                }
+            }
+        }
+
         private void RegisterProjectNodes(IReadOnlyList<BackupProjectNode> nodes)
         {
             var byId = new Dictionary<Guid, BackupProjectNode>();
@@ -1535,6 +1591,7 @@ internal static partial class BackupValidation
                 var what = $"The {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}";
                 Register(node.Id, what);
                 byId.TryAdd(node.Id, node);
+                _nodes.TryAdd(node.Id, node);
 
                 if (!_projects.Contains(node.ProjectId))
                 {

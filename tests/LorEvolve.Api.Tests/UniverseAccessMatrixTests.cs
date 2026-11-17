@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.ComicCollections;
 using System.Net;
 using System.Net.Http.Json;
 using LorEvolve.Api.Features.Chronology;
@@ -364,6 +365,16 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("suggest scene changes", Post, $"{scene}/suggestions", May.Comment, Json(new SceneRequest("Retitled", null, null, null, null, null, w.Chapter, 1))),
             new("accept suggestion", Post, $"{u}/suggestions/{any}/accept", May.Edit),
             new("reject suggestion", Post, $"{u}/suggestions/{any}/reject", May.Edit),
+
+            // ---------- Comic story arcs and events (#296) ----------
+            new("comic collections", Get, $"{u}/comic-collections", May.Read),
+            new("create comic collection", Post, $"{u}/comic-collections", May.Edit, Json(new ComicCollectionRequest("event", "Insert a name", null))),
+            new("update comic collection", Put, $"{u}/comic-collections/{any}", May.Edit, Json(new ComicCollectionRequest(null, "Insert a name", null, 1))),
+            new("delete comic collection", Delete, $"{u}/comic-collections/{any}", May.Edit),
+            new("move comic collection", Post, $"{u}/comic-collections/{any}/move", May.Edit, Json(new ComicPlaceRequest(0))),
+            new("add comic entry", Post, $"{u}/comic-collections/{any}/entries", May.Edit, Json(new ComicEntryRequest(Guid.NewGuid()))),
+            new("remove comic entry", Delete, $"{u}/comic-collections/{any}/entries/{any}", May.Edit),
+            new("move comic entry", Post, $"{u}/comic-collections/{any}/entries/{any}/move", May.Edit, Json(new ComicPlaceRequest(0))),
 
             // ---------- Collaborators (030) ----------
             new("collaborators", Get, $"{u}/collaborators", May.Own),

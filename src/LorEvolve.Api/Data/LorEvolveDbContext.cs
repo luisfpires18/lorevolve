@@ -1,5 +1,6 @@
 using LorEvolve.Api.Features.TypeTemplates;
 using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.CanonIntegrity;
@@ -168,6 +169,10 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<CinemaPhase> CinemaPhases => Set<CinemaPhase>();
 
     public DbSet<CinemaPhaseMembership> CinemaPhaseMemberships => Set<CinemaPhaseMembership>();
+
+    public DbSet<ComicCollection> ComicCollections => Set<ComicCollection>();
+
+    public DbSet<ComicCollectionEntry> ComicCollectionEntries => Set<ComicCollectionEntry>();
 
     public DbSet<ProjectEpisode> ProjectEpisodes => Set<ProjectEpisode>();
 

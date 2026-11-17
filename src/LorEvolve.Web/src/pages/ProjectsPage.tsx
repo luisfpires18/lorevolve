@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useOutletContext, useSearchParams } from 'react-router-dom'
 import { CinemaSagas } from '../components/CinemaSagas'
+import { ComicCollections } from '../components/ComicCollections'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
@@ -58,6 +59,9 @@ export default function ProjectsPage({
   // Sagas and Phases (#289): a second view of the Cinema list, inside one universe.
   const cinema = Boolean(universeId && kinds?.includes(ProjectKind.Film))
   const showSagas = cinema && params.get('view') === 'sagas'
+  // Story Arcs and Events (#296): the same second view on the Comic list.
+  const comic = Boolean(universeId && kinds?.includes(ProjectKind.Comic))
+  const showCollections = comic && params.get('view') === 'arcs'
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
   useDocumentTitle(heading)
@@ -139,8 +143,35 @@ export default function ProjectsPage({
         </nav>
       ) : null}
 
+      {comic ? (
+        <nav
+          className="views"
+          aria-label={t('projects.comics.viewsLabel')}
+          data-testid="comic-views"
+        >
+          <Link
+            className="views__link"
+            to="?"
+            aria-current={showCollections ? undefined : 'page'}
+            data-testid="comic-view-projects"
+          >
+            {t('projects.comics.projectsView')}
+          </Link>
+          <Link
+            className="views__link"
+            to="?view=arcs"
+            aria-current={showCollections ? 'page' : undefined}
+            data-testid="comic-view-collections"
+          >
+            {t('projects.comics.collectionsView')}
+          </Link>
+        </nav>
+      ) : null}
+
       {showSagas && universeId ? (
         <CinemaSagas universeId={universeId} />
+      ) : showCollections && universeId ? (
+        <ComicCollections universeId={universeId} />
       ) : shown.length === 0 ? (
         <EmptyState
           title={t(kinds ? categoryEmpty(kinds[0]) : 'projects.list.empty')}

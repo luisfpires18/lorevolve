@@ -92,6 +92,8 @@ internal static class BackupNormalization
             : [.. payload.ProjectEntities.Select(entry => entry is null ? null! : entry with { FieldImages = null })],
         // Cinema sagas arrived at version 52 (#289): an older file has none, even when it carries some.
         CinemaSagas = version >= 52 ? payload.CinemaSagas : null,
+        // Comic collections arrived at version 53 (#296): an older file has none, even when it carries some.
+        ComicCollections = version >= 53 ? payload.ComicCollections : null,
         // Project formats arrived at version 49 (#288): an older file has none, even when it carries one.
         CreativeProjects = version >= 49 || payload.CreativeProjects is null
             ? payload.CreativeProjects

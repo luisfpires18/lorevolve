@@ -75,6 +75,7 @@ before proposing against them, which is the only read of them MCP offers.
 | Collaborators | `collaborators` | `person-only` | `person-only` |
 | Invitations | `invitations` | `person-only` | `person-only` |
 | Lore references | `lore-references` | `get_lore_entry` | `read-only-by-design` |
+| Comic story arcs and events (#296) | `comic-collections` | `person-only` | `person-only` |
 
 ## Inside a project
 

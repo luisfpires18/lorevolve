@@ -152,6 +152,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Excepted("Collaborators", ["collaborators"], Why.PersonOnly),
         Excepted("Invitations", ["invitations"], Why.PersonOnly),
         ReadOnly("Lore references", ["lore-references"], ["get_lore_entry"]),
+        Excepted("Comic story arcs and events (#296)", ["comic-collections"], Why.PersonOnly),
     ];
 
     private static readonly Domain[] Project =

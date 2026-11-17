@@ -625,6 +625,75 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("CinemaSagas", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UniverseId", "Kind", "SortOrder");
+
+                    b.ToTable("ComicCollections", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollectionEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CollectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("NodeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NodeId");
+
+                    b.HasIndex("CollectionId", "NodeId")
+                        .IsUnique();
+
+                    b.HasIndex("CollectionId", "SortOrder");
+
+                    b.ToTable("ComicCollectionEntries", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Comments.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4906,6 +4975,36 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Universe");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollection", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollectionEntry", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.ComicCollections.ComicCollection", "Collection")
+                        .WithMany("Entries")
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.ProjectEntities.ProjectNode", "Node")
+                        .WithMany()
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Node");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Comments.Comment", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Comments.CommentThread", "Thread")
@@ -6763,6 +6862,11 @@ namespace LorEvolve.Api.Data.Migrations
             modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaSaga", b =>
                 {
                     b.Navigation("Phases");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollection", b =>
+                {
+                    b.Navigation("Entries");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Comments.CommentThread", b =>

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -114,6 +115,11 @@ internal sealed class RestoreIdentity
         foreach (var node in payload.ProjectNodes ?? [])
         {
             yield return node.Id;
+        }
+
+        foreach (var collection in payload.ComicCollections ?? [])
+        {
+            yield return collection.Id;
         }
 
         foreach (var saga in payload.CinemaSagas ?? [])
@@ -1101,6 +1107,35 @@ internal sealed partial class UniverseRestore(
                         SortOrder = place++,
                     });
                 }
+            }
+        }
+
+        // The Comic story arcs and events (version 53, #296), after the nodes they reference.
+        foreach (var collection in payload.ComicCollections ?? [])
+        {
+            db.ComicCollections.Add(new ComicCollection
+            {
+                Id = ids.Map(collection.Id),
+                UniverseId = universeId,
+                Kind = collection.Kind,
+                Name = collection.Name,
+                Summary = collection.Summary,
+                SortOrder = collection.SortOrder,
+                CreatedAt = collection.CreatedAt,
+                UpdatedAt = collection.UpdatedAt,
+            });
+
+            var place = 0;
+
+            foreach (var nodeId in collection.NodeIds ?? [])
+            {
+                db.ComicCollectionEntries.Add(new ComicCollectionEntry
+                {
+                    Id = Guid.NewGuid(),
+                    CollectionId = ids.Map(collection.Id),
+                    NodeId = ids.Map(nodeId),
+                    SortOrder = place++,
+                });
             }
         }
 

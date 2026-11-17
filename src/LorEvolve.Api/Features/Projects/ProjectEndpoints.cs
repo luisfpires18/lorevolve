@@ -27,6 +27,8 @@ public static class ProjectEndpoints
     public const string ChangedCode = "project_changed";
     public const string InCinemaPhaseCode = "project_in_cinema_phase";
 
+    public const string InComicCollectionCode = "project_in_comic_collection";
+
     public static IEndpointRouteBuilder MapProjectEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/projects")
@@ -250,6 +252,17 @@ public static class ProjectEndpoints
                 title: "In a Cinema phase",
                 detail: "This production is in a Cinema phase. Remove it from its phase first.",
                 extensions: new Dictionary<string, object?> { ["code"] = InCinemaPhaseCode });
+        }
+
+        // A story arc or event holds only this universe's comic parts, so a move or kind change waits until they leave it.
+        if ((project.UniverseId != request.UniverseId || request.Kind != ProjectKind.Comic)
+            && await db.ComicCollectionEntries.AnyAsync(entry => entry.Node!.ProjectId == id, cancellationToken))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "In a story arc or event",
+                detail: "Part of this comic is in a story arc or an event. Remove it there first.",
+                extensions: new Dictionary<string, object?> { ["code"] = InComicCollectionCode });
         }
 
         var name = request.Name!.Trim();
