@@ -138,6 +138,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
             await DismissedFindingsAsync(universeId, cancellationToken),
+            await TypeTemplatesAsync(universeId, cancellationToken),
             await CinemaSagasAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
@@ -1802,6 +1803,41 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
     /// it was dismissed.
     /// </summary>
+    /// <summary>The universe's type templates (#281), by name, each with its fields and their choices in order.</summary>
+    private async Task<IReadOnlyList<BackupTypeTemplate>> TypeTemplatesAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var templates = await db.TypeTemplates.AsNoTracking()
+            .Where(template => template.UniverseId == universeId)
+            .Include(template => template.Fields)
+            .ThenInclude(field => field.Options)
+            .OrderBy(template => template.Name)
+            .ThenBy(template => template.Id)
+            .ToListAsync(cancellationToken);
+
+        return [.. templates.Select(template => new BackupTypeTemplate(
+            template.Id,
+            template.Name,
+            template.Description,
+            template.Icon,
+            template.AccentColor,
+            template.CreatedAt,
+            template.UpdatedAt,
+            [.. template.Fields
+                .OrderBy(field => field.DisplayOrder)
+                .ThenBy(field => field.Id)
+                .Select(field => new BackupTypeTemplateField(
+                    field.Id,
+                    field.Name,
+                    field.Kind,
+                    field.IsRequired,
+                    field.DisplayOrder,
+                    field.ImageShape,
+                    [.. field.Options
+                        .OrderBy(option => option.DisplayOrder)
+                        .ThenBy(option => option.Id)
+                        .Select(option => new BackupTypeTemplateFieldOption(option.Id, option.Value, option.DisplayOrder))]))]))];
+    }
+
     private async Task<IReadOnlyList<BackupDismissedFinding>> DismissedFindingsAsync(
         Guid universeId,
         CancellationToken cancellationToken)

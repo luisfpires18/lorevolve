@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Admin;
@@ -186,6 +187,7 @@ app.MapAiChangeEndpoints();
 app.MapAiChangeMediaEndpoints();
 app.MapProjectEndpoints();
 app.MapProjectEntityTypeEndpoints();
+app.MapTypeTemplateEndpoints();
 app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
 app.MapCinemaSagaEndpoints();

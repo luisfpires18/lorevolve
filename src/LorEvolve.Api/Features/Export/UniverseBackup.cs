@@ -349,11 +349,16 @@ public sealed record UniverseBackup(
     /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
     /// none, and every restored project has none.
     ///
-    /// 50 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
-    /// phases and the projects each phase holds, in order. Not ignorable: a version 49 reader would restore the universe
-    /// with no sagas. A file at version 49 or earlier has none.
+    /// 50 - A universe keeps reusable type templates (#281). <see cref="UniverseBackupPayload.TypeTemplates"/> holds
+    /// each template with its fields and their choices, in order. Nothing refers to a template, so every id is new on
+    /// restore. Not ignorable: a version 49 reader would restore the universe without its templates. A file at version
+    /// 49 or earlier has none, and restores with none.
+    ///
+    /// 51 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
+    /// phases and the projects each phase holds, in order. Not ignorable: a version 50 reader would restore the universe
+    /// with no sagas. A file at version 50 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 50;
+    public const int CurrentVersion = 51;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -425,10 +430,11 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
+    IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
     IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
 
 /// <summary>
-/// One Cinema saga of this universe with its phases in order (since version 50, #289). A phase lists the projects it
+/// One Cinema saga of this universe with its phases in order (since version 51, #289). A phase lists the projects it
 /// holds by this file's project ids, in release order: membership only, so the projects themselves travel as projects.
 /// </summary>
 public sealed record BackupCinemaSaga(
@@ -1021,6 +1027,28 @@ public sealed record BackupProjectPanel(
     int SortOrder,
     DateTime CreatedAt,
     DateTime UpdatedAt);
+
+/// <summary>A universe's reusable type template (since version 50, #281), with its fields in order.</summary>
+public sealed record BackupTypeTemplate(
+    Guid Id,
+    string Name,
+    string? Description,
+    string? Icon,
+    string? AccentColor,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupTypeTemplateField> Fields);
+
+public sealed record BackupTypeTemplateField(
+    Guid Id,
+    string Name,
+    EntityFieldKind Kind,
+    bool IsRequired,
+    int DisplayOrder,
+    FieldImageShape? ImageShape,
+    IReadOnlyList<BackupTypeTemplateFieldOption> Options);
+
+public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int DisplayOrder);
 
 public sealed record BackupProjectEntity(
     Guid Id,

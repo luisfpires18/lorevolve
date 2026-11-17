@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using System.Text.RegularExpressions;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.CinemaSagas;
@@ -614,7 +615,12 @@ internal static partial class BackupValidation
             ? 0L
             : 2L + finding.Evidence.Count);
 
-        // Cinema sagas (version 50): a saga, its phases and one membership row per project a phase holds.
+        // Type templates (version 50): each template, its fields and their choices.
+        count += (payload.TypeTemplates ?? []).Sum(template => template is null
+            ? 0L
+            : 1L + (template.Fields ?? []).Sum(field => field is null ? 0L : 1L + (field.Options?.Count ?? 0)));
+
+        // Cinema sagas (version 51): a saga, its phases and one membership row per project a phase holds.
         count += (payload.CinemaSagas ?? []).Sum(saga => saga is null
             ? 0L
             : 1L + (saga.Phases ?? []).Sum(phase => phase is null ? 0L : 1L + (phase.ProjectIds ?? []).Count));
@@ -697,6 +703,7 @@ internal static partial class BackupValidation
             var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
             var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
             var dismissedFindings = Required(payload.DismissedFindings, "the dismissed World Logic findings", since: 46);
+            var typeTemplates = Required(payload.TypeTemplates, "the list of type templates", since: 50);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -772,7 +779,94 @@ internal static partial class BackupValidation
                 CheckDismissedFinding(finding);
             }
 
+            CheckTypeTemplates(typeTemplates);
+
             CheckArchiveHoldsOnlyPictures();
+        }
+
+        // ---------- Type templates (version 50, #281) ----------
+
+        private void CheckTypeTemplates(IReadOnlyList<BackupTypeTemplate> templates)
+        {
+            if (templates.Count > TypeTemplateEndpoints.MaxTemplatesPerUniverse)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"The backup has {templates.Count} type templates. LorEvolve keeps at most {TypeTemplateEndpoints.MaxTemplatesPerUniverse}.");
+            }
+
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var template in templates)
+            {
+                if (template is null)
+                {
+                    Missing("a type template");
+                    continue;
+                }
+
+                var what = $"The type template \"{template.Name}\"";
+
+                if (Text(template.Name, LoreLimits.NameMaxLength, "A type template's name", required: true)
+                    && !names.Add(template.Name.Trim()))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} is named twice.");
+                }
+
+                Text(template.Description, LoreLimits.DescriptionMaxLength, $"{what}'s description");
+                Text(template.Icon, LoreLimits.IconMaxLength, $"{what}'s icon");
+                Accent(template.AccentColor, $"{what}'s colour");
+
+                var fields = Required(template.Fields, $"{what}'s fields");
+
+                if (fields.Count > ProjectEntityTypeEndpoints.MaxFieldsPerType)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has {fields.Count} fields. LorEvolve keeps at most {ProjectEntityTypeEndpoints.MaxFieldsPerType}.");
+                }
+
+                var fieldNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var field in fields)
+                {
+                    if (field is null)
+                    {
+                        Missing($"a field of {what}");
+                        continue;
+                    }
+
+                    if (Text(field.Name, LoreLimits.NameMaxLength, $"A field of {what}", required: true)
+                        && !fieldNames.Add(field.Name.Trim()))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} has two fields named \"{field.Name}\".");
+                    }
+
+                    if (!Enum.IsDefined(field.Kind) || field.Kind == EntityFieldKind.EntityReference)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"A field of {what} is of a kind a template cannot hold.");
+                    }
+
+                    if (field.ImageShape is { } shape && (field.Kind != EntityFieldKind.Image || !Enum.IsDefined(shape)))
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"A field of {what} has a picture shape it cannot hold.");
+                    }
+
+                    var options = Required(field.Options, $"the choices of a field of {what}");
+
+                    if (options.Count > ProjectEntityTypeEndpoints.MaxOptionsPerField)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"A field of {what} has {options.Count} choices. LorEvolve keeps at most {ProjectEntityTypeEndpoints.MaxOptionsPerField}.");
+                    }
+
+                    foreach (var option in options)
+                    {
+                        if (option is null)
+                        {
+                            Missing($"a choice of a field of {what}");
+                            continue;
+                        }
+
+                        Text(option.Value, LoreLimits.OptionMaxLength, $"A choice of a field of {what}", required: true);
+                    }
+                }
+            }
         }
 
         // ---------- Universe ----------

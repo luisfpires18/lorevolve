@@ -124,6 +124,11 @@ public sealed class BackupInventoryTests
         "ProjectPages",
         "ProjectPanels",
 
+        // A universe's reusable type templates, their fields and those fields' choices (#281).
+        "TypeTemplates",
+        "TypeTemplateFields",
+        "TypeTemplateFieldOptions",
+
         // World Logic (#150, ADR 0072): the universe's Systems and reusable rule definitions, the links between
         // them, the declared dependencies and both sets of saved states. All authored, so all carried; the ids
         // inside a stored condition are translated on restore like any other reference.

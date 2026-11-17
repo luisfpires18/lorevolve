@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Auth;
@@ -174,6 +175,13 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<ProjectPage> ProjectPages => Set<ProjectPage>();
 
     public DbSet<ProjectPanel> ProjectPanels => Set<ProjectPanel>();
+
+    /// <summary>A universe's reusable type templates, their fields and those fields' choices (#281).</summary>
+    public DbSet<TypeTemplate> TypeTemplates => Set<TypeTemplate>();
+
+    public DbSet<TypeTemplateField> TypeTemplateFields => Set<TypeTemplateField>();
+
+    public DbSet<TypeTemplateFieldOption> TypeTemplateFieldOptions => Set<TypeTemplateFieldOption>();
 
     public DbSet<Story> Stories => Set<Story>();
 
