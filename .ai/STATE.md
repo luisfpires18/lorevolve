@@ -55,6 +55,7 @@ deferred.
 - #283 (tracker #300) `feat/types-from-templates-283`, PR #345 done: `POST /api/projects/{id}/entity-types/from-template` copies a universe template into a game as an independent top-level type (no link, no schema change); Types page Gaming context gets a "From a template" drawer.
 - #291 (tracker #302) `feat/tv-structures-291`, PR #339: `tv-show` and `limited-series` entries in `ProjectStructures` plus season/episode level words; no schema change.
 
+- #302 M5 Cinema tracker; #289 in review (PR #334): Cinema Sagas and Phases (`CinemaSagas`/`CinemaPhases`/`CinemaPhaseMemberships`, one phase per project, `/api/universes/:id/cinema-sagas`, Sagas view on the Cinema list, project update refuses a phased universe or kind change with 409, backup v52)
 One line per branch. Delete the line when it merges.
 
 #299 M2 Projects & Writing tracker running; its deferred E2E and CI run at the tracker end (owner). #275 done: a universe's Projects (`/app/universes/:id/projects`) is a directory of four category cards (Writing, Gaming, Cinema, Comic) drawn from `CREATION`, each with its project count and a link to its list; `ProjectsDirectory.tsx`, one `listAllProjects` read (PR #324).
