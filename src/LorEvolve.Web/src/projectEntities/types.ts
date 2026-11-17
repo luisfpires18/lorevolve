@@ -133,6 +133,10 @@ export type ProjectEntityDetail = {
   summary: string | null
   entityTypeId: string
   entityTypeName: string
+  entityTypeIcon: string | null
+  entityTypeAccentColor: string | null
+  createdAt: string
+  updatedAt: string
   fields: FieldValue[]
   fieldImages: FieldImageRef[]
   /** The entry's own picture, through Lore's entry image routes (#286). */

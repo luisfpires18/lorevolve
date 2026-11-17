@@ -9,7 +9,6 @@ import {
   type ProjectEntityDetail,
   type ProjectEntityType,
 } from '../projectEntities/types'
-import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import { t, useI18n } from '../i18n'
 import { Drawer } from './Drawer'
@@ -25,19 +24,22 @@ export function ProjectEntityFields({
   projectId,
   universeId,
   detail,
+  editing,
+  onEditingChange: setEditing,
   onSaved,
 }: {
   projectId: string
   universeId: string
   detail: ProjectEntityDetail
+  /** Whether the Edit drawer is open; the page's bar holds the Edit button, as Lore's does. */
+  editing: boolean
+  onEditingChange: (editing: boolean) => void
   onSaved: () => void
 }) {
   useI18n()
   const chronology = useOutletContext<WorkspaceContext>().chronology
-  const access = useUniverseAccess()
   // undefined while reading; null when the read failed, which leaves the stored values and no Edit.
   const [type, setType] = useState<ProjectEntityType | null | undefined>(undefined)
-  const [editing, setEditing] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
 
   useEffect(() => {
@@ -56,22 +58,6 @@ export function ProjectEntityFields({
 
   return (
     <section data-testid="game-entity-fields">
-      <div className="projects__head">
-        <h2 className="sectionrule">{t('projects.gameEntities.entity.fields')}</h2>
-        {type && access.editContent ? (
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => {
-              setFailed(null)
-              setEditing(true)
-            }}
-            data-testid="project-entity-edit"
-          >
-            {t('projects.gameEntities.entity.edit')}
-          </button>
-        ) : null}
-      </div>
       {rows.length > 0 ? (
         <dl className="facts">
           {rows.map((row) => {
