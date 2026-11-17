@@ -35,7 +35,7 @@ export interface ProjectDetail {
   kind: ProjectKindValue
   lifecycle: ProjectLifecycleValue
   subtype: string | null
-  /** The production format (#288), an id from `CINEMA_FORMATS`; null when none was chosen. */
+  /** The production format (#288), an id from `PROJECT_FORMATS`; null when none was chosen. */
   format: string | null
   summary: string
   /** The universe the project belongs to. Every project belongs to exactly one (#172). */

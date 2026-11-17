@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 /**
- * Issue #288: Cinema production formats. Each Film and Series format is chosen on the new project form, persists across
+ * Issues #288 and #293: Cinema and Comic production formats. Each Film, Series and Comic format is chosen on the new project form, persists across
  * a reload, and shows on the Projects list and the project's overview.
  */
 
@@ -14,6 +14,11 @@ const FORMATS = [
   { kind: '3', id: 'trailer', label: 'Trailer' },
   { kind: '2', id: 'tv-show', label: 'TV Show' },
   { kind: '2', id: 'limited-series', label: 'Limited Series' },
+  { kind: '4', id: 'western-comic', label: 'Western Comic' },
+  { kind: '4', id: 'manga', label: 'Manga' },
+  { kind: '4', id: 'graphic-novel', label: 'Graphic Novel' },
+  { kind: '4', id: 'one-shot', label: 'One-shot' },
+  { kind: '4', id: 'webcomic', label: 'Webcomic / Webtoon' },
 ]
 
 function unique(prefix: string) {
@@ -31,7 +36,7 @@ async function signUp(page: Page) {
   await page.waitForURL('/app')
 }
 
-test('each Cinema format is chosen, kept after a reload, and drawn on the list and overview', async ({
+test('each Cinema and Comic format is chosen, kept after a reload, and drawn on the list and overview', async ({
   page,
 }) => {
   await signUp(page)

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using LorEvolve.Api.Features.ProjectEntities;
 using LorEvolve.Api.Features.Projects;
 using static LorEvolve.Api.Tests.PlotTestClient;
 using static LorEvolve.Api.Tests.RestoreTestClient;
@@ -15,6 +16,11 @@ public sealed class ProjectFormatTests(LorEvolveApiFactory factory) : IClassFixt
     [InlineData("trailer", ProjectKind.Film)]
     [InlineData("tv-show", ProjectKind.Series)]
     [InlineData("limited-series", ProjectKind.Series)]
+    [InlineData("western-comic", ProjectKind.Comic)]
+    [InlineData("manga", ProjectKind.Comic)]
+    [InlineData("graphic-novel", ProjectKind.Comic)]
+    [InlineData("one-shot", ProjectKind.Comic)]
+    [InlineData("webcomic", ProjectKind.Comic)]
     public async Task Each_cinema_format_is_accepted_and_read_back(string format, ProjectKind kind)
     {
         var (client, universe) = await SignedInWithUniverse(_factory, $"fmt{format}".Replace("-", string.Empty, StringComparison.Ordinal));
@@ -28,6 +34,9 @@ public sealed class ProjectFormatTests(LorEvolveApiFactory factory) : IClassFixt
     [InlineData("tv-show", ProjectKind.Film)]
     [InlineData("feature-film", ProjectKind.Series)]
     [InlineData("feature-film", ProjectKind.Comic)]
+    [InlineData("tv-show", ProjectKind.Comic)]
+    [InlineData("manga", ProjectKind.Film)]
+    [InlineData("manga", ProjectKind.Series)]
     [InlineData("nonsense", ProjectKind.Film)]
     public async Task A_format_that_does_not_fit_the_kind_is_refused(string format, ProjectKind kind)
     {
@@ -64,6 +73,33 @@ public sealed class ProjectFormatTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Null((await cleared.Content.ReadFromJsonAsync<ProjectDetail>())!.Format);
     }
     [Fact]
+    public async Task A_comic_without_a_format_stays_null_and_a_format_change_keeps_identity()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "fmtcomic");
+        var comic = await Create(client, new ProjectRequest("Old comic", ProjectKind.Comic, ProjectLifecycle.Planning, null, null, universe.Id, null));
+        Assert.Null(comic.Format);
+        var same = await Save(client, comic, comic with { Summary = "Edited" });
+        Assert.Null(same.Format);
+        var changed = await Save(client, same, same with { Format = "manga" });
+        Assert.Equal("manga", changed.Format);
+        Assert.Equal(comic.Id, changed.Id);
+        Assert.Equal(universe.Id, changed.Universe!.Id);
+        Assert.Equal(comic.IsOwned, changed.IsOwned);
+    }
+
+    [Theory]
+    [InlineData("manga", "Manga")]
+    [InlineData("webcomic", "Webtoon")]
+    [InlineData("western-comic", "Comic")]
+    [InlineData("graphic-novel", "Comic")]
+    [InlineData("one-shot", "Comic")]
+    public void A_comic_format_picks_its_starter_template_and_beats_the_subtype(string format, string template)
+    {
+        Assert.Equal(template, ProjectTemplates.For(ProjectKind.Comic, "webtoon", format).Name);
+        Assert.Equal("Webtoon", ProjectTemplates.For(ProjectKind.Comic, "webtoon", null).Name);
+    }
+
+    [Fact]
     public async Task The_format_survives_a_backup_and_restore()
     {
         var client = await SignedIn(_factory, "fmtbackup");
@@ -79,6 +115,19 @@ public sealed class ProjectFormatTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal("short-film", projects.Single(project => project.Name == "Short one").Format);
         Assert.Null(projects.Single(project => project.Name == "Long one").Format);
     }
+    [Fact]
+    public async Task A_backup_whose_comic_carries_a_film_format_is_refused()
+    {
+        var client = await SignedIn(_factory, "fmtcomicbackup");
+        var u = (await PublishingTestClient.CreateUniverse(client, "Comic formats world")).Id;
+        await Create(client, new ProjectRequest("Manga one", ProjectKind.Comic, ProjectLifecycle.Planning, null, null, u, null, "manga"));
+        var archive = await RawArchive(client, u);
+        Assert.Equal("manga", BackupOf(archive).Payload.CreativeProjects!.Single().Format);
+
+        var bad = Rewrite(archive, root => root["payload"]!["creativeProjects"]![0]!["format"] = "tv-show");
+        await Refused(await Validate(client, bad));
+    }
+
     private static Task<HttpResponseMessage> Post(HttpClient client, ProjectRequest request) =>
         client.PostAsJsonAsync("/api/projects", request);
     private static async Task<ProjectDetail> Create(HttpClient client, ProjectRequest request)
