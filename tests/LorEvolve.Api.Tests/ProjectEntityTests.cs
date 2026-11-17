@@ -202,6 +202,7 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
 
         Assert.Equal(loreId, row.CanonEntityId);
         Assert.Equal("Alenna Vance", row.CanonEntityName);
+        Assert.Equal(loreId, (await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project.Id}/entities/{linked.Id}"))!.CanonEntityId);
 
         // A link to something that is not a lore entry of this universe is refused by field.
         var refused = await client.PostAsJsonAsync(
@@ -747,6 +748,53 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(
             HttpStatusCode.BadRequest,
             (await client.GetAsync($"/api/projects/{project.Id}/entities?sort=status")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Saving_an_entry_keeps_the_values_of_an_archived_field_until_it_is_restored()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "archivedvalue");
+        var project = await NewProject(client, universe.Id, "Hollow Season");
+        var unit = await NewType(client, project.Id, "Unit");
+
+        await AddField(client, project.Id, unit.Id, new ProjectEntityFieldRequest("Cost", EntityFieldKind.Number));
+        var withBoth = await AddField(client, project.Id, unit.Id, new ProjectEntityFieldRequest("Weight", EntityFieldKind.Number));
+        var cost = withBoth.Fields.First(field => field.Name == "Cost");
+        var weight = withBoth.Fields.First(field => field.Name == "Weight");
+
+        var entry = await NewEntry(
+            client,
+            project.Id,
+            unit.Id,
+            "Saltbearer",
+            fields: [new FieldValueInput(cost.Id, null, 35, null, null, null, null), new FieldValueInput(weight.Id, null, 4, null, null, null, null)]);
+
+        async Task SetArchived(DateTime? at) => await WithDb(_factory, async db =>
+        {
+            var field = await db.EntityFieldDefinitions.IgnoreQueryFilters().SingleAsync(each => each.Id == cost.Id);
+            field.ArchivedAt = at;
+            await db.SaveChangesAsync();
+        });
+
+        await SetArchived(DateTime.UtcNow);
+
+        // The form cannot send an archived field's value back, so this save carries the other field only.
+        var saved = await Put<EntityDetail>(
+            client,
+            $"/api/projects/{project.Id}/entities/{entry.Id}",
+            new ProjectEntityRequest(
+                unit.Id,
+                "Saltbearer",
+                null,
+                null,
+                [new FieldValueInput(weight.Id, null, 9, null, null, null, null)],
+                entry.Version));
+        Assert.Equal(9, saved.Fields.First(field => field.FieldDefinitionId == weight.Id).Number);
+
+        await SetArchived(null);
+
+        var restored = await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project.Id}/entities/{entry.Id}");
+        Assert.Equal(35, restored!.Fields.First(field => field.FieldDefinitionId == cost.Id).Number);
     }
 
     [Fact]
