@@ -46,6 +46,7 @@ deferred.
 
 ## In flight
 - #300 M3 Types tracker running; #279 done: types audit in `docs/architecture/types-architecture.md` (one shared EntityTypes engine scoped by ProjectId; templates go in a new table pair); #280 done: Types page Lore/Gaming switch and game picker (`?context=gaming&game=`), no API change.
+- #302 M5 Cinema tracker running; #288 done: Film/Series projects have a selectable production format (`ProjectFormats` map, `CreativeProjects.Format`, backup v49); a project save must send the current format back.
 
 One line per branch. Delete the line when it merges.
 

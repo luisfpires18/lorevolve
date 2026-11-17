@@ -19,7 +19,14 @@ import { createProject, getProject, listProjects } from '../projects/api'
 import { getStory } from '../stories/api'
 import StoryPage from './StoryPage'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { kindLabel, lifecycleLabel, projectPath, projectSections } from '../projects/sections'
+import {
+  formatLabel,
+  formatsFor,
+  kindLabel,
+  lifecycleLabel,
+  projectPath,
+  projectSections,
+} from '../projects/sections'
 import {
   ProjectKind,
   ProjectLifecycle,
@@ -71,6 +78,9 @@ function NewProject() {
   const universeId = params.get('universeId')
   const [name, setName] = useState('')
   const [kind, setKind] = useState<ProjectKindValue>(kindFromParam(params.get('kind')))
+  const [format, setFormat] = useState<string | null>(
+    () => formatsFor(kindFromParam(params.get('kind')))[0]?.id ?? null,
+  )
   const [summary, setSummary] = useState('')
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
@@ -106,6 +116,7 @@ function NewProject() {
             kind,
             lifecycle: ProjectLifecycle.Planning,
             subtype: null,
+            format,
             summary,
             universeId,
             expectedVersion: null,
@@ -137,7 +148,11 @@ function NewProject() {
               {...control}
               className="field__input field__input--select"
               value={kind}
-              onChange={(event) => setKind(Number(event.target.value) as ProjectKindValue)}
+              onChange={(event) => {
+                const next = Number(event.target.value) as ProjectKindValue
+                setKind(next)
+                setFormat(formatsFor(next)[0]?.id ?? null)
+              }}
               data-testid="project-new-kind"
             >
               {KINDS.map((value) => (
@@ -148,6 +163,26 @@ function NewProject() {
             </select>
           )}
         </Field>
+
+        {formatsFor(kind).length > 0 ? (
+          <Field label={t('projects.new.format')}>
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={format ?? ''}
+                onChange={(event) => setFormat(event.target.value)}
+                data-testid="project-new-format"
+              >
+                {formatsFor(kind).map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {formatLabel(option.id)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        ) : null}
 
         <Field label={t('projects.new.summary')}>
           {(control) => (
@@ -347,6 +382,11 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
           lede={
             <span className="projectmeta" data-testid="project-meta">
               <span>{kindLabel(project.kind)}</span>
+              {project.format ? (
+                <span data-testid="project-format">{formatLabel(project.format)}</span>
+              ) : formatsFor(project.kind).length > 0 ? (
+                <span data-testid="project-format">{t('projects.format.unset')}</span>
+              ) : null}
               <span>{lifecycleLabel(project.lifecycle)}</span>
               {project.subtype ? <span>{project.subtype}</span> : null}
             </span>

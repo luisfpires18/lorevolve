@@ -61,6 +61,7 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
                 kind = project.Kind,
                 stage = project.Lifecycle,
                 subtype = project.Subtype,
+                format = project.Format,
                 summary = project.Summary,
                 updatedAt = project.UpdatedAt,
                 storyId = (Guid?)null,
@@ -77,6 +78,7 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
                 kind = ProjectKind.Writing,
                 stage = StoryProjects.LifecycleOf(story.Status),
                 subtype = (string?)null,
+                format = (string?)null,
                 summary = story.Premise ?? string.Empty,
                 updatedAt = story.UpdatedAt,
                 storyId = (Guid?)story.Id,
@@ -95,6 +97,7 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
                     project.kind,
                     project.stage,
                     project.subtype,
+                    project.format,
                     project.summary,
                     project.storyId,
                 }),
@@ -127,6 +130,7 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
                 kind = candidate.Kind,
                 stage = candidate.Lifecycle,
                 subtype = candidate.Subtype,
+                format = candidate.Format,
                 summary = candidate.Summary,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -154,6 +158,7 @@ public sealed class LorEvolveMcpProjectTools(LorEvolveDbContext db, McpCaller ca
             project.kind,
             project.stage,
             project.subtype,
+            project.format,
             project.summary,
             universe = new { id = caller.UniverseId, name = caller.UniverseName },
         });

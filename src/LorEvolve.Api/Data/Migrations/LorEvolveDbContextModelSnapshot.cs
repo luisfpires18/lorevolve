@@ -2645,6 +2645,10 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Format")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Kind")
                         .HasColumnType("INTEGER");
 

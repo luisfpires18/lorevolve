@@ -254,7 +254,7 @@ public sealed class ProjectEndpointTests(LorEvolveApiFactory factory) : IClassFi
     // ---------- steps ----------
 
     private static ProjectRequest Request(ProjectDetail project) =>
-        new(project.Name, project.Kind, project.Lifecycle, project.Subtype, project.Summary, project.Universe?.Id, project.Version);
+        new(project.Name, project.Kind, project.Lifecycle, project.Subtype, project.Summary, project.Universe?.Id, project.Version, project.Format);
 
     private static Task<HttpResponseMessage> Post(HttpClient client, ProjectRequest request) =>
         client.PostAsJsonAsync(Projects, request);

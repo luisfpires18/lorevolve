@@ -52,6 +52,15 @@ const projects = {
     film: 'Filme',
     comic: 'Banda desenhada',
   },
+  format: {
+    'feature-film': 'Longa-metragem / Filme',
+    'short-film': 'Curta-metragem',
+    special: 'Especial',
+    trailer: 'Trailer',
+    'tv-show': 'Série de TV',
+    'limited-series': 'Minissérie',
+    unset: 'Formato por definir',
+  },
   lifecycle: {
     planning: 'A planear',
     active: 'Em curso',
@@ -246,6 +255,7 @@ const projects = {
     title: 'Novo projeto',
     name: 'Nome',
     kind: 'Que tipo de trabalho é?',
+    format: 'Formato',
     summary: 'Descrição',
     save: 'Criar projeto',
     saving: 'A criar…',
