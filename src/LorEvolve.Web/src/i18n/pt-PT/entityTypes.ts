@@ -364,8 +364,27 @@ const entityTypes: Dictionary['entityTypes'] = {
       events:
         'Os tipos e métodos de acontecimento que um acontecimento e a verificação de uma regra do mundo podem indicar.',
       gaming: 'Tipos de {game}. Pertencem só a este jogo.',
+      templates:
+        'Os modelos pertencem a este universo. Alterar ou apagar um nunca muda os tipos dos teus jogos.',
     },
-    context: { label: 'Tipos de', lore: 'Lore', gaming: 'Jogos' },
+    context: { label: 'Tipos de', lore: 'Lore', gaming: 'Jogos', templates: 'Modelos' },
+    templates: {
+      new: 'Novo modelo',
+      eyebrow: 'Modelo',
+      nameHint: 'Os jogos que já usaram este modelo ficam com a sua própria cópia.',
+      chip: 'Modelo do universo',
+      empty: 'Ainda não há modelos.',
+      emptyHint:
+        'Um modelo é um tipo que podes reutilizar em vários jogos. Cria um, dá-lhe campos e copia-o para um jogo quando precisares.',
+      emptyHintViewer: 'Este universo ainda não tem modelos.',
+      delete: 'Apagar modelo',
+      deleteTitle: 'Apagar este modelo?',
+      deleteMessage: 'Os tipos de jogo já criados a partir dele ficam como estão.',
+      deleteConfirm: 'Apagar modelo',
+      editField: 'Editar campo',
+      loadFailed: 'Não foi possível carregar os modelos.',
+      actionFailed: 'Não foi possível guardar essa alteração.',
+    },
     game: { label: 'Jogo', loading: 'A carregar jogos…' },
     loadFailed: 'Não foi possível carregar os tipos.',
     movedToPlace: 'Tipo “{name}” movido para o lugar {place} de {total}.',
