@@ -13,6 +13,7 @@ import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
+import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
 import { ProjectOverview } from '../components/ProjectOverview'
 import { ProjectOutline } from '../components/ProjectOutline'
 import { ProjectSeasons } from '../components/ProjectSeasons'
@@ -349,7 +350,12 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
 
   const { project } = read
   const sections = projectSections(project.kind)
-  const section = sections.find((candidate) => candidate.segment === segment)
+  // `entities/<entryId>` is one entry's own screen (#286) inside the project; no other view has a sub-address.
+  const [head, entryId, ...beyond] = segment.split('/')
+  const section =
+    beyond.length === 0 && (entryId === undefined || (head === 'entities' && entryId !== ''))
+      ? sections.find((candidate) => candidate.segment === head)
+      : undefined
 
   /*
    * One address per view (#199): `/app/universes/<universeId>/projects/<id>/<view>`, inside the universe the project
@@ -360,7 +366,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   if (!inUniverse || universeId !== project.universe.id || !section) {
     const target = projectPath(
       project.id,
-      section ? section.segment : sections[0].segment,
+      section ? segment : sections[0].segment,
       project.universe.id,
     )
     return <Navigate to={`${target}${search}${hash}`} replace />
@@ -371,7 +377,19 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
    * Types and Entries into two columns of unequal weight and dropped the structure panel full width underneath. They
    * are the same kind of thing and now read as one stack, separated by a rule, at every width (#184).
    */
-  const body = (
+  const entitiesPath = projectPath(project.id, 'entities', project.universe.id)
+  const body = entryId ? (
+    <div className="projectbody">
+      <ProjectEntityDetailView
+        key={entryId}
+        projectId={project.id}
+        universeId={project.universe.id}
+        entityId={entryId}
+        gameName={project.name}
+        gameHref={entitiesPath}
+      />
+    </div>
+  ) : (
     <div className="projectbody">
       <section className="projects" data-testid="project-page">
         {/*
@@ -422,6 +440,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
           projectId={project.id}
           universeId={project.universe.id}
           reloadKey={schemaVersion}
+          entryHref={(entry) => `${entitiesPath}/${entry.id}`}
           onChanged={() => setSchemaVersion((version) => version + 1)}
         />
       ) : section.segment === 'structure' &&
