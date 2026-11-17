@@ -37,7 +37,12 @@ export default function GameEntitiesPage() {
     return () => controller.abort()
   }, [projectId])
 
-  const project = read?.kind === 'ready' ? read.project : null
+  const loaded = read?.kind === 'ready' ? read.project : null
+  // Only a game of this universe counts: a foreign project's name must not reach the tab title either.
+  const project =
+    loaded !== null && loaded.kind === ProjectKind.Game && loaded.universe.id === universeId
+      ? loaded
+      : null
   useDocumentTitle(project?.name ?? sectionLabel(GAME_ENTITIES))
 
   const back = (
@@ -49,7 +54,7 @@ export default function GameEntitiesPage() {
   if (read === null) return <p className="projects__lede">{t('projects.list.loading')}</p>
 
   // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
-  if (project === null || project.kind !== ProjectKind.Game || project.universe.id !== universeId) {
+  if (project === null) {
     return (
       <EmptyState
         title={t('projects.gameEntities.notFound')}
