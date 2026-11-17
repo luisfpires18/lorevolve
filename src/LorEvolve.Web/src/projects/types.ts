@@ -1,3 +1,4 @@
+import type { UniverseArtworkRef } from '../publishing/types'
 /**
  * A creative project as the API sends it (#138). The enums travel as numbers, so these are the numbers the API
  * declares and nothing here guesses one: an unknown value is refused by the server, not corrected here.
@@ -31,10 +32,14 @@ export interface ProjectUniverse {
 
 export interface ProjectDetail {
   id: string
+  /** The project's cover, framed 16:10 for its console screen (owner, 2026-11-17). */
+  cover?: UniverseArtworkRef | null
   name: string
   kind: ProjectKindValue
   lifecycle: ProjectLifecycleValue
   subtype: string | null
+  /** The production format (#288), an id from `PROJECT_FORMATS`; null when none was chosen. */
+  format: string | null
   summary: string
   /** The universe the project belongs to. Every project belongs to exactly one (#172). */
   universe: ProjectUniverse
@@ -57,6 +62,11 @@ export interface ProjectInput {
   kind: ProjectKindValue
   lifecycle: ProjectLifecycleValue
   subtype: string | null
+  /**
+   * Required on purpose: a save stores exactly what it is sent, so a caller that edits another field must send the
+   * project's current `format` back or the save clears it (#288).
+   */
+  format: string | null
   summary: string
   universeId: string
   expectedVersion: number | null

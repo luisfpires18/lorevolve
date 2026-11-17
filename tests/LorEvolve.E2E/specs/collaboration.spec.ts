@@ -479,7 +479,7 @@ test.describe('each role is shown what it can do', () => {
       for (const [path, control] of [
         ['timeline', 'new-moment'],
         ['world-rules', 'new-world-rule'],
-        ['stories', 'new-story'],
+        ['writing', 'new-story'],
         ['canon', 'evaluate-canon'],
         ['types', 'new-type'],
       ]) {

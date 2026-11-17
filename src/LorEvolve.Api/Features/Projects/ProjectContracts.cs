@@ -12,6 +12,10 @@ namespace LorEvolve.Api.Features.Projects;
 ///
 /// <paramref name="ExpectedVersion"/> is the <c>version</c> the edit was written over, on an update. When the project has
 /// changed since, the save is refused with 409 <c>project_changed</c> and nothing is written. Ignored on create.
+///
+/// <paramref name="Format"/> (#288) is a production format from <see cref="ProjectFormats"/> that belongs to
+/// <paramref name="Kind"/>, or null for none. Like the subtype, a save stores what it is sent: a caller that edits another
+/// field sends the current format back, or the format is cleared.
 /// </summary>
 public sealed record ProjectRequest(
     string? Name,
@@ -20,7 +24,8 @@ public sealed record ProjectRequest(
     string? Subtype,
     string? Summary,
     Guid? UniverseId,
-    int? ExpectedVersion);
+    int? ExpectedVersion,
+    string? Format = null);
 
 /// <summary>The universe a project is linked to, as much of it as a list or a header draws.</summary>
 public sealed record ProjectUniverse(Guid Id, string Name, string? AccentColor, bool IsArchived);
@@ -49,4 +54,12 @@ public sealed record ProjectDetail(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     int Version,
-    Guid? StoryId = null);
+    Guid? StoryId = null,
+    string? Format = null,
+    Publishing.UniverseArtworkRef? Cover = null);
+
+/// <summary>
+/// One kind of a universe's projects in a new order: <paramref name="ProjectIds"/> lists every project of
+/// <paramref name="Kind"/> in that universe, each once.
+/// </summary>
+public sealed record ProjectOrderRequest(ProjectKind? Kind, IReadOnlyList<Guid>? ProjectIds);

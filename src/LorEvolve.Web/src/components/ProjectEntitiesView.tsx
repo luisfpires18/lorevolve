@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { Plus } from 'lucide-react'
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { listProjectTypes } from '../projectEntities/api'
-import type { ProjectEntityType } from '../projectEntities/types'
+import type { ProjectEntitySummary, ProjectEntityType } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
+import { ActionIcon } from './ActionIcon'
+import { ActionMenu } from './ActionMenu'
 import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
+import { PageHeader } from './PageHeader'
+import { useUniverseAccess } from '../universes/access'
 import { ProjectEntries } from './ProjectEntries'
 import { ProjectSchema } from './ProjectSchema'
-import { t, useI18n } from '../i18n'
+import { t, tx, useI18n } from '../i18n'
 
 /**
  * A project's Entities view (#196): its types as cards, one type's entries a page at a time, and the type editor as an
@@ -21,6 +26,8 @@ export function ProjectEntitiesView({
   universeId,
   reloadKey,
   onChanged,
+  entryHref,
+  typesHref,
 }: {
   projectId: string
   /** The universe the project belongs to: an entry's pictures are stored under it. */
@@ -28,11 +35,18 @@ export function ProjectEntitiesView({
   /** The page's `schemaVersion`: bumped by a schema write, so the cards and the entries re-read what they offer. */
   reloadKey: number
   onChanged: () => void
+  /** Where an entry's card opens (#286); unset, a card has no page to open. */
+  entryHref?: (entry: ProjectEntitySummary) => string
+  /**
+   * The project's own Types view, when it has one (a Game, owner 2026-11-17): the type editor lives there, so the old
+   * `?manage=types` address leads to it and the cards head the screen as Lore's page does. Unset, the editor stays here.
+   */
+  typesHref?: string
 }) {
   useI18n()
   const [params] = useSearchParams()
   // Explicit, because a relative link under the project's splat route would resolve without the view's segment.
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const typeId = params.get('type')
   const managing = params.get('manage') === 'types'
   // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
@@ -43,6 +57,14 @@ export function ProjectEntitiesView({
       {t('projects.entities.title')}
     </Link>
   )
+
+  if (managing && typesHref) {
+    // The old address keeps whatever else it carried, as every other project address does on its way to its view.
+    const rest = new URLSearchParams(params)
+    rest.delete('manage')
+    const query = rest.toString()
+    return <Navigate to={`${typesHref}${query ? `?${query}` : ''}${hash}`} replace />
+  }
 
   if (managing) {
     return (
@@ -69,6 +91,8 @@ export function ProjectEntitiesView({
           openEntryId={entryId ?? undefined}
           reloadKey={reloadKey}
           crumb={back}
+          entryHref={entryHref}
+          startAdding={params.get('add') === '1'}
         />
       </div>
     )
@@ -80,6 +104,7 @@ export function ProjectEntitiesView({
       projectId={projectId}
       reloadKey={reloadKey}
       onChanged={onChanged}
+      typesHref={typesHref}
     />
   )
 }
@@ -93,12 +118,15 @@ function TypeCards({
   projectId,
   reloadKey,
   onChanged,
+  typesHref,
 }: {
   pathname: string
   projectId: string
   reloadKey: number
   onChanged: () => void
+  typesHref?: string
 }) {
+  const access = useUniverseAccess()
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
   // A project type's own entry count is what the card reads as listed; its drill-in lists that type's entries only.
@@ -132,19 +160,54 @@ function TypeCards({
 
   return (
     <section className="projects" data-testid="project-entity-types">
-      <header className="projects__head">
-        <div className="projects__headtext">
-          <h2 className="sectionrule">{t('projects.entities.title')}</h2>
-          <p className="projects__lede">{t('projects.entities.lede')}</p>
-        </div>
-        <Link
-          to={`${pathname}?manage=types`}
-          className="button button--secondary"
-          data-testid="project-types-manage"
-        >
-          {t('projects.entities.manage')}
-        </Link>
-      </header>
+      {typesHref ? (
+        // Lore's own page head: the screen's name, one line on what it holds, and New entry by type on the right.
+        <PageHeader
+          title={t('projects.entities.title')}
+          titleTestId="project-entities-title"
+          lede={t('projects.entities.lede')}
+          actions={
+            access.editContent && types.length > 0 ? (
+              <ActionMenu
+                label={t('lore.page.newEntry')}
+                triggerClassName="button"
+                triggerTestId="project-entities-new"
+                trigger={
+                  <>
+                    <ActionIcon icon={Plus} />
+                    {t('lore.page.newEntry')}
+                  </>
+                }
+              >
+                {tree.ordered.map((node) => (
+                  <Link
+                    key={node.type.id}
+                    className="actionmenu__item"
+                    to={`${pathname}?type=${node.type.id}&add=1`}
+                    data-testid={`project-entities-new-${node.type.id}`}
+                  >
+                    {tx('lore.page.newType', { type: <bdi>{node.type.name}</bdi> })}
+                  </Link>
+                ))}
+              </ActionMenu>
+            ) : null
+          }
+        />
+      ) : (
+        <header className="projects__head">
+          <div className="projects__headtext">
+            <h2 className="sectionrule">{t('projects.entities.title')}</h2>
+            <p className="projects__lede">{t('projects.entities.lede')}</p>
+          </div>
+          <Link
+            to={`${pathname}?manage=types`}
+            className="button button--secondary"
+            data-testid="project-types-manage"
+          >
+            {t('projects.entities.manage')}
+          </Link>
+        </header>
+      )}
 
       {failed ? (
         <p role="alert" data-testid="project-entity-types-failed">

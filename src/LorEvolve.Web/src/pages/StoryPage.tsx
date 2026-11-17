@@ -269,7 +269,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         title={t('stories.page.missing.title')}
         hint={tx('stories.page.missing.hint', {
           link: (
-            <Link to={`/app/universes/${universe.id}/stories`}>
+            <Link to={`/app/universes/${universe.id}/writing`}>
               {t('stories.page.missing.back')}
             </Link>
           ),
@@ -731,7 +731,7 @@ function StoryView({ view }: { view: StoryViewName }) {
     if (removed) {
       // The last Writing project may have gone to the Trash: the sidebar follows (#272).
       refreshProjects().catch(() => undefined)
-      navigate(`/app/universes/${universe.id}/stories`)
+      navigate(`/app/universes/${universe.id}/writing`)
     }
   }
 
@@ -851,7 +851,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       <PageHeader
         crumb={
           <nav className="story__crumbs" aria-label={t('stories.page.breadcrumb')}>
-            <Link to={`/app/universes/${universe.id}/stories`}>{t('stories.page.crumb')}</Link>
+            <Link to={`/app/universes/${universe.id}/writing`}>{t('stories.page.crumb')}</Link>
           </nav>
         }
         title={<bdi>{story.title}</bdi>}

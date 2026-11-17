@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.Covers;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +26,9 @@ public static class ProjectEndpoints
 {
     /// <summary>The machine-readable marker on the 409 for a save written over a project that has since changed.</summary>
     public const string ChangedCode = "project_changed";
+    public const string InCinemaPhaseCode = "project_in_cinema_phase";
+
+    public const string InComicCollectionCode = "project_in_comic_collection";
 
     public static IEndpointRouteBuilder MapProjectEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -36,6 +41,12 @@ public static class ProjectEndpoints
         group.MapGet("/{id:guid}", GetAsync).WithName("GetProject");
         group.MapPut("/{id:guid}", UpdateAsync).WithName("UpdateProject");
 
+        endpoints.MapGroup("/api/universes/{universeId:guid}/projects")
+            .WithTags("Projects")
+            .RequireAuthorization()
+            .MapPut("/order", ReorderAsync)
+            .WithName("ReorderProjects");
+
         return endpoints;
     }
 
@@ -43,18 +54,20 @@ public static class ProjectEndpoints
     public const int MaxPageSize = 100;
 
     /// <summary>
-    /// One page of the projects the caller can reach, most recently updated first. <paramref name="universeId"/> narrows
-    /// to one universe's projects; <paramref name="offset"/> and <paramref name="limit"/> pick the page, and the limit
-    /// is never more than <see cref="MaxPageSize"/>, so the payload is bounded whatever the caller asks (#198).
-    /// <paramref name="include"/> names one project or story the caller is inside: when it is readable and not on the
-    /// page, it is added after the page, so a sidebar showing the first few always shows the one being read.
+    /// One page of the projects the caller can reach, most recently updated first, the stored projects in their authored
+    /// order (#198). <paramref name="universeId"/> narrows to one universe's projects; <paramref name="offset"/> and
+    /// <paramref name="limit"/> pick the page, and the limit is never more than <see cref="MaxPageSize"/>, so the payload
+    /// is bounded whatever the caller asks. <paramref name="include"/> names one project or story the caller is inside:
+    /// when it is readable and not on the page, it is added after the page, so a sidebar showing the first few always
+    /// shows the one being read. Every row carries its cover.
     ///
     /// <b>How two sources are paged as one.</b> The rows are the stored projects and every readable Story shown as a
-    /// Writing Project (#140), and one ordering runs over both. Each source is read in that ordering and cut at
-    /// <c>offset + limit</c> in the database, which is enough: no row past that point in its own source can be inside
-    /// the first <c>offset + limit</c> rows of the two together. The two cut lists are then merged, newest first, and
-    /// the page is taken from the merge. A tie on the update time keeps each source's own order (its id) and puts a
-    /// stored project before a story, so a page boundary falls in the same place on every request.
+    /// Writing Project (#140). Update times interleave the two, newest first: they decide which places are a project's
+    /// and which a story's, and the projects then take their places in the author's order (their place, then the most
+    /// recently updated, then id), so reordering projects never moves a story. Each source is read and cut at
+    /// <c>offset + limit</c> in the database, which is enough: no row past that point in its own ordering can be inside
+    /// the first <c>offset + limit</c> rows of the two together. A tie on the update time puts a stored project before
+    /// a story, so a page boundary falls in the same place on every request.
     ///
     /// There is no filter for projects belonging to no universe, because there are none: every project is inside
     /// exactly one (#171).
@@ -99,8 +112,15 @@ public static class ProjectEndpoints
         }
 
         var ownRows = await projects
+            .OrderBy(project => project.SortOrder)
+            .ThenByDescending(project => project.UpdatedAt)
+            .ThenBy(project => project.Id)
+            .Take(reach)
+            .ToListAsync(cancellationToken);
+        var ownTimes = await projects
             .OrderByDescending(project => project.UpdatedAt)
             .ThenBy(project => project.Id)
+            .Select(project => project.UpdatedAt)
             .Take(reach)
             .ToListAsync(cancellationToken);
         var storyRows = await stories
@@ -109,15 +129,21 @@ public static class ProjectEndpoints
             .Take(reach)
             .ToListAsync(cancellationToken);
 
-        // Each source keeps its database order through the merge; the sort only interleaves them by update time.
-        var page = ownRows.Select((project, index) => (Row: Detail(project, userId), Source: 0, Index: index))
-            .Concat(storyRows.Select((story, index) => (Row: StoryProjects.Detail(story, userId), Source: 1, Index: index)))
-            .OrderByDescending(candidate => candidate.Row.UpdatedAt)
-            .ThenBy(candidate => candidate.Source)
-            .ThenBy(candidate => candidate.Index)
+        // Update times decide which places are a project's and which a story's; the projects fill theirs in the
+        // author's order. Each source keeps its database order, and a tie puts a stored project before a story.
+        var nextProject = 0;
+        var nextStory = 0;
+        var page = ownTimes.Select((updatedAt, index) => (UpdatedAt: updatedAt, Source: 0, Index: index))
+            .Concat(storyRows.Select((story, index) => (story.UpdatedAt, Source: 1, Index: index)))
+            .OrderByDescending(slot => slot.UpdatedAt)
+            .ThenBy(slot => slot.Source)
+            .ThenBy(slot => slot.Index)
+            .Select(slot => slot.Source == 0
+                ? Detail(ownRows[nextProject++], userId)
+                : StoryProjects.Detail(storyRows[nextStory++], userId))
+            .ToList()
             .Skip(offset)
             .Take(limit)
-            .Select(candidate => candidate.Row)
             .ToList();
 
         if (include is { } wanted && page.All(row => row.Id != wanted))
@@ -132,7 +158,101 @@ public static class ProjectEndpoints
             }
         }
 
-        return Results.Ok(page);
+        return Results.Ok(await WithCoversAsync(db, page, cancellationToken));
+    }
+
+    /// <summary>Each row with its cover: a project's own, or for a story shown as a project the story's.</summary>
+    private static async Task<List<ProjectDetail>> WithCoversAsync(
+        LorEvolveDbContext db,
+        List<ProjectDetail> rows,
+        CancellationToken cancellationToken)
+    {
+        var projectCovers = await CoverEndpoints.ProjectCoversAsync(
+            db, [.. rows.Where(row => row.StoryId is null).Select(row => row.Id)], cancellationToken);
+        var storyCovers = await CoverEndpoints.StoryCoversAsync(
+            db, [.. rows.Where(row => row.StoryId is not null).Select(row => row.Id)], cancellationToken);
+
+        return
+        [
+            .. rows.Select(row => row with
+            {
+                Cover = (row.StoryId is null ? projectCovers : storyCovers).GetValueOrDefault(row.Id),
+            }),
+        ];
+    }
+
+    /// <summary>The next place at the end of a universe's projects.</summary>
+    private static async Task<int> NextPlaceAsync(LorEvolveDbContext db, Guid universeId, CancellationToken cancellationToken) =>
+        (await db.CreativeProjects
+            .Where(project => project.UniverseId == universeId)
+            .MaxAsync(project => (int?)project.SortOrder, cancellationToken) ?? -1) + 1;
+
+    /// <summary>
+    /// One kind of a universe's projects in a new order: the whole list of that kind, each once. The places the kind
+    /// already held are handed out again in the new order, so projects of other kinds keep theirs. Changes no project's
+    /// edit version or dates: the order is the list's, not a project's.
+    /// </summary>
+    private static async Task<IResult> ReorderAsync(
+        Guid universeId,
+        [FromBody] ProjectOrderRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        if (await UniverseAccess.DenyAsync(db, universeId, principal, UniverseCapability.EditContent, cancellationToken) is { } denied)
+        {
+            return denied;
+        }
+
+        if (request.Kind is not { } kind || !Enum.IsDefined(kind))
+        {
+            return Problems.Field("kind", "Name the kind of project to order.");
+        }
+
+        if (request.ProjectIds is not { } ids)
+        {
+            return Refused("List the universe's projects in order.");
+        }
+
+        if (ids.Distinct().Count() != ids.Count)
+        {
+            return Refused("List each project once.");
+        }
+
+        var projects = await db.CreativeProjects
+            .Where(project => project.UniverseId == universeId && project.Kind == kind)
+            .ToListAsync(cancellationToken);
+
+        var byId = projects.ToDictionary(project => project.Id);
+        if (ids.Count != projects.Count || ids.Any(id => !byId.ContainsKey(id)))
+        {
+            return Refused("List every project of this kind in this universe exactly once.");
+        }
+
+        var places = projects
+            .OrderBy(project => project.SortOrder)
+            .ThenByDescending(project => project.UpdatedAt)
+            .ThenBy(project => project.Id)
+            .Select(project => project.SortOrder)
+            .ToList();
+
+        // A place two projects share is spread, so the new order is strict.
+        for (var index = 1; index < places.Count; index++)
+        {
+            places[index] = Math.Max(places[index], places[index - 1] + 1);
+        }
+
+        foreach (var (id, place) in ids.Zip(places))
+        {
+            byId[id].SortOrder = place;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return await ListAsync(principal, db, cancellationToken, universeId);
+
+        static IResult Refused(string message) =>
+            Problems.Field("projectIds", message);
     }
 
     private static async Task<IResult> GetAsync(
@@ -147,7 +267,7 @@ public static class ProjectEndpoints
             .Include(candidate => candidate.Universe)
             .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
 
-        return project is null ? Results.NotFound() : Results.Ok(Detail(project, userId));
+        return project is null ? Results.NotFound() : Results.Ok((await WithCoversAsync(db, [Detail(project, userId)], cancellationToken))[0]);
     }
 
     private static async Task<IResult> CreateAsync(
@@ -176,8 +296,10 @@ public static class ProjectEndpoints
             Kind = request.Kind,
             Lifecycle = request.Lifecycle,
             Subtype = Cleaned(request.Subtype),
+            Format = Cleaned(request.Format),
             Name = request.Name!.Trim(),
             Summary = request.Summary ?? string.Empty,
+            SortOrder = await NextPlaceAsync(db, request.UniverseId!.Value, cancellationToken),
             CreatedAt = now,
             UpdatedAt = now,
             Version = 1,
@@ -238,15 +360,58 @@ public static class ProjectEndpoints
             return refused;
         }
 
+        // A phase holds only this universe's films and series, so a move or kind change waits until it leaves the phase.
+        if ((project.UniverseId != request.UniverseId || !CinemaSagaLimits.Holds(request.Kind))
+            && await db.CinemaPhaseMemberships.AnyAsync(member => member.ProjectId == id, cancellationToken))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "In a Cinema phase",
+                detail: "This production is in a Cinema phase. Remove it from its phase first.",
+                extensions: new Dictionary<string, object?> { ["code"] = InCinemaPhaseCode });
+        }
+
+        // A story arc, event or volume holds only this universe's comic parts, so a move or kind change waits until
+        // they leave it. A Volume (#297) belongs to its project, so even an empty one blocks the change.
+        if ((project.UniverseId != request.UniverseId || request.Kind != ProjectKind.Comic)
+            && (await db.ComicCollectionEntries.AnyAsync(entry => entry.Node!.ProjectId == id, cancellationToken)
+                || await db.ComicCollections.AnyAsync(collection => collection.ProjectId == id, cancellationToken)))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "In a story arc, event or volume",
+                detail: "This comic has volumes, or part of it is in a story arc or an event. Remove them first.",
+                extensions: new Dictionary<string, object?> { ["code"] = InComicCollectionCode });
+        }
+
         var name = request.Name!.Trim();
         var subtype = Cleaned(request.Subtype);
+        var format = Cleaned(request.Format);
         var summary = request.Summary ?? string.Empty;
         var unchanged = project.Name == name
             && project.Kind == request.Kind
             && project.Lifecycle == request.Lifecycle
             && project.Subtype == subtype
+            && project.Format == format
             && project.Summary == summary
             && project.UniverseId == request.UniverseId!.Value;
+
+        // A Comic format change must not hide authored nodes (#294): refuse rather than convert or drop them.
+        if (project.Kind == ProjectKind.Comic && request.Kind == ProjectKind.Comic && project.Format != format
+            && !ProjectStructures.Fits(
+                ProjectStructures.For(format),
+                (await db.ProjectNodes
+                    .Where(node => node.ProjectId == id)
+                    .Select(node => new { node.Level, ParentLevel = node.Parent == null ? null : node.Parent.Level })
+                    .ToListAsync(cancellationToken))
+                .Select(node => (node.Level, node.ParentLevel))))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "The format cannot hold this project.",
+                detail: "This project has content that the new format cannot hold. Move or delete it first.",
+                extensions: new Dictionary<string, object?> { ["code"] = "project_structure_conflict" });
+        }
 
         if (!unchanged)
         {
@@ -254,8 +419,14 @@ public static class ProjectEndpoints
             project.Kind = request.Kind;
             project.Lifecycle = request.Lifecycle;
             project.Subtype = subtype;
+            project.Format = format;
             project.Summary = summary;
-            project.UniverseId = request.UniverseId!.Value;
+            if (project.UniverseId != request.UniverseId!.Value)
+            {
+                project.SortOrder = await NextPlaceAsync(db, request.UniverseId.Value, cancellationToken);
+            }
+
+            project.UniverseId = request.UniverseId.Value;
             project.UpdatedAt = DateTime.UtcNow;
             project.Version++;
             await db.SaveChangesAsync(cancellationToken);
@@ -305,6 +476,10 @@ public static class ProjectEndpoints
             errors["subtype"] = [$"A subtype is at most {ProjectLimits.SubtypeMaxLength} characters."];
         }
 
+        if (Cleaned(request.Format) is { } format && !ProjectFormats.Allows(request.Kind, format))
+        {
+            errors["format"] = ["That is not a format for this kind of project."];
+        }
         if ((request.Summary?.Length ?? 0) > ProjectLimits.SummaryMaxLength)
         {
             errors["summary"] = [$"A summary is at most {ProjectLimits.SummaryMaxLength} characters."];
@@ -327,7 +502,7 @@ public static class ProjectEndpoints
             .Include(candidate => candidate.Universe)
             .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
 
-        return project is null ? null : Detail(project, userId);
+        return project is null ? null : (await WithCoversAsync(db, [Detail(project, userId)], cancellationToken))[0];
     }
 
     /// <summary>One project as a client reads it, mapped after the rows are in hand.</summary>
@@ -345,5 +520,6 @@ public static class ProjectEndpoints
             project.OwnerId == userId,
             Utc(project.CreatedAt),
             Utc(project.UpdatedAt),
-            project.Version);
+            project.Version,
+            Format: project.Format);
 }

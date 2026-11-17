@@ -98,9 +98,17 @@ test.describe('Projects navigation', () => {
     await expect(page.getByTestId('projects-new')).toHaveCount(0)
     await expect(page.getByTestId('projects-all')).toHaveCount(0)
 
-    // The project is reached from the Projects page.
+    // The project is reached from the Projects directory, through its Writing card.
     await page.getByTestId('workspace-projects').click()
-    await page.getByTestId(`projects-row-${first.id}`).click()
+    await page
+      .getByTestId('projects-directory-card')
+      .and(page.locator('[data-section="writing"]'))
+      .click()
+    await page
+      .getByTestId('writing-project-row')
+      .filter({ hasText: first.name })
+      .getByRole('link')
+      .click()
     await expect(page.getByTestId('project-name')).toContainText(first.name)
   })
 
@@ -113,9 +121,17 @@ test.describe('Projects navigation', () => {
 
     await page.goto(`/app/universes/${world.id}`)
 
-    // The project itself, from the universe's Projects page.
+    // The project itself, from the universe's Projects directory and its Writing list.
     await page.getByTestId('workspace-projects').click()
-    await page.getByTestId(`projects-row-${inWorld.id}`).click()
+    await page
+      .getByTestId('projects-directory-card')
+      .and(page.locator('[data-section="writing"]'))
+      .click()
+    await page
+      .getByTestId('writing-project-row')
+      .filter({ hasText: inWorld.name })
+      .getByRole('link')
+      .click()
     await expect(page).toHaveURL(
       new RegExp(`/app/universes/${world.id}/projects/${inWorld.id}/overview$`),
     )
@@ -210,8 +226,11 @@ test.describe('Projects navigation', () => {
     await page.getByTestId('project-new-kind').selectOption('1')
     await page.getByTestId('project-new-save').click()
 
-    await expect(page.getByTestId('project-name')).toContainText(name)
-    await expect(page.getByTestId('project-meta')).toContainText('Game')
+    // A game opens on Entities, headed by its own name and facts.
+    await expect(page.getByTestId('project-name')).toHaveText(name)
+    await expect(page.getByTestId('project-facts').getByTestId('project-meta')).toContainText(
+      'Game',
+    )
 
     // Nothing in the list pushes the phone's viewport sideways.
     await page.goto('/app/projects')

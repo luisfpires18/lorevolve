@@ -63,13 +63,17 @@ test.describe('Project sections', () => {
     const game = await project(page, world.id, 1)
     const base = `/app/universes/${world.id}/projects/${game.id}`
 
-    // The bare address leads to the kind's first view.
+    // The bare address leads to the kind's first view. A game has no overview: it opens on Entities, its facts under
+    // the tabs.
     await page.goto(base)
-    await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
-    await expect(page.getByTestId('project-name')).toContainText(game.name)
+    await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
+    // A game heads its own page: its name and facts over its views as chips, with no breadcrumb (owner, 2026-11-17).
+    await expect(page.getByTestId('project-facts')).toBeVisible()
+    await expect(page.getByTestId('project-name')).toBeVisible()
+    await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
 
     // The tab bar lists the kind's views, in order, and the sidebar lists none of them.
-    const expected = ['overview', 'entities', 'systems']
+    const expected = ['entities', 'types', 'systems']
     expect(await tabSegments(page)).toEqual(expected)
     await expect(page.locator('[data-testid^="project-pages-"]')).toHaveCount(0)
 
@@ -89,15 +93,17 @@ test.describe('Project sections', () => {
     }
 
     // Each view renders one panel and never another's (#193). A project with no types opens Entities on the starter
-    // offer, and the overview no longer holds the schema (#196).
+    // offer, and the type editor is its own tab (#196).
     await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-schema-offer')).toBeVisible()
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
-    await page.getByTestId('projecttab-overview').click()
-    // The overview is its own view now (#195); with no types and no entries it is that view's empty state, and it
-    // still holds neither the schema nor the entries.
-    await expect(page.getByTestId('project-overview-empty')).toBeVisible()
-    await expect(page.getByTestId('project-schema')).toHaveCount(0)
+    await page.getByTestId('projecttab-types').click()
+    await expect(page.getByTestId('project-schema')).toBeVisible()
+    // Headed as the universe Types page's Gaming view is: its title, and a lede naming this game.
+    await expect(page.getByTestId('project-types-title')).toHaveText('Types')
+    await expect(page.getByTestId('project-schema')).toContainText(
+      `Types of ${game.name}. They belong to this game only.`,
+    )
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await page.getByTestId('projecttab-systems').click()
     await expect(page.getByTestId('project-view-empty-systems')).toBeVisible()
@@ -123,13 +129,13 @@ test.describe('Project sections', () => {
     await page.evaluate(() => Object.assign(window, { noReload: true }))
 
     // The write happens in the editor behind the action, then the author moves by links, without a reload.
-    await page.getByTestId('project-types-manage').click()
+    await page.getByTestId('projecttab-types').click()
     // The same drawer the universe's Types screen opens.
     await page.getByTestId('project-type-add').click()
     await page.getByTestId('type-name').fill('Encounter')
     await page.getByTestId('save-type').click()
     await expect(page.getByTestId('project-types')).toContainText('Encounter')
-    await page.getByTestId('project-entities-back').click()
+    await page.getByTestId('projecttab-entities').click()
 
     await expect(cards.getByTestId('lore-type-card')).toHaveCount(2)
     await cards.getByRole('link', { name: /Encounter/ }).click()
@@ -230,23 +236,23 @@ test.describe('Project sections', () => {
     const canonical = `/app/universes/${world.id}/projects/${game.id}/entities`
 
     // The account-level address, a deep link included, redirects and keeps the query and the hash (#199).
-    await page.goto(`/app/projects/${game.id}/entities?manage=types#top`)
-    await expect(page).toHaveURL(new RegExp(`${canonical}\\?manage=types#top$`))
+    await page.goto(`/app/projects/${game.id}/entities?probe=1#top`)
+    await expect(page).toHaveURL(new RegExp(`${canonical}\\?probe=1#top$`))
+
+    // For a game the old Manage types address is its Types tab, keeping the rest of its query and its hash.
+    const types = canonical.replace(/entities$/, 'types')
+    await page.goto(`/app/projects/${game.id}/entities?manage=types`)
+    await expect(page).toHaveURL(new RegExp(`${types}$`))
+    await page.goto(`/app/projects/${game.id}/entities?manage=types&probe=1#top`)
+    await expect(page).toHaveURL(new RegExp(`${types}\\?probe=1#top$`))
 
     // A universe the project does not belong to lands on the one it does.
     await page.goto(`/app/universes/${other.id}/projects/${game.id}/entities`)
     await expect(page).toHaveURL(new RegExp(`${canonical}$`))
 
-    // The breadcrumb names the universe and the project, and the universe crumb opens the universe.
-    const crumbs = page.getByTestId('project-breadcrumb')
-    await expect(crumbs).toHaveAttribute('aria-label', 'Breadcrumb')
-    await expect(page.getByTestId('project-breadcrumb-project')).toHaveText(game.name)
-    await expect(page.getByTestId('project-breadcrumb-project')).toHaveAttribute(
-      'aria-current',
-      'page',
-    )
-    await page.getByTestId('project-breadcrumb-universe').click()
-    await expect(page).toHaveURL(new RegExp(`/app/universes/${world.id}$`))
+    // A game is headed by its own name rather than a breadcrumb; the sidebar is the way back to the universe.
+    await expect(page.getByTestId('project-name')).toHaveText(game.name)
+    await expect(page.getByTestId('project-breadcrumb')).toHaveCount(0)
   })
 
   test('on a narrow screen the tab bar is still the only copy of the views', async ({ page }) => {

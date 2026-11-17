@@ -371,7 +371,7 @@ public static partial class UniverseEndpoints
             .ExecuteDeleteAsync(cancellationToken);
 
         // The stored keys, as written - never rebuilt from the naming convention - while the rows still exist.
-        var pictureKeys = (await db.EntityImages
+        var pictureKeys = (await db.EntityImages.IgnoreQueryFilters()
                 .Where(image => image.Entity!.UniverseId == universe.Id)
                 .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
                 .ToListAsync(cancellationToken))
@@ -387,6 +387,23 @@ public static partial class UniverseEndpoints
                     .Select(image => new { image.OriginalKey, image.CropKey })
                     .ToListAsync(cancellationToken))
                 .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
+            // A comic page's or panel's picture (#295), going with its project in the cascade.
+            .Concat((await db.ProjectNodeImages
+                    .Where(image => image.Node!.Project!.UniverseId == universe.Id)
+                    .Select(image => new { image.OriginalKey, image.CropKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(image => new[] { image.OriginalKey, image.CropKey }))
+            // Story and project covers, going with their subjects in the cascade.
+            .Concat((await db.StoryCovers
+                    .Where(cover => cover.UniverseId == universe.Id)
+                    .Select(cover => new { cover.OriginalKey, cover.CardKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(cover => new[] { cover.OriginalKey, cover.CardKey }))
+            .Concat((await db.ProjectCovers
+                    .Where(cover => cover.UniverseId == universe.Id)
+                    .Select(cover => new { cover.OriginalKey, cover.CardKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(cover => new[] { cover.OriginalKey, cover.CardKey }))
             .ToArray();
 
         var artworkKeys = (await db.UniverseArtworks

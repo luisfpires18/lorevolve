@@ -1,19 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp } from 'lucide-react'
-import { Link, useOutletContext } from 'react-router-dom'
-import { ActionIcon } from '../components/ActionIcon'
-import { ActionMenu } from '../components/ActionMenu'
+import { useEffect, useState } from 'react'
+import { Link, Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import { ApiError } from '../lib/api'
 import { listAllProjects } from '../projects/api'
-import { kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
-import type { ProjectDetail, ProjectKindValue } from '../projects/types'
+import { formatLabel, kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
+import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
-import { listStories, reorderStories } from '../stories/api'
-import { useUniverseAccess } from '../universes/access'
-import { WRITING_PROJECTS, sectionLabel, type Section } from '../universes/sections'
+import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 /**
@@ -22,8 +16,15 @@ import type { WorkspaceContext } from './UniverseWorkspace'
  * from whether the key still matches.
  */
 type LoadState =
-  | { kind: 'ready'; for: string; projects: ProjectDetail[]; ordered: boolean }
-  | { kind: 'failed'; for: string }
+  { kind: 'ready'; for: string; projects: ProjectDetail[] } | { kind: 'failed'; for: string }
+
+/** The empty wording of a category list, named by its first kind; Series reads as Cinema, like Film. */
+function categoryEmpty(kind: ProjectKindValue) {
+  if (kind === ProjectKind.Game) return 'projects.list.emptyGame' as const
+  if (kind === ProjectKind.Comic) return 'projects.list.emptyComic' as const
+  if (kind === ProjectKind.Writing) return 'projects.list.emptyWriting' as const
+  return 'projects.list.emptyCinema' as const
+}
 
 /**
  * Every project an author can reach, most recently updated first, each inside the universe it belongs to.
@@ -37,24 +38,21 @@ export default function ProjectsPage({
   inUniverse = false,
   kinds,
   section,
+  rowPath = projectRowPath,
 }: {
   inUniverse?: boolean
   /** Only these kinds: the sidebar's Writing, Gaming, Cinema, Comic and Game Entities open this list narrowed (#272). */
   kinds?: readonly ProjectKindValue[]
   /** The sidebar section this list is the page of, which names it. */
   section?: Section
+  /** Where a row opens. Game Entities opens a game's directory instead of its project page (#284). */
+  rowPath?: (project: ProjectDetail) => string
 }) {
   useI18n()
-  const access = useUniverseAccess()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? workspace?.universe.id : undefined
   const requested = universeId ?? 'all'
   const [state, setState] = useState<LoadState | null>(null)
-  const [announcement, setAnnouncement] = useState('')
-  const [moveError, setMoveError] = useState<string | null>(null)
-  const isMoving = useRef(false)
-  // Writing is the one family with an order of the author's own: the stories' (#272 follow-up). The rest stay by update.
-  const reorderable = section === WRITING_PROJECTS && universeId !== undefined
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
   useDocumentTitle(heading)
@@ -62,78 +60,13 @@ export default function ProjectsPage({
   useEffect(() => {
     const controller = new AbortController()
     // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198).
-    Promise.all([
-      listAllProjects(universeId ? { universeId } : {}, controller.signal),
-      reorderable && universeId // The order is a nicety: a refused read leaves the list by update time, without the move menu.
-        ? listStories(universeId, controller.signal).catch(() => null)
-        : null,
-    ])
-      .then(([projects, stories]) =>
-        setState({
-          kind: 'ready',
-          for: requested,
-          projects: stories
-            ? inStoryOrder(
-                projects,
-                stories.map((story) => story.id),
-              )
-            : projects,
-          ordered: stories !== null,
-        }),
-      )
+    listAllProjects(universeId ? { universeId } : {}, controller.signal)
+      .then((projects) => setState({ kind: 'ready', for: requested, projects }))
       .catch(() => {
         if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })
       })
     return () => controller.abort()
-  }, [universeId, requested, reorderable])
-
-  /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
-  async function move(project: ProjectDetail, by: -1 | 1) {
-    if (state?.kind !== 'ready' || !universeId || isMoving.current) return
-    const before = state.projects
-    // Only stories have an order to move in: the API takes exactly the live stories, each once.
-    const stories = before.filter((candidate) => candidate.storyId)
-    const from = stories.findIndex((candidate) => candidate.id === project.id)
-    const to = from + by
-    if (from < 0 || to < 0 || to >= stories.length) return
-
-    const moved = [...stories]
-    moved.splice(to, 0, ...moved.splice(from, 1))
-    const after = [...moved, ...before.filter((candidate) => !candidate.storyId)]
-    isMoving.current = true
-    setMoveError(null)
-    setState({ kind: 'ready', for: requested, projects: after, ordered: true })
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLElement>(
-          `[data-project-id="${project.id}"] [data-testid="story-actions"]`,
-        )
-        ?.focus(),
-    )
-    try {
-      const saved = await reorderStories(
-        universeId,
-        moved.map((candidate) => candidate.storyId ?? candidate.id),
-      )
-      setState({
-        kind: 'ready',
-        for: requested,
-        projects: inStoryOrder(
-          after,
-          saved.map((story) => story.id),
-        ),
-        ordered: true,
-      })
-      setAnnouncement(
-        t('stories.browse.moved', { title: project.name, n: to + 1, total: moved.length }),
-      )
-    } catch (error: unknown) {
-      setState({ kind: 'ready', for: requested, projects: before, ordered: true })
-      setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
-    } finally {
-      isMoving.current = false
-    }
-  }
+  }, [universeId, requested])
 
   if (state === null || state.for !== requested) {
     return <p className="projects__lede">{t('projects.list.loading')}</p>
@@ -147,7 +80,10 @@ export default function ProjectsPage({
     ? state.projects.filter((project) => kinds.includes(project.kind))
     : state.projects
 
-  const storyRows = shown.filter((project) => project.storyId)
+  // One game is no choice: go straight to it. `replace` keeps Back from landing on a picker that would bounce again.
+  if (rowPath !== projectRowPath && shown.length === 1) {
+    return <Navigate to={rowPath(shown[0])} replace />
+  }
 
   return (
     <section className="projects" data-testid="projects-page">
@@ -164,7 +100,7 @@ export default function ProjectsPage({
           universeId ? (
             <Link
               className="button"
-              to={`/app/projects/new?universeId=${universeId}`}
+              to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
               data-testid="projects-page-new"
             >
               {t('projects.nav.new')}
@@ -173,19 +109,10 @@ export default function ProjectsPage({
         }
       />
 
-      <p className="visually-hidden" role="status" data-testid="projects-announcement">
-        {announcement}
-      </p>
-      {moveError ? (
-        <p className="form__message" role="alert" data-testid="projects-move-error">
-          {moveError}
-        </p>
-      ) : null}
-
       {shown.length === 0 ? (
         <EmptyState
-          title={t('projects.list.empty')}
-          hint={t('projects.list.emptyHint')}
+          title={t(kinds ? categoryEmpty(kinds[0]) : 'projects.list.empty')}
+          hint={t(kinds ? 'projects.list.emptyCategoryHint' : 'projects.list.emptyHint')}
           testId="projects-empty"
         />
       ) : (
@@ -196,52 +123,22 @@ export default function ProjectsPage({
               key={project.id}
               data-testid="projects-item"
               data-project-id={project.id}
+              data-kind={project.kind}
             >
               <Link
                 className="storyrow__title"
-                to={projectRowPath(project)}
+                to={rowPath(project)}
                 data-testid={`projects-row-${project.id}`}
               >
                 <bdi>{project.name}</bdi>
               </Link>
               <p className="storyrow__meta">
                 <span>{kindLabel(project.kind)}</span>
-                <span>{lifecycleLabel(project.lifecycle)}</span>
-                <span>{project.universe.name}</span>
-                {reorderable &&
-                state.ordered &&
-                access.editContent &&
-                project.storyId &&
-                storyRows.length > 1 ? (
-                  <ActionMenu
-                    className="storyrow__menu"
-                    label={t('stories.browse.moreActions', { title: project.name })}
-                    triggerTestId="story-actions"
-                  >
-                    {storyRows.indexOf(project) > 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(project, -1)}
-                        data-testid="story-move-up"
-                      >
-                        <ActionIcon icon={ArrowUp} />
-                        {t('stories.browse.moveUp')}
-                      </button>
-                    ) : null}
-                    {storyRows.indexOf(project) < storyRows.length - 1 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(project, 1)}
-                        data-testid="story-move-down"
-                      >
-                        <ActionIcon icon={ArrowDown} />
-                        {t('stories.browse.moveDown')}
-                      </button>
-                    ) : null}
-                  </ActionMenu>
+                {project.format ? (
+                  <span data-testid="project-row-format">{formatLabel(project.format)}</span>
                 ) : null}
+                <span>{lifecycleLabel(project.lifecycle)}</span>
+                {inUniverse ? null : <span>{project.universe.name}</span>}
               </p>
               {project.summary ? (
                 <p className="storyrow__premise prose">{project.summary}</p>
@@ -252,13 +149,4 @@ export default function ProjectsPage({
       )}
     </section>
   )
-}
-
-/** The projects in the order the stories are in; one with no story, or not named, goes last. */
-function inStoryOrder(projects: ProjectDetail[], storyIds: string[]) {
-  const rank = (project: ProjectDetail) => {
-    const at = storyIds.indexOf(project.storyId ?? project.id)
-    return at < 0 ? storyIds.length : at
-  }
-  return [...projects].sort((a, b) => rank(a) - rank(b))
 }

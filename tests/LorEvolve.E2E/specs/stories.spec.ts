@@ -316,7 +316,7 @@ test.describe('stories', () => {
 
     // Reached by its address: the sidebar lists stories as Writing Projects rather than as a section of their own
     // (#191), and the Overview no longer links to it (#273).
-    await page.goto(`/app/universes/${universeId}/stories`)
+    await page.goto(`/app/universes/${universeId}/writing`)
     await expect(page.getByTestId('stories-empty')).toContainText('No stories yet.')
 
     await page.getByTestId('new-story').click()
@@ -325,7 +325,7 @@ test.describe('stories', () => {
     await page.getByTestId('story-status-drafting').click()
     await page.getByTestId('save-story').click()
 
-    await page.waitForURL(/\/stories\/[0-9a-f-]+$/)
+    await page.waitForURL(/\/projects\/[0-9a-f-]+\/structure$/)
     const storyUrl = page.url()
     await expect(page.getByTestId('story-title')).toHaveText('The Long Winter')
     await expect(page.getByTestId('story-status')).toHaveText('Drafting')
@@ -419,7 +419,7 @@ test.describe('stories', () => {
     await acceptConfirm(page)
     await expect.poll(() => sceneOrder(page)).toEqual(['Childhood', 'Aftermath at the Gate'])
 
-    await page.goto(page.url().replace(/(\/app\/universes\/[^/]+).*/, '$1/stories'))
+    await page.goto(page.url().replace(/(\/app\/universes\/[^/]+).*/, '$1/writing'))
     const row = page.locator('[data-testid="story-row"][data-title="The Long Winter"]')
     await expect(row.getByTestId('story-scene-count')).toHaveText('2 scenes')
   })
@@ -431,11 +431,11 @@ test.describe('stories', () => {
     const universeId = await newUniverse(page, unique('Chapter Reach '))
     await seedEntities(page, universeId, ['Arlen', 'White Tower'])
 
-    await page.goto(`/app/universes/${universeId}/stories`)
+    await page.goto(`/app/universes/${universeId}/writing`)
     await page.getByTestId('new-story').click()
     await page.getByTestId('story-title-input').fill('The Ashen Road')
     await page.getByTestId('save-story').click()
-    await page.waitForURL(/\/stories\/[0-9a-f-]+$/)
+    await page.waitForURL(/\/projects\/[0-9a-f-]+\/structure$/)
 
     // Two chapters, numbered by where they sit and titled as written.
     await addChapter(page, 'Arrival', 'They reach the gate.')
@@ -582,7 +582,7 @@ test.describe('stories', () => {
     await page.waitForURL(/\/lore\/[0-9a-f-]+$/)
     await expect(page.getByText('Arlen').first()).toBeVisible()
 
-    await page.goto(page.url().replace(/(\/app\/universes\/[^/]+).*/, '$1/stories'))
+    await page.goto(page.url().replace(/(\/app\/universes\/[^/]+).*/, '$1/writing'))
     const row = page.locator('[data-testid="story-row"][data-title="The Ashen Road"]')
     await expect(row.getByTestId('story-scene-count')).toHaveText('4 scenes')
   })
@@ -598,7 +598,7 @@ test.describe('stories', () => {
     expect(created.status()).toBe(201)
     const storyId = (await created.json()).id as string
 
-    await page.goto(`/app/universes/${universeId}/stories`)
+    await page.goto(`/app/universes/${universeId}/writing`)
     const row = page.getByTestId('story-row')
     // One link per row, named by the title alone - the status and the premise are read around it.
     await expect(row.getByRole('link')).toHaveCount(1)
@@ -612,7 +612,7 @@ test.describe('stories', () => {
     await expect(page.getByTestId('story-view-scenes')).toHaveAttribute('aria-current', 'page')
 
     await page.goBack()
-    await page.waitForURL(/\/stories$/)
+    await page.waitForURL(/\/writing$/)
     await expect(page.getByTestId('story-row')).toHaveCount(1)
   })
 
@@ -856,7 +856,7 @@ test.describe('stories', () => {
       // At every width the stories list is reached by its address (#191 took it out of the sidebar, #273 off the Overview).
       await page.goto(`/app/universes/${universeId}`)
       await expect(page.getByTestId('workspace-name')).toBeAttached()
-      await page.goto(`/app/universes/${universeId}/stories`)
+      await page.goto(`/app/universes/${universeId}/writing`)
       await expect(page.getByTestId('story-row')).toHaveCount(1)
       expect(await scrollsSideways(page), `stories at ${width}px`).toBe(false)
 

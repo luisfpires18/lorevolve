@@ -50,6 +50,7 @@ before proposing against them, which is the only read of them MCP offers.
 | The reckoning and its calendar | `chronology` | `get_change_options` | `Chronology` |
 | World Rules | `world-rules` | `get_change_options` | `WorldRule` |
 | World Logic Systems and rule definitions | `systems`, `system-rules`, `world-logic/rules` | `list_systems`, `list_world_logic_rules`, `get_world_logic_rule`, `evaluate_world_logic_rule`, `get_rule_impact` | `SystemRule`, `LoreSystem` |
+| A System's state machine | `systems/machine` | `pending-lorex-075` | `pending-lorex-075` |
 | Recorded World Logic findings | `world-logic/findings` | `list_world_logic_findings`, `get_world_logic_finding` | `person-only` |
 | An AI client's unverified claim | `world-logic/semantic-findings` | `person-only` | `submit_semantic_finding` |
 | The rule vocabulary | `validation-terms` | `get_change_options` | `ValidationTerm` |
@@ -62,6 +63,8 @@ before proposing against them, which is the only read of them MCP offers.
 | Scenes | `stories/scenes` | `get_scene` | `Scene` |
 | A scene's prose | `stories/scenes/manuscript` | `read_scene_manuscript`, `search_scene_manuscript` | `Manuscript` |
 | Plot arcs | `stories/plot-arcs` | `get_arc` | `PlotArc` |
+| A story's cover | `stories/cover` | `media-bytes` | `media-bytes` |
+| The order of the universe's projects | `projects` | `person-only` | `person-only` |
 | Review comments | `entities/comments`, `stories/comments`, `stories/scenes/comments`, `comment-threads` | `person-only` | `person-only` |
 | Suggested changes | `entities/suggestions`, `stories/suggestions`, `stories/scenes/suggestions`, `suggestions` | `person-only` | `person-only` |
 | The Trash | `trash` | `live-only` | `live-only` |
@@ -75,6 +78,9 @@ before proposing against them, which is the only read of them MCP offers.
 | Collaborators | `collaborators` | `person-only` | `person-only` |
 | Invitations | `invitations` | `person-only` | `person-only` |
 | Lore references | `lore-references` | `get_lore_entry` | `read-only-by-design` |
+| Type templates | `type-templates`, `type-templates/fields` | `person-only` | `person-only` |
+| Cinema sagas and their phases | `cinema-sagas`, `cinema-sagas/move`, `cinema-sagas/phases`, `cinema-sagas/phases/move`, `cinema-sagas/phases/members`, `cinema-sagas/phases/members/move` | `person-only` | `person-only` |
+| Comic story arcs and events | `comic-collections`, `comic-collections/move`, `comic-collections/entries`, `comic-collections/entries/move` | `person-only` | `person-only` |
 
 ## Inside a project
 
@@ -87,7 +93,9 @@ universe only.
 | A project's entries | `entities` | `list_project_entries`, `get_project_entry` | `ProjectEntry` |
 | A project entry's history | `entities/revisions` | `live-only` | `live-only` |
 | A project's own types | `entity-types` | `get_project_schema` | `ProjectType`, `ProjectField` |
-| A project's structure | `seasons` | `get_project_structure` | `read-only-by-design` |
+| A project's structure | `seasons`, `structure`, `structure/move` | `get_project_structure` | `read-only-by-design` |
+| A comic page's or panel's picture | `structure/image` | `media-bytes` | `media-bytes` |
+| A project's cover | `cover` | `media-bytes` | `media-bytes` |
 
 ## The write path
 
@@ -203,8 +211,11 @@ reaches; that one says who may reach it at all.
 
 ## Known gaps
 
-Every child of milestone #135 has merged, so nothing in the tables carries a `pending-` code. What is left is the
+Every child of milestone #135 has merged, so nothing from it carries a `pending-` code. What is left of it is the
 shape of the surface, not unfinished work.
+
+- **A System's state machine has no tool yet.** `systems/machine` (#357) is read and saved only in LorEvolve. Its
+  row is `pending-lorex-075` until #361 gives MCP a way to read it.
 
 - **A connected app never reads a canon finding.** `canon-conflicts` is `person-only`: the older Canon integrity
   queue is a person's to work through. World Logic's own findings (#153) *are* readable, by

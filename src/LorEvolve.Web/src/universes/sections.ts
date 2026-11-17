@@ -150,7 +150,6 @@ const SETTINGS: Section = {
 export const WORLD_BUILDING: readonly Section[] = [
   LORE,
   TYPES,
-  GAME_ENTITIES,
   FAMILY_TREE,
   MAPS,
   TIMELINE,

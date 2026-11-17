@@ -79,17 +79,18 @@ test.describe('Project entities', () => {
     await expect(cards).toContainText('No entries yet')
     await expect(page.getByTestId('project-schema')).toHaveCount(0)
 
-    // The definitions are one action away. Map's starter field records the player counts it supports, as several
+    // The definitions are a tab away. Map's starter field records the player counts it supports, as several
     // choices rather than one number.
-    await page.getByTestId('project-types-manage').click()
-    await expect(page).toHaveURL(/\/entities\?manage=types$/)
+    await expect(page.getByTestId('project-types-manage')).toHaveCount(0)
+    await page.getByTestId('projecttab-types').click()
+    await expect(page).toHaveURL(/\/types$/)
     const types = page.getByTestId('project-types')
     // A type's fields open from its row, as on the universe's Types screen.
     await types.getByRole('button', { name: 'Fields of Map' }).click()
     await expect(types).toContainText('Supported players')
     await expect(types).toContainText('Several choices')
     await expect(page.getByTestId('project-schema-offer')).toHaveCount(0)
-    await page.getByTestId('project-entities-back').click()
+    await page.getByTestId('projecttab-entities').click()
 
     // A card opens that type's entries alone: no other type is offered and the editor is not on the way.
     await cards.getByRole('link', { name: /Map/ }).click()
@@ -116,7 +117,7 @@ test.describe('Project entities', () => {
     )
 
     // From here the schema is the author's: a type of their own, and one of the starters gone.
-    await page.getByTestId('project-types-manage').click()
+    await page.getByTestId('projecttab-types').click()
     // The same drawer the universe's Types screen opens.
     await page.getByTestId('project-type-add').click()
     await page.getByTestId('type-name').fill('Encounter')
@@ -225,24 +226,30 @@ test.describe('Project entities', () => {
     await expect(page.locator('main')).not.toContainText('Unit')
   })
 
-  test('a game overview says what is in the project, what was touched last, and the way into the rest', async ({
+  test('a game has no overview: its address lands on Entities, with its facts above and the counts on the type cards', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
     const project = await game(page, world.id)
-    const overview = `/app/projects/${project.id}/overview`
+    const entities = `/app/universes/${world.id}/projects/${project.id}/entities`
 
-    // Nothing of its own yet: the overview says what to do first rather than drawing empty panels (#195).
-    await page.goto(overview)
-    const empty = page.getByTestId('project-overview-empty')
-    await expect(empty).toBeVisible()
-    await expect(empty).toContainText('nothing in it yet')
+    // The bare address and /overview both land on the first view, Entities. A game has no overview of its own.
+    for (const address of [`/app/projects/${project.id}`, `/app/projects/${project.id}/overview`]) {
+      await page.goto(address)
+      await expect(page).toHaveURL(entities)
+    }
+    await expect(page.getByTestId('project-page')).toHaveCount(0)
     await expect(page.getByTestId('project-overview-counts')).toHaveCount(0)
+    await expect(page.getByTestId('projecttab-overview')).toHaveCount(0)
 
-    // Its action leads into Entities, which is where a project with no types starts.
-    await empty.getByRole('link').click()
-    await page.waitForURL(/\/entities$/)
+    // Its facts sit under the tabs. No summary was given, so none is drawn.
+    const facts = page.getByTestId('project-facts')
+    await expect(facts.getByTestId('project-meta')).toContainText('Game')
+    await expect(facts.getByTestId('project-summary')).toHaveCount(0)
+
+    // With no types the view is the offer to take the starters.
+    await expect(page.getByTestId('project-schema-offer')).toBeVisible()
 
     const types = await api<{ id: string; name: string }[]>(
       page,
@@ -259,58 +266,39 @@ test.describe('Project entities', () => {
         summary: null,
       })
     }
-    const latest = await api<{ id: string; name: string }>(
-      page,
-      'POST',
-      `/api/projects/${project.id}/entities`,
-      { entityTypeId: map.id, name: 'Aback Flats', summary: null },
-    )
+    await api(page, 'POST', `/api/projects/${project.id}/entities`, {
+      entityTypeId: map.id,
+      name: 'Aback Flats',
+      summary: null,
+    })
 
-    await page.goto(overview)
+    await page.goto(entities)
 
     // Counts per type, from the types list rather than from counting entries.
-    const counts = page.getByTestId('project-overview-type-counts')
-    await expect(counts.getByTestId(`project-overview-type-${unit.id}`)).toContainText('2 entries')
-    await expect(counts.getByTestId(`project-overview-type-${map.id}`)).toContainText('1 entry')
+    const counts = page.getByTestId('project-entity-type-cards')
+    const card = (name: string) => counts.getByTestId('lore-type-card').filter({ hasText: name })
+    await expect(card(unit.name)).toContainText('2 entries')
+    await expect(card(map.name)).toContainText('1 entry')
 
-    // The newest first, which is the order the list has to be asked for: by name Aback Flats would lead anyway, so
-    // the assertion that carries weight is that the newest entry heads the list while two older ones exist.
-    const recent = page.getByTestId('project-overview-recent-list')
-    await expect(recent.locator('> li')).toHaveCount(3)
-    await expect(recent.locator('> li').first()).toContainText('Aback Flats')
-
-    // Each one opens that entry: its type's list, on its own row, marked as the row in view.
-    await page.getByTestId(`project-overview-entry-${latest.id}`).click()
-    await expect(page.getByTestId('project-entries')).toContainText('Aback Flats')
-    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
-    // The address names it, so a direct load opens the same row rather than the top of the list.
-    const named = page.url()
-    await page.goto(named)
-    await expect(page.getByTestId(`project-entry-${latest.id}`)).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
-
-    // The universe's lore and every other view this kind offers are a link away.
-    await page.goto(overview)
-    await expect(page.getByTestId('project-overview-lore')).toContainText(/\w/)
-    for (const segment of ['entities', 'systems']) {
-      await expect(page.getByTestId(`project-overview-way-${segment}`)).toBeVisible()
+    // The tab bar and the sidebar's Lore stay reachable.
+    for (const segment of ['entities', 'types', 'systems']) {
+      await expect(page.getByTestId(`projecttab-${segment}`)).toBeVisible()
     }
-    await expect(page.getByTestId('project-overview-way-overview')).toHaveCount(0)
+    await page
+      .getByRole('navigation', { name: 'Universe', exact: true })
+      .getByRole('link', { name: 'Lore', exact: true })
+      .click()
+    await expect(page).toHaveURL(/\/lore$/)
   })
 
-  test('a game, a series and a film open a type as Lore does, edit types, and move between views at both widths', async ({
+  test('a game, a series, a film and a comic open a type as Lore does, edit types, and move between views at both widths', async ({
     page,
   }) => {
     await signUp(page)
     const world = await universe(page)
 
-    // 1 is Game, 2 Series and 3 Film. Series and Film have five views, whose tab bar used to widen a phone's page.
-    for (const kind of [1, 2, 3]) {
+    // 1 is Game, 2 Series, 3 Film and 4 Comic (#278 checks the shared overview on each). Series and Film have five views, whose tab bar used to widen a phone's page.
+    for (const kind of [1, 2, 3, 4]) {
       const project = await api<{ id: string }>(page, 'POST', '/api/projects', {
         name: unique('Low Tide '),
         kind,
@@ -332,6 +320,9 @@ test.describe('Project entities', () => {
         summary: 'Comes back to the harbour.',
       })
       const base = `/app/universes/${world.id}/projects/${project.id}`
+      // A game has no overview: its other view beside Entities is Types (owner, 2026-11-17).
+      const isGame = kind === 1
+      const other = isGame ? 'types' : 'overview'
 
       await page.setViewportSize({ width: 1280, height: 800 })
       await page.goto(`${base}/entities?type=${first.id}`)
@@ -349,18 +340,32 @@ test.describe('Project entities', () => {
 
       // The tab bar is the way between the views at every width (#271).
       await expect(page.getByTestId('project-tabs')).toBeVisible()
-      await page.getByTestId('projecttab-overview').click()
-      await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
+      await page.getByTestId(`projecttab-${other}`).click()
+      await expect(page).toHaveURL(new RegExp(`${base}/${other}$`))
+      if (!isGame) {
+        // The other kinds share the one overview: counts only, no recent list and no ways-out section (#278).
+        await expect(page.getByTestId('project-overview-recent')).toHaveCount(0)
+        await expect(page.getByTestId('project-overview-links')).toHaveCount(0)
+      }
       await page.getByTestId('projecttab-entities').click()
       await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
 
       // A type of the project's own, made in the Types screen's drawer, is on the cards when the crumb leads back.
-      await page.getByTestId('project-types-manage').click()
+      // A game opens it from its Types tab, the other kinds from Manage types inside Entities.
+      if (isGame) {
+        await page.getByTestId('projecttab-types').click()
+      } else {
+        await page.getByTestId('project-types-manage').click()
+      }
       await page.getByTestId('project-type-add').click()
       await page.getByTestId('type-name').fill('Rehearsal')
       await page.getByTestId('save-type').click()
       await expect(page.getByTestId('project-types')).toContainText('Rehearsal')
-      await page.getByTestId('project-entities-back').click()
+      if (isGame) {
+        await page.getByTestId('projecttab-entities').click()
+      } else {
+        await page.getByTestId('project-entities-back').click()
+      }
       await expect(page.getByTestId('project-entity-type-cards')).toContainText('Rehearsal')
 
       // On a phone the tabs are the way between the views, scroll inside their own bar, and the page stays the
@@ -370,8 +375,8 @@ test.describe('Project entities', () => {
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         375,
       )
-      await page.getByTestId('projecttab-overview').click()
-      await expect(page).toHaveURL(new RegExp(`${base}/overview$`))
+      await page.getByTestId(`projecttab-${other}`).click()
+      await expect(page).toHaveURL(new RegExp(`${base}/${other}$`))
       await page.getByTestId('projecttab-entities').click()
       await expect(page).toHaveURL(new RegExp(`${base}/entities$`))
       await expect(page.getByTestId('project-entity-type-cards')).toContainText('Rehearsal')

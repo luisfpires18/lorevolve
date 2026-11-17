@@ -1,0 +1,28 @@
+Issue #358, web checks, run in src/LorEvolve.Web on 2026-11-17.
+
+$ npm test   (exit 0)
+ℹ tests 55
+ℹ suites 0
+ℹ pass 55
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2709.521
+
+$ npm run build   (exit 0)
+dist/assets/dist-o3OqT3_U.js                     308.67 kB │ gzip: 94.31 kB
+
+✓ built in 1.76s
+
+$ npm run lint   (exit 0; 6 warnings, all in files this change does not touch)
+src/pages/LorePage.tsx:270:11: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'fieldFilters' help: Eit
+src/components/ProjectSchema.tsx:51:17: warning react(only-export-components): Fast refresh only works when a file only exports components. 
+src/components/ProjectOutline.tsx:84:7: warning react(set-state-in-effect): Calling setState synchronously within an effect can trigger casc
+src/components/ProjectEntries.tsx:120:36: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'setFilter' h
+src/components/ProjectEntries.tsx:130:13: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'fixedTypeId'
+src/components/ProjectEntries.tsx:163:12: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'filter' help
+
+$ npm run format:check   (exit 0)
+Checking formatting...
+All matched files use Prettier code style!

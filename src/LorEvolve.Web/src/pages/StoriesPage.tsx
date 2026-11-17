@@ -1,22 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
-import { Link, useNavigate, useOutletContext } from 'react-router-dom'
+import { ArrowDown, ArrowUp, Plus, Image as ImageIcon } from 'lucide-react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
+import { CoverDrawer } from '../components/CoverDrawer'
+import { ShelfCard, shelfStep } from '../components/ShelfCard'
+import { pictureUrl, projectCoverStore, storyCoverStore } from '../covers/api'
 import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
+import { listAllProjects } from '../projects/api'
+import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
+import { ProjectKind, type ProjectDetail } from '../projects/types'
+import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { listStories, reorderStories } from '../stories/api'
 import { sceneCountLabel } from '../stories/format'
 import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
 type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; stories: StorySummary[] } | { kind: 'error' }
+  | { kind: 'loading' }
+  | { kind: 'ready'; stories: StorySummary[]; others: ProjectDetail[] }
+  | { kind: 'error' }
 
 /**
  * The stories told in this universe. A story is narrative an author writes with the lore - it draws
@@ -34,12 +43,15 @@ export default function StoriesPage() {
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const navigate = useNavigate()
+  const heading = sectionLabel(WRITING_PROJECTS)
+  useDocumentTitle(heading)
   const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [isCreating, setIsCreating] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [moveError, setMoveError] = useState<string | null>(null)
   const isMoving = useRef(false)
+  const [covering, setCovering] = useState<StorySummary | null>(null)
 
   /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
   async function move(story: StorySummary, by: -1 | 1) {
@@ -53,7 +65,7 @@ export default function StoriesPage() {
     after.splice(to, 0, ...after.splice(from, 1))
     isMoving.current = true
     setMoveError(null)
-    setState({ kind: 'ready', stories: after })
+    setState({ kind: 'ready', stories: after, others: state.others })
     requestAnimationFrame(() =>
       document
         .querySelector<HTMLElement>(`[data-story-id="${story.id}"] [data-testid="story-actions"]`)
@@ -64,12 +76,12 @@ export default function StoriesPage() {
         universe.id,
         after.map((candidate) => candidate.id),
       )
-      setState({ kind: 'ready', stories: saved })
+      setState({ kind: 'ready', stories: saved, others: state.others })
       setAnnouncement(
         t('stories.browse.moved', { title: story.title, n: to + 1, total: after.length }),
       )
     } catch (error: unknown) {
-      setState({ kind: 'ready', stories: before })
+      setState({ kind: 'ready', stories: before, others: state.others })
       setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
     } finally {
       isMoving.current = false
@@ -79,8 +91,15 @@ export default function StoriesPage() {
   useEffect(() => {
     const controller = new AbortController()
 
-    listStories(universe.id, controller.signal)
-      .then((stories) => setState({ kind: 'ready', stories }))
+    // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.
+    const others = listAllProjects({ universeId: universe.id }, controller.signal)
+      .then((projects) =>
+        projects.filter((project) => project.kind === ProjectKind.Writing && !project.storyId),
+      )
+      .catch((): ProjectDetail[] => [])
+
+    Promise.all([listStories(universe.id, controller.signal), others])
+      .then(([stories, rest]) => setState({ kind: 'ready', stories, others: rest }))
       .catch(() => {
         if (controller.signal.aborted) return
         setState({ kind: 'error' })
@@ -94,7 +113,7 @@ export default function StoriesPage() {
   return (
     <article className="stories">
       <PageHeader
-        title={t('stories.browse.title')}
+        title={heading}
         lede={t('stories.browse.lede')}
         actions={
           access.editContent ? (
@@ -143,27 +162,50 @@ export default function StoriesPage() {
       ) : null}
 
       {state.kind === 'ready' && state.stories.length > 0 ? (
-        <ul className="storylist" data-testid="story-list">
+        // Each story as a book on its shelf (owner, 2026-11-17); the Gaming page draws its games the same way.
+        <ul className="shelf" data-testid="story-list">
           {state.stories.map((story, index) => (
-            <li
-              className="storyrow"
+            <ShelfCard
               key={story.id}
-              data-testid="story-row"
-              data-title={story.title}
-              data-story-id={story.id}
-            >
-              <Link className="storyrow__title" to={story.id}>
-                <bdi>{story.title}</bdi>
-              </Link>
-              <p className="storyrow__meta">
-                <StatusBadge step={story.status} label={STORY_STATUS_LABELS[story.status]} />
+              frame="book"
+              href={storyProjectPath(universe.id, story.id)}
+              title={story.title}
+              description={story.premise}
+              step={story.status}
+              statusLabel={STORY_STATUS_LABELS[story.status]}
+              meta={
                 <span data-testid="story-scene-count">{sceneCountLabel(story.sceneCount)}</span>
-                {access.editContent && state.stories.length > 1 ? (
+              }
+              cover={
+                story.cover
+                  ? pictureUrl(storyCoverStore(universe.id, story.id), story.cover, 'card')
+                  : null
+              }
+              onAddPicture={access.editContent ? () => setCovering(story) : undefined}
+              attrs={{
+                'data-testid': 'story-row',
+                'data-title': story.title,
+                'data-story-id': story.id,
+              }}
+              menu={
+                access.editContent ? (
                   <ActionMenu
-                    className="storyrow__menu"
                     label={t('stories.browse.moreActions', { title: story.title })}
                     triggerTestId="story-actions"
                   >
+                    <button
+                      className="actionmenu__item"
+                      type="button"
+                      onClick={() => setCovering(story)}
+                      data-testid="story-cover"
+                    >
+                      <ActionIcon icon={ImageIcon} />
+                      {t(
+                        story.cover
+                          ? 'projects.common.changePicture'
+                          : 'projects.common.addPicture',
+                      )}
+                    </button>
                     {index > 0 ? (
                       <button
                         className="actionmenu__item"
@@ -187,15 +229,59 @@ export default function StoriesPage() {
                       </button>
                     ) : null}
                   </ActionMenu>
-                ) : null}
-              </p>
-              {story.premise ? <p className="storyrow__premise prose">{story.premise}</p> : null}
-            </li>
+                ) : null
+              }
+            />
           ))}
         </ul>
       ) : null}
 
-      {state.kind === 'ready' && state.stories.length === 0 ? (
+      {covering ? (
+        <CoverDrawer
+          universeId={universe.id}
+          name={covering.title}
+          cover={covering.cover ?? null}
+          store={storyCoverStore(universe.id, covering.id)}
+          onChanged={(cover) => {
+            setCovering({ ...covering, cover })
+            setState((current) =>
+              current.kind === 'ready'
+                ? {
+                    ...current,
+                    stories: current.stories.map((one) =>
+                      one.id === covering.id ? { ...one, cover } : one,
+                    ),
+                  }
+                : current,
+            )
+          }}
+          onClose={() => setCovering(null)}
+        />
+      ) : null}
+
+      {state.kind === 'ready' && state.others.length > 0 ? (
+        <ul className="shelf" data-testid="writing-project-list">
+          {state.others.map((project) => (
+            <ShelfCard
+              key={project.id}
+              frame="book"
+              href={projectRowPath(project)}
+              title={project.name}
+              description={project.summary}
+              step={shelfStep(project.lifecycle)}
+              statusLabel={lifecycleLabel(project.lifecycle)}
+              cover={
+                project.cover
+                  ? pictureUrl(projectCoverStore(project.id), project.cover, 'card')
+                  : null
+              }
+              attrs={{ 'data-testid': 'writing-project-row' }}
+            />
+          ))}
+        </ul>
+      ) : null}
+
+      {state.kind === 'ready' && state.stories.length === 0 && state.others.length === 0 ? (
         <EmptyState
           testId="stories-empty"
           title={t('stories.browse.empty.title')}
@@ -221,7 +307,7 @@ export default function StoriesPage() {
           universeId={universe.id}
           story={null}
           onClose={() => setIsCreating(false)}
-          onSaved={(story) => navigate(`/app/universes/${universe.id}/stories/${story.id}`)}
+          onSaved={(story) => navigate(storyProjectPath(universe.id, story.id))}
         />
       ) : null}
     </article>

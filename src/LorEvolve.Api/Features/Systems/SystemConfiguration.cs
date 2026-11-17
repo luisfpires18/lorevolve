@@ -35,6 +35,15 @@ public static class WorldLogicLimits
     public const int DefaultPageSize = 50;
 
     public const int MaxPageSize = 100;
+
+    /// <summary>How many states one machine may hold (state machine specification, section 7).</summary>
+    public const int MaxStates = 64;
+
+    /// <summary>How many transitions one machine may hold (state machine specification, section 7).</summary>
+    public const int MaxTransitions = 256;
+
+    /// <summary>How far from the origin a state may sit on the canvas, as an idea board card.</summary>
+    public const double MaxCoordinate = 1_000_000;
 }
 
 public sealed class LoreSystemConfiguration : IEntityTypeConfiguration<LoreSystem>
@@ -199,5 +208,77 @@ public sealed class SystemRuleDependencyConfiguration : IEntityTypeConfiguration
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(dependency => dependency.DependsOnRuleId);
+    }
+}
+
+public sealed class SystemMachineConfiguration : IEntityTypeConfiguration<SystemMachine>
+{
+    public void Configure(EntityTypeBuilder<SystemMachine> builder)
+    {
+        builder.ToTable("SystemMachines");
+        builder.HasKey(machine => machine.SystemId);
+
+        builder.Property(machine => machine.SubjectType).IsRequired().HasMaxLength(WorldLogicLimits.NameMaxLength);
+        builder.Property(machine => machine.Attribute).IsRequired().HasMaxLength(WorldLogicLimits.NameMaxLength);
+
+        // One per System and gone with it, so deleting a System needs no code for its machine.
+        builder.HasOne(machine => machine.LoreSystem)
+            .WithOne()
+            .HasForeignKey<SystemMachine>(machine => machine.SystemId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class SystemStateConfiguration : IEntityTypeConfiguration<SystemState>
+{
+    public void Configure(EntityTypeBuilder<SystemState> builder)
+    {
+        builder.ToTable("SystemStates");
+        builder.HasKey(state => new { state.SystemId, state.Id });
+
+        builder.Property(state => state.Name).IsRequired().HasMaxLength(WorldLogicLimits.NameMaxLength);
+        builder.Property(state => state.Value).IsRequired().HasMaxLength(WorldLogicLimits.NameMaxLength);
+
+        builder.HasOne(state => state.Machine)
+            .WithMany(machine => machine.States)
+            .HasForeignKey(state => state.SystemId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public sealed class SystemTransitionConfiguration : IEntityTypeConfiguration<SystemTransition>
+{
+    public void Configure(EntityTypeBuilder<SystemTransition> builder)
+    {
+        builder.ToTable("SystemTransitions");
+        builder.HasKey(transition => new { transition.SystemId, transition.Id });
+
+        builder.Property(transition => transition.Label).HasMaxLength(WorldLogicLimits.NameMaxLength);
+
+        // Both ends keyed with the System, as an idea board's lines are with the board: no transition can join two
+        // machines, and the machine's cascade reaches transitions through its states.
+        builder.HasOne(transition => transition.FromState)
+            .WithMany()
+            .HasForeignKey(transition => new { transition.SystemId, transition.FromStateId })
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(transition => transition.ToState)
+            .WithMany()
+            .HasForeignKey(transition => new { transition.SystemId, transition.ToStateId })
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Cascade, with the refusal in the endpoint, for the reason the System's rule link gives: a universe has to
+        // stay deletable, and SystemRuleEndpoints refuses deleting a rule a transition still names as its guard.
+        builder.HasOne(transition => transition.GuardRule)
+            .WithMany()
+            .HasForeignKey(transition => transition.GuardRuleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Which transitions name one rule: what the rule's delete check reads.
+        builder.HasIndex(transition => transition.GuardRuleId);
     }
 }

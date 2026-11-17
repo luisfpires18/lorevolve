@@ -1,3 +1,4 @@
+import type { UniverseArtworkRef } from '../publishing/types'
 import type { ChronologyValue } from '../chronology/types'
 import type { EntityImageRef } from '../lore/types'
 import type { VisibilityValue } from '../publishing/types'
@@ -46,6 +47,8 @@ export interface StorySummary {
   sceneCount: number
   createdAt: string
   updatedAt: string
+  /** The story's book cover, framed 2:3 (owner, 2026-11-17). */
+  cover?: UniverseArtworkRef | null
 }
 
 /**

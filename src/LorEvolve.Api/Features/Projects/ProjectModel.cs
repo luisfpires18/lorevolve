@@ -84,6 +84,8 @@ public sealed class CreativeProject
     /// enum makes expensive to correct.
     /// </summary>
     public string? Subtype { get; set; }
+    /// <summary>The production format (#288), an identifier from <see cref="ProjectFormats"/>; null when none was chosen.</summary>
+    public string? Format { get; set; }
 
     public ProjectLifecycle Lifecycle { get; set; }
 
@@ -91,6 +93,9 @@ public sealed class CreativeProject
 
     /// <summary>What the project is, in the author's words. <c>""</c> when there is none; never read for meaning.</summary>
     public required string Summary { get; set; }
+
+    /// <summary>The project's place among its universe's projects, from 0: lists read in this order. A new project goes last.</summary>
+    public int SortOrder { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

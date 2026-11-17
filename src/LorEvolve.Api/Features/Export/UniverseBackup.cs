@@ -344,8 +344,50 @@ public sealed record UniverseBackup(
     /// and <see cref="BackupEntity.FieldImages"/> and <see cref="BackupProjectEntity.FieldImages"/> each entry's pictures in
     /// those fields, each original in the archive with the crop the author chose. Not ignorable: a version 47 reader would
     /// restore an image field with no shape and its entries with no pictures. A file at version 47 or earlier has none.
+    ///
+    /// 49 - A project may have a production format (#288). <see cref="BackupCreativeProject.Format"/> carries its identifier.
+    /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
+    /// none, and every restored project has none.
+    ///
+    /// 50 - A universe keeps reusable type templates (#281). <see cref="UniverseBackupPayload.TypeTemplates"/> holds
+    /// each template with its fields and their choices, in order. Nothing refers to a template, so every id is new on
+    /// restore. Not ignorable: a version 49 reader would restore the universe without its templates. A file at version
+    /// 49 or earlier has none, and restores with none.
+    ///
+    /// 51 - A project with a rule-backed format holds a structure of nodes (#290): acts, sequences, scenes, beats.
+    /// <see cref="UniverseBackupPayload.ProjectNodes"/> carries them flat, each naming its parent. Not ignorable: a
+    /// version 50 reader would restore a feature film with no acts or scenes. A file at version 50 or earlier has none.
+    ///
+    /// 52 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
+    /// phases and the projects each phase holds, in order. Not ignorable: a version 51 reader would restore the universe
+    /// with no sagas. A file at version 51 or earlier has none.
+    ///
+    /// 53 - Comic Story Arcs and Events (#296). <see cref="UniverseBackupPayload.ComicCollections"/> carries each
+    /// collection with the nodes it references, in reading order. Not ignorable: a version 52 reader would restore the
+    /// universe with no arcs or events. A file at version 52 or earlier has none.
+    /// 54 - A comic panel carries its script and a page or panel its artwork (#295). <see cref="BackupProjectNode.Dialogue"/>,
+    /// <c>Caption</c>, <c>Sfx</c> and <c>Notes</c> hold the panel's text, and <see cref="BackupProjectNode.Image"/> the picture,
+    /// its original in the archive. Not ignorable: a version 53 reader would restore panels without their script or art. A
+    /// file at version 53 or earlier has none.
+    ///
+    /// 55 - Comic Volumes (#297). <see cref="BackupComicCollection.ProjectId"/> names the one Comic project a collection
+    /// of kind <c>volume</c> belongs to. Not ignorable: a version 54 reader would drop the project and refuse the volume.
+    /// A file at version 54 or earlier has no volume and no collection project.
+    ///
+    /// 56 - Project entry profile pictures (#286). <see cref="BackupProjectEntity.Image"/> carries a project entry's
+    /// picture exactly as <see cref="BackupEntity.Image"/>, its original in the archive. Not ignorable: a version 55
+    /// reader would restore the entry without its picture. A file at version 55 or earlier has none.
+    ///
+    /// 57 - A System's state machine (#357, ADR 0073). <see cref="BackupLoreSystem.Machine"/> carries its binding, states
+    /// with their canvas positions and transitions with their guards. Not ignorable: a version 56 reader would restore the
+    /// System without its machine. A file at version 56 or earlier has none.
+    /// 58 - Story and project covers, and the projects' order. <see cref="BackupStory.Cover"/> and
+    /// <see cref="BackupCreativeProject.Cover"/> carry a cover as <see cref="BackupFieldImage"/> (its id the story's or
+    /// project's own), its original in the archive; <see cref="BackupCreativeProject.SortOrder"/> is the project's place
+    /// among the universe's projects. Not ignorable: a version 57 reader would restore no cover and lose the order. A file
+    /// at version 57 or earlier has no cover, and its projects take the order they were listed in then, newest first.
     /// </summary>
-    public const int CurrentVersion = 48;
+    public const int CurrentVersion = 58;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -416,7 +458,48 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
-    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null);
+    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
+    IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
+    IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
+    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null,
+    IReadOnlyList<BackupComicCollection>? ComicCollections = null);
+
+/// <summary>
+/// One Comic Story Arc, Event or Volume of this universe (since version 53, #296; volumes since 55, #297). It lists the nodes it references by this
+/// file's node ids, in reading order: references only, so the nodes themselves travel as project nodes.
+/// </summary>
+public sealed record BackupComicCollection(
+    Guid Id,
+    string Kind,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> NodeIds,
+    Guid? ProjectId = null);
+
+/// <summary>
+/// One Cinema saga of this universe with its phases in order (since version 52, #289). A phase lists the projects it
+/// holds by this file's project ids, in release order: membership only, so the projects themselves travel as projects.
+/// </summary>
+public sealed record BackupCinemaSaga(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupCinemaPhase> Phases);
+
+public sealed record BackupCinemaPhase(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> ProjectIds);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -624,7 +707,10 @@ public sealed record BackupCreativeProject(
     string? Subtype,
     string Summary,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    string? Format = null,
+    int? SortOrder = null,
+    BackupFieldImage? Cover = null);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
@@ -990,6 +1076,51 @@ public sealed record BackupProjectPanel(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
+/// <summary>A universe's reusable type template (since version 50, #281), with its fields in order.</summary>
+public sealed record BackupTypeTemplate(
+    Guid Id,
+    string Name,
+    string? Description,
+    string? Icon,
+    string? AccentColor,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupTypeTemplateField> Fields);
+
+public sealed record BackupTypeTemplateField(
+    Guid Id,
+    string Name,
+    EntityFieldKind Kind,
+    bool IsRequired,
+    int DisplayOrder,
+    FieldImageShape? ImageShape,
+    IReadOnlyList<BackupTypeTemplateFieldOption> Options);
+
+public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int DisplayOrder);
+
+/// <summary>
+/// One node of a project's structure (since version 51, #290), flat, naming its parent node (null for a root) by this
+/// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
+/// Since version 54 (#295) a panel's script and a page's or panel's picture; the picture's
+/// <see cref="BackupFieldImage.FieldDefinitionId"/> is the node's own id.
+/// </summary>
+public sealed record BackupProjectNode(
+    Guid Id,
+    Guid ProjectId,
+    Guid? ParentId,
+    string Level,
+    string? Title,
+    string? Summary,
+    string? Body,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    string? Dialogue = null,
+    string? Caption = null,
+    string? Sfx = null,
+    string? Notes = null,
+    BackupFieldImage? Image = null);
+
 public sealed record BackupProjectEntity(
     Guid Id,
     Guid ProjectId,
@@ -1008,7 +1139,9 @@ public sealed record BackupProjectEntity(
     /// </summary>
     IReadOnlyList<BackupRevision>? Revisions = null,
     /// <summary>The entry's pictures in its image fields (since version 48, Issue #238), as <see cref="BackupEntity.FieldImages"/>.</summary>
-    IReadOnlyList<BackupFieldImage>? FieldImages = null);
+    IReadOnlyList<BackupFieldImage>? FieldImages = null,
+    /// <summary>The entry's profile picture (since version 56, Issue #286), as <see cref="BackupEntity.Image"/>.</summary>
+    BackupEntityImage? Image = null);
 
 public sealed record BackupFieldValue(
     Guid FieldDefinitionId,
@@ -1204,7 +1337,8 @@ public sealed record BackupStory(
     IReadOnlyList<BackupScene> Scenes,
     IReadOnlyList<BackupPlotArc>? PlotArcs,
     string? PublicSummary = null,
-    int? SortOrder = null);
+    int? SortOrder = null,
+    BackupFieldImage? Cover = null);
 
 /// <summary>
 /// One chapter (since version 6): its place in the story, from 0, and the author's title, summary and
@@ -1395,7 +1529,28 @@ public sealed record BackupLoreSystem(
     DateTime CreatedAt,
     DateTime UpdatedAt,
     IReadOnlyList<Guid> RuleIds,
-    IReadOnlyList<BackupWorldLogicRevision> Revisions);
+    IReadOnlyList<BackupWorldLogicRevision> Revisions,
+
+    /// <summary>The System's state machine (since version 57, ADR 0073), or null for a System with none.</summary>
+    BackupSystemMachine? Machine = null);
+
+/// <summary>
+/// A System's state machine (since version 57, ADR 0073): its binding, its states in order and its transitions in
+/// declared order. State and transition ids are the document's own, kept as they are on a restore because they are
+/// unique only inside one System; a guard is an id of this file's <see cref="UniverseBackupPayload.SystemRules"/>.
+/// </summary>
+public sealed record BackupSystemMachine(
+    int SchemaVersion,
+    string SubjectType,
+    string Attribute,
+    IReadOnlyList<BackupSystemState> States,
+    IReadOnlyList<BackupSystemTransition> Transitions);
+
+/// <summary>One state of a machine, with where the author put it on the canvas.</summary>
+public sealed record BackupSystemState(Guid Id, string Name, string Value, bool Initial, double X, double Y);
+
+/// <summary>One transition of a machine. <paramref name="GuardRuleId"/> is a rule definition of this file, or null.</summary>
+public sealed record BackupSystemTransition(Guid Id, Guid FromStateId, Guid ToStateId, string? Label, Guid? GuardRuleId);
 
 /// <summary>
 /// One reusable rule definition (since version 44, ADR 0072).

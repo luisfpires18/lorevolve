@@ -115,9 +115,30 @@ public sealed class BackupInventoryTests
         "ProjectSeasons",
         "ProjectEpisodes",
 
+        // A universe's Cinema sagas, their phases and which projects each phase holds (#289).
+        "CinemaSagas",
+        "CinemaPhases",
+        "CinemaPhaseMemberships",
+        // A universe's Comic story arcs and events and the nodes each references (#296).
+        "ComicCollections",
+        "ComicCollectionEntries",
+
         // A comic chapter's pages and the panels on them (#147).
         "ProjectPages",
         "ProjectPanels",
+
+        // A universe's reusable type templates, their fields and those fields' choices (#281).
+        "TypeTemplates",
+        "TypeTemplateFields",
+        "TypeTemplateFieldOptions",
+
+        // A project's structure nodes: acts, sequences, scenes, beats (#290).
+        "ProjectNodes",
+        "ProjectNodeImages",
+
+        // Story and project covers, carried with their story or project (version 58).
+        "StoryCovers",
+        "ProjectCovers",
 
         // World Logic (#150, ADR 0072): the universe's Systems and reusable rule definitions, the links between
         // them, the declared dependencies and both sets of saved states. All authored, so all carried; the ids
@@ -128,6 +149,11 @@ public sealed class BackupInventoryTests
         "SystemRules",
         "SystemRuleRevisions",
         "SystemRuleDependencies",
+
+        // A System's state machine (#357, ADR 0073): its binding, states and transitions, all authored.
+        "SystemMachines",
+        "SystemStates",
+        "SystemTransitions",
 
         // Only the dismissals, exactly as a Canon conflict carries only its own (#153, ADR 0072): a finding is
         // derived from the lore and the whole table regenerates by sweeping again, while the author's decision to

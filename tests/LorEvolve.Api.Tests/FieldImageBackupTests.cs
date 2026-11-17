@@ -44,10 +44,12 @@ public sealed class FieldImageBackupTests(LorEvolveApiFactory factory) : IClassF
             .Fields.Single(field => field.Name == "Art").Id;
         var scout = await PostJson<EntityDetail>(client, $"/api/projects/{project.Id}/entities", new ProjectEntityRequest(unit.Id, "Scout", null));
         await Upload(client, u, scout.Id, art, Png(800, 600, 23), null);
+        var scoutPortrait = Png(300, 300, 24);
+        await UploadPortrait(client, u, scout.Id, scoutPortrait);
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(48, backup.FormatVersion);
+        Assert.Equal(58, backup.FormatVersion);
 
         var fields = backup.Payload.EntityTypes.SelectMany(type => type.Fields).ToDictionary(field => field.Id);
         Assert.Equal(FieldImageShape.Square, fields[portrait].ImageShape);
@@ -60,7 +62,12 @@ public sealed class FieldImageBackupTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal($"media/entities/{entry:D}/fields/{portrait:D}/original.png", portraitImage.MediaPath);
         Assert.Equal(portraitPng, Entries(archive)[portraitImage.MediaPath]);
         Assert.Equal(new BackupImageCrop(0, 0.25, 1, 0.5), held.Single(image => image.FieldDefinitionId == sketch).Crop);
-        Assert.Single(backup.Payload.ProjectEntities!.Single(each => each.Id == scout.Id).FieldImages!);
+        var backedScout = backup.Payload.ProjectEntities!.Single(each => each.Id == scout.Id);
+        Assert.Single(backedScout.FieldImages!);
+
+        // The project entry's profile picture travels as a lore entry's does (version 56, #286).
+        Assert.Equal(BackupArchive.MediaPathFor(scout.Id, "image/png"), backedScout.Image!.MediaPath);
+        Assert.Equal(scoutPortrait, Entries(archive)[backedScout.Image.MediaPath]);
         Assert.DoesNotContain("universes/", DocumentOf(archive), StringComparison.Ordinal);
 
         // Restored: new ids and keys, both pictures readable, the shapes kept.
@@ -86,6 +93,14 @@ public sealed class FieldImageBackupTests(LorEvolveApiFactory factory) : IClassF
             .ToDictionary(field => field.Name);
         Assert.Equal(FieldImageShape.Square, restoredFields["Portrait"].ImageShape);
         Assert.Equal(FieldImageShape.Free, restoredFields["Sketch"].ImageShape);
+
+        var restoredProject = (await client.GetFromJsonAsync<List<ProjectDetail>>($"/api/projects?universeId={restored.Id}"))!.Single();
+        var restoredScout = (await client.GetFromJsonAsync<List<ProjectEntitySummary>>($"/api/projects/{restoredProject.Id}/entities"))!
+            .Single(each => each.Name == "Scout").Id;
+        var scoutDetail = (await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{restoredProject.Id}/entities/{restoredScout}"))!;
+        var scoutOriginal = await client.GetAsync($"/api/universes/{restored.Id}/entities/{restoredScout}/image/{scoutDetail.Image!.AssetId}/original");
+        Assert.Equal(HttpStatusCode.OK, scoutOriginal.StatusCode);
+        Assert.Equal(scoutPortrait, await scoutOriginal.Content.ReadAsByteArrayAsync());
 
         // Three originals and three crops under the restored universe: the project entry's picture came back as well.
         Assert.Equal(6, _api.Media.Keys.Count(key => key.StartsWith($"universes/{restored.Id:D}/", StringComparison.Ordinal) && key.Contains("/fields/", StringComparison.Ordinal)));
@@ -129,6 +144,17 @@ public sealed class FieldImageBackupTests(LorEvolveApiFactory factory) : IClassF
         }
 
         var response = await client.PutAsync($"/api/universes/{u}/entities/{entry}/field-images/{field}", form);
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+    }
+
+    private static async Task UploadPortrait(HttpClient client, Guid u, Guid entry, byte[] png)
+    {
+        using var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(png);
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "file", "portrait.png");
+
+        var response = await client.PutAsync($"/api/universes/{u}/entities/{entry}/image", form);
         Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
     }
 

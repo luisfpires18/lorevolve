@@ -17,7 +17,8 @@ import { RouteFocus, SkipLink } from './components/SkipLink'
 import { WorkspaceLayout } from './components/WorkspaceLayout'
 import { useI18n } from './i18n'
 import { ProjectKind } from './projects/types'
-import { CINEMA, COMIC, GAME_ENTITIES, GAMING, WRITING_PROJECTS } from './universes/sections'
+import { CINEMA, COMIC, GAME_ENTITIES, GAMING } from './universes/sections'
+
 import { HistoryLeaveGuard } from './lib/leaveGuard'
 import { StoryRedirect } from './components/StoryRedirect'
 import { ProfileImageProvider } from './profile/ProfileImageProvider'
@@ -34,6 +35,9 @@ import {
   ExplorePage,
   FamilyTreePage,
   ForgotPasswordPage,
+  GameEntitiesPage,
+  CategoryShelfPage,
+  GameEntityPage,
   IdeaBoardPage,
   IdeaBoardsPage,
   IdeaPage,
@@ -46,6 +50,7 @@ import {
   MassCreatePage,
   ProfilePage,
   ProjectPage,
+  ProjectsDirectory,
   ProjectsPage,
   PublicAuthorPage,
   PublicLorePage,
@@ -65,6 +70,11 @@ import {
   WorldRulePage,
   WorldRulesPage,
 } from './screens'
+
+/** The kinds on each Creation shelf, kept stable so the shelf reads its projects once. */
+const GAMING_KINDS = [ProjectKind.Game]
+const CINEMA_KINDS = [ProjectKind.Film, ProjectKind.Series]
+const COMIC_KINDS = [ProjectKind.Comic]
 
 /**
  * Held while a whole screen's code is fetched. The same plate the session probe holds behind
@@ -115,6 +125,11 @@ const asScreen = (key: string, page: ReactNode) => screen(key, <ScreenPending />
 function ExploreRedirect() {
   const { search } = useLocation()
   return <Navigate to={{ pathname: '/', search }} replace />
+}
+/** The old stories list (LOREX-049, #277): Writing is the list now. The query and hash ride along. */
+function StoriesToWriting() {
+  const { search, hash } = useLocation()
+  return <Navigate to={{ pathname: '../writing', search, hash }} relative="path" replace />
 }
 const asSection = (key: string, page: ReactNode) => screen(key, <SectionPending />, page)
 
@@ -296,34 +311,33 @@ function Root() {
                   </RoleGate>,
                 )}
               />
-              <Route path="projects" element={asSection('projects', <ProjectsPage inUniverse />)} />
+              <Route path="projects" element={asSection('projects', <ProjectsDirectory />)} />
               {/* The Creation and Game Entities destinations: the project list narrowed to their kinds (#272). */}
-              <Route
-                path="writing"
-                element={asSection(
-                  'projects',
-                  <ProjectsPage
-                    inUniverse
-                    section={WRITING_PROJECTS}
-                    kinds={[ProjectKind.Writing]}
-                  />,
-                )}
-              />
+              <Route path="writing" element={asSection('stories', <StoriesPage />)} />
               <Route
                 path="gaming"
                 element={asSection(
                   'projects',
-                  <ProjectsPage inUniverse section={GAMING} kinds={[ProjectKind.Game]} />,
+                  <CategoryShelfPage
+                    key="gaming"
+                    section={GAMING}
+                    kinds={GAMING_KINDS}
+                    frame="console"
+                    empty="projects.list.emptyGame"
+                  />,
                 )}
               />
               <Route
                 path="cinema"
                 element={asSection(
                   'projects',
-                  <ProjectsPage
-                    inUniverse
+                  <CategoryShelfPage
+                    key="cinema"
                     section={CINEMA}
-                    kinds={[ProjectKind.Film, ProjectKind.Series]}
+                    kinds={CINEMA_KINDS}
+                    frame="film"
+                    empty="projects.list.emptyCinema"
+                    view="sagas"
                   />,
                 )}
               />
@@ -331,15 +345,37 @@ function Root() {
                 path="comic"
                 element={asSection(
                   'projects',
-                  <ProjectsPage inUniverse section={COMIC} kinds={[ProjectKind.Comic]} />,
+                  <CategoryShelfPage
+                    key="comic"
+                    section={COMIC}
+                    kinds={COMIC_KINDS}
+                    frame="comic"
+                    empty="projects.list.emptyComic"
+                    view="arcs"
+                  />,
                 )}
               />
               <Route
                 path="game-entities"
                 element={asSection(
                   'projects',
-                  <ProjectsPage inUniverse section={GAME_ENTITIES} kinds={[ProjectKind.Game]} />,
+                  <ProjectsPage
+                    inUniverse
+                    section={GAME_ENTITIES}
+                    kinds={[ProjectKind.Game]}
+                    rowPath={(project) =>
+                      `/app/universes/${project.universe.id}/game-entities/${project.id}`
+                    }
+                  />,
                 )}
+              />
+              <Route
+                path="game-entities/:projectId"
+                element={asSection('projects', <GameEntitiesPage />)}
+              />
+              <Route
+                path="game-entities/:projectId/:entityId"
+                element={asSection('projects', <GameEntityPage />)}
               />
               <Route
                 path="projects/:projectId/*"
@@ -359,7 +395,7 @@ function Root() {
                 path="projects/:storyId/manuscript/:sceneId?"
                 element={asSection('project', <ProjectPage inUniverse view="manuscript" />)}
               />
-              <Route path="stories" element={asSection('stories', <StoriesPage />)} />
+              <Route path="stories" element={<StoriesToWriting />} />
               {/*
                * Until #194 a story's pages lived here. Every one of these addresses still resolves, by a redirect to the
                * story's project views that keeps the scene id, the query and the hash (a `#scene-` link lands on its

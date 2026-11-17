@@ -8,18 +8,30 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom'
+import { ComicCollections } from '../components/ComicCollections'
 import { EmptyState } from '../components/EmptyState'
 import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
+import { ProjectSchema } from '../components/ProjectSchema'
+import { useUniverseAccess } from '../universes/access'
+import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
 import { ProjectOverview } from '../components/ProjectOverview'
+import { ProjectOutline } from '../components/ProjectOutline'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
 import { createProject, getProject, listProjects } from '../projects/api'
 import { getStory } from '../stories/api'
 import StoryPage from './StoryPage'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { kindLabel, lifecycleLabel, projectPath, projectSections } from '../projects/sections'
+import {
+  formatLabel,
+  formatsFor,
+  kindLabel,
+  lifecycleLabel,
+  projectPath,
+  projectSections,
+} from '../projects/sections'
 import {
   ProjectKind,
   ProjectLifecycle,
@@ -29,6 +41,14 @@ import {
 import { documentTitle, useDocumentTitle, useWholeTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 
+/** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
+function kindFromParam(raw: string | null): ProjectKindValue {
+  const kind = Number(raw)
+  return raw !== null && KINDS.includes(kind as ProjectKindValue)
+    ? (kind as ProjectKindValue)
+    : ProjectKind.Writing
+}
+
 const KINDS: readonly ProjectKindValue[] = [
   ProjectKind.Writing,
   ProjectKind.Game,
@@ -36,6 +56,24 @@ const KINDS: readonly ProjectKindValue[] = [
   ProjectKind.Film,
   ProjectKind.Comic,
 ]
+
+/** The kinds the form offers (owner, 2026-11-17): Film and Series are one choice, Cinema, told apart by the format. */
+const PICKED: readonly ProjectKindValue[] = [
+  ProjectKind.Writing,
+  ProjectKind.Game,
+  ProjectKind.Film,
+  ProjectKind.Comic,
+]
+
+const isCinema = (kind: ProjectKindValue) =>
+  kind === ProjectKind.Film || kind === ProjectKind.Series
+
+/** A kind's formats; Cinema's are the film formats then the series formats, and the one picked sets the kind. */
+function pickFormats(kind: ProjectKindValue) {
+  return isCinema(kind)
+    ? [...formatsFor(ProjectKind.Film), ...formatsFor(ProjectKind.Series)]
+    : formatsFor(kind)
+}
 
 /** One project: its own page, or the form that makes one. */
 export default function ProjectPage({
@@ -62,7 +100,10 @@ function NewProject() {
   const [params] = useSearchParams()
   const universeId = params.get('universeId')
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<ProjectKindValue>(ProjectKind.Writing)
+  const [kind, setKind] = useState<ProjectKindValue>(kindFromParam(params.get('kind')))
+  const [format, setFormat] = useState<string | null>(
+    () => formatsFor(kindFromParam(params.get('kind')))[0]?.id ?? null,
+  )
   const [summary, setSummary] = useState('')
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
@@ -98,6 +139,7 @@ function NewProject() {
             kind,
             lifecycle: ProjectLifecycle.Planning,
             subtype: null,
+            format,
             summary,
             universeId,
             expectedVersion: null,
@@ -128,18 +170,46 @@ function NewProject() {
             <select
               {...control}
               className="field__input field__input--select"
-              value={kind}
-              onChange={(event) => setKind(Number(event.target.value) as ProjectKindValue)}
+              value={isCinema(kind) ? ProjectKind.Film : kind}
+              onChange={(event) => {
+                const next = Number(event.target.value) as ProjectKindValue
+                setKind(next)
+                setFormat(formatsFor(next)[0]?.id ?? null)
+              }}
               data-testid="project-new-kind"
             >
-              {KINDS.map((value) => (
+              {PICKED.map((value) => (
                 <option key={value} value={value}>
-                  {kindLabel(value)}
+                  {value === ProjectKind.Film ? t('projects.new.cinema') : kindLabel(value)}
                 </option>
               ))}
             </select>
           )}
         </Field>
+
+        {pickFormats(kind).length > 0 ? (
+          <Field label={t('projects.new.format')}>
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={format ?? ''}
+                onChange={(event) => {
+                  const picked = pickFormats(kind).find((one) => one.id === event.target.value)
+                  setFormat(event.target.value)
+                  if (picked && isCinema(kind)) setKind(picked.kind as ProjectKindValue)
+                }}
+                data-testid="project-new-format"
+              >
+                {pickFormats(kind).map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {formatLabel(option.id)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        ) : null}
 
         <Field label={t('projects.new.summary')}>
           {(control) => (
@@ -196,6 +266,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   const { search, hash } = useLocation()
   // The universe's workspace, when the route is inside one. The account-level route has none.
   const workspace = useOutletContext<WorkspaceContext | undefined>()
+  const access = useUniverseAccess()
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
@@ -304,7 +375,12 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
 
   const { project } = read
   const sections = projectSections(project.kind)
-  const section = sections.find((candidate) => candidate.segment === segment)
+  // `entities/<entryId>` is one entry's own screen (#286) inside the project; no other view has a sub-address.
+  const [head, entryId, ...beyond] = segment.split('/')
+  const section =
+    beyond.length === 0 && (entryId === undefined || (head === 'entities' && entryId !== ''))
+      ? sections.find((candidate) => candidate.segment === head)
+      : undefined
 
   /*
    * One address per view (#199): `/app/universes/<universeId>/projects/<id>/<view>`, inside the universe the project
@@ -315,7 +391,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   if (!inUniverse || universeId !== project.universe.id || !section) {
     const target = projectPath(
       project.id,
-      section ? section.segment : sections[0].segment,
+      section ? segment : sections[0].segment,
       project.universe.id,
     )
     return <Navigate to={`${target}${search}${hash}`} replace />
@@ -326,35 +402,56 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
    * Types and Entries into two columns of unequal weight and dropped the structure panel full width underneath. They
    * are the same kind of thing and now read as one stack, separated by a rule, at every width (#184).
    */
-  const body = (
+  const entitiesPath = projectPath(project.id, 'entities', project.universe.id)
+  const meta = (
+    <span className="projectmeta" data-testid="project-meta">
+      <span>{kindLabel(project.kind)}</span>
+      {project.format ? (
+        <span data-testid="project-format">{formatLabel(project.format)}</span>
+      ) : formatsFor(project.kind).length > 0 ? (
+        <span data-testid="project-format">{t('projects.format.unset')}</span>
+      ) : null}
+      <span>{lifecycleLabel(project.lifecycle)}</span>
+      {project.subtype ? <span>{project.subtype}</span> : null}
+    </span>
+  )
+  // A kind with no Overview (a Game, owner 2026-11-17) opens on its content; its facts and summary sit above the tabs.
+  const compact = !sections.some((candidate) => candidate.segment === 'overview')
+  const typesPath = sections.some((candidate) => candidate.segment === 'types')
+    ? projectPath(project.id, 'types', project.universe.id)
+    : undefined
+  const body = entryId ? (
     <div className="projectbody">
-      <section className="projects" data-testid="project-page">
-        {/*
-         * The head every other workspace screen uses (#184): the project's facts as the lede, and the summary under it
-         * as the project's own words. The universe is named by the shell's breadcrumb above the tabs (#199).
-         */}
-        <PageHeader
-          title={project.name}
-          titleTestId="project-name"
-          lede={
-            <span className="projectmeta" data-testid="project-meta">
-              <span>{kindLabel(project.kind)}</span>
-              <span>{lifecycleLabel(project.lifecycle)}</span>
-              {project.subtype ? <span>{project.subtype}</span> : null}
-            </span>
-          }
-        />
+      <ProjectEntityDetailView
+        key={entryId}
+        projectId={project.id}
+        universeId={project.universe.id}
+        entityId={entryId}
+        gameName={project.name}
+        gameHref={entitiesPath}
+      />
+    </div>
+  ) : (
+    <div className="projectbody">
+      {compact ? null : (
+        <section className="projects" data-testid="project-page">
+          {/*
+           * The head every other workspace screen uses (#184): the project's facts as the lede, and the summary under it
+           * as the project's own words. The universe is named by the shell's breadcrumb above the tabs (#199).
+           */}
+          <PageHeader title={project.name} titleTestId="project-name" lede={meta} />
 
-        {project.summary ? (
-          <p className="prose" data-testid="project-summary">
-            {project.summary}
-          </p>
-        ) : (
-          <p className="projectcard__meta" data-testid="project-summary-empty">
-            {t('projects.one.noSummary')}
-          </p>
-        )}
-      </section>
+          {project.summary ? (
+            <p className="prose" data-testid="project-summary">
+              {project.summary}
+            </p>
+          ) : (
+            <p className="projectcard__meta" data-testid="project-summary-empty">
+              {t('projects.one.noSummary')}
+            </p>
+          )}
+        </section>
+      )}
 
       {/*
        * One panel per view (#193). The overview holds the project's own content, its counts and the ways into the rest
@@ -372,6 +469,19 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
           projectId={project.id}
           universeId={project.universe.id}
           reloadKey={schemaVersion}
+          entryHref={(entry) => `${entitiesPath}/${entry.id}`}
+          typesHref={typesPath}
+          onChanged={() => setSchemaVersion((version) => version + 1)}
+        />
+      ) : section.segment === 'types' ? (
+        // The type editor, the same `ProjectSchema` Entities used to open behind "Manage types".
+        <ProjectSchema
+          asPage
+          projectName={project.name}
+          universeId={project.universe.id}
+          canEdit={access.editContent}
+          projectId={project.id}
+          reloadKey={schemaVersion}
           onChanged={() => setSchemaVersion((version) => version + 1)}
         />
       ) : section.segment === 'structure' &&
@@ -384,18 +494,35 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         (project.kind === ProjectKind.Series ||
           project.kind === ProjectKind.Film ||
           project.kind === ProjectKind.Comic) ? (
-        <ProjectSeasons
-          projectId={project.id}
-          universeId={project.universe.id}
-          words={
-            project.kind === ProjectKind.Film
-              ? 'sequences'
-              : project.kind === ProjectKind.Comic
-                ? 'volumes'
-                : 'seasons'
-          }
-          pages={project.kind === ProjectKind.Comic}
-        />
+        /*
+         * A project whose format has structure rules (#290) gets the outline; the outline draws this legacy panel itself
+         * when the tree read answers 404 (no format, or one without rules yet), and under "Earlier structure" while
+         * legacy rows exist.
+         */
+        <>
+          <ProjectOutline
+            key={`${project.id}-${project.format ?? ''}`}
+            projectId={project.id}
+            legacy={
+              <ProjectSeasons
+                projectId={project.id}
+                universeId={project.universe.id}
+                words={
+                  project.kind === ProjectKind.Film
+                    ? 'sequences'
+                    : project.kind === ProjectKind.Comic
+                      ? 'volumes'
+                      : 'seasons'
+                }
+                pages={project.kind === ProjectKind.Comic}
+              />
+            }
+          />
+          {/* A Comic's Volumes (#297) collect its issues or chapters by reference, under the outline. */}
+          {project.kind === ProjectKind.Comic ? (
+            <ComicCollections universeId={project.universe.id} projectId={project.id} />
+          ) : null}
+        </>
       ) : (
         <EmptyState
           title={t('projects.view.empty')}
@@ -412,6 +539,18 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       projectName={project.name}
       universe={project.universe}
       sections={sections}
+      facts={
+        compact
+          ? {
+              lede: meta,
+              summary: project.summary ? (
+                <p className="prose" data-testid="project-summary">
+                  {project.summary}
+                </p>
+              ) : null,
+            }
+          : undefined
+      }
     >
       {body}
     </ProjectShell>

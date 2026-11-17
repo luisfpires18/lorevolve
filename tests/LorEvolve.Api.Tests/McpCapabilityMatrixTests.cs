@@ -100,6 +100,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
             ["systems", "system-rules", "world-logic/rules"],
             ["list_systems", "list_world_logic_rules", "get_world_logic_rule", "evaluate_world_logic_rule", "get_rule_impact"],
             ["SystemRule", "LoreSystem"]),
+        Excepted("A System's state machine", ["systems/machine"], "pending-lorex-075"),
         new(
             "Recorded World Logic findings",
             ["world-logic/findings"],
@@ -124,6 +125,8 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("Scenes", ["stories/scenes"], ["get_scene"], ["Scene"]),
         Mapped("A scene's prose", ["stories/scenes/manuscript"], ["read_scene_manuscript", "search_scene_manuscript"], ["Manuscript"]),
         Mapped("Plot arcs", ["stories/plot-arcs"], ["get_arc"], ["PlotArc"]),
+        Excepted("A story's cover", ["stories/cover"], Why.MediaBytes),
+        Excepted("The order of the universe's projects", ["projects"], Why.PersonOnly),
         Excepted(
             "Review comments",
             ["entities/comments", "stories/comments", "stories/scenes/comments", "comment-threads"],
@@ -152,6 +155,18 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Excepted("Collaborators", ["collaborators"], Why.PersonOnly),
         Excepted("Invitations", ["invitations"], Why.PersonOnly),
         ReadOnly("Lore references", ["lore-references"], ["get_lore_entry"]),
+        Excepted("Type templates", ["type-templates", "type-templates/fields"], Why.PersonOnly),
+        Excepted(
+            "Cinema sagas and their phases",
+            [
+                "cinema-sagas", "cinema-sagas/move", "cinema-sagas/phases", "cinema-sagas/phases/move",
+                "cinema-sagas/phases/members", "cinema-sagas/phases/members/move",
+            ],
+            Why.PersonOnly),
+        Excepted(
+            "Comic story arcs and events",
+            ["comic-collections", "comic-collections/move", "comic-collections/entries", "comic-collections/entries/move"],
+            Why.PersonOnly),
     ];
 
     private static readonly Domain[] Project =
@@ -160,7 +175,9 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("A project's entries", ["entities"], ["list_project_entries", "get_project_entry"], ["ProjectEntry"]),
         Excepted("A project entry's history", ["entities/revisions"], Why.LiveOnly),
         Mapped("A project's own types", ["entity-types"], ["get_project_schema"], ["ProjectType", "ProjectField"]),
-        ReadOnly("A project's structure", ["seasons"], ["get_project_structure"]),
+        ReadOnly("A project's structure", ["seasons", "structure", "structure/move"], ["get_project_structure"]),
+        Excepted("A comic page's or panel's picture", ["structure/image"], Why.MediaBytes),
+        Excepted("A project's cover", ["cover"], Why.MediaBytes),
     ];
 
     /// <summary>The proposal tools themselves: the one write path, and how an app finds and follows it.</summary>
@@ -283,9 +300,9 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         var published = File.ReadAllText(Path.Combine(RepositoryRoot(), Path.Combine(Document)));
         var gaps = published[published.IndexOf("## Known gaps", StringComparison.Ordinal)..];
 
-        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. Nothing
-        // carries one now that every M3 child has merged. If a later milestone adds one, the prose has to name every
-        // prefix it covers, or a reader is told of fewer gaps than there are.
+        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. A System's
+        // state machine carries one until #361 gives it its tools. The prose has to name every prefix such a domain
+        // covers, or a reader is told of fewer gaps than there are.
         foreach (var domain in Universe.Concat(Project).Where(domain => domain.ReadWhy.StartsWith("pending-", StringComparison.Ordinal)))
         {
             foreach (var prefix in domain.Prefixes)

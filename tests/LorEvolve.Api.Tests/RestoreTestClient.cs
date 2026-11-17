@@ -474,6 +474,72 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 58)
+        {
+            // Story and project covers, and the projects' order, came in version 58.
+            foreach (var story in payload["stories"]?.AsArray() ?? [])
+            {
+                Drop(story, "cover");
+            }
+
+            foreach (var project in payload["creativeProjects"]?.AsArray() ?? [])
+            {
+                Drop(project, "cover", "sortOrder");
+            }
+
+            foreach (var path in entries.Keys
+                .Where(path => path.StartsWith("media/stories/", StringComparison.Ordinal) || path.StartsWith("media/projects/", StringComparison.Ordinal))
+                .ToList())
+            {
+                entries.Remove(path);
+            }
+        }
+
+        if (version < 55)
+        {
+            // A collection's project (Comic Volumes) came in version 55 (#297).
+            foreach (var collection in payload["comicCollections"]?.AsArray() ?? [])
+            {
+                Drop(collection, "projectId");
+            }
+        }
+
+        if (version < 54)
+        {
+            // A panel's script and a page's or panel's picture came in version 54 (#295).
+            foreach (var node in payload["projectNodes"]?.AsArray() ?? [])
+            {
+                Drop(node, "dialogue", "caption", "sfx", "notes", "image");
+            }
+        }
+
+        if (version < 53)
+        {
+            // Comic story arcs and events came in version 53 (#296).
+            Drop(payload, "comicCollections");
+        }
+
+        if (version < 52)
+        {
+            // Cinema sagas came in version 52 (#289).
+            Drop(payload, "cinemaSagas");
+        }
+
+        if (version < 51)
+        {
+            // A project's structure nodes came in version 51 (#290).
+            Drop(payload, "projectNodes");
+        }
+
+        if (version < 49)
+        {
+            // A project's format came in version 49 (#288).
+            foreach (var project in payload["creativeProjects"]?.AsArray() ?? [])
+            {
+                Drop(project, "format");
+            }
+        }
+
         if (version < 48)
         {
             // Image fields came in version 48 (Issue #238): a field's crop shape and an entry's field pictures.

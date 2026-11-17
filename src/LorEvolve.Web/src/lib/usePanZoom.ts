@@ -47,6 +47,30 @@ export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
+const FIT_MARGIN = 48
+
+/** The view that shows every item whole, never above actual size; an empty layer is centred. */
+export function fitView(
+  items: { x: number; y: number; width: number; height: number }[],
+  size: StageSize,
+): View {
+  if (items.length === 0) return { scale: 1, x: size.width / 2, y: size.height / 2 }
+  const left = Math.min(...items.map((item) => item.x))
+  const top = Math.min(...items.map((item) => item.y))
+  const right = Math.max(...items.map((item) => item.x + item.width))
+  const bottom = Math.max(...items.map((item) => item.y + item.height))
+  const scale = Math.min(
+    1,
+    (size.width - FIT_MARGIN * 2) / Math.max(right - left, 1),
+    (size.height - FIT_MARGIN * 2) / Math.max(bottom - top, 1),
+  )
+  return {
+    scale: Math.max(scale, 0.1),
+    x: size.width / 2 - ((left + right) / 2) * scale,
+    y: size.height / 2 - ((top + bottom) / 2) * scale,
+  }
+}
+
 /**
  * Pan and zoom over one transformed layer, shared by the map viewer (ADR 0060) and the idea board (ADR 0066).
  *

@@ -69,7 +69,7 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(sidebar(page).getByTestId('workspace-game-entities')).toHaveCount(0)
   })
 
-  test('a Game project with no entities offers Gaming and Game Entities, the latter right after Types', async ({
+  test('a Game project offers Gaming, and World building no Game Entities (owner, 2026-11-17)', async ({
     page,
   }) => {
     await signUp(page)
@@ -80,7 +80,6 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(sidebar(page).getByTestId('sidebar-world-building').getByRole('link')).toHaveText([
       'Lore',
       'Types',
-      'Game Entities',
       'Family Tree',
       'Maps',
       'Timeline',
@@ -164,10 +163,12 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     await expect(list).toContainText('Serial')
     await expect(list).not.toContainText('Quest')
 
+    // Writing is the Stories experience (#277): its stories sit in `story-list`.
     await sidebar(page).getByTestId('workspace-writing').click()
-    await expect(list.getByRole('link')).toHaveCount(1)
-    await expect(list).toContainText('Only Tale')
-    await expect(list).not.toContainText('Quest')
+    const writing = page.getByTestId('story-list')
+    await expect(writing.getByRole('link')).toHaveCount(1)
+    await expect(writing).toContainText('Only Tale')
+    await expect(writing).not.toContainText('Quest')
   })
 
   test('Writing keeps the stories order: Move down is kept across a reload', async ({ page }) => {
@@ -178,14 +179,14 @@ test.describe('Conditional Creation and Game Entities navigation', () => {
     }
     await project(page, id, 'Quest', GAME)
     await page.goto(`/app/universes/${id}/writing`)
-    const titles = page.locator('.storyrow__title')
+    const titles = page.locator('.shelfcard__title')
     await expect(titles).toHaveText(['First Tale', 'Second Tale'])
 
     await page.getByTestId('story-actions').first().click()
     await page.getByTestId('story-move-down').click()
     await expect(titles).toHaveText(['Second Tale', 'First Tale'])
     // The screen moves first; the announcement is the API's answer, so reload only after it.
-    await expect(page.getByTestId('projects-announcement')).toContainText('story 2 of 2')
+    await expect(page.getByTestId('stories-announcement')).toContainText('story 2 of 2')
 
     await page.reload()
     await expect(titles).toHaveText(['Second Tale', 'First Tale'])
@@ -243,7 +244,7 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     ])
   })
 
-  test('a Game project adds Game Entities after Types, and Gaming alone under Creation', async ({
+  test('a Game project adds Gaming alone under Creation, and no Game Entities card', async ({
     page,
   }) => {
     await signUp(page)
@@ -252,7 +253,7 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     await page.goto(`/app/universes/${id}`)
     await expect(overviewHeadings(page)).toHaveText(['World building', 'Creation', 'Management'])
     const ids = await overviewIds(page)
-    expect(ids.indexOf('overview-game-entities')).toBe(ids.indexOf('overview-types') + 1)
+    expect(ids).not.toContain('overview-game-entities')
     await expect(page.locator('.contents--creation [data-testid^="overview-"]')).toHaveText([
       /Gaming/,
     ])
@@ -335,5 +336,46 @@ test.describe('Overview mirrors the navigation hierarchy', () => {
     const description = await page.locator('.overview__description').boundingBox()
     const firstSection = await page.locator('.contents').first().boundingBox()
     expect(description!.y).toBeLessThan(firstSection!.y)
+  })
+})
+
+test.describe('Projects directory', () => {
+  test('Projects is four category cards with counts, each opening its own list', async ({
+    page,
+  }) => {
+    await signUp(page)
+    const id = await universe(page)
+    await project(page, id, unique('Reel '), FILM)
+    await project(page, id, unique('Season '), SERIES)
+    await project(page, id, unique('Quest '), GAME)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`/app/universes/${id}/projects`)
+
+    const cards = page.getByTestId('projects-directory-card')
+    await expect(cards).toHaveCount(4)
+    await expect(cards.locator('.typecard__name')).toHaveText([
+      'Writing',
+      'Gaming',
+      'Cinema',
+      'Comic',
+    ])
+    await expect(page.getByTestId('projects-directory-count')).toHaveText([
+      'No projects yet',
+      '1 project',
+      '2 projects',
+      'No projects yet',
+    ])
+    await expect(page.getByTestId('projects-page-new')).toBeVisible()
+    await expect(sidebar(page).locator('[data-testid^="project-link-"]')).toHaveCount(0)
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    )
+    expect(overflow).toBeLessThanOrEqual(0)
+
+    for (const segment of ['writing', 'gaming', 'cinema', 'comic']) {
+      await page.goto(`/app/universes/${id}/projects`)
+      await cards.and(page.locator(`[data-section="${segment}"]`)).click()
+      await expect(page).toHaveURL(new RegExp(`/app/universes/${id}/${segment}$`))
+    }
   })
 })

@@ -1,5 +1,26 @@
 /** Stories: the story page, its arcs, chapters and scenes, their forms and what each part publishes (#103). */
 const stories = {
+  cover: {
+    tooBig: 'Pictures must be {mb} MB or smaller.',
+    removeFailed: 'The cover could not be removed.',
+    cardAlt: 'The cover as the book shows it',
+    empty: 'No cover yet',
+    replace: 'Replace cover',
+    upload: 'Upload cover',
+    editFraming: 'Edit framing',
+    editFramingTitle: 'Edit framing',
+    frameTitle: 'Frame the cover',
+    saveFraming: 'Save',
+    confirmUpload: 'Upload',
+    updatingCard: 'Updating cover',
+    processing: 'Processing picture',
+    cropHint:
+      'Drag the picture to place the frame, or select it and use the arrow keys. The whole picture is kept; the frame is what the card shows.',
+    removing: 'Removing…',
+    remove: 'Remove cover',
+    hint: 'One tall picture, framed 2:3 for the book cover. JPEG, PNG or WebP, up to 8 MB.',
+    hintPublic: 'One tall picture, framed 2:3 for the book cover. JPEG, PNG or WebP, up to 8 MB.',
+  },
   page: {
     opening: 'Opening the story…',
     missing: {

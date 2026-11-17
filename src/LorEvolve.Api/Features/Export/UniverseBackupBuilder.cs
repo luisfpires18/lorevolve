@@ -68,8 +68,19 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .Where(image => image.Entity!.UniverseId == universeId)
                 .ToListAsync(cancellationToken))
             .ToLookup(image => image.EntityId);
+        // Every comic page's and panel's picture (#295), originals only.
+        var nodeImages = await db.ProjectNodeImages.AsNoTracking()
+            .Where(image => image.Node!.Project!.UniverseId == universeId)
+            .ToDictionaryAsync(image => image.NodeId, cancellationToken);
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
+        // Story and project covers (version 58), originals only: the card is cut again on restore.
+        var storyCovers = await db.StoryCovers.AsNoTracking()
+            .Where(cover => cover.UniverseId == universeId)
+            .ToDictionaryAsync(cover => cover.SubjectId, cancellationToken);
+        var projectCovers = await db.ProjectCovers.AsNoTracking()
+            .Where(cover => cover.UniverseId == universeId)
+            .ToDictionaryAsync(cover => cover.SubjectId, cancellationToken);
 
         // Every map with its pins (issue #52), originals only: the display copy is fitted again on restore.
         var maps = await db.UniverseMaps.AsNoTracking()
@@ -121,7 +132,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await RelationshipTypesAsync(universeId, cancellationToken),
             await RelationshipsAsync(universeId, cancellationToken),
             await TimelineAsync(universeId, cancellationToken),
-            await StoriesAsync(universeId, cancellationToken),
+            [.. (await StoriesAsync(universeId, cancellationToken))
+                .Select(story => story with { Cover = CoverOf(storyCovers, story.Id, BackupArchive.StoryCoverMediaPathFor) })],
             await DismissedConflictsAsync(universeId, cancellationToken),
             await IdeasAsync(universe.Id, universe.OwnerId, cancellationToken),
             await WorldRulesAsync(universeId, cancellationToken),
@@ -131,13 +143,18 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await KnowledgeAsync(universeId, cancellationToken),
             MapsOf(maps, calibrations),
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
-            await CreativeProjectsAsync(universeId, cancellationToken),
+            [.. (await CreativeProjectsAsync(universeId, cancellationToken))
+                .Select(project => project with { Cover = CoverOf(projectCovers, project.Id, BackupArchive.ProjectCoverMediaPathFor) })],
             [.. (await ProjectEntriesAsync(universeId, revisions, cancellationToken))
-                .Select(entry => entry with { FieldImages = FieldImagesOf(entry.Id, fieldImages) })],
+                .Select(entry => entry with { FieldImages = FieldImagesOf(entry.Id, fieldImages), Image = Image(images, entry.Id) })],
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
-            await DismissedFindingsAsync(universeId, cancellationToken));
+            await DismissedFindingsAsync(universeId, cancellationToken),
+            await TypeTemplatesAsync(universeId, cancellationToken),
+            await ProjectNodesAsync(universeId, nodeImages, cancellationToken),
+            await CinemaSagasAsync(universeId, cancellationToken),
+            await ComicCollectionsAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -161,6 +178,21 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         BackupArchive.FieldImageMediaPathFor(image.EntityId, image.FieldDefinitionId, image.ContentType),
                         image.OriginalKey,
                         image.ContentType)))
+                    .Concat(nodeImages.Values.Select(image => new BackupMediaObject(
+                        null,
+                        BackupArchive.NodeImageMediaPathFor(image.NodeId, image.ContentType),
+                        image.OriginalKey,
+                        image.ContentType)))
+                    .Concat(storyCovers.Values.Select(cover => new BackupMediaObject(
+                        null,
+                        BackupArchive.StoryCoverMediaPathFor(cover.SubjectId, cover.ContentType),
+                        cover.OriginalKey,
+                        cover.ContentType)))
+                    .Concat(projectCovers.Values.Select(cover => new BackupMediaObject(
+                        null,
+                        BackupArchive.ProjectCoverMediaPathFor(cover.SubjectId, cover.ContentType),
+                        cover.OriginalKey,
+                        cover.ContentType)))
                     .Concat(artwork is null
                         ? []
                         : [new BackupMediaObject(null, BackupArchive.ArtworkPathFor(artwork.ContentType), artwork.OriginalKey, artwork.ContentType)])
@@ -175,6 +207,21 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     }
 
     // ---------- Media ----------
+
+    /// <summary>A story's or project's cover as the archive describes it, or null when it has none.</summary>
+    private static BackupFieldImage? CoverOf<TCover>(Dictionary<Guid, TCover> covers, Guid subjectId, Func<Guid, string, string> pathFor)
+        where TCover : Covers.CoverImage =>
+        covers.TryGetValue(subjectId, out var cover)
+            ? new BackupFieldImage(
+                subjectId,
+                cover.FileName,
+                cover.ContentType,
+                cover.Width,
+                cover.Height,
+                cover.ByteSize,
+                pathFor(subjectId, cover.ContentType),
+                new BackupImageCrop(cover.CropX, cover.CropY, cover.CropWidth, cover.CropHeight))
+            : null;
 
     /// <summary>An entry's pictures in its image fields, by field id, or null when it has none.</summary>
     private static IReadOnlyList<BackupFieldImage>? FieldImagesOf(Guid entityId, ILookup<Guid, EntityFieldImage> fieldImages) =>
@@ -203,7 +250,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     private async Task<Dictionary<Guid, EntityImage>> ImagesAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>
-        await db.EntityImages.AsNoTracking()
+        // IgnoreQueryFilters: project entries' pictures too (#286), which the entity filter hides.
+        await db.EntityImages.AsNoTracking().IgnoreQueryFilters()
             .Where(image => image.Entity!.UniverseId == universeId)
             .ToDictionaryAsync(image => image.EntityId, cancellationToken);
 
@@ -1342,12 +1390,102 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
 
     // ---------- Idea boards ----------
 
+    /// <summary>Comic story arcs and events (version 53, #296): see <see cref="BackupComicCollection"/>.</summary>
+    private async Task<IReadOnlyList<BackupComicCollection>> ComicCollectionsAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ComicCollections.AsNoTracking()
+            .Where(collection => collection.UniverseId == universeId)
+            .OrderBy(collection => collection.Kind)
+            .ThenBy(collection => collection.ProjectId)
+            .ThenBy(collection => collection.SortOrder)
+            .Select(collection => new BackupComicCollection(
+                collection.Id,
+                collection.Kind,
+                collection.Name,
+                collection.Summary,
+                collection.SortOrder,
+                collection.CreatedAt,
+                collection.UpdatedAt,
+                collection.Entries.OrderBy(entry => entry.SortOrder).Select(entry => entry.NodeId).ToList(),
+                collection.ProjectId))
+            .ToListAsync(cancellationToken);
+
+    /// <summary>Cinema sagas (version 52, #289): see <see cref="BackupCinemaSaga"/>.</summary>
+    private async Task<IReadOnlyList<BackupCinemaSaga>> CinemaSagasAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.CinemaSagas.AsNoTracking()
+            .Where(saga => saga.UniverseId == universeId)
+            .OrderBy(saga => saga.SortOrder)
+            .Select(saga => new BackupCinemaSaga(
+                saga.Id,
+                saga.Name,
+                saga.Summary,
+                saga.SortOrder,
+                saga.CreatedAt,
+                saga.UpdatedAt,
+                saga.Phases
+                    .OrderBy(phase => phase.SortOrder)
+                    .Select(phase => new BackupCinemaPhase(
+                        phase.Id,
+                        phase.Name,
+                        phase.Summary,
+                        phase.SortOrder,
+                        phase.CreatedAt,
+                        phase.UpdatedAt,
+                        phase.Members.OrderBy(member => member.SortOrder).Select(member => member.ProjectId).ToList()))
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every project of this universe, oldest first (version 39). A universe owns its projects and deletes them with
     /// it (#171), so they belong in its archive; the project-scoped entry types name them by the ids written here.
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>Every structure node of every project of this universe, flat (version 51, #290).</summary>
+    private async Task<IReadOnlyList<BackupProjectNode>> ProjectNodesAsync(
+        Guid universeId,
+        Dictionary<Guid, ProjectEntities.ProjectNodeImage> nodeImages,
+        CancellationToken cancellationToken) =>
+        [.. (await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.Project!.UniverseId == universeId)
+            .OrderBy(node => node.ProjectId)
+            .ThenBy(node => node.ParentId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new BackupProjectNode(
+                node.Id,
+                node.ProjectId,
+                node.ParentId,
+                node.Level,
+                node.Title,
+                node.Summary,
+                node.Body,
+                node.SortOrder,
+                node.CreatedAt,
+                node.UpdatedAt,
+                node.Dialogue,
+                node.Caption,
+                node.Sfx,
+                node.Notes,
+                null))
+            .ToListAsync(cancellationToken))
+            .Select(node => nodeImages.TryGetValue(node.Id, out var image)
+                ? node with
+                {
+                    Image = new BackupFieldImage(
+                        node.Id,
+                        image.FileName,
+                        image.ContentType,
+                        image.Width,
+                        image.Height,
+                        image.ByteSize,
+                        BackupArchive.NodeImageMediaPathFor(node.Id, image.ContentType),
+                        new BackupImageCrop(image.CropX, image.CropY, image.CropWidth, image.CropHeight)),
+                }
+                : node)];
+
     /// <summary>
     /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
     /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.
@@ -1471,7 +1609,10 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 project.Subtype,
                 project.Summary,
                 Utc(project.CreatedAt),
-                Utc(project.UpdatedAt)))
+                Utc(project.UpdatedAt),
+                project.Format,
+                project.SortOrder,
+                null))
             .ToListAsync(cancellationToken);
 
     /// <summary>
@@ -1612,6 +1753,37 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .Where(revision => revision.LoreSystem!.UniverseId == universeId)
             .ToListAsync(cancellationToken);
 
+        // The machines (version 57, ADR 0073), their states and transitions, each in its stored order.
+        var machines = await db.SystemMachines.AsNoTracking()
+            .Where(machine => machine.LoreSystem!.UniverseId == universeId)
+            .ToDictionaryAsync(machine => machine.SystemId, cancellationToken);
+
+        var states = await db.SystemStates.AsNoTracking()
+            .Where(state => state.Machine!.LoreSystem!.UniverseId == universeId)
+            .OrderBy(state => state.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        var transitions = await db.SystemTransitions.AsNoTracking()
+            .Where(transition => transition.FromState!.Machine!.LoreSystem!.UniverseId == universeId)
+            .OrderBy(transition => transition.SortOrder)
+            .ToListAsync(cancellationToken);
+
+        BackupSystemMachine? Machine(Guid systemId) => machines.TryGetValue(systemId, out var machine)
+            ? new BackupSystemMachine(
+                machine.SchemaVersion,
+                machine.SubjectType,
+                machine.Attribute,
+                [
+                    .. states.Where(state => state.SystemId == systemId)
+                        .Select(state => new BackupSystemState(state.Id, state.Name, state.Value, state.IsInitial, state.X, state.Y)),
+                ],
+                [
+                    .. transitions.Where(transition => transition.SystemId == systemId)
+                        .Select(transition => new BackupSystemTransition(
+                            transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId)),
+                ])
+            : null;
+
         return
         [
             .. systems
@@ -1645,7 +1817,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                                 SchemaVersion: null,
                                 Condition: null,
                                 Utc(revision.SavedAt))),
-                    ])),
+                    ],
+                    Machine(system.Id))),
         ];
     }
 
@@ -1763,6 +1936,41 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 .ThenBy(conflict => conflict.Fingerprint, StringComparer.Ordinal)
                 .Select(conflict => conflict with { DismissedAt = Utc(conflict.DismissedAt) }),
         ];
+    }
+
+    /// <summary>The universe's type templates (#281), by name, each with its fields and their choices in order.</summary>
+    private async Task<IReadOnlyList<BackupTypeTemplate>> TypeTemplatesAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var templates = await db.TypeTemplates.AsNoTracking()
+            .Where(template => template.UniverseId == universeId)
+            .Include(template => template.Fields)
+            .ThenInclude(field => field.Options)
+            .OrderBy(template => template.Name)
+            .ThenBy(template => template.Id)
+            .ToListAsync(cancellationToken);
+
+        return [.. templates.Select(template => new BackupTypeTemplate(
+            template.Id,
+            template.Name,
+            template.Description,
+            template.Icon,
+            template.AccentColor,
+            template.CreatedAt,
+            template.UpdatedAt,
+            [.. template.Fields
+                .OrderBy(field => field.DisplayOrder)
+                .ThenBy(field => field.Id)
+                .Select(field => new BackupTypeTemplateField(
+                    field.Id,
+                    field.Name,
+                    field.Kind,
+                    field.IsRequired,
+                    field.DisplayOrder,
+                    field.ImageShape,
+                    [.. field.Options
+                        .OrderBy(option => option.DisplayOrder)
+                        .ThenBy(option => option.Id)
+                        .Select(option => new BackupTypeTemplateFieldOption(option.Id, option.Value, option.DisplayOrder))]))]))];
     }
 
     /// <summary>

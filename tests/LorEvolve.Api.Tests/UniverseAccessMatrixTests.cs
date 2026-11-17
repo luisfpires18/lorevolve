@@ -1,11 +1,15 @@
+using LorEvolve.Api.Features.ComicCollections;
 using System.Net;
 using System.Net.Http.Json;
 using LorEvolve.Api.Features.Chronology;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Comments;
 using LorEvolve.Api.Features.Knowledge;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Maps;
 using LorEvolve.Api.Features.Progression;
+using LorEvolve.Api.Features.ProjectEntities;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.Publishing;
 using LorEvolve.Api.Features.Relationships;
 using LorEvolve.Api.Features.RuleValidation;
@@ -111,6 +115,28 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("delete type group", Delete, $"{u}/entity-type-groups/{any}", May.Edit),
             new("type group family tree", Put, $"{u}/entity-type-groups/{any}/family-tree", May.Edit, Json(new EntityTypeGroupFamilyTreeRequest(true))),
 
+            new("type templates", Get, $"{u}/type-templates", May.Read),
+            new("type template", Get, $"{u}/type-templates/{any}", May.Read),
+            new("create type template", Post, $"{u}/type-templates", May.Edit, Json(new ProjectEntityTypeRequest("Matrix template", null, null, null))),
+            new("edit type template", Put, $"{u}/type-templates/{any}", May.Edit, Json(new ProjectEntityTypeRequest("Matrix template", null, null, null))),
+            new("delete type template", Delete, $"{u}/type-templates/{any}", May.Edit),
+            new("add type template field", Post, $"{u}/type-templates/{any}/fields", May.Edit, Json(new ProjectEntityFieldRequest("Motto", EntityFieldKind.ShortText))),
+            new("edit type template field", Put, $"{u}/type-templates/{any}/fields/{any}", May.Edit, Json(new ProjectEntityFieldRequest("Motto", EntityFieldKind.ShortText))),
+            new("delete type template field", Delete, $"{u}/type-templates/{any}/fields/{any}", May.Edit),
+
+            new("cinema sagas", Get, $"{u}/cinema-sagas", May.Read),
+            new("create cinema saga", Post, $"{u}/cinema-sagas", May.Edit, Json(new CinemaGroupRequest("Matrix saga", null))),
+            new("edit cinema saga", Put, $"{u}/cinema-sagas/{any}", May.Edit, Json(new CinemaGroupRequest("Matrix saga", null))),
+            new("delete cinema saga", Delete, $"{u}/cinema-sagas/{any}", May.Edit),
+            new("move cinema saga", Post, $"{u}/cinema-sagas/{any}/move", May.Edit, Json(new CinemaPlaceRequest(0))),
+            new("create cinema phase", Post, $"{u}/cinema-sagas/{any}/phases", May.Edit, Json(new CinemaGroupRequest("Matrix phase", null))),
+            new("edit cinema phase", Put, $"{u}/cinema-sagas/{any}/phases/{any}", May.Edit, Json(new CinemaGroupRequest("Matrix phase", null))),
+            new("delete cinema phase", Delete, $"{u}/cinema-sagas/{any}/phases/{any}", May.Edit),
+            new("move cinema phase", Post, $"{u}/cinema-sagas/{any}/phases/{any}/move", May.Edit, Json(new CinemaPlaceRequest(0))),
+            new("add cinema phase member", Post, $"{u}/cinema-sagas/{any}/phases/{any}/members", May.Edit, Json(new CinemaMemberRequest(any))),
+            new("remove cinema phase member", Delete, $"{u}/cinema-sagas/{any}/phases/{any}/members/{any}", May.Edit),
+            new("move cinema phase member", Post, $"{u}/cinema-sagas/{any}/phases/{any}/members/{any}/move", May.Edit, Json(new CinemaPlaceRequest(0))),
+
             new("image original", Get, $"{e}/image/{w.Image.AssetId}/original", May.Read),
             new("image thumbnail", Get, $"{e}/image/{w.Image.AssetId}/thumbnail/{w.Image.ThumbnailId}", May.Read),
             new("image display", Get, $"{e}/image/{w.Image.AssetId}/display", May.Read),
@@ -184,6 +210,8 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("system revisions", Get, $"{u}/systems/{w.LoreSystem}/revisions", May.Read),
             new("link system rule", Put, $"{u}/systems/{any}/rules/{any}", May.Edit),
             new("unlink system rule", Delete, $"{u}/systems/{any}/rules/{any}", May.Edit),
+            new("system machine", Get, $"{u}/systems/{w.LoreSystem}/machine", May.Read),
+            new("save system machine", Put, $"{u}/systems/{any}/machine", May.Edit, Json(new SystemMachineRequest(1, null, [], [], 1))),
             new("rule definitions", Get, $"{u}/system-rules", May.Read),
             new("rule definition", Get, $"{u}/system-rules/{w.RuleDefinition}", May.Read),
             new("create rule definition", Post, $"{u}/system-rules", May.Edit, Json(new SystemRuleRequest("Age of majority", "Sixteen."))),
@@ -232,6 +260,13 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("order stories", Put, $"{u}/stories/order", May.Edit, Json(new StoryOrderRequest([w.Story]))),
             new("edit story", Put, s, May.Edit, Json(new StoryRequest("The drowned heir", "Edited", StoryStatus.Drafting))),
             new("trash story", Delete, s, May.Edit),
+            new("story cover", Get, $"{s}/cover", May.Read),
+            new("upload story cover", Put, $"{s}/cover", May.Edit, PngForm),
+            new("reframe story cover", Put, $"{s}/cover/card", May.Edit, Json(new UniverseArtworkCardRequest(any, null))),
+            new("remove story cover", Delete, $"{s}/cover", May.Edit),
+            new("story cover original", Get, $"{s}/cover/{any}/original", May.Read),
+            new("story cover card", Get, $"{s}/cover/{any}/card/{any}", May.Read),
+            new("order projects", Put, $"{u}/projects/order", May.Edit, Json(new ProjectOrderRequest(ProjectKind.Game, []))),
             new("chapters", Get, $"{s}/chapters", May.Read),
             new("chapter", Get, $"{s}/chapters/{w.Chapter}", May.Read),
             new("create chapter", Post, $"{s}/chapters", May.Edit, Json(new ChapterRequest("High water", null, null))),
@@ -365,6 +400,16 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
             new("accept suggestion", Post, $"{u}/suggestions/{any}/accept", May.Edit),
             new("reject suggestion", Post, $"{u}/suggestions/{any}/reject", May.Edit),
 
+            // ---------- Comic story arcs and events (#296) ----------
+            new("comic collections", Get, $"{u}/comic-collections", May.Read),
+            new("create comic collection", Post, $"{u}/comic-collections", May.Edit, Json(new ComicCollectionRequest("event", "Insert a name", null))),
+            new("update comic collection", Put, $"{u}/comic-collections/{any}", May.Edit, Json(new ComicCollectionRequest(null, "Insert a name", null, 1))),
+            new("delete comic collection", Delete, $"{u}/comic-collections/{any}", May.Edit),
+            new("move comic collection", Post, $"{u}/comic-collections/{any}/move", May.Edit, Json(new ComicPlaceRequest(0))),
+            new("add comic entry", Post, $"{u}/comic-collections/{any}/entries", May.Edit, Json(new ComicEntryRequest(Guid.NewGuid()))),
+            new("remove comic entry", Delete, $"{u}/comic-collections/{any}/entries/{any}", May.Edit),
+            new("move comic entry", Post, $"{u}/comic-collections/{any}/entries/{any}/move", May.Edit, Json(new ComicPlaceRequest(0))),
+
             // ---------- Collaborators (030) ----------
             new("collaborators", Get, $"{u}/collaborators", May.Own),
             new("change collaborator role", Put, $"{u}/collaborators/{w.EditorId}", May.Own, Json(new CollaboratorRoleRequest(UniverseRole.Viewer))),
@@ -441,9 +486,10 @@ public sealed class UniverseAccessMatrixTests(LorEvolveApiFactory factory) : ICl
                 var response = await w.Client(who).SendAsync(call.Request(call.Path));
 
                 // A finding id is random: past the gate, a member is told it is not there - the same as the owner is.
-                var expected = call.Name is "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "field picture original" or "field picture crop" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                var expected = call.Name is "type template" or "canon finding" or "world logic finding" or "semantic finding" or "ai change" or "map" or "map picture original" or "map picture display" or "field picture original" or "field picture crop" or "preview ai change picture" or "preview ai change original" or "ai change approval progress"
+                    or "story cover original" or "story cover card"
                     ? HttpStatusCode.NotFound
-                    : HttpStatusCode.OK;
+                    : call.Name is "story cover" ? HttpStatusCode.NoContent : HttpStatusCode.OK;
                 Assert.True(response.StatusCode == expected, $"{who}: {call.Name} answered {(int)response.StatusCode}");
             }
         }

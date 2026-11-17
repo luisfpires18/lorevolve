@@ -26,6 +26,7 @@ public sealed class CreativeProjectConfiguration : IEntityTypeConfiguration<Crea
         builder.Property(project => project.OwnerId).IsRequired();
         builder.Property(project => project.Name).IsRequired().HasMaxLength(ProjectLimits.NameMaxLength);
         builder.Property(project => project.Subtype).HasMaxLength(ProjectLimits.SubtypeMaxLength);
+        builder.Property(project => project.Format).HasMaxLength(ProjectFormats.MaxLength);
         builder.Property(project => project.Summary).IsRequired();
 
         // Every other enum in this schema is stored as an int, so a rename never rewrites rows.

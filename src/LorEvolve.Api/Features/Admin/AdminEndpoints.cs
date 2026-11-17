@@ -64,6 +64,9 @@ public static class AdminEndpoints
         var loreImages = await db.EntityImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
         var appearanceImages = await db.EntityAppearanceImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
         var fieldImages = await db.EntityFieldImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
+        fieldImages += await db.ProjectNodeImages.SumAsync(image => (long?)image.ByteSize, cancellationToken) ?? 0;
+        fieldImages += await db.StoryCovers.SumAsync(cover => (long?)cover.ByteSize, cancellationToken) ?? 0;
+        fieldImages += await db.ProjectCovers.SumAsync(cover => (long?)cover.ByteSize, cancellationToken) ?? 0;
         var connectedApps = await db.McpConnections.CountAsync(cancellationToken);
 
         var created = await db.Universes

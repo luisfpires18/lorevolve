@@ -87,9 +87,40 @@ internal static class BackupNormalization
         Entities = payload.Entities is null ? null! : [.. payload.Entities.Select(entity => entity is null ? null! : ProjectEntity(entity, version))],
 
         // Image fields arrived at version 48 (Issue #238): an older file has no field pictures, even when it carries some.
-        ProjectEntities = version >= 48 || payload.ProjectEntities is null
+        // Profile pictures arrived at version 56 (#286): an older file has none, even when it carries some.
+        ProjectEntities = version >= 56 || payload.ProjectEntities is null
             ? payload.ProjectEntities
-            : [.. payload.ProjectEntities.Select(entry => entry is null ? null! : entry with { FieldImages = null })],
+            : [.. payload.ProjectEntities.Select(entry => entry is null ? null! : entry with
+            {
+                FieldImages = version >= 48 ? entry.FieldImages : null,
+                Image = null,
+            })],
+        // Cinema sagas arrived at version 52 (#289): an older file has none, even when it carries some.
+        CinemaSagas = version >= 52 ? payload.CinemaSagas : null,
+        // Comic collections arrived at version 53 (#296): an older file has none, even when it carries some.
+        // A collection's project arrived at version 55 (#297): below that it is dropped, so a volume there is refused.
+        ComicCollections = version >= 55 ? payload.ComicCollections
+            : version >= 53 ? payload.ComicCollections?.Select(collection => collection is null ? null! : collection with { ProjectId = null }).ToList()
+            : null,
+        // Project formats arrived at version 49 (#288): an older file has none, even when it carries one.
+        // Project covers and order arrived at version 58: an older file has neither, even when it carries them.
+        CreativeProjects = version >= 58 || payload.CreativeProjects is null
+            ? payload.CreativeProjects
+            : [.. payload.CreativeProjects.Select(project => project is null ? null! : project with
+            {
+                Format = version >= 49 ? project.Format : null,
+                SortOrder = null,
+                Cover = null,
+            })],
+        // Structure nodes arrived at version 51 (#290): an older file has none, even when it carries some.
+        // A panel's script and a page's or panel's picture arrived at version 54 (#295).
+        ProjectNodes = version >= 54 || payload.ProjectNodes is null
+            ? payload.ProjectNodes
+            : version >= 51
+                ? [.. payload.ProjectNodes.Select(node => node is null
+                    ? null!
+                    : node with { Dialogue = null, Caption = null, Sfx = null, Notes = null, Image = null })]
+                : null,
         RelationshipTypes = version >= 14 || payload.RelationshipTypes is null
             ? payload.RelationshipTypes!
             : [.. payload.RelationshipTypes.Select(type => type is null ? null! : ProjectRelationshipType(type, version))],
@@ -142,7 +173,12 @@ internal static class BackupNormalization
 
         // World Logic arrived at version 44 (ADR 0072). An older file has no System and no rule definition, and
         // nothing is inferred for it: a universe restored from one simply has no World Logic.
-        LoreSystems = version >= 44 ? payload.LoreSystems : null,
+        // A System's machine arrived at version 57 (ADR 0073). An older file's Systems restore with none.
+        LoreSystems = version >= 57 || payload.LoreSystems is null
+            ? version >= 44 ? payload.LoreSystems : null
+            : version >= 44
+                ? [.. payload.LoreSystems.Select(system => system is null ? null! : system with { Machine = null })]
+                : null,
 
         // Exceptions arrived at version 45. An older file carries a rule without them, and none is invented: a
         // restored rule simply excuses nothing, which is what the file says.
@@ -219,6 +255,7 @@ internal static class BackupNormalization
         DeletedAt = version >= 10 ? story.DeletedAt : null,
         PublicSummary = version >= 16 ? story.PublicSummary : null,
         SortOrder = version >= 38 ? story.SortOrder : null,
+        Cover = version >= 58 ? story.Cover : null,
         Chapters = version >= 6 && story.Chapters is not null
             ? [.. story.Chapters.Select(chapter => chapter is null
                 ? null!
@@ -258,6 +295,7 @@ internal static class BackupNormalization
             version < 38
                 ? payload.Entities.OfType<BackupEntity>().GroupBy(entity => entity.Id).ToDictionary(group => group.Key, group => group.First().Name ?? string.Empty)
                 : null),
+        CreativeProjects = PlacedProjects(payload.CreativeProjects),
         Ideas = payload.Ideas ?? [],
         WorldRules = [.. (payload.WorldRules ?? []).Select(rule => rule.Validation is { Kind: WorldRuleValidationKind.None } ? rule with { Validation = null } : rule)],
         ValidationTerms = payload.ValidationTerms ?? [],
@@ -311,6 +349,22 @@ internal static class BackupNormalization
                     })],
             }),
     ];
+
+    /// <summary>
+    /// Every project with its place among the universe's projects, numbered from 0: as written from version 58, and before
+    /// that the order the list read in then, most recently updated first (the migration's order too).
+    /// </summary>
+    private static List<BackupCreativeProject>? PlacedProjects(IReadOnlyList<BackupCreativeProject>? projects) =>
+        projects is null
+            ? null
+            :
+            [
+                .. projects
+                    .OrderBy(project => project?.SortOrder ?? int.MaxValue)
+                    .ThenByDescending(project => project?.UpdatedAt)
+                    .ThenBy(project => project?.Id)
+                    .Select((project, place) => project is null ? null! : project with { SortOrder = place }),
+            ];
 
     /// <summary>A version 1-3 icon, brought inside the closed set the way the migration brought a stored one.</summary>
     internal static string? LegacyIcon(string? icon) =>

@@ -1,11 +1,15 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { Field } from '../components/Field'
+import { QueryTabList, TabPanel } from '../components/QueryTabs'
+import { SystemMachinePanel } from '../components/SystemMachinePanel'
 import { PageHeader } from '../components/PageHeader'
 import { t, useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { confirmAction } from '../lib/confirm'
+import { confirmAction, confirmDiscard } from '../lib/confirm'
+import { useQueryTab } from '../lib/queryTab'
 import { createSystem, deleteSystem, getSystem, saveSystem } from '../worldLogic/api'
+import { advanceVersions, type BaseVersions } from '../worldLogic/machine'
 import {
   SYSTEM_NAME_MAX_LENGTH,
   SYSTEM_SUMMARY_MAX_LENGTH,
@@ -22,10 +26,14 @@ type Load =
 /**
  * Creates a System, or edits and deletes a saved one, at `world-logic/systems/new` or `world-logic/systems/:systemId`.
  *
- * A System is a name and a summary; the rule definitions it references are written through MCP or the API until the
- * web has an editor for them. A save names the version it was written over, so a System changed meanwhile is refused
+ * A System is a name and a summary; the rule definitions it references are written through MCP or the API, and a
+ * transition's guard is built from blocks on the Machine tab (Issue #359). A save names the version it was written over, so a System changed meanwhile is refused
  * (`system_changed`) rather than overwritten, and the author reloads it. Its scope is fixed at creation, so this editor
  * only ever creates a universe-wide System.
+ *
+ * A saved System has two tabs: Details, the name and summary, and Machine, its states and transitions. Both saves name
+ * the System's one version, so the editor keeps a base for each and moves the other along after a save of its own
+ * (`advanceVersions`): the author is never refused by their own earlier save, and a stale draft still is.
  */
 export default function SystemEditorPage({ isNew = false }: { isNew?: boolean }) {
   useI18n() // re-renders when the language changes
@@ -69,6 +77,14 @@ function SystemEditor({
   const [conflict, setConflict] = useState(false)
   const [saving, setSaving] = useState(false)
   const [announcement, setAnnouncement] = useState('')
+  const [bases, setBases] = useState<BaseVersions>({ details: 0, machine: 0 })
+  const machineDirty = useRef(false)
+
+  const tabs = [
+    { id: 'details' as const, label: t('canon.worldLogic.systems.editor.tabs.details') },
+    { id: 'machine' as const, label: t('canon.worldLogic.systems.editor.tabs.machine') },
+  ]
+  const [tab, choose] = useQueryTab(tabs)
 
   useEffect(() => {
     if (!systemId) return
@@ -77,6 +93,7 @@ function SystemEditor({
     getSystem(universeId, systemId, controller.signal)
       .then((system) => {
         setSaved(system)
+        setBases({ details: system.version, machine: system.version })
         setName(system.name)
         setSummary(system.summary)
         setLoad({ kind: 'ready', system })
@@ -95,7 +112,14 @@ function SystemEditor({
     }
   }, [universeId, systemId, reads])
 
-  function reread() {
+  async function reread() {
+    // Reading the System again starts the Machine tab over too, so an unsaved drawing is asked about first.
+    if (
+      machineDirty.current &&
+      !(await confirmDiscard(t('canon.worldLogic.systems.machine.discard')))
+    )
+      return
+    machineDirty.current = false
     setConflict(false)
     setFailure(null)
     setFieldErrors({})
@@ -114,7 +138,7 @@ function SystemEditor({
       name: name.trim(),
       summary,
       projectId: saved?.projectId ?? null,
-      expectedVersion: saved?.version,
+      expectedVersion: saved ? bases.details : undefined,
     }
 
     try {
@@ -125,6 +149,9 @@ function SystemEditor({
       }
 
       const next = await saveSystem(universeId, systemId, input)
+      setBases((current) =>
+        advanceVersions(current, 'details', input.expectedVersion!, next.version),
+      )
       setSaved(next)
       setName(next.name)
       setSummary(next.summary)
@@ -187,7 +214,7 @@ function SystemEditor({
             : t('canon.worldLogic.systems.readFailed')}
         </p>
         {load.kind === 'error' ? (
-          <button className="button button--secondary" type="button" onClick={reread}>
+          <button className="button button--secondary" type="button" onClick={() => void reread()}>
             {t('canon.rules.retry')}
           </button>
         ) : null}
@@ -200,23 +227,8 @@ function SystemEditor({
 
   const isNew = !systemId
 
-  return (
-    <section aria-labelledby={headingId} data-testid="system-editor">
-      <PageHeader
-        title={
-          isNew
-            ? t('canon.worldLogic.systems.editor.newTitle')
-            : t('canon.worldLogic.systems.editor.editTitle')
-        }
-        titleId={headingId}
-        lede={t('canon.worldLogic.systems.editor.lede')}
-        actions={
-          <Link className="button button--secondary" to={listPath} data-testid="system-editor-back">
-            {t('canon.worldLogic.systems.editor.back')}
-          </Link>
-        }
-      />
-
+  const details = (
+    <>
       {conflict ? (
         <div className="manuscript__conflict" role="alert" data-testid="system-editor-conflict">
           <p className="manuscript__conflicttext">
@@ -226,7 +238,7 @@ function SystemEditor({
             <button
               className="button button--secondary"
               type="button"
-              onClick={reread}
+              onClick={() => void reread()}
               data-testid="system-editor-load-saved"
             >
               {t('canon.worldLogic.systems.editor.loadSaved')}
@@ -322,6 +334,58 @@ function SystemEditor({
           ) : null}
         </div>
       </form>
+    </>
+  )
+
+  return (
+    <section aria-labelledby={headingId} data-testid="system-editor">
+      <PageHeader
+        title={
+          isNew
+            ? t('canon.worldLogic.systems.editor.newTitle')
+            : t('canon.worldLogic.systems.editor.editTitle')
+        }
+        titleId={headingId}
+        lede={t('canon.worldLogic.systems.editor.lede')}
+        actions={
+          <Link className="button button--secondary" to={listPath} data-testid="system-editor-back">
+            {t('canon.worldLogic.systems.editor.back')}
+          </Link>
+        }
+      />
+
+      {!systemId ? (
+        details
+      ) : (
+        <>
+          <QueryTabList
+            label={t('canon.worldLogic.systems.editor.editTitle')}
+            idPrefix="system-editor"
+            tabs={tabs}
+            tab={tab}
+            onChoose={choose}
+          />
+          <TabPanel idPrefix="system-editor" id="details" tab={tab}>
+            {details}
+          </TabPanel>
+          <TabPanel idPrefix="system-editor" id="machine" tab={tab}>
+            <SystemMachinePanel
+              universeId={universeId}
+              systemId={systemId}
+              systemName={saved?.name ?? name}
+              projectId={saved?.projectId ?? null}
+              baseVersion={bases.machine}
+              onLoaded={(version) => setBases((current) => ({ ...current, machine: version }))}
+              onSaved={(from, to) =>
+                setBases((current) => advanceVersions(current, 'machine', from, to))
+              }
+              onDirty={(isDirty) => {
+                machineDirty.current = isDirty
+              }}
+            />
+          </TabPanel>
+        </>
+      )}
 
       <p className="visually-hidden" role="status" data-testid="system-editor-announcer">
         {announcement}

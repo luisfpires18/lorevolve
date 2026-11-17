@@ -77,6 +77,7 @@ internal sealed class ReadableBook
     private const string RelationshipsPage = "relationships.md";
     private const string TimelinePage = "timeline.md";
     private const string WorldRulesPage = "world-rules.md";
+    private const string SystemsPage = "systems.md";
     private const string IdeasPage = "ideas.md";
 
     private static readonly string[] AllowedLinkSchemes = ["http", "https", "mailto"];
@@ -166,6 +167,7 @@ internal sealed class ReadableBook
         }
 
         _pages[WorldRulesPage] = WorldRules();
+        _pages[SystemsPage] = Systems();
         _pages[IdeasPage] = Ideas();
         return _pages;
     }
@@ -336,6 +338,7 @@ internal sealed class ReadableBook
             .AppendLine($"- {Link(_w.Relationships, RelationshipsPage)} - {LiveRelationships().Count()}")
             .AppendLine($"- {Link(_w.Timeline, TimelinePage)} - {_moments.Count}{_w.MomentsSuffix}")
             .AppendLine($"- {Link(_w.WorldRules, WorldRulesPage)} - {LiveRules().Count()}")
+            .AppendLine($"- {Link(_w.Systems, SystemsPage)} - {(_payload.LoreSystems ?? []).Count}")
             .AppendLine($"- {Link(_w.Ideas, IdeasPage)} - {LiveIdeas().Count()}")
             .AppendLine($"- {_w.Stories} - {stories.Count}");
         foreach (var story in stories)
@@ -960,6 +963,67 @@ internal sealed class ReadableBook
                     _terms.GetValueOrDefault(check.EventKindTermId, "?"),
                     _terms.GetValueOrDefault(check.MethodTermId, "?")));
             }
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>Each System by name with its summary, then its machine: the binding, the states and the transitions in order.</summary>
+    private string Systems()
+    {
+        var text = new StringBuilder($"# {_w.Systems}\n\n");
+        var systems = _payload.LoreSystems ?? [];
+        if (systems.Count == 0)
+        {
+            return text.AppendLine(_w.None).ToString();
+        }
+
+        var rules = (_payload.SystemRules ?? []).ToDictionary(rule => rule.Id, rule => rule.Title);
+        foreach (var system in systems)
+        {
+            text.Append("## ").AppendLine(Inline(system.Name)).AppendLine();
+            Paragraph(text, system.Summary);
+            if (system.Machine is not { } machine)
+            {
+                continue;
+            }
+
+            Field(text, _w.Machine, $"{machine.SubjectType}.{machine.Attribute}");
+            var names = machine.States.ToDictionary(state => state.Id, state => state.Name);
+
+            text.Append("### ").AppendLine(_w.States).AppendLine();
+            foreach (var state in machine.States)
+            {
+                text.Append("- ").Append(Inline(state.Name)).Append(" (").Append(Inline(state.Value)).Append(')')
+                    .AppendLine(state.Initial ? $", {_w.InitialState}" : "");
+            }
+
+            text.AppendLine();
+            if (machine.Transitions.Count == 0)
+            {
+                continue;
+            }
+
+            text.Append("### ").AppendLine(_w.Transitions).AppendLine();
+            foreach (var transition in machine.Transitions)
+            {
+                text.Append("- ").Append(Inline(names.GetValueOrDefault(transition.FromStateId, "?")))
+                    .Append(' ').Append(_w.TransitionTo).Append(' ')
+                    .Append(Inline(names.GetValueOrDefault(transition.ToStateId, "?")));
+                if (!string.IsNullOrWhiteSpace(transition.Label))
+                {
+                    text.Append(": ").Append(Inline(transition.Label));
+                }
+
+                if (transition.GuardRuleId is { } guard)
+                {
+                    text.Append(", ").Append(_w.Guard).Append(": ").Append(Inline(rules.GetValueOrDefault(guard, "?")));
+                }
+
+                text.AppendLine();
+            }
+
+            text.AppendLine();
         }
 
         return text.ToString();

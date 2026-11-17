@@ -1706,6 +1706,7 @@ public static class EntityEndpoints
                 candidate.CreatedAt,
                 candidate.UpdatedAt,
                 candidate.Version,
+                candidate.CanonEntityId,
                 // Whatever its type, an entry that already holds a live family link keeps its way into the Family Tree (ADR 0040).
                 HasFamilyConnections = db.Relationships.Any(relationship =>
                     relationship.UniverseId == universeId
@@ -1779,6 +1780,7 @@ public static class EntityEndpoints
             entity.HasFamilyConnections,
             entity.Version,
             entity.HasProgression,
-            entity.FieldImages);
+            entity.FieldImages,
+            entity.CanonEntityId);
     }
 }

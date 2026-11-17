@@ -1,5 +1,8 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using System.Text.RegularExpressions;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -200,7 +203,11 @@ internal static partial class BackupValidation
         BackupIssueList issues,
         CancellationToken cancellationToken)
     {
-        var withImages = payload.Entities.Where(entity => entity.Image is not null).ToList();
+        // A project entry's profile picture (version 56, #286) goes through the same gate as a lore entry's.
+        var withImages = payload.Entities.Select(entity => (entity.Id, Name: Entry(entity), entity.Image))
+            .Concat((payload.ProjectEntities ?? []).Select(entry => (entry.Id, Name: $"the project entry {Quote(entry.Name)}", entry.Image)))
+            .Where(owner => owner.Image is not null)
+            .ToList();
         var results = new Dictionary<Guid, ValidatedImage>();
         using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
 
@@ -232,15 +239,15 @@ internal static partial class BackupValidation
                 {
                     if (prepared is null)
                     {
-                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} could not be used: {rejection!.Message}");
+                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {entity.Name} could not be used: {rejection!.Message}");
                     }
                     else if (!string.Equals(prepared.ContentType, image.ContentType, StringComparison.Ordinal))
                     {
-                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} is not the kind of image the backup says it is.");
+                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {entity.Name} is not the kind of image the backup says it is.");
                     }
                     else if (bytes.Length != image.ByteSize)
                     {
-                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} is not the size the backup says it is.");
+                        issues.Add(BackupIssueCodes.InvalidImage, $"The picture of {entity.Name} is not the size the backup says it is.");
                     }
                     else
                     {
@@ -356,7 +363,21 @@ internal static partial class BackupValidation
         var pictures = payload.Entities.Select(entity => (entity.Id, Name: Entry(entity), entity.FieldImages))
             .Concat((payload.ProjectEntities ?? []).Select(entry => (entry.Id, Name: $"the project entry {Quote(entry.Name)}", entry.FieldImages)))
             .SelectMany(owner => (owner.FieldImages ?? []).Select(image => (EntityId: owner.Id, owner.Name, Image: image)))
+            // A comic page's or panel's picture (#295): keyed by (node, node), its frame free.
+            .Concat((payload.ProjectNodes ?? [])
+                .Where(node => node?.Image is not null && node.Image.FieldDefinitionId == node.Id)
+                .Select(node => (EntityId: node.Id, Name: $"the {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}", Image: node.Image!)))
+            // A story's or project's cover (version 58): keyed by (subject, subject), cut to the subject's frame.
+            .Concat((payload.Stories ?? [])
+                .Where(story => story?.Cover is not null && story.Cover.FieldDefinitionId == story.Id)
+                .Select(story => (EntityId: story.Id, Name: $"the story {Quote(story.Title)}", Image: story.Cover!)))
+            .Concat((payload.CreativeProjects ?? [])
+                .Where(project => project?.Cover is not null && project.Cover.FieldDefinitionId == project.Id)
+                .Select(project => (EntityId: project.Id, Name: $"the project {Quote(project.Name)}", Image: project.Cover!)))
             .ToList();
+        var coverFrames = (payload.Stories ?? []).Where(story => story?.Cover is not null).Select(story => (story.Id, Frame: Covers.CoverFrames.Story))
+            .Concat((payload.CreativeProjects ?? []).Where(project => project?.Cover is not null).Select(project => (project.Id, Frame: Covers.CoverFrames.Project)))
+            .ToDictionary(cover => cover.Id, cover => cover.Frame);
         var results = new Dictionary<(Guid EntityId, Guid FieldId), ValidatedImage>();
         using var gate = new SemaphoreSlim(BackupRestoreLimits.ImageConcurrency);
 
@@ -368,7 +389,9 @@ internal static partial class BackupValidation
                 var image = picture.Image;
                 var bytes = await opened.ReadMediaAsync(image.MediaPath, cancellationToken);
                 var crop = new ImageCrop(image.Crop.X, image.Crop.Y, image.Crop.Width, image.Crop.Height);
-                var frame = EntityFieldImageEndpoints.FrameFor(shapes.GetValueOrDefault(image.FieldDefinitionId));
+                var frame = coverFrames.TryGetValue(picture.EntityId, out var coverFrame)
+                    ? coverFrame
+                    : EntityFieldImageEndpoints.FrameFor(shapes.GetValueOrDefault(image.FieldDefinitionId));
 
                 using var stream = new MemoryStream(bytes, writable: false);
                 PreparedImage? prepared;
@@ -559,7 +582,7 @@ internal static partial class BackupValidation
                 continue;
             }
 
-            count += 1 + (entry.FieldValues?.Count ?? 0) + (entry.FieldImages?.Count ?? 0);
+            count += 1 + (entry.FieldValues?.Count ?? 0) + (entry.FieldImages?.Count ?? 0) + (entry.Image is null ? 0 : 1);
 
             foreach (var revision in entry.Revisions ?? [])
             {
@@ -602,7 +625,11 @@ internal static partial class BackupValidation
         // declared dependencies. Every one of them is a row the restore writes, so the limit has to bound it.
         count += (payload.LoreSystems ?? []).Sum(system => system is null
             ? 0L
-            : 1L + system.RuleIds.Count + system.Revisions.Count);
+            : 1L + system.RuleIds.Count + system.Revisions.Count
+                // Its machine (version 57): the machine row, its states and its transitions.
+                + (system.Machine is null
+                    ? 0L
+                    : 1L + (system.Machine.States?.Count ?? 0) + (system.Machine.Transitions?.Count ?? 0)));
         count += (payload.SystemRules ?? []).Sum(rule => rule is null
             ? 0L
             : 1L + rule.DependsOn.Count + rule.Revisions.Count);
@@ -612,6 +639,24 @@ internal static partial class BackupValidation
         count += (payload.DismissedFindings ?? []).Sum(finding => finding is null
             ? 0L
             : 2L + finding.Evidence.Count);
+
+        // Type templates (version 50): each template, its fields and their choices.
+        count += (payload.TypeTemplates ?? []).Sum(template => template is null
+            ? 0L
+            : 1L + (template.Fields ?? []).Sum(field => field is null ? 0L : 1L + (field.Options?.Count ?? 0)));
+        count += (payload.ProjectNodes ?? []).Sum(node => node?.Image is null ? 1L : 2L);
+
+        // Covers (version 58): one row each.
+        count += (payload.Stories ?? []).Count(story => story?.Cover is not null);
+        count += (payload.CreativeProjects ?? []).Count(project => project?.Cover is not null);
+
+        // Cinema sagas (version 52): a saga, its phases and one membership row per project a phase holds.
+        count += (payload.CinemaSagas ?? []).Sum(saga => saga is null
+            ? 0L
+            : 1L + (saga.Phases ?? []).Sum(phase => phase is null ? 0L : 1L + (phase.ProjectIds ?? []).Count));
+
+        // Comic collections (version 53): a collection and one entry row per node it references.
+        count += (payload.ComicCollections ?? []).Sum(collection => collection is null ? 0L : 1L + (collection.NodeIds ?? []).Count);
 
         return (int)Math.Min(count, int.MaxValue);
     }
@@ -633,8 +678,21 @@ internal static partial class BackupValidation
         private readonly HashSet<Guid> _ids = [];
         private readonly HashSet<Guid> _projects = [];
 
+        // Each project's structure rules (#290), null when its format has none, so its nodes can be checked.
+        private readonly Dictionary<Guid, ProjectStructures.Rules?> _projectRules = [];
+
+        /// <summary>The Film and Series projects of this file: the only ones a Cinema phase may hold (#289).</summary>
+        private readonly HashSet<Guid> _cinemaProjects = [];
+
+        /// <summary>The Comic projects of this file and every node's level by id, so a story arc entry can be checked (#296).</summary>
+        private readonly HashSet<Guid> _comicProjects = [];
+        private readonly Dictionary<Guid, BackupProjectNode> _nodes = [];
+
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
+
+        /// <summary>The project of each project-scoped rule definition, for the guard scope check a save makes (ADR 0073).</summary>
+        private readonly Dictionary<Guid, Guid> _systemRuleProjects = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
@@ -688,6 +746,7 @@ internal static partial class BackupValidation
             var systems = Required(payload.LoreSystems, "the list of Systems", since: 44);
             var systemRules = Required(payload.SystemRules, "the list of rule definitions", since: 44);
             var dismissedFindings = Required(payload.DismissedFindings, "the dismissed World Logic findings", since: 46);
+            var typeTemplates = Required(payload.TypeTemplates, "the list of type templates", since: 50);
 
             // Everything that can be referenced is listed first, so a reference checked below can
             // point anywhere in the file regardless of order.
@@ -701,7 +760,10 @@ internal static partial class BackupValidation
             RegisterTags(tags);
             RegisterEntities(entities);
             RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
+            RegisterCinemaSagas(Required(payload.CinemaSagas, "the list of Cinema sagas", since: 52));
             RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
+            RegisterProjectNodes(Required(payload.ProjectNodes, "the list of project structure nodes", since: 51));
+            RegisterComicCollections(Required(payload.ComicCollections, "the list of Comic story arcs and events", since: 53));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
             RegisterValidationTerms(terms);
@@ -762,7 +824,94 @@ internal static partial class BackupValidation
                 CheckDismissedFinding(finding);
             }
 
+            CheckTypeTemplates(typeTemplates);
+
             CheckArchiveHoldsOnlyPictures();
+        }
+
+        // ---------- Type templates (version 50, #281) ----------
+
+        private void CheckTypeTemplates(IReadOnlyList<BackupTypeTemplate> templates)
+        {
+            if (templates.Count > TypeTemplateEndpoints.MaxTemplatesPerUniverse)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"The backup has {templates.Count} type templates. LorEvolve keeps at most {TypeTemplateEndpoints.MaxTemplatesPerUniverse}.");
+            }
+
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var template in templates)
+            {
+                if (template is null)
+                {
+                    Missing("a type template");
+                    continue;
+                }
+
+                var what = $"The type template \"{template.Name}\"";
+
+                if (Text(template.Name, LoreLimits.NameMaxLength, "A type template's name", required: true)
+                    && !names.Add(template.Name.Trim()))
+                {
+                    Add(BackupIssueCodes.Duplicate, $"{what} is named twice.");
+                }
+
+                Text(template.Description, LoreLimits.DescriptionMaxLength, $"{what}'s description");
+                Text(template.Icon, LoreLimits.IconMaxLength, $"{what}'s icon");
+                Accent(template.AccentColor, $"{what}'s colour");
+
+                var fields = Required(template.Fields, $"{what}'s fields");
+
+                if (fields.Count > ProjectEntityTypeEndpoints.MaxFieldsPerType)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has {fields.Count} fields. LorEvolve keeps at most {ProjectEntityTypeEndpoints.MaxFieldsPerType}.");
+                }
+
+                var fieldNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var field in fields)
+                {
+                    if (field is null)
+                    {
+                        Missing($"a field of {what}");
+                        continue;
+                    }
+
+                    if (Text(field.Name, LoreLimits.NameMaxLength, $"A field of {what}", required: true)
+                        && !fieldNames.Add(field.Name.Trim()))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} has two fields named \"{field.Name}\".");
+                    }
+
+                    if (!Enum.IsDefined(field.Kind) || field.Kind == EntityFieldKind.EntityReference)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"A field of {what} is of a kind a template cannot hold.");
+                    }
+
+                    if (field.ImageShape is { } shape && (field.Kind != EntityFieldKind.Image || !Enum.IsDefined(shape)))
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"A field of {what} has a picture shape it cannot hold.");
+                    }
+
+                    var options = Required(field.Options, $"the choices of a field of {what}");
+
+                    if (options.Count > ProjectEntityTypeEndpoints.MaxOptionsPerField)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"A field of {what} has {options.Count} choices. LorEvolve keeps at most {ProjectEntityTypeEndpoints.MaxOptionsPerField}.");
+                    }
+
+                    foreach (var option in options)
+                    {
+                        if (option is null)
+                        {
+                            Missing($"a choice of a field of {what}");
+                            continue;
+                        }
+
+                        Text(option.Value, LoreLimits.OptionMaxLength, $"A choice of a field of {what}", required: true);
+                    }
+                }
+            }
         }
 
         // ---------- Universe ----------
@@ -1136,6 +1285,19 @@ internal static partial class BackupValidation
                 var what = $"The project {Quote(project.Name)}";
                 Register(project.Id, what);
                 _projects.Add(project.Id);
+                _projectRules[project.Id] = project.Format is { } rulesFormat && ProjectFormats.Allows(project.Kind, rulesFormat)
+                    ? ProjectStructures.For(rulesFormat)
+                    : null;
+
+                if (CinemaSagaLimits.Holds(project.Kind))
+                {
+                    _cinemaProjects.Add(project.Id);
+                }
+
+                if (project.Kind == ProjectKind.Comic)
+                {
+                    _comicProjects.Add(project.Id);
+                }
 
                 if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
                 {
@@ -1154,6 +1316,12 @@ internal static partial class BackupValidation
                 {
                     Add(BackupIssueCodes.InvalidValue, $"{what} is at a stage LorEvolve does not have.");
                 }
+                if (project.Format is { } format && !ProjectFormats.Allows(project.Kind, format))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} has a format that is not one for its kind.");
+                }
+
+                CheckCover(project.Cover, project.Id, BackupArchive.ProjectCoverMediaPathFor, Covers.CoverFrames.Project, what);
             }
         }
 
@@ -1340,10 +1508,203 @@ internal static partial class BackupValidation
 
         // ---------- Entries ----------
 
+        private void RegisterCinemaSagas(IReadOnlyList<BackupCinemaSaga> sagas)
+        {
+            var members = new HashSet<Guid>();
+
+            foreach (var saga in sagas)
+            {
+                if (saga is null)
+                {
+                    Missing("a Cinema saga");
+                    continue;
+                }
+
+                var what = $"The saga {Quote(saga.Name)}";
+                Register(saga.Id, what);
+                Text(saga.Name, CinemaSagaLimits.NameMaxLength, $"{what}'s name", required: true);
+                Text(saga.Summary, CinemaSagaLimits.SummaryMaxLength, $"{what}'s summary");
+
+                foreach (var phase in saga.Phases ?? [])
+                {
+                    if (phase is null)
+                    {
+                        Missing($"a phase of {what}");
+                        continue;
+                    }
+
+                    var which = $"The phase {Quote(phase.Name)} of {Quote(saga.Name)}";
+                    Register(phase.Id, which);
+                    Text(phase.Name, CinemaSagaLimits.NameMaxLength, $"{which}'s name", required: true);
+                    Text(phase.Summary, CinemaSagaLimits.SummaryMaxLength, $"{which}'s summary");
+
+                    foreach (var projectId in phase.ProjectIds ?? [])
+                    {
+                        if (!_projects.Contains(projectId))
+                        {
+                            Add(BackupIssueCodes.MissingReference, $"{which} holds a project this file does not hold.");
+                        }
+                        else if (!_cinemaProjects.Contains(projectId))
+                        {
+                            Add(BackupIssueCodes.InvalidValue, $"{which} holds a project that is not a film or a series.");
+                        }
+
+                        if (!members.Add(projectId))
+                        {
+                            Add(BackupIssueCodes.Duplicate, $"{which} holds a project that is already in a phase.");
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
         /// and one project's season names are unique among themselves, which is what the database says too.
         /// </summary>
+        /// <summary>
+        /// A project's structure nodes (version 51, #290): each in a project this file holds, its parent in the same
+        /// project, no cycle, and every level where the project format's rules allow it. A project whose format has no
+        /// rules holds no nodes.
+        /// </summary>
+        private void RegisterComicCollections(IReadOnlyList<BackupComicCollection> collections)
+        {
+            foreach (var collection in collections)
+            {
+                if (collection is null)
+                {
+                    Missing("a Comic story arc or event");
+                    continue;
+                }
+
+                var what = $"The story arc or event {Quote(collection.Name)}";
+                Register(collection.Id, what);
+                Text(collection.Name, ComicCollectionLimits.NameMaxLength, $"{what}'s name", required: true);
+                Text(collection.Summary, ComicCollectionLimits.SummaryMaxLength, $"{what}'s summary");
+
+                if (collection.Kind is null || !ComicCollectionKinds.Levels.ContainsKey(collection.Kind))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is neither a story arc, an event nor a volume.");
+                    continue;
+                }
+
+                // A volume (version 55, #297) belongs to one Comic project of this file; arcs and events to none.
+                if (collection.Kind == ComicCollectionKinds.Volume
+                    ? collection.ProjectId is not { } volumeProject || !_comicProjects.Contains(volumeProject)
+                    : collection.ProjectId is not null)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} must belong to one comic of this file only if it is a volume.");
+                }
+
+                var held = new HashSet<Guid>();
+
+                foreach (var nodeId in collection.NodeIds ?? [])
+                {
+                    if (!_nodes.TryGetValue(nodeId, out var node))
+                    {
+                        Add(BackupIssueCodes.MissingReference, $"{what} references a part this file does not hold.");
+                    }
+                    else if (!_comicProjects.Contains(node.ProjectId) || !ComicCollectionKinds.Allows(collection.Kind, node.Level))
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} references a part that is not an issue or a chapter of a comic.");
+                    }
+                    else if (collection.ProjectId is { } owner && node.ProjectId != owner)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} references a part of another comic.");
+                    }
+
+                    if (!held.Add(nodeId))
+                    {
+                        Add(BackupIssueCodes.Duplicate, $"{what} references the same part twice.");
+                    }
+                }
+            }
+        }
+
+        private void RegisterProjectNodes(IReadOnlyList<BackupProjectNode> nodes)
+        {
+            var byId = new Dictionary<Guid, BackupProjectNode>();
+
+            foreach (var node in nodes)
+            {
+                if (node is null)
+                {
+                    Missing("a project structure node");
+                    continue;
+                }
+
+                var what = $"The {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}";
+                Register(node.Id, what);
+                byId.TryAdd(node.Id, node);
+                _nodes.TryAdd(node.Id, node);
+
+                if (!_projects.Contains(node.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} belongs to a project this file does not hold.");
+                }
+
+                Text(node.Level, StructureLimits.LevelMaxLength, $"{what}'s level", required: true);
+                Text(node.Title, SeriesLimits.NameMaxLength, $"{what}'s title");
+                Text(node.Summary, SeriesLimits.SummaryMaxLength, $"{what}'s summary");
+                Text(node.Body, SeriesLimits.ScriptMaxLength, $"{what}'s text");
+                Text(node.Dialogue, StructureLimits.ScriptFieldMaxLength, $"{what}'s dialogue");
+                Text(node.Caption, StructureLimits.ScriptFieldMaxLength, $"{what}'s caption");
+                Text(node.Sfx, StructureLimits.ScriptFieldMaxLength, $"{what}'s sound effects");
+                Text(node.Notes, StructureLimits.ScriptFieldMaxLength, $"{what}'s notes");
+
+                if (node.Level != "panel" && (node.Dialogue ?? node.Caption ?? node.Sfx ?? node.Notes) is not null)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} holds script text, which only a panel holds.");
+                }
+
+                if (node.Image is { } image)
+                {
+                    if (!StructureLimits.ArtLevels.Contains(node.Level) || image.FieldDefinitionId != node.Id)
+                    {
+                        Add(BackupIssueCodes.InvalidValue, $"{what} holds a picture, which only a page or a panel holds.");
+                    }
+                    else
+                    {
+                        CheckStoredPicture(image, BackupArchive.NodeImageMediaPathFor(node.Id, image.ContentType), ImageFrame.FieldFree, what);
+                    }
+                }
+            }
+
+            foreach (var node in byId.Values)
+            {
+                var what = $"The {Quote(node.Level)} {Quote(node.Title ?? node.Id.ToString())}";
+                BackupProjectNode? parent = null;
+
+                if (node.ParentId is { } parentId
+                    && (!byId.TryGetValue(parentId, out parent) || parent.ProjectId != node.ProjectId))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what} sits under a node its project does not hold.");
+                    continue;
+                }
+
+                // Walk up; more steps than there are nodes means the parents loop.
+                var steps = 0;
+                for (var at = parent; at is not null && steps <= byId.Count; steps++)
+                {
+                    at = at.ParentId is { } up && byId.TryGetValue(up, out var next) ? next : null;
+                }
+
+                if (steps > byId.Count)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} sits inside itself.");
+                    continue;
+                }
+
+                if (_projects.Contains(node.ProjectId)
+                    && (!_projectRules.TryGetValue(node.ProjectId, out var rules)
+                        || rules is null
+                        || !ProjectStructures.Allows(rules, parent?.Level, node.Level)))
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what} is at a place its project's format does not allow.");
+                }
+            }
+        }
+
         private void RegisterProjectSeasons(IReadOnlyList<BackupProjectSeason> seasons)
         {
             var namesByProject = new Dictionary<Guid, HashSet<string>>();
@@ -1481,6 +1842,11 @@ internal static partial class BackupValidation
                 }
 
                 CheckFieldImages(entry.Id, entry.EntityTypeId, entry.FieldImages, what);
+
+                if (entry.Image is { } image)
+                {
+                    CheckImage(entry.Id, $"the project entry {Quote(entry.Name)}", image, what);
+                }
 
                 // The entry's saved versions (version 42, #146). Each id is registered, as a lore entry's versions are,
                 // so a reference to one inside the file resolves and a duplicate is caught.
@@ -1661,7 +2027,7 @@ internal static partial class BackupValidation
 
             if (entity.Image is { } image)
             {
-                CheckImage(entity, image, what);
+                CheckImage(entity.Id, Entry(entity), image, what);
             }
 
             CheckFieldImages(entity.Id, entity.EntityTypeId, entity.FieldImages, what);
@@ -1890,51 +2256,64 @@ internal static partial class BackupValidation
                     continue;
                 }
 
-                if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"{what} has a field picture of a kind LorEvolve does not store.");
-                    continue;
-                }
-
-                var expected = BackupArchive.FieldImageMediaPathFor(entityId, image.FieldDefinitionId, image.ContentType);
-                if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"{what} names a field picture at a place LorEvolve would not have put it.");
-                    continue;
-                }
-
-                _referencedMedia.Add(expected);
-
-                if (opened.MediaLength(expected) is not { } length)
-                {
-                    Add(BackupIssueCodes.MissingMedia, $"A field picture of {what} is missing from the archive.");
-                    continue;
-                }
-
-                if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} is not the size the backup says it is.");
-                }
-
-                if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} has dimensions LorEvolve does not accept.");
-                }
-
-                Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of a field picture of {what}");
-
-                if (image.Crop is not { } crop)
-                {
-                    Missing($"the crop of a field picture of {what}");
-                }
-                else if (ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height), EntityFieldImageEndpoints.FrameFor(shape)) is { } badCrop)
-                {
-                    Add(BackupIssueCodes.InvalidImage, $"The crop of a field picture of {what} cannot be used: {badCrop}");
-                }
+                CheckStoredPicture(
+                    image,
+                    BackupArchive.FieldImageMediaPathFor(entityId, image.FieldDefinitionId, image.ContentType),
+                    EntityFieldImageEndpoints.FrameFor(shape),
+                    what);
             }
         }
 
-        private void CheckImage(BackupEntity entity, BackupEntityImage image, string what)
+        /// <summary>
+        /// One stored picture of the field image shape (an image field's, Issue #238, or a comic node's, #295): a kind LorEvolve
+        /// stores, at <paramref name="expected"/>, in the archive at the size the backup says, with sane dimensions and a frame
+        /// that fits <paramref name="frame"/>.
+        /// </summary>
+        private void CheckStoredPicture(BackupFieldImage image, string expected, ImageFrame frame, string what)
+        {
+            if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{what} has a field picture of a kind LorEvolve does not store.");
+                return;
+            }
+
+            if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
+            {
+                Add(BackupIssueCodes.InvalidImage, $"{what} names a field picture at a place LorEvolve would not have put it.");
+                return;
+            }
+
+            _referencedMedia.Add(expected);
+
+            if (opened.MediaLength(expected) is not { } length)
+            {
+                Add(BackupIssueCodes.MissingMedia, $"A field picture of {what} is missing from the archive.");
+                return;
+            }
+
+            if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} is not the size the backup says it is.");
+            }
+
+            if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"A field picture of {what} has dimensions LorEvolve does not accept.");
+            }
+
+            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of a field picture of {what}");
+
+            if (image.Crop is not { } crop)
+            {
+                Missing($"the crop of a field picture of {what}");
+            }
+            else if (ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height), frame) is { } badCrop)
+            {
+                Add(BackupIssueCodes.InvalidImage, $"The crop of a field picture of {what} cannot be used: {badCrop}");
+            }
+        }
+
+        private void CheckImage(Guid entityId, string name, BackupEntityImage image, string what)
         {
             if (image.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
             {
@@ -1944,7 +2323,7 @@ internal static partial class BackupValidation
 
             // The path is not trusted as written: it has to be exactly the one LorEvolve would have built from the
             // entry's own id and the picture's kind, which also keeps every read inside the archive's media folder.
-            var expected = BackupArchive.MediaPathFor(entity.Id, image.ContentType);
+            var expected = BackupArchive.MediaPathFor(entityId, image.ContentType);
 
             if (!string.Equals(image.MediaPath, expected, StringComparison.Ordinal))
             {
@@ -1956,25 +2335,25 @@ internal static partial class BackupValidation
 
             if (opened.MediaLength(expected) is not { } length)
             {
-                Add(BackupIssueCodes.MissingMedia, $"The picture of {Entry(entity)} is missing from the archive.");
+                Add(BackupIssueCodes.MissingMedia, $"The picture of {name} is missing from the archive.");
                 return;
             }
 
             if (length != image.ByteSize || image.ByteSize <= 0 || image.ByteSize > BackupRestoreLimits.MaxMediaBytes)
             {
-                Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} is not the size the backup says it is.");
+                Add(BackupIssueCodes.InvalidImage, $"The picture of {name} is not the size the backup says it is.");
             }
 
             if (image.Width <= 0 || image.Height <= 0 || image.Width > ImagePreparation.MaxSide || image.Height > ImagePreparation.MaxSide)
             {
-                Add(BackupIssueCodes.InvalidImage, $"The picture of {Entry(entity)} has dimensions LorEvolve does not accept.");
+                Add(BackupIssueCodes.InvalidImage, $"The picture of {name} has dimensions LorEvolve does not accept.");
             }
 
-            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of the picture of {Entry(entity)}");
+            Text(image.FileName, StoredImageLimits.FileNameMaxLength, $"The file name of the picture of {name}");
 
             if (image.Crop is { } crop && ImagePreparation.CheckCrop(new ImageCrop(crop.X, crop.Y, crop.Width, crop.Height)) is { } badCrop)
             {
-                Add(BackupIssueCodes.InvalidImage, $"The thumbnail framing of {Entry(entity)} cannot be used: {badCrop}");
+                Add(BackupIssueCodes.InvalidImage, $"The thumbnail framing of {name} cannot be used: {badCrop}");
             }
         }
 
@@ -2307,9 +2686,27 @@ internal static partial class BackupValidation
             }
         }
 
+        /// <summary>A story's or project's cover (version 58): its id is its subject's, and it is checked as any stored picture.</summary>
+        private void CheckCover(BackupFieldImage? cover, Guid subjectId, Func<Guid, string, string> pathFor, ImageFrame frame, string what)
+        {
+            if (cover is null)
+            {
+                return;
+            }
+
+            if (cover.FieldDefinitionId != subjectId)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what} holds a cover that names something else.");
+                return;
+            }
+
+            CheckStoredPicture(cover, pathFor(subjectId, cover.ContentType), frame, what);
+        }
+
         private void CheckStory(BackupStory story)
         {
             var what = $"The story {Quote(story.Title)}";
+            CheckCover(story.Cover, story.Id, BackupArchive.StoryCoverMediaPathFor, Covers.CoverFrames.Story, what);
             Text(story.Title, StoryLimits.TitleMaxLength, $"{what}'s title", required: true);
             Text(story.Premise, StoryLimits.PremiseMaxLength, $"{what}'s premise");
             Text(story.PublicSummary, PublicationLimits.SummaryMaxLength, $"{what}'s public summary");
@@ -2621,6 +3018,11 @@ internal static partial class BackupValidation
                 Register(rule.Id, what);
                 _systemRules.Add(rule.Id);
 
+                if (rule.ProjectId is { } ruleProject)
+                {
+                    _systemRuleProjects[rule.Id] = ruleProject;
+                }
+
                 Text(rule.Title, WorldLogicLimits.NameMaxLength, $"{what}'s title", required: true);
 
                 if (rule.Description is null)
@@ -2747,6 +3149,63 @@ internal static partial class BackupValidation
 
                     Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved name", required: true);
                     Text(revision.Body, WorldLogicLimits.SummaryMaxLength, $"{what}'s saved summary");
+                }
+
+                if (system.Machine is { } machine)
+                {
+                    CheckSystemMachine(machine, system.ProjectId, what);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A System's machine (version 57, ADR 0073), held to the same check a save is, and every guard a rule
+        /// definition this file holds that is the universe's or the System's own project's.
+        /// </summary>
+        private void CheckSystemMachine(BackupSystemMachine machine, Guid? systemProject, string what)
+        {
+            if (machine.States is null || machine.Transitions is null)
+            {
+                Missing($"the states or transitions of {what.ToLowerInvariant()}'s machine");
+                return;
+            }
+
+            var request = new SystemMachineRequest(
+                machine.SchemaVersion,
+                new SystemMachineBinding(machine.SubjectType, machine.Attribute),
+                [
+                    .. machine.States.Select(state => state is null
+                        ? null!
+                        : new SystemMachineState(state.Id, state.Name, state.Value, state.Initial, state.X, state.Y)),
+                ],
+                [
+                    .. machine.Transitions.Select(transition => transition is null
+                        ? null!
+                        : new SystemMachineTransition(
+                            transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId)),
+                ],
+                ExpectedVersion: null);
+
+            if (SystemMachineEndpoints.Problem(request) is { } problem)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s machine cannot be saved as it is: {problem.Message}");
+                return;
+            }
+
+            foreach (var transition in machine.Transitions)
+            {
+                if (transition.GuardRuleId is not { } guard)
+                {
+                    continue;
+                }
+
+                if (!_systemRules.Contains(guard))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what}'s machine names a guard the backup does not hold.");
+                }
+                else if (_systemRuleProjects.TryGetValue(guard, out var guardProject) && guardProject != systemProject)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what}'s machine names a guard from another project.");
                 }
             }
         }

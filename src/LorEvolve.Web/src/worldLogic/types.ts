@@ -52,6 +52,50 @@ export interface SystemRuleSummary {
   updatedAt: string
 }
 
+/**
+ * One rule definition, whole. `condition` and `exceptions` are the stored JSON trees as they were written; the guard
+ * builder edits the condition and sends the exceptions back untouched.
+ */
+export interface SystemRuleDetail {
+  id: string
+  title: string
+  description: string
+  scope: WorldLogicScope
+  projectId: string | null
+  schemaVersion: number | null
+  condition: unknown
+  dependsOn: string[]
+  systems: { id: string; name: string }[]
+  version: number
+  createdAt: string
+  updatedAt: string
+  exceptions?: unknown
+}
+
+/** What a rule save sends. An update is whole, under `expectedVersion`; a stale one is 409 `system_rule_changed`. */
+export interface SystemRuleInput {
+  title: string
+  description: string
+  projectId: string | null
+  schemaVersion?: number
+  condition?: unknown
+  dependsOn?: string[]
+  exceptions?: unknown
+  expectedVersion?: number
+}
+
+/** What evaluating one rule answered. `outcome` is the evaluator's word; nothing is stored by asking. */
+export interface ConditionEvaluationResponse {
+  ruleId: string
+  ruleVersion: number
+  schemaVersion: number
+  outcome: string
+  errorCode: string | null
+  exemptionId: string | null
+  evidence: ConditionEvidenceRow[]
+  rationale: string[]
+}
+
 /** What a System save sends. `projectId` is the scope it was created in and never changes. */
 export interface SystemInput {
   name: string
@@ -152,4 +196,54 @@ export interface WorldLogicPage<T> {
   pageSize: number
   totalCount: number
   totalPages: number
+}
+
+/** The API's machine limits (ADR 0073). */
+export const MACHINE_MAX_STATES = 64
+export const MACHINE_MAX_TRANSITIONS = 256
+/** A state's name and value, a transition's label and each half of the binding. */
+export const MACHINE_TEXT_MAX_LENGTH = 200
+
+/** Which attribute of which subject type a machine's states are values of, compared as text. */
+export interface SystemMachineBinding {
+  subjectType: string
+  attribute: string
+}
+
+/** One state. `id` is the client's own, unique within the document; `x` and `y` place it on the canvas. */
+export interface SystemMachineState {
+  id: string
+  name: string
+  value: string
+  initial: boolean
+  x: number
+  y: number
+}
+
+/** One transition, in declared order. `guardRuleId` names a rule definition, or is null. */
+export interface SystemMachineTransition {
+  id: string
+  fromStateId: string
+  toStateId: string
+  label: string | null
+  guardRuleId: string | null
+}
+
+/** A System's machine, whole, with the System's version. A System with none has a null binding and empty lists. */
+export interface SystemMachineDetail {
+  systemId: string
+  version: number
+  schemaVersion: number
+  binding: SystemMachineBinding | null
+  states: SystemMachineState[]
+  transitions: SystemMachineTransition[]
+}
+
+/** What a machine save sends: the whole document, under the System's version. An empty one removes the machine. */
+export interface SystemMachineInput {
+  schemaVersion: number
+  binding: SystemMachineBinding | null
+  states: SystemMachineState[]
+  transitions: SystemMachineTransition[]
+  expectedVersion: number
 }

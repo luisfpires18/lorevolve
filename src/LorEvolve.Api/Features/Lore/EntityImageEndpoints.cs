@@ -40,6 +40,9 @@ namespace LorEvolve.Api.Features.Lore;
 /// turns that into a 503 problem carrying LorEvolve's own sentence. An SDK exception never reaches
 /// the response, and a write that fails part-way sweeps what it had written.</para>
 ///
+/// <para>Lore entries and project entries alike (#286): both are <see cref="LoreEntity"/> rows, so each read lifts the
+/// project filter with the universe named.</para>
+///
 /// <para>Every route passes <see cref="UniverseAccess"/> first: members read, Editors and the owner change (ADR
 /// 0041), and an entry in a world the caller has no access to answers 404, indistinguishable from one that is not there.
 /// Nothing in a response, an error or a log carries a bucket name, an endpoint or a
@@ -145,7 +148,7 @@ public static partial class EntityImageEndpoints
 
         // Trashed is not editable, exactly as the entity update path has it. The same read names
         // whose storage the picture will count against: the universe's owner, not the uploader.
-        var ownerId = await db.Entities
+        var ownerId = await db.Entities.IgnoreQueryFilters()
             .Where(candidate => candidate.Id == entityId
                 && candidate.UniverseId == universeId
                 && candidate.DeletedAt == null)
@@ -291,7 +294,7 @@ public static partial class EntityImageEndpoints
                     // The entry itself must still be live: a universe deleted, or an entry trashed or erased,
                     // while the bytes were on their way leaves this upload nothing to attach to. The delete
                     // swept only what had been committed; this upload's own objects are its own to remove.
-                    var current = await db.Entities.AnyAsync(
+                    var current = await db.Entities.IgnoreQueryFilters().AnyAsync(
                             candidate => candidate.Id == entityId
                                 && candidate.UniverseId == universeId
                                 && candidate.DeletedAt == null,
@@ -429,7 +432,7 @@ public static partial class EntityImageEndpoints
     {
         await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
 
-        var live = await db.Entities.AnyAsync(
+        var live = await db.Entities.IgnoreQueryFilters().AnyAsync(
             candidate => candidate.Id == entityId && candidate.UniverseId == universeId && candidate.DeletedAt == null,
             cancellationToken);
         if (!live || await db.EntityImages.AnyAsync(image => image.EntityId == entityId, cancellationToken))
@@ -499,7 +502,7 @@ public static partial class EntityImageEndpoints
         }
 
         // Trashed is not editable here either: a thumbnail is part of the image.
-        var image = await db.EntityImages.AsNoTracking()
+        var image = await db.EntityImages.AsNoTracking().IgnoreQueryFilters()
             .Where(candidate => candidate.EntityId == entityId
                 && candidate.Entity!.UniverseId == universeId
                 && candidate.Entity.DeletedAt == null)
@@ -689,7 +692,7 @@ public static partial class EntityImageEndpoints
             return denied;
         }
 
-        var image = await db.EntityImages
+        var image = await db.EntityImages.IgnoreQueryFilters()
             .Where(candidate => candidate.EntityId == entityId
                 && candidate.Entity!.UniverseId == universeId
                 && candidate.Entity.DeletedAt == null)
@@ -804,7 +807,7 @@ public static partial class EntityImageEndpoints
             return denied;
         }
 
-        var image = await db.EntityImages.AsNoTracking()
+        var image = await db.EntityImages.AsNoTracking().IgnoreQueryFilters()
             .Where(candidate => candidate.EntityId == entityId
                 && candidate.AssetId == assetId
                 && candidate.Entity!.UniverseId == universeId)

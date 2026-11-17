@@ -1,6 +1,9 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using System.Collections.Concurrent;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.CinemaSagas;
+using LorEvolve.Api.Features.ComicCollections;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -106,6 +109,26 @@ internal sealed class RestoreIdentity
             foreach (var revision in entry.Revisions ?? [])
             {
                 yield return revision.Id;
+            }
+        }
+
+        foreach (var node in payload.ProjectNodes ?? [])
+        {
+            yield return node.Id;
+        }
+
+        foreach (var collection in payload.ComicCollections ?? [])
+        {
+            yield return collection.Id;
+        }
+
+        foreach (var saga in payload.CinemaSagas ?? [])
+        {
+            yield return saga.Id;
+
+            foreach (var phase in saga.Phases ?? [])
+            {
+                yield return phase.Id;
             }
         }
 
@@ -429,6 +452,141 @@ internal sealed partial class UniverseRestore(
                 });
             }
         }
+
+        // A comic page's or panel's picture (#295), the same way, under the node's restored id.
+        foreach (var node in backup.Payload.ProjectNodes ?? [])
+        {
+            if (node.Image is not { } image)
+            {
+                continue;
+            }
+
+            var validated = backup.FieldImages![(node.Id, node.Id)];
+            var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+            var nodeId = ids.Map(node.Id);
+            var projectId = ids.Map(node.ProjectId);
+            var assetId = Guid.NewGuid();
+            var cropId = Guid.NewGuid();
+            var originalKey = ProjectNodeImageKeys.Original(universeId, projectId, nodeId, assetId, validated.Extension);
+            var cropKey = ProjectNodeImageKeys.Crop(universeId, projectId, nodeId, assetId, cropId);
+
+            attempted.Enqueue(originalKey);
+            attempted.Enqueue(cropKey);
+
+            using var originalBytes = new MemoryStream(original, writable: false);
+            using var cropBytes = new MemoryStream(validated.Thumbnail, writable: false);
+            await MediaObjectWrites.PutAllAsync(
+                store,
+                cancellationToken,
+                new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+                new PendingMediaObject(cropKey, cropBytes, "image/webp"));
+
+            _nodeImages.Add(new ProjectNodeImage
+            {
+                NodeId = nodeId,
+                AssetId = assetId,
+                OriginalKey = originalKey,
+                CropId = cropId,
+                CropKey = cropKey,
+                CropX = image.Crop.X,
+                CropY = image.Crop.Y,
+                CropWidth = image.Crop.Width,
+                CropHeight = image.Crop.Height,
+                ContentType = validated.ContentType,
+                FileName = ImagePreparation.TrimFileName(image.FileName),
+                Width = validated.Width,
+                Height = validated.Height,
+                ByteSize = validated.ByteSize,
+                UploadedAt = now,
+            });
+        }
+
+        foreach (var story in backup.Payload.Stories ?? [])
+        {
+            if (await StoreCoverAsync(backup, opened, ids, universeId, now, attempted, story.Id, story.Cover, Covers.CoverKeys.Stories,
+                    () => new Covers.StoryCover { OriginalKey = string.Empty, CardKey = string.Empty, ContentType = string.Empty },
+                    cancellationToken) is { } cover)
+            {
+                _storyCovers.Add(cover);
+            }
+        }
+
+        foreach (var project in backup.Payload.CreativeProjects ?? [])
+        {
+            if (await StoreCoverAsync(backup, opened, ids, universeId, now, attempted, project.Id, project.Cover, Covers.CoverKeys.Projects,
+                    () => new Covers.ProjectCover { OriginalKey = string.Empty, CardKey = string.Empty, ContentType = string.Empty },
+                    cancellationToken) is { } cover)
+            {
+                _projectCovers.Add(cover);
+            }
+        }
+    }
+
+    /// <summary>Comic node pictures (#295) written before the transaction, added after their nodes.</summary>
+    private readonly List<ProjectNodeImage> _nodeImages = [];
+
+    /// <summary>Story covers (version 58) written before the transaction, added after their stories.</summary>
+    private readonly List<Covers.StoryCover> _storyCovers = [];
+
+    /// <summary>Project covers (version 58) written before the transaction, added after their projects.</summary>
+    private readonly List<Covers.ProjectCover> _projectCovers = [];
+
+    /// <summary>A story's or project's cover, the way a field picture is stored, under the subject's restored id.</summary>
+    private async Task<TCover?> StoreCoverAsync<TCover>(
+        RestorableBackup backup,
+        OpenedBackup opened,
+        RestoreIdentity ids,
+        Guid universeId,
+        DateTime now,
+        ConcurrentQueue<string> attempted,
+        Guid fileSubjectId,
+        BackupFieldImage? image,
+        string kind,
+        Func<TCover> create,
+        CancellationToken cancellationToken)
+        where TCover : Covers.CoverImage
+    {
+        if (image is null)
+        {
+            return null;
+        }
+
+        var validated = backup.FieldImages![(fileSubjectId, fileSubjectId)];
+        var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+        var subjectId = ids.Map(fileSubjectId);
+        var assetId = Guid.NewGuid();
+        var cardId = Guid.NewGuid();
+        var originalKey = Covers.CoverKeys.Original(kind, universeId, subjectId, assetId, validated.Extension);
+        var cardKey = Covers.CoverKeys.Card(kind, universeId, subjectId, assetId, cardId);
+
+        attempted.Enqueue(originalKey);
+        attempted.Enqueue(cardKey);
+
+        using var originalBytes = new MemoryStream(original, writable: false);
+        using var cardBytes = new MemoryStream(validated.Thumbnail, writable: false);
+        await MediaObjectWrites.PutAllAsync(
+            store,
+            cancellationToken,
+            new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+            new PendingMediaObject(cardKey, cardBytes, "image/webp"));
+
+        var cover = create();
+        cover.SubjectId = subjectId;
+        cover.UniverseId = universeId;
+        cover.AssetId = assetId;
+        cover.OriginalKey = originalKey;
+        cover.CardId = cardId;
+        cover.CardKey = cardKey;
+        (cover.CropX, cover.CropY, cover.CropWidth, cover.CropHeight) = (image.Crop.X, image.Crop.Y, image.Crop.Width, image.Crop.Height);
+        cover.ContentType = validated.ContentType;
+        cover.FileName = ImagePreparation.TrimFileName(image.FileName);
+        cover.Width = validated.Width;
+        cover.Height = validated.Height;
+        cover.ByteSize = validated.ByteSize;
+        cover.UploadedAt = now;
+        return cover;
     }
 
     /// <summary>Maps whose pictures were written before the transaction, with their pins, added by <see cref="AddMaps"/>.</summary>
@@ -603,7 +761,11 @@ internal sealed partial class UniverseRestore(
         CancellationToken cancellationToken)
     {
         var rows = new ConcurrentDictionary<Guid, EntityImage>();
-        var withImages = backup.Payload.Entities.Where(entity => entity.Image is not null).ToList();
+        // Lore and project entries' profile pictures alike (version 56, #286).
+        var withImages = backup.Payload.Entities.Select(entity => (entity.Id, entity.Image))
+            .Concat((backup.Payload.ProjectEntities ?? []).Select(entry => (entry.Id, entry.Image)))
+            .Where(owner => owner.Image is not null)
+            .ToList();
 
         if (withImages.Count == 0)
         {
@@ -881,11 +1043,13 @@ internal sealed partial class UniverseRestore(
             AddMaps();
             db.EntityFieldImages.AddRange(_fieldImages);
             AddStories(payload, ids, universeId);
+            db.StoryCovers.AddRange(_storyCovers);
             AddIdeas(payload, ids, universeId, ownerId);
             AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
             AddWorldRules(payload, ids, universeId);
             AddWorldLogic(payload, ids, universeId);
             AddDismissedFindings(payload, ids, universeId);
+            AddTypeTemplates(payload, universeId);
             AddRuleValidation(payload, ids, universeId);
 
             await db.SaveChangesAsync(cancellationToken);
@@ -1013,10 +1177,116 @@ internal sealed partial class UniverseRestore(
                 Kind = project.Kind,
                 Lifecycle = project.Lifecycle,
                 Subtype = project.Subtype,
+                Format = project.Format,
                 Summary = project.Summary,
+                SortOrder = project.SortOrder ?? 0,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
             });
+        }
+
+        db.ProjectCovers.AddRange(_projectCovers);
+
+        // The projects' structure nodes (version 51, #290), parents before children so every parent row exists first.
+        var nodesById = (payload.ProjectNodes ?? []).ToDictionary(node => node.Id);
+
+        int Depth(BackupProjectNode node) =>
+            node.ParentId is { } parentId && nodesById.TryGetValue(parentId, out var parent) ? 1 + Depth(parent) : 0;
+
+        foreach (var node in nodesById.Values.OrderBy(Depth))
+        {
+            db.ProjectNodes.Add(new ProjectNode
+            {
+                Id = ids.Map(node.Id),
+                ProjectId = ids.Map(node.ProjectId),
+                ParentId = node.ParentId is { } parentId ? ids.Map(parentId) : null,
+                Level = node.Level,
+                Title = node.Title,
+                Summary = node.Summary,
+                Body = node.Body,
+                Dialogue = node.Dialogue,
+                Caption = node.Caption,
+                Sfx = node.Sfx,
+                Notes = node.Notes,
+                SortOrder = node.SortOrder,
+                CreatedAt = node.CreatedAt,
+                UpdatedAt = node.UpdatedAt,
+                Version = 1,
+            });
+        }
+
+        db.ProjectNodeImages.AddRange(_nodeImages);
+
+        // The Cinema sagas, their phases and memberships (version 52, #289), after the projects they hold.
+        foreach (var saga in payload.CinemaSagas ?? [])
+        {
+            db.CinemaSagas.Add(new CinemaSaga
+            {
+                Id = ids.Map(saga.Id),
+                UniverseId = universeId,
+                Name = saga.Name,
+                Summary = saga.Summary,
+                SortOrder = saga.SortOrder,
+                CreatedAt = saga.CreatedAt,
+                UpdatedAt = saga.UpdatedAt,
+            });
+
+            foreach (var phase in saga.Phases ?? [])
+            {
+                db.CinemaPhases.Add(new CinemaPhase
+                {
+                    Id = ids.Map(phase.Id),
+                    SagaId = ids.Map(saga.Id),
+                    Name = phase.Name,
+                    Summary = phase.Summary,
+                    SortOrder = phase.SortOrder,
+                    CreatedAt = phase.CreatedAt,
+                    UpdatedAt = phase.UpdatedAt,
+                });
+
+                var place = 0;
+
+                foreach (var projectId in phase.ProjectIds ?? [])
+                {
+                    db.CinemaPhaseMemberships.Add(new CinemaPhaseMembership
+                    {
+                        Id = Guid.NewGuid(),
+                        PhaseId = ids.Map(phase.Id),
+                        ProjectId = ids.Map(projectId),
+                        SortOrder = place++,
+                    });
+                }
+            }
+        }
+
+        // The Comic story arcs and events (version 53, #296), after the nodes they reference.
+        foreach (var collection in payload.ComicCollections ?? [])
+        {
+            db.ComicCollections.Add(new ComicCollection
+            {
+                Id = ids.Map(collection.Id),
+                UniverseId = universeId,
+                Kind = collection.Kind,
+                ProjectId = collection.ProjectId is { } projectId ? ids.Map(projectId) : null,
+                Name = collection.Name,
+                Summary = collection.Summary,
+                SortOrder = collection.SortOrder,
+                CreatedAt = collection.CreatedAt,
+                UpdatedAt = collection.UpdatedAt,
+            });
+
+            var place = 0;
+
+            foreach (var nodeId in collection.NodeIds ?? [])
+            {
+                db.ComicCollectionEntries.Add(new ComicCollectionEntry
+                {
+                    Id = Guid.NewGuid(),
+                    CollectionId = ids.Map(collection.Id),
+                    NodeId = ids.Map(nodeId),
+                    SortOrder = place++,
+                });
+            }
         }
 
         // The projects' seasons and episodes (version 41, #145), after the projects they belong to.
@@ -1194,6 +1464,11 @@ internal sealed partial class UniverseRestore(
 
             // The entry's history, through the same writer the lore's entries use (version 42, #146).
             AddRevisions(ids.Map(entry.Id), entry.Revisions ?? [], ids);
+
+            if (images.TryGetValue(entry.Id, out var entryImage))
+            {
+                db.EntityImages.Add(entryImage);
+            }
 
             foreach (var value in entry.FieldValues ?? [])
             {
@@ -2082,6 +2357,50 @@ internal sealed partial class UniverseRestore(
                     SavedAt = revision.SavedAt,
                 });
             }
+
+            // The machine (version 57, ADR 0073). State and transition ids are unique only inside one System, so they
+            // are kept as they are, as an idea board's card ids are; the guard is translated like every rule reference.
+            if (system.Machine is { } machine)
+            {
+                db.SystemMachines.Add(new SystemMachine
+                {
+                    SystemId = ids.Map(system.Id),
+                    SubjectType = machine.SubjectType,
+                    Attribute = machine.Attribute,
+                    SchemaVersion = machine.SchemaVersion,
+                });
+
+                var stateOrder = 0;
+                foreach (var state in machine.States)
+                {
+                    db.SystemStates.Add(new SystemState
+                    {
+                        SystemId = ids.Map(system.Id),
+                        Id = state.Id,
+                        Name = state.Name,
+                        Value = state.Value,
+                        IsInitial = state.Initial,
+                        X = state.X,
+                        Y = state.Y,
+                        SortOrder = stateOrder++,
+                    });
+                }
+
+                var transitionOrder = 0;
+                foreach (var transition in machine.Transitions)
+                {
+                    db.SystemTransitions.Add(new SystemTransition
+                    {
+                        SystemId = ids.Map(system.Id),
+                        Id = transition.Id,
+                        FromStateId = transition.FromStateId,
+                        ToStateId = transition.ToStateId,
+                        Label = transition.Label,
+                        GuardRuleId = ids.Map(transition.GuardRuleId),
+                        SortOrder = transitionOrder++,
+                    });
+                }
+            }
         }
     }
 
@@ -2141,6 +2460,57 @@ internal sealed partial class UniverseRestore(
     }
 
     // ---------- Canon ----------
+
+    /// <summary>
+    /// The universe's type templates (version 50, #281). Nothing refers to a template, so each row simply gets a new id;
+    /// a file from before version 50 has none.
+    /// </summary>
+    private void AddTypeTemplates(UniverseBackupPayload payload, Guid universeId)
+    {
+        foreach (var template in payload.TypeTemplates ?? [])
+        {
+            var templateId = Guid.NewGuid();
+
+            db.TypeTemplates.Add(new TypeTemplate
+            {
+                Id = templateId,
+                UniverseId = universeId,
+                Name = template.Name.Trim(),
+                Description = template.Description,
+                Icon = template.Icon,
+                AccentColor = template.AccentColor,
+                CreatedAt = template.CreatedAt,
+                UpdatedAt = template.UpdatedAt,
+            });
+
+            foreach (var field in template.Fields)
+            {
+                var fieldId = Guid.NewGuid();
+
+                db.TypeTemplateFields.Add(new TypeTemplateField
+                {
+                    Id = fieldId,
+                    TemplateId = templateId,
+                    Name = field.Name.Trim(),
+                    Kind = field.Kind,
+                    IsRequired = field.IsRequired,
+                    DisplayOrder = field.DisplayOrder,
+                    ImageShape = field.ImageShape,
+                });
+
+                foreach (var option in field.Options)
+                {
+                    db.TypeTemplateFieldOptions.Add(new TypeTemplateFieldOption
+                    {
+                        Id = Guid.NewGuid(),
+                        FieldId = fieldId,
+                        Value = option.Value,
+                        DisplayOrder = option.DisplayOrder,
+                    });
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Conflicts are derived (ADR 0010), so they are found again over the restored lore rather than copied. A dismissal
