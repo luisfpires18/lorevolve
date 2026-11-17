@@ -31,7 +31,8 @@ const projects = {
     moveUp: 'Mover para cima',
     moveDown: 'Mover para baixo',
     done: 'Concluído',
-    cover: 'Capa',
+    addPicture: 'Adicionar imagem',
+    changePicture: 'Mudar imagem',
   },
   gaming: {
     moved: '“{name}” é agora o jogo {n} de {total}.',

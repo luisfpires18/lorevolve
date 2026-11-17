@@ -181,6 +181,7 @@ export default function StoriesPage() {
                   ? pictureUrl(storyCoverStore(universe.id, story.id), story.cover, 'card')
                   : null
               }
+              onAddPicture={access.editContent ? () => setCovering(story) : undefined}
               attrs={{
                 'data-testid': 'story-row',
                 'data-title': story.title,
@@ -199,7 +200,11 @@ export default function StoriesPage() {
                       data-testid="story-cover"
                     >
                       <ActionIcon icon={ImageIcon} />
-                      {t('projects.common.cover')}
+                      {t(
+                        story.cover
+                          ? 'projects.common.changePicture'
+                          : 'projects.common.addPicture',
+                      )}
                     </button>
                     {index > 0 ? (
                       <button

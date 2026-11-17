@@ -3,8 +3,8 @@ import { png } from './support/png'
 import { post, signUp, world } from './support/trash'
 
 /**
- * The Gaming and Writing shelves (owner, 2026-11-17): a game is a card in a handheld console, a story a book, each with a
- * cover set from its ⋯ menu; games move up and down like stories, and the order is kept. Each test registers its own
+ * The Gaming and Writing shelves (owner, 2026-11-17): a game is a card on a widescreen handheld, a story a book, each
+ * with a picture added from the empty card or its ⋯ menu; games move up and down like stories, and the order is kept. Each test registers its own
  * account and builds its own universe through the API.
  */
 
@@ -74,7 +74,7 @@ test.describe('shelf cards', () => {
     await expect.poll(() => names(page)).toEqual(['Beta Quest', 'Gamma Quest', 'Alpha Quest'])
   })
 
-  test('a game and a story each take a cover from their card', async ({ page }) => {
+  test('a game and a story each take a picture from their card', async ({ page }) => {
     await signUp(page)
     const universeId = await world(page)
     await game(page, universeId, 'Cover Quest')
@@ -84,20 +84,26 @@ test.describe('shelf cards', () => {
       status: 1,
     })
 
+    // The empty screen offers Add picture; once there is one, the button is gone and the menu changes it.
     await page.goto(`/app/universes/${universeId}/gaming`)
     const card = page.getByTestId('projects-item')
-    await expect(card.locator('.console__screen img')).toHaveCount(0)
-    await card.getByTestId('game-actions').click()
-    await card.getByTestId('game-cover').click()
+    await expect(card.locator('.handheld__screen img')).toHaveCount(0)
+    await card.getByTestId('shelf-add-picture').click()
     await setCover(page, 'screen.png')
-    await expect(card.locator('.console__screen img')).toBeVisible()
+    await expect(card.locator('.handheld__screen img')).toBeVisible()
+    await expect(card.getByTestId('shelf-add-picture')).toHaveCount(0)
     await page.reload()
-    await expect(card.locator('.console__screen img')).toBeVisible()
+    await expect(card.locator('.handheld__screen img')).toBeVisible()
+    await card.getByTestId('game-actions').click()
+    await expect(card.getByTestId('game-cover')).toHaveText('Change picture')
 
+    // The book takes one from its menu just as well.
     await page.goto(`/app/universes/${universeId}/writing`)
     const book = page.getByTestId('story-row')
     await expect(book.locator('.book__cover img')).toHaveCount(0)
+    await expect(book.getByTestId('shelf-add-picture')).toBeVisible()
     await book.getByTestId('story-actions').click()
+    await expect(book.getByTestId('story-cover')).toHaveText('Add picture')
     await book.getByTestId('story-cover').click()
     await setCover(page, 'book.png')
     await expect(book.locator('.book__cover img')).toBeVisible()

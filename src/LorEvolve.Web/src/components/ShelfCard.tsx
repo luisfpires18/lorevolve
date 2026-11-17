@@ -1,15 +1,19 @@
 import type { ReactNode } from 'react'
-import { BookOpen, Gamepad2 } from 'lucide-react'
+import { BookOpen, Gamepad2, ImagePlus } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { t, useI18n } from '../i18n'
+import { ActionIcon } from './ActionIcon'
 import { StatusBadge } from './StatusBadge'
 
 /**
- * One thing an author is making, on its shelf: a game in a handheld console, its cover on the screen; a story as a
- * book, its cover on the front. Gaming and Writing draw the same card from different sources (owner, 2026-11-17), so
- * the two pages mirror each other: the frame changes, the parts do not.
+ * One thing an author is making, on its shelf: a game on a widescreen handheld, its picture on the screen; a story as a
+ * book, its picture on the cover. Gaming and Writing draw the same card from different sources (owner, 2026-11-17), so
+ * the two pages mirror each other: the object changes, the parts do not. The object carries the picture; the title,
+ * status and summary sit under it.
  *
- * The whole card is one link (the title's, stretched); the ⋯ menu sits above it so it stays its own control. Every
- * drawn part of the frame (bezel, LED, buttons, spine, page edges) is decoration and hidden from assistive technology.
+ * The whole card is one link (the title's, stretched); the ⋯ menu and the Add picture button sit above it so each stays
+ * its own control. Every drawn part of the object (shell, sticks, buttons, spine, page edges) is decoration and hidden
+ * from assistive technology.
  */
 export function ShelfCard({
   frame,
@@ -21,6 +25,7 @@ export function ShelfCard({
   meta,
   cover,
   menu,
+  onAddPicture,
   attrs,
   openTestId,
 }: {
@@ -32,69 +37,75 @@ export function ShelfCard({
   step: 0 | 1 | 2
   statusLabel: string
   meta?: ReactNode
-  /** The card crop's address, or null for the frame's own empty screen or plain cover. */
+  /** The card crop's address, or null for the object's own empty screen or plain cover. */
   cover: string | null
   menu?: ReactNode
+  /** Offered only to those who may edit, and only while there is no picture: it opens the picture drawer. */
+  onAddPicture?: () => void
   /** The item's own test ids and data attributes, which each page already selects its rows by. */
   attrs: Record<string, string>
   openTestId?: string
 }) {
-  const heading = (
-    <h3 className="shelfcard__title">
-      <Link className="shelfcard__link" to={href} data-testid={openTestId}>
-        <bdi>{title}</bdi>
-      </Link>
-    </h3>
-  )
-  const text = (
-    <div className="shelfcard__text">
-      <div className="shelfcard__status">
-        <StatusBadge step={step} label={statusLabel} />
-        {meta ? <span className="shelfcard__meta">{meta}</span> : null}
-      </div>
-      {description ? <p className="shelfcard__description">{description}</p> : null}
+  useI18n()
+  const picture = cover ? (
+    <img src={cover} alt="" loading="lazy" decoding="async" />
+  ) : (
+    <div className="shelfcard__empty">
+      {frame === 'console' ? (
+        <Gamepad2 className="shelfcard__emptyicon" aria-hidden="true" strokeWidth={1.25} />
+      ) : (
+        <BookOpen className="shelfcard__emptyicon" aria-hidden="true" strokeWidth={1.25} />
+      )}
+      {onAddPicture ? (
+        <button
+          className="button button--secondary button--sm shelfcard__add"
+          type="button"
+          onClick={onAddPicture}
+          data-testid="shelf-add-picture"
+        >
+          <ActionIcon icon={ImagePlus} />
+          {t('projects.common.addPicture')}
+        </button>
+      ) : null}
     </div>
   )
 
   return (
     <li className={`shelfcard shelfcard--${frame}`} {...attrs}>
       {frame === 'console' ? (
-        <div className="console">
-          <div className="console__bezel">
-            <span className="console__led" aria-hidden="true" />
-            <div className="console__screen">
-              {cover ? (
-                <img src={cover} alt="" width={960} height={600} loading="lazy" decoding="async" />
-              ) : (
-                <Gamepad2 className="console__empty" aria-hidden="true" strokeWidth={1.25} />
-              )}
-            </div>
-          </div>
-          {heading}
-          {text}
-          <div className="console__controls" aria-hidden="true">
-            <span className="console__dpad" />
-            <span className="console__ab">
+        <div className="handheld">
+          <span className="handheld__grip" aria-hidden="true">
+            <span className="handheld__stick" />
+            <span className="handheld__dpad" />
+          </span>
+          <div className="handheld__screen">{picture}</div>
+          <span className="handheld__grip" aria-hidden="true">
+            <span className="handheld__face">
+              <span />
+              <span />
               <span />
               <span />
             </span>
-          </div>
+            <span className="handheld__stick" />
+          </span>
         </div>
       ) : (
-        <>
-          <div className="book">
-            <div className="book__cover">
-              {cover ? (
-                <img src={cover} alt="" width={400} height={600} loading="lazy" decoding="async" />
-              ) : (
-                <BookOpen className="book__empty" aria-hidden="true" strokeWidth={1.25} />
-              )}
-            </div>
-          </div>
-          {heading}
-          {text}
-        </>
+        <div className="book">
+          <div className="book__cover">{picture}</div>
+        </div>
       )}
+      <h3 className="shelfcard__title">
+        <Link className="shelfcard__link" to={href} data-testid={openTestId}>
+          <bdi>{title}</bdi>
+        </Link>
+      </h3>
+      <div className="shelfcard__text">
+        <div className="shelfcard__status">
+          <StatusBadge step={step} label={statusLabel} />
+          {meta ? <span className="shelfcard__meta">{meta}</span> : null}
+        </div>
+        {description ? <p className="shelfcard__description">{description}</p> : null}
+      </div>
       {menu ? <div className="shelfcard__menu">{menu}</div> : null}
     </li>
   )

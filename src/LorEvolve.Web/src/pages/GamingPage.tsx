@@ -131,7 +131,7 @@ export default function GamingPage() {
       ) : null}
 
       {state.kind === 'ready' && state.games.length > 0 ? (
-        <ul className="shelf" data-testid="projects-list">
+        <ul className="shelf shelf--wide" data-testid="projects-list">
           {state.games.map((game, index) => (
             <ShelfCard
               key={game.id}
@@ -144,6 +144,7 @@ export default function GamingPage() {
               meta={game.format ? formatLabel(game.format) : (game.subtype ?? undefined)}
               cover={game.cover ? pictureUrl(projectCoverStore(game.id), game.cover, 'card') : null}
               openTestId={`projects-row-${game.id}`}
+              onAddPicture={access.editContent ? () => setCovering(game) : undefined}
               attrs={{ 'data-testid': 'projects-item', 'data-project-id': game.id }}
               menu={
                 access.editContent ? (
@@ -158,7 +159,9 @@ export default function GamingPage() {
                       data-testid="game-cover"
                     >
                       <ActionIcon icon={ImageIcon} />
-                      {t('projects.common.cover')}
+                      {t(
+                        game.cover ? 'projects.common.changePicture' : 'projects.common.addPicture',
+                      )}
                     </button>
                     {index > 0 ? (
                       <button
