@@ -194,6 +194,11 @@ public sealed class CinemaSagaTests(LorEvolveApiFactory factory) : IClassFixture
             Assert.Equal(film.Id, member.ProjectId);
         }
 
+        // The source universe's backup still holds the film it lists, so it validates and restores.
+        var restored = await RestoreArchive(client, await RawArchive(client, u), "Guarded world restored");
+        var kept = Assert.Single(Assert.Single(Assert.Single((await List(client, restored.Id)).Sagas).Phases).Members);
+        Assert.Equal("Phased film", kept.Name);
+
         // A project in no phase still moves and changes kind.
         var free = await Project(client, u, "Free film", ProjectKind.Film, null);
         await Ok(client.PutAsJsonAsync(
