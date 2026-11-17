@@ -143,6 +143,8 @@ internal static class AiChangeJson
                 AiChangeResource.ProjectEntry => Read<ProjectEntryValues>(json),
                 AiChangeResource.SystemRule => Read<SystemRuleValues>(json),
                 AiChangeResource.LoreSystem => Read<LoreSystemValues>(json),
+                AiChangeResource.SystemState => Read<SystemStateValues>(json),
+                AiChangeResource.SystemTransition => Read<SystemTransitionValues>(json),
                 AiChangeResource.ProjectType => Read<ProjectTypeValues>(json),
                 AiChangeResource.ProjectField => Read<ProjectSchemaFieldValues>(json),
                 AiChangeResource.Idea => Read<IdeaValues>(json),
@@ -172,6 +174,8 @@ internal static class AiChangeJson
         (AiChangeResource.ProjectEntry, _) => Read<ProjectEntryValues>(json),
         (AiChangeResource.SystemRule, _) => Read<SystemRuleValues>(json),
         (AiChangeResource.LoreSystem, _) => Read<LoreSystemValues>(json),
+        (AiChangeResource.SystemState, _) => Read<SystemStateValues>(json),
+        (AiChangeResource.SystemTransition, _) => Read<SystemTransitionValues>(json),
         (AiChangeResource.ProjectType, _) => Read<ProjectTypeValues>(json),
         (AiChangeResource.ProjectField, _) => Read<ProjectSchemaFieldValues>(json),
         (AiChangeResource.Idea, _) => Read<IdeaValues>(json),
@@ -514,6 +518,9 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
                 case (AiChangeResource.LoreSystem, _):
                     await CheckLoreSystemAsync(work, cancellationToken);
                     break;
+                case (AiChangeResource.SystemState or AiChangeResource.SystemTransition, _):
+                    await CheckSystemMachineAsync(work, works, cancellationToken);
+                    break;
                 case (AiChangeResource.ProjectType, _):
                     await CheckProjectTypeAsync(work, works, cancellationToken);
                     break;
@@ -631,6 +638,14 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
         SystemRuleValues rule => rule.DependsOn.Select(dependency => (dependency, AiChangeResource.SystemRule, "dependsOn")),
         LoreSystemValues system => system.RuleIds.Select(rule => (rule, AiChangeResource.SystemRule, "ruleIds")),
+        SystemStateValues state => [(state.System, AiChangeResource.LoreSystem, "system")],
+        SystemTransitionValues transition =>
+        [
+            (transition.System, AiChangeResource.LoreSystem, "system"),
+            (transition.From, AiChangeResource.SystemState, "from"),
+            (transition.To, AiChangeResource.SystemState, "to"),
+            .. transition.Guard is { } guard ? [(guard, AiChangeResource.SystemRule, "guard")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
+        ],
         ProjectEntryValues entry =>
         [
             .. entry.TypeRef is { } typeRef ? [(new AiRef(null, typeRef), AiChangeResource.ProjectType, "typeRef")] : Array.Empty<(AiRef, AiChangeResource, string)>(),
@@ -1280,7 +1295,8 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             _ => (false, null, true),
         };
 
-        if (work.Resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.SystemRule or AiChangeResource.LoreSystem)
+        if (work.Resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.SystemRule or AiChangeResource.LoreSystem
+            or AiChangeResource.SystemState or AiChangeResource.SystemTransition)
         {
             work.Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(work.Resource));
             return;
@@ -1469,6 +1485,8 @@ internal static class AiChangeText
         AiChangeResource.Progression => "An AI change never removes an era, form, ability or appearance. Remove one by hand on the entry's Progression page, where it shows what goes with it.",
         AiChangeResource.SystemRule => "An AI change never deletes a rule definition: it has no Trash. Delete it by hand in LorEvolve, once no System or rule references it.",
         AiChangeResource.LoreSystem => "An AI change never deletes a System: a System delete is permanent. Delete it by hand in LorEvolve, or propose an update that changes its rule list.",
+        AiChangeResource.SystemState => "An AI change never deletes a state: its transitions and findings would go with it. Delete it by hand on the System's machine in LorEvolve.",
+        AiChangeResource.SystemTransition => "An AI change never deletes a transition. Delete it by hand on the System's machine in LorEvolve.",
         _ => "A manuscript isn't removed. To empty one, replace its text, and its saved versions keep the old prose.",
     };
 

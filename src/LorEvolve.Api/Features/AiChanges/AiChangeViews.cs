@@ -297,6 +297,29 @@ internal static class AiChangeViews
                 return (work.Action == AiChangeAction.Create ? $"New System: {system.Name}" : $"Edit System: {old?.Name ?? system.Name}", lines);
             }
 
+            case (SystemStateValues state, var before):
+            {
+                var old = before as SystemStateValues;
+                Line("System", old is null ? null : names.LoreSystem(old.System), names.LoreSystem(state.System));
+                Line("Name", old?.Name, state.Name);
+                Line("Value", old?.Value, state.Value);
+                Line("Initial", old is null ? null : YesNo(old.Initial), YesNo(state.Initial));
+                Line("Covers", null, state.Binding is { } binding ? $"{binding.SubjectType}, by its attribute {binding.Attribute}" : null);
+                return (work.Action == AiChangeAction.Create ? $"New state: {state.Name}" : $"Edit state: {old?.Name ?? state.Name}", lines);
+            }
+
+            case (SystemTransitionValues transition, var before):
+            {
+                var old = before as SystemTransitionValues;
+                Line("System", old is null ? null : names.LoreSystem(old.System), names.LoreSystem(transition.System));
+                Line("From", old is null ? null : names.State(old.From), names.State(transition.From));
+                Line("To", old is null ? null : names.State(old.To), names.State(transition.To));
+                Line("Label", old?.Label, transition.Label);
+                Line("Guard", old?.Guard is { } was ? names.Rule(was) : null, transition.Guard is { } guard ? names.Rule(guard) : null);
+                var joins = $"{names.State((old ?? transition).From)} to {names.State((old ?? transition).To)}";
+                return (work.Action == AiChangeAction.Create ? $"New transition: {joins}" : $"Edit transition: {joins}", lines);
+            }
+
             case (IdeaValues idea, var before):
             {
                 var old = before as IdeaValues;
@@ -731,6 +754,8 @@ internal static class AiChangeViews
         AiChangeResource.ProjectEntry => "project entry",
         AiChangeResource.SystemRule => "rule definition",
         AiChangeResource.LoreSystem => "System",
+        AiChangeResource.SystemState => "state",
+        AiChangeResource.SystemTransition => "transition",
         AiChangeResource.ProjectType => "project type",
         AiChangeResource.ProjectField => "project field",
         _ => "item",
@@ -778,6 +803,8 @@ internal static class AiChangeViews
         private Dictionary<Guid, string> _projectTypes = [];
         private Dictionary<Guid, string> _appearances = [];
         private Dictionary<Guid, string> _rules = [];
+        private Dictionary<Guid, string> _systems = [];
+        private Dictionary<Guid, string> _states = [];
         private Dictionary<string, AiChangeWork> _pending = [];
         private UniverseChronology _chronology = UniverseChronology.Plain;
 
@@ -818,6 +845,15 @@ internal static class AiChangeViews
                     .Where(look => look.Entity!.UniverseId == universeId && ids.Contains(look.EntityId))
                     .ToDictionaryAsync(look => look.Id, look => look.Label, cancellationToken),
                 _rules = await db.SystemRules.AsNoTracking().Where(rule => rule.UniverseId == universeId && ids.Contains(rule.Id)).ToDictionaryAsync(rule => rule.Id, rule => rule.Title, cancellationToken),
+                _systems = await db.LoreSystems.AsNoTracking().Where(system => system.UniverseId == universeId && ids.Contains(system.Id)).ToDictionaryAsync(system => system.Id, system => system.Name, cancellationToken),
+
+                // A state's id is its System's own, so two Systems may share one; the first name read stands.
+                _states = (await db.SystemStates.AsNoTracking()
+                        .Where(state => state.Machine!.LoreSystem!.UniverseId == universeId && ids.Contains(state.Id))
+                        .Select(state => new { state.Id, state.Name })
+                        .ToListAsync(cancellationToken))
+                    .DistinctBy(state => state.Id)
+                    .ToDictionary(state => state.Id, state => state.Name),
                 _pending = works.ToDictionary(work => work.Key, StringComparer.Ordinal),
                 _chronology = await UniverseChronology.LoadAsync(db, universeId, cancellationToken),
             };
@@ -871,6 +907,10 @@ internal static class AiChangeViews
 
         /// <summary>A rule definition by its title, or one this proposal creates: "Fusion (new)".</summary>
         public string Rule(AiRef reference) => Named(reference, _rules, work => (work.Proposed as SystemRuleValues)?.Title);
+
+        public string LoreSystem(AiRef reference) => Named(reference, _systems, work => (work.Proposed as LoreSystemValues)?.Name);
+
+        public string State(AiRef reference) => Named(reference, _states, work => (work.Proposed as SystemStateValues)?.Name);
 
 
         private string Term(Guid id) => _terms.GetValueOrDefault(id) ?? "(unknown term)";

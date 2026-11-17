@@ -6,6 +6,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 /// The values of World Logic rule definitions and Systems (ADR 0072), built from an AI's input as every other resource's
 /// are: a create from the input alone, an update as the stored form with only what the input sets changed, bound to the
 /// version it was staged over. Neither is ever removed by an AI; staging refuses that before it gets here.
+/// A System machine's states and transitions (#361) are built the same way, bound to their System's version.
 /// </summary>
 internal static partial class AiChangeStaging
 {
@@ -33,6 +34,124 @@ internal static partial class AiChangeStaging
             return await StoredAsync(
                 () => AiChangeSnapshots.LoreSystemAsync(db, universeId, input.TargetId!.Value, cancellationToken),
                 stored => Work(stored.Form, stored.Version, LoreSystem(input.System, stored.Form)));
+        }
+
+        private async Task<AiChangeWork?> SystemStateAsync(CancellationToken cancellationToken)
+        {
+            if (input.SystemState is not { } state)
+            {
+                Fail(AiChangeCodes.Invalid, "Put the state's values in systemState.", "systemState");
+                return null;
+            }
+
+            if (await MachineSystemAsync(state.System, "systemState.system", cancellationToken) is not { } system)
+            {
+                return null;
+            }
+
+            // Kept as the AI named it: only the machine's first state may, which the check sees and staging here does not.
+            var binding = state.SubjectType is null && state.Attribute is null ? null : new SystemMachineBinding(state.SubjectType, state.Attribute);
+            if (action == AiChangeAction.Create)
+            {
+                return Work(null, system.Version, new SystemStateValues(system.Ref, state.Name?.Trim() ?? string.Empty, state.Value ?? string.Empty, state.Initial == true, binding));
+            }
+
+            // A machine always has exactly one initial state, so the flag moves to another state and never just goes off.
+            if (state.Initial == false)
+            {
+                Fail(AiChangeCodes.Invalid, "A machine always has one initial state. To move it, set initial to true on the state that should be initial.", "systemState.initial");
+                return null;
+            }
+
+            return await StoredAsync(
+                () => AiChangeSnapshots.SystemStateAsync(db, universeId, system.Ref.Id!.Value, input.TargetId!.Value, cancellationToken),
+                stored => Work(stored.Form, stored.Version, stored.Form with
+                {
+                    Name = state.Name?.Trim() ?? stored.Form.Name,
+                    Value = state.Value ?? stored.Form.Value,
+                    Initial = state.Initial ?? stored.Form.Initial,
+                    Binding = binding,
+                }));
+        }
+
+        private async Task<AiChangeWork?> SystemTransitionAsync(CancellationToken cancellationToken)
+        {
+            if (input.SystemTransition is not { } transition)
+            {
+                Fail(AiChangeCodes.Invalid, "Put the transition's values in systemTransition.", "systemTransition");
+                return null;
+            }
+
+            if (await MachineSystemAsync(transition.System, "systemTransition.system", cancellationToken) is not { } system)
+            {
+                return null;
+            }
+
+            var from = Ref(transition.From, "systemTransition.from");
+            var to = Ref(transition.To, "systemTransition.to");
+            var guard = Ref(transition.Guard, "systemTransition.guard");
+            if (guard is not null && transition.RemoveGuard == true)
+            {
+                Fail(AiChangeCodes.Invalid, "Name a guard or remove it, not both.", "systemTransition.removeGuard");
+            }
+
+            if (action == AiChangeAction.Create)
+            {
+                if ((from is null || to is null) && !_failed)
+                {
+                    Fail(AiChangeCodes.Invalid, "Say which two states the transition joins, in from and to.", from is null ? "systemTransition.from" : "systemTransition.to");
+                }
+
+                return from is null || to is null ? null : Work(null, system.Version, new SystemTransitionValues(system.Ref, from, to, Cleared(transition.Label, null), guard));
+            }
+
+            return await StoredAsync(
+                () => AiChangeSnapshots.SystemTransitionAsync(db, universeId, system.Ref.Id!.Value, input.TargetId!.Value, cancellationToken),
+                stored => Work(stored.Form, stored.Version, stored.Form with
+                {
+                    From = from ?? stored.Form.From,
+                    To = to ?? stored.Form.To,
+                    Label = Cleared(transition.Label, stored.Form.Label),
+                    Guard = transition.RemoveGuard == true ? null : guard ?? stored.Form.Guard,
+                }));
+        }
+
+        /// <summary>
+        /// The System a state or transition is in, which every machine change names: an existing one of this universe, with
+        /// the version the change is staged over, or a system this proposal creates, which has none yet. A change to an
+        /// item that exists names its System by id, since the item's id is only unique inside its System.
+        /// </summary>
+        private async Task<(AiRef Ref, int? Version)?> MachineSystemAsync(AiRefInput? reference, string field, CancellationToken cancellationToken)
+        {
+            if (Ref(reference, field) is not { } system)
+            {
+                if (!_failed)
+                {
+                    Fail(AiChangeCodes.Invalid, "Say which System this is in: {\"id\"} of an existing one, or {\"ref\"} of a system this proposal creates.", field);
+                }
+
+                return null;
+            }
+
+            if (system.Id is not { } id)
+            {
+                if (action == AiChangeAction.Update)
+                {
+                    Fail(AiChangeCodes.Invalid, "A state or transition that exists is in a System that exists: name it by {\"id\"}.", field);
+                    return null;
+                }
+
+                return (system, null);
+            }
+
+            // Another universe's System answers as a missing one does.
+            if (await AiChangeSnapshots.SystemVersionAsync(db, universeId, id, cancellationToken) is not { } version)
+            {
+                Fail(AiChangeCodes.NotFound, "This universe has no such System. Read them with list_systems.", field);
+                return null;
+            }
+
+            return (system, version);
         }
 
         private SystemRuleValues? SystemRule(AiSystemRuleInput? rule, SystemRuleValues? before)
