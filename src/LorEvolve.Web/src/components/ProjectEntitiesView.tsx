@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { listProjectTypes } from '../projectEntities/api'
-import type { ProjectEntityType } from '../projectEntities/types'
+import type { ProjectEntitySummary, ProjectEntityType } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
 import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
 import { ProjectEntries } from './ProjectEntries'
@@ -21,6 +21,7 @@ export function ProjectEntitiesView({
   universeId,
   reloadKey,
   onChanged,
+  entryHref,
 }: {
   projectId: string
   /** The universe the project belongs to: an entry's pictures are stored under it. */
@@ -28,6 +29,8 @@ export function ProjectEntitiesView({
   /** The page's `schemaVersion`: bumped by a schema write, so the cards and the entries re-read what they offer. */
   reloadKey: number
   onChanged: () => void
+  /** Where an entry's card opens (#286); unset, a card has no page to open. */
+  entryHref?: (entry: ProjectEntitySummary) => string
 }) {
   useI18n()
   const [params] = useSearchParams()
@@ -69,6 +72,7 @@ export function ProjectEntitiesView({
           openEntryId={entryId ?? undefined}
           reloadKey={reloadKey}
           crumb={back}
+          entryHref={entryHref}
         />
       </div>
     )

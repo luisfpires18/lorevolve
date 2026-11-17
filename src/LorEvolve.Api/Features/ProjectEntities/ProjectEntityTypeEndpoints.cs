@@ -4,6 +4,7 @@ using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Media;
 using LorEvolve.Api.Features.Projects;
+using LorEvolve.Api.Features.TypeTemplates;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -51,6 +52,7 @@ public static class ProjectEntityTypeEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListProjectEntityTypes");
         group.MapPost("/", CreateAsync).WithName("CreateProjectEntityType");
+        group.MapPost("/from-template", CreateFromTemplateAsync).WithName("CreateProjectEntityTypeFromTemplate");
         group.MapPut("/{typeId:guid}", UpdateAsync).WithName("UpdateProjectEntityType");
         group.MapDelete("/{typeId:guid}", DeleteAsync).WithName("DeleteProjectEntityType");
 
@@ -200,6 +202,121 @@ public static class ProjectEntityTypeEndpoints
         var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
 
         return denied ?? await CreateTypeCoreAsync(db, project!, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// Copies one of the universe's type templates (#281) into this project as an ordinary top-level type. The copy is
+    /// plain rows with new ids and no link back, so editing either side never reaches the other, and it only inserts:
+    /// a name that is taken is refused, never merged into the existing type.
+    /// </summary>
+    private static async Task<IResult> CreateFromTemplateAsync(
+        Guid projectId,
+        [FromBody] ProjectTypeFromTemplateRequest request,
+        ClaimsPrincipal principal,
+        LorEvolveDbContext db,
+        CancellationToken cancellationToken)
+    {
+        var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
+
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        // Another universe's template answers like a missing one, so no route tells that it exists.
+        var template = await db.TypeTemplates.AsNoTracking()
+            .Include(candidate => candidate.Fields).ThenInclude(field => field.Options)
+            .FirstOrDefaultAsync(
+                candidate => candidate.Id == request.TemplateId && candidate.UniverseId == project!.UniverseId,
+                cancellationToken);
+
+        if (template is null)
+        {
+            return Results.NotFound();
+        }
+
+        var requested = string.IsNullOrWhiteSpace(request.Name) ? template.Name : request.Name.Trim();
+
+        if (Validate(new ProjectEntityTypeRequest(requested, template.Description, template.Icon, template.AccentColor)) is { } errors)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        await using var transaction = await JoinedTransaction.BeginAsync(db, cancellationToken);
+
+        var existing = await db.EntityTypes.IgnoreQueryFilters()
+            .Where(type => type.ProjectId == projectId)
+            .ToListAsync(cancellationToken);
+
+        if (existing.Count >= MaxTypesPerProject)
+        {
+            return Problems.Field("name", $"A project can have at most {MaxTypesPerProject} types.");
+        }
+
+        if (existing.Any(type => string.Equals(type.Name, requested, StringComparison.OrdinalIgnoreCase)))
+        {
+            return NameTaken();
+        }
+
+        var now = DateTime.UtcNow;
+        var created = new EntityType
+        {
+            Id = Guid.NewGuid(),
+            UniverseId = project!.UniverseId,
+            ProjectId = projectId,
+            Name = requested,
+            Description = template.Description,
+            Icon = template.Icon,
+            AccentColor = template.AccentColor,
+            DisplayOrder = existing.Count == 0 ? 0 : existing.Max(type => type.DisplayOrder) + 1,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        db.EntityTypes.Add(created);
+
+        foreach (var source in template.Fields.OrderBy(field => field.DisplayOrder))
+        {
+            var field = new EntityFieldDefinition
+            {
+                Id = Guid.NewGuid(),
+                EntityTypeId = created.Id,
+                Name = source.Name,
+                Kind = source.Kind,
+                IsRequired = source.IsRequired,
+                DisplayOrder = source.DisplayOrder,
+                ImageShape = source.ImageShape,
+            };
+
+            db.EntityFieldDefinitions.Add(field);
+
+            foreach (var option in source.Options.OrderBy(option => option.DisplayOrder))
+            {
+                db.EntityFieldOptions.Add(new EntityFieldOption
+                {
+                    Id = Guid.NewGuid(),
+                    FieldDefinitionId = field.Id,
+                    Value = option.Value,
+                    DisplayOrder = option.DisplayOrder,
+                });
+            }
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException failure) when (DatabaseFailures.IsUniqueViolation(failure))
+        {
+            return NameTaken();
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        var types = await LoadTypesAsync(db, project, cancellationToken);
+        return Results.Created(
+            $"/api/projects/{projectId}/entity-types/{created.Id}",
+            types.First(type => type.Id == created.Id));
     }
 
     // ---------- The cores an approved AI change commits through ----------

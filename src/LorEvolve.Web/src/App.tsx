@@ -34,6 +34,8 @@ import {
   ExplorePage,
   FamilyTreePage,
   ForgotPasswordPage,
+  GameEntitiesPage,
+  GameEntityPage,
   IdeaBoardPage,
   IdeaBoardsPage,
   IdeaPage,
@@ -334,8 +336,23 @@ function Root() {
                 path="game-entities"
                 element={asSection(
                   'projects',
-                  <ProjectsPage inUniverse section={GAME_ENTITIES} kinds={[ProjectKind.Game]} />,
+                  <ProjectsPage
+                    inUniverse
+                    section={GAME_ENTITIES}
+                    kinds={[ProjectKind.Game]}
+                    rowPath={(project) =>
+                      `/app/universes/${project.universe.id}/game-entities/${project.id}`
+                    }
+                  />,
                 )}
+              />
+              <Route
+                path="game-entities/:projectId"
+                element={asSection('projects', <GameEntitiesPage />)}
+              />
+              <Route
+                path="game-entities/:projectId/:entityId"
+                element={asSection('projects', <GameEntityPage />)}
               />
               <Route
                 path="projects/:projectId/*"

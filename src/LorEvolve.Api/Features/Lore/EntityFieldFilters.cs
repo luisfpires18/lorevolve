@@ -314,7 +314,7 @@ public static class EntityFieldFilters
     /// A-Z to a-z and nothing else - exactly what SQLite's lower() does to the column - so both sides of a comparison fold
     /// alike. A culture-aware lowering here would fold "Ä" where the database does not, and the exact text would stop matching.
     /// </summary>
-    private static string AsciiLower(string text) =>
+    internal static string AsciiLower(string text) =>
         string.Create(text.Length, text, (span, source) =>
         {
             for (var i = 0; i < source.Length; i++)
