@@ -644,6 +644,9 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("INTEGER");
 
@@ -661,6 +664,8 @@ namespace LorEvolve.Api.Data.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProjectId", "SortOrder");
 
                     b.HasIndex("UniverseId", "Kind", "SortOrder");
 
@@ -5052,11 +5057,18 @@ namespace LorEvolve.Api.Data.Migrations
 
             modelBuilder.Entity("LorEvolve.Api.Features.ComicCollections.ComicCollection", b =>
                 {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
                         .WithMany()
                         .HasForeignKey("UniverseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Project");
 
                     b.Navigation("Universe");
                 });

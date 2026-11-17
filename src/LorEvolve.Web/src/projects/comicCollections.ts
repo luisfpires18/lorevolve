@@ -12,11 +12,13 @@ export type ComicNode = {
 /** An entry in reading order; `available` is false when its node no longer fits the collection. */
 export type ComicEntry = ComicNode & { available: boolean }
 
-export type ComicCollectionKind = 'story-arc' | 'event'
+export type ComicCollectionKind = 'story-arc' | 'event' | 'volume'
 
 export type ComicCollection = {
   id: string
   kind: ComicCollectionKind
+  /** The one project a volume belongs to (#297); null for arcs and events. */
+  projectId: string | null
   name: string
   summary: string | null
   sortOrder: number
@@ -28,6 +30,7 @@ export type ComicCollections = { collections: ComicCollection[]; candidates: Com
 
 export type ComicCollectionInput = {
   kind?: ComicCollectionKind
+  projectId?: string
   name: string
   summary: string | null
   expectedVersion?: number
@@ -37,8 +40,16 @@ const base = (universeId: string) => `/api/universes/${universeId}/comic-collect
 const post = (url: string, body: unknown) =>
   apiFetch<void>(url, { method: 'POST', body: JSON.stringify(body) })
 
-export const listComicCollections = (universeId: string, signal?: AbortSignal) =>
-  apiFetch<ComicCollections>(base(universeId), { signal })
+/** Without a project: arcs and events. With one: that project's volumes and its nodes only. */
+export const listComicCollections = (
+  universeId: string,
+  signal?: AbortSignal,
+  projectId?: string,
+) =>
+  apiFetch<ComicCollections>(
+    projectId ? `${base(universeId)}?projectId=${projectId}` : base(universeId),
+    { signal },
+  )
 
 export const createComicCollection = (universeId: string, input: ComicCollectionInput) =>
   post(base(universeId), input)
