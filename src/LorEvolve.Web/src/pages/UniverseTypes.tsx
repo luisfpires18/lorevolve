@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   DndContext,
   DragOverlay,
@@ -34,6 +34,10 @@ import {
 import { type EntityType, type EntityTypeGroup } from '../lore/types'
 import { buildTypeTree, branchIds, typePathLabel, type TypeNode } from '../lore/typeTree'
 import { PageHeader } from '../components/PageHeader'
+import { Field } from '../components/Field'
+import { ProjectSchema } from '../components/ProjectSchema'
+import { listAllProjects } from '../projects/api'
+import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { confirmAction } from '../lib/confirm'
 
@@ -71,6 +75,49 @@ export default function UniverseTypes() {
     events: t('entityTypes.page.ledes.events'),
   }
   const [tab, chooseTab] = useQueryTab(tabs, { history: 'push' })
+
+  // Lore or Gaming (`?context=gaming&game=`): the game types are each game's own, so the switch only exists while this
+  // universe has a game. An unknown context or game reads as Lore or the first game, without rewriting the address.
+  const [params, setParams] = useSearchParams()
+  const [gamesRead, setGamesRead] = useState<ProjectDetail[] | 'loading' | 'failed'>('loading')
+  useEffect(() => {
+    const controller = new AbortController()
+    listAllProjects({ universeId: universe.id }, controller.signal)
+      .then((all) => setGamesRead(all.filter((each) => each.kind === ProjectKind.Game)))
+      .catch(() => {
+        if (!controller.signal.aborted) setGamesRead('failed')
+      })
+    return () => controller.abort()
+  }, [universe.id])
+  const games = Array.isArray(gamesRead) ? gamesRead : []
+  const waitingForGames = params.get('context') === 'gaming' && gamesRead === 'loading'
+  const gaming = params.get('context') === 'gaming' && games.length > 0
+  const game = games.find((each) => each.id === params.get('game')) ?? games[0]
+  const showLore = !gaming && !waitingForGames
+
+  function chooseContext(next: 'lore' | 'gaming') {
+    if (next === (gaming ? 'gaming' : 'lore')) return
+    setParams((current) => {
+      const copy = new URLSearchParams(current)
+      if (next === 'lore') {
+        copy.delete('context')
+        copy.delete('game')
+      } else {
+        copy.set('context', 'gaming')
+        copy.set('game', game.id)
+      }
+      return copy
+    })
+  }
+
+  function chooseGame(id: string) {
+    if (id === game?.id) return
+    setParams((current) => {
+      const copy = new URLSearchParams(current)
+      copy.set('game', id)
+      return copy
+    })
+  }
 
   const types = Array.isArray(typesRead) ? typesRead : null
   // Groups are an extra: without them the types still work, and the group controls simply have none to offer.
@@ -386,9 +433,9 @@ export default function UniverseTypes() {
     <article className="types">
       <PageHeader
         title={t('entityTypes.page.title')}
-        lede={ledes[tab]}
+        lede={gaming ? t('entityTypes.page.ledes.gaming', { game: game.name }) : ledes[tab]}
         actions={
-          tab === 'lore' && access.editContent ? (
+          showLore && tab === 'lore' && access.editContent ? (
             <button
               className="button"
               type="button"
@@ -404,14 +451,65 @@ export default function UniverseTypes() {
           ) : null
         }
       >
-        <QueryTabList
-          label={t('entityTypes.page.title')}
-          idPrefix="types"
-          tabs={tabs}
-          tab={tab}
-          onChoose={chooseTab}
-        />
+        {games.length > 0 ? (
+          <div className="types__context">
+            <div
+              className="segmented"
+              role="group"
+              aria-label={t('entityTypes.page.context.label')}
+              data-testid="types-context"
+            >
+              {(['lore', 'gaming'] as const).map((each) => (
+                <button
+                  key={each}
+                  className="segmented__option"
+                  type="button"
+                  aria-pressed={(gaming ? 'gaming' : 'lore') === each}
+                  onClick={() => chooseContext(each)}
+                  data-testid={`types-context-${each}`}
+                >
+                  {t(`entityTypes.page.context.${each}`)}
+                </button>
+              ))}
+            </div>
+            {gaming ? (
+              <Field label={t('entityTypes.page.game.label')} className="types__game">
+                {(control) => (
+                  <select
+                    {...control}
+                    className="field__input field__input--select"
+                    value={game.id}
+                    onChange={(event) => chooseGame(event.target.value)}
+                    data-testid="types-game"
+                  >
+                    {games.map((each) => (
+                      <option key={each.id} value={each.id}>
+                        {each.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+            ) : null}
+          </div>
+        ) : null}
+        {showLore ? (
+          <QueryTabList
+            label={t('entityTypes.page.title')}
+            idPrefix="types"
+            tabs={tabs}
+            tab={tab}
+            onChoose={chooseTab}
+          />
+        ) : null}
       </PageHeader>
+
+      {waitingForGames ? (
+        <p className="notice" role="status">
+          {t('entityTypes.page.game.loading')}
+        </p>
+      ) : null}
+      {gaming ? <ProjectSchema key={game.id} projectId={game.id} reloadKey={0} /> : null}
 
       {editing ? (
         <TypeDialog
@@ -464,7 +562,7 @@ export default function UniverseTypes() {
         />
       ) : null}
 
-      <TabPanel idPrefix="types" id="lore" tab={tab}>
+      <TabPanel idPrefix="types" id="lore" tab={showLore ? tab : ''}>
         {message ? (
           <div className="notice notice--error" role="alert" data-testid="types-error">
             <p>{message}</p>
@@ -825,7 +923,7 @@ export default function UniverseTypes() {
         )}
       </TabPanel>
 
-      <TabPanel idPrefix="types" id="groups" tab={tab}>
+      <TabPanel idPrefix="types" id="groups" tab={showLore ? tab : ''}>
         <TypeGroupsPanel
           universeId={universe.id}
           groups={groups}
@@ -835,11 +933,11 @@ export default function UniverseTypes() {
         />
       </TabPanel>
 
-      <TabPanel idPrefix="types" id="relations" tab={tab}>
+      <TabPanel idPrefix="types" id="relations" tab={showLore ? tab : ''}>
         <RelationshipTypeManager universeId={universe.id} />
       </TabPanel>
 
-      <TabPanel idPrefix="types" id="events" tab={tab}>
+      <TabPanel idPrefix="types" id="events" tab={showLore ? tab : ''}>
         <ValidationTermManager universeId={universe.id} />
       </TabPanel>
     </article>
