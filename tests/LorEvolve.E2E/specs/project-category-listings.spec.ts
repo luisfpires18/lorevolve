@@ -59,6 +59,10 @@ async function project(page: Page, universeId: string, name: string, kind: numbe
 async function listed(page: Page, universeId: string, category: string) {
   await page.goto(`/app/universes/${universeId}/${category}`)
   await expect(page.getByTestId('projects-page')).toBeVisible()
+  // The shelf shows its page while it reads; the list or the empty state means the reading is done.
+  await expect(
+    page.getByTestId('projects-list').or(page.getByTestId('projects-empty')),
+  ).toBeVisible()
   return page.getByTestId('projects-item')
 }
 
@@ -109,12 +113,12 @@ test.describe('Project listings by category', () => {
       'data-kind',
       `${FILM}`,
     )
-    await expect(page.locator(`[data-project-id="${film}"] .storyrow__meta`)).toContainText('Film')
+    await expect(page.locator(`[data-project-id="${film}"] .shelfcard__meta`)).toContainText('Film')
     await expect(page.locator(`[data-project-id="${series}"]`)).toHaveAttribute(
       'data-kind',
       `${SERIES}`,
     )
-    await expect(page.locator(`[data-project-id="${series}"] .storyrow__meta`)).toContainText(
+    await expect(page.locator(`[data-project-id="${series}"] .shelfcard__meta`)).toContainText(
       'Series',
     )
 

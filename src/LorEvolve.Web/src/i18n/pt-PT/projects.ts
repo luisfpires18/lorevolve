@@ -34,9 +34,9 @@ const projects = {
     addPicture: 'Adicionar imagem',
     changePicture: 'Mudar imagem',
   },
-  gaming: {
-    moved: '“{name}” é agora o jogo {n} de {total}.',
-    moveFailed: 'Não foi possível mover esse jogo. Tenta de novo.',
+  shelf: {
+    moved: '“{name}” é agora o {n} de {total}.',
+    moveFailed: 'Não foi possível mover esse projeto. Tenta de novo.',
   },
   comics: {
     viewsLabel: 'Vistas de banda desenhada',

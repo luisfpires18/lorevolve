@@ -19054,8 +19054,9 @@ details.reviewsection > .reviewsection__list {
 }
 
 /*
- * Shelves (owner, 2026-11-17): Gaming and Writing draw what an author is making as the thing it will be, a game on a
- * widescreen handheld and a story as a book, in one grid that both pages share. The object carries the picture and is
+ * Shelves (owner, 2026-11-17): the Creation pages draw what an author is making as the thing it will be, a game on a
+ * widescreen handheld, a film or series on a strip of film, a comic as an issue and a story as a book, in one grid that
+ * every page shares. The object carries the picture and is
  * the one bold thing here; the title and status under it stay the app's quiet type, as a book's label would.
  */
 .shelf {
@@ -19067,7 +19068,7 @@ details.reviewsection > .reviewsection__list {
   list-style: none;
 }
 
-/* A handheld lies on its side, so its shelf has wider places. */
+/* A handheld and a strip of film lie on their side, so their shelf has wider places. */
 .shelf--wide {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
 }
@@ -19124,6 +19125,16 @@ details.reviewsection > .reviewsection__list {
   right: calc(var(--handheld-grip) + 0.5rem);
 }
 
+.shelfcard--film .shelfcard__menu {
+  top: calc(var(--film-rail) + 0.5rem);
+  right: calc(var(--film-edge) + 0.5rem);
+}
+
+.shelfcard--comic .shelfcard__menu {
+  top: calc(var(--space-2) + 4px);
+  right: calc(var(--space-2) + 4px);
+}
+
 .shelfcard__menu .iconbutton {
   background: color-mix(in oklab, var(--paper) 82%, transparent);
   color: var(--ink);
@@ -19150,6 +19161,8 @@ details.reviewsection > .reviewsection__list {
  * press through to the link but the button's own.
  */
 .handheld,
+.filmstrip,
+.comic,
 .book {
   z-index: 2;
   pointer-events: none;
@@ -19381,6 +19394,154 @@ details.reviewsection > .reviewsection__list {
   object-fit: cover;
 }
 
+/*
+ * The strip of film: a frame of dark celluloid with a row of sprocket holes along each rail, the picture exposed in the
+ * frame between them. The base stays near black in both themes, as film does, tinted by the theme's accent; the holes
+ * show the page through them.
+ */
+.shelfcard--film {
+  --film-rail: 1.05rem;
+  --film-edge: 0.55rem;
+}
+
+.filmstrip {
+  --celluloid: color-mix(in oklab, var(--accent) 14%, #0d0e12);
+  position: relative;
+  padding: var(--film-rail) var(--film-edge);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, white 9%, transparent),
+      transparent 30%,
+      transparent 70%,
+      color-mix(in oklab, black 30%, transparent)
+    ),
+    var(--celluloid);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, white 8%, transparent),
+    var(--shadow-2);
+  transition:
+    transform var(--duration-2) var(--ease),
+    box-shadow var(--duration-2) var(--ease);
+}
+
+/* The sprocket holes: one row on each rail, cut from the page's own colour. */
+.filmstrip::before,
+.filmstrip::after {
+  content: '';
+  position: absolute;
+  right: var(--film-edge);
+  left: var(--film-edge);
+  height: 0.42rem;
+  border-radius: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 0.3rem,
+    color-mix(in oklab, var(--paper) 86%, white) 0.3rem 0.85rem,
+    transparent 0.85rem 1.15rem
+  );
+  opacity: 0.85;
+}
+
+.filmstrip::before {
+  top: calc((var(--film-rail) - 0.42rem) / 2);
+}
+
+.filmstrip::after {
+  bottom: calc((var(--film-rail) - 0.42rem) / 2);
+}
+
+.filmstrip__frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--accent) 16%, var(--paper));
+  box-shadow: 0 0 0 1px color-mix(in oklab, black 60%, transparent);
+}
+
+/* The light through the frame: a soft vignette at its corners, over the picture. */
+.filmstrip__frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 100% at 50% 50%,
+    transparent 62%,
+    color-mix(in oklab, black 32%, transparent)
+  );
+}
+
+.filmstrip__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * The comic issue: a 2:3 cover in a heavy ink keyline with the hard offset shadow of printed comics, a masthead band in
+ * the theme's accent across the top and a small issue box in its corner. The picture runs full bleed under the masthead.
+ */
+.comic {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  transition: transform var(--duration-2) var(--ease);
+}
+
+.comic__cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  border-radius: 3px;
+  background:
+    radial-gradient(color-mix(in oklab, var(--ink) 12%, transparent) 1px, transparent 1.5px) 0 0 /
+      9px 9px,
+    color-mix(in oklab, var(--accent) 14%, var(--raised));
+  box-shadow: 5px 5px 0 color-mix(in oklab, var(--ink) 80%, transparent);
+}
+
+/* The masthead: a band of the accent across the top, over the picture. */
+.comic__cover::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 13%;
+  border-bottom: 3px solid var(--ink);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 85%, white), var(--accent));
+}
+
+/* The issue box in the masthead's corner. */
+.comic__cover::after {
+  content: '';
+  position: absolute;
+  top: 2.5%;
+  left: 4%;
+  z-index: 1;
+  width: 13%;
+  height: 8%;
+  border: 2px solid var(--ink);
+  /* Printed paper in both themes, as the issue box on a real cover is. */
+  background: color-mix(in oklab, var(--accent) 6%, #f7f3ea);
+}
+
+.comic__cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* The one hover: the object lifts off the shelf, as a thing picked up does. */
 .shelfcard:hover .handheld,
 .shelfcard:focus-within .handheld {
@@ -19392,6 +19553,16 @@ details.reviewsection > .reviewsection__list {
     var(--shadow-3);
 }
 
+.shelfcard:hover .filmstrip,
+.shelfcard:focus-within .filmstrip {
+  transform: translateY(-3px) rotate(-0.4deg);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, white 8%, transparent),
+    var(--shadow-3);
+}
+
+.shelfcard:hover .comic,
+.shelfcard:focus-within .comic,
 .shelfcard:hover .book,
 .shelfcard:focus-within .book {
   transform: translateY(-3px) rotate(-0.6deg);
@@ -19399,12 +19570,18 @@ details.reviewsection > .reviewsection__list {
 
 @media (prefers-reduced-motion: reduce) {
   .handheld,
+  .filmstrip,
+  .comic,
   .book {
     transition: none;
   }
 
   .shelfcard:hover .handheld,
   .shelfcard:focus-within .handheld,
+  .shelfcard:hover .filmstrip,
+  .shelfcard:focus-within .filmstrip,
+  .shelfcard:hover .comic,
+  .shelfcard:focus-within .comic,
   .shelfcard:hover .book,
   .shelfcard:focus-within .book {
     transform: none;
