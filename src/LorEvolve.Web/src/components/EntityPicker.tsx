@@ -1,12 +1,12 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { Chronology } from '../chronology/types'
-import { listEntities } from '../lore/api'
 import type { EntitySummary } from '../lore/types'
 import { Field } from './Field'
-import { QuickCreateDialog } from './QuickCreateDialog'
 import { useI18n } from '../i18n'
-
-const MAX_RESULTS = 8
+import { useEntitySearch } from '../lore/useEntitySearch'
+import { listKeyDown, useCloseOnOutside, useKeepListInView } from './entityPickerList'
+import { EntityPickerCreate } from './lore/EntityPickerCreate'
+import { usePickerQuickCreate } from '../lore/usePickerQuickCreate'
 
 /** What a picker hands back: enough to show a name without a second request. */
 export interface EntityChoice {
@@ -25,153 +25,6 @@ export interface QuickCreateOptions {
   chronology: Chronology
   /** Said once the new entry exists: what still has to be saved for the choice to be kept. */
   keepHint: string
-}
-
-/**
- * Search-as-you-type over one universe, shared by both pickers. The API does the
- * searching, so nothing is preloaded and a large world costs the same as a small one.
- */
-function useEntitySearch(
-  universeId: string,
-  query: string,
-  isOpen: boolean,
-  excludeIds: string[],
-  familyTreeOnly = false,
-  entityTypeId: string | null = null,
-  entityTypeGroupId: string | null = null,
-) {
-  const [results, setResults] = useState<EntitySummary[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [active, setActive] = useState(0)
-
-  // Joined rather than held as an array, so a fresh array carrying the same ids on every
-  // render does not restart the search.
-  const excludeKey = excludeIds.join(',')
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    const excluded = new Set(excludeKey ? excludeKey.split(',') : [])
-    const controller = new AbortController()
-
-    // Typing settles before the API is asked, so a fast typist makes one call, not ten.
-    const timer = setTimeout(() => {
-      setIsSearching(true)
-      listEntities(
-        universeId,
-        {
-          search: query,
-          // A picker chooses an entry by its name or alias, never one that only mentions the words.
-          namesOnly: true,
-          entityTypeId,
-          // A link field limited to a type takes that type's nested types too (Issue #61).
-          includeDescendants: true,
-          entityTypeGroupId,
-          canonStatus: null,
-          tag: null,
-          page: 1,
-          familyTreeEligible: familyTreeOnly,
-        },
-        controller.signal,
-      )
-        .then((page) => {
-          setResults(page.items.filter((item) => !excluded.has(item.id)).slice(0, MAX_RESULTS))
-          setActive(0)
-        })
-        .catch(() => {
-          /* An aborted or failed search simply leaves the previous results in place. */
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setIsSearching(false)
-        })
-    }, 200)
-
-    return () => {
-      clearTimeout(timer)
-      controller.abort()
-    }
-  }, [universeId, query, excludeKey, isOpen, familyTreeOnly, entityTypeId, entityTypeGroupId])
-
-  return { results, isSearching, active, setActive }
-}
-
-/** A click outside closes the list without choosing anything. */
-function useCloseOnOutside(
-  wrapper: RefObject<HTMLDivElement | null>,
-  isOpen: boolean,
-  close: () => void,
-) {
-  useEffect(() => {
-    if (!isOpen) return
-
-    function onPointerDown(event: PointerEvent) {
-      if (!wrapper.current?.contains(event.target as Node)) close()
-    }
-
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [wrapper, isOpen, close])
-}
-
-/**
- * Keeps an open result list on screen.
- *
- * The list drops out of the field it belongs to, and both pickers are used in places
- * where that field is the last one in a scrolling container - the bottom of the timeline
- * drawer, the foot of a relation form. On a phone the list then opens below the fold,
- * behind the drawer's own action bar, and the author sees nothing happen at all. Asking
- * for the nearest scroll brings it into view without moving anything that already is.
- */
-function useKeepListInView(
-  list: RefObject<HTMLUListElement | null>,
-  isOpen: boolean,
-  count: number,
-) {
-  useEffect(() => {
-    if (!isOpen) return
-    list.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [list, isOpen, count])
-}
-
-interface ListKeyOptions {
-  isOpen: boolean
-  open: () => void
-  close: () => void
-  results: EntitySummary[]
-  active: number
-  setActive: (update: (current: number) => number) => void
-  choose: (item: EntitySummary) => void
-  /** A last row after the results that is not an entry - Create "..." - taken by Enter like any other. */
-  extra?: () => void
-}
-
-/** Arrow keys walk the list, Enter takes the highlighted row, Escape gives up on it. */
-function listKeyDown(event: KeyboardEvent<HTMLInputElement>, options: ListKeyOptions) {
-  const { isOpen, open, close, results, active, setActive, choose, extra } = options
-  const count = results.length + (extra ? 1 : 0)
-
-  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-    event.preventDefault()
-    if (!isOpen) {
-      open()
-      return
-    }
-    const step = event.key === 'ArrowDown' ? 1 : -1
-    setActive((current) => (count === 0 ? 0 : (current + step + count) % count))
-  } else if (event.key === 'Enter') {
-    if (isOpen && results[active]) {
-      event.preventDefault()
-      choose(results[active])
-    } else if (isOpen && extra && active === results.length) {
-      event.preventDefault()
-      extra()
-    }
-  } else if (event.key === 'Escape') {
-    if (isOpen) {
-      event.preventDefault()
-      close()
-    }
-  }
 }
 
 interface EntityPickerProps {
@@ -219,18 +72,14 @@ export function EntityPicker({
 
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  // The name Quick Create opened with, while its form is open.
-  const [creating, setCreating] = useState<string | null>(null)
-  // The entry Quick Create just made, said under the choice until the choice changes.
-  const [created, setCreated] = useState<EntityChoice | null>(null)
+  const { creating, focusAfterCreate, createName, startCreate, finishCreate, note } =
+    usePickerQuickCreate({ quickCreate, query, setQuery, setIsOpen, value, onChange })
 
   const wrapper = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLUListElement>(null)
   const input = useRef<HTMLInputElement>(null)
   const change = useRef<HTMLButtonElement>(null)
   const focusInput = useRef(false)
-  // Where the focus goes once Quick Create's form has gone: the choice it made, or back to the search.
-  const focusAfterCreate = useRef<'chosen' | 'input' | null>(null)
   const { results, isSearching, active, setActive } = useEntitySearch(
     universeId,
     query,
@@ -263,26 +112,6 @@ export function EntityPicker({
     setIsOpen(false)
     setQuery('')
   }
-
-  // Offered whenever something is typed, beside the matches rather than only when there are none: a name can be shared.
-  const createName = quickCreate ? query.trim() : ''
-  const startCreate = createName
-    ? () => {
-        setIsOpen(false)
-        setCreating(createName)
-      }
-    : undefined
-
-  function finishCreate(choice: EntityChoice | null, wasCreated: boolean) {
-    focusAfterCreate.current = choice ? 'chosen' : 'input'
-    setCreating(null)
-    if (!choice) return
-    setCreated(wasCreated ? choice : null)
-    setQuery('')
-    onChange(choice)
-  }
-
-  const note = created && value?.id === created.id ? created : null
 
   return (
     <Field label={label} id={inputId} className="picker" error={error}>
@@ -409,189 +238,16 @@ export function EntityPicker({
             </>
           )}
 
-          {quickCreate ? (
-            // Announced as it appears: the entry exists now, the choice does not until the form it sits in is saved.
-            <p className="picker__created" id={noteId} role="status" data-testid="picker-created">
-              {note ? (
-                <>
-                  {tx('entity.picker.created', {
-                    name: <bdi>{note.name}</bdi>,
-                    hint: quickCreate.keepHint,
-                    link: (
-                      <a
-                        href={`/app/universes/${universeId}/lore/${note.id}`}
-                        target="_blank"
-                        rel="noopener"
-                        data-testid="picker-created-open"
-                      >
-                        {t('entity.picker.openFull')}
-                      </a>
-                    ),
-                  })}
-                </>
-              ) : null}
-            </p>
-          ) : null}
-
-          {creating !== null && quickCreate ? (
-            <QuickCreateDialog
-              universeId={universeId}
-              initialName={creating}
-              entityTypeId={entityTypeId}
-              entityTypeGroupId={entityTypeGroupId}
-              chronology={quickCreate.chronology}
-              onCreated={(choice) => finishCreate(choice, true)}
-              onChooseExisting={(choice) => finishCreate(choice, false)}
-              onCancel={() => finishCreate(null, false)}
-            />
-          ) : null}
-        </div>
-      )}
-    </Field>
-  )
-}
-
-interface EntityMultiPickerProps {
-  label: string
-  hint?: string
-  universeId: string
-  /** Everyone and everything already taking part, in the order they were added. */
-  value: EntityChoice[]
-  onChange: (choices: EntityChoice[]) => void
-  placeholder?: string
-  error?: string
-}
-
-/**
- * Several entities at once, on the same search. Chosen ones sit as tokens in the field
- * and drop out of the results, so nothing can be added twice.
- */
-export function EntityMultiPicker({
-  label,
-  hint,
-  universeId,
-  value,
-  onChange,
-  placeholder: customPlaceholder,
-  error,
-}: EntityMultiPickerProps) {
-  const { t } = useI18n()
-  const placeholder = customPlaceholder ?? t('entity.multiPicker.placeholder')
-  const inputId = useId()
-  const listId = useId()
-
-  const [query, setQuery] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
-
-  const wrapper = useRef<HTMLDivElement>(null)
-  const list = useRef<HTMLUListElement>(null)
-  const { results, isSearching, active, setActive } = useEntitySearch(
-    universeId,
-    query,
-    isOpen,
-    value.map((choice) => choice.id),
-  )
-
-  useCloseOnOutside(wrapper, isOpen, () => setIsOpen(false))
-  useKeepListInView(list, isOpen, results.length)
-
-  function choose(item: EntitySummary) {
-    onChange([...value, { id: item.id, name: item.name }])
-    setQuery('')
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    // Backspace on an empty field takes the last one back off, as it does for tags.
-    if (event.key === 'Backspace' && query === '' && value.length > 0) {
-      onChange(value.slice(0, -1))
-      return
-    }
-
-    listKeyDown(event, {
-      isOpen,
-      open: () => setIsOpen(true),
-      close: () => setIsOpen(false),
-      results,
-      active,
-      setActive,
-      choose,
-    })
-  }
-
-  return (
-    <Field label={label} id={inputId} className="picker" hint={hint} error={error}>
-      {(control) => (
-        <div ref={wrapper}>
-          <div className="tokens" data-testid="participants">
-            {value.map((choice) => (
-              <span className="token" key={choice.id}>
-                <bdi>{choice.name}</bdi>
-                <button
-                  type="button"
-                  className="token__remove"
-                  aria-label={t('entity.multiPicker.remove', { name: choice.name })}
-                  onClick={() => onChange(value.filter((candidate) => candidate.id !== choice.id))}
-                  data-testid={`participant-remove-${choice.name}`}
-                >
-                  &times;
-                </button>
-              </span>
-            ))}
-            <input
-              {...control}
-              className="tokens__input"
-              type="text"
-              role="combobox"
-              autoComplete="off"
-              aria-expanded={isOpen}
-              aria-controls={listId}
-              aria-autocomplete="list"
-              aria-activedescendant={
-                isOpen && results[active] ? `${listId}-${results[active].id}` : undefined
-              }
-              placeholder={value.length === 0 ? placeholder : ''}
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setIsOpen(true)
-              }}
-              onFocus={() => setIsOpen(true)}
-              onKeyDown={onKeyDown}
-              data-testid="participant-input"
-            />
-          </div>
-
-          {isOpen ? (
-            <ul className="picker__list" id={listId} role="listbox" aria-label={label} ref={list}>
-              {results.map((item, index) => (
-                <li key={item.id}>
-                  <button
-                    id={`${listId}-${item.id}`}
-                    className="picker__option"
-                    type="button"
-                    role="option"
-                    aria-selected={index === active}
-                    onMouseEnter={() => setActive(() => index)}
-                    onClick={() => choose(item)}
-                    data-testid={`participant-option-${item.name}`}
-                  >
-                    <span className="picker__name">
-                      <bdi>{item.name}</bdi>
-                    </span>
-                    <span className="picker__kind">
-                      <bdi>{item.entityTypeName}</bdi>
-                    </span>
-                  </button>
-                </li>
-              ))}
-
-              {results.length === 0 ? (
-                <li className="picker__none">
-                  {isSearching ? t('entity.multiPicker.looking') : t('entity.multiPicker.none')}
-                </li>
-              ) : null}
-            </ul>
-          ) : null}
+          <EntityPickerCreate
+            universeId={universeId}
+            quickCreate={quickCreate}
+            noteId={noteId}
+            note={note}
+            creating={creating}
+            entityTypeId={entityTypeId}
+            entityTypeGroupId={entityTypeGroupId}
+            finishCreate={finishCreate}
+          />
         </div>
       )}
     </Field>
