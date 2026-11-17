@@ -51,7 +51,13 @@ async function game(
       page,
       'POST',
       `/api/projects/${created.id}/entity-types`,
-      { name: typeName, description: null, icon: null, accentColor: null, parentId: null },
+      {
+        name: typeName,
+        description: null,
+        icon: null,
+        accentColor: null,
+        parentId: null,
+      },
     )
     for (const entry of entries) {
       const made = await api<{ id: string }>(page, 'POST', `/api/projects/${created.id}/entities`, {
@@ -106,7 +112,9 @@ test.describe('Game entity details', () => {
     await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
   })
 
-  test("the project's own Entities tab opens the same page, inside the project", async ({ page }) => {
+  test("the project's own Entities tab opens the same page, inside the project", async ({
+    page,
+  }) => {
     await signUp(page)
     const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
       name: unique('Detworld '),
@@ -138,9 +146,18 @@ test.describe('Game entity details', () => {
       'true',
     )
 
-    // A deeper or empty sub-address is not an entry: it falls back to the Entities view.
-    await page.goto(`${entities}/${alpha.ids['Bastion']}/more`)
-    await expect(page.getByTestId('game-entity-page')).toHaveCount(0)
+    // Only `entities/<entryId>` is a sub-address. A deeper one, an empty one, or one under another view falls back to
+    // the project's first view, as any unknown address always has (#192).
+    const overview = `/app/universes/${world.id}/projects/${alpha.id}/overview`
+    for (const wrong of [
+      `${entities}/${alpha.ids['Bastion']}/more`,
+      `${entities}/`,
+      `${overview}/${alpha.ids['Bastion']}`,
+    ]) {
+      await page.goto(wrong)
+      await expect(page).toHaveURL(overview)
+      await expect(page.getByTestId('game-entity-page')).toHaveCount(0)
+    }
   })
 
   test('an entry with an uploaded Image field picture shows it on the page', async ({ page }) => {
@@ -161,7 +178,13 @@ test.describe('Game entity details', () => {
       page,
       'POST',
       `/api/projects/${alpha.id}/entity-types/${typeId}/fields`,
-      { name: 'Cover', kind: 8, isRequired: false, options: null, imageShape: 2 },
+      {
+        name: 'Cover',
+        kind: 8,
+        isRequired: false,
+        options: null,
+        imageShape: 2,
+      },
     )
     const cover = withField.fields.find((one) => one.name === 'Cover')!.id
 
