@@ -110,6 +110,11 @@ internal sealed class RestoreIdentity
             }
         }
 
+        foreach (var node in payload.ProjectNodes ?? [])
+        {
+            yield return node.Id;
+        }
+
         foreach (var season in payload.ProjectSeasons ?? [])
         {
             yield return season.Id;
@@ -1019,6 +1024,30 @@ internal sealed partial class UniverseRestore(
                 Summary = project.Summary,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
+            });
+        }
+
+        // The projects' structure nodes (version 51, #290), parents before children so every parent row exists first.
+        var nodesById = (payload.ProjectNodes ?? []).ToDictionary(node => node.Id);
+
+        int Depth(BackupProjectNode node) =>
+            node.ParentId is { } parentId && nodesById.TryGetValue(parentId, out var parent) ? 1 + Depth(parent) : 0;
+
+        foreach (var node in nodesById.Values.OrderBy(Depth))
+        {
+            db.ProjectNodes.Add(new ProjectNode
+            {
+                Id = ids.Map(node.Id),
+                ProjectId = ids.Map(node.ProjectId),
+                ParentId = node.ParentId is { } parentId ? ids.Map(parentId) : null,
+                Level = node.Level,
+                Title = node.Title,
+                Summary = node.Summary,
+                Body = node.Body,
+                SortOrder = node.SortOrder,
+                CreatedAt = node.CreatedAt,
+                UpdatedAt = node.UpdatedAt,
+                Version = 1,
             });
         }
 
