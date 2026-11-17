@@ -1,4 +1,4 @@
-import type { EntityType } from './types'
+import type { EntityType } from './typeDefinitions'
 
 /**
  * The one reading of a universe's type forest on the client (ADR 0007 amendment, 2026-10-01): built from ids, never from the

@@ -1,5 +1,6 @@
 import { t } from '../i18n'
-import { FieldKind, type EntityType, type FieldDefinition, type FieldKindValue } from './types'
+import { FieldKind, type FieldKindValue } from './fieldKinds'
+import type { EntityType, FieldDefinition } from './typeDefinitions'
 
 /**
  * Lore's custom-field filters (refinement 034): one module for their grammar, their wording and what makes one valid,

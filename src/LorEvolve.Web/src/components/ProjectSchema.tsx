@@ -17,7 +17,7 @@ import {
   FIELD_IMAGE_SHAPE_ORDER,
   FieldImageShape,
   type FieldImageShapeValue,
-} from '../lore/types'
+} from '../lore/fieldKinds'
 import {
   FieldKind,
   type FieldKindValue,

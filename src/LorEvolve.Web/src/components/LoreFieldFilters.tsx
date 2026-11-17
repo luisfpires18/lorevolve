@@ -13,7 +13,7 @@ import {
   type FieldFilter,
   type FieldFilterOp,
 } from '../lore/fieldFilters'
-import type { EntityType, FieldDefinition } from '../lore/types'
+import type { EntityType, FieldDefinition } from '../lore/typeDefinitions'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EntityPicker, type EntityChoice } from './EntityPicker'

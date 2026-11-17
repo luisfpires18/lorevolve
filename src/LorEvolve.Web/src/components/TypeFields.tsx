@@ -29,12 +29,10 @@ import {
   FIELD_SEMANTIC_LABELS,
   FieldKind,
   semanticsFor,
-  type EntityType,
-  type EntityTypeGroup,
-  type FieldDefinition,
   type FieldKindValue,
   type FieldSemanticValue,
-} from '../lore/types'
+} from '../lore/fieldKinds'
+import type { EntityType, EntityTypeGroup, FieldDefinition } from '../lore/typeDefinitions'
 import { typePathLabel, type TypeTree } from '../lore/typeTree'
 import { groupBySection } from '../lore/fieldSections'
 import { confirmAction } from '../lib/confirm'

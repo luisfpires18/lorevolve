@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
-import type { EntityTypeGroup } from '../lore/types'
+import type { EntityTypeGroup } from '../lore/typeDefinitions'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }

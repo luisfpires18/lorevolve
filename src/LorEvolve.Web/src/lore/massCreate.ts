@@ -1,5 +1,6 @@
 import { t, tn } from '../i18n'
-import { CANON_LABELS, CANON_ORDER, type CanonStatusValue, type EntityType } from './types'
+import { CANON_LABELS, CANON_ORDER, type CanonStatusValue } from './types'
+import type { EntityType } from './typeDefinitions'
 
 /**
  * The most entries one mass create writes. Mirrors `EntityEndpoints.MassCreateMaxEntries` on the API, which refuses a

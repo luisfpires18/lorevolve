@@ -1,4 +1,6 @@
-import { FieldKind, type FieldDefinition, type FieldValueInput } from './types'
+import { type FieldValueInput } from './types'
+import { FieldKind } from './fieldKinds'
+import type { FieldDefinition } from './typeDefinitions'
 
 /** Schemes an article link may use. The API enforces the same set. */
 export const ALLOWED_LINK_SCHEMES = ['http', 'https', 'mailto']

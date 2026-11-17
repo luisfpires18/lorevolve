@@ -17,7 +17,8 @@ import { formatDateTime } from '../lib/dates'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { renderFact } from '../lore/facts'
 import { RevisionKind } from '../lore/revisions'
-import type { EntityDetail, FieldDefinition } from '../lore/types'
+import type { EntityDetail } from '../lore/types'
+import type { FieldDefinition } from '../lore/typeDefinitions'
 import {
   abilityInputOf,
   appearanceDisplayUrl,

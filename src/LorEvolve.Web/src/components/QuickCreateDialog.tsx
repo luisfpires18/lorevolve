@@ -7,12 +7,8 @@ import { emptyValue, valuedFields } from '../lore/document'
 import { createEntity, listEntities, listEntityTypeGroups, listEntityTypes } from '../lore/api'
 import { withInheritedFields } from '../lore/fieldInheritance'
 import { branchIds, buildTypeTree } from '../lore/typeTree'
-import {
-  CanonStatus,
-  type EntitySummary,
-  type EntityType,
-  type FieldValueInput,
-} from '../lore/types'
+import { CanonStatus, type EntitySummary, type FieldValueInput } from '../lore/types'
+import type { EntityType } from '../lore/typeDefinitions'
 import type { EntityChoice } from './EntityPicker'
 import { Drawer } from './Drawer'
 import { Field } from './Field'

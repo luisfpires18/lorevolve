@@ -10,7 +10,7 @@ import { projectFamilies } from '../projects/sections'
 import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
 import { listEntityTypeGroups, listEntityTypes } from '../lore/api'
-import type { EntityType, EntityTypeGroup } from '../lore/types'
+import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { getUniverse } from '../universes/api'
 import {
   ALL_SECTIONS,

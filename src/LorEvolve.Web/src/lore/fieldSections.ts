@@ -1,4 +1,4 @@
-import type { FieldSection } from './types'
+import type { FieldSection } from './typeDefinitions'
 
 /** One section with the items it holds, in the order they were given. */
 export interface SectionGroup<T> {

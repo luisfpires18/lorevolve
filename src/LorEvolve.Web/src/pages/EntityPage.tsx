@@ -52,14 +52,17 @@ import {
   CanonStatus,
   type CanonStatusValue,
   type EntityDetail,
-  type EntityType,
-  type FieldDefinition,
-  FieldKind,
-  type FieldSection,
   type FieldValue,
   type FieldValueInput,
   CANON_KEYS,
 } from '../lore/types'
+import {
+  NO_TYPES,
+  type EntityType,
+  type FieldDefinition,
+  type FieldSection,
+} from '../lore/typeDefinitions'
+import { FieldKind } from '../lore/fieldKinds'
 import { renderFact } from '../lore/facts'
 import { groupBySection } from '../lore/fieldSections'
 import { typeChoices } from '../lore/typeTree'
@@ -126,9 +129,6 @@ interface CopySource {
   detail: EntityDetail
   article: EntityArticle | null
 }
-
-/** No types read: one stable empty list, so what is worked out from the types is not worked out again each render. */
-const NO_TYPES: EntityType[] = []
 
 /**
  * A new entry's starting form when it is copied from another: the source's type, summary, tags and field values, named

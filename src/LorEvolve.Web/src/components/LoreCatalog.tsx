@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { Link, useSearchParams, type To } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { useI18n } from '../i18n'
-import type { EntityTypeGroup } from '../lore/types'
+import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { branchIds, type TreeType, type TypeNode, type TypeTree } from '../lore/typeTree'
 import { TypeIcon } from './TypeIcon'
 

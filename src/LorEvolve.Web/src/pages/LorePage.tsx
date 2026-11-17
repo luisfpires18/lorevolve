@@ -33,8 +33,8 @@ import {
   type CanonStatusValue,
   type EntityPage,
   type EntitySort,
-  type EntityTypeGroup,
 } from '../lore/types'
+import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import {
   FIELD_FILTER_PARAM,
   encodeFieldFilter,

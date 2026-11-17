@@ -7,13 +7,10 @@ import type {
   EntityInput,
   EntityPage,
   EntityQuery,
-  EntityType,
-  EntityTypeGroup,
-  FieldImageShapeValue,
-  FieldKindValue,
-  FieldSemanticValue,
   TagSummary,
 } from './types'
+import type { EntityType, EntityTypeGroup } from './typeDefinitions'
+import type { FieldImageShapeValue, FieldKindValue, FieldSemanticValue } from './fieldKinds'
 
 export const ENTITY_PAGE_SIZE = 12
 

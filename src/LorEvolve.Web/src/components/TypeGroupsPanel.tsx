@@ -10,7 +10,7 @@ import {
   renameEntityTypeGroup,
   reorderEntityTypeGroups,
 } from '../lore/api'
-import type { EntityType, EntityTypeGroup } from '../lore/types'
+import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 
 /**
  * The universe's groups on their own tab of Types: their priority, first first, and who is in each. The priority orders a

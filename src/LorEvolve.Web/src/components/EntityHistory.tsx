@@ -26,7 +26,8 @@ import {
   type EntityRevisionSummary,
   type RevisionFieldValue,
 } from '../lore/revisions'
-import { CANON_LABELS, FieldKind } from '../lore/types'
+import { CANON_LABELS } from '../lore/types'
+import { FieldKind } from '../lore/fieldKinds'
 import { confirmAction } from '../lib/confirm'
 import { t, useI18n } from '../i18n'
 

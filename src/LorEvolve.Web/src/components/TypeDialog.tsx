@@ -7,7 +7,7 @@ import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
 import { useReturnFocus } from '../lib/returnFocus'
-import type { EntityTypeGroup } from '../lore/types'
+import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { branchIds, typePathLabel, type TreeType, type TypeTree } from '../lore/typeTree'
 
 /** What the drawer reads of the type it edits: a lore type, or a project's own type (#144). */

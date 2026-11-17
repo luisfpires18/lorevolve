@@ -1,4 +1,4 @@
-import type { EntityType } from './types'
+import type { EntityType } from './typeDefinitions'
 
 /**
  * The types above `type`, root first: whose fields it inherits (ADR 0007 amendment, 2026-11-12). A parent missing from the

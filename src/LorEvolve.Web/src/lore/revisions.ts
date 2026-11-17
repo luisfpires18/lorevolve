@@ -1,6 +1,7 @@
 import { apiFetch, ApiError } from '../lib/api'
 import { t } from '../i18n'
-import type { CanonStatusValue, FieldKindValue } from './types'
+import type { CanonStatusValue } from './types'
+import type { FieldKindValue } from './fieldKinds'
 
 type ChangeWord =
   'name' | 'summary' | 'article' | 'status' | 'type' | 'aliases' | 'tags' | 'details' | 'image'

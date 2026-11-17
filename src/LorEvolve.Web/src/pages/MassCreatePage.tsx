@@ -24,19 +24,11 @@ import {
   type RowField,
   type RowProblem,
 } from '../lore/massCreate'
-import {
-  CANON_LABELS,
-  CANON_ORDER,
-  CanonStatus,
-  type CanonStatusValue,
-  type EntityType,
-} from '../lore/types'
+import { CANON_LABELS, CANON_ORDER, CanonStatus, type CanonStatusValue } from '../lore/types'
+import { NO_TYPES, type EntityType } from '../lore/typeDefinitions'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; types: EntityType[] } | { kind: 'error' }
-
-/** No types read yet: one stable empty list for what is worked out from them. */
-const NO_TYPES: EntityType[] = []
 
 /** What the API said about one row of a refused batch. */
 interface ServerProblem {
