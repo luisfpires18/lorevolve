@@ -315,6 +315,36 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         Assert.Contains(refusal.Issues, issue => issue.Message.Contains("a guard from another project", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The other half of the scope rule: a universe rule may guard a project System's machine, in a file as in a save.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_whose_project_machine_is_guarded_by_a_universe_rule_is_accepted()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmachineshared");
+
+        var project = (await PostJson<ProjectDetail>(
+            client,
+            "/api/projects",
+            new ProjectRequest("Side", ProjectKind.Game, ProjectLifecycle.Planning, null, null, universe.Id, null))).Id;
+        var shared = await PostJson<SystemRuleDetail>(client, Rules(universe.Id), new SystemRuleRequest("Shared", null));
+        var system = await PostJson<SystemDetail>(client, Systems(universe.Id), new SystemRequest("Local", null, project));
+        var from = Guid.NewGuid();
+        var to = Guid.NewGuid();
+
+        await PutJson<SystemMachineDetail>(
+            client,
+            $"{System(universe.Id, system.Id)}/machine",
+            new SystemMachineRequest(
+                1,
+                new SystemMachineBinding("member", "rank"),
+                [new(from, "Novice", "novice", true, 0, 0), new(to, "Master", "master", false, 320, 0)],
+                [new(Guid.NewGuid(), from, to, "Raised", shared.Id)],
+                system.Version));
+
+        await Validated(client, await RawArchive(client, universe.Id));
+    }
+
     /// <summary>A rule, a System, and a two-state machine on it whose one transition the rule guards.</summary>
     private static async Task<(SystemRuleDetail Rule, SystemDetail System, SystemMachineDetail Machine)> WithMachine(
         HttpClient client,
