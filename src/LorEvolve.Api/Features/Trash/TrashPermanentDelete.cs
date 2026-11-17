@@ -414,6 +414,16 @@ internal static class TrashPermanentDelete
             await db.Entities.Where(entity => entries.Contains(entity.Id)).ExecuteDeleteAsync(cancellationToken);
         }
 
+        // A story's cover goes with it in the cascade; its objects are swept after the commit.
+        if (stories.Count > 0)
+        {
+            objectKeys = [.. objectKeys, .. (await db.StoryCovers
+                    .Where(cover => stories.Contains(cover.SubjectId))
+                    .Select(cover => new { cover.OriginalKey, cover.CardKey })
+                    .ToListAsync(cancellationToken))
+                .SelectMany(cover => new[] { cover.OriginalKey, cover.CardKey })];
+        }
+
         // 4. Story content, parents first: a child a parent's cascade already took matches nothing on its own statement.
         await Erase(db.Stories.Where(row => stories.Contains(row.Id)), stories);
         await Erase(db.PlotArcs.Where(row => arcs.Contains(row.Id)), arcs);

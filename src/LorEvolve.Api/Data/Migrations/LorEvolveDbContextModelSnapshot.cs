@@ -765,6 +765,136 @@ namespace LorEvolve.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Covers.ProjectCover", b =>
+                {
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("ProjectId");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("CardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CardKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CropHeight")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropWidth")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropX")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropY")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("SubjectId");
+
+                    b.HasIndex("UniverseId");
+
+                    b.ToTable("ProjectCovers", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Covers.StoryCover", b =>
+                {
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("StoryId");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("CardId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CardKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("CropHeight")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropWidth")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropX")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("CropY")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OriginalKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("SubjectId");
+
+                    b.HasIndex("UniverseId");
+
+                    b.ToTable("StoryCovers", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Feedback.FeedbackReport", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2961,6 +3091,9 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Property<string>("OwnerId")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Subtype")
                         .HasMaxLength(60)
@@ -5218,6 +5351,24 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Scene");
 
                     b.Navigation("Story");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Covers.ProjectCover", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", null)
+                        .WithOne()
+                        .HasForeignKey("LorEvolve.Api.Features.Covers.ProjectCover", "SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Covers.StoryCover", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Stories.Story", null)
+                        .WithOne()
+                        .HasForeignKey("LorEvolve.Api.Features.Covers.StoryCover", "SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Ideas.Idea", b =>

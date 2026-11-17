@@ -2,12 +2,40 @@ import type { Dictionary } from '../en'
 
 /** Projetos criativos: os romances, jogos, séries, filmes e bandas desenhadas que o autor está a fazer (#138, #139). */
 const projects = {
+  cover: {
+    tooBig: 'As imagens têm de ter {mb} MB ou menos.',
+    removeFailed: 'Não foi possível remover a capa.',
+    cardAlt: 'A capa tal como o cartão do jogo a mostra',
+    empty: 'Ainda sem capa',
+    replace: 'Substituir capa',
+    upload: 'Carregar capa',
+    editFraming: 'Editar enquadramento',
+    editFramingTitle: 'Editar enquadramento',
+    frameTitle: 'Enquadrar a capa',
+    saveFraming: 'Guardar',
+    confirmUpload: 'Carregar',
+    updatingCard: 'A atualizar a capa',
+    processing: 'A processar a imagem',
+    cropHint:
+      'Arrasta a imagem para posicionar o enquadramento, ou seleciona-a e usa as setas do teclado. A imagem inteira é guardada; o enquadramento é o que o cartão mostra.',
+    removing: 'A remover…',
+    remove: 'Remover capa',
+    hint: 'Uma imagem larga, enquadrada em 16:10 para o cartão do jogo. JPEG, PNG ou WebP, até 8 MB.',
+    hintPublic:
+      'Uma imagem larga, enquadrada em 16:10 para o cartão do jogo. JPEG, PNG ou WebP, até 8 MB.',
+  },
   common: {
     loading: 'A ler',
     cancel: 'Cancelar',
     more: 'Mais ações para {name}',
     moveUp: 'Mover para cima',
     moveDown: 'Mover para baixo',
+    done: 'Concluído',
+    cover: 'Capa',
+  },
+  gaming: {
+    moved: '“{name}” é agora o jogo {n} de {total}.',
+    moveFailed: 'Não foi possível mover esse jogo. Tenta de novo.',
   },
   comics: {
     viewsLabel: 'Vistas de banda desenhada',

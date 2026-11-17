@@ -1,3 +1,4 @@
+import type { UniverseArtworkRef } from '../publishing/types'
 /**
  * A creative project as the API sends it (#138). The enums travel as numbers, so these are the numbers the API
  * declares and nothing here guesses one: an unknown value is refused by the server, not corrected here.
@@ -31,6 +32,8 @@ export interface ProjectUniverse {
 
 export interface ProjectDetail {
   id: string
+  /** The project's cover, framed 16:10 for its console screen (owner, 2026-11-17). */
+  cover?: UniverseArtworkRef | null
   name: string
   kind: ProjectKindValue
   lifecycle: ProjectLifecycleValue

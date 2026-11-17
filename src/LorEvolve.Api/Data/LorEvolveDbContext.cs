@@ -5,6 +5,7 @@ using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.CanonIntegrity;
 using LorEvolve.Api.Features.Comments;
+using LorEvolve.Api.Features.Covers;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Ideas;
 using LorEvolve.Api.Features.Knowledge;
@@ -45,6 +46,10 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<UniverseInvitation> UniverseInvitations => Set<UniverseInvitation>();
 
     public DbSet<UniverseArtwork> UniverseArtworks => Set<UniverseArtwork>();
+
+    public DbSet<StoryCover> StoryCovers => Set<StoryCover>();
+
+    public DbSet<ProjectCover> ProjectCovers => Set<ProjectCover>();
 
     public DbSet<EntityType> EntityTypes => Set<EntityType>();
 

@@ -74,6 +74,13 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             .ToDictionaryAsync(image => image.NodeId, cancellationToken);
         var artwork = await db.UniverseArtworks.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.UniverseId == universeId, cancellationToken);
+        // Story and project covers (version 58), originals only: the card is cut again on restore.
+        var storyCovers = await db.StoryCovers.AsNoTracking()
+            .Where(cover => cover.UniverseId == universeId)
+            .ToDictionaryAsync(cover => cover.SubjectId, cancellationToken);
+        var projectCovers = await db.ProjectCovers.AsNoTracking()
+            .Where(cover => cover.UniverseId == universeId)
+            .ToDictionaryAsync(cover => cover.SubjectId, cancellationToken);
 
         // Every map with its pins (issue #52), originals only: the display copy is fitted again on restore.
         var maps = await db.UniverseMaps.AsNoTracking()
@@ -125,7 +132,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await RelationshipTypesAsync(universeId, cancellationToken),
             await RelationshipsAsync(universeId, cancellationToken),
             await TimelineAsync(universeId, cancellationToken),
-            await StoriesAsync(universeId, cancellationToken),
+            [.. (await StoriesAsync(universeId, cancellationToken))
+                .Select(story => story with { Cover = CoverOf(storyCovers, story.Id, BackupArchive.StoryCoverMediaPathFor) })],
             await DismissedConflictsAsync(universeId, cancellationToken),
             await IdeasAsync(universe.Id, universe.OwnerId, cancellationToken),
             await WorldRulesAsync(universeId, cancellationToken),
@@ -135,7 +143,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await KnowledgeAsync(universeId, cancellationToken),
             MapsOf(maps, calibrations),
             await IdeaBoardsAsync(universe.Id, universe.OwnerId, cancellationToken),
-            await CreativeProjectsAsync(universeId, cancellationToken),
+            [.. (await CreativeProjectsAsync(universeId, cancellationToken))
+                .Select(project => project with { Cover = CoverOf(projectCovers, project.Id, BackupArchive.ProjectCoverMediaPathFor) })],
             [.. (await ProjectEntriesAsync(universeId, revisions, cancellationToken))
                 .Select(entry => entry with { FieldImages = FieldImagesOf(entry.Id, fieldImages), Image = Image(images, entry.Id) })],
             await ProjectSeasonsAsync(universeId, cancellationToken),
@@ -174,6 +183,16 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         BackupArchive.NodeImageMediaPathFor(image.NodeId, image.ContentType),
                         image.OriginalKey,
                         image.ContentType)))
+                    .Concat(storyCovers.Values.Select(cover => new BackupMediaObject(
+                        null,
+                        BackupArchive.StoryCoverMediaPathFor(cover.SubjectId, cover.ContentType),
+                        cover.OriginalKey,
+                        cover.ContentType)))
+                    .Concat(projectCovers.Values.Select(cover => new BackupMediaObject(
+                        null,
+                        BackupArchive.ProjectCoverMediaPathFor(cover.SubjectId, cover.ContentType),
+                        cover.OriginalKey,
+                        cover.ContentType)))
                     .Concat(artwork is null
                         ? []
                         : [new BackupMediaObject(null, BackupArchive.ArtworkPathFor(artwork.ContentType), artwork.OriginalKey, artwork.ContentType)])
@@ -188,6 +207,21 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     }
 
     // ---------- Media ----------
+
+    /// <summary>A story's or project's cover as the archive describes it, or null when it has none.</summary>
+    private static BackupFieldImage? CoverOf<TCover>(Dictionary<Guid, TCover> covers, Guid subjectId, Func<Guid, string, string> pathFor)
+        where TCover : Covers.CoverImage =>
+        covers.TryGetValue(subjectId, out var cover)
+            ? new BackupFieldImage(
+                subjectId,
+                cover.FileName,
+                cover.ContentType,
+                cover.Width,
+                cover.Height,
+                cover.ByteSize,
+                pathFor(subjectId, cover.ContentType),
+                new BackupImageCrop(cover.CropX, cover.CropY, cover.CropWidth, cover.CropHeight))
+            : null;
 
     /// <summary>An entry's pictures in its image fields, by field id, or null when it has none.</summary>
     private static IReadOnlyList<BackupFieldImage>? FieldImagesOf(Guid entityId, ILookup<Guid, EntityFieldImage> fieldImages) =>
@@ -1576,7 +1610,9 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                 project.Summary,
                 Utc(project.CreatedAt),
                 Utc(project.UpdatedAt),
-                project.Format))
+                project.Format,
+                project.SortOrder,
+                null))
             .ToListAsync(cancellationToken);
 
     /// <summary>

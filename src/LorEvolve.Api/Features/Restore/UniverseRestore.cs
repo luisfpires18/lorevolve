@@ -501,10 +501,93 @@ internal sealed partial class UniverseRestore(
                 UploadedAt = now,
             });
         }
+
+        foreach (var story in backup.Payload.Stories ?? [])
+        {
+            if (await StoreCoverAsync(backup, opened, ids, universeId, now, attempted, story.Id, story.Cover, Covers.CoverKeys.Stories,
+                    () => new Covers.StoryCover { OriginalKey = string.Empty, CardKey = string.Empty, ContentType = string.Empty },
+                    cancellationToken) is { } cover)
+            {
+                _storyCovers.Add(cover);
+            }
+        }
+
+        foreach (var project in backup.Payload.CreativeProjects ?? [])
+        {
+            if (await StoreCoverAsync(backup, opened, ids, universeId, now, attempted, project.Id, project.Cover, Covers.CoverKeys.Projects,
+                    () => new Covers.ProjectCover { OriginalKey = string.Empty, CardKey = string.Empty, ContentType = string.Empty },
+                    cancellationToken) is { } cover)
+            {
+                _projectCovers.Add(cover);
+            }
+        }
     }
 
     /// <summary>Comic node pictures (#295) written before the transaction, added after their nodes.</summary>
     private readonly List<ProjectNodeImage> _nodeImages = [];
+
+    /// <summary>Story covers (version 58) written before the transaction, added after their stories.</summary>
+    private readonly List<Covers.StoryCover> _storyCovers = [];
+
+    /// <summary>Project covers (version 58) written before the transaction, added after their projects.</summary>
+    private readonly List<Covers.ProjectCover> _projectCovers = [];
+
+    /// <summary>A story's or project's cover, the way a field picture is stored, under the subject's restored id.</summary>
+    private async Task<TCover?> StoreCoverAsync<TCover>(
+        RestorableBackup backup,
+        OpenedBackup opened,
+        RestoreIdentity ids,
+        Guid universeId,
+        DateTime now,
+        ConcurrentQueue<string> attempted,
+        Guid fileSubjectId,
+        BackupFieldImage? image,
+        string kind,
+        Func<TCover> create,
+        CancellationToken cancellationToken)
+        where TCover : Covers.CoverImage
+    {
+        if (image is null)
+        {
+            return null;
+        }
+
+        var validated = backup.FieldImages![(fileSubjectId, fileSubjectId)];
+        var original = await opened.ReadMediaAsync(validated.MediaPath, cancellationToken);
+
+        var subjectId = ids.Map(fileSubjectId);
+        var assetId = Guid.NewGuid();
+        var cardId = Guid.NewGuid();
+        var originalKey = Covers.CoverKeys.Original(kind, universeId, subjectId, assetId, validated.Extension);
+        var cardKey = Covers.CoverKeys.Card(kind, universeId, subjectId, assetId, cardId);
+
+        attempted.Enqueue(originalKey);
+        attempted.Enqueue(cardKey);
+
+        using var originalBytes = new MemoryStream(original, writable: false);
+        using var cardBytes = new MemoryStream(validated.Thumbnail, writable: false);
+        await MediaObjectWrites.PutAllAsync(
+            store,
+            cancellationToken,
+            new PendingMediaObject(originalKey, originalBytes, validated.ContentType),
+            new PendingMediaObject(cardKey, cardBytes, "image/webp"));
+
+        var cover = create();
+        cover.SubjectId = subjectId;
+        cover.UniverseId = universeId;
+        cover.AssetId = assetId;
+        cover.OriginalKey = originalKey;
+        cover.CardId = cardId;
+        cover.CardKey = cardKey;
+        (cover.CropX, cover.CropY, cover.CropWidth, cover.CropHeight) = (image.Crop.X, image.Crop.Y, image.Crop.Width, image.Crop.Height);
+        cover.ContentType = validated.ContentType;
+        cover.FileName = ImagePreparation.TrimFileName(image.FileName);
+        cover.Width = validated.Width;
+        cover.Height = validated.Height;
+        cover.ByteSize = validated.ByteSize;
+        cover.UploadedAt = now;
+        return cover;
+    }
 
     /// <summary>Maps whose pictures were written before the transaction, with their pins, added by <see cref="AddMaps"/>.</summary>
     private readonly List<UniverseMap> _maps = [];
@@ -960,6 +1043,7 @@ internal sealed partial class UniverseRestore(
             AddMaps();
             db.EntityFieldImages.AddRange(_fieldImages);
             AddStories(payload, ids, universeId);
+            db.StoryCovers.AddRange(_storyCovers);
             AddIdeas(payload, ids, universeId, ownerId);
             AddIdeaBoards(payload, ids, universeId, ownerId, ownedOutsideIdeas);
             AddWorldRules(payload, ids, universeId);
@@ -1095,10 +1179,13 @@ internal sealed partial class UniverseRestore(
                 Subtype = project.Subtype,
                 Format = project.Format,
                 Summary = project.Summary,
+                SortOrder = project.SortOrder ?? 0,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
             });
         }
+
+        db.ProjectCovers.AddRange(_projectCovers);
 
         // The projects' structure nodes (version 51, #290), parents before children so every parent row exists first.
         var nodesById = (payload.ProjectNodes ?? []).ToDictionary(node => node.Id);

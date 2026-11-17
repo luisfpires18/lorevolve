@@ -125,6 +125,8 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("Scenes", ["stories/scenes"], ["get_scene"], ["Scene"]),
         Mapped("A scene's prose", ["stories/scenes/manuscript"], ["read_scene_manuscript", "search_scene_manuscript"], ["Manuscript"]),
         Mapped("Plot arcs", ["stories/plot-arcs"], ["get_arc"], ["PlotArc"]),
+        Excepted("A story's cover", ["stories/cover"], Why.MediaBytes),
+        Excepted("The order of the universe's projects", ["projects"], Why.PersonOnly),
         Excepted(
             "Review comments",
             ["entities/comments", "stories/comments", "stories/scenes/comments", "comment-threads"],
@@ -175,6 +177,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("A project's own types", ["entity-types"], ["get_project_schema"], ["ProjectType", "ProjectField"]),
         ReadOnly("A project's structure", ["seasons", "structure", "structure/move"], ["get_project_structure"]),
         Excepted("A comic page's or panel's picture", ["structure/image"], Why.MediaBytes),
+        Excepted("A project's cover", ["cover"], Why.MediaBytes),
     ];
 
     /// <summary>The proposal tools themselves: the one write path, and how an app finds and follows it.</summary>

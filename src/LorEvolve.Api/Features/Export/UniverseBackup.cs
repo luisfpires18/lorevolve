@@ -381,8 +381,13 @@ public sealed record UniverseBackup(
     /// 57 - A System's state machine (#357, ADR 0073). <see cref="BackupLoreSystem.Machine"/> carries its binding, states
     /// with their canvas positions and transitions with their guards. Not ignorable: a version 56 reader would restore the
     /// System without its machine. A file at version 56 or earlier has none.
+    /// 58 - Story and project covers, and the projects' order. <see cref="BackupStory.Cover"/> and
+    /// <see cref="BackupCreativeProject.Cover"/> carry a cover as <see cref="BackupFieldImage"/> (its id the story's or
+    /// project's own), its original in the archive; <see cref="BackupCreativeProject.SortOrder"/> is the project's place
+    /// among the universe's projects. Not ignorable: a version 57 reader would restore no cover and lose the order. A file
+    /// at version 57 or earlier has no cover, and its projects take the order they were listed in then, newest first.
     /// </summary>
-    public const int CurrentVersion = 57;
+    public const int CurrentVersion = 58;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -703,7 +708,9 @@ public sealed record BackupCreativeProject(
     string Summary,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    string? Format = null);
+    string? Format = null,
+    int? SortOrder = null,
+    BackupFieldImage? Cover = null);
 
 /// <summary>One section of a type's fields (since version 31): its id, which its fields name, its name, place and fold.</summary>
 public sealed record BackupFieldSection(Guid Id, string Name, int DisplayOrder, bool StartsCollapsed);
@@ -1330,7 +1337,8 @@ public sealed record BackupStory(
     IReadOnlyList<BackupScene> Scenes,
     IReadOnlyList<BackupPlotArc>? PlotArcs,
     string? PublicSummary = null,
-    int? SortOrder = null);
+    int? SortOrder = null,
+    BackupFieldImage? Cover = null);
 
 /// <summary>
 /// One chapter (since version 6): its place in the story, from 0, and the author's title, summary and

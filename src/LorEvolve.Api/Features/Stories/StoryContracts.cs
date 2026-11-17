@@ -18,7 +18,8 @@ public sealed record StorySummary(
     StoryStatus Status,
     int SceneCount,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    Publishing.UniverseArtworkRef? Cover = null);
 
 /// <summary>
 /// One story with its whole structure and every lore reference already resolved, so the story page is
@@ -39,7 +40,8 @@ public sealed record StoryDetail(
     IReadOnlyList<SceneResponse> Scenes,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    int Version);
+    int Version,
+    Publishing.UniverseArtworkRef? Cover = null);
 
 /// <summary>
 /// Everything a client may set on a chapter. The order is absent - a new chapter is appended and only

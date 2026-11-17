@@ -474,6 +474,27 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 58)
+        {
+            // Story and project covers, and the projects' order, came in version 58.
+            foreach (var story in payload["stories"]?.AsArray() ?? [])
+            {
+                Drop(story, "cover");
+            }
+
+            foreach (var project in payload["creativeProjects"]?.AsArray() ?? [])
+            {
+                Drop(project, "cover", "sortOrder");
+            }
+
+            foreach (var path in entries.Keys
+                .Where(path => path.StartsWith("media/stories/", StringComparison.Ordinal) || path.StartsWith("media/projects/", StringComparison.Ordinal))
+                .ToList())
+            {
+                entries.Remove(path);
+            }
+        }
+
         if (version < 55)
         {
             // A collection's project (Comic Volumes) came in version 55 (#297).
