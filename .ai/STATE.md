@@ -48,6 +48,7 @@ deferred.
 - #300 M3 Types tracker running; #279 done: types audit in `docs/architecture/types-architecture.md` (one shared EntityTypes engine scoped by ProjectId; templates go in a new table pair); #280 done: Types page Lore/Gaming switch and game picker (`?context=gaming&game=`), no API change.
 - #302 M5 Cinema tracker running; #288 done: Film/Series projects have a selectable production format (`ProjectFormats` map, `CreativeProjects.Format`, backup v49); a project save must send the current format back.
 
+- #302 M5 Cinema tracker; #289 done: Cinema Sagas and Phases (`CinemaSagas`/`CinemaPhases`/`CinemaPhaseMemberships`, one phase per project, `/api/universes/:id/cinema-sagas`, Sagas view on the Cinema list, backup v50)
 One line per branch. Delete the line when it merges.
 
 #299 M2 Projects & Writing tracker running; its deferred E2E and CI run at the tracker end (owner). #275 done: a universe's Projects (`/app/universes/:id/projects`) is a directory of four category cards (Writing, Gaming, Cinema, Comic) drawn from `CREATION`, each with its project count and a link to its list; `ProjectsDirectory.tsx`, one `listAllProjects` read (PR #324).

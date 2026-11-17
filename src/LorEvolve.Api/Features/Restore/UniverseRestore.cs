@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -106,6 +107,16 @@ internal sealed class RestoreIdentity
             foreach (var revision in entry.Revisions ?? [])
             {
                 yield return revision.Id;
+            }
+        }
+
+        foreach (var saga in payload.CinemaSagas ?? [])
+        {
+            yield return saga.Id;
+
+            foreach (var phase in saga.Phases ?? [])
+            {
+                yield return phase.Id;
             }
         }
 
@@ -1018,6 +1029,48 @@ internal sealed partial class UniverseRestore(
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
             });
+        }
+
+        // The Cinema sagas, their phases and memberships (version 50, #289), after the projects they hold.
+        foreach (var saga in payload.CinemaSagas ?? [])
+        {
+            db.CinemaSagas.Add(new CinemaSaga
+            {
+                Id = ids.Map(saga.Id),
+                UniverseId = universeId,
+                Name = saga.Name,
+                Summary = saga.Summary,
+                SortOrder = saga.SortOrder,
+                CreatedAt = saga.CreatedAt,
+                UpdatedAt = saga.UpdatedAt,
+            });
+
+            foreach (var phase in saga.Phases ?? [])
+            {
+                db.CinemaPhases.Add(new CinemaPhase
+                {
+                    Id = ids.Map(phase.Id),
+                    SagaId = ids.Map(saga.Id),
+                    Name = phase.Name,
+                    Summary = phase.Summary,
+                    SortOrder = phase.SortOrder,
+                    CreatedAt = phase.CreatedAt,
+                    UpdatedAt = phase.UpdatedAt,
+                });
+
+                var place = 0;
+
+                foreach (var projectId in phase.ProjectIds ?? [])
+                {
+                    db.CinemaPhaseMemberships.Add(new CinemaPhaseMembership
+                    {
+                        Id = Guid.NewGuid(),
+                        PhaseId = ids.Map(phase.Id),
+                        ProjectId = ids.Map(projectId),
+                        SortOrder = place++,
+                    });
+                }
+            }
         }
 
         // The projects' seasons and episodes (version 41, #145), after the projects they belong to.

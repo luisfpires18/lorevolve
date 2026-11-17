@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Auth;
 using LorEvolve.Api.Features.CanonIntegrity;
@@ -160,6 +161,12 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
 
     /// <summary>The seasons of a Series project, and the episodes in them (#145).</summary>
     public DbSet<ProjectSeason> ProjectSeasons => Set<ProjectSeason>();
+
+    public DbSet<CinemaSaga> CinemaSagas => Set<CinemaSaga>();
+
+    public DbSet<CinemaPhase> CinemaPhases => Set<CinemaPhase>();
+
+    public DbSet<CinemaPhaseMembership> CinemaPhaseMemberships => Set<CinemaPhaseMembership>();
 
     public DbSet<ProjectEpisode> ProjectEpisodes => Set<ProjectEpisode>();
 

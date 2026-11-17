@@ -348,8 +348,12 @@ public sealed record UniverseBackup(
     /// 49 - A project may have a production format (#288). <see cref="BackupCreativeProject.Format"/> carries its identifier.
     /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
     /// none, and every restored project has none.
+    ///
+    /// 50 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
+    /// phases and the projects each phase holds, in order. Not ignorable: a version 49 reader would restore the universe
+    /// with no sagas. A file at version 49 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 49;
+    public const int CurrentVersion = 50;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -420,7 +424,30 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupProjectSeason>? ProjectSeasons = null,
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
-    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null);
+    IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
+    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
+
+/// <summary>
+/// One Cinema saga of this universe with its phases in order (since version 50, #289). A phase lists the projects it
+/// holds by this file's project ids, in release order: membership only, so the projects themselves travel as projects.
+/// </summary>
+public sealed record BackupCinemaSaga(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupCinemaPhase> Phases);
+
+public sealed record BackupCinemaPhase(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> ProjectIds);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its

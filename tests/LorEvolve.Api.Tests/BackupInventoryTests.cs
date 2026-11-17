@@ -115,6 +115,11 @@ public sealed class BackupInventoryTests
         "ProjectSeasons",
         "ProjectEpisodes",
 
+        // A universe's Cinema sagas, their phases and which projects each phase holds (#289).
+        "CinemaSagas",
+        "CinemaPhases",
+        "CinemaPhaseMemberships",
+
         // A comic chapter's pages and the panels on them (#147).
         "ProjectPages",
         "ProjectPanels",

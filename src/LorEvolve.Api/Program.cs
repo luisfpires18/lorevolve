@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Admin;
 using LorEvolve.Api.Features.Feedback;
@@ -187,6 +188,7 @@ app.MapProjectEndpoints();
 app.MapProjectEntityTypeEndpoints();
 app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
+app.MapCinemaSagaEndpoints();
 app.MapComicEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
