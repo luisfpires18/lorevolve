@@ -146,6 +146,11 @@ public sealed class BackupInventoryTests
         "SystemRuleRevisions",
         "SystemRuleDependencies",
 
+        // A System's state machine (#357, ADR 0073): its binding, states and transitions, all authored.
+        "SystemMachines",
+        "SystemStates",
+        "SystemTransitions",
+
         // Only the dismissals, exactly as a Canon conflict carries only its own (#153, ADR 0072): a finding is
         // derived from the lore and the whole table regenerates by sweeping again, while the author's decision to
         // live with one is not derived. The evidence comes with a carried dismissal, because the fingerprint that

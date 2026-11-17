@@ -44,6 +44,13 @@ internal sealed record ReadableWords
         Relationships = "Relações",
         Timeline = "Cronologia",
         WorldRules = "Regras do mundo",
+        Systems = "Sistemas",
+        Machine = "Máquina",
+        States = "Estados",
+        Transitions = "Transições",
+        InitialState = "inicial",
+        TransitionTo = "para",
+        Guard = "guarda",
         Ideas = "Ideias",
         Stories = "Histórias",
         Maps = "Mapas",
@@ -213,6 +220,20 @@ internal sealed record ReadableWords
     public string Timeline { get; init; } = "Timeline";
 
     public string WorldRules { get; init; } = "World rules";
+
+    public string Systems { get; init; } = "Systems";
+
+    public string Machine { get; init; } = "Machine";
+
+    public string States { get; init; } = "States";
+
+    public string Transitions { get; init; } = "Transitions";
+
+    public string InitialState { get; init; } = "initial";
+
+    public string TransitionTo { get; init; } = "to";
+
+    public string Guard { get; init; } = "guard";
 
     public string Ideas { get; init; } = "Ideas";
 

@@ -50,6 +50,7 @@ before proposing against them, which is the only read of them MCP offers.
 | The reckoning and its calendar | `chronology` | `get_change_options` | `Chronology` |
 | World Rules | `world-rules` | `get_change_options` | `WorldRule` |
 | World Logic Systems and rule definitions | `systems`, `system-rules`, `world-logic/rules` | `list_systems`, `list_world_logic_rules`, `get_world_logic_rule`, `evaluate_world_logic_rule`, `get_rule_impact` | `SystemRule`, `LoreSystem` |
+| A System's state machine | `systems/machine` | `pending-lorex-075` | `pending-lorex-075` |
 | Recorded World Logic findings | `world-logic/findings` | `list_world_logic_findings`, `get_world_logic_finding` | `person-only` |
 | An AI client's unverified claim | `world-logic/semantic-findings` | `person-only` | `submit_semantic_finding` |
 | The rule vocabulary | `validation-terms` | `get_change_options` | `ValidationTerm` |
@@ -207,8 +208,11 @@ reaches; that one says who may reach it at all.
 
 ## Known gaps
 
-Every child of milestone #135 has merged, so nothing in the tables carries a `pending-` code. What is left is the
+Every child of milestone #135 has merged, so nothing from it carries a `pending-` code. What is left of it is the
 shape of the surface, not unfinished work.
+
+- **A System's state machine has no tool yet.** `systems/machine` (#357) is read and saved only in LorEvolve. Its
+  row is `pending-lorex-075` until #361 gives MCP a way to read it.
 
 - **A connected app never reads a canon finding.** `canon-conflicts` is `person-only`: the older Canon integrity
   queue is a person's to work through. World Logic's own findings (#153) *are* readable, by

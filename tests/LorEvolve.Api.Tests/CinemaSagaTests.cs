@@ -152,7 +152,7 @@ public sealed class CinemaSagaTests(LorEvolveApiFactory factory) : IClassFixture
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(56, backup.FormatVersion);
+        Assert.Equal(57, backup.FormatVersion);
         Assert.Equal([series.Id, film.Id], backup.Payload.CinemaSagas!.Single().Phases.Single().ProjectIds);
 
         var restored = await RestoreArchive(client, archive, "Saga world restored");

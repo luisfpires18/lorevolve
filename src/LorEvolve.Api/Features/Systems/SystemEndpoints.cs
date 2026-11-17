@@ -555,7 +555,7 @@ public static class SystemEndpoints
             rules);
     }
 
-    private static IResult Changed() => Results.Conflict(new
+    internal static IResult Changed() => Results.Conflict(new
     {
         code = ChangedCode,
         message = "This System changed since the edit began. Reload it and apply the change again.",

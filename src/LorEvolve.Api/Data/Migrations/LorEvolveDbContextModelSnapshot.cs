@@ -3972,6 +3972,29 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("SemanticFindingCitations", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemMachine", b =>
+                {
+                    b.Property<Guid>("SystemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Attribute")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SubjectType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SystemId");
+
+                    b.ToTable("SystemMachines", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4076,6 +4099,76 @@ namespace LorEvolve.Api.Data.Migrations
                     b.HasKey("RuleId", "Version");
 
                     b.ToTable("SystemRuleRevisions", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemState", b =>
+                {
+                    b.Property<Guid>("SystemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsInitial")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("X")
+                        .HasColumnType("REAL");
+
+                    b.Property<double>("Y")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("SystemId", "Id");
+
+                    b.ToTable("SystemStates", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemTransition", b =>
+                {
+                    b.Property<Guid>("SystemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FromStateId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("GuardRuleId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ToStateId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("SystemId", "Id");
+
+                    b.HasIndex("GuardRuleId");
+
+                    b.HasIndex("SystemId", "FromStateId");
+
+                    b.HasIndex("SystemId", "ToStateId");
+
+                    b.ToTable("SystemTransitions", (string)null);
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
@@ -6601,6 +6694,17 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Finding");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemMachine", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.LoreSystem", "LoreSystem")
+                        .WithOne()
+                        .HasForeignKey("LorEvolve.Api.Features.Systems.SystemMachine", "SystemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LoreSystem");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
@@ -6647,6 +6751,43 @@ namespace LorEvolve.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Rule");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemState", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemMachine", "Machine")
+                        .WithMany("States")
+                        .HasForeignKey("SystemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Machine");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemTransition", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemRule", "GuardRule")
+                        .WithMany()
+                        .HasForeignKey("GuardRuleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemState", "FromState")
+                        .WithMany()
+                        .HasForeignKey("SystemId", "FromStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Systems.SystemState", "ToState")
+                        .WithMany()
+                        .HasForeignKey("SystemId", "ToStateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FromState");
+
+                    b.Navigation("GuardRule");
+
+                    b.Navigation("ToState");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.WorldLogicFinding", b =>
@@ -7129,6 +7270,11 @@ namespace LorEvolve.Api.Data.Migrations
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SemanticFinding", b =>
                 {
                     b.Navigation("Citations");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemMachine", b =>
+                {
+                    b.Navigation("States");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Systems.SystemRule", b =>

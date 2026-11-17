@@ -613,7 +613,11 @@ internal static partial class BackupValidation
         // declared dependencies. Every one of them is a row the restore writes, so the limit has to bound it.
         count += (payload.LoreSystems ?? []).Sum(system => system is null
             ? 0L
-            : 1L + system.RuleIds.Count + system.Revisions.Count);
+            : 1L + system.RuleIds.Count + system.Revisions.Count
+                // Its machine (version 57): the machine row, its states and its transitions.
+                + (system.Machine is null
+                    ? 0L
+                    : 1L + (system.Machine.States?.Count ?? 0) + (system.Machine.Transitions?.Count ?? 0)));
         count += (payload.SystemRules ?? []).Sum(rule => rule is null
             ? 0L
             : 1L + rule.DependsOn.Count + rule.Revisions.Count);
@@ -670,6 +674,9 @@ internal static partial class BackupValidation
 
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
+
+        /// <summary>The project of each project-scoped rule definition, for the guard scope check a save makes (ADR 0073).</summary>
+        private readonly Dictionary<Guid, Guid> _systemRuleProjects = [];
         private readonly Dictionary<Guid, BackupEntityType> _types = [];
         private readonly Dictionary<Guid, Guid> _fieldOwner = [];
         private readonly HashSet<Guid> _requiredFields = [];
@@ -2975,6 +2982,11 @@ internal static partial class BackupValidation
                 Register(rule.Id, what);
                 _systemRules.Add(rule.Id);
 
+                if (rule.ProjectId is { } ruleProject)
+                {
+                    _systemRuleProjects[rule.Id] = ruleProject;
+                }
+
                 Text(rule.Title, WorldLogicLimits.NameMaxLength, $"{what}'s title", required: true);
 
                 if (rule.Description is null)
@@ -3101,6 +3113,63 @@ internal static partial class BackupValidation
 
                     Text(revision.Title, WorldLogicLimits.NameMaxLength, $"{what}'s saved name", required: true);
                     Text(revision.Body, WorldLogicLimits.SummaryMaxLength, $"{what}'s saved summary");
+                }
+
+                if (system.Machine is { } machine)
+                {
+                    CheckSystemMachine(machine, system.ProjectId, what);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A System's machine (version 57, ADR 0073), held to the same check a save is, and every guard a rule
+        /// definition this file holds that is the universe's or the System's own project's.
+        /// </summary>
+        private void CheckSystemMachine(BackupSystemMachine machine, Guid? systemProject, string what)
+        {
+            if (machine.States is null || machine.Transitions is null)
+            {
+                Missing($"the states or transitions of {what.ToLowerInvariant()}'s machine");
+                return;
+            }
+
+            var request = new SystemMachineRequest(
+                machine.SchemaVersion,
+                new SystemMachineBinding(machine.SubjectType, machine.Attribute),
+                [
+                    .. machine.States.Select(state => state is null
+                        ? null!
+                        : new SystemMachineState(state.Id, state.Name, state.Value, state.Initial, state.X, state.Y)),
+                ],
+                [
+                    .. machine.Transitions.Select(transition => transition is null
+                        ? null!
+                        : new SystemMachineTransition(
+                            transition.Id, transition.FromStateId, transition.ToStateId, transition.Label, transition.GuardRuleId)),
+                ],
+                ExpectedVersion: null);
+
+            if (SystemMachineEndpoints.Problem(request) is { } problem)
+            {
+                Add(BackupIssueCodes.InvalidValue, $"{what}'s machine cannot be saved as it is: {problem.Message}");
+                return;
+            }
+
+            foreach (var transition in machine.Transitions)
+            {
+                if (transition.GuardRuleId is not { } guard)
+                {
+                    continue;
+                }
+
+                if (!_systemRules.Contains(guard))
+                {
+                    Add(BackupIssueCodes.MissingReference, $"{what}'s machine names a guard the backup does not hold.");
+                }
+                else if (_systemRuleProjects.TryGetValue(guard, out var guardProject) && guardProject != systemProject)
+                {
+                    Add(BackupIssueCodes.InvalidValue, $"{what}'s machine names a guard from another project.");
                 }
             }
         }

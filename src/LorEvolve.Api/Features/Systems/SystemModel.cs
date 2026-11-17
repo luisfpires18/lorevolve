@@ -224,6 +224,89 @@ public sealed class LoreSystemRule
 }
 
 /// <summary>
+/// A System's state machine: which attribute of which subject type its states are values of (ADR 0073).
+///
+/// <b>Data, never code.</b> A machine is a binding, states and transitions, and a transition's guard is an existing
+/// <see cref="SystemRule"/>; there is no second condition format. At most one per System, keyed by the System, and
+/// saved whole. A System with no row has no machine, which is also how a machine is removed.
+/// </summary>
+public sealed class SystemMachine
+{
+    public Guid SystemId { get; set; }
+
+    /// <summary>Named for its type rather than "System", so the namespace stays reachable inside this class.</summary>
+    public LoreSystem? LoreSystem { get; set; }
+
+    /// <summary>The <c>type</c> of the subjects the machine covers, exactly as sent.</summary>
+    public required string SubjectType { get; set; }
+
+    /// <summary>The attribute whose value is a subject's state, exactly as sent.</summary>
+    public required string Attribute { get; set; }
+
+    /// <summary>The machine document version this row was saved under. Only 1 exists.</summary>
+    public int SchemaVersion { get; set; }
+
+    public ICollection<SystemState> States { get; } = [];
+}
+
+/// <summary>
+/// One state of a machine. The id is the client's, unique within the document, so a canvas can name a state before
+/// it is saved and a save is idempotent. <see cref="X"/> and <see cref="Y"/> are where the author put it and are never
+/// read by a check; <see cref="SortOrder"/> is the order the document listed it in.
+/// </summary>
+public sealed class SystemState
+{
+    public Guid SystemId { get; set; }
+
+    public SystemMachine? Machine { get; set; }
+
+    public Guid Id { get; set; }
+
+    /// <summary>What the author calls the state, trimmed. Carries no meaning, like every title.</summary>
+    public required string Name { get; set; }
+
+    /// <summary>The attribute value that means "in this state", exactly as sent, unique within the machine.</summary>
+    public required string Value { get; set; }
+
+    public bool IsInitial { get; set; }
+
+    public double X { get; set; }
+
+    public double Y { get; set; }
+
+    public int SortOrder { get; set; }
+}
+
+/// <summary>
+/// One transition of a machine. <see cref="SortOrder"/> is the declared order, and it is part of the record: it is
+/// the evaluation order. <see cref="GuardRuleId"/> names a rule definition of the same universe that must hold, or
+/// null for no requirement; a rule named here is in use and cannot be deleted.
+/// </summary>
+public sealed class SystemTransition
+{
+    public Guid SystemId { get; set; }
+
+    public Guid Id { get; set; }
+
+    public Guid FromStateId { get; set; }
+
+    public SystemState? FromState { get; set; }
+
+    public Guid ToStateId { get; set; }
+
+    public SystemState? ToState { get; set; }
+
+    /// <summary>Display only.</summary>
+    public string? Label { get; set; }
+
+    public Guid? GuardRuleId { get; set; }
+
+    public SystemRule? GuardRule { get; set; }
+
+    public int SortOrder { get; set; }
+}
+
+/// <summary>
 /// That one rule definition declares it may reference another (ADR 0072).
 ///
 /// The declared set is what a <c>ruleHolds</c> node may name; a reference to anything else is refused on save, so

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using LorEvolve.Api.Features.Export;
+using LorEvolve.Api.Features.Projects;
 using LorEvolve.Api.Features.RuleValidation;
 using LorEvolve.Api.Features.Systems;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +29,7 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
     [Fact]
     public async Task The_format_is_at_the_world_logic_version()
     {
-        Assert.Equal(56, UniverseBackup.CurrentVersion);
+        Assert.Equal(57, UniverseBackup.CurrentVersion);
         Assert.Equal(UniverseBackup.CurrentVersion, LorEvolve.Api.Features.Restore.BackupFormatSupport.MaxVersion);
     }
 
@@ -63,7 +64,7 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         var backup = await Backup(client, universe.Id);
         var payload = backup.Payload;
 
-        Assert.Equal(56, backup.FormatVersion);
+        Assert.Equal(57, backup.FormatVersion);
 
         var carriedSystem = Assert.Single(payload.LoreSystems!);
         Assert.Equal("Runeforging", carriedSystem.Name);
@@ -239,6 +240,132 @@ public sealed class WorldLogicBackupTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal(
             Shape(before.Payload.LoreSystems!, before.Payload.SystemRules!),
             Shape(after.Payload.LoreSystems!, after.Payload.SystemRules!));
+    }
+
+    /// <summary>
+    /// A System's machine travels whole (#357, ADR 0073): its binding, its states with their ids and positions, its
+    /// transitions in order, and a guard that names the restored rule rather than the exported one.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_and_restore_keep_a_machine_with_its_guard_translated()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmachinebackup");
+        var (rule, system, machine) = await WithMachine(client, universe.Id);
+
+        var backup = await Backup(client, universe.Id);
+        var carried = Assert.Single(backup.Payload.LoreSystems!).Machine!;
+        Assert.Equal("member", carried.SubjectType);
+        Assert.Equal("rank", carried.Attribute);
+        Assert.Equal(machine.States.Select(state => state.Id), carried.States.Select(state => state.Id));
+        Assert.Equal(rule.Id, Assert.Single(carried.Transitions).GuardRuleId);
+
+        var restored = await RestoreArchive(client, await RawArchive(client, universe.Id), "World wlmachinebackup restored");
+        var restoredSystem = (await client.GetFromJsonAsync<WorldLogicPage<SystemSummary>>(Systems(restored.Id)))!.Items.Single();
+        var restoredRule = (await client.GetFromJsonAsync<WorldLogicPage<SystemRuleSummary>>(Rules(restored.Id)))!.Items.Single();
+        var read = (await client.GetFromJsonAsync<SystemMachineDetail>($"{System(restored.Id, restoredSystem.Id)}/machine"))!;
+
+        Assert.NotEqual(system.Id, restoredSystem.Id);
+        Assert.Equal(machine.Binding, read.Binding);
+        Assert.Equal(machine.States, read.States);
+
+        var transition = Assert.Single(read.Transitions);
+        Assert.Equal(machine.Transitions[0] with { GuardRuleId = restoredRule.Id }, transition);
+        Assert.NotEqual(rule.Id, restoredRule.Id);
+    }
+
+    /// <summary>A file written before machines existed restores its Systems with none, whatever it carries.</summary>
+    [Fact]
+    public async Task An_older_backup_restores_with_no_machine()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmachineold");
+        await WithMachine(client, universe.Id);
+
+        var older = Rewrite(await RawArchive(client, universe.Id), root => root["formatVersion"] = 56);
+        var restored = await RestoreArchive(client, older, "World wlmachineold restored");
+
+        var restoredSystem = (await client.GetFromJsonAsync<WorldLogicPage<SystemSummary>>(Systems(restored.Id)))!.Items.Single();
+        var read = (await client.GetFromJsonAsync<SystemMachineDetail>($"{System(restored.Id, restoredSystem.Id)}/machine"))!;
+
+        Assert.Null(read.Binding);
+        Assert.Empty(read.States);
+        Assert.Empty(read.Transitions);
+    }
+
+    /// <summary>
+    /// A file is held to the scope rule a save is: a universe System's machine cannot be guarded by a project's rule,
+    /// however the file came to say so.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_whose_machine_names_a_guard_from_another_project_is_refused()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmachinescope");
+        await WithMachine(client, universe.Id);
+
+        var project = (await PostJson<ProjectDetail>(
+            client,
+            "/api/projects",
+            new ProjectRequest("Side", ProjectKind.Game, ProjectLifecycle.Planning, null, null, universe.Id, null))).Id;
+        var foreign = await PostJson<SystemRuleDetail>(client, Rules(universe.Id), new SystemRuleRequest("Local", null, project));
+
+        var crafted = Rewrite(
+            await RawArchive(client, universe.Id),
+            root => Payload(root)["loreSystems"]![0]!["machine"]!["transitions"]![0]!["guardRuleId"] = foreign.Id);
+
+        var refusal = await Refused(await Validate(client, crafted));
+        Assert.Contains(refusal.Issues, issue => issue.Message.Contains("a guard from another project", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The other half of the scope rule: a universe rule may guard a project System's machine, in a file as in a save.
+    /// </summary>
+    [Fact]
+    public async Task A_backup_whose_project_machine_is_guarded_by_a_universe_rule_is_accepted()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "wlmachineshared");
+
+        var project = (await PostJson<ProjectDetail>(
+            client,
+            "/api/projects",
+            new ProjectRequest("Side", ProjectKind.Game, ProjectLifecycle.Planning, null, null, universe.Id, null))).Id;
+        var shared = await PostJson<SystemRuleDetail>(client, Rules(universe.Id), new SystemRuleRequest("Shared", null));
+        var system = await PostJson<SystemDetail>(client, Systems(universe.Id), new SystemRequest("Local", null, project));
+        var from = Guid.NewGuid();
+        var to = Guid.NewGuid();
+
+        await PutJson<SystemMachineDetail>(
+            client,
+            $"{System(universe.Id, system.Id)}/machine",
+            new SystemMachineRequest(
+                1,
+                new SystemMachineBinding("member", "rank"),
+                [new(from, "Novice", "novice", true, 0, 0), new(to, "Master", "master", false, 320, 0)],
+                [new(Guid.NewGuid(), from, to, "Raised", shared.Id)],
+                system.Version));
+
+        await Validated(client, await RawArchive(client, universe.Id));
+    }
+
+    /// <summary>A rule, a System, and a two-state machine on it whose one transition the rule guards.</summary>
+    private static async Task<(SystemRuleDetail Rule, SystemDetail System, SystemMachineDetail Machine)> WithMachine(
+        HttpClient client,
+        Guid universeId)
+    {
+        var rule = await PostJson<SystemRuleDetail>(client, Rules(universeId), new SystemRuleRequest("Masterwork", null));
+        var system = await PostJson<SystemDetail>(client, Systems(universeId), new SystemRequest("Rank", null));
+        var novice = Guid.NewGuid();
+        var master = Guid.NewGuid();
+
+        var machine = await PutJson<SystemMachineDetail>(
+            client,
+            $"{System(universeId, system.Id)}/machine",
+            new SystemMachineRequest(
+                1,
+                new SystemMachineBinding("member", "rank"),
+                [new(novice, "Novice", "novice", true, 0, 0), new(master, "Master", "master", false, 320.5, -40)],
+                [new(Guid.NewGuid(), novice, master, "Raised", rule.Id)],
+                system.Version));
+
+        return (rule, system, machine);
     }
 
     /// <summary>
