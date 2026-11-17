@@ -152,7 +152,7 @@ public sealed class CinemaSagaTests(LorEvolveApiFactory factory) : IClassFixture
 
         var archive = await RawArchive(client, u);
         var backup = BackupOf(archive);
-        Assert.Equal(50, backup.FormatVersion);
+        Assert.Equal(51, backup.FormatVersion);
         Assert.Equal([series.Id, film.Id], backup.Payload.CinemaSagas!.Single().Phases.Single().ProjectIds);
 
         var restored = await RestoreArchive(client, archive, "Saga world restored");
@@ -169,6 +169,39 @@ public sealed class CinemaSagaTests(LorEvolveApiFactory factory) : IClassFixture
         var missing = Rewrite(archive, root =>
             Payload(root)["cinemaSagas"]![0]!["phases"]![0]!["projectIds"]!.AsArray().Add(JsonValue.Create(Guid.NewGuid())));
         Assert.Contains(BackupIssueCodes.MissingReference, (await Refused(await Validate(client, missing))).IssueCodes);
+    }
+
+    [Fact]
+    public async Task A_phased_project_cannot_move_universe_or_stop_being_cinema_until_it_leaves_its_phase()
+    {
+        var (client, universe) = await SignedInWithUniverse(_factory, "sagaguard");
+        var u = universe.Id;
+        var elsewhere = (await PublishingTestClient.CreateUniverse(client, "Elsewhere")).Id;
+        var film = await Project(client, u, "Phased film", ProjectKind.Film, null);
+        var saga = await Saga(client, u, "Saga");
+        var phase = await Phase(client, u, saga, "Phase");
+        await Ok(client.PostAsJsonAsync($"{Base(u)}/{saga}/phases/{phase}/members", new CinemaMemberRequest(film.Id)));
+
+        foreach (var (kind, target) in new[] { (ProjectKind.Film, elsewhere), (ProjectKind.Game, u) })
+        {
+            var refused = await client.PutAsJsonAsync(
+                $"/api/projects/{film.Id}",
+                new ProjectRequest(film.Name, kind, ProjectLifecycle.Planning, null, null, target, film.Version));
+            Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
+            Assert.Contains(ProjectEndpoints.InCinemaPhaseCode, await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+            await AssertUnchanged(client, film);
+            var member = Assert.Single(Assert.Single((await List(client, u)).Sagas[0].Phases).Members);
+            Assert.Equal(film.Id, member.ProjectId);
+        }
+
+        // A project in no phase still moves and changes kind.
+        var free = await Project(client, u, "Free film", ProjectKind.Film, null);
+        await Ok(client.PutAsJsonAsync(
+            $"/api/projects/{free.Id}",
+            new ProjectRequest(free.Name, ProjectKind.Game, ProjectLifecycle.Planning, null, null, elsewhere, free.Version)));
+        var moved = (await client.GetFromJsonAsync<ProjectDetail>($"/api/projects/{free.Id}"))!;
+        Assert.Equal(elsewhere, moved.Universe!.Id);
+        Assert.Equal(ProjectKind.Game, moved.Kind);
     }
 
     private static string Base(Guid universeId) => $"/api/universes/{universeId}/cinema-sagas";

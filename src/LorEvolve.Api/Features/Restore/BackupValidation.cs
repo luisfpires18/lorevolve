@@ -717,7 +717,7 @@ internal static partial class BackupValidation
             RegisterTags(tags);
             RegisterEntities(entities);
             RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
-            RegisterCinemaSagas(Required(payload.CinemaSagas, "the list of Cinema sagas", since: 50));
+            RegisterCinemaSagas(Required(payload.CinemaSagas, "the list of Cinema sagas", since: 51));
             RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
             RegisterRelationshipTypes(relationshipTypes);
             RegisterStories(stories);
@@ -1453,10 +1453,6 @@ internal static partial class BackupValidation
 
         // ---------- Entries ----------
 
-        /// <summary>
-        /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
-        /// and one project's season names are unique among themselves, which is what the database says too.
-        /// </summary>
         private void RegisterCinemaSagas(IReadOnlyList<BackupCinemaSaga> sagas)
         {
             var members = new HashSet<Guid>();
@@ -1507,6 +1503,10 @@ internal static partial class BackupValidation
             }
         }
 
+        /// <summary>
+        /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
+        /// and one project's season names are unique among themselves, which is what the database says too.
+        /// </summary>
         private void RegisterProjectSeasons(IReadOnlyList<BackupProjectSeason> seasons)
         {
             var namesByProject = new Dictionary<Guid, HashSet<string>>();

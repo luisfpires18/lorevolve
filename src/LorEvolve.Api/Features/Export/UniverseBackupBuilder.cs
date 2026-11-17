@@ -1344,7 +1344,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
 
     // ---------- Idea boards ----------
 
-    /// <summary>Cinema sagas (version 50, #289): see <see cref="BackupCinemaSaga"/>.</summary>
+    /// <summary>Cinema sagas (version 51, #289): see <see cref="BackupCinemaSaga"/>.</summary>
     private async Task<IReadOnlyList<BackupCinemaSaga>> CinemaSagasAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>
@@ -1795,14 +1795,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         ];
     }
 
-    /// <summary>
-    /// Only the dismissals, for the reason a Canon dismissal is the only conflict carried: an open or resolved
-    /// finding is re-derived by sweeping the lore in this same file, and a dismissal is not.
-    ///
-    /// What the fingerprint was taken over is carried rather than the fingerprint itself, because a restore gives
-    /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
-    /// it was dismissed.
-    /// </summary>
     /// <summary>The universe's type templates (#281), by name, each with its fields and their choices in order.</summary>
     private async Task<IReadOnlyList<BackupTypeTemplate>> TypeTemplatesAsync(Guid universeId, CancellationToken cancellationToken)
     {
@@ -1838,6 +1830,14 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         .Select(option => new BackupTypeTemplateFieldOption(option.Id, option.Value, option.DisplayOrder))]))]))];
     }
 
+    /// <summary>
+    /// Only the dismissals, for the reason a Canon dismissal is the only conflict carried: an open or resolved
+    /// finding is re-derived by sweeping the lore in this same file, and a dismissal is not.
+    ///
+    /// What the fingerprint was taken over is carried rather than the fingerprint itself, because a restore gives
+    /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
+    /// it was dismissed.
+    /// </summary>
     private async Task<IReadOnlyList<BackupDismissedFinding>> DismissedFindingsAsync(
         Guid universeId,
         CancellationToken cancellationToken)

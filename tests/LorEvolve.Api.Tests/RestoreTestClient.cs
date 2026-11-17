@@ -474,9 +474,9 @@ internal static partial class RestoreTestClient
             }
         }
 
-        if (version < 50)
+        if (version < 51)
         {
-            // Cinema sagas came in version 50 (#289).
+            // Cinema sagas came in version 51 (#289).
             Drop(payload, "cinemaSagas");
         }
 

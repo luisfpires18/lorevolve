@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LorEvolve.Api.Data;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Universes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,7 @@ public static class ProjectEndpoints
 {
     /// <summary>The machine-readable marker on the 409 for a save written over a project that has since changed.</summary>
     public const string ChangedCode = "project_changed";
+    public const string InCinemaPhaseCode = "project_in_cinema_phase";
 
     public static IEndpointRouteBuilder MapProjectEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -237,6 +239,17 @@ public static class ProjectEndpoints
             && await ProjectAccess.DenyLinkAsync(db, request.UniverseId, principal, cancellationToken) is { } refused)
         {
             return refused;
+        }
+
+        // A phase holds only this universe's films and series, so a move or kind change waits until it leaves the phase.
+        if ((project.UniverseId != request.UniverseId || !CinemaSagaLimits.Holds(request.Kind))
+            && await db.CinemaPhaseMemberships.AnyAsync(member => member.ProjectId == id, cancellationToken))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "In a Cinema phase",
+                detail: "This production is in a Cinema phase. Remove it from its phase first.",
+                extensions: new Dictionary<string, object?> { ["code"] = InCinemaPhaseCode });
         }
 
         var name = request.Name!.Trim();

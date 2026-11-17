@@ -1033,7 +1033,7 @@ internal sealed partial class UniverseRestore(
             });
         }
 
-        // The Cinema sagas, their phases and memberships (version 50, #289), after the projects they hold.
+        // The Cinema sagas, their phases and memberships (version 51, #289), after the projects they hold.
         foreach (var saga in payload.CinemaSagas ?? [])
         {
             db.CinemaSagas.Add(new CinemaSaga
@@ -2199,31 +2199,6 @@ internal sealed partial class UniverseRestore(
     // ---------- Canon ----------
 
     /// <summary>
-    /// Conflicts are derived (ADR 0010), so they are found again over the restored lore rather than copied. A dismissal
-    /// is not derived, and the backup identifies each one by a fingerprint of the ids it was about - ids this universe
-    /// no longer uses. So each finding's fingerprint is also computed over the ids its records had in the backup, and a
-    /// finding whose old fingerprint was dismissed is dismissed again, as of when it was. A dismissal whose finding no
-    /// longer arises is not kept: evaluation would have resolved it in the source universe the next time it ran.
-    /// </summary>
-    /// <summary>
-    /// Writes back the World Logic findings the author chose to live with (version 46, ADR 0072).
-    ///
-    /// <b>Only the dismissals, and dismissed.</b> Every other finding is derived and the next sweep produces it
-    /// again. A dismissal is the author's own decision that a finding needs no action, so restoring the universe
-    /// without it would report the same thing again and ask the author to decide twice.
-    ///
-    /// <b>The fingerprint is computed again, not carried.</b> It is a hash over the rule, the scope, the outcome,
-    /// the error code and the evidence ids, and a restore gives every record a new id, so the backup carries what
-    /// the hash was taken over and the hash is taken again from the restored ids. The next sweep then matches the
-    /// finding it produces to the dismissal rather than opening a second one beside it.
-    ///
-    /// <b>An evidence id the map does not know is left as it was</b>, exactly as a condition's is: evidence may
-    /// name a row the backup did not hold, and the honest answer is a dismissal that the next sweep simply does not
-    /// match, rather than a quietly different fingerprint.
-    ///
-    /// The history entry carries no actor: no account did this, the restore did.
-    /// </summary>
-    /// <summary>
     /// The universe's type templates (version 50, #281). Nothing refers to a template, so each row simply gets a new id;
     /// a file from before version 50 has none.
     /// </summary>
@@ -2274,6 +2249,31 @@ internal sealed partial class UniverseRestore(
         }
     }
 
+    /// <summary>
+    /// Conflicts are derived (ADR 0010), so they are found again over the restored lore rather than copied. A dismissal
+    /// is not derived, and the backup identifies each one by a fingerprint of the ids it was about - ids this universe
+    /// no longer uses. So each finding's fingerprint is also computed over the ids its records had in the backup, and a
+    /// finding whose old fingerprint was dismissed is dismissed again, as of when it was. A dismissal whose finding no
+    /// longer arises is not kept: evaluation would have resolved it in the source universe the next time it ran.
+    /// </summary>
+    /// <summary>
+    /// Writes back the World Logic findings the author chose to live with (version 46, ADR 0072).
+    ///
+    /// <b>Only the dismissals, and dismissed.</b> Every other finding is derived and the next sweep produces it
+    /// again. A dismissal is the author's own decision that a finding needs no action, so restoring the universe
+    /// without it would report the same thing again and ask the author to decide twice.
+    ///
+    /// <b>The fingerprint is computed again, not carried.</b> It is a hash over the rule, the scope, the outcome,
+    /// the error code and the evidence ids, and a restore gives every record a new id, so the backup carries what
+    /// the hash was taken over and the hash is taken again from the restored ids. The next sweep then matches the
+    /// finding it produces to the dismissal rather than opening a second one beside it.
+    ///
+    /// <b>An evidence id the map does not know is left as it was</b>, exactly as a condition's is: evidence may
+    /// name a row the backup did not hold, and the honest answer is a dismissal that the next sweep simply does not
+    /// match, rather than a quietly different fingerprint.
+    ///
+    /// The history entry carries no actor: no account did this, the restore did.
+    /// </summary>
     private void AddDismissedFindings(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
     {
         foreach (var dismissed in payload.DismissedFindings ?? [])
