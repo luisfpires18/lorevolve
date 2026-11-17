@@ -91,6 +91,16 @@ const projects = {
     back: 'Entidades de jogo',
     notFound: 'Este jogo não está neste universo.',
     notFoundHint: 'Volte às Entidades de jogo e escolha um dos jogos.',
+    entity: {
+      loading: 'A ler esta entidade.',
+      failed: 'Não foi possível ler esta entidade.',
+      notFound: 'Não foi possível encontrar esta entidade.',
+      notFoundHint: 'Pode ter sido apagada ou não faz parte deste jogo.',
+      backToGame: 'Voltar ao jogo',
+      noImage: 'Ainda sem imagem',
+      noDescription: 'Ainda sem descrição.',
+      imageAlt: 'Imagem de {name}',
+    },
   },
   directory: {
     lede: 'Escolha um tipo de projeto para ver o que está a fazer neste universo.',
