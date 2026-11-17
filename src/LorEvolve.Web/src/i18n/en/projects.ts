@@ -245,6 +245,10 @@ const projects = {
     manage: 'Manage types',
   },
   entries: {
+    searchPlaceholder: 'Search by name',
+    noMatch: 'No entries match.',
+    noMatchHint: 'Change or clear the search to see more.',
+    nested: 'Include nested types',
     more: 'Show more',
     title: 'Entries',
     failed: "This project's entries could not be read.",
