@@ -46,7 +46,7 @@ export function ProjectEntitiesView({
   useI18n()
   const [params] = useSearchParams()
   // Explicit, because a relative link under the project's splat route would resolve without the view's segment.
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   const typeId = params.get('type')
   const managing = params.get('manage') === 'types'
   // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
@@ -59,7 +59,11 @@ export function ProjectEntitiesView({
   )
 
   if (managing && typesHref) {
-    return <Navigate to={typesHref} replace />
+    // The old address keeps whatever else it carried, as every other project address does on its way to its view.
+    const rest = new URLSearchParams(params)
+    rest.delete('manage')
+    const query = rest.toString()
+    return <Navigate to={`${typesHref}${query ? `?${query}` : ''}${hash}`} replace />
   }
 
   if (managing) {

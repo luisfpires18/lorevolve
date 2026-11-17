@@ -232,9 +232,12 @@ test.describe('Project sections', () => {
     await page.goto(`/app/projects/${game.id}/entities?probe=1#top`)
     await expect(page).toHaveURL(new RegExp(`${canonical}\\?probe=1#top$`))
 
-    // For a game the old Manage types address is its Types tab.
+    // For a game the old Manage types address is its Types tab, keeping the rest of its query and its hash.
+    const types = canonical.replace(/entities$/, 'types')
     await page.goto(`/app/projects/${game.id}/entities?manage=types`)
-    await expect(page).toHaveURL(new RegExp(`${canonical.replace(/entities$/, 'types')}$`))
+    await expect(page).toHaveURL(new RegExp(`${types}$`))
+    await page.goto(`/app/projects/${game.id}/entities?manage=types&probe=1#top`)
+    await expect(page).toHaveURL(new RegExp(`${types}\\?probe=1#top$`))
 
     // A universe the project does not belong to lands on the one it does.
     await page.goto(`/app/universes/${other.id}/projects/${game.id}/entities`)
