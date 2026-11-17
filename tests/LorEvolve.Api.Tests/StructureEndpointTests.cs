@@ -193,10 +193,9 @@ public sealed class StructureEndpointTests(LorEvolveApiFactory factory) : IClass
     {
         var (client, universe) = await SignedInWithUniverse(_factory, "filmlegacy");
         var legacy = await NewProject(client, universe.Id, ProjectKind.Film, null);
-        var trailer = await NewProject(client, universe.Id, ProjectKind.Film, "trailer", "Teaser");
         var novel = await NewProject(client, universe.Id, ProjectKind.Game, null, "Board");
 
-        foreach (var project in new[] { legacy, trailer, novel })
+        foreach (var project in new[] { legacy, novel })
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/projects/{project.Id}/structure")).StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, (await Post(client, project.Id, new ProjectNodeRequest("scene"))).StatusCode);

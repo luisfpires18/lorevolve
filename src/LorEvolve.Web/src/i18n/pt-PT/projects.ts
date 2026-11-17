@@ -261,6 +261,8 @@ const projects = {
       page: 'página',
       panel: 'vinheta',
       episode: 'episódio',
+      segment: 'segmento',
+      shot: 'plano',
     },
   },
   volumes: {

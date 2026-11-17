@@ -261,6 +261,8 @@ const projects = {
       page: 'page',
       panel: 'panel',
       episode: 'episode',
+      segment: 'segment',
+      shot: 'shot',
     },
   },
   volumes: {

@@ -44,6 +44,12 @@ public static class ProjectStructures
         }),
         ["short-film"] = SceneBeat,
         ["special"] = SceneBeat,
+        // Trailer and Teaser share one format (#292): segments of shots.
+        ["trailer"] = new(["segment"], new Dictionary<string, string[]>
+        {
+            ["segment"] = ["shot"],
+            ["shot"] = [],
+        }),
     };
 
     /// <summary>The rules of a format, or null when it has no node structure (no format, or not supported yet).</summary>
