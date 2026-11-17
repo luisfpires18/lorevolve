@@ -358,12 +358,16 @@ public sealed record UniverseBackup(
     /// <see cref="UniverseBackupPayload.ProjectNodes"/> carries them flat, each naming its parent. Not ignorable: a
     /// version 50 reader would restore a feature film with no acts or scenes. A file at version 50 or earlier has none.
     ///
-    /// 52 - A comic panel carries its script and a page or panel its artwork (#295). <see cref="BackupProjectNode.Dialogue"/>,
+    /// 52 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
+    /// phases and the projects each phase holds, in order. Not ignorable: a version 51 reader would restore the universe
+    /// with no sagas. A file at version 51 or earlier has none.
+    ///
+    /// 53 - A comic panel carries its script and a page or panel its artwork (#295). <see cref="BackupProjectNode.Dialogue"/>,
     /// <c>Caption</c>, <c>Sfx</c> and <c>Notes</c> hold the panel's text, and <see cref="BackupProjectNode.Image"/> the picture,
-    /// its original in the archive. Not ignorable: a version 51 reader would restore panels without their script or art. A
-    /// file at version 51 or earlier has none.
+    /// its original in the archive. Not ignorable: a version 52 reader would restore panels without their script or art. A
+    /// file at version 52 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 52;
+    public const int CurrentVersion = 53;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -436,7 +440,30 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
     IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
-    IReadOnlyList<BackupProjectNode>? ProjectNodes = null);
+    IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
+    IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
+
+/// <summary>
+/// One Cinema saga of this universe with its phases in order (since version 52, #289). A phase lists the projects it
+/// holds by this file's project ids, in release order: membership only, so the projects themselves travel as projects.
+/// </summary>
+public sealed record BackupCinemaSaga(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupCinemaPhase> Phases);
+
+public sealed record BackupCinemaPhase(
+    Guid Id,
+    string Name,
+    string? Summary,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<Guid> ProjectIds);
 
 /// <summary>
 /// One idea board that belongs to this universe (since version 36, ADR 0066): a canvas of possibilities, never lore. Its
@@ -1036,7 +1063,7 @@ public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int Di
 /// <summary>
 /// One node of a project's structure (since version 51, #290), flat, naming its parent node (null for a root) by this
 /// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
-/// Since version 52 (#295) a panel's script and a page's or panel's picture; the picture's
+/// Since version 53 (#295) a panel's script and a page's or panel's picture; the picture's
 /// <see cref="BackupFieldImage.FieldDefinitionId"/> is the node's own id.
 /// </summary>
 public sealed record BackupProjectNode(

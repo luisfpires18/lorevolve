@@ -1,19 +1,22 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Field } from './Field'
-import { Link, useLocation } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { ListFilter, Plus, X } from 'lucide-react'
 import {
   createProjectEntity,
   deleteProjectEntity,
   getProjectEntity,
   listProjectEntities,
   listProjectTypes,
+  saveProjectEntity,
 } from '../projectEntities/api'
+import { valuesFromDetail } from '../projectEntities/fieldRows'
 import { setFieldImage } from '../lore/images'
 import type { FieldImageRef } from '../lore/types'
 import {
   FieldKind,
   type FieldValueInput,
+  type ProjectEntityDetail,
   type ProjectEntityType,
   type ProjectEntitySummary,
   type ProjectField,
@@ -46,6 +49,7 @@ export function ProjectEntries({
   reloadKey,
   onChanged,
   crumb,
+  entryHref,
 }: {
   projectId: string
   /** The universe the project belongs to: an entry's pictures are stored under it. */
@@ -63,21 +67,56 @@ export function ProjectEntries({
   onChanged?: () => void
   /** The way back to the type cards, which the type's ancestors follow as they do above a Lore type's list. */
   crumb?: ReactNode
+  /** Where an entry's card opens (#286); unset, a card is static as it was (#196). */
+  entryHref?: (entry: ProjectEntitySummary) => string
 }) {
   useI18n()
   const { pathname } = useLocation()
+  // Search, sort and nesting live in the address beside `type`, so a filtered list is linkable (#285).
+  const [params, setParams] = useSearchParams()
+  const q = params.get('q') ?? ''
+  const sortParam = params.get('sort')
+  const sort =
+    sortParam === 'updated' || sortParam === 'name' || sortParam === 'created' ? sortParam : ''
+  const nested = params.get('nested') === '1'
+  const filtered = q !== '' || sort !== '' || nested
+  const [searchText, setSearchText] = useState(q)
+  const filter = { q, sort, includeDescendants: nested }
   const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
   const [typeId, setTypeId] = useState<string | null>(fixedTypeId ?? null)
   const [entries, setEntries] = useState<ProjectEntitySummary[] | null>(null)
   const [more, setMore] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [name, setName] = useState('')
-  const [summary, setSummary] = useState('')
+  // The main read's controller: loadMore and refresh share its signal so a filter change cancels them too.
+  const readRef = useRef<AbortController | null>(null)
   const [adding, setAdding] = useState(false)
-  const [values, setValues] = useState<Record<string, FieldValueInput>>({})
-  // An Image field's picture waits here until the entry exists, by field id: it is its own write after the create.
-  const [pendingImages, setPendingImages] = useState<Record<string, PendingFieldImage>>({})
+
+  function setFilter(changes: Record<string, string | null>) {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        for (const [key, value] of Object.entries(changes)) {
+          if (value) next.set(key, value)
+          else next.delete(key)
+        }
+        return next
+      },
+      { replace: true },
+    )
+  }
+
+  function clearFilters() {
+    setSearchText('')
+    setFilter({ q: null, sort: null, nested: null })
+  }
+
+  // Typing waits for a pause before it reaches the address, and so the read, as Lore's search does.
+  useEffect(() => {
+    if (searchText === q) return
+    const timer = setTimeout(() => setFilter({ q: searchText.trim() || null }), 150)
+    return () => clearTimeout(timer)
+  }, [searchText, q])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -106,6 +145,7 @@ export function ProjectEntries({
     if (typeId === null) return
 
     const controller = new AbortController()
+    readRef.current = controller
 
     /*
      * The first page, or as many pages as it takes to include the entry the address names, so a link to an entry does
@@ -117,6 +157,7 @@ export function ProjectEntries({
       const first = await listProjectEntities(projectId, forType, signal, {
         skip: 0,
         take: ENTRY_PAGE_SIZE + 1,
+        ...filter,
       })
 
       if (!openEntryId) return { read: first, shown: ENTRY_PAGE_SIZE }
@@ -131,6 +172,7 @@ export function ProjectEntries({
         const next = await listProjectEntities(projectId, forType, signal, {
           skip: read.length,
           take: ENTRY_PAGE_SIZE + 1,
+          ...filter,
         })
         read = [...read.slice(0, shown), ...next]
         shown += ENTRY_PAGE_SIZE
@@ -146,7 +188,7 @@ export function ProjectEntries({
         setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
       })
     return () => controller.abort()
-  }, [projectId, typeId, reloadKey, openEntryId])
+  }, [projectId, typeId, reloadKey, openEntryId, q, sort, nested])
 
   /** One more row than is shown is asked for, so whether another page exists is known without a count. */
   function showing(read: ProjectEntitySummary[], shown: number) {
@@ -157,34 +199,43 @@ export function ProjectEntries({
   function loadMore() {
     if (typeId === null || entries === null) return
     setBusy(true)
-    listProjectEntities(projectId, typeId, undefined, {
+    // Tied to the main read's signal: a filter change aborts it, so a late page never lands on a newer list.
+    const signal = readRef.current?.signal
+    listProjectEntities(projectId, typeId, signal, {
       skip: entries.length,
       take: ENTRY_PAGE_SIZE + 1,
+      ...filter,
     })
       .then((read) => {
-        setEntries([...entries, ...read.slice(0, ENTRY_PAGE_SIZE)])
-        setMore(read.length > ENTRY_PAGE_SIZE)
         setBusy(false)
+        if (signal?.aborted) return
+        setEntries((current) => [...(current ?? []), ...read.slice(0, ENTRY_PAGE_SIZE)])
+        setMore(read.length > ENTRY_PAGE_SIZE)
       })
-      .catch(failing)
+      .catch((error: unknown) => failing(error, signal))
   }
 
   function refresh(notice: string | null = null) {
     if (typeId === null) return
     // A write re-reads as many rows as were already open, so the author keeps their place in a long list.
     const shown = Math.max(entries?.length ?? 0, ENTRY_PAGE_SIZE)
-    listProjectEntities(projectId, typeId, undefined, { skip: 0, take: shown + 1 })
+    const signal = readRef.current?.signal
+    listProjectEntities(projectId, typeId, signal, { skip: 0, take: shown + 1, ...filter })
       .then((read) => {
-        showing(read, shown)
         setBusy(false)
-        setFailed(notice)
+        // The write itself happened, so the parent is told even when a newer list has replaced this read.
+        if (!signal?.aborted) {
+          showing(read, shown)
+          setFailed(notice)
+        }
         onChanged?.()
       })
-      .catch(failing)
+      .catch((error: unknown) => failing(error, signal))
   }
 
-  function failing(error: unknown) {
+  function failing(error: unknown, signal?: AbortSignal) {
     setBusy(false)
+    if (signal?.aborted) return
     setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
   }
 
@@ -302,8 +353,6 @@ export function ProjectEntries({
               value={typeId ?? ''}
               onChange={(event) => {
                 setTypeId(event.target.value)
-                setValues({})
-                setPendingImages({})
               }}
               data-testid="project-entries-type"
             >
@@ -321,131 +370,94 @@ export function ProjectEntries({
        * Asked for rather than always open. Its fields are the chosen type's, so it sits under the type above it and
        * the author reads the type's name before the boxes that belong to it.
        */}
-      {adding ? (
-        <form
-          className="form"
-          data-testid="project-entry-new"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (busy || typeId === null) return
-            setBusy(true)
-            createProjectEntity(projectId, {
-              entityTypeId: typeId,
-              name,
-              summary: summary.length > 0 ? summary : null,
-              canonEntityId: null,
-              // A picture is never a value: it is uploaded below, once the entry has an id.
-              fields: Object.values(values).filter(
-                (one) => !imageFieldIds.has(one.fieldDefinitionId),
-              ),
-              expectedVersion: null,
-            })
-              .then(async (created) => {
-                // Each picture is its own write and may fail on its own: the entry is already stored.
-                const refused: string[] = []
-                for (const [fieldId, held] of Object.entries(pendingImages)) {
-                  try {
-                    await setFieldImage(universeId, created.id, fieldId, held.file, held.crop)
-                  } catch {
-                    refused.push(fields.find((one) => one.id === fieldId)?.name ?? '')
-                  }
-                }
-                setName('')
-                setSummary('')
-                setValues({})
-                setPendingImages({})
-                setAdding(false)
-                refresh(
-                  refused.length > 0
-                    ? t('entity.fieldImage.uploadFailed', { name: refused.join(', ') })
-                    : null,
-                )
-              })
-              .catch(failing)
+      {adding && typeId !== null ? (
+        // Keyed by type: another type's fields start the form over rather than keep values that are not its own.
+        <ProjectEntryForm
+          key={typeId}
+          projectId={projectId}
+          universeId={universeId}
+          entityTypeId={typeId}
+          fields={fields}
+          onSaved={(notice) => {
+            setAdding(false)
+            refresh(notice)
           }}
-        >
-          <Field label={t('projects.entries.name')}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                data-testid="project-entry-new-name"
-                required
-              />
-            )}
-          </Field>
+          onFailed={failing}
+          onCancel={() => setAdding(false)}
+        />
+      ) : null}
 
-          <Field label={t('projects.entries.summary')}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={summary}
-                onChange={(event) => setSummary(event.target.value)}
-                data-testid="project-entry-new-summary"
-              />
-            )}
-          </Field>
-
-          {fields.length > 0 ? (
-            <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
-          ) : null}
-
-          {fields.map((field) =>
-            field.kind === FieldKind.Image ? (
-              <FieldImageInput
-                key={field.id}
-                universeId={universeId}
-                entityId={null}
-                fieldId={field.id}
-                name={field.name}
-                shape={field.imageShape}
-                image={null}
-                pending={pendingImages[field.id] ?? null}
-                onPending={(held) =>
-                  setPendingImages((current) => {
-                    const { [field.id]: _dropped, ...rest } = current
-                    return held ? { ...rest, [field.id]: held } : rest
-                  })
-                }
-                onChanged={() => undefined}
-                disabled={busy}
-              />
-            ) : (
-              <ValueField
-                key={field.id}
-                field={field}
-                value={values[field.id]}
-                onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
-              />
-            ),
-          )}
-
-          <div className="form__actions">
-            <button
-              className="button"
-              type="submit"
-              disabled={busy}
-              data-testid="project-entry-new-save"
-            >
-              {busy ? t('projects.entries.saving') : t('projects.entries.add')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setAdding(false)}
-              data-testid="project-entry-new-cancel"
-            >
-              {t('projects.common.cancel')}
-            </button>
+      {typeId !== null ? (
+        <div className="projects__filters" role="group" aria-label={t('lore.page.filtersGroup')}>
+          <div className="lore__search">
+            <label className="visually-hidden" htmlFor="project-entries-search">
+              {t('lore.page.filterEntries')}
+            </label>
+            <ListFilter
+              className="lore__searchicon"
+              aria-hidden="true"
+              focusable="false"
+              strokeWidth={1.75}
+            />
+            <input
+              id="project-entries-search"
+              className="field__input lore__searchinput"
+              type="search"
+              placeholder={t('projects.entries.searchPlaceholder')}
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              data-testid="project-entries-search"
+            />
           </div>
-        </form>
+          <div className="lore__pagesize">
+            <label className="lore__pagesizelabel" htmlFor="project-entries-sort">
+              {t('lore.page.sortBy')}
+            </label>
+            <select
+              id="project-entries-sort"
+              className="field__input lore__pagesizeselect"
+              value={sort}
+              onChange={(event) => setFilter({ sort: event.target.value || null })}
+              data-testid="project-entries-sort"
+            >
+              <option value="">{t('lore.page.sortName')}</option>
+              <option value="updated">{t('lore.page.sortUpdated')}</option>
+              <option value="created">{t('lore.page.sortCreated')}</option>
+            </select>
+          </div>
+          {type && buildTypeTree(types).byId.get(type.id)?.children.length ? (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={nested}
+                onChange={(event) => setFilter({ nested: event.target.checked ? '1' : null })}
+                data-testid="project-entries-nested"
+              />
+              <span>{t('projects.entries.nested')}</span>
+            </label>
+          ) : null}
+          {filtered ? (
+            <button
+              className="button button--text"
+              type="button"
+              onClick={clearFilters}
+              data-testid="project-entries-clear"
+            >
+              <ActionIcon icon={X} />
+              {t('lore.page.clearFilters')}
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       {typeId !== null && entries === null ? (
         <p className="projectcard__meta">{t('projects.common.loading')}</p>
+      ) : (entries ?? []).length === 0 && filtered ? (
+        <EmptyState
+          title={t('projects.entries.noMatch')}
+          hint={t('projects.entries.noMatchHint')}
+          testId="project-entries-no-match"
+        />
       ) : (entries ?? []).length === 0 ? (
         <EmptyState
           title={t('projects.entries.empty')}
@@ -467,18 +479,33 @@ export function ProjectEntries({
                   : undefined
               }
             >
-              {/* Lore's card, without the link: an entry has no page of its own, so its one action is the menu. */}
+              {/* Lore's card; with an `entryHref` the body is the link and the More menu stays outside it. */}
               <div className="entitycard entitycard--static">
-                {/* No picture, so the tile draws the type's icon and never reads a universe. */}
-                <EntityCardBody
-                  universeId=""
-                  entity={entry}
-                  note={
-                    entry.canonEntityName
-                      ? t('projects.entries.canon', { name: entry.canonEntityName })
-                      : undefined
-                  }
-                />
+                {(() => {
+                  // No picture, so the tile draws the type's icon and never reads a universe.
+                  const body = (
+                    <EntityCardBody
+                      universeId=""
+                      entity={entry}
+                      note={
+                        entry.canonEntityName
+                          ? t('projects.entries.canon', { name: entry.canonEntityName })
+                          : undefined
+                      }
+                    />
+                  )
+                  return entryHref ? (
+                    <Link
+                      className="entitycard__link"
+                      to={entryHref(entry)}
+                      data-testid={`project-entry-open-${entry.id}`}
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    body
+                  )
+                })()}
                 <div className="entitycard__actions">
                   <ActionMenu
                     label={t('projects.common.more', { name: entry.name })}
@@ -526,6 +553,170 @@ export function ProjectEntries({
         </button>
       ) : null}
     </section>
+  )
+}
+
+/**
+ * The one entry form (#287): New on the list, and Edit on an entry's own screen. Edit starts from the stored entry and
+ * saves it with its version, so a change made elsewhere in between is refused rather than overwritten. The type is
+ * never changed here. A picture is not a value: on New it waits for the entry to exist, on Edit it is stored in place.
+ */
+export function ProjectEntryForm({
+  projectId,
+  universeId,
+  entityTypeId,
+  fields,
+  entry,
+  onSaved,
+  onFailed,
+  onCancel,
+}: {
+  projectId: string
+  universeId: string
+  entityTypeId: string
+  fields: ProjectField[]
+  /** Set for Edit; it carries the version and the canon link a save sends back. */
+  entry?: ProjectEntityDetail
+  /** After the save; the notice names any picture that could not be stored. */
+  onSaved: (notice: string | null) => void
+  onFailed: (error: unknown) => void
+  onCancel: () => void
+}) {
+  useI18n()
+  const [busy, setBusy] = useState(false)
+  const [name, setName] = useState(entry?.name ?? '')
+  const [summary, setSummary] = useState(entry?.summary ?? '')
+  const [values, setValues] = useState<Record<string, FieldValueInput>>(() =>
+    entry ? valuesFromDetail(entry, fields) : {},
+  )
+  // An Image field's picture waits here until the entry exists, by field id: it is its own write after the create.
+  const [pendingImages, setPendingImages] = useState<Record<string, PendingFieldImage>>({})
+  const imageFieldIds = new Set(
+    fields.filter((one) => one.kind === FieldKind.Image).map((one) => one.id),
+  )
+  const prefix = entry ? 'project-entry-edit' : 'project-entry-new'
+
+  return (
+    <form
+      className="form"
+      data-testid={prefix}
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (busy) return
+        setBusy(true)
+        const input = {
+          entityTypeId,
+          name,
+          summary: summary.length > 0 ? summary : null,
+          // The save replaces the link, so an edit sends the stored one back and never clears it by leaving it out.
+          canonEntityId: entry?.canonEntityId ?? null,
+          // A picture is never a value: it is uploaded below, once the entry has an id.
+          fields: Object.values(values).filter((one) => !imageFieldIds.has(one.fieldDefinitionId)),
+          expectedVersion: entry?.version ?? null,
+        }
+        ;(entry
+          ? saveProjectEntity(projectId, entry.id, input)
+          : createProjectEntity(projectId, input)
+        )
+          .then(async (saved) => {
+            // Each picture is its own write and may fail on its own: the entry is already stored.
+            const refused: string[] = []
+            for (const [fieldId, held] of Object.entries(pendingImages)) {
+              try {
+                await setFieldImage(universeId, saved.id, fieldId, held.file, held.crop)
+              } catch {
+                refused.push(fields.find((one) => one.id === fieldId)?.name ?? '')
+              }
+            }
+            onSaved(
+              refused.length > 0
+                ? t('entity.fieldImage.uploadFailed', { name: refused.join(', ') })
+                : null,
+            )
+          })
+          .catch((error: unknown) => {
+            setBusy(false)
+            onFailed(error)
+          })
+      }}
+    >
+      <Field label={t('projects.entries.name')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            data-testid={`${prefix}-name`}
+            required
+          />
+        )}
+      </Field>
+
+      <Field label={t('projects.entries.summary')}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            value={summary}
+            onChange={(event) => setSummary(event.target.value)}
+            data-testid={`${prefix}-summary`}
+          />
+        )}
+      </Field>
+
+      {fields.length > 0 ? (
+        <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
+      ) : null}
+
+      {fields.map((field) =>
+        field.kind === FieldKind.Image ? (
+          <FieldImageInput
+            key={field.id}
+            universeId={universeId}
+            entityId={entry?.id ?? null}
+            fieldId={field.id}
+            name={field.name}
+            shape={field.imageShape}
+            image={entry?.fieldImages.find((one) => one.fieldId === field.id) ?? null}
+            pending={pendingImages[field.id] ?? null}
+            onPending={(held) =>
+              setPendingImages((current) => {
+                const { [field.id]: _dropped, ...rest } = current
+                return held ? { ...rest, [field.id]: held } : rest
+              })
+            }
+            onChanged={() => undefined}
+            disabled={busy}
+          />
+        ) : (
+          <ValueField
+            key={field.id}
+            field={field}
+            value={values[field.id]}
+            onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
+          />
+        ),
+      )}
+
+      <div className="form__actions">
+        <button className="button" type="submit" disabled={busy} data-testid={`${prefix}-save`}>
+          {busy
+            ? t('projects.entries.saving')
+            : entry
+              ? t('projects.entries.saveEdit')
+              : t('projects.entries.add')}
+        </button>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={onCancel}
+          data-testid={`${prefix}-cancel`}
+        >
+          {t('projects.common.cancel')}
+        </button>
+      </div>
+    </form>
   )
 }
 

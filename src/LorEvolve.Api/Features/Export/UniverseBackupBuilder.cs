@@ -143,7 +143,8 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await SystemRulesAsync(universeId, cancellationToken),
             await DismissedFindingsAsync(universeId, cancellationToken),
             await TypeTemplatesAsync(universeId, cancellationToken),
-            await ProjectNodesAsync(universeId, nodeImages, cancellationToken));
+            await ProjectNodesAsync(universeId, nodeImages, cancellationToken),
+            await CinemaSagasAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1353,6 +1354,33 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
 
     // ---------- Idea boards ----------
 
+    /// <summary>Cinema sagas (version 52, #289): see <see cref="BackupCinemaSaga"/>.</summary>
+    private async Task<IReadOnlyList<BackupCinemaSaga>> CinemaSagasAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.CinemaSagas.AsNoTracking()
+            .Where(saga => saga.UniverseId == universeId)
+            .OrderBy(saga => saga.SortOrder)
+            .Select(saga => new BackupCinemaSaga(
+                saga.Id,
+                saga.Name,
+                saga.Summary,
+                saga.SortOrder,
+                saga.CreatedAt,
+                saga.UpdatedAt,
+                saga.Phases
+                    .OrderBy(phase => phase.SortOrder)
+                    .Select(phase => new BackupCinemaPhase(
+                        phase.Id,
+                        phase.Name,
+                        phase.Summary,
+                        phase.SortOrder,
+                        phase.CreatedAt,
+                        phase.UpdatedAt,
+                        phase.Members.OrderBy(member => member.SortOrder).Select(member => member.ProjectId).ToList()))
+                    .ToList()))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every project of this universe, oldest first (version 39). A universe owns its projects and deletes them with
     /// it (#171), so they belong in its archive; the project-scoped entry types name them by the ids written here.
@@ -1819,14 +1847,6 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
         ];
     }
 
-    /// <summary>
-    /// Only the dismissals, for the reason a Canon dismissal is the only conflict carried: an open or resolved
-    /// finding is re-derived by sweeping the lore in this same file, and a dismissal is not.
-    ///
-    /// What the fingerprint was taken over is carried rather than the fingerprint itself, because a restore gives
-    /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
-    /// it was dismissed.
-    /// </summary>
     /// <summary>The universe's type templates (#281), by name, each with its fields and their choices in order.</summary>
     private async Task<IReadOnlyList<BackupTypeTemplate>> TypeTemplatesAsync(Guid universeId, CancellationToken cancellationToken)
     {
@@ -1862,6 +1882,14 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
                         .Select(option => new BackupTypeTemplateFieldOption(option.Id, option.Value, option.DisplayOrder))]))]))];
     }
 
+    /// <summary>
+    /// Only the dismissals, for the reason a Canon dismissal is the only conflict carried: an open or resolved
+    /// finding is re-derived by sweeping the lore in this same file, and a dismissal is not.
+    ///
+    /// What the fingerprint was taken over is carried rather than the fingerprint itself, because a restore gives
+    /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
+    /// it was dismissed.
+    /// </summary>
     private async Task<IReadOnlyList<BackupDismissedFinding>> DismissedFindingsAsync(
         Guid universeId,
         CancellationToken cancellationToken)

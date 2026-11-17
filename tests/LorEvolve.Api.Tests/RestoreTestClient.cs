@@ -474,13 +474,19 @@ internal static partial class RestoreTestClient
             }
         }
 
-        if (version < 52)
+        if (version < 53)
         {
-            // A panel's script and a page's or panel's picture came in version 52 (#295).
+            // A panel's script and a page's or panel's picture came in version 53 (#295).
             foreach (var node in payload["projectNodes"]?.AsArray() ?? [])
             {
                 Drop(node, "dialogue", "caption", "sfx", "notes", "image");
             }
+        }
+
+        if (version < 52)
+        {
+            // Cinema sagas came in version 52 (#289).
+            Drop(payload, "cinemaSagas");
         }
 
         if (version < 51)
