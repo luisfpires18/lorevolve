@@ -354,11 +354,15 @@ public sealed record UniverseBackup(
     /// restore. Not ignorable: a version 49 reader would restore the universe without its templates. A file at version
     /// 49 or earlier has none, and restores with none.
     ///
-    /// 51 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
-    /// phases and the projects each phase holds, in order. Not ignorable: a version 50 reader would restore the universe
-    /// with no sagas. A file at version 50 or earlier has none.
+    /// 51 - A project with a rule-backed format holds a structure of nodes (#290): acts, sequences, scenes, beats.
+    /// <see cref="UniverseBackupPayload.ProjectNodes"/> carries them flat, each naming its parent. Not ignorable: a
+    /// version 50 reader would restore a feature film with no acts or scenes. A file at version 50 or earlier has none.
+    ///
+    /// 52 - Cinema Sagas and Phases (#289). <see cref="UniverseBackupPayload.CinemaSagas"/> carries each saga with its
+    /// phases and the projects each phase holds, in order. Not ignorable: a version 51 reader would restore the universe
+    /// with no sagas. A file at version 51 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 51;
+    public const int CurrentVersion = 52;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -431,10 +435,11 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
     IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
+    IReadOnlyList<BackupProjectNode>? ProjectNodes = null,
     IReadOnlyList<BackupCinemaSaga>? CinemaSagas = null);
 
 /// <summary>
-/// One Cinema saga of this universe with its phases in order (since version 51, #289). A phase lists the projects it
+/// One Cinema saga of this universe with its phases in order (since version 52, #289). A phase lists the projects it
 /// holds by this file's project ids, in release order: membership only, so the projects themselves travel as projects.
 /// </summary>
 public sealed record BackupCinemaSaga(
@@ -1049,6 +1054,22 @@ public sealed record BackupTypeTemplateField(
     IReadOnlyList<BackupTypeTemplateFieldOption> Options);
 
 public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int DisplayOrder);
+
+/// <summary>
+/// One node of a project's structure (since version 51, #290), flat, naming its parent node (null for a root) by this
+/// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
+/// </summary>
+public sealed record BackupProjectNode(
+    Guid Id,
+    Guid ProjectId,
+    Guid? ParentId,
+    string Level,
+    string? Title,
+    string? Summary,
+    string? Body,
+    int SortOrder,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
 public sealed record BackupProjectEntity(
     Guid Id,

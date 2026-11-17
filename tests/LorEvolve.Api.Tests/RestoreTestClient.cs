@@ -474,10 +474,16 @@ internal static partial class RestoreTestClient
             }
         }
 
+        if (version < 52)
+        {
+            // Cinema sagas came in version 52 (#289).
+            Drop(payload, "cinemaSagas");
+        }
+
         if (version < 51)
         {
-            // Cinema sagas came in version 51 (#289).
-            Drop(payload, "cinemaSagas");
+            // A project's structure nodes came in version 51 (#290).
+            Drop(payload, "projectNodes");
         }
 
         if (version < 49)

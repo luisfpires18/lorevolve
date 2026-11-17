@@ -139,6 +139,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await SystemRulesAsync(universeId, cancellationToken),
             await DismissedFindingsAsync(universeId, cancellationToken),
             await TypeTemplatesAsync(universeId, cancellationToken),
+            await ProjectNodesAsync(universeId, cancellationToken),
             await CinemaSagasAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
@@ -1344,7 +1345,7 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
 
     // ---------- Idea boards ----------
 
-    /// <summary>Cinema sagas (version 51, #289): see <see cref="BackupCinemaSaga"/>.</summary>
+    /// <summary>Cinema sagas (version 52, #289): see <see cref="BackupCinemaSaga"/>.</summary>
     private async Task<IReadOnlyList<BackupCinemaSaga>> CinemaSagasAsync(
         Guid universeId,
         CancellationToken cancellationToken) =>
@@ -1377,6 +1378,28 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>Every structure node of every project of this universe, flat (version 51, #290).</summary>
+    private async Task<IReadOnlyList<BackupProjectNode>> ProjectNodesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.Project!.UniverseId == universeId)
+            .OrderBy(node => node.ProjectId)
+            .ThenBy(node => node.ParentId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new BackupProjectNode(
+                node.Id,
+                node.ProjectId,
+                node.ParentId,
+                node.Level,
+                node.Title,
+                node.Summary,
+                node.Body,
+                node.SortOrder,
+                node.CreatedAt,
+                node.UpdatedAt))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
     /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.

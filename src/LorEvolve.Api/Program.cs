@@ -192,6 +192,7 @@ app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
 app.MapCinemaSagaEndpoints();
 app.MapComicEndpoints();
+app.MapStructureEndpoints();
 app.MapIdeaEndpoints();
 app.MapIdeaBoardEndpoints();
 app.MapUniverseSearchEndpoints();

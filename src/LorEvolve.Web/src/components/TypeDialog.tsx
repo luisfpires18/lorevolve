@@ -47,6 +47,8 @@ export function TypeDialog({
   eyebrow,
   iconHint,
   parentHint,
+  noParent = false,
+  nameHint,
   write,
   onClose,
   onSaved,
@@ -65,6 +67,10 @@ export function TypeDialog({
   eyebrow?: string
   iconHint?: string
   parentHint?: string
+  /** A type with no place in a hierarchy (a universe template): the Hierarchy section is left out and no parent is sent. */
+  noParent?: boolean
+  /** A line under the name. */
+  nameHint?: string
   /** The save itself: the caller knows which API holds the type. A rejection is shown in the drawer. */
   write: (values: TypeDialogValues) => Promise<unknown>
   onClose: () => void
@@ -223,6 +229,7 @@ export function TypeDialog({
           name="type-name"
           placeholder={type ? undefined : t('entityTypes.page.dialog.namePlaceholder')}
           dir="auto"
+          hint={nameHint}
           value={name}
           onChange={(event) => setName(event.target.value)}
           error={fieldErrors.name}
@@ -236,34 +243,36 @@ export function TypeDialog({
         </div>
       </section>
 
-      <section className="drawer__group" aria-labelledby="type-hierarchy">
-        <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
-          {t('entityTypes.page.dialog.hierarchy')}
-        </h3>
-        <Field
-          label={t('entityTypes.page.dialog.parent')}
-          id="type-parent"
-          hint={parentHint ?? t('entityTypes.page.dialog.parentHint')}
-          error={fieldErrors.parent}
-        >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={parentId ?? ''}
-              onChange={(event) => setParentId(event.target.value || null)}
-              data-testid="type-parent"
-            >
-              <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
-              {parents.map((node) => (
-                <option key={node.type.id} value={node.type.id}>
-                  {typePathLabel(node)}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-      </section>
+      {noParent ? null : (
+        <section className="drawer__group" aria-labelledby="type-hierarchy">
+          <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
+            {t('entityTypes.page.dialog.hierarchy')}
+          </h3>
+          <Field
+            label={t('entityTypes.page.dialog.parent')}
+            id="type-parent"
+            hint={parentHint ?? t('entityTypes.page.dialog.parentHint')}
+            error={fieldErrors.parent}
+          >
+            {(control) => (
+              <select
+                {...control}
+                className="field__input field__input--select"
+                value={parentId ?? ''}
+                onChange={(event) => setParentId(event.target.value || null)}
+                data-testid="type-parent"
+              >
+                <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
+                {parents.map((node) => (
+                  <option key={node.type.id} value={node.type.id}>
+                    {typePathLabel(node)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </section>
+      )}
 
       {groups ? (
         <>
