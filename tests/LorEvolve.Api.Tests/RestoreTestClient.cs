@@ -474,9 +474,9 @@ internal static partial class RestoreTestClient
             }
         }
 
-        if (version < 50)
+        if (version < 51)
         {
-            // A project's structure nodes came in version 50 (#290).
+            // A project's structure nodes came in version 51 (#290).
             Drop(payload, "projectNodes");
         }
 

@@ -349,11 +349,16 @@ public sealed record UniverseBackup(
     /// Not ignorable: a version 48 reader would restore the project with no format. A file at version 48 or earlier has
     /// none, and every restored project has none.
     ///
-    /// 50 - A project with a rule-backed format holds a structure of nodes (#290): acts, sequences, scenes, beats.
+    /// 50 - A universe keeps reusable type templates (#281). <see cref="UniverseBackupPayload.TypeTemplates"/> holds
+    /// each template with its fields and their choices, in order. Nothing refers to a template, so every id is new on
+    /// restore. Not ignorable: a version 49 reader would restore the universe without its templates. A file at version
+    /// 49 or earlier has none, and restores with none.
+    ///
+    /// 51 - A project with a rule-backed format holds a structure of nodes (#290): acts, sequences, scenes, beats.
     /// <see cref="UniverseBackupPayload.ProjectNodes"/> carries them flat, each naming its parent. Not ignorable: a
-    /// version 49 reader would restore a feature film with no acts or scenes. A file at version 49 or earlier has none.
+    /// version 50 reader would restore a feature film with no acts or scenes. A file at version 50 or earlier has none.
     /// </summary>
-    public const int CurrentVersion = 50;
+    public const int CurrentVersion = 51;
 
     public static UniverseBackup Of(UniverseBackupPayload payload, DateTime generatedAt) =>
         new(FormatName, CurrentVersion, generatedAt, payload);
@@ -425,6 +430,7 @@ public sealed record UniverseBackupPayload(
     IReadOnlyList<BackupLoreSystem>? LoreSystems = null,
     IReadOnlyList<BackupSystemRule>? SystemRules = null,
     IReadOnlyList<BackupDismissedFinding>? DismissedFindings = null,
+    IReadOnlyList<BackupTypeTemplate>? TypeTemplates = null,
     IReadOnlyList<BackupProjectNode>? ProjectNodes = null);
 
 /// <summary>
@@ -1000,8 +1006,30 @@ public sealed record BackupProjectPanel(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
+/// <summary>A universe's reusable type template (since version 50, #281), with its fields in order.</summary>
+public sealed record BackupTypeTemplate(
+    Guid Id,
+    string Name,
+    string? Description,
+    string? Icon,
+    string? AccentColor,
+    DateTime CreatedAt,
+    DateTime UpdatedAt,
+    IReadOnlyList<BackupTypeTemplateField> Fields);
+
+public sealed record BackupTypeTemplateField(
+    Guid Id,
+    string Name,
+    EntityFieldKind Kind,
+    bool IsRequired,
+    int DisplayOrder,
+    FieldImageShape? ImageShape,
+    IReadOnlyList<BackupTypeTemplateFieldOption> Options);
+
+public sealed record BackupTypeTemplateFieldOption(Guid Id, string Value, int DisplayOrder);
+
 /// <summary>
-/// One node of a project's structure (since version 50, #290), flat, naming its parent node (null for a root) by this
+/// One node of a project's structure (since version 51, #290), flat, naming its parent node (null for a root) by this
 /// file's own ids. Which levels may sit where is the project format's rules (<see cref="Projects.ProjectStructures"/>).
 /// </summary>
 public sealed record BackupProjectNode(

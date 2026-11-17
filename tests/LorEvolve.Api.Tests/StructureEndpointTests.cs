@@ -282,8 +282,8 @@ public sealed class StructureEndpointTests(LorEvolveApiFactory factory) : IClass
         Assert.Contains(BackupIssueCodes.MissingReference, dangling.IssueCodes);
 
         // An older file carries no nodes and still restores.
-        var older = await Validated(client, Downgrade(archive, 49));
-        Assert.Equal(49, older.Preview.FormatVersion);
+        var older = await Validated(client, Downgrade(archive, 50));
+        Assert.Equal(50, older.Preview.FormatVersion);
     }
 
     // ---------- helpers ----------

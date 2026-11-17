@@ -119,6 +119,11 @@ public sealed class BackupInventoryTests
         "ProjectPages",
         "ProjectPanels",
 
+        // A universe's reusable type templates, their fields and those fields' choices (#281).
+        "TypeTemplates",
+        "TypeTemplateFields",
+        "TypeTemplateFieldOptions",
+
         // A project's structure nodes: acts, sequences, scenes, beats (#290).
         "ProjectNodes",
 
