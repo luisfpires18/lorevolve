@@ -302,6 +302,8 @@ const projects = {
       chapter: 'capítulo',
       page: 'página',
       panel: 'vinheta',
+      segment: 'segmento',
+      shot: 'plano',
     },
   },
   volumes: {

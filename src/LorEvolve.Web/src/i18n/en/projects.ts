@@ -303,6 +303,8 @@ const projects = {
       chapter: 'chapter',
       page: 'page',
       panel: 'panel',
+      segment: 'segment',
+      shot: 'shot',
     },
   },
   volumes: {
