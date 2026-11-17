@@ -52,7 +52,7 @@ deferred.
 - #281 (tracker #300) `feat/type-templates-281`, PR #331: universe-scoped type templates, API + migration + backup format 50.
 - #282 (tracker #300) `feat/template-management-282`, PR #342 done: Types page `?context=templates` lists and manages the universe's templates (`TypeTemplates.tsx`, `typeTemplates/api.ts`); web only.
 
-- #302 M5 Cinema tracker; #289 done: Cinema Sagas and Phases (`CinemaSagas`/`CinemaPhases`/`CinemaPhaseMemberships`, one phase per project, `/api/universes/:id/cinema-sagas`, Sagas view on the Cinema list, backup v50)
+- #302 M5 Cinema tracker; #289 in review (PR #334): Cinema Sagas and Phases (`CinemaSagas`/`CinemaPhases`/`CinemaPhaseMemberships`, one phase per project, `/api/universes/:id/cinema-sagas`, Sagas view on the Cinema list, project update refuses a phased universe or kind change with 409, backup v52)
 One line per branch. Delete the line when it merges.
 
 #299 M2 Projects & Writing tracker running; its deferred E2E and CI run at the tracker end (owner). #275 done: a universe's Projects (`/app/universes/:id/projects`) is a directory of four category cards (Writing, Gaming, Cinema, Comic) drawn from `CREATION`, each with its project count and a link to its list; `ProjectsDirectory.tsx`, one `listAllProjects` read (PR #324).
