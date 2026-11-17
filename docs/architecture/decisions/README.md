@@ -76,9 +76,9 @@ One ADR per durable decision. Rationale lives in the ADR, never here.
 | 0070 | Arcs are story structure (Story, arcs, chapters, scenes) and beats belong to scenes; plot beats retired, supersedes 0026 | [0070-story-arcs-as-structure.md](0070-story-arcs-as-structure.md) |
 | 0071 | Interface languages: typed dictionaries in the web app (`src/i18n/`), chosen per browser; pt-PT unready until #107 | [0071-interface-languages.md](0071-interface-languages.md) |
 | 0072 | A World Logic rule carries a versioned, typed condition tree; a System is a named set of such rules ([spec](../world-logic-condition-spec.md)) | [0072-generic-condition-and-system-semantics.md](0072-generic-condition-and-system-semantics.md) |
-| 0073 | Proposed: a World system may carry one state machine, bound to one attribute, whose guards are existing rules ([spec](../world-logic-state-machine-spec.md)) | [0073-world-system-state-machines.md](0073-world-system-state-machines.md) |
+| 0073 | A World system may carry one state machine, bound to one attribute, whose guards are existing rules ([spec](../world-logic-state-machine-spec.md)) | [0073-world-system-state-machines.md](0073-world-system-state-machines.md) |
 
-All accepted except 0073, which waits for the owner on #356. Next number: `0074`.
+All accepted. Next number: `0074`.
 
 Known limitations are recorded in the ADR that owns them - cross-era ordering on the plain
 reckoning in 0009 and 0011, and years written before a universe named its eras, the listing's

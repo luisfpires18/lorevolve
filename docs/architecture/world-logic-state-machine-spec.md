@@ -1,6 +1,6 @@
 # World Logic state machine specification, version 1
 
-Status: proposed (2026-11-17), ADR 0073. Normative for #357 to #361 once the owner accepts it.
+Status: accepted (2026-11-17), ADR 0073. Normative for #357 to #361.
 
 This document is the contract behind a state machine drawn on a World system. It builds on the condition
 specification (`world-logic-condition-spec.md`, ADR 0072) and changes nothing in it. Like that document it names no

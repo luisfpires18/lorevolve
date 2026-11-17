@@ -1,6 +1,6 @@
 # ADR 0073 - A World system may carry one state machine whose guards are existing rules
 
-Status: proposed (2026-11-17). Becomes accepted when the owner approves the model on #356.
+Status: accepted (2026-11-17)
 
 ## Context
 
