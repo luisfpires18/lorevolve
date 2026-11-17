@@ -526,6 +526,105 @@ namespace LorEvolve.Api.Data.Migrations
                     b.ToTable("ChronologyEras", (string)null);
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaPhase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SagaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SagaId", "SortOrder");
+
+                    b.ToTable("CinemaPhases", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaPhaseMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PhaseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique();
+
+                    b.HasIndex("PhaseId", "SortOrder");
+
+                    b.ToTable("CinemaPhaseMemberships", (string)null);
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaSaga", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UniverseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UniverseId", "SortOrder");
+
+                    b.ToTable("CinemaSagas", (string)null);
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Comments.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4766,6 +4865,47 @@ namespace LorEvolve.Api.Data.Migrations
                     b.Navigation("Universe");
                 });
 
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaPhase", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.CinemaSagas.CinemaSaga", "Saga")
+                        .WithMany("Phases")
+                        .HasForeignKey("SagaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Saga");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaPhaseMembership", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.CinemaSagas.CinemaPhase", "Phase")
+                        .WithMany("Members")
+                        .HasForeignKey("PhaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LorEvolve.Api.Features.Projects.CreativeProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Phase");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaSaga", b =>
+                {
+                    b.HasOne("LorEvolve.Api.Features.Universes.Universe", "Universe")
+                        .WithMany()
+                        .HasForeignKey("UniverseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Universe");
+                });
+
             modelBuilder.Entity("LorEvolve.Api.Features.Comments.Comment", b =>
                 {
                     b.HasOne("LorEvolve.Api.Features.Comments.CommentThread", "Thread")
@@ -6613,6 +6753,16 @@ namespace LorEvolve.Api.Data.Migrations
             modelBuilder.Entity("LorEvolve.Api.Features.Chronology.ChronologyCalendar", b =>
                 {
                     b.Navigation("Months");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaPhase", b =>
+                {
+                    b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("LorEvolve.Api.Features.CinemaSagas.CinemaSaga", b =>
+                {
+                    b.Navigation("Phases");
                 });
 
             modelBuilder.Entity("LorEvolve.Api.Features.Comments.CommentThread", b =>

@@ -20,6 +20,15 @@ public static class ProjectStructures
         ["beat"] = [],
     });
 
+    // #291: what an episode holds, shared by both series formats. An act is optional (episode lists act and scene).
+    private static readonly Dictionary<string, string[]> EpisodeLevels = new()
+    {
+        ["episode"] = ["act", "scene"],
+        ["act"] = ["scene"],
+        ["scene"] = ["beat"],
+        ["beat"] = [],
+    };
+
     // The page and panel tail every Comic format shares (#294).
     private static Dictionary<string, string[]> ComicTail(Dictionary<string, string[]> upper)
     {
@@ -44,6 +53,14 @@ public static class ProjectStructures
         }),
         ["short-film"] = SceneBeat,
         ["special"] = SceneBeat,
+        // Trailer and Teaser share one format (#292): segments of shots.
+        ["trailer"] = new(["segment"], new Dictionary<string, string[]>
+        {
+            ["segment"] = ["shot"],
+            ["shot"] = [],
+        }),
+        ["tv-show"] = new(["season"], new Dictionary<string, string[]>(EpisodeLevels) { ["season"] = ["episode"] }),
+        ["limited-series"] = new(["episode"], EpisodeLevels),
     };
 
     /// <summary>The rules of a format, or null when it has no node structure (no format, or not supported yet).</summary>

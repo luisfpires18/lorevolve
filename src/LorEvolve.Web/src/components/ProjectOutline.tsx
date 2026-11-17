@@ -29,6 +29,8 @@ import { t, tn, useI18n } from '../i18n'
  * season and episode, #292 segment and shot, #294 issue, chapter, page and panel. An unknown level shows its own word.
  */
 const LEVEL_WORDS: Record<string, () => string> = {
+  season: () => t('projects.structure.levels.season'),
+  episode: () => t('projects.structure.levels.episode'),
   act: () => t('projects.structure.levels.act'),
   sequence: () => t('projects.structure.levels.sequence'),
   scene: () => t('projects.structure.levels.scene'),
@@ -37,7 +39,8 @@ const LEVEL_WORDS: Record<string, () => string> = {
   chapter: () => t('projects.structure.levels.chapter'),
   page: () => t('projects.structure.levels.page'),
   panel: () => t('projects.structure.levels.panel'),
-  episode: () => t('projects.structure.levels.episode'),
+  segment: () => t('projects.structure.levels.segment'),
+  shot: () => t('projects.structure.levels.shot'),
 }
 
 const levelWord = (level: string) => LEVEL_WORDS[level]?.() ?? level

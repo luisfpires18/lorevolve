@@ -1,6 +1,7 @@
 using LorEvolve.Api.Features.TypeTemplates;
 using System.Text.RegularExpressions;
 using LorEvolve.Api.Features.CanonIntegrity;
+using LorEvolve.Api.Features.CinemaSagas;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Export;
 using LorEvolve.Api.Features.Ideas;
@@ -620,6 +621,11 @@ internal static partial class BackupValidation
             : 1L + (template.Fields ?? []).Sum(field => field is null ? 0L : 1L + (field.Options?.Count ?? 0)));
         count += payload.ProjectNodes?.Count ?? 0;
 
+        // Cinema sagas (version 52): a saga, its phases and one membership row per project a phase holds.
+        count += (payload.CinemaSagas ?? []).Sum(saga => saga is null
+            ? 0L
+            : 1L + (saga.Phases ?? []).Sum(phase => phase is null ? 0L : 1L + (phase.ProjectIds ?? []).Count));
+
         return (int)Math.Min(count, int.MaxValue);
     }
 
@@ -642,6 +648,9 @@ internal static partial class BackupValidation
 
         // Each project's structure rules (#290), null when its format has none, so its nodes can be checked.
         private readonly Dictionary<Guid, ProjectStructures.Rules?> _projectRules = [];
+
+        /// <summary>The Film and Series projects of this file: the only ones a Cinema phase may hold (#289).</summary>
+        private readonly HashSet<Guid> _cinemaProjects = [];
 
         /// <summary>Every rule definition this file holds, so a link and a dependency can be checked against it.</summary>
         private readonly HashSet<Guid> _systemRules = [];
@@ -712,6 +721,7 @@ internal static partial class BackupValidation
             RegisterTags(tags);
             RegisterEntities(entities);
             RegisterProjectEntries(Required(payload.ProjectEntities, "the list of project entries", since: 40));
+            RegisterCinemaSagas(Required(payload.CinemaSagas, "the list of Cinema sagas", since: 52));
             RegisterProjectSeasons(Required(payload.ProjectSeasons, "the list of project seasons", since: 41));
             RegisterProjectNodes(Required(payload.ProjectNodes, "the list of project structure nodes", since: 51));
             RegisterRelationshipTypes(relationshipTypes);
@@ -1239,6 +1249,11 @@ internal static partial class BackupValidation
                     ? ProjectStructures.For(rulesFormat)
                     : null;
 
+                if (CinemaSagaLimits.Holds(project.Kind))
+                {
+                    _cinemaProjects.Add(project.Id);
+                }
+
                 if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
                 {
                     Add(BackupIssueCodes.Duplicate, $"Two projects are both called {Quote(project.Name)}.");
@@ -1445,6 +1460,56 @@ internal static partial class BackupValidation
         }
 
         // ---------- Entries ----------
+
+        private void RegisterCinemaSagas(IReadOnlyList<BackupCinemaSaga> sagas)
+        {
+            var members = new HashSet<Guid>();
+
+            foreach (var saga in sagas)
+            {
+                if (saga is null)
+                {
+                    Missing("a Cinema saga");
+                    continue;
+                }
+
+                var what = $"The saga {Quote(saga.Name)}";
+                Register(saga.Id, what);
+                Text(saga.Name, CinemaSagaLimits.NameMaxLength, $"{what}'s name", required: true);
+                Text(saga.Summary, CinemaSagaLimits.SummaryMaxLength, $"{what}'s summary");
+
+                foreach (var phase in saga.Phases ?? [])
+                {
+                    if (phase is null)
+                    {
+                        Missing($"a phase of {what}");
+                        continue;
+                    }
+
+                    var which = $"The phase {Quote(phase.Name)} of {Quote(saga.Name)}";
+                    Register(phase.Id, which);
+                    Text(phase.Name, CinemaSagaLimits.NameMaxLength, $"{which}'s name", required: true);
+                    Text(phase.Summary, CinemaSagaLimits.SummaryMaxLength, $"{which}'s summary");
+
+                    foreach (var projectId in phase.ProjectIds ?? [])
+                    {
+                        if (!_projects.Contains(projectId))
+                        {
+                            Add(BackupIssueCodes.MissingReference, $"{which} holds a project this file does not hold.");
+                        }
+                        else if (!_cinemaProjects.Contains(projectId))
+                        {
+                            Add(BackupIssueCodes.InvalidValue, $"{which} holds a project that is not a film or a series.");
+                        }
+
+                        if (!members.Add(projectId))
+                        {
+                            Add(BackupIssueCodes.Duplicate, $"{which} holds a project that is already in a phase.");
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// A project's seasons and their episodes (version 41, #145). Each season belongs to a project this file holds,
