@@ -46,6 +46,7 @@ deferred.
 
 ## In flight
 - #300 M3 Types tracker running; #279 done: types audit in `docs/architecture/types-architecture.md` (one shared EntityTypes engine scoped by ProjectId; templates go in a new table pair).
+- #281 (tracker #300) `feat/type-templates-281`, PR #331: universe-scoped type templates, API + migration + backup format 49.
 
 One line per branch. Delete the line when it merges.
 

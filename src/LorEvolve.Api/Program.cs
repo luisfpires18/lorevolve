@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.Admin;
 using LorEvolve.Api.Features.Feedback;
@@ -185,6 +186,7 @@ app.MapAiChangeEndpoints();
 app.MapAiChangeMediaEndpoints();
 app.MapProjectEndpoints();
 app.MapProjectEntityTypeEndpoints();
+app.MapTypeTemplateEndpoints();
 app.MapProjectEntityEndpoints();
 app.MapSeriesEndpoints();
 app.MapComicEndpoints();
