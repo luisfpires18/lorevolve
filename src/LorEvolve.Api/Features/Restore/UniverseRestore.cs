@@ -1,3 +1,4 @@
+using LorEvolve.Api.Features.TypeTemplates;
 using System.Collections.Concurrent;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.CanonIntegrity;
@@ -107,6 +108,11 @@ internal sealed class RestoreIdentity
             {
                 yield return revision.Id;
             }
+        }
+
+        foreach (var node in payload.ProjectNodes ?? [])
+        {
+            yield return node.Id;
         }
 
         foreach (var season in payload.ProjectSeasons ?? [])
@@ -886,6 +892,7 @@ internal sealed partial class UniverseRestore(
             AddWorldRules(payload, ids, universeId);
             AddWorldLogic(payload, ids, universeId);
             AddDismissedFindings(payload, ids, universeId);
+            AddTypeTemplates(payload, universeId);
             AddRuleValidation(payload, ids, universeId);
 
             await db.SaveChangesAsync(cancellationToken);
@@ -1017,6 +1024,30 @@ internal sealed partial class UniverseRestore(
                 Summary = project.Summary,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt,
+            });
+        }
+
+        // The projects' structure nodes (version 51, #290), parents before children so every parent row exists first.
+        var nodesById = (payload.ProjectNodes ?? []).ToDictionary(node => node.Id);
+
+        int Depth(BackupProjectNode node) =>
+            node.ParentId is { } parentId && nodesById.TryGetValue(parentId, out var parent) ? 1 + Depth(parent) : 0;
+
+        foreach (var node in nodesById.Values.OrderBy(Depth))
+        {
+            db.ProjectNodes.Add(new ProjectNode
+            {
+                Id = ids.Map(node.Id),
+                ProjectId = ids.Map(node.ProjectId),
+                ParentId = node.ParentId is { } parentId ? ids.Map(parentId) : null,
+                Level = node.Level,
+                Title = node.Title,
+                Summary = node.Summary,
+                Body = node.Body,
+                SortOrder = node.SortOrder,
+                CreatedAt = node.CreatedAt,
+                UpdatedAt = node.UpdatedAt,
+                Version = 1,
             });
         }
 
@@ -2168,6 +2199,57 @@ internal sealed partial class UniverseRestore(
     ///
     /// The history entry carries no actor: no account did this, the restore did.
     /// </summary>
+    /// <summary>
+    /// The universe's type templates (version 50, #281). Nothing refers to a template, so each row simply gets a new id;
+    /// a file from before version 50 has none.
+    /// </summary>
+    private void AddTypeTemplates(UniverseBackupPayload payload, Guid universeId)
+    {
+        foreach (var template in payload.TypeTemplates ?? [])
+        {
+            var templateId = Guid.NewGuid();
+
+            db.TypeTemplates.Add(new TypeTemplate
+            {
+                Id = templateId,
+                UniverseId = universeId,
+                Name = template.Name.Trim(),
+                Description = template.Description,
+                Icon = template.Icon,
+                AccentColor = template.AccentColor,
+                CreatedAt = template.CreatedAt,
+                UpdatedAt = template.UpdatedAt,
+            });
+
+            foreach (var field in template.Fields)
+            {
+                var fieldId = Guid.NewGuid();
+
+                db.TypeTemplateFields.Add(new TypeTemplateField
+                {
+                    Id = fieldId,
+                    TemplateId = templateId,
+                    Name = field.Name.Trim(),
+                    Kind = field.Kind,
+                    IsRequired = field.IsRequired,
+                    DisplayOrder = field.DisplayOrder,
+                    ImageShape = field.ImageShape,
+                });
+
+                foreach (var option in field.Options)
+                {
+                    db.TypeTemplateFieldOptions.Add(new TypeTemplateFieldOption
+                    {
+                        Id = Guid.NewGuid(),
+                        FieldId = fieldId,
+                        Value = option.Value,
+                        DisplayOrder = option.DisplayOrder,
+                    });
+                }
+            }
+        }
+    }
+
     private void AddDismissedFindings(UniverseBackupPayload payload, RestoreIdentity ids, Guid universeId)
     {
         foreach (var dismissed in payload.DismissedFindings ?? [])

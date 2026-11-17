@@ -137,7 +137,9 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
             await ProjectSeasonsAsync(universeId, cancellationToken),
             await LoreSystemsAsync(universeId, cancellationToken),
             await SystemRulesAsync(universeId, cancellationToken),
-            await DismissedFindingsAsync(universeId, cancellationToken));
+            await DismissedFindingsAsync(universeId, cancellationToken),
+            await TypeTemplatesAsync(universeId, cancellationToken),
+            await ProjectNodesAsync(universeId, cancellationToken));
 
         // Read-only, so there is nothing to commit; this just closes the snapshot.
         await transaction.CommitAsync(cancellationToken);
@@ -1348,6 +1350,28 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// Nothing of the owning account travels: a restore makes each project the restoring account's, as it does the
     /// universe itself.
     /// </summary>
+    /// <summary>Every structure node of every project of this universe, flat (version 51, #290).</summary>
+    private async Task<IReadOnlyList<BackupProjectNode>> ProjectNodesAsync(
+        Guid universeId,
+        CancellationToken cancellationToken) =>
+        await db.ProjectNodes.AsNoTracking()
+            .Where(node => node.Project!.UniverseId == universeId)
+            .OrderBy(node => node.ProjectId)
+            .ThenBy(node => node.ParentId)
+            .ThenBy(node => node.SortOrder)
+            .Select(node => new BackupProjectNode(
+                node.Id,
+                node.ProjectId,
+                node.ParentId,
+                node.Level,
+                node.Title,
+                node.Summary,
+                node.Body,
+                node.SortOrder,
+                node.CreatedAt,
+                node.UpdatedAt))
+            .ToListAsync(cancellationToken);
+
     /// <summary>
     /// Every season of every project of this universe, each with its episodes and their scripts, in their own order
     /// (version 41, #145). No query filter stands in the way here: seasons are a project's own tables.
@@ -1774,6 +1798,41 @@ public sealed class UniverseBackupBuilder(LorEvolveDbContext db)
     /// every record a new id. <c>UpdatedAt</c> is when the status last moved, which for a dismissed finding is when
     /// it was dismissed.
     /// </summary>
+    /// <summary>The universe's type templates (#281), by name, each with its fields and their choices in order.</summary>
+    private async Task<IReadOnlyList<BackupTypeTemplate>> TypeTemplatesAsync(Guid universeId, CancellationToken cancellationToken)
+    {
+        var templates = await db.TypeTemplates.AsNoTracking()
+            .Where(template => template.UniverseId == universeId)
+            .Include(template => template.Fields)
+            .ThenInclude(field => field.Options)
+            .OrderBy(template => template.Name)
+            .ThenBy(template => template.Id)
+            .ToListAsync(cancellationToken);
+
+        return [.. templates.Select(template => new BackupTypeTemplate(
+            template.Id,
+            template.Name,
+            template.Description,
+            template.Icon,
+            template.AccentColor,
+            template.CreatedAt,
+            template.UpdatedAt,
+            [.. template.Fields
+                .OrderBy(field => field.DisplayOrder)
+                .ThenBy(field => field.Id)
+                .Select(field => new BackupTypeTemplateField(
+                    field.Id,
+                    field.Name,
+                    field.Kind,
+                    field.IsRequired,
+                    field.DisplayOrder,
+                    field.ImageShape,
+                    [.. field.Options
+                        .OrderBy(option => option.DisplayOrder)
+                        .ThenBy(option => option.Id)
+                        .Select(option => new BackupTypeTemplateFieldOption(option.Id, option.Value, option.DisplayOrder))]))]))];
+    }
+
     private async Task<IReadOnlyList<BackupDismissedFinding>> DismissedFindingsAsync(
         Guid universeId,
         CancellationToken cancellationToken)
