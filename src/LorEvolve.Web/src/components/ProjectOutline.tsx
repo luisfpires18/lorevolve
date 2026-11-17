@@ -33,6 +33,11 @@ const LEVEL_WORDS: Record<string, () => string> = {
   sequence: () => t('projects.structure.levels.sequence'),
   scene: () => t('projects.structure.levels.scene'),
   beat: () => t('projects.structure.levels.beat'),
+  issue: () => t('projects.structure.levels.issue'),
+  chapter: () => t('projects.structure.levels.chapter'),
+  page: () => t('projects.structure.levels.page'),
+  panel: () => t('projects.structure.levels.panel'),
+  episode: () => t('projects.structure.levels.episode'),
 }
 
 const levelWord = (level: string) => LEVEL_WORDS[level]?.() ?? level

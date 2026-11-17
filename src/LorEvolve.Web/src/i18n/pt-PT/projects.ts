@@ -235,6 +235,11 @@ const projects = {
       sequence: 'sequência',
       scene: 'cena',
       beat: 'momento',
+      issue: 'número',
+      chapter: 'capítulo',
+      page: 'página',
+      panel: 'vinheta',
+      episode: 'episódio',
     },
   },
   volumes: {
