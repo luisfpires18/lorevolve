@@ -451,7 +451,9 @@ public sealed record EntityDetail(
     bool HasFamilyConnections,
     int Version,
     bool HasProgression = false,
-    IReadOnlyList<FieldImageRef>? FieldImages = null);
+    IReadOnlyList<FieldImageRef>? FieldImages = null,
+    // A project entry's link to its lore entry (#287), so an edit can send it back; always null for a lore entry.
+    Guid? CanonEntityId = null);
 
 public sealed record EntityPage(
     IReadOnlyList<EntitySummary> Items,

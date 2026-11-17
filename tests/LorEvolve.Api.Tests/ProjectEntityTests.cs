@@ -202,6 +202,7 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
 
         Assert.Equal(loreId, row.CanonEntityId);
         Assert.Equal("Alenna Vance", row.CanonEntityName);
+        Assert.Equal(loreId, (await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{project.Id}/entities/{linked.Id}"))!.CanonEntityId);
 
         // A link to something that is not a lore entry of this universe is refused by field.
         var refused = await client.PostAsJsonAsync(
