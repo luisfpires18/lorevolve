@@ -44,7 +44,7 @@ const KINDS: readonly { kind: FieldKindValue; label: () => string }[] = [
   { kind: FieldKind.Image, label: () => t('projects.schema.kind.image') },
 ]
 
-function kindLabel(kind: FieldKindValue) {
+export function kindLabel(kind: FieldKindValue) {
   return KINDS.find((each) => each.kind === kind)?.label() ?? ''
 }
 
@@ -426,12 +426,15 @@ export function ProjectSchema({
 }
 
 /** The form that adds one field. Choices are asked for only by the two kinds that have them. */
-function FieldForm({
+export function FieldForm({
   busy,
+  initial,
   onSubmit,
   onCancel,
 }: {
   busy: boolean
+  /** An existing field to edit: the form then starts from it and saves as an edit. */
+  initial?: ProjectField
   onSubmit: (input: {
     name: string
     kind: FieldKindValue
@@ -442,11 +445,15 @@ function FieldForm({
   onCancel: () => void
 }) {
   useI18n()
-  const [name, setName] = useState('')
-  const [kind, setKind] = useState<FieldKindValue>(FieldKind.ShortText)
-  const [options, setOptions] = useState('')
-  const [required, setRequired] = useState(false)
-  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(FieldImageShape.Free)
+  const [name, setName] = useState(initial?.name ?? '')
+  const [kind, setKind] = useState<FieldKindValue>(initial?.kind ?? FieldKind.ShortText)
+  const [options, setOptions] = useState(
+    initial?.options.map((each) => each.value).join('\n') ?? '',
+  )
+  const [required, setRequired] = useState(initial?.isRequired ?? false)
+  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(
+    initial?.imageShape ?? FieldImageShape.Free,
+  )
   const isImage = kind === FieldKind.Image
   const choosing = kind === FieldKind.Select || kind === FieldKind.MultiSelect
 
@@ -558,7 +565,11 @@ function FieldForm({
           disabled={busy}
           data-testid="project-field-new-save"
         >
-          {busy ? t('projects.schema.fieldSaving') : t('projects.schema.addField')}
+          {busy
+            ? t('projects.schema.fieldSaving')
+            : initial
+              ? t('projects.schema.saveField')
+              : t('projects.schema.addField')}
         </button>
         <button
           className="button button--secondary"

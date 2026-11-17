@@ -123,6 +123,7 @@ const projects = {
     fields: 'Campos',
     noFields: 'Ainda não há campos.',
     addField: 'Adicionar campo',
+    saveField: 'Guardar campo',
     fieldName: 'Nome do campo',
     fieldKind: 'O que vai lá dentro?',
     fieldOptions: 'Opções, uma por linha',

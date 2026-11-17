@@ -49,6 +49,7 @@ deferred.
 - #302 M5 Cinema tracker running; #288 done: Film/Series projects have a selectable production format (`ProjectFormats` map, `CreativeProjects.Format`, backup v49); a project save must send the current format back. #290 done: generic `ProjectNodes` structure engine (`/api/projects/{id}/structure`, rule map `ProjectStructures`, `ProjectOutline.tsx`, backup v51); feature-film acts/sequences/scenes/beats, short-film and special root scenes.
 - #303 M6 Comics tracker running; #293 done: Comic projects pick a format (western-comic, manga, graphic-novel, one-shot, webcomic) through the same `ProjectFormats` map; a set format drives the starter template, Subtype is the fallback.
 - #281 (tracker #300) `feat/type-templates-281`, PR #331: universe-scoped type templates, API + migration + backup format 50.
+- #282 (tracker #300) `feat/template-management-282`, PR #342 done: Types page `?context=templates` lists and manages the universe's templates (`TypeTemplates.tsx`, `typeTemplates/api.ts`); web only.
 
 One line per branch. Delete the line when it merges.
 

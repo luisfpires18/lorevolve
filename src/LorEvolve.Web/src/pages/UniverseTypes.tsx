@@ -40,6 +40,7 @@ import { listAllProjects } from '../projects/api'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { confirmAction } from '../lib/confirm'
+import { TypeTemplates } from '../components/TypeTemplates'
 
 /** Groups not read: none to offer, one stable list. */
 const NO_GROUPS: EntityTypeGroup[] = []
@@ -93,14 +94,19 @@ export default function UniverseTypes() {
   const waitingForGames = params.get('context') === 'gaming' && gamesRead === 'loading'
   const gaming = params.get('context') === 'gaming' && games.length > 0
   const game = games.find((each) => each.id === params.get('game')) ?? games[0]
-  const showLore = !gaming && !waitingForGames
+  const templates = params.get('context') === 'templates'
+  const showLore = !gaming && !waitingForGames && !templates
+  const current = templates ? 'templates' : gaming ? 'gaming' : 'lore'
 
-  function chooseContext(next: 'lore' | 'gaming') {
-    if (next === (gaming ? 'gaming' : 'lore')) return
+  function chooseContext(next: 'lore' | 'gaming' | 'templates') {
+    if (next === current) return
     setParams((current) => {
       const copy = new URLSearchParams(current)
       if (next === 'lore') {
         copy.delete('context')
+        copy.delete('game')
+      } else if (next === 'templates') {
+        copy.set('context', 'templates')
         copy.delete('game')
       } else {
         copy.set('context', 'gaming')
@@ -433,7 +439,13 @@ export default function UniverseTypes() {
     <article className="types">
       <PageHeader
         title={t('entityTypes.page.title')}
-        lede={gaming ? t('entityTypes.page.ledes.gaming', { game: game.name }) : ledes[tab]}
+        lede={
+          templates
+            ? t('entityTypes.page.ledes.templates')
+            : gaming
+              ? t('entityTypes.page.ledes.gaming', { game: game.name })
+              : ledes[tab]
+        }
         actions={
           showLore && tab === 'lore' && access.editContent ? (
             <button
@@ -451,48 +463,48 @@ export default function UniverseTypes() {
           ) : null
         }
       >
-        {games.length > 0 ? (
-          <div className="types__context">
-            <div
-              className="segmented"
-              role="group"
-              aria-label={t('entityTypes.page.context.label')}
-              data-testid="types-context"
-            >
-              {(['lore', 'gaming'] as const).map((each) => (
-                <button
-                  key={each}
-                  className="segmented__option"
-                  type="button"
-                  aria-pressed={(gaming ? 'gaming' : 'lore') === each}
-                  onClick={() => chooseContext(each)}
-                  data-testid={`types-context-${each}`}
-                >
-                  {t(`entityTypes.page.context.${each}`)}
-                </button>
-              ))}
-            </div>
-            {gaming ? (
-              <Field label={t('entityTypes.page.game.label')}>
-                {(control) => (
-                  <select
-                    {...control}
-                    className="field__input field__input--select"
-                    value={game.id}
-                    onChange={(event) => chooseGame(event.target.value)}
-                    data-testid="types-game"
-                  >
-                    {games.map((each) => (
-                      <option key={each.id} value={each.id}>
-                        {each.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-            ) : null}
+        <div className="types__context">
+          <div
+            className="segmented"
+            role="group"
+            aria-label={t('entityTypes.page.context.label')}
+            data-testid="types-context"
+          >
+            {(
+              ['lore', ...(games.length > 0 ? (['gaming'] as const) : []), 'templates'] as const
+            ).map((each) => (
+              <button
+                key={each}
+                className="segmented__option"
+                type="button"
+                aria-pressed={current === each}
+                onClick={() => chooseContext(each)}
+                data-testid={`types-context-${each}`}
+              >
+                {t(`entityTypes.page.context.${each}`)}
+              </button>
+            ))}
           </div>
-        ) : null}
+          {gaming ? (
+            <Field label={t('entityTypes.page.game.label')}>
+              {(control) => (
+                <select
+                  {...control}
+                  className="field__input field__input--select"
+                  value={game.id}
+                  onChange={(event) => chooseGame(event.target.value)}
+                  data-testid="types-game"
+                >
+                  {games.map((each) => (
+                    <option key={each.id} value={each.id}>
+                      {each.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          ) : null}
+        </div>
         {showLore ? (
           <QueryTabList
             label={t('entityTypes.page.title')}
@@ -510,6 +522,7 @@ export default function UniverseTypes() {
         </p>
       ) : null}
       {gaming ? <ProjectSchema key={game.id} projectId={game.id} reloadKey={0} /> : null}
+      {templates ? <TypeTemplates universeId={universe.id} canEdit={access.editContent} /> : null}
 
       {editing ? (
         <TypeDialog
