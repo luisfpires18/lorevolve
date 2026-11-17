@@ -117,6 +117,29 @@ test('a part changed elsewhere after it was opened is not overwritten', async ({
   expect((await read(page, film, scene)).body).toBe('Theirs.')
 })
 
+test('a part that cannot be read offers Try again, which reads it', async ({ browser }) => {
+  const { page } = await person(browser, 'scriptrt')
+  const universeId = await world(page)
+  const film = await newProject(page, universeId, 3, 'short-film')
+  const scene = await node(page, film, 'scene', 'Opening')
+
+  // Every read of the part fails until the server is back.
+  let down = true
+  await page.route(`**/api/projects/${film}/structure/${scene}`, (route) => {
+    if (down && route.request().method() === 'GET') {
+      return route.fulfill({ status: 500, body: '' })
+    }
+    return route.continue()
+  })
+
+  await page.goto(`/app/universes/${universeId}/projects/${film}/script?node=${scene}`)
+  await expect(page.getByTestId('project-script-part-failed')).toBeVisible()
+  down = false
+  await page.getByTestId('project-script-part-retry').click()
+  await expect(page.getByTestId('project-script-title')).toHaveText('Opening')
+  await expect(page.getByTestId('project-script-part-failed')).toHaveCount(0)
+})
+
 test('a comic panel shows its four script fields, and a save keeps its title and summary', async ({
   browser,
 }) => {

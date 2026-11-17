@@ -343,6 +343,7 @@ const projects = {
     nothingSaved: 'Not saved yet',
     unsaved: '{name} has changes that are not saved.',
     reload: 'Reload',
+    retry: 'Try again',
     tooLong: 'Too long to save: {used} of {max} characters.',
   },
   structure: {

@@ -344,6 +344,7 @@ const projects = {
     nothingSaved: 'Ainda não foi guardado',
     unsaved: '{name} tem alterações por guardar.',
     reload: 'Recarregar',
+    retry: 'Tentar de novo',
     tooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
   },
   structure: {

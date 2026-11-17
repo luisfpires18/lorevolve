@@ -270,8 +270,19 @@ function ScriptPart({
 
   if (!node) {
     return failure ? (
-      <p role="alert" data-testid="project-script-part-failed">
-        {failure}
+      <p className="form__message" role="alert" data-testid="project-script-part-failed">
+        {failure}{' '}
+        <button
+          className="button button--text"
+          type="button"
+          onClick={() => {
+            setFailure(null)
+            void load()
+          }}
+          data-testid="project-script-part-retry"
+        >
+          {t('projects.script.retry')}
+        </button>
       </p>
     ) : (
       <p className="projectcard__meta">{t('projects.common.loading')}</p>
