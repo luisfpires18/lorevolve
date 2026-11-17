@@ -117,6 +117,17 @@ const projects = {
     starterHint: 'Um ponto de partida. Mude o nome, apague, ou faça os seus.',
     starterApply: 'Adicionar estes tipos',
     starterApplying: 'A adicionar…',
+    fromTemplate: {
+      button: 'A partir de um modelo',
+      title: 'Novo tipo a partir de um modelo',
+      source: 'Modelo',
+      template: 'Modelo',
+      option: '{name} ({count} campos)',
+      copyHint: 'O jogo fica com uma cópia própria. Alterações posteriores ao modelo não a mudam.',
+      nameHint: 'Deixa vazio para usar o nome do modelo.',
+      detailsCreate: 'Verifica o campo assinalado.',
+      failed: 'Não foi possível criar o tipo.',
+    },
     iconHint:
       'Opcional, e apenas uma imagem: marca o tipo no seu cartão. Nada é escolhido por si a partir do nome.',
     parentHint:
@@ -235,6 +246,11 @@ const projects = {
       sequence: 'sequência',
       scene: 'cena',
       beat: 'momento',
+      issue: 'número',
+      chapter: 'capítulo',
+      page: 'página',
+      panel: 'vinheta',
+      episode: 'episódio',
     },
   },
   volumes: {

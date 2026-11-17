@@ -20,8 +20,21 @@ public static class ProjectStructures
         ["beat"] = [],
     });
 
+    // The page and panel tail every Comic format shares (#294).
+    private static Dictionary<string, string[]> ComicTail(Dictionary<string, string[]> upper)
+    {
+        upper["page"] = ["panel"];
+        upper["panel"] = [];
+        return upper;
+    }
+
     private static readonly Dictionary<string, Rules> ByFormat = new(StringComparer.Ordinal)
     {
+        ["western-comic"] = new(["issue"], ComicTail(new() { ["issue"] = ["page"] })),
+        ["manga"] = new(["chapter"], ComicTail(new() { ["chapter"] = ["page"] })),
+        ["graphic-novel"] = new(["chapter", "page"], ComicTail(new() { ["chapter"] = ["page"] })),
+        ["one-shot"] = new(["page"], ComicTail([])),
+        ["webcomic"] = new(["episode"], ComicTail(new() { ["episode"] = ["page"] })),
         ["feature-film"] = new(["act"], new Dictionary<string, string[]>
         {
             ["act"] = ["sequence", "scene"],
@@ -44,4 +57,8 @@ public static class ProjectStructures
     /// <summary>True when <paramref name="level"/> may sit under <paramref name="parentLevel"/>, or at the root when null.</summary>
     public static bool Allows(Rules rules, string? parentLevel, string level) =>
         parentLevel is null ? AllowsRoot(rules, level) : AllowsChild(rules, parentLevel, level);
+
+    /// <summary>True when every node (its level, and its parent's level or null at the root) fits the rules; no rules fits only no nodes.</summary>
+    public static bool Fits(Rules? rules, IEnumerable<(string Level, string? ParentLevel)> nodes) =>
+        nodes.All(node => rules is not null && Allows(rules, node.ParentLevel, node.Level));
 }

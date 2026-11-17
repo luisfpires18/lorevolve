@@ -32,6 +32,17 @@ export function createProjectType(projectId: string, input: ProjectTypeInput) {
   })
 }
 
+/** A copy of a universe type template as a new type of this project (#283). No link back to the template. */
+export function createProjectTypeFromTemplate(
+  projectId: string,
+  input: { templateId: string; name: string | null },
+) {
+  return apiFetch<ProjectEntityType>(`${base(projectId)}/entity-types/from-template`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
 export function saveProjectType(projectId: string, typeId: string, input: ProjectTypeInput) {
   return apiFetch<ProjectEntityType>(`${base(projectId)}/entity-types/${typeId}`, {
     method: 'PUT',

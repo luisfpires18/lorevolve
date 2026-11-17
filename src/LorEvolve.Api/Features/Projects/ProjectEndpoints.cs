@@ -251,6 +251,23 @@ public static class ProjectEndpoints
             && project.Summary == summary
             && project.UniverseId == request.UniverseId!.Value;
 
+        // A Comic format change must not hide authored nodes (#294): refuse rather than convert or drop them.
+        if (project.Kind == ProjectKind.Comic && request.Kind == ProjectKind.Comic && project.Format != format
+            && !ProjectStructures.Fits(
+                ProjectStructures.For(format),
+                (await db.ProjectNodes
+                    .Where(node => node.ProjectId == id)
+                    .Select(node => new { node.Level, ParentLevel = node.Parent == null ? null : node.Parent.Level })
+                    .ToListAsync(cancellationToken))
+                .Select(node => (node.Level, node.ParentLevel))))
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "The format cannot hold this project.",
+                detail: "This project has content that the new format cannot hold. Move or delete it first.",
+                extensions: new Dictionary<string, object?> { ["code"] = "project_structure_conflict" });
+        }
+
         if (!unchanged)
         {
             project.Name = name;
