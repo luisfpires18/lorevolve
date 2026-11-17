@@ -18752,3 +18752,15 @@ details.reviewsection > .reviewsection__list {
   flex: 1 1 12rem;
   min-width: 0;
 }
+
+/* Types: the Lore / Gaming switch and the game picker sit on one row above the tabs. */
+.types__context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.types__context .segmented {
+  align-self: flex-end;
+}
