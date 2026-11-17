@@ -269,8 +269,9 @@ test.describe('Project entities', () => {
 
     // Counts per type, from the types list rather than from counting entries.
     const counts = page.getByTestId('project-overview-type-counts')
-    await expect(counts.getByTestId(`project-overview-type-${unit.id}`)).toContainText('2 entries')
-    await expect(counts.getByTestId(`project-overview-type-${map.id}`)).toContainText('1 entry')
+    const card = (name: string) => counts.getByTestId('lore-type-card').filter({ hasText: name })
+    await expect(card(unit.name)).toContainText('2 entries')
+    await expect(card(map.name)).toContainText('1 entry')
 
     // The overview is identity and counts only (#278): no recent list and no ways-out section.
     await expect(page.getByTestId('project-overview-recent')).toHaveCount(0)

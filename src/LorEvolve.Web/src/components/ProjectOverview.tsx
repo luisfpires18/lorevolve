@@ -4,7 +4,9 @@ import { listProjectTypes } from '../projectEntities/api'
 import type { ProjectEntityType } from '../projectEntities/types'
 import { projectPath } from '../projects/sections'
 import type { ProjectDetail } from '../projects/types'
+import { buildTypeTree } from '../lore/typeTree'
 import { EmptyState } from './EmptyState'
+import { LoreCatalog } from './LoreCatalog'
 import { t, tn, useI18n } from '../i18n'
 
 /**
@@ -39,6 +41,7 @@ export function ProjectOverview({ project }: { project: ProjectDetail }) {
   }
 
   const entries = types.reduce((total, type) => total + type.entryCount, 0)
+  const entitiesPath = projectPath(project.id, 'entities', universeId)
 
   // Nothing of its own yet: say what to do first rather than drawing four empty panels. The types view is where a
   // project starts, because it is what offers the starter templates.
@@ -89,24 +92,21 @@ export function ProjectOverview({ project }: { project: ProjectDetail }) {
             {t('projects.overview.noTypes')}
           </p>
         ) : (
-          <ul className="projectcardlist" data-testid="project-overview-type-counts">
-            {types.map((type) => (
-              <li key={type.id} className="projectcard">
-                <Link
-                  to={`${projectPath(project.id, 'entities', universeId)}?type=${type.id}`}
-                  className="projectcard__head"
-                  data-testid={`project-overview-type-${type.id}`}
-                >
-                  <h3 className="projectcard__title">{type.name}</h3>
-                  <p className="projectcard__meta">
-                    {type.entryCount === 0
-                      ? t('projects.schema.noEntries')
-                      : tn('projects.schema.entryCount', type.entryCount)}
-                  </p>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          // Lore's own type cards, as the Entities view draws them, each opening that type's entries there.
+          <div data-testid="project-overview-type-counts">
+            <LoreCatalog
+              tree={buildTypeTree(
+                types.map((type) => ({ ...type, listedEntityCount: type.entryCount })),
+              )}
+              groups={[]}
+              browsing={null}
+              onBrowse={() => undefined}
+              typeHref={(typeId) => `${entitiesPath}?type=${typeId}`}
+              groupHref={() => entitiesPath}
+              typesUrl={`${entitiesPath}?manage=types`}
+              countBranch={false}
+            />
+          </div>
         )}
       </section>
     </div>

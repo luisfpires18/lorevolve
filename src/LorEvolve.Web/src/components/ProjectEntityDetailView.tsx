@@ -18,8 +18,8 @@ type LoadState =
 
 /**
  * The one detail screen of a project's entry (#286), the same for every type: its name, type, picture and full
- * description. The caller has already checked that `projectId` is a Game of this universe, and names it here for the
- * crumbs; this view reads the entry by project and id together, so another project's entry is a 404, shown as not found
+ * description. Game Entities (after checking the game is of this universe) and a project's own Entities view both open
+ * it, each naming its directory for the crumbs; this view reads the entry by project and id together, so another project's entry is a 404, shown as not found
  * without saying why. Field values and Edit (#287) follow the description.
  */
 export function ProjectEntityDetailView({

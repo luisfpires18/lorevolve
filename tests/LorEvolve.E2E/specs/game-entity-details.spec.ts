@@ -106,6 +106,43 @@ test.describe('Game entity details', () => {
     await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
   })
 
+  test("the project's own Entities tab opens the same page, inside the project", async ({ page }) => {
+    await signUp(page)
+    const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
+      name: unique('Detworld '),
+      description: null,
+    })
+    const alpha = await game(page, world.id, 'Alpha game', {
+      Units: [{ name: 'Bastion', summary: 'A walled post.' }],
+    })
+    const entities = `/app/universes/${world.id}/projects/${alpha.id}/entities`
+
+    // Overview's type cards are Lore's cards, and they open the type's entries.
+    await page.goto(`/app/universes/${world.id}/projects/${alpha.id}/overview`)
+    await page
+      .getByTestId('project-overview-type-counts')
+      .getByTestId('lore-type-card')
+      .filter({ hasText: 'Units' })
+      .click()
+    await page.getByTestId(`project-entry-open-${alpha.ids['Bastion']}`).click()
+    await expect(page).toHaveURL(`${entities}/${alpha.ids['Bastion']}`)
+    await expect(page.getByTestId('game-entity-title')).toHaveText('Bastion')
+    await expect(page.getByTestId('game-entity-description')).toContainText('A walled post.')
+    await expect(page.getByTestId('projecttab-entities')).toHaveAttribute('aria-current', 'page')
+
+    // Back from the type crumb lands on the project's own list, the row marked.
+    await page.getByTestId('game-entity-crumb-type').click()
+    await expect(page).toHaveURL(new RegExp(`^[^?]*${entities}\\?type=`))
+    await expect(page.getByTestId(`project-entry-${alpha.ids['Bastion']}`)).toHaveAttribute(
+      'aria-current',
+      'true',
+    )
+
+    // A deeper or empty sub-address is not an entry: it falls back to the Entities view.
+    await page.goto(`${entities}/${alpha.ids['Bastion']}/more`)
+    await expect(page.getByTestId('game-entity-page')).toHaveCount(0)
+  })
+
   test('an entry with an uploaded Image field picture shows it on the page', async ({ page }) => {
     await signUp(page)
     const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
