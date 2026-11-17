@@ -36,7 +36,7 @@ const nodeLabel = (node: ComicNode) =>
 type Editing = { kind: ComicCollectionKind; collection: ComicCollection | null }
 
 /**
- * Comic Story Arcs and Events (#296): ordered references to issues, chapters and episodes across this universe's
+ * Comic Story Arcs and Events (#296): ordered references to issues and chapters across this universe's
  * comics. Every action here changes only the collection or an entry; an entry row opens the original node.
  */
 export function ComicCollections({ universeId }: { universeId: string }) {

@@ -1565,7 +1565,7 @@ internal static partial class BackupValidation
                     }
                     else if (!_comicProjects.Contains(node.ProjectId) || !ComicCollectionKinds.Allows(collection.Kind, node.Level))
                     {
-                        Add(BackupIssueCodes.InvalidValue, $"{what} references a part that is not an issue, chapter or episode of a comic.");
+                        Add(BackupIssueCodes.InvalidValue, $"{what} references a part that is not an issue or a chapter of a comic.");
                     }
 
                     if (!held.Add(nodeId))

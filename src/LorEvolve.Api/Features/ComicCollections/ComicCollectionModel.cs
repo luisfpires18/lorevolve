@@ -61,8 +61,8 @@ public static class ComicCollectionKinds
     /// <summary>The node levels each kind may hold. #297 adds <c>volume</c> as one more entry.</summary>
     public static readonly IReadOnlyDictionary<string, string[]> Levels = new Dictionary<string, string[]>
     {
-        [StoryArc] = ["issue", "chapter", "episode"],
-        [Event] = ["issue", "chapter", "episode"],
+        [StoryArc] = ["issue", "chapter"],
+        [Event] = ["issue", "chapter"],
     };
 
     public static bool Allows(string kind, string level) =>

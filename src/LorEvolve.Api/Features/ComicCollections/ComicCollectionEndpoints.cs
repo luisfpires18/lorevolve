@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LorEvolve.Api.Features.ComicCollections;
 
 /// <summary>
-/// Comic Story Arcs and Events (#296): ordered references to issue-level units across a universe's Comic projects.
+/// Comic Story Arcs and Events (#296): ordered references to issues and chapters across a universe's Comic projects.
 /// Every write here touches only collection and entry rows; a node or project is never moved, copied or changed.
 /// </summary>
 public static class ComicCollectionEndpoints
@@ -321,7 +321,7 @@ public static class ComicCollectionEndpoints
 
         if (!ComicCollectionKinds.Allows(kind, node.Level))
         {
-            return Problems.Field("nodeId", "Only an issue, a chapter or an episode can be in a story arc or an event.");
+            return Problems.Field("nodeId", "Only an issue or a chapter can be in a story arc or an event.");
         }
 
         if (await db.ComicCollectionEntries.AnyAsync(

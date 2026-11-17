@@ -101,9 +101,10 @@ public sealed class ComicCollectionTests(LorEvolveApiFactory factory) : IClassFi
         var issue = await Node(client, comic.Id, "issue", null);
         var page = await Node(client, comic.Id, "page", null, issue);
         var arc = await Collection(client, u, ComicCollectionKinds.StoryArc, "Arc");
+        var episode = await Node(client, (await Project(client, u, "Webcomic", ProjectKind.Comic, "webcomic")).Id, "episode", null);
 
         await AssertHidden(await client.PostAsJsonAsync($"{Base(u)}/{arc}/entries", new ComicEntryRequest(foreign)), "another universe's node");
-        foreach (var refusedNode in new[] { act, page })
+        foreach (var refusedNode in new[] { act, page, episode })
         {
             var refused = await client.PostAsJsonAsync($"{Base(u)}/{arc}/entries", new ComicEntryRequest(refusedNode));
             Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
