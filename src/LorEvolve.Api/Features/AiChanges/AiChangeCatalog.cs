@@ -219,8 +219,10 @@ internal static class AiChangeCatalog
                 var offered = action switch
                 {
                     AiChangeAction.Create => !prose && resource != AiChangeResource.Progression,
-                    // A rule definition has no Trash and a System delete is permanent, so neither is removed by an AI.
-                    AiChangeAction.Remove => !prose && resource is not (AiChangeResource.Progression or AiChangeResource.SystemRule or AiChangeResource.LoreSystem),
+                    // A rule definition has no Trash and a System delete is permanent, so neither is removed by an AI; nor is
+                    // a machine's state or transition, which is deleted by hand on the machine.
+                    AiChangeAction.Remove => !prose && resource is not (AiChangeResource.Progression or AiChangeResource.SystemRule or AiChangeResource.LoreSystem
+                        or AiChangeResource.SystemState or AiChangeResource.SystemTransition),
                     AiChangeAction.Reorder => ordered,
                     _ => resource != AiChangeResource.Media,
                 };
@@ -448,6 +450,8 @@ internal static class AiChangeCatalog
         AiChangeResource.ProjectEntry => "project_entry",
         AiChangeResource.SystemRule => "system_rule",
         AiChangeResource.LoreSystem => "system",
+        AiChangeResource.SystemState => "system_state",
+        AiChangeResource.SystemTransition => "system_transition",
         AiChangeResource.ProjectType => "project_type",
         AiChangeResource.ProjectField => "project_field",
         AiChangeResource.LoreType => "lore_type",

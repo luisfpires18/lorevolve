@@ -124,7 +124,7 @@ internal static partial class AiChangeStaging
             }
 
             if (action == AiChangeAction.Remove && resource is AiChangeResource.Manuscript or AiChangeResource.Article or AiChangeResource.Progression
-                    or AiChangeResource.SystemRule or AiChangeResource.LoreSystem)
+                    or AiChangeResource.SystemRule or AiChangeResource.LoreSystem or AiChangeResource.SystemState or AiChangeResource.SystemTransition)
             {
                 Problem(AiChangeCodes.Unsupported, AiChangeText.NoTrash(resource));
                 continue;
@@ -266,6 +266,8 @@ internal static partial class AiChangeStaging
         "project_entry" or "project_entity" => AiChangeResource.ProjectEntry,
         "system_rule" or "world_logic_rule" => AiChangeResource.SystemRule,
         "system" or "lore_system" or "world_logic_system" => AiChangeResource.LoreSystem,
+        "system_state" or "machine_state" => AiChangeResource.SystemState,
+        "system_transition" or "machine_transition" => AiChangeResource.SystemTransition,
         "project_type" or "project_entity_type" => AiChangeResource.ProjectType,
         "project_field" or "project_entity_field" => AiChangeResource.ProjectField,
         "idea" => AiChangeResource.Idea,
@@ -321,6 +323,8 @@ internal static partial class AiChangeStaging
                 (AiChangeResource.ProjectEntry, _) => await ProjectEntryAsync(cancellationToken),
                 (AiChangeResource.SystemRule, _) => await SystemRuleAsync(cancellationToken),
                 (AiChangeResource.LoreSystem, _) => await LoreSystemAsync(cancellationToken),
+                (AiChangeResource.SystemState, _) => await SystemStateAsync(cancellationToken),
+                (AiChangeResource.SystemTransition, _) => await SystemTransitionAsync(cancellationToken),
                 (AiChangeResource.ProjectType, _) => await ProjectTypeAsync(cancellationToken),
                 (AiChangeResource.ProjectField, _) => await ProjectFieldAsync(cancellationToken),
                 (AiChangeResource.Idea, _) => await IdeaAsync(cancellationToken),

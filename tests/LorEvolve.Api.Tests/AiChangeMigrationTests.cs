@@ -232,6 +232,54 @@ public sealed class AiChangeMigrationTests : IDisposable
         Assert.NotEqual(schema, await ProposalAsync(14));
     }
 
+    /// <summary>
+    /// AllowSystemMachineProposals (#361) widens one check constraint, which SQLite does by rebuilding the table: every
+    /// proposal already there comes through it both ways, and only once it is up may a change name a machine's state (25)
+    /// or transition (26).
+    /// </summary>
+    [Fact]
+    public async Task Rolling_back_machine_proposals_keeps_every_proposal_and_up_again_takes_states_and_transitions()
+    {
+        Directory.CreateDirectory(_directory);
+        Guid universeId;
+        await using (var host = new FileHost(DataSource))
+        {
+            var client = host.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+            (await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest("user-aimachinemig", "aimachinemig@example.test", Password))).EnsureSuccessStatusCode();
+            universeId = (await PlotTestClient.CreateUniverse(client, "Machine world")).Id;
+        }
+
+        SqliteConnection.ClearAllPools();
+
+        await using var db = Context();
+        var userId = (await Strings(db, "SELECT Id AS Value FROM AspNetUsers"))[0];
+        async Task<string> ProposalAsync(int resource)
+        {
+            var id = Guid.NewGuid().ToString().ToUpperInvariant();
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO AiChangeProposals (Id, UniverseId, ProposedByUserId, Source, Status, Revision, CreatedAt, ExpiresAt) VALUES ({0}, {1}, {2}, 1, 0, 1, '2026-11-17 00:00:00', '2026-12-01 00:00:00')",
+                id, universeId.ToString().ToUpperInvariant(), userId);
+            await db.Database.ExecuteSqlRawAsync(
+                "INSERT INTO AiChangeOperations (Id, ProposalId, Sequence, Key, Resource, Action, Proposed, DependsOn, Status) VALUES ({0}, {1}, 0, 'a', {2}, 0, '{{}}', '[]', 0)",
+                Guid.NewGuid().ToString().ToUpperInvariant(), id, resource);
+            return id;
+        }
+
+        const string resources = "SELECT Resource || '' AS Value FROM AiChangeOperations ORDER BY Resource";
+        List<string> kept = [await ProposalAsync(0), await ProposalAsync(22), await ProposalAsync(24)];
+
+        await db.GetService<IMigrator>().MigrateAsync("20261117171543_AddMachineFindings");
+        Assert.Equal(kept.Order(StringComparer.Ordinal), (await Strings(db, "SELECT Id AS Value FROM AiChangeProposals")).Order(StringComparer.Ordinal));
+        Assert.Equal(["0", "22", "24"], await Strings(db, resources));
+        await Assert.ThrowsAsync<SqliteException>(() => ProposalAsync(25));
+
+        await db.GetService<IMigrator>().MigrateAsync();
+        Assert.False(db.Database.HasPendingModelChanges());
+        await ProposalAsync(25);
+        await ProposalAsync(26);
+        Assert.Equal(["0", "22", "24", "25", "26"], await Strings(db, resources));
+    }
+
     private LorEvolveDbContext Context() => new(new DbContextOptionsBuilder<LorEvolveDbContext>().UseSqlite($"Data Source={DataSource}").Options);
 
     private static async Task<List<string>> Tables(LorEvolveDbContext db) =>

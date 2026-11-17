@@ -3,6 +3,7 @@ using System.Text.Json;
 using LorEvolve.Api.Features.Chronology;
 using LorEvolve.Api.Features.Lore;
 using LorEvolve.Api.Features.Stories;
+using LorEvolve.Api.Features.Systems;
 using LorEvolve.Api.Features.Timeline;
 
 namespace LorEvolve.Api.Features.AiChanges;
@@ -27,7 +28,7 @@ public sealed record AiChangeOperationInput(
     string? Id,
     [property: Description("create, update, remove or reorder. remove moves the item to LorEvolve's Trash (an idea to the owner's deleted ideas), from where it can be restored; nothing is deleted for good. reorder sets the whole order of a story's chapters or plot arcs, or a chapter's scenes.")]
     string? Action,
-    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea, project_entry (an entry of one of the universe's projects), system_rule (a World Logic rule definition), system (a World Logic System and its ordered rule list), project_type (a type of a project, such as a game's GameEntity) or project_field (a field on a project's type) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
+    [property: Description("lore_entry, article, progression (an entry's eras, forms, abilities and appearances), image (a picture the person uploads in LorEvolve), relationship, story, chapter, scene, manuscript, plot_arc, timeline_event, world_rule, idea, project_entry (an entry of one of the universe's projects), system_rule (a World Logic rule definition), system (a World Logic System and its ordered rule list), system_state (a state of a System's state machine), system_transition (a transition between two of its states), project_type (a type of a project, such as a game's GameEntity) or project_field (a field on a project's type) - or, for a connection allowed to propose schema, lore_type, lore_field, lore_group, relationship_kind, chronology, event_kind or method. Schema changes go in a proposal of their own.")]
     string? Resource,
     [property: Description("For update and remove: the existing item's id, exactly as a read tool gave it. For a manuscript or an article, the scene or entry goes in manuscript.scene or article.entry instead; for reorder, the container goes in order.")]
     Guid? TargetId = null,
@@ -57,7 +58,9 @@ public sealed record AiChangeOperationInput(
     AiSystemRuleInput? SystemRule = null,
     AiSystemInput? System = null,
     AiProjectTypeInput? ProjectType = null,
-    AiProjectSchemaFieldInput? ProjectField = null);
+    AiProjectSchemaFieldInput? ProjectField = null,
+    AiSystemStateInput? SystemState = null,
+    AiSystemTransitionInput? SystemTransition = null);
 
 /// <summary>Something that exists, by its id, or something this proposal creates, by the change's id.</summary>
 public sealed record AiRefInput(
@@ -247,6 +250,28 @@ public sealed record AiSystemInput(
     [property: Description("Create only: a project's id, from list_projects, for one project's System. Leave it out for a System of the whole universe. A project's System may reference the universe's rules and its own project's.")] Guid? ProjectId = null,
     [property: Description("The System's whole rule list, in order: {\"id\"} for an existing rule, {\"ref\"} for a system_rule this proposal creates. On update, leave it out to keep the stored list; a list given replaces it, so a rule left out is unlinked from this System, never deleted.")] IReadOnlyList<AiRefInput>? RuleIds = null);
 
+[Description("A state of a System's state machine (system_state). Read the machine with get_system_machine. For create: system, "
+    + "name and value are required, and the System's first state also names subjectType and attribute. For update: targetId is "
+    + "the state's id, system is still required, and only what you set changes. There is no remove: a state is deleted by hand.")]
+public sealed record AiSystemStateInput(
+    [property: Description("The System: {\"id\"} of an existing one, or {\"ref\"} of a system this proposal creates.")] AiRefInput? System = null,
+    string? Name = null,
+    [property: Description("The attribute value an entry holds in this state, stored exactly as written. Unique in the machine.")] string? Value = null,
+    [property: Description("true makes this the machine's one initial state and takes the flag from the state that had it. A first state is initial on its own. false is refused on update: set true on another state instead.")] bool? Initial = null,
+    [property: Description("Only on the System's first state: the type of entry the machine covers.")] string? SubjectType = null,
+    [property: Description("Only on the System's first state: the attribute that holds an entry's state.")] string? Attribute = null);
+
+[Description("A transition of a System's state machine (system_transition), from one of its states to another. For create: system, "
+    + "from and to are required. For update: targetId is the transition's id, system is still required, and only what you set "
+    + "changes. There is no remove: a transition is deleted by hand.")]
+public sealed record AiSystemTransitionInput(
+    [property: Description("The System: {\"id\"} of an existing one, or {\"ref\"} of a system this proposal creates.")] AiRefInput? System = null,
+    [property: Description("The state it leaves: {\"id\"} from get_system_machine, or {\"ref\"} of a system_state this proposal creates.")] AiRefInput? From = null,
+    [property: Description("The state it enters, named the same way. It must differ from from.")] AiRefInput? To = null,
+    [property: Description("Optional words on the arrow. On update, \"\" clears it.")] string? Label = null,
+    [property: Description("Optional: the rule that must hold to take it, {\"id\"} of a rule definition or {\"ref\"} of a system_rule this proposal creates.")] AiRefInput? Guard = null,
+    [property: Description("On update, true removes the guard.")] bool? RemoveGuard = null);
+
 public sealed record AiRuleCheckInput(
     [property: Description("An event kind's id, from get_change_options.")] Guid? EventKindId = null,
     [property: Description("A method's id, from get_change_options.")] Guid? MethodId = null,
@@ -416,6 +441,19 @@ public sealed record LoreSystemValues(
     string Name,
     string Summary,
     List<AiRef> RuleIds);
+
+/// <summary>
+/// What a proposed state of a System's machine would hold (#361): its System, as an existing id or a <c>system</c> this
+/// proposal creates, and its fields. <paramref name="Binding"/> is set only when the AI named one, which only the
+/// machine's first state may. The commit puts it in the machine as it is then and saves the machine whole.
+/// </summary>
+public sealed record SystemStateValues(AiRef System, string Name, string Value, bool Initial, SystemMachineBinding? Binding);
+
+/// <summary>
+/// What a proposed transition would hold (#361): its System, the two states it joins and its optional guard, each an
+/// existing id or something this proposal creates.
+/// </summary>
+public sealed record SystemTransitionValues(AiRef System, AiRef From, AiRef To, string? Label, AiRef? Guard);
 
 /// <summary>
 /// What a proposed project entry would hold (#148). The project and the type are the entry's scope, carried so a

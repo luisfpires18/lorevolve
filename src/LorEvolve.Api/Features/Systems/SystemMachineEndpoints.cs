@@ -166,6 +166,20 @@ public static class SystemMachineEndpoints
             return denied;
         }
 
+        return await SaveCoreAsync(db, universeId, id, request, cancellationToken);
+    }
+
+    /// <summary>
+    /// The save behind the route's access check. An approved AI change to a state or a transition (#361) is saved
+    /// through here, so it is held to exactly what a <c>PUT</c> is.
+    /// </summary>
+    internal static async Task<IResult> SaveCoreAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid id,
+        SystemMachineRequest request,
+        CancellationToken cancellationToken)
+    {
         if (Problem(request) is { } problem)
         {
             return Refused(problem);
@@ -189,33 +203,9 @@ public static class SystemMachineEndpoints
         var states = request.States ?? [];
         var transitions = request.Transitions ?? [];
 
-        // A guard is a rule of this universe, and inside the System's project when the rule is project-scoped.
-        var guardIds = transitions.Where(transition => transition.GuardRuleId is not null)
-            .Select(transition => transition.GuardRuleId!.Value)
-            .Distinct()
-            .ToList();
-        var guards = await db.SystemRules.AsNoTracking()
-            .Where(rule => guardIds.Contains(rule.Id) && rule.UniverseId == universeId)
-            .Select(rule => new { rule.Id, rule.ProjectId })
-            .ToDictionaryAsync(rule => rule.Id, rule => rule.ProjectId, cancellationToken);
-
-        for (var index = 0; index < transitions.Count; index++)
+        if (await GuardProblemAsync(db, universeId, system.ProjectId, transitions, null, cancellationToken) is { } guardProblem)
         {
-            if (transitions[index].GuardRuleId is not { } guardId)
-            {
-                continue;
-            }
-
-            var field = $"transitions[{index}].guardRuleId";
-            if (!guards.TryGetValue(guardId, out var guardProject))
-            {
-                return Refused((field, "The guard names no rule definition of this universe.", GuardRuleNotFoundCode));
-            }
-
-            if (guardProject is not null && guardProject != system.ProjectId)
-            {
-                return Refused((field, "The guard belongs to a project this System is not in.", GuardScopeMismatchCode));
-            }
+            return Refused(guardProblem);
         }
 
         var binding = request.Binding is null && states.Count == 0 ? null : request.Binding;
@@ -427,6 +417,51 @@ public static class SystemMachineEndpoints
             if (transition.FromStateId == transition.ToStateId)
             {
                 return ($"transitions[{index}].toStateId", "A transition joins two different states.", SelfTransitionCode);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The first guard that names no rule of this universe, or a rule of a project the System is not in, as
+    /// <see cref="Problem"/> answers; null when every guard is good. <paramref name="pending"/> holds rules an AI change
+    /// creates (#361), by the stand-in id its check gave each, with the project each would be in.
+    /// </summary>
+    internal static async Task<(string Field, string Message, string? Code)?> GuardProblemAsync(
+        LorEvolveDbContext db,
+        Guid universeId,
+        Guid? systemProjectId,
+        IReadOnlyList<SystemMachineTransition> transitions,
+        IReadOnlyDictionary<Guid, Guid?>? pending,
+        CancellationToken cancellationToken)
+    {
+        // A guard is a rule of this universe, and inside the System's project when the rule is project-scoped.
+        var guardIds = transitions.Where(transition => transition.GuardRuleId is not null)
+            .Select(transition => transition.GuardRuleId!.Value)
+            .Distinct()
+            .ToList();
+        var guards = await db.SystemRules.AsNoTracking()
+            .Where(rule => guardIds.Contains(rule.Id) && rule.UniverseId == universeId)
+            .Select(rule => new { rule.Id, rule.ProjectId })
+            .ToDictionaryAsync(rule => rule.Id, rule => rule.ProjectId, cancellationToken);
+
+        for (var index = 0; index < transitions.Count; index++)
+        {
+            if (transitions[index].GuardRuleId is not { } guardId)
+            {
+                continue;
+            }
+
+            var field = $"transitions[{index}].guardRuleId";
+            if (!guards.TryGetValue(guardId, out var guardProject) && pending?.TryGetValue(guardId, out guardProject) != true)
+            {
+                return (field, "The guard names no rule definition of this universe.", GuardRuleNotFoundCode);
+            }
+
+            if (guardProject is not null && guardProject != systemProjectId)
+            {
+                return (field, "The guard belongs to a project this System is not in.", GuardScopeMismatchCode);
             }
         }
 

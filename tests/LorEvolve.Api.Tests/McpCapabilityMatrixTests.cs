@@ -100,7 +100,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
             ["systems", "system-rules", "world-logic/rules"],
             ["list_systems", "list_world_logic_rules", "get_world_logic_rule", "evaluate_world_logic_rule", "get_rule_impact"],
             ["SystemRule", "LoreSystem"]),
-        Excepted("A System's state machine", ["systems/machine"], "pending-lorex-075"),
+        Mapped("A System's state machine", ["systems/machine"], ["get_system_machine", "evaluate_world_logic_rule"], ["SystemState", "SystemTransition"]),
         new(
             "Recorded World Logic findings",
             ["world-logic/findings"],
@@ -235,7 +235,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
         Nothing("Tools the server offers that the matrix does not map", [.. offered.Except(mapped).Order(StringComparer.Ordinal)]);
         Nothing("Names the matrix maps that the server does not offer", [.. mapped.Except(offered).Order(StringComparer.Ordinal)]);
-        Assert.Equal(35, offered.Count);
+        Assert.Equal(36, offered.Count);
     }
 
     [Fact]
@@ -300,8 +300,8 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         var published = File.ReadAllText(Path.Combine(RepositoryRoot(), Path.Combine(Document)));
         var gaps = published[published.IndexOf("## Known gaps", StringComparison.Ordinal)..];
 
-        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. A System's
-        // state machine carries one until #361 gives it its tools. The prose has to name every prefix such a domain
+        // A `pending-...` code says a domain has no tool because work that would give it one has not landed. None carries
+        // one since #361 gave a System's state machine its tools. The prose has to name every prefix such a domain
         // covers, or a reader is told of fewer gaps than there are.
         foreach (var domain in Universe.Concat(Project).Where(domain => domain.ReadWhy.StartsWith("pending-", StringComparison.Ordinal)))
         {
