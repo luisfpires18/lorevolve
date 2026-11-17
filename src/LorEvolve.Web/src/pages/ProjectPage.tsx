@@ -13,6 +13,7 @@ import { Field } from '../components/Field'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { ProjectOverview } from '../components/ProjectOverview'
+import { ProjectOutline } from '../components/ProjectOutline'
 import { ProjectSeasons } from '../components/ProjectSeasons'
 import { ProjectShell } from '../components/ProjectShell'
 import { createProject, getProject, listProjects } from '../projects/api'
@@ -432,17 +433,28 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         (project.kind === ProjectKind.Series ||
           project.kind === ProjectKind.Film ||
           project.kind === ProjectKind.Comic) ? (
-        <ProjectSeasons
+        /*
+         * A project whose format has structure rules (#290) gets the outline; the outline draws this legacy panel itself
+         * when the tree read answers 404 (no format, or one without rules yet), and under "Earlier structure" while
+         * legacy rows exist.
+         */
+        <ProjectOutline
+          key={`${project.id}-${project.format ?? ''}`}
           projectId={project.id}
-          universeId={project.universe.id}
-          words={
-            project.kind === ProjectKind.Film
-              ? 'sequences'
-              : project.kind === ProjectKind.Comic
-                ? 'volumes'
-                : 'seasons'
+          legacy={
+            <ProjectSeasons
+              projectId={project.id}
+              universeId={project.universe.id}
+              words={
+                project.kind === ProjectKind.Film
+                  ? 'sequences'
+                  : project.kind === ProjectKind.Comic
+                    ? 'volumes'
+                    : 'seasons'
+              }
+              pages={project.kind === ProjectKind.Comic}
+            />
           }
-          pages={project.kind === ProjectKind.Comic}
         />
       ) : (
         <EmptyState
