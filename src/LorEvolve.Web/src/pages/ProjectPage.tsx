@@ -455,6 +455,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         // The type editor, the same `ProjectSchema` Entities used to open behind "Manage types".
         <ProjectSchema
           asPage
+          projectName={project.name}
           universeId={project.universe.id}
           canEdit={access.editContent}
           projectId={project.id}

@@ -70,6 +70,7 @@ export function ProjectSchema({
   universeId,
   canEdit = false,
   asPage = false,
+  projectName,
 }: {
   projectId: string
   /**
@@ -82,6 +83,8 @@ export function ProjectSchema({
   onChanged?: () => void
   /** A project's own Types view (a Game): headed as the universe's Types page is, with its title and New type. */
   asPage?: boolean
+  /** The project the page is for, named in the lede as the universe Types page's Gaming view names its game. */
+  projectName?: string
   /** The way back to the type cards, above the panel's name, when the panel is a screen of its own. */
   crumb?: ReactNode
   /** When given, the universe's type templates are offered as a second way to make a type (#283). */
@@ -165,7 +168,11 @@ export function ProjectSchema({
         <PageHeader
           title={t('entityTypes.page.title')}
           titleTestId="project-types-title"
-          lede={t('projects.schema.lede')}
+          lede={
+            projectName
+              ? t('entityTypes.page.ledes.gaming', { game: projectName })
+              : t('projects.schema.lede')
+          }
           actions={
             <>
               <button

@@ -99,6 +99,11 @@ test.describe('Project sections', () => {
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await page.getByTestId('projecttab-types').click()
     await expect(page.getByTestId('project-schema')).toBeVisible()
+    // Headed as the universe Types page's Gaming view is: its title, and a lede naming this game.
+    await expect(page.getByTestId('project-types-title')).toHaveText('Types')
+    await expect(page.getByTestId('project-schema')).toContainText(
+      `Types of ${game.name}. They belong to this game only.`,
+    )
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
     await page.getByTestId('projecttab-systems').click()
     await expect(page.getByTestId('project-view-empty-systems')).toBeVisible()
