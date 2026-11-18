@@ -1,0 +1,96 @@
+import { useI18n } from '../../i18n'
+import { Field } from '../Field'
+import { ORIGINAL_CREATOR_MAX, ORIGINAL_WORK_MAX } from '../../publishing/types'
+import type { Attribution } from '../../publishing/publicDetailsDraft'
+
+/** The "based on" attribution field: the box, then whose work and which, when ticked. */
+export function PublicAttributionField({
+  attribution,
+  attribute,
+  fieldErrors,
+  creatorId,
+  creatorHintId,
+  workId,
+}: {
+  attribution: Attribution
+  attribute: (change: Partial<Attribution>) => void
+  fieldErrors: Record<string, string>
+  creatorId: string
+  creatorHintId: string
+  workId: string
+}) {
+  const { t } = useI18n()
+  return (
+    <Field
+      label={t('universe.publicDetails.attribution')}
+      group="fieldset"
+      className="publication__attribution"
+      data-testid="public-attribution"
+    >
+      <label className="check">
+        <input
+          type="checkbox"
+          checked={attribution.based}
+          aria-controls={attribution.based ? creatorId : undefined}
+          onChange={(event) => attribute({ based: event.target.checked })}
+          data-testid="based-on-external-work"
+        />
+        {t('universe.publicDetails.basedOn')}
+      </label>
+      {attribution.based ? (
+        <div className="publication__attributionfields">
+          <Field
+            label={t('universe.publicDetails.creator')}
+            id={creatorId}
+            error={
+              fieldErrors.originalcreator ? (
+                <span role="alert">{fieldErrors.originalcreator}</span>
+              ) : undefined
+            }
+          >
+            {(control) => (
+              <>
+                <input
+                  id={control.id}
+                  className="field__input"
+                  maxLength={ORIGINAL_CREATOR_MAX}
+                  value={attribution.creator}
+                  aria-required="true"
+                  aria-describedby={`${creatorHintId} ${control['aria-describedby'] ?? ''}`.trim()}
+                  aria-invalid={control['aria-invalid']}
+                  onChange={(event) => attribute({ creator: event.target.value })}
+                  data-testid="original-creator"
+                />
+                <p className="field__hint" id={creatorHintId}>
+                  {t('universe.publicDetails.creatorHint')}
+                </p>
+              </>
+            )}
+          </Field>
+          <Field
+            label={t('universe.publicDetails.work')}
+            id={workId}
+            error={
+              fieldErrors.originalwork ? (
+                <span role="alert">{fieldErrors.originalwork}</span>
+              ) : undefined
+            }
+          >
+            {(control) => (
+              <input
+                id={control.id}
+                className="field__input"
+                maxLength={ORIGINAL_WORK_MAX}
+                value={attribution.work}
+                aria-describedby={control['aria-describedby']}
+                aria-invalid={control['aria-invalid']}
+                onChange={(event) => attribute({ work: event.target.value })}
+                data-testid="original-work"
+              />
+            )}
+          </Field>
+        </div>
+      ) : null}
+    </Field>
+  )
+}

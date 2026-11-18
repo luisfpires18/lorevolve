@@ -1,44 +1,13 @@
 import { useEffect, useId, useState } from 'react'
-import { ChevronDown, Globe, Lock, PenLine } from 'lucide-react'
+import { ChevronDown, Globe, Lock } from 'lucide-react'
 import { ActionMenu } from './ActionMenu'
 import { StoryPublicSummaryForm } from './StoryPublicSummaryForm'
-import { getContentPublication, publishContent, unpublishContent } from '../publishing/api'
+import { getContentPublication } from '../publishing/api'
 import { Visibility, type ContentKind, type ContentPublicationState } from '../publishing/types'
 import { t, useI18n } from '../i18n'
-
-/** What each kind lists publicly and what it keeps private - said before publishing, never discovered after. */
-function wordsOf(kind: ContentKind) {
-  if (kind === 'entry') {
-    return {
-      listed: t('stories.publication.content.entry.listed'),
-      kept: t('stories.publication.content.entry.kept'),
-      isPublic: t('stories.publication.content.entry.isPublic'),
-      willPublish: t('stories.publication.content.entry.willPublish'),
-      onlyYou: t('stories.publication.content.entry.onlyYou'),
-      publish: t('stories.publication.content.entry.publish'),
-    }
-  }
-  return {
-    listed: t('stories.publication.content.story.listed'),
-    kept: t('stories.publication.content.story.kept'),
-    isPublic: t('stories.publication.content.story.isPublic'),
-    willPublish: t('stories.publication.content.story.willPublish'),
-    onlyYou: t('stories.publication.content.story.onlyYou'),
-    publish: t('stories.publication.content.story.publish'),
-  }
-}
-
-type Shown = 'private' | 'public' | 'selected'
-
-/** Whether a story still lacks the public summary readers need (Task 011). Always false for an entry. */
-function lacksSummary(kind: ContentKind, state: ContentPublicationState) {
-  return kind === 'story' && !state.publicSummary
-}
-
-function shownOf(kind: ContentKind, state: ContentPublicationState): Shown {
-  if (state.visibility !== Visibility.Public) return 'private'
-  return state.universeIsPublic && !lacksSummary(kind, state) ? 'public' : 'selected'
-}
+import { lacksSummary, shownOf, wordsOf, type Shown } from '../publishing/contentPublicationWords'
+import { contentPublicationChange } from '../publishing/contentPublicationChange'
+import { ContentPublicationPanel } from './ContentPublicationPanel'
 
 /**
  * One lore entry's or story's publication (ADR 0036, Tasks 010-011): its state as a pill, which opens what that state
@@ -125,33 +94,15 @@ export function ContentPublication({
   const isSelected = state.visibility === Visibility.Public
   const missingSummary = lacksSummary(kind, state)
 
-  async function change(publish: boolean) {
-    setBusy(true)
-    setFailed(null)
-    setAnnouncement('')
-    try {
-      const next = publish
-        ? await publishContent(universeId, kind, id)
-        : await unpublishContent(universeId, kind, id)
-      setState(next)
-      setAnnouncement(
-        !publish
-          ? t('stories.publication.content.madePrivate')
-          : next.universeIsPublic && !lacksSummary(kind, next)
-            ? t('stories.publication.content.published')
-            : t('stories.publication.content.selected'),
-      )
-    } catch {
-      // Nothing changed: the state shown is still the stored one.
-      setFailed(
-        publish
-          ? t('stories.publication.content.failedPublish')
-          : t('stories.publication.content.failedPrivate'),
-      )
-    } finally {
-      setBusy(false)
-    }
-  }
+  const change = contentPublicationChange({
+    universeId,
+    kind,
+    id,
+    setBusy,
+    setFailed,
+    setAnnouncement,
+    setState,
+  })
 
   const heading =
     shown === 'public'
@@ -217,76 +168,19 @@ export function ContentPublication({
         triggerTestId={`${kind}-publication`}
         panelTestId={`${kind}-publication-panel`}
       >
-        <div className="actionmenu__context contentpub__context" id={noteId}>
-          <p className="contentpub__heading">{heading}</p>
-          {explanation.map((line) => (
-            <p className="contentpub__note" key={line}>
-              {line}
-            </p>
-          ))}
-          {kind === 'story' && state.publicSummary ? (
-            <p className="contentpub__summary" data-testid="story-public-summary">
-              <span className="contentpub__summarylabel">
-                {t('stories.publication.content.summaryLabel')}
-              </span>{' '}
-              <span dir="auto">{state.publicSummary}</span>
-            </p>
-          ) : null}
-        </div>
-        {kind === 'story' ? (
-          <button
-            className="actionmenu__item"
-            type="button"
-            disabled={busy}
-            onClick={() => setEditingSummary(true)}
-            data-testid="edit-story-public-summary"
-          >
-            <PenLine
-              className="button__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {state.publicSummary
-              ? t('stories.publication.content.editSummary')
-              : t('stories.publication.content.writeSummary')}
-          </button>
-        ) : null}
-        {isSelected ? (
-          <button
-            className="actionmenu__item"
-            type="button"
-            disabled={busy}
-            aria-describedby={noteId}
-            onClick={() => void change(false)}
-            data-testid={`unpublish-${kind}`}
-          >
-            <Lock
-              className="button__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {t('stories.publication.content.makePrivate')}
-          </button>
-        ) : (
-          <button
-            className="actionmenu__item"
-            type="button"
-            disabled={busy || missingSummary}
-            aria-describedby={noteId}
-            onClick={() => void change(true)}
-            data-testid={`publish-${kind}`}
-          >
-            <Globe
-              className="button__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {words.publish}
-          </button>
-        )}
+        <ContentPublicationPanel
+          noteId={noteId}
+          heading={heading}
+          explanation={explanation}
+          kind={kind}
+          state={state}
+          busy={busy}
+          setEditingSummary={setEditingSummary}
+          isSelected={isSelected}
+          change={change}
+          missingSummary={missingSummary}
+          words={words}
+        />
       </ActionMenu>
       {failed ? (
         <span className="contentpub__error" role="alert" data-testid={`${kind}-publication-error`}>

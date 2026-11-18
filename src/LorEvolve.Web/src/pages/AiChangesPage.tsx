@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useOutletContext } from 'react-router-dom'
-import {
-  listProposals,
-  ProposalStatus,
-  reviewPath,
-  type ProposalPage,
-  type ProposalState,
-} from '../aiChanges/api'
+import { listProposals, reviewPath } from '../aiChanges/api'
+import { ProposalStatus, type ProposalPage, type ProposalState } from '../aiChanges/types'
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
