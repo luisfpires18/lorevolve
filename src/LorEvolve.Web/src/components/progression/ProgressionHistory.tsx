@@ -20,8 +20,8 @@ import type {
   ProgressionRevisionSummary,
 } from '../../progression/types'
 
-export /** The progression's own history: each saved version with when and by whom, readable in place and put back on request. */
-function ProgressionHistory({
+/** The progression's own history: each saved version with when and by whom, readable in place and put back on request. */
+export function ProgressionHistory({
   universeId,
   entityId,
   currentVersion,
