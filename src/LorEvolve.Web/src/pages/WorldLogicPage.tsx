@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react'
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
 import { ActionIcon } from '../components/ActionIcon'
 import { EmptyState } from '../components/EmptyState'
@@ -9,29 +9,24 @@ import { t, useI18n } from '../i18n'
 import { formatDate, formatDateTime } from '../lib/dates'
 import { useQueryTab } from '../lib/queryTab'
 import { useUniverseAccess } from '../universes/access'
-import {
-  decideWorldLogicFinding,
-  evaluateWorldLogicFindings,
-  getSystem,
-  getWorldLogicFinding,
-  listSystems,
-  listWorldLogicFindings,
-  listWorldLogicRules,
-} from '../worldLogic/api'
+import { decideWorldLogicFinding, getSystem, getWorldLogicFinding } from '../worldLogic/api'
 import type {
   SystemDetail,
   SystemSummary,
   WorldLogicFindingDetail,
-  WorldLogicFindingOutcome,
   WorldLogicFindingRow,
-  WorldLogicFindingStatus,
-  WorldLogicPage as Page,
-  WorldLogicRuleRow,
-  WorldLogicSweepResult,
 } from '../worldLogic/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-type Load<T> = { kind: 'loading' } | { kind: 'ready'; page: Page<T> } | { kind: 'error' }
+import { useWorldLogicState } from '../worldLogic/useWorldLogicState'
+import { useWorldLogicReads } from '../worldLogic/useWorldLogicReads'
+import { worldLogicActions } from '../worldLogic/worldLogicActions'
+import {
+  outcomeLabel,
+  findingTitle,
+  outcomeHint,
+  statusLabel,
+  historyLabel,
+} from '../worldLogic/findingLabels'
 
 type View = 'rules' | 'systems' | 'integrity'
 
@@ -73,116 +68,12 @@ export default function WorldLogicPage() {
 
   const [tab, choose] = useQueryTab<View>(tabs)
 
-  // Each list keeps its own page in the address, so a link lands on the page it was taken from and the two cannot
-  // read each other's: both panels stay mounted, so one shared number would page the list nobody is looking at.
-  const [params, setParams] = useSearchParams()
-  const rulesPage = asPage(params.get('rulesPage'))
-  const systemsPage = asPage(params.get('systemsPage'))
-  const findingsPage = asPage(params.get('findingsPage'))
+  const state = useWorldLogicState()
+  const { rules, systems, findings, sweep, sweeping, sweepFailed } = state
 
   const base = `/app/universes/${universe.id}`
-  const [rules, setRules] = useState<Load<WorldLogicRuleRow>>({ kind: 'loading' })
-  const [systems, setSystems] = useState<Load<SystemSummary>>({ kind: 'loading' })
-  const [findings, setFindings] = useState<Load<WorldLogicFindingRow>>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-
-  // The last check run from this page, which is the only thing that can tell "nothing found" from "nothing ran":
-  // the store keeps findings, not sweeps, so a reload forgets this and the empty state says both again.
-  const [sweep, setSweep] = useState<WorldLogicSweepResult | null>(null)
-  const [sweeping, setSweeping] = useState(false)
-  const [sweepFailed, setSweepFailed] = useState(false)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listWorldLogicRules(universe.id, rulesPage, controller.signal)
-      .then((page) => setRules({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setRules({ kind: 'error' })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, rulesPage, reads])
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listSystems(universe.id, systemsPage, controller.signal)
-      .then((page) => setSystems({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setSystems({ kind: 'error' })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, systemsPage, reads])
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listWorldLogicFindings(universe.id, findingsPage, controller.signal)
-      .then((page) => setFindings({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setFindings({ kind: 'error' })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, findingsPage, reads])
-
-  /** Moves one list to a page, leaving the other lists' pages and the chosen tab where they are. */
-  function goTo(which: 'rulesPage' | 'systemsPage' | 'findingsPage', next: number) {
-    // The list says it is loading from here, where the author asked for it, rather than from the effect that reads
-    // it: a setState inside the effect would start a second render for something this event already knows.
-    if (which === 'rulesPage') setRules({ kind: 'loading' })
-    else if (which === 'systemsPage') setSystems({ kind: 'loading' })
-    else setFindings({ kind: 'loading' })
-
-    setParams((current) => {
-      const updated = new URLSearchParams(current)
-      if (next <= 1) updated.delete(which)
-      else updated.set(which, String(next))
-      return updated
-    })
-  }
-
-  function retry() {
-    setRules({ kind: 'loading' })
-    setSystems({ kind: 'loading' })
-    setFindings({ kind: 'loading' })
-    setReads((current) => current + 1)
-  }
-
-  /**
-   * Runs the check and reads the findings back. The sweep answers counts rather than rows, so the list is read again
-   * afterwards; a run that found nothing is what lets the empty state say every rule passed rather than guessing.
-   */
-  async function check() {
-    setSweeping(true)
-    setSweepFailed(false)
-
-    try {
-      const result = await evaluateWorldLogicFindings(universe.id)
-      setSweep(result)
-      setFindings({ kind: 'loading' })
-      // A new run can empty the page the author is on, so the list goes back to the first page with it.
-      if (findingsPage > 1) goTo('findingsPage', 1)
-      else setReads((current) => current + 1)
-    } catch {
-      setSweepFailed(true)
-    } finally {
-      setSweeping(false)
-    }
-  }
-
-  /** Reads the list again after a decision, so what a row says is what the store holds. */
-  function reread() {
-    setReads((current) => current + 1)
-  }
+  useWorldLogicReads({ ...state, universe })
+  const { goTo, retry, check, reread } = worldLogicActions({ ...state, universe })
 
   return (
     <section className="rules" aria-labelledby={headingId} data-testid="world-logic">
@@ -537,11 +428,6 @@ export default function WorldLogicPage() {
   )
 }
 
-/** A page number from the address: at least 1, and 1 for anything that is not a number. */
-function asPage(written: string | null) {
-  return Math.max(1, Number.parseInt(written ?? '1', 10) || 1)
-}
-
 /**
  * One list's pages, drawn only when there is more than one. The same shape the rule book's own pager has, so the two
  * read the same way; each list on this page has its own, because each has its own page in the address.
@@ -696,61 +582,6 @@ function SystemRow({ universeId, system }: { universeId: string; system: SystemS
       </div>
     </li>
   )
-}
-
-/** What the outcome means, in a word. Never a severity number: the three outcomes are three different facts. */
-function outcomeLabel(outcome: WorldLogicFindingOutcome) {
-  if (outcome === 'violation') return t('canon.worldLogic.integrity.outcomes.violation')
-  if (outcome === 'error') return t('canon.worldLogic.integrity.outcomes.error')
-  return t('canon.worldLogic.integrity.outcomes.unknown')
-}
-
-/** A rule finding is titled by its rule; a machine finding by its System and state, or as a value with no state. */
-function findingTitle(finding: WorldLogicFindingRow) {
-  const { machine } = finding
-  if (!machine) return finding.ruleTitle
-  return machine.stateName === null
-    ? t('canon.worldLogic.integrity.machine.undeclaredTitle', { system: machine.systemName })
-    : t('canon.worldLogic.integrity.machine.title', {
-        system: machine.systemName,
-        state: machine.stateName,
-      })
-}
-
-function outcomeHint(outcome: WorldLogicFindingOutcome) {
-  if (outcome === 'violation') return t('canon.worldLogic.integrity.outcomeHints.violation')
-  if (outcome === 'error') return t('canon.worldLogic.integrity.outcomeHints.error')
-  return t('canon.worldLogic.integrity.outcomeHints.unknown')
-}
-
-function statusLabel(status: WorldLogicFindingStatus) {
-  if (status === 'reviewing') return t('canon.worldLogic.integrity.statuses.reviewing')
-  if (status === 'resolved') return t('canon.worldLogic.integrity.statuses.resolved')
-  if (status === 'dismissed') return t('canon.worldLogic.integrity.statuses.dismissed')
-  return t('canon.worldLogic.integrity.statuses.open')
-}
-
-/**
- * What one history entry was, in the reader's language. An action the server adds later has no wording here yet, so
- * it is shown as the server's own word rather than dropped: a history that hides an entry is not a history.
- */
-function historyLabel(action: string) {
-  switch (action) {
-    case 'detected':
-      return t('canon.worldLogic.integrity.actions.detected')
-    case 'reopened':
-      return t('canon.worldLogic.integrity.actions.reopened')
-    case 'reviewed':
-      return t('canon.worldLogic.integrity.actions.reviewed')
-    case 'dismissed':
-      return t('canon.worldLogic.integrity.actions.dismissed')
-    case 'resolved':
-      return t('canon.worldLogic.integrity.actions.resolved')
-    case 'closed':
-      return t('canon.worldLogic.integrity.actions.closed')
-    default:
-      return action
-  }
 }
 
 /**
