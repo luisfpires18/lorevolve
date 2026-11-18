@@ -6,7 +6,6 @@
   "components/ProjectScript.tsx": 400,
   "components/PublicDetailsForm.tsx": 365,
   "components/RelationshipSection.tsx": 773,
-  "components/RelationshipTypeManager.tsx": 568,
   "components/RestoreBackup.tsx": 556,
   "components/ReviewComments.tsx": 509,
   "components/ReviewSuggestions.tsx": 392,
