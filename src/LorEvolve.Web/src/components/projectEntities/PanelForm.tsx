@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Field } from '../Field'
 import { EntityPicker } from '../EntityPicker'
 import { t, useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 export function PanelForm({
   busy,
@@ -71,14 +71,14 @@ export function PanelForm({
         />
       </div>
 
-      <div className="form__actions">
-        <Button type="submit" disabled={busy} data-testid="project-panel-new-save">
-          {t('projects.pages.addPanel')}
-        </Button>
-        <Button tone="secondary" onClick={onCancel} data-testid="project-panel-new-cancel">
-          {t('projects.common.cancel')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={t('projects.pages.addPanel')}
+        disabled={busy}
+        submitTestId="project-panel-new-save"
+        onCancel={onCancel}
+        cancelTestId="project-panel-new-cancel"
+        inline
+      />
     </form>
   )
 }

@@ -2,7 +2,7 @@ import { useI18n } from '../../i18n'
 import { categoryLabel, genreLabel } from '../../publishing/types'
 import type { Confirming, usePublishState } from '../../publishing/usePublishState'
 import { SelectedLoreReview } from './SelectedLoreReview'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** The confirm before publishing: exactly what becomes public, read fresh, and the lore that goes with it. */
 export function PublishConfirm({
@@ -89,14 +89,17 @@ export function PublishConfirm({
         <strong>{t('universe.publish.confirm.notPublished')}</strong>{' '}
         {t('universe.publish.confirm.staysPrivate')}
       </p>
-      <div className="form__actions">
-        <Button disabled={busy} onClick={() => void publish()} data-testid="confirm-publish">
-          {busy ? t('universe.publish.confirm.publishing') : t('universe.publish.confirm.publish')}
-        </Button>
-        <Button tone="secondary" disabled={busy} onClick={() => setConfirming(null)}>
-          {t('universe.publish.confirm.keepPrivate')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={t('universe.publish.confirm.publish')}
+        busy={busy}
+        busyLabel={t('universe.publish.confirm.publishing')}
+        onSubmit={() => void publish()}
+        submitTestId="confirm-publish"
+        onCancel={() => setConfirming(null)}
+        cancelLabel={t('universe.publish.confirm.keepPrivate')}
+        lockCancel
+        inline
+      />
     </div>
   )
 }

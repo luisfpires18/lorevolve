@@ -4,6 +4,7 @@ import { SYSTEM_NAME_MAX_LENGTH, SYSTEM_SUMMARY_MAX_LENGTH } from '../../worldLo
 import type { useSystemEditorState } from '../../worldLogic/useSystemEditorState'
 import type { systemEditorActions } from '../../worldLogic/systemEditorActions'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 type State = ReturnType<typeof useSystemEditorState>
 type Actions = ReturnType<typeof systemEditorActions>
@@ -119,24 +120,20 @@ export function SystemDetails({
           )}
         </Field>
 
-        <div className="form__actions">
-          <Button type="submit" disabled={saving} data-testid="system-editor-save">
-            {saving
-              ? t('canon.worldLogic.systems.editor.saving')
-              : isNew
-                ? t('canon.worldLogic.systems.editor.create')
-                : t('canon.worldLogic.systems.editor.save')}
-          </Button>
-          {!isNew ? (
-            <Button
-              tone="secondary"
-              onClick={() => void remove()}
-              data-testid="system-editor-delete"
-            >
-              {t('canon.worldLogic.systems.editor.delete.open')}
-            </Button>
-          ) : null}
-        </div>
+        <FormActions
+          submitLabel={
+            isNew
+              ? t('canon.worldLogic.systems.editor.create')
+              : t('canon.worldLogic.systems.editor.save')
+          }
+          busy={saving}
+          busyLabel={t('canon.worldLogic.systems.editor.saving')}
+          submitTestId="system-editor-save"
+          onDelete={!isNew ? () => void remove() : undefined}
+          deleteLabel={t('canon.worldLogic.systems.editor.delete.open')}
+          deleteTestId="system-editor-delete"
+          inline
+        />
       </form>
     </>
   )

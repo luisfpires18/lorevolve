@@ -8,7 +8,7 @@ import type { UniverseInput } from '../universes/types'
 import { confirmDiscard } from '../lib/confirm'
 import { HEX, inputOf, normalizeHex } from '../universes/universeFormInput'
 import { UniverseColourField } from './UniverseColourField'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface UniverseFormProps {
   initial?: UniverseInput
@@ -193,16 +193,13 @@ export function UniverseForm({
         />
       ) : null}
 
-      <div className="form__actions">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? busyLabel : submitLabel}
-        </Button>
-        {onCancel ? (
-          <Button tone="secondary" onClick={cancel}>
-            {t('universe.form.cancel')}
-          </Button>
-        ) : null}
-      </div>
+      <FormActions
+        submitLabel={submitLabel}
+        busy={isSubmitting}
+        busyLabel={busyLabel}
+        onCancel={onCancel ? cancel : undefined}
+        inline
+      />
     </form>
   )
 }

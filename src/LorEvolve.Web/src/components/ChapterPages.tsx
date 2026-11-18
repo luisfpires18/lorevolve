@@ -4,6 +4,7 @@ import { createPage, listPages, type ProjectPage } from '../projectEntities/page
 import { t, useI18n } from '../i18n'
 import { PageRow } from './projectEntities/PageRow'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -149,22 +150,14 @@ export function ChapterPages({
               />
             )}
           </Field>
-          <div className="form__actions">
-            <Button
-              type="submit"
-              disabled={busy}
-              data-testid={`project-page-new-save-${chapterId}`}
-            >
-              {t('projects.pages.add')}
-            </Button>
-            <Button
-              tone="secondary"
-              onClick={() => setAddingPage(false)}
-              data-testid={`project-page-new-cancel-${chapterId}`}
-            >
-              {t('projects.common.cancel')}
-            </Button>
-          </div>
+          <FormActions
+            submitLabel={t('projects.pages.add')}
+            disabled={busy}
+            submitTestId={`project-page-new-save-${chapterId}`}
+            onCancel={() => setAddingPage(false)}
+            cancelTestId={`project-page-new-cancel-${chapterId}`}
+            inline
+          />
         </form>
       ) : null}
 

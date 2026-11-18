@@ -15,7 +15,7 @@ import { FamilyLinkKindField } from './relationships/FamilyLinkKindField'
 import { FamilyLinkPreview } from './relationships/FamilyLinkPreview'
 import { FamilyLinkSide } from './relationships/FamilyLinkSide'
 import { FamilyLinkStatus } from './relationships/FamilyLinkStatus'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface Props {
   universeId: string
@@ -160,14 +160,16 @@ export function FamilyLinkForm({
         </p>
       ) : null}
 
-      <div className="relform__actions">
-        <Button onClick={save} disabled={isSaving || !kind} data-testid="save-family-link">
-          {isSaving ? t('places.linkForm.saving') : t('places.linkForm.add')}
-        </Button>
-        <Button tone="secondary" onClick={cancel}>
-          {t('places.linkForm.cancel')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={t('places.linkForm.add')}
+        busy={isSaving}
+        busyLabel={t('places.linkForm.saving')}
+        disabled={!kind}
+        onSubmit={save}
+        submitTestId="save-family-link"
+        onCancel={cancel}
+        inline
+      />
 
       {isCreatingKind ? (
         <FamilyKindDialog

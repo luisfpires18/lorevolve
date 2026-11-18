@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** Settings → Advanced: the danger section with its confirm once archived, or the note that deleting needs the archive. */
 export function SettingsDelete({
@@ -53,14 +54,16 @@ export function SettingsDelete({
           <p className="settings__confirmtitle" id="delete-confirm-title">
             {tx('universe.settings.deleteConfirm', { name: <bdi>{universe.name}</bdi> })}
           </p>
-          <div className="form__actions">
-            <Button tone="danger" onClick={remove} disabled={busy} data-testid="confirm-delete">
-              {t('universe.settings.deleteConfirmButton')}
-            </Button>
-            <Button tone="secondary" onClick={() => setConfirmingDelete(false)}>
-              {t('universe.settings.deleteKeep')}
-            </Button>
-          </div>
+          <FormActions
+            submitLabel={t('universe.settings.deleteConfirmButton')}
+            disabled={busy}
+            submitTone="danger"
+            onSubmit={remove}
+            submitTestId="confirm-delete"
+            onCancel={() => setConfirmingDelete(false)}
+            cancelLabel={t('universe.settings.deleteKeep')}
+            inline
+          />
         </div>
       ) : (
         <Button

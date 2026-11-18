@@ -2,7 +2,7 @@ import type { FormEvent } from 'react'
 import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { useRestoreBackupState } from '../../backups/useRestoreBackupState'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** The first stage: the file field, the upload and check progress, Check and Cancel. */
 export function RestoreChooseForm({
@@ -82,17 +82,15 @@ export function RestoreChooseForm({
         </div>
       ) : null}
 
-      <div className="form__actions">
-        <Button type="submit" disabled={busy} data-testid="restore-check">
-          {stage.kind === 'checking' ? t('admin.restore.checkBusy') : t('admin.restore.check')}
-        </Button>
-        <Button
-          tone="secondary"
-          onClick={() => (stage.kind === 'checking' ? upload.current?.abort() : onCancel())}
-        >
-          {t('admin.restore.cancel')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={t('admin.restore.check')}
+        busy={stage.kind === 'checking'}
+        busyLabel={t('admin.restore.checkBusy')}
+        disabled={busy}
+        submitTestId="restore-check"
+        onCancel={() => (stage.kind === 'checking' ? upload.current?.abort() : onCancel())}
+        inline
+      />
     </form>
   )
 }

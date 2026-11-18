@@ -1,7 +1,7 @@
 import type { RefObject } from 'react'
 import { useI18n } from '../../i18n'
 import type { PublishEverythingPreview } from '../../publishing/types'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** The confirm before Publish everything: each entry and story it would publish, and the stories it would skip. */
 export function PublishEverythingConfirm({
@@ -114,23 +114,18 @@ export function PublishEverythingConfirm({
           </ul>
         </div>
       ) : null}
-      <div className="form__actions">
-        {nothing ? null : (
-          <Button
-            busy={busy}
-            busyLabel={t('universe.publish.everything.publishing')}
-            onClick={() => void confirm()}
-            data-testid="publish-everything-confirm-button"
-          >
-            {t('universe.publish.everything.confirm')}
-          </Button>
-        )}
-        <Button tone="secondary" disabled={busy} onClick={() => setPreview(null)}>
-          {nothing
-            ? t('universe.publish.everything.close')
-            : t('universe.publish.everything.keepPrivate')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={nothing ? undefined : t('universe.publish.everything.confirm')}
+        busy={busy}
+        busyLabel={t('universe.publish.everything.publishing')}
+        onSubmit={() => void confirm()}
+        submitTestId="publish-everything-confirm-button"
+        onCancel={() => setPreview(null)}
+        dismiss={nothing ? 'close' : 'cancel'}
+        cancelLabel={nothing ? undefined : t('universe.publish.everything.keepPrivate')}
+        lockCancel
+        inline
+      />
       {nothing ? null : <p className="settings__note">{t('universe.publish.everything.again')}</p>}
     </div>
   )
