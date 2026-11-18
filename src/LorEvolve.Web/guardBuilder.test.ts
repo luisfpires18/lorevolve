@@ -18,31 +18,28 @@ import {
   VALUE_TYPES,
 } from './src/worldLogic/conditionSchema.ts'
 import {
-  blockFor,
-  blockPaths,
-  checkComplete,
-  classifyNode,
-  classifyOperand,
-  clauseOperators,
-  compareOperators,
   getAt,
   isObject,
-  measure,
-  newClause,
-  newGuard,
-  newNode,
-  pathOf,
   removeAt,
-  sameCondition,
   setAt,
-  summarize,
-  toUpdateRequest,
-  withField,
-  wrap,
   type Json,
   type JsonObject,
   type Path,
 } from './src/worldLogic/guard.ts'
+import { classifyNode, classifyOperand } from './src/worldLogic/guardClassify.ts'
+import { blockFor, blockPaths, pathOf } from './src/worldLogic/guardPaths.ts'
+import { checkComplete, measure } from './src/worldLogic/guardChecks.ts'
+import { sameCondition, summarize } from './src/worldLogic/guardSummary.ts'
+import {
+  clauseOperators,
+  compareOperators,
+  newClause,
+  newGuard,
+  newNode,
+  withField,
+  wrap,
+} from './src/worldLogic/guardBlocks.ts'
+import { toUpdateRequest } from './src/worldLogic/guardRequests.ts'
 import type { SystemRuleDetail } from './src/worldLogic/types.ts'
 
 const here = import.meta.dirname

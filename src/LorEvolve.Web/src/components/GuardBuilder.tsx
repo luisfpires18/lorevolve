@@ -8,29 +8,13 @@ import {
 } from '../worldLogic/conditionSchema'
 import {
   BLOCK_KINDS,
-  blockFor,
-  blockPaths,
-  classifyNode,
-  classifyOperand,
-  clauseOperators,
-  compareOperators,
-  fieldType,
-  fixOperator,
   isObject,
   LITERAL_TYPES,
-  newClause,
-  newLiteral,
-  newNode,
-  newOperand,
   OPERAND_KINDS,
-  pathKey,
   pointValueOf,
   scopeOf,
   setAt,
   SOURCES,
-  summarize,
-  withField,
-  wrap,
   type BlockKind,
   type Json,
   type JsonObject,
@@ -39,6 +23,20 @@ import {
   type Path,
   type Problem,
 } from '../worldLogic/guard'
+import {
+  clauseOperators,
+  compareOperators,
+  fixOperator,
+  newClause,
+  newLiteral,
+  newNode,
+  newOperand,
+  withField,
+  wrap,
+} from '../worldLogic/guardBlocks'
+import { classifyNode, classifyOperand, fieldType } from '../worldLogic/guardClassify'
+import { blockFor, blockPaths, pathKey } from '../worldLogic/guardPaths'
+import { summarize } from '../worldLogic/guardSummary'
 
 const g = 'canon.worldLogic.systems.machine.guardBuilder'
 

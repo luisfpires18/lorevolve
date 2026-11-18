@@ -22,20 +22,12 @@ import {
   saveSystemRule,
 } from '../worldLogic/api'
 import { CONDITION_CODES } from '../worldLogic/conditionSchema'
-import {
-  blockFor,
-  blockPaths,
-  checkComplete,
-  measure,
-  newGuard,
-  pathKey,
-  pathOf,
-  sameCondition,
-  toCreateRequest,
-  toUpdateRequest,
-  type Json,
-  type Problem,
-} from '../worldLogic/guard'
+import type { Json, Problem } from '../worldLogic/guard'
+import { newGuard } from '../worldLogic/guardBlocks'
+import { checkComplete, measure } from '../worldLogic/guardChecks'
+import { blockFor, blockPaths, pathKey, pathOf } from '../worldLogic/guardPaths'
+import { toCreateRequest, toUpdateRequest } from '../worldLogic/guardRequests'
+import { sameCondition } from '../worldLogic/guardSummary'
 import {
   addState,
   addTransition,
