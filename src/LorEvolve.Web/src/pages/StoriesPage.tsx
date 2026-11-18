@@ -1,26 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Plus, Image as ImageIcon } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { ActionIcon } from '../components/ActionIcon'
-import { ActionMenu } from '../components/ActionMenu'
 import { CoverDrawer } from '../components/CoverDrawer'
-import { ShelfCard, shelfStep } from '../components/ShelfCard'
-import { pictureUrl, projectCoverStore, storyCoverStore } from '../covers/api'
+import { storyCoverStore } from '../covers/api'
 import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
 import { listAllProjects } from '../projects/api'
-import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
+import { storyProjectPath } from '../projects/sections'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { listStories, reorderStories } from '../stories/api'
-import { sceneCountLabel } from '../stories/format'
-import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
+import type { StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { StoryShelf } from '../components/stories/StoryShelf'
+import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
 
 type LoadState =
   | { kind: 'loading' }
@@ -162,78 +161,13 @@ export default function StoriesPage() {
       ) : null}
 
       {state.kind === 'ready' && state.stories.length > 0 ? (
-        // Each story as a book on its shelf (owner, 2026-11-17); the Gaming page draws its games the same way.
-        <ul className="shelf" data-testid="story-list">
-          {state.stories.map((story, index) => (
-            <ShelfCard
-              key={story.id}
-              frame="book"
-              href={storyProjectPath(universe.id, story.id)}
-              title={story.title}
-              description={story.premise}
-              step={story.status}
-              statusLabel={STORY_STATUS_LABELS[story.status]}
-              meta={
-                <span data-testid="story-scene-count">{sceneCountLabel(story.sceneCount)}</span>
-              }
-              cover={
-                story.cover
-                  ? pictureUrl(storyCoverStore(universe.id, story.id), story.cover, 'card')
-                  : null
-              }
-              onAddPicture={access.editContent ? () => setCovering(story) : undefined}
-              attrs={{
-                'data-testid': 'story-row',
-                'data-title': story.title,
-                'data-story-id': story.id,
-              }}
-              menu={
-                access.editContent ? (
-                  <ActionMenu
-                    label={t('stories.browse.moreActions', { title: story.title })}
-                    triggerTestId="story-actions"
-                  >
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      onClick={() => setCovering(story)}
-                      data-testid="story-cover"
-                    >
-                      <ActionIcon icon={ImageIcon} />
-                      {t(
-                        story.cover
-                          ? 'projects.common.changePicture'
-                          : 'projects.common.addPicture',
-                      )}
-                    </button>
-                    {index > 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(story, -1)}
-                        data-testid="story-move-up"
-                      >
-                        <ActionIcon icon={ArrowUp} />
-                        {t('stories.browse.moveUp')}
-                      </button>
-                    ) : null}
-                    {index < state.stories.length - 1 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(story, 1)}
-                        data-testid="story-move-down"
-                      >
-                        <ActionIcon icon={ArrowDown} />
-                        {t('stories.browse.moveDown')}
-                      </button>
-                    ) : null}
-                  </ActionMenu>
-                ) : null
-              }
-            />
-          ))}
-        </ul>
+        <StoryShelf
+          stories={state.stories}
+          access={access}
+          universe={universe}
+          move={move}
+          setCovering={setCovering}
+        />
       ) : null}
 
       {covering ? (
@@ -260,25 +194,7 @@ export default function StoriesPage() {
       ) : null}
 
       {state.kind === 'ready' && state.others.length > 0 ? (
-        <ul className="shelf" data-testid="writing-project-list">
-          {state.others.map((project) => (
-            <ShelfCard
-              key={project.id}
-              frame="book"
-              href={projectRowPath(project)}
-              title={project.name}
-              description={project.summary}
-              step={shelfStep(project.lifecycle)}
-              statusLabel={lifecycleLabel(project.lifecycle)}
-              cover={
-                project.cover
-                  ? pictureUrl(projectCoverStore(project.id), project.cover, 'card')
-                  : null
-              }
-              attrs={{ 'data-testid': 'writing-project-row' }}
-            />
-          ))}
-        </ul>
+        <WritingProjectShelf projects={state.others} />
       ) : null}
 
       {state.kind === 'ready' && state.stories.length === 0 && state.others.length === 0 ? (

@@ -13,7 +13,7 @@ import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import { t, useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { EntityImageField } from './EntityImageField'
-import { ProjectEntryForm } from './ProjectEntries'
+import { ProjectEntryForm } from './ProjectEntryForm'
 
 /**
  * An entry's field values (#287), in its own type's order and read from its own game's types, so a same-named type of
