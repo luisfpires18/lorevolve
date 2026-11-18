@@ -4,20 +4,21 @@ import { ArrowLeft } from 'lucide-react'
 import {
   approveChanges,
   getApprovalProgress,
+  editChange,
+  getProposal,
+  rejectChanges,
+} from '../aiChanges/api'
+import {
   ChangeAction,
   ChangeResource,
   ChangeStatus,
-  editChange,
-  getProposal,
-  itemPath,
-  mediaPreviewPath,
   ProposalStatus,
-  rejectChanges,
-  uploadChangeMedia,
   type Change,
   type ChangeEditable,
   type Proposal,
-} from '../aiChanges/api'
+} from '../aiChanges/types'
+import { itemPath } from '../aiChanges/itemPath'
+import { mediaPreviewPath, uploadChangeMedia } from '../aiChanges/media'
 import { compareProse } from '../aiChanges/diff'
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
