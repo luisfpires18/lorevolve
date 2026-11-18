@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ActionMenu } from './ActionMenu'
-import { MoveItems } from './CinemaSagas'
+import { MoveItems } from './MoveItems'
 import { OutlineItem } from './OutlineItem'
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
