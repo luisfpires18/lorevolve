@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Field } from './Field'
-import { TypeIconPicker } from './TypeIconPicker'
 import { TypeGroupsField, type GroupChoice } from './TypeGroupsField'
 import { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
 import { useReturnFocus } from '../lib/returnFocus'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
-import { branchIds, typePathLabel, type TreeType, type TypeTree } from '../lore/typeTree'
+import { branchIds, type TreeType, type TypeTree } from '../lore/typeTree'
+import { typeDialogSave } from '../lore/typeDialogSave'
+import { TypeDialogIdentity } from './TypeDialogIdentity'
+import { TypeDialogPlace } from './TypeDialogPlace'
+import { TypeDialogBehaviour } from './TypeDialogBehaviour'
 
 /** What the drawer reads of the type it edits: a lore type, or a project's own type (#144). */
 export type DialogType = TreeType & { icon: string | null; familyTreeEligible?: boolean }
@@ -122,46 +123,21 @@ export function TypeDialog({
     document.getElementById('type-name')?.focus()
   }, [])
 
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    if (!name.trim()) {
-      setFieldErrors({ name: t('entityTypes.page.dialog.nameRequired') })
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      await write({
-        name: name.trim(),
-        icon,
-        parentId,
-        familyTreeEligible,
-        // Only a change is sent: an edit that leaves the groups alone, or a new type in none, says nothing about them.
-        groups: (type ? groupsChanged : groupChoices.length > 0) ? groupChoices : undefined,
-      })
-      await onSaved(name.trim(), parentId)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : type
-              ? t('entityTypes.page.dialog.detailsSave')
-              : t('entityTypes.page.dialog.detailsCreate'),
-        )
-      } else {
-        setMessage(
-          type
-            ? t('entityTypes.page.dialog.saveFailed')
-            : t('entityTypes.page.dialog.createFailed'),
-        )
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { save } = typeDialogSave({
+    type,
+    write,
+    onSaved,
+    t,
+    name,
+    parentId,
+    icon,
+    familyTreeEligible,
+    groupChoices,
+    groupsChanged,
+    setFieldErrors,
+    setMessage,
+    setIsSaving,
+  })
 
   return (
     <Drawer
@@ -220,58 +196,25 @@ export function TypeDialog({
       ) : null}
 
       {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
-      <section className="drawer__group" aria-labelledby="type-identity">
-        <h3 className="sectionrule sectionrule--accent" id="type-identity">
-          {t('entityTypes.page.dialog.identity')}
-        </h3>
-        <Field
-          label={t('entityTypes.page.dialog.name')}
-          name="type-name"
-          placeholder={type ? undefined : t('entityTypes.page.dialog.namePlaceholder')}
-          dir="auto"
-          hint={nameHint}
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          error={fieldErrors.name}
-          data-testid="type-name"
-        />
-
-        <div className="field">
-          <TypeIconPicker value={icon} onChange={setIcon} testId="type-icon" />
-          <p className="field__hint">{iconHint ?? t('entityTypes.page.dialog.iconHint')}</p>
-          {fieldErrors.icon ? <p className="field__error">{fieldErrors.icon}</p> : null}
-        </div>
-      </section>
+      <TypeDialogIdentity
+        type={type}
+        nameHint={nameHint}
+        iconHint={iconHint}
+        name={name}
+        setName={setName}
+        icon={icon}
+        setIcon={setIcon}
+        fieldErrors={fieldErrors}
+      />
 
       {noParent ? null : (
-        <section className="drawer__group" aria-labelledby="type-hierarchy">
-          <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
-            {t('entityTypes.page.dialog.hierarchy')}
-          </h3>
-          <Field
-            label={t('entityTypes.page.dialog.parent')}
-            id="type-parent"
-            hint={parentHint ?? t('entityTypes.page.dialog.parentHint')}
-            error={fieldErrors.parent}
-          >
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={parentId ?? ''}
-                onChange={(event) => setParentId(event.target.value || null)}
-                data-testid="type-parent"
-              >
-                <option value="">{t('entityTypes.page.dialog.parentNone')}</option>
-                {parents.map((node) => (
-                  <option key={node.type.id} value={node.type.id}>
-                    {typePathLabel(node)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-        </section>
+        <TypeDialogPlace
+          parentHint={parentHint}
+          parentId={parentId}
+          setParentId={setParentId}
+          parents={parents}
+          fieldErrors={fieldErrors}
+        />
       )}
 
       {groups ? (
@@ -282,23 +225,10 @@ export function TypeDialog({
       ) : null}
 
       {type || !groups ? null : (
-        <section className="drawer__group" aria-labelledby="type-behaviour">
-          <h3 className="sectionrule sectionrule--accent" id="type-behaviour">
-            {t('entityTypes.page.dialog.behaviour')}
-          </h3>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={familyTreeEligible}
-              onChange={(event) => setFamilyTreeEligible(event.target.checked)}
-              data-testid="type-family"
-            />
-            <span>
-              <span className="types__familylabel">{t('entityTypes.page.dialog.familyLabel')}</span>
-              {t('entityTypes.page.dialog.familyText')}
-            </span>
-          </label>
-        </section>
+        <TypeDialogBehaviour
+          familyTreeEligible={familyTreeEligible}
+          setFamilyTreeEligible={setFamilyTreeEligible}
+        />
       )}
     </Drawer>
   )
