@@ -155,3 +155,7 @@ The screen list is the "Screenshot coverage" section of the plan. "crawl state" 
 ## Screenshots
 
 `<screen>-<desktop|phone>-<light|dark>-<before|after>.png`: desktop 1440x900, phone 390x844 (touch, scale 1), emulated colour scheme with no saved theme, reduced motion, viewport only (not full page). 51 screens x 8 files = 408 PNG.
+
+## After the capture
+
+The first CI run on `434fc5f9` failed two specs this branch had broken. `trash-permanent-delete.spec.ts:326` pins the Trash row's Delete permanently as quiet text with no fill, so Restore stays the row's one button; that row keeps `tone="text"` and its key does not start with "delete", so the Delete tone guard does not apply. The `trash-row` after shots above were taken before that revert and show the danger-quiet border; the spec checks the restored look at every width, in both themes and at 200%. `shelf-cards.spec.ts:50` now presses Close in the cover drawer, which the plan moved from Done to Close.

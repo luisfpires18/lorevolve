@@ -167,7 +167,7 @@ export function TrashRow({
         </Button>
         {access.permanentlyDelete ? (
           <Button
-            tone="danger-quiet"
+            tone="text"
             className="trash__erase"
             ref={(node) => {
               if (node) eraseButtons.current.set(item.id, node)
