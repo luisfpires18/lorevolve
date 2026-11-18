@@ -1,6 +1,6 @@
 # Evidence for #409: one footer, one New button, one wording for actions
 
-Everything here was produced for PR #426 (branch `feat/form-actions`, head `434fc5f9`) against a local stack, the way #408 did it: API on port 5185 with a scratch database, one registered capture account and one seeded universe, and two Vite servers on the same API. The "before" side is a detached worktree of `origin/dev` at `6e7eea7f` with its own `npm ci`, served on port 5194. The "after" side is the main checkout at the branch head, served on port 5193. Both sides use the same database and the same account, so a difference between them comes from the code and nothing else.
+Everything here was produced for PR #426 (branch `feat/form-actions`, code head `d37e54d3`) against a local stack, the way #408 did it: API on port 5185 with a scratch database, one registered capture account and one seeded universe, and two Vite servers on the same API. The "before" side is a detached worktree of `origin/dev` at `6e7eea7f` with its own `npm ci`, served on port 5194. The "after" side is the main checkout at the branch head, served on port 5193. Both sides use the same database and the same account, so a difference between them comes from the code and nothing else.
 
 The seed holds a universe (entries, a type group, a story with a chapter, a scene and an arc, an idea, a board, a rule, a System, a calibrated map, a trashed entry) and seven projects (Writing, Series with a season and episodes, two Films with a saga group, a Western Comic with an issue and collections, a Manga, a Game with a type and an entity). A second account with no projects serves the empty directory. The capture refuses every request that is not a read (the one exception is the backup check, `PUT /api/backups/validate`, which only stages a file that expires on its own), so the database never changes during a run and the two sides cannot drift apart.
 
@@ -11,43 +11,44 @@ The capture script and the logs live outside the repository; only the PNGs, this
 | Proof | Command | Result |
 | --- | --- | --- |
 | Find the states | `capture409.mjs crawl before` and `crawl after`: open every route, click every button that is not a save, send or sign-out, up to three levels deep (menus, drawers, tabs, inline forms) | 442 states on the before side, 439 on the after side, 434 distinct |
-| DOM dump of every state | `capture409.mjs redump before` and `redump after`: replay each of the 434 states by its steps, dump `body` (attributes and class tokens sorted, React ids and guids normalised, `<time>` ignored when comparing), desktop 1440x900, light | 434 dumps per side. 431 replay cleanly on both sides; 3 idea picker sub-states fail on both sides and are left out. Of the 431: 247 differ, 184 are identical |
+| DOM dump of every state | `capture409.mjs redump before` and `redump after`: replay each of the 434 states by its steps, dump `body` (attributes and class tokens sorted, React ids and guids normalised, `<time>` ignored when comparing), desktop 1440x900, light | 434 dumps per side. Replays that fail on the first pass (16 before, 10 after in the final run) are replayed again; 3 idea picker sub-states still fail on both sides and are left out. Of the other 431: 241 differ, 190 are identical |
 | Hand-driven states | `capture409.mjs extras` (12 states: sagas, restore steps, machine tab, feedback, arc form, and others) | 12 dumps per side, 9 differ, 3 identical |
-| The 92 screens | mapping below | 72 reached (51 differ in the DOM, 21 identical), 20 not reached |
-| Screenshots | `capture409.mjs shots before` and `shots after` | 408 PNG (51 screens x 4 variants x 2 sides), 204 pairs: 103 byte-identical, 101 differ. Folder size about 10.9 MB |
+| The 92 screens | mapping below | 72 reached (49 differ in the DOM, 23 identical), 20 not reached |
+| Screenshots | `capture409.mjs shots before` and `shots after` | 408 PNG (51 screens x 4 variants x 2 sides), 204 pairs: 106 byte-identical, 98 differ. Folder size about 10.9 MB |
 | Phone width scroll | `scrollWidth - clientWidth` on every phone shot | 0 px everywhere except `map-calibration`, +7 px in light and dark on both sides (already there before) |
-| Capture is repeatable | `redump before` run a second time on 120 states (every crawl state used by a screen below plus 60 others), and `extras` run twice | 118 of 120 identical, 12 of 12 extras identical. The 2 that differ are not screens: a board zoom state where a "Recovered draft" notice shows on one run only (the draft lives in the browser's local storage), and one of the 3 failing picker sub-states |
+| Capture is repeatable (first pass, before the last fixes) | `redump before` run a second time on 120 states (every crawl state used by a screen below plus 60 others), and `extras` run twice | 118 of 120 identical, 12 of 12 extras identical. The 2 that differ are not screens: a board zoom state where a "Recovered draft" notice shows on one run only (the draft lives in the browser's local storage), and one of the 3 failing picker sub-states |
 | CSS removed by the PR | `git diff origin/dev...HEAD -- '*.css'` | one rule, `.relform__actions` (7 lines). No file uses the class after the PR; the three forms that did (`RelationForm`, `KindForm`, `FamilyLinkForm`) now use `FormActions inline`, and `relationships-section`, `relationship-types` and `family-tree-forms` render pixel-identical before and after |
 
 The screenshots are 256-colour PNGs (palette quantised) to keep the folder small. Identical renders stay byte-identical, so a pair that is identical is identical.
 
 ## The intended differences
 
-The 247 differing dumps boil down to a handful of changes. Counts are dumps that contain the change.
+The 241 differing dumps boil down to a handful of changes. Counts are dumps that contain the change.
 
 | Change | Dumps | Example (before `-`, after `+`) |
 | --- | --- | --- |
 | Plus icon on New and Add buttons | 106 | `-<button class="button" data-testid="project-node-add-issue" type="button">Add issue</button>` then `+<button class="button" ...>` and `+<svg aria-hidden="true" class="button__icon lucide lucide-plus" ...>` before the label |
-| Text-only add buttons become secondary | 164 | `-<button aria-label="Add child type inside Character" class="button button--sm button--text types__addchild" ...>` then `+<button aria-label="Add child type inside Character" class="button button--secondary button--sm types__addchild" ...>` |
-| Delete reads in the quiet danger tone | 59 | `-<button ... class="button button--text trash__erase" data-testid="erase-Binned Beta" ...>` then `+<button ... class="button button--danger-quiet button--secondary trash__erase" ...>` |
+| Delete reads in the quiet danger tone | 60 | `-<button aria-label="Delete the group Characters" class="button button--sm button--text typegroups__delete" ...>` then `+<button ... class="button button--danger-quiet button--secondary button--sm typegroups__delete" ...>` |
 | Save buttons carry the busy state | 120 | `-<button class="button" data-testid="save-type" type="submit">Add type</button>` then `+<button aria-busy="false" class="button" data-testid="save-type" type="submit">Add type</button>` |
 | Openers say whether they are open | 16 | `+<button aria-expanded="false" class="button" ...>` on "Add season" |
 | Menu items carry an icon (Projects area) | 10 | `+<button class="actionmenu__item actionmenu__item--danger" ...>` then `+<svg ... lucide-trash ...>` |
 | The cover drawer closes with "Close" | 10 | `-<button class="button button--secondary" type="button">Done</button>` then `+<button class="button button--secondary" type="button">Close</button>` |
-| System editor Delete is the solid danger button | 5 | `-<button class="button button--secondary" data-testid="system-editor-delete" type="button">Delete</button>` then `+<button class="button button--danger" data-testid="system-editor-delete" type="button">Delete</button>` |
+| System editor Delete is quiet danger | 5 | `-<button class="button button--secondary" data-testid="system-editor-delete" type="button">Delete</button>` then `+<button class="button button--danger-quiet button--secondary" data-testid="system-editor-delete" type="button">Delete</button>` |
 
-`dom-diff-lines.txt` lists the 70 most frequent distinct diff lines with their counts.
+`dom-diff-lines.txt` lists the 69 most frequent distinct diff lines with their counts.
 
-16 of the 51 screens that differ in the DOM render pixel-identical in all four variants (marked below): the footer markup changed and the picture did not, which is the point of `FormActions`.
+16 of the 49 screens that differ in the DOM render pixel-identical in all four variants (marked below): the footer markup changed and the picture did not, which is the point of `FormActions`.
 
 ## Looks worth a glance
 
-Nothing was fixed. I looked at 11 before and after pairs side by side (comic collections, project outline, story page, trash row, types, system editor, map pin and notice, story drawer on phone). The rest were checked by the pixel comparison above, not by eye. No overflow, no wrapped or misaligned footer and no phone width scroll came out of it. Four things to decide on:
+The recaptured shots were checked by the pixel and DOM comparisons above and by the phone width scroll check (0 px except `map-calibration`), not by eye. Things to know:
 
-1. `system-editor`: Delete is now the solid red button next to the solid black Save. Every other Delete in the set uses the quiet red outline, so this one is the loudest button on its screen.
-2. `universe-types`: every type row now has "Add child" as a bordered button with a Plus. Nine rows of these make the list denser than before.
-3. The floating "New scene" button on the story page (phone) and "New volume" on the comic Structure page still have no Plus, while "Add issue", "Add page" and "Add scene" in the same views do.
-4. `map-calibration` scrolls 7 px sideways on the phone, in both before and after, so the PR did not cause it.
+1. `system-editor`: Delete is the quiet red outline, the same as every other Delete in the set. The solid red button is kept for the last word of a confirm.
+2. `universe-types` and `project-schema`: "Add child" is quiet text again with its `ListTree` glyph (not a Plus), so the rows are no denser than before.
+3. The phone "New scene" button on the story page already has its Plus through `NewButton`. "New volume" and the other collection kinds' New buttons on the comic Structure page now have theirs too.
+4. `trash-row` and `trash-erase-confirm` are byte-identical to their before shots in all four variants: the Delete permanently button is quiet text again.
+5. `map-calibration` scrolls 7 px sideways on the phone, in both before and after, so the PR did not cause it.
+6. The recapture also changed a few shots in regions the code does not touch (the map picture in the `map-*` screens, a 1 px line in the comic drawers, a few pixels in `knowledge-view` and `publish-confirm`). Those are render differences between runs, not investigated further.
 
 ## The 92 screens
 
@@ -73,7 +74,7 @@ The screen list is the "Screenshot coverage" section of the plan. "crawl state" 
 | 16 | `project-script` | crawl state `PSeries_script` | identical | covered by the DOM comparison |
 | 17 | `project-entries` | crawl state `PGame_entities__p0-project_entities_new` | identical | covered by the DOM comparison |
 | 18 | `project-schema` | crawl state `PGame_types__p4-project_type_actions_a2a3a746_cc0e_4948_` | differs | 8 PNG |
-| 19 | `project-field-form` | crawl state `PGame_types__p3-project_type_fields_open_a2a3a746_cc0e_4__p5-project_f...` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 19 | `project-field-form` | crawl state `PGame_types__p3-project_type_fields_open_a2a3a746_cc0e_4__p5-project_f...` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
 | 20 | `type-templates` | crawl state `PSeries_types__p1-project_schema_starters` | identical | covered by the DOM comparison |
 | 21 | `universe-types` | crawl state `U_types__p12-type_actions_Character` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
 | 22 | `type-dialog` | crawl state `U_types__p0-new_type` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
@@ -90,14 +91,14 @@ The screen list is the "Screenshot coverage" section of the plan. "crawl state" 
 | 33 | `collaborators-invite` | crawl state `U_settings__p2-settings_tab_collaborators` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
 | 34 | `collaborators-remove-confirm` | not reached | n/a | not captured: needs a second member; none seeded |
 | 35 | `connected-apps-confirm` | not reached | n/a | not captured: needs a connected MCP client through OAuth; none |
-| 36 | `publish-confirm` | crawl state `U_publish__p0-publish` | differs | 8 PNG (3 of 4 pairs pixel-identical) |
+| 36 | `publish-confirm` | crawl state `U_publish__p0-publish` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
 | 37 | `publish-unpublish-confirm` | not reached | n/a | not captured: needs a published item; publishing is a write |
 | 38 | `publish-everything-confirm` | not reached | n/a | not captured: the opener did not render with the fixtures |
-| 39 | `trash-erase-confirm` | crawl state `U_trash__p2-erase_Binned_Beta` | differs | 8 PNG |
+| 39 | `trash-erase-confirm` | crawl state `U_trash__p2-erase_Binned_Beta` | identical | 8 PNG (4 of 4 pairs pixel-identical) |
 | 40 | `trash-bulk-confirm` | crawl state `U_trash__p0-trash_select__p1-trash_select_page__p1-trash_bulk_delete` | identical | covered by the DOM comparison |
 | 41 | `trash-restore-public` | not reached | n/a | not captured: needs a trashed item that was public |
 | 42 | `trash-select-bar` | crawl state `U_trash__p0-trash_select` | identical | covered by the DOM comparison |
-| 43 | `trash-row` | crawl state `U_trash` | differs | 8 PNG |
+| 43 | `trash-row` | crawl state `U_trash` | identical | 8 PNG (4 of 4 pairs pixel-identical) |
 | 44 | `restore-choose` | crawl state `app__p1-restore_backup` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
 | 45 | `restore-ready` | driven by hand: restore-backup then restore-file then restore-check then restore-preview | differs | 8 PNG (4 of 4 pairs pixel-identical) |
 | 46 | `restore-refused` | driven by hand: restore-backup then restore-file then restore-check | identical | covered by the DOM comparison |
@@ -121,9 +122,9 @@ The screen list is the "Screenshot coverage" section of the plan. "crawl state" 
 | 64 | `chronology-editor` | crawl state `U_timeline_configuration` | identical | covered by the DOM comparison |
 | 65 | `calendar-editor` | crawl state `U_timeline_configuration__p3-calendar_mode_custom` | identical | covered by the DOM comparison |
 | 66 | `progression-item-drawer` | driven by hand: add-appearance | differs | 8 PNG (4 of 4 pairs pixel-identical) |
-| 67 | `map-form` | crawl state `U_maps__p0-new_map` | differs | 8 PNG (3 of 4 pairs pixel-identical) |
+| 67 | `map-form` | crawl state `U_maps__p0-new_map` | differs | 8 PNG (1 of 4 pairs pixel-identical) |
 | 68 | `map-pin-form` | crawl state `U_maps_ID__p0-map_add_pin__p2-map_place_centre` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
-| 69 | `map-calibration` | driven by hand: map-calibrate | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 69 | `map-calibration` | driven by hand: map-calibrate | differs | 8 PNG |
 | 70 | `map-notices` | crawl state `U_maps_ID__p0-map_add_pin` | differs | 8 PNG |
 | 71 | `lore-quick-create` | not reached | n/a | not captured: opens from inside the entry editor; not driven |
 | 72 | `lore-link-drawer` | not reached | n/a | not captured: opens from inside the entry editor; not driven |
@@ -158,4 +159,6 @@ The screen list is the "Screenshot coverage" section of the plan. "crawl state" 
 
 ## After the capture
 
-The first CI run on `434fc5f9` failed two specs this branch had broken. `trash-permanent-delete.spec.ts:326` pins the Trash row's Delete permanently as quiet text with no fill, so Restore stays the row's one button; that row keeps `tone="text"` and its key does not start with "delete", so the Delete tone guard does not apply. The `trash-row` after shots above were taken before that revert and show the danger-quiet border; the spec checks the restored look at every width, in both themes and at 200%. `shelf-cards.spec.ts:50` now presses Close in the cover drawer, which the plan moved from Done to Close.
+Two reviews followed the first capture, and the code changed. The "before" files are untouched. The "after" side was captured again on the head after the corrections, all 51 screens in all 8 variants; 54 of the 204 after files changed and were replaced, the rest are byte-for-byte what the first capture gave. The DOM comparison was run again on the same 434 states and the 12 hand-driven states.
+
+What changed in the code: a footer Delete (`FormActions` `onDelete`) is now `danger-quiet` by default, because each one opens a confirm (`deleteTone="danger"` exists for a Delete with no confirm after it, and nothing uses it); `New volume` and the other collection kinds use `NewButton`; `Add child` is `tone="text"` again; the crop dialog's Cancel is the shared one. The `trash-row` shots now show the quiet text Delete permanently that `trash-permanent-delete.spec.ts:326` requires, and the two specs the first CI run failed (`trash-permanent-delete.spec.ts`, `shelf-cards.spec.ts`) were fixed in earlier commits.
