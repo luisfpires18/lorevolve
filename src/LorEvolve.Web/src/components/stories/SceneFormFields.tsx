@@ -1,0 +1,202 @@
+import { ChronologyPointFields, type ChronologyPointPart } from '../ChronologyPointFields'
+import { EntityPicker } from '../EntityPicker'
+import { EntityMultiPicker } from '../EntityMultiPicker'
+import type { Chronology } from '../../chronology/types'
+import { Field } from '../Field'
+import { useI18n } from '../../i18n'
+import { unchaptered } from '../../stories/format'
+import { chapterChoices } from '../../stories/structure'
+import { SceneBeatsField } from '../SceneBeatsField'
+import { EMPTY_POINT, type SceneDraft } from '../../stories/sceneDraft'
+import type { Chapter, PlotArc, Scene } from '../../stories/types'
+import type { RefObject } from 'react'
+
+/** The scene form's fields: title, chapter, summary, beats, notes, point of view, date and lore. */
+export function SceneFormFields({
+  universeId,
+  scene,
+  chapters,
+  arcs,
+  chronology,
+  suggesting,
+  title,
+  draft,
+  fieldErrors,
+  hasPoint,
+  unreckoned,
+  edit,
+  setPart,
+}: {
+  universeId: string
+  scene: Scene | null
+  chapters: Chapter[]
+  arcs: PlotArc[]
+  chronology: Chronology
+  suggesting: boolean
+  title: RefObject<HTMLInputElement | null>
+  draft: SceneDraft
+  fieldErrors: Record<string, string>
+  hasPoint: boolean
+  unreckoned: boolean
+  edit: (change: Partial<SceneDraft>) => void
+  setPart: (part: ChronologyPointPart, value: string) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      <Field id="scene-title" label={t('stories.sceneForm.titleLabel')} error={fieldErrors.title}>
+        {(control) => (
+          <input
+            {...control}
+            className="field__input"
+            ref={title}
+            type="text"
+            dir="auto"
+            placeholder={t('stories.sceneForm.titlePlaceholder')}
+            value={draft.title}
+            onChange={(event) => edit({ title: event.target.value })}
+            data-testid="scene-title-input"
+          />
+        )}
+      </Field>
+
+      {chapters.length > 0 ? (
+        <Field
+          id="scene-chapter"
+          label={t('stories.sceneForm.chapterLabel')}
+          hint={
+            scene ? t('stories.sceneForm.chapterHintMove') : t('stories.sceneForm.chapterHintNew')
+          }
+          error={fieldErrors.chapterid}
+        >
+          {(control) => (
+            <select
+              {...control}
+              className="field__input field__input--select"
+              value={draft.chapterId}
+              onChange={(event) => edit({ chapterId: event.target.value })}
+              data-testid="scene-chapter-select"
+            >
+              <option value="">{unchaptered()}</option>
+              {chapterChoices(arcs, chapters).map((choice) => (
+                <option key={choice.id} value={choice.id}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+      ) : null}
+
+      <Field
+        id="scene-summary"
+        label={t('stories.sceneForm.summaryLabel')}
+        hint={t('stories.sceneForm.summaryHint')}
+        error={fieldErrors.summary}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={3}
+            value={draft.summary}
+            onChange={(event) => edit({ summary: event.target.value })}
+            data-testid="scene-summary-input"
+          />
+        )}
+      </Field>
+
+      {/* A suggestion never changes a scene's beats: the API takes none from one. */}
+      {suggesting ? null : (
+        <SceneBeatsField
+          beats={draft.beats}
+          onChange={(beats) => edit({ beats })}
+          errors={fieldErrors}
+        />
+      )}
+
+      <Field
+        id="scene-notes"
+        label={t('stories.sceneForm.notesLabel')}
+        hint={t('stories.sceneForm.notesHint')}
+        error={fieldErrors.notes}
+      >
+        {(control) => (
+          <textarea
+            {...control}
+            className="field__input field__input--area"
+            rows={4}
+            value={draft.notes}
+            onChange={(event) => edit({ notes: event.target.value })}
+            data-testid="scene-notes-input"
+          />
+        )}
+      </Field>
+
+      <div data-testid="scene-pov-field">
+        <EntityPicker
+          label={t('stories.sceneForm.povLabel')}
+          universeId={universeId}
+          value={draft.pov}
+          onChange={(pov) => edit({ pov })}
+          placeholder={t('stories.sceneForm.povPlaceholder')}
+          error={fieldErrors.poventityid}
+        />
+      </div>
+
+      <Field
+        group="fieldset"
+        className="scenechron"
+        label={t('stories.sceneForm.whenLegend')}
+        hint={t('stories.sceneForm.whenHint')}
+      >
+        <ChronologyPointFields
+          chronology={chronology}
+          ids={{
+            eraId: 'scene-eraId',
+            year: 'scene-year',
+            month: 'scene-month',
+            day: 'scene-day',
+          }}
+          value={draft.point}
+          onChange={setPart}
+          errors={{
+            eraId: fieldErrors['chronology.eraid'],
+            year: fieldErrors['chronology.year'],
+            month: fieldErrors['chronology.month'],
+            day: fieldErrors['chronology.day'],
+          }}
+        />
+
+        {unreckoned ? (
+          <p className="field__hint" data-testid="scene-unreckoned">
+            {t('stories.sceneForm.unreckoned')}
+          </p>
+        ) : null}
+
+        {hasPoint ? (
+          <button
+            className="button button--secondary button--sm scenechron__clear"
+            type="button"
+            onClick={() => edit({ point: EMPTY_POINT })}
+            data-testid="scene-chronology-clear"
+          >
+            {t('stories.sceneForm.clearWhen')}
+          </button>
+        ) : null}
+      </Field>
+
+      <div data-testid="scene-lore-field">
+        <EntityMultiPicker
+          label={t('stories.sceneForm.loreLabel')}
+          hint={t('stories.sceneForm.loreHint')}
+          universeId={universeId}
+          value={draft.entities}
+          onChange={(entities) => edit({ entities })}
+          error={fieldErrors.entityids}
+        />
+      </div>
+    </>
+  )
+}
