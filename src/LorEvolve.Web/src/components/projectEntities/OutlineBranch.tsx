@@ -14,6 +14,8 @@ import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { OutlineAddButtons } from './OutlineAddButtons'
 import { Button } from '../Button'
+import { ArrowDown, ArrowUp, FolderInput, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 type OutlineBranchProps = {
   parentId: string | null
@@ -77,6 +79,7 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                         run(moveNode(projectId, node.id, { place: index - 1, parentId }))
                       }
                     >
+                      <ActionIcon icon={ArrowUp} />
                       {t('projects.common.moveUp')}
                     </button>
                   )}
@@ -90,6 +93,7 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                         run(moveNode(projectId, node.id, { place: index + 1, parentId }))
                       }
                     >
+                      <ActionIcon icon={ArrowDown} />
                       {t('projects.common.moveDown')}
                     </button>
                   )}
@@ -110,6 +114,7 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                         )
                       }
                     >
+                      <ActionIcon icon={FolderInput} />
                       {target
                         ? t('projects.structure.moveTo', { name: nameOf(target) })
                         : t('projects.structure.moveToTop')}
@@ -122,6 +127,7 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                     data-testid={`project-node-delete-${node.id}`}
                     onClick={() => void remove(current, node)}
                   >
+                    <ActionIcon icon={Trash} />
                     {t('projects.structure.delete')}
                   </button>
                 </ActionMenu>

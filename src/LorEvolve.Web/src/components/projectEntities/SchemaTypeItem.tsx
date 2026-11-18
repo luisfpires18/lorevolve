@@ -1,4 +1,4 @@
-import { ListTree, Pencil } from 'lucide-react'
+import { ListTree, Pencil, Trash } from 'lucide-react'
 import { deleteProjectType } from '../../projectEntities/api'
 import { typePathLabel } from '../../lore/typeTree'
 import type { ProjectEntityType } from '../../projectEntities/types'
@@ -137,6 +137,7 @@ export function SchemaTypeItem({
                 deleteProjectType(projectId, type.id).then(refresh).catch(failing)
               }}
             >
+              <ActionIcon icon={Trash} />
               {t('entityTypes.page.deleteType')}
             </button>
           </ActionMenu>

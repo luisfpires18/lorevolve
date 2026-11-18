@@ -110,7 +110,7 @@ export function ChronologyEraRow({
               {t('time.periods.later')}
             </Button>
             <Button
-              tone="secondary"
+              tone="danger-quiet"
               size="sm"
               onClick={() => {
                 if (!inUse) change(drafts.filter((_, position) => position !== index))

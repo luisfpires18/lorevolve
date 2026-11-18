@@ -113,7 +113,7 @@ export function TermGroup({
                   ) : null}
                   {access.editContent && term.ruleCount === 0 && term.momentCount === 0 ? (
                     <Button
-                      tone="secondary"
+                      tone="danger-quiet"
                       size="sm"
                       aria-label={t('canon.terms.deleteAria', { name: term.name })}
                       disabled={busyId === term.id}

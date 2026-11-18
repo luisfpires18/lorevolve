@@ -78,7 +78,7 @@ export function SectionListEditor({
                   data-testid={`section-down-${index}`}
                 />
                 <Button
-                  tone="text"
+                  tone="danger-quiet"
                   size="sm"
                   icon={Trash2}
                   className="fieldlist__delete"

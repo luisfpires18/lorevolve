@@ -136,7 +136,7 @@ export function TypeGroupRow({
                 {t('entityTypes.groupsPanel.rename')}
               </Button>
               <Button
-                tone="text"
+                tone="danger-quiet"
                 size="sm"
                 className="typegroups__delete"
                 disabled={busy}

@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, ListTree, Pencil } from 'lucide-react'
+import { ArrowDown, ArrowUp, ListTree, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import { useI18n } from '../../i18n'
@@ -162,6 +162,7 @@ export function TypeRowActions({
             onClick={() => void removeType(type)}
             data-testid={`delete-type-${type.name}`}
           >
+            <ActionIcon icon={Trash} />
             {t('entityTypes.page.deleteType')}
           </button>
         </ActionMenu>

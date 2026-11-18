@@ -5,6 +5,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import { PagePanels } from './PagePanels'
 import { PanelForm } from './PanelForm'
 import { NewButton } from '../NewButton'
+import { ArrowDown, ArrowUp, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** One page in a chapter: its name, its menu, its panels, and the form to add a panel. */
 export function PageRow({
@@ -63,6 +65,7 @@ export function PageRow({
               data-testid={`project-page-up-${page.id}`}
               onClick={() => run(movePage(projectId, volumeId, chapterId, page.id, index - 1))}
             >
+              <ActionIcon icon={ArrowUp} />
               {t('projects.common.moveUp')}
             </button>
           )}
@@ -74,6 +77,7 @@ export function PageRow({
               data-testid={`project-page-down-${page.id}`}
               onClick={() => run(movePage(projectId, volumeId, chapterId, page.id, index + 1))}
             >
+              <ActionIcon icon={ArrowDown} />
               {t('projects.common.moveDown')}
             </button>
           )}
@@ -84,6 +88,7 @@ export function PageRow({
             data-testid={`project-page-delete-${page.id}`}
             onClick={() => run(deletePage(projectId, volumeId, chapterId, page.id))}
           >
+            <ActionIcon icon={Trash} />
             {t('projects.pages.delete')}
           </button>
         </ActionMenu>

@@ -17,6 +17,8 @@ import {
 import type { Dispatch, SetStateAction } from 'react'
 import { WORDS } from '../../projects/comicCollectionWords'
 import type { Editing } from './CollectionDrawer'
+import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** One collection: its head and menu, and the entries in it with the way to move them. */
 export function ComicCollectionItem({
@@ -74,6 +76,7 @@ export function ComicCollectionItem({
               data-testid={`comic-collection-entry-new-${collection.id}`}
               onClick={() => setAdding(collection)}
             >
+              <ActionIcon icon={Plus} />
               {t('projects.comics.addEntry')}
             </button>
             <button
@@ -82,6 +85,7 @@ export function ComicCollectionItem({
               data-testid={`comic-collection-edit-${collection.id}`}
               onClick={() => setEditing({ kind, collection })}
             >
+              <ActionIcon icon={Pencil} />
               {t('projects.comics.edit')}
             </button>
             <button
@@ -100,6 +104,7 @@ export function ComicCollectionItem({
                 })
               }
             >
+              <ActionIcon icon={Trash} />
               {t('projects.comics.delete')}
             </button>
           </ActionMenu>
@@ -167,6 +172,7 @@ export function ComicCollectionItem({
                           run(() => removeComicEntry(universeId, collection.id, entry.nodeId))
                         }
                       >
+                        <ActionIcon icon={FolderInput} />
                         {t('projects.comics.remove')}
                       </button>
                     </ActionMenu>

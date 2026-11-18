@@ -14,6 +14,8 @@ import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
+import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
 export function SeasonItem({
@@ -124,6 +126,7 @@ export function SeasonItem({
                   data-testid={`project-season-up-${season.id}`}
                   onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
                 >
+                  <ActionIcon icon={ArrowUp} />
                   {t('projects.common.moveUp')}
                 </button>
               )}
@@ -135,6 +138,7 @@ export function SeasonItem({
                   data-testid={`project-season-down-${season.id}`}
                   onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
                 >
+                  <ActionIcon icon={ArrowDown} />
                   {t('projects.common.moveDown')}
                 </button>
               )}
@@ -147,6 +151,7 @@ export function SeasonItem({
                   setRenameTo(season.name)
                 }}
               >
+                <ActionIcon icon={Pencil} />
                 {t('projects.seasons.rename')}
               </button>
               <button
@@ -156,6 +161,7 @@ export function SeasonItem({
                 data-testid={`project-season-delete-${season.id}`}
                 onClick={() => run(deleteSeason(projectId, season.id))}
               >
+                <ActionIcon icon={Trash} />
                 {say.delete()}
               </button>
             </ActionMenu>

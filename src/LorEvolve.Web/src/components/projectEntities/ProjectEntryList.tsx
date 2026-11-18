@@ -11,6 +11,8 @@ import { t, useI18n } from '../../i18n'
 import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntriesRead'
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
 import { EntryPictures } from './EntryPictures'
+import { Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** The entries as cards, each opening to its own form and pictures. */
 export function ProjectEntryList({
@@ -95,6 +97,7 @@ export function ProjectEntryList({
                       .catch(failing)
                   }}
                 >
+                  <ActionIcon icon={Trash} />
                   {t('projects.entries.delete')}
                 </button>
               </ActionMenu>

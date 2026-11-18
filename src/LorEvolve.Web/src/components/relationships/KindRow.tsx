@@ -57,7 +57,7 @@ export function KindRow({
         ) : null}
         {access.editContent && type.relationshipCount === 0 ? (
           <Button
-            tone="secondary"
+            tone="danger-quiet"
             size="sm"
             onClick={() => remove(type)}
             data-testid={`delete-reltype-${type.name}`}
