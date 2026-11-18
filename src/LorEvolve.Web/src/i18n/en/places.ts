@@ -1,3 +1,10 @@
+import placesPositions from './places/positions'
+import placesDiscovery from './places/discovery'
+import placesFamilyPage from './places/familyPage'
+import placesMapForm from './places/mapForm'
+import placesCalibration from './places/calibration'
+import placesMapPage from './places/mapPage'
+
 /** Maps and family trees: their pages, pins, calibration and the kinds a family link can have (#103). */
 const places = {
   familyTypes: {
@@ -35,40 +42,7 @@ const places = {
     openEntry: 'Open entry',
     showFamily: 'Show this family',
   },
-  positions: {
-    grandparents: {
-      one: 'Grandparent',
-      many: 'Grandparents',
-    },
-    parents: {
-      one: 'Parent',
-      many: 'Parents',
-    },
-    siblings: {
-      one: 'Sibling',
-      many: 'Siblings',
-    },
-    children: {
-      one: 'Child',
-      many: 'Children',
-    },
-    grandchildren: {
-      one: 'Grandchild',
-      many: 'Grandchildren',
-    },
-    auntsUncles: {
-      one: 'Aunt or uncle',
-      many: 'Aunts and uncles',
-    },
-    cousins: {
-      one: 'Cousin',
-      many: 'Cousins',
-    },
-    niecesNephews: {
-      one: 'Niece or nephew',
-      many: 'Nieces and nephews',
-    },
-  },
+  positions: placesPositions,
   reading: {
     hidden: 'a hidden entry',
     parent: '{word} parent',
@@ -132,40 +106,7 @@ const places = {
     add: 'Add connection',
     cancel: 'Cancel',
   },
-  discovery: {
-    searchLabel: 'Search families by member',
-    searchPlaceholder: 'Any name in the family',
-    find: 'Find a character',
-    noneTitle: 'No families recorded yet.',
-    noneHintEditor:
-      'A family shows up here once two people are connected by a kind with a family meaning. Choose someone to record their first connection.',
-    noneHint:
-      'A family shows up here once two people are connected by a kind with a family meaning.',
-    whose: 'Whose family?',
-    pickerPlaceholder: 'Search this universe',
-    pickerHint: 'Opens anyone’s tree, even with no family recorded yet.',
-    heading: 'Families in this universe',
-    noMatch: 'No family has a member by that name.',
-    matches: {
-      one: '{n} family includes “{q}”.',
-      other: '{n} families include “{q}”.',
-    },
-    count: {
-      one: '{n} family',
-      other: '{n} families',
-    },
-    finding: 'Finding families…',
-    error: 'The families could not be read.',
-    retry: 'Try again',
-    members: {
-      one: '{n} member',
-      other: '{n} members',
-    },
-    pages: 'Family pages',
-    previous: 'Previous',
-    position: 'Page {page} of {total}',
-    next: 'Next',
-  },
+  discovery: placesDiscovery,
   treeView: {
     rows: {
       grandparents: 'Grandparents',
@@ -185,40 +126,7 @@ const places = {
     legendNote:
       'Children hang from the line between their parents. Side by side and joined: parents of one child, or family recorded in one generation. Faded lines and dashed rings mark what is not Canon yet. Open the eye beside a portrait to see that person’s details, with every connection written out.',
   },
-  familyPage: {
-    title: 'Family Tree',
-    lede: 'Parents, grandparents, siblings, aunts and uncles, cousins, nieces and nephews, children and grandchildren, worked out from the connections you have recorded. Only a relation kind you have given a family meaning counts.',
-    browse: 'Browse families',
-    shownFor: 'Family shown for',
-    whose: 'Whose family?',
-    pickerPlaceholder: 'Search this universe',
-    noTypes:
-      'No Lore Type is enabled for Family Tree yet. You can enable a type when you create it, under {link}, or turn on a group of types under Types in Family Tree, below.',
-    noTypesLink: 'Types → Lore Types',
-    noKinds:
-      'Family Tree needs a family relation kind: “parent of”, “uncle of”, “married to”. A kind means nothing to the tree until you give it a family meaning, whatever it is called. Create one here, or give a meaning to an existing kind under {link}.',
-    noKindsLink: 'Types → Relation Kinds',
-    newKind: 'New family relationship kind',
-    loading: 'Working out this family…',
-    missingTitle: 'That entry is not here.',
-    missingHint:
-      'It may have been moved to the Trash, deleted, or it belongs to another universe. {link}',
-    missingLink: 'Back to Lore',
-    error: 'This family tree could not be read.',
-    retry: 'Try again',
-    typeNotEnabled:
-      'This entry’s type, {type}, is not currently enabled for Family Tree. Its recorded family is still shown here.',
-    loopTitle: 'These connections go round in a circle',
-    loopBody:
-      'Nobody in it can be placed above the others, so the tree below shows them where it can. Nothing has been changed: open the entries and correct or remove one of them.',
-    note: 'Relatives are worked out from the parent connections themselves, every time this page is opened. Nothing on it is stored as a connection of its own, and a sibling here means one shared parent that somebody wrote down, and nothing more. Other family you recorded, like a spouse or a guardian, is listed in each person’s details and shown while you point at or focus them; a spouse stands beside them. It places nobody in a generation.',
-    othersHeading: 'Other relationships',
-    othersNote:
-      '{name}’s relationships that are not family. They are not part of the tree above. {link}',
-    othersLink: 'All relations',
-    relationshipStatus: '{status} relationship',
-    add: 'Add family connection',
-  },
+  familyPage: placesFamilyPage,
   maps: {
     tabMaps: 'Maps',
     tabInteractive: 'Interactive map',
@@ -243,48 +151,7 @@ const places = {
     soonTitle: 'Interactive map is coming.',
     soonHint: 'Planned, not built yet.',
   },
-  mapForm: {
-    leaveNew: 'This map has not been created. Leave without creating it?',
-    leaveChanges: 'There are unsaved changes. Leave without saving them?',
-    tooLarge: 'Images must be {size} or smaller.',
-    nameMissing: 'Give the map a name.',
-    fileMissing: 'Choose a map image.',
-    pinsMissing: 'Say what happens to the pins already on the map.',
-    fieldErrors: 'Some details need a change before this can be saved.',
-    failed: 'That could not be saved.',
-    headingNew: 'New map',
-    headingDetails: 'Map details',
-    headingReplace: 'Replace the picture',
-    name: 'Name',
-    namePlaceholder: 'Insert a name',
-    description: 'Description',
-    descriptionHint: 'What this map shows, in a line or two. Optional.',
-    imageNew: 'Map image',
-    imageReplace: 'New picture',
-    imageHint:
-      'A JPEG, PNG or WebP up to {size}. The original is kept as it is; the viewer shows a copy fitted for the screen.',
-    chosen: '{name} · {size}',
-    pinsLegend: 'The pins already on this map',
-    noPins: 'This map has no pins, so nothing is at risk. Choose either way.',
-    pinsPlaced: {
-      one: '{n} pin was placed on the current picture. A new picture may put them somewhere else.',
-      other:
-        '{n} pins were placed on the current picture. A new picture may put them somewhere else.',
-    },
-    scaleNote:
-      'The scale was measured on the current picture and goes with it. Set it again on the new one before asking for distances.',
-    keep: '{lead}, and mark each one as waiting for review. Open each pin to check its place on the new picture and save it to confirm.',
-    keepLead: 'Keep the pins where they are',
-    remove: '{lead} The Lore entries they stood for are not touched.',
-    removeLead: 'Remove every pin.',
-    uploading: 'Uploading… {percent}%',
-    uploaded: 'Uploaded. Preparing the map…',
-    saving: 'Saving…',
-    createMap: 'Create map',
-    saveDetails: 'Save',
-    replacePicture: 'Replace picture',
-    cancel: 'Cancel',
-  },
+  mapForm: placesMapForm,
   pinForm: {
     leaveChanges: '“{title}” has unsaved changes. Leave without saving them?',
     leaveNew: 'This pin has not been placed yet. Leave without placing it?',
@@ -316,42 +183,7 @@ const places = {
     place: 'Place pin',
     cancel: 'Cancel',
   },
-  calibration: {
-    removeTitle: 'Remove the scale?',
-    removeMessage:
-      'Distances can no longer be measured on this map until it is calibrated again. Pins are not touched.',
-    removeConfirm: 'Remove scale',
-    scale: 'Scale',
-    summary:
-      'Two points are {distance} apart, so a pixel of the picture is about {perPixel} {unit}. Distances asked of a connected AI app are straight lines on this picture, by this scale.',
-    noneEditor:
-      'No scale yet. Mark two points and say how far apart they are, and a connected AI app can measure straight-line distances between pins.',
-    none: 'No scale yet. Distances cannot be measured on this map.',
-    setAgain: 'Set the scale again',
-    set: 'Set the scale',
-    remove: 'Remove scale',
-    firstMissing: 'Mark the first point.',
-    secondMissing: 'Mark the second point.',
-    distanceInvalid: 'A number above zero.',
-    unitMissing: 'Name the unit: km, miles, leagues, days of travel.',
-    fieldErrors: 'Check the points and the distance.',
-    failed: 'The scale could not be saved.',
-    formTitle: 'Set the scale',
-    formIntro:
-      "Press the map twice to mark two points whose distance apart you know, or type where they are. Then say how far apart they are, in your world's own unit.",
-    pointA: 'Point A',
-    pointANot: 'Point A (not marked)',
-    pointB: 'Point B',
-    pointBNot: 'Point B (not marked)',
-    across: 'Across',
-    down: 'Down',
-    distance: 'Distance',
-    unit: 'Unit',
-    unitPlaceholder: 'Insert a unit',
-    saving: 'Saving…',
-    save: 'Save',
-    cancel: 'Cancel',
-  },
+  calibration: placesCalibration,
   viewer: {
     stage: 'Map: {name}',
     pinReview: '{title} (position awaiting review)',
@@ -363,65 +195,7 @@ const places = {
     hintPlacing:
       'Drag to pan and scroll to zoom. With the map focused, the arrow keys pan, plus and minus zoom, and 0 fits the whole map. Tab reaches each pin; Enter selects it. Placing a pin: press the map where it goes, or press Enter to place it at the centre.',
   },
-  mapPage: {
-    moveFailed: 'The pin could not be moved.',
-    removePinTitle: 'Delete the pin {pin}?',
-    removePinLore: 'The Lore entry it stands for is not touched.',
-    removePinOnly: 'Only the pin goes.',
-    removePinConfirm: 'Delete pin',
-    deleteTitle: 'Delete the map {map}?',
-    deleteMessage:
-      'The map and its pins are deleted for good. Maps do not go to the Trash. The Lore entries its pins stand for are not touched.',
-    pinCount: {
-      one: '{n} pin',
-      other: '{n} pins',
-    },
-    deleteConfirm: 'Delete map',
-    loading: 'Unrolling the map…',
-    missingTitle: 'That map is not here.',
-    missingHint: 'It may have been deleted. {link}',
-    missingLink: 'Back to the maps',
-    error: 'The map could not be opened.',
-    retry: 'Try again',
-    crumb: 'Maps',
-    placingButton: 'Placing a pin…',
-    addPin: 'Add pin',
-    moreActions: 'More actions for {name}',
-    editDetails: 'Edit details',
-    replacePicture: 'Replace picture',
-    deleteMap: 'Delete map',
-    reviewEditor: {
-      one: 'One pin was placed on an earlier picture of this map. Open each one to check its place on the new picture and save it to confirm.',
-      other:
-        '{n} pins were placed on an earlier picture of this map. Open each one to check its place on the new picture and save it to confirm.',
-    },
-    reviewViewer: {
-      one: 'One pin was placed on an earlier picture of this map. Their places are shown as they were.',
-      other:
-        '{n} pins were placed on an earlier picture of this map. Their places are shown as they were.',
-    },
-    calibrating:
-      'Setting the scale: press the map to mark point A, then point B, or type where they are beside the map.',
-    placing: 'Press the map where the pin goes, or {position}.',
-    typePosition: 'type its position',
-    cancel: 'Cancel',
-    markerA: 'A',
-    markerB: 'B',
-    panel: 'Pins and scale',
-    pinReview: 'Position awaiting review',
-    pinTrashed: 'The entry this pin stood for is in the Trash.',
-    openEntry: 'Open {name}',
-    entryType: '· {type}',
-    annotation: 'An annotation, linked to no entry.',
-    position: '{x}% across · {y}% down',
-    editPin: 'Edit',
-    removePin: 'Delete',
-    pins: 'Pins',
-    noPinsEditor: 'No pins yet. Add one to mark a place and open its Lore from the map.',
-    noPins: 'No pins on this map yet.',
-    awaitingReview: '· awaiting review',
-    listType: '· {type}',
-  },
+  mapPage: placesMapPage,
 }
 
 export default places

@@ -1,0 +1,31 @@
+const storiesStoryForm = {
+  leaveSuggestion: 'Your suggestion for “{title}” hasn’t been sent. Leave without sending it?',
+  leaveUnsaved: '“{title}” has unsaved changes. Leave without saving them?',
+  leaveNew: 'This new story has not been created. Leave without saving it?',
+  detailsToSend: 'Some details need a change before this can be sent.',
+  detailsToSave: 'Some details need a change before this can be saved.',
+  failedSend: 'That suggestion couldn’t be sent.',
+  failedSave: 'That story could not be saved.',
+  eyebrowSuggesting: 'Suggesting changes to a story',
+  eyebrowEditing: 'Editing a story',
+  newTitle: 'New story',
+  suggestingNote:
+    'You’re suggesting changes. The story stays as it is until the owner or an Editor accepts them.',
+  conflictNoun: 'story',
+  titleLabel: 'Title',
+  titlePlaceholder: 'Insert a title',
+  premiseLabel: 'Premise',
+  premiseHint: 'What the story is about. Optional.',
+  premisePlaceholder: 'Insert a premise',
+  statusLabel: 'Status',
+  statusHint: 'Where you are with the telling. It says nothing about canon.',
+  sending: 'Sending',
+  sendSuggestion: 'Send suggestion',
+  saving: 'Saving…',
+  creating: 'Creating…',
+  save: 'Save',
+  create: 'Create story',
+  cancel: 'Cancel',
+}
+
+export default storiesStoryForm

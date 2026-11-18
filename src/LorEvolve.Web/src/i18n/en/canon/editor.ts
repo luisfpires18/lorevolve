@@ -1,0 +1,58 @@
+const canonEditor = {
+  openFailed: 'This rule could not be opened.',
+  thisRule: 'This rule',
+  unsaved: '“{name}” has unsaved changes. Leave without saving them?',
+  titleRequired: 'Give the rule a title, so you can find it again.',
+  saveGone:
+    'This rule is no longer here, so it could not be saved. It may have been moved to the Trash in another window. Your writing is still here: copy it before you leave.',
+  saveInvalid: 'Something needs a change before this rule can be saved.',
+  saveFailed: 'The rule could not be saved. Your writing is still here. Try again.',
+  replace: {
+    title: 'Replace this rule with the version saved elsewhere?',
+    message: 'What you changed here since your last save will be lost.',
+    confirm: 'Use the saved version',
+    cancel: 'Keep my changes',
+  },
+  savedLoaded: 'The saved version of the rule is loaded.',
+  trash: {
+    title: 'Move “{title}” to the Trash?',
+    messageDirty:
+      'Your unsaved changes will be lost. The rule as last saved goes to the Trash, where you can restore it.',
+    message: 'You can restore it from the Trash.',
+    confirm: 'Move to Trash',
+    busy: 'Moving…',
+    gone: 'This rule is no longer here. It may already be in the Trash.',
+    failed: 'The rule could not be moved to the Trash. Try again.',
+  },
+  opening: 'Opening the rule…',
+  missing: {
+    title: 'This rule is not here.',
+    hint: 'It may be in the Trash, or it is not a rule of this universe. {trash}, or go back to {rules}.',
+    openTrash: 'Open the Trash',
+    rules: 'World Rules',
+  },
+  retry: 'Try again',
+  back: 'World Rules',
+  newRule: 'New rule',
+  actions: 'More actions for {title}',
+  delete: 'Delete rule',
+  lede: 'A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted.',
+  lastSaved: 'Last saved {time}.',
+  conflict:
+    'This rule was saved in another tab or on another device after you opened it here. Nothing was overwritten, and your version below is not saved.',
+  keepMine: 'Save mine over it',
+  loadSaved: 'Load the saved version',
+  title: 'Title',
+  titlePlaceholder: 'Insert a title',
+  description: 'Description',
+  descriptionHint: 'Optional. Plain text, kept exactly as you write it.',
+  descriptionPlaceholder: 'What the rule says, where it holds, and what it does not cover.',
+  count: '{used} of {max} characters.',
+  countTooLong: 'Too long to save: {used} of {max} characters.',
+  create: 'Create rule',
+  save: 'Save changes',
+  notSaved: 'Not saved yet',
+  saved: 'Saved',
+}
+
+export default canonEditor

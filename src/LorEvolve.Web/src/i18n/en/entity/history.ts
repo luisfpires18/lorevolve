@@ -1,0 +1,46 @@
+const entityHistory = {
+  created: 'Created',
+  firstVersion: 'First recorded version',
+  changedNothing: 'Changed',
+  changedOne: 'Changed {last}',
+  changedMany: 'Changed {list} and {last}',
+  change: {
+    name: 'the name',
+    summary: 'the summary',
+    article: 'the article',
+    status: 'the status',
+    type: 'the type',
+    aliases: 'the aliases',
+    tags: 'the tags',
+    details: 'the details',
+    image: 'the image',
+  },
+  imagesNotRestored: 'Images are not included when restoring a revision.',
+  openFailed: 'That version could not be opened.',
+  restoreConfirm: {
+    title: 'Put version {number} back?',
+    message: 'It becomes the newest version. The article stays as it is: it keeps its own history.',
+    confirm: 'Put this version back',
+  },
+  changedElsewhere:
+    'This entry changed after you opened it, so nothing was put back. The history now shows the latest.',
+  restoreFailed: 'That version could not be put back.',
+  title: 'History',
+  articleNote:
+    'Versions of this entry’s details. The article keeps its own history, on the Article view.',
+  readFailed: 'This entry’s history could not be read.',
+  retry: 'Try again',
+  empty: 'Nothing recorded yet. The next save starts this entry’s history.',
+  nowShowing: 'now showing',
+  version: 'Version {number}',
+  restoredVersion: 'restored version {number}',
+  hide: 'Hide',
+  view: 'View',
+  restoring: 'Restoring',
+  restore: 'Restore',
+  opening: 'Opening…',
+  alsoKnownAs: 'also known as {names}',
+  articleThen: 'The article as it read then. Restoring this version leaves the article as it is.',
+}
+
+export default entityHistory

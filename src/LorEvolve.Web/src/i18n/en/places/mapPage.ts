@@ -1,0 +1,61 @@
+const placesMapPage = {
+  moveFailed: 'The pin could not be moved.',
+  removePinTitle: 'Delete the pin {pin}?',
+  removePinLore: 'The Lore entry it stands for is not touched.',
+  removePinOnly: 'Only the pin goes.',
+  removePinConfirm: 'Delete pin',
+  deleteTitle: 'Delete the map {map}?',
+  deleteMessage:
+    'The map and its pins are deleted for good. Maps do not go to the Trash. The Lore entries its pins stand for are not touched.',
+  pinCount: {
+    one: '{n} pin',
+    other: '{n} pins',
+  },
+  deleteConfirm: 'Delete map',
+  loading: 'Unrolling the map…',
+  missingTitle: 'That map is not here.',
+  missingHint: 'It may have been deleted. {link}',
+  missingLink: 'Back to the maps',
+  error: 'The map could not be opened.',
+  retry: 'Try again',
+  crumb: 'Maps',
+  placingButton: 'Placing a pin…',
+  addPin: 'Add pin',
+  moreActions: 'More actions for {name}',
+  editDetails: 'Edit details',
+  replacePicture: 'Replace picture',
+  deleteMap: 'Delete map',
+  reviewEditor: {
+    one: 'One pin was placed on an earlier picture of this map. Open each one to check its place on the new picture and save it to confirm.',
+    other:
+      '{n} pins were placed on an earlier picture of this map. Open each one to check its place on the new picture and save it to confirm.',
+  },
+  reviewViewer: {
+    one: 'One pin was placed on an earlier picture of this map. Their places are shown as they were.',
+    other:
+      '{n} pins were placed on an earlier picture of this map. Their places are shown as they were.',
+  },
+  calibrating:
+    'Setting the scale: press the map to mark point A, then point B, or type where they are beside the map.',
+  placing: 'Press the map where the pin goes, or {position}.',
+  typePosition: 'type its position',
+  cancel: 'Cancel',
+  markerA: 'A',
+  markerB: 'B',
+  panel: 'Pins and scale',
+  pinReview: 'Position awaiting review',
+  pinTrashed: 'The entry this pin stood for is in the Trash.',
+  openEntry: 'Open {name}',
+  entryType: '· {type}',
+  annotation: 'An annotation, linked to no entry.',
+  position: '{x}% across · {y}% down',
+  editPin: 'Edit',
+  removePin: 'Delete',
+  pins: 'Pins',
+  noPinsEditor: 'No pins yet. Add one to mark a place and open its Lore from the map.',
+  noPins: 'No pins on this map yet.',
+  awaitingReview: '· awaiting review',
+  listType: '· {type}',
+}
+
+export default placesMapPage
