@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import {
   BookPlus,
@@ -17,7 +17,6 @@ import { ViewChips } from '../components/ViewChips'
 import { ActionIcon } from '../components/ActionIcon'
 import { ActionMenu } from '../components/ActionMenu'
 import { ArcSection } from '../components/ArcSection'
-import { revealInFolds } from '../components/fold'
 import { ContentPublication } from '../components/ContentPublication'
 import { ChapterForm } from '../components/ChapterForm'
 import { ChapterSection, type ArcTarget } from '../components/ChapterSection'
@@ -31,14 +30,12 @@ import { SceneForm } from '../components/SceneForm'
 import { StoryForm } from '../components/StoryForm'
 import { StoryPartPublication } from '../components/StoryPartPublication'
 import { ApiError } from '../lib/api'
-import { getContentPublication } from '../publishing/api'
-import { Visibility, type ContentPublicationState, type VisibilityValue } from '../publishing/types'
+import { Visibility, type VisibilityValue } from '../publishing/types'
 import {
   deleteChapter,
   deletePlotArc,
   deleteScene,
   deleteStory,
-  getStory,
   moveChapterToArc,
   moveScene,
   reorderChapters,
@@ -75,34 +72,12 @@ import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { confirmAction } from '../lib/confirm'
 import { projectPath } from '../projects/sections'
-
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; story: StoryDetail }
-  | { kind: 'missing' }
-  | { kind: 'error' }
-
-type SceneFormState =
-  | { mode: 'closed' }
-  | { mode: 'new'; chapterId: string | null }
-  | { mode: 'edit'; scene: Scene; addBeat?: boolean }
-  | { mode: 'suggest'; scene: Scene }
-
-type ChapterFormState =
-  | { mode: 'closed' }
-  | { mode: 'new'; arcId: string | null }
-  | { mode: 'edit'; chapter: Chapter; index: number }
-
-type ArcFormState =
-  { mode: 'closed' } | { mode: 'new' } | { mode: 'edit'; arc: PlotArc; index: number }
+import { useStoryState, type StoryViewName } from '../stories/useStoryState'
+import { useStoryLoad } from '../stories/useStoryLoad'
+import { useStoryArrival } from '../stories/useStoryArrival'
 
 /** Where the focus goes back to once a scene has moved: its ⋯ menu, wherever the scene now is. */
 const sceneMenu = (sceneId: string) => `#scene-${sceneId} [data-testid="scene-actions"]`
-
-/** How long a scene reached by a link stays marked, so the eye can pick it out from its neighbours. */
-const ARRIVAL_MS = 2400
-
-type StoryViewName = 'scenes' | 'manuscript'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
@@ -145,107 +120,34 @@ function StoryView({ view }: { view: StoryViewName }) {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [stale, setStale] = useState(false)
-  const [sceneForm, setSceneForm] = useState<SceneFormState>({ mode: 'closed' })
-  const [chapterForm, setChapterForm] = useState<ChapterFormState>({ mode: 'closed' })
-  const [arcForm, setArcForm] = useState<ArcFormState>({ mode: 'closed' })
-  const [storyForm, setStoryForm] = useState<'closed' | 'edit' | 'suggest'>('closed')
-  // A suggestion just sent from this page, said where it can be seen (task 045).
-  const [sent, setSent] = useState(false)
-  const [announcement, setAnnouncement] = useState('')
-  const [reloads, setReloads] = useState(0)
-
-  // A refusal is held with the address it was raised on, like the manuscript outline's open state, so one raised on
-  // the Scenes view is not still standing when the author comes back to it from the Manuscript view.
-  const [raised, setRaised] = useState<{ at: string; text: string } | null>(null)
+  const base = useStoryState()
+  const {
+    state,
+    setState,
+    stale,
+    sceneForm,
+    setSceneForm,
+    chapterForm,
+    setChapterForm,
+    arcForm,
+    setArcForm,
+    storyForm,
+    setStoryForm,
+    sent,
+    setSent,
+    announcement,
+    setAnnouncement,
+    setReloads,
+    raised,
+    setRaised,
+    isMoving,
+    pendingFocus,
+    publication,
+    setPublication,
+  } = base
   const message = raised?.at === location.pathname ? raised.text : null
-
-  const isMoving = useRef(false)
-  const pendingFocus = useRef<string | null>(null)
-
-  // The story's own publication, read once for the page: its pill shows it, and every part's pill needs to know whether
-  // the story is public to say Selected or Public (ADR 0039). Held with the story it was read for.
-  const [publication, setPublication] = useState<{
-    storyId: string
-    state: ContentPublicationState | null
-  } | null>(null)
-
-  useEffect(() => {
-    // Publication is the owner's (ADR 0041): nobody else is shown a pill, so nobody else asks.
-    if (!storyId || !access.publish) return
-    const controller = new AbortController()
-    getContentPublication(universe.id, 'story', storyId, controller.signal)
-      .then((state) => setPublication({ storyId, state }))
-      .catch(() => {
-        // The story's pill reads it again itself and says so if it cannot; the parts only never claim Public.
-        if (!controller.signal.aborted) setPublication({ storyId, state: null })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, storyId, access.publish])
-
-  useEffect(() => {
-    if (!storyId) return
-    const controller = new AbortController()
-
-    getStory(universe.id, storyId, controller.signal)
-      .then((story) => {
-        setState({ kind: 'ready', story })
-        setStale(false)
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        if (error instanceof ApiError && error.status === 404) {
-          setState({ kind: 'missing' })
-          return
-        }
-
-        // A story already on screen stays there, marked as possibly out of date, rather than being taken away - and
-        // with it any prose being written beside it. Only a first read that fails has nothing to show.
-        setState((current) => (current.kind === 'ready' ? current : { kind: 'error' }))
-        setStale(true)
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, storyId, reloads])
-
-  // Whatever has just moved keeps the focus on its own ⋯ menu, wherever the page put it: the move was made from that
-  // menu, and moving the row in the page can take the focus off it.
-  useEffect(() => {
-    const selector = pendingFocus.current
-    if (!selector || state.kind !== 'ready') return
-    pendingFocus.current = null
-    const target = document.querySelector<HTMLElement>(selector)
-    // The folds around it open before this returns, so a hidden row can still take the focus.
-    revealInFolds(target)
-    target?.focus()
-  }, [state])
-
-  // A link to one scene - a search result, or the manuscript's way back to its scene - lands on it, whichever view it
-  // opens: scrolled to, given the focus so a keyboard and a screen reader arrive there too, and
-  // marked for a moment so the eye can tell which of twenty rows it meant. The location's key runs it again when the
-  // same link is followed twice.
-  const isReady = state.kind === 'ready'
-  useEffect(() => {
-    if (!isReady || location.hash.length < 2) return
-    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)))
-    if (!target) return
-
-    revealInFolds(target)
-    target.scrollIntoView({ block: 'center' })
-    target.focus({ preventScroll: true })
-    target.setAttribute('data-arrived', 'true')
-    const timer = window.setTimeout(() => target.removeAttribute('data-arrived'), ARRIVAL_MS)
-
-    return () => {
-      window.clearTimeout(timer)
-      target.removeAttribute('data-arrived')
-    }
-  }, [isReady, view, location.hash, location.key])
+  useStoryLoad({ ...base, universe, storyId, access })
+  useStoryArrival({ ...base, view, location })
 
   const reload = useCallback(() => setReloads((count) => count + 1), [])
 
