@@ -13,6 +13,7 @@ import { TimelineControls } from '../components/timeline/TimelineControls'
 import { TimelineNotices } from '../components/timeline/TimelineNotices'
 import { TimelineStream } from '../components/timeline/TimelineStream'
 import { TimelineEmpty } from '../components/timeline/TimelineEmpty'
+import { Button } from '../components/Button'
 
 /**
  * The universe's one timeline: the moments written here, every dated scene of every live story, and every live entry's birth
@@ -130,25 +131,23 @@ export default function TimelinePage() {
 
       {result && result.totalPages > 1 ? (
         <nav className="pager" aria-label={t('time.timeline.pagination')}>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page <= 1}
             onClick={() => update({ page: String(result.page - 1) })}
           >
             {t('time.timeline.previous')}
-          </button>
+          </Button>
           <span className="pager__position">
             {t('time.timeline.page', { page: result.page, total: result.totalPages })}
           </span>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page >= result.totalPages}
             onClick={() => update({ page: String(result.page + 1) })}
           >
             {t('time.timeline.next')}
-          </button>
+          </Button>
         </nav>
       ) : null}
 

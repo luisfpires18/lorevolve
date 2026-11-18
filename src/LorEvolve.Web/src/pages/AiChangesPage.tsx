@@ -8,6 +8,7 @@ import { PageHeader } from '../components/PageHeader'
 import { useI18n } from '../i18n'
 import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { Button } from '../components/Button'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; page: ProposalPage } | { kind: 'error' }
 
@@ -92,13 +93,9 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
       ) : load.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{t('review.aiChanges.loadFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => setReads((count) => count + 1)}
-          >
+          <Button tone="secondary" onClick={() => setReads((count) => count + 1)}>
             {t('review.aiChanges.retry')}
-          </button>
+          </Button>
         </div>
       ) : load.page.items.length === 0 ? (
         <EmptyState
@@ -159,14 +156,9 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             ))}
           </ul>
           {load.page.hasMore ? (
-            <button
-              className="button button--text button--sm"
-              type="button"
-              disabled={more}
-              onClick={() => void readMore()}
-            >
+            <Button tone="text" size="sm" disabled={more} onClick={() => void readMore()}>
               {t('review.aiChanges.showMore')}
-            </button>
+            </Button>
           ) : null}
         </>
       )}

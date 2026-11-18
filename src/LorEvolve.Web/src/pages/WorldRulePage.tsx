@@ -8,6 +8,7 @@ import { getWorldRule } from '../worldRules/api'
 import type { WorldRuleDetail } from '../worldRules/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import type { WorldRulesListNotice } from './WorldRulesPage'
+import { Button } from '../components/Button'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -125,16 +126,15 @@ function WorldRuleReading({
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((count) => count + 1)
             }}
           >
             {t('canon.rule.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
       {state.kind === 'ready' ? (

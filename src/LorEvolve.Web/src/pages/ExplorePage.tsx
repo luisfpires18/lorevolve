@@ -6,6 +6,7 @@ import { listPublicUniverses, type ExploreQuery, type PublicUniverse } from '../
 import { CATEGORIES, categoryLabel, GENRES, genreLabel } from '../publishing/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, tn, useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 /** The API's own limit on a search; the portal bar's field holds the same. */
 const SEARCH_MAX = 100
@@ -209,13 +210,9 @@ export default function ExplorePage() {
             data-testid="explore-error"
           >
             <p>{t('portal.explore.error.message')}</p>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setAttempt((count) => count + 1)}
-            >
+            <Button tone="secondary" onClick={() => setAttempt((count) => count + 1)}>
               {t('portal.explore.error.retry')}
-            </button>
+            </Button>
           </div>
         ) : null}
 
@@ -233,9 +230,9 @@ export default function ExplorePage() {
             title={t('portal.explore.noMatch.title')}
             hint={t('portal.explore.noMatch.hint')}
             action={
-              <button className="button button--secondary" type="button" onClick={clearAll}>
+              <Button tone="secondary" onClick={clearAll}>
                 {t('portal.explore.noMatch.clear')}
-              </button>
+              </Button>
             }
           />
         ) : null}
@@ -258,20 +255,16 @@ export default function ExplorePage() {
                 {t('portal.explore.more.error')}
               </p>
             ) : null}
-            <button
-              className="button button--secondary explore__more-button"
-              type="button"
+            <Button
+              tone="secondary"
+              className="explore__more-button"
+              busy={more === 'loading'}
+              busyLabel={t('portal.explore.more.loading')}
               onClick={showMore}
-              disabled={more === 'loading'}
-              aria-busy={more === 'loading'}
               data-testid="explore-more"
             >
-              {more === 'loading'
-                ? t('portal.explore.more.loading')
-                : more === 'error'
-                  ? t('portal.explore.more.retry')
-                  : t('portal.explore.more.show')}
-            </button>
+              {more === 'error' ? t('portal.explore.more.retry') : t('portal.explore.more.show')}
+            </Button>
           </div>
         ) : null}
       </div>

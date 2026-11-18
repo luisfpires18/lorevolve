@@ -7,6 +7,7 @@ import { useI18n } from '../i18n'
 import { ConsentDetails } from '../components/mcp/ConsentDetails'
 import { ConsentLayout } from '../components/mcp/ConsentLayout'
 import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
+import { Button } from '../components/Button'
 
 /** The field the decision travels in, beside the request's own parameters. Read by `OAuthEndpoints` on the server. */
 const DECISION_FIELD = 'lorevolve_decision'
@@ -68,8 +69,7 @@ export default function ConnectAuthorizePage() {
       {content}
       <div className="form__actions consent__actions">
         {load.kind === 'ready' ? (
-          <button
-            className="button"
+          <Button
             type="submit"
             name={DECISION_FIELD}
             value="approve"
@@ -77,17 +77,17 @@ export default function ConnectAuthorizePage() {
             data-testid="consent-approve"
           >
             {deciding ? t('universe.connect.connecting') : t('universe.connect.approve')}
-          </button>
+          </Button>
         ) : null}
-        <button
-          className="button button--secondary"
+        <Button
+          tone="secondary"
           type="submit"
           name={DECISION_FIELD}
           value="deny"
           data-testid="consent-deny"
         >
           {load.kind === 'ready' ? t('universe.connect.deny') : t('universe.connect.goBack')}
-        </button>
+        </Button>
       </div>
     </form>
   )

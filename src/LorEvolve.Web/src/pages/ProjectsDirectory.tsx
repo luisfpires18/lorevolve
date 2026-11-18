@@ -15,6 +15,7 @@ import {
   sectionPurpose,
 } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { Button } from '../components/Button'
 
 /** The kinds each category lists: the same sets the routes in `App.tsx` give `ProjectsPage`, so a count equals its list. */
 const KINDS_BY_SECTION = new Map<string, readonly ProjectKindValue[]>([
@@ -66,13 +67,12 @@ export default function ProjectsDirectory() {
         lede={t('projects.directory.lede')}
         actions={
           universeId ? (
-            <Link
-              className="button"
+            <Button
               to={`/app/projects/new?universeId=${universeId}`}
               data-testid="projects-page-new"
             >
               {t('projects.nav.new')}
-            </Link>
+            </Button>
           ) : null
         }
       />

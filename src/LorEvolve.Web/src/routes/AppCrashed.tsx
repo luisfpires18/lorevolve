@@ -1,5 +1,6 @@
 import { useRouteError } from 'react-router-dom'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 /** A screen's code that no longer exists on the server: the tab predates a deploy and asked for an old chunk. */
 function isStaleChunk(error: unknown) {
@@ -24,13 +25,9 @@ export function AppCrashed() {
     <main className="session-pending session-pending--unreachable">
       <div className="notice notice--error" role="alert">
         <p>{stale ? t('shell.app.crashed.stale') : t('shell.app.crashed.generic')}</p>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={() => window.location.reload()}
-        >
+        <Button tone="secondary" onClick={() => window.location.reload()}>
           {t('shell.app.crashed.reload')}
-        </button>
+        </Button>
       </div>
     </main>
   )

@@ -13,6 +13,7 @@ import { PublishStatus } from '../components/publishing/PublishStatus'
 import { publishActions } from '../publishing/publishActions'
 import { usePublishReads } from '../publishing/usePublishReads'
 import { usePublishState } from '../publishing/usePublishState'
+import { Button } from '../components/Button'
 
 /**
  * Publish (UI refinement 014): a universe's public presentation, in the workspace, on a page of its own rather than a
@@ -53,9 +54,9 @@ export default function UniversePublish() {
         {header}
         <div className="notice notice--error" role="alert">
           <p>{loadError}</p>
-          <button className="button button--secondary" type="button" onClick={() => void load()}>
+          <Button tone="secondary" onClick={() => void load()}>
             {t('universe.publish.retry')}
-          </button>
+          </Button>
         </div>
       </article>
     )

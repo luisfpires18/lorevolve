@@ -14,6 +14,7 @@ import {
   INVITATION_OTHER_ACCOUNT,
   type ReceivedInvitation,
 } from '../universes/collaborators'
+import { Button } from '../components/Button'
 
 type State =
   | { kind: 'loading' }
@@ -125,17 +126,12 @@ export default function InvitationPage() {
         })}
       >
         <div className="invite__actions" data-testid="invitation-signed-out">
-          <Link className="button" to="/login" state={from} data-testid="invitation-sign-in">
+          <Button to="/login" state={from} data-testid="invitation-sign-in">
             {t('auth.invitation.signedOut.signIn')}
-          </Link>
-          <Link
-            className="button button--secondary"
-            to="/register"
-            state={from}
-            data-testid="invitation-register"
-          >
+          </Button>
+          <Button tone="secondary" to="/register" state={from} data-testid="invitation-register">
             {t('auth.invitation.signedOut.createAccount')}
-          </Link>
+          </Button>
         </div>
       </AuthLayout>
     )
@@ -173,26 +169,22 @@ export default function InvitationPage() {
               </p>
             ) : null}
             <div className="invite__actions">
-              <button
-                className="button"
-                type="button"
+              <Button
+                busy={busy}
+                busyLabel={t('auth.invitation.ready.working')}
                 onClick={() => void accept()}
-                disabled={busy}
-                aria-busy={busy}
                 data-testid="invitation-accept"
               >
-                {busy ? t('auth.invitation.ready.working') : t('auth.invitation.ready.accept')}
-              </button>
-              <button
-                className="button button--secondary"
-                type="button"
+                {t('auth.invitation.ready.accept')}
+              </Button>
+              <Button
+                tone="secondary"
+                busy={busy}
                 onClick={() => void decline()}
-                disabled={busy}
-                aria-busy={busy}
                 data-testid="invitation-decline"
               >
                 {t('auth.invitation.ready.decline')}
-              </button>
+              </Button>
             </div>
           </div>
         </AuthLayout>

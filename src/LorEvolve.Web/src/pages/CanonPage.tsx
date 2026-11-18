@@ -8,6 +8,7 @@ import { useCanonConflicts } from '../canon/useCanonConflicts'
 import { canonActions } from '../canon/canonActions'
 import { CanonControls } from '../components/canon/CanonControls'
 import { CanonResults } from '../components/canon/CanonResults'
+import { Button } from '../components/Button'
 
 /**
  * The review screen for one universe.
@@ -53,16 +54,14 @@ export default function CanonPage() {
         actions={
           // Evaluating writes the findings, so it is editing (ADR 0041); everyone reads what the last one found.
           access.editContent ? (
-            <button
-              className="button"
-              type="button"
+            <Button
+              busy={isEvaluating}
+              busyLabel={t('canon.page.evaluating')}
               onClick={() => void evaluate()}
-              disabled={isEvaluating}
-              aria-busy={isEvaluating}
               data-testid="evaluate-canon"
             >
-              {isEvaluating ? t('canon.page.evaluating') : t('canon.page.evaluate')}
-            </button>
+              {t('canon.page.evaluate')}
+            </Button>
           ) : undefined
         }
       />

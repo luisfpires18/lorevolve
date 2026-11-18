@@ -246,11 +246,6 @@ test('Field renders label, hint, control, error in that order', () => {
   )
 })
 
-// Folders whose .tsx files still write a raw .button or .iconbutton class: the conversion to Button and
-// IconButton (#408) goes folder by folder, and each commit removes its entry. A listed folder with no raw
-// use left fails, so the list cannot go stale. Temporary: the last conversion commit deletes it.
-const RAW_BUTTON_PENDING = new Set<string>(['src/pages', 'src/routes', 'src/auth'])
-
 // Every quoted class string in a file: className="..." or any prop ending in className/ClassName
 // (triggerClassName counts), and each literal inside className={...}.
 function classStrings(source: string): string[] {
@@ -268,22 +263,45 @@ const RAW_BUTTON_CLASS = /(^|\s)(icon)?button(\s|$)/
 const rawButtonFiles = tsxFiles
   .filter((file) => !['src/components/Button.tsx', 'src/components/IconButton.tsx'].includes(file))
   .filter((file) => classStrings(read(file)).some((value) => RAW_BUTTON_CLASS.test(value)))
-const folderOf = (file: string) => file.slice(0, file.lastIndexOf('/'))
 
 test('no raw .button or .iconbutton class outside Button and IconButton', () => {
   assert.deepEqual(
-    rawButtonFiles.filter((file) => !RAW_BUTTON_PENDING.has(folderOf(file))),
+    rawButtonFiles,
     [],
     'Use Button or IconButton from components/, see docs/design/ui-components.md',
   )
 })
 
-test('RAW_BUTTON_PENDING lists only folders that still have a raw button class', () => {
-  const live = new Set(rawButtonFiles.map(folderOf))
+// The only files that may call buttonClass() or iconButtonClass(): each draws something that is not
+// a <button> or a Link, so it cannot render Button. Fixed, not a list that shrinks.
+const BUTTON_CLASS_CALLERS = new Map<string, string>([
+  [
+    'src/components/ActionMenu.tsx',
+    'its trigger can be an avatar or a pill, so it keeps its own button',
+  ],
+  ['src/components/LoreFieldFilters.tsx', 'an ActionMenu trigger styled as a button'],
+  ['src/components/ProjectEntitiesView.tsx', 'an ActionMenu trigger styled as a button'],
+  ['src/components/lore/TypeLevelMenus.tsx', 'an ActionMenu trigger styled as a button'],
+  ['src/components/EntityImageField.tsx', 'a label that opens the file input'],
+  ['src/components/FieldImageRow.tsx', 'a label that opens the file input'],
+  ['src/components/ProfileAvatar.tsx', 'a label that opens the file input'],
+  ['src/components/UniverseArtworkField.tsx', 'a label that opens the file input'],
+  ['src/components/lore/AppearanceGallery.tsx', 'a label that opens the file input'],
+])
+
+test('buttonClass() and iconButtonClass() are called only where a component cannot go', () => {
+  const callers = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
+    .map((file) => 'src/' + file.replaceAll('\\', '/'))
+    .filter((file) => /\.tsx?$/.test(file))
+    .filter(
+      (file) => !/^src\/(lib\/buttonClass\.ts|components\/(Button|IconButton)\.tsx)$/.test(file),
+    )
+    .filter((file) => /\b(buttonClass|iconButtonClass)\(/.test(read(file)))
+    .sort()
   assert.deepEqual(
-    [...RAW_BUTTON_PENDING].filter((folder) => !live.has(folder)),
-    [],
-    'Remove the folder from RAW_BUTTON_PENDING',
+    callers,
+    [...BUTTON_CLASS_CALLERS.keys()].sort(),
+    'Draw a button with Button or IconButton; only a file input label or ActionMenu trigger takes the class helper',
   )
 })
 

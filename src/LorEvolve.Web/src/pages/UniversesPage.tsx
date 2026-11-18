@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore, Plus, Search } from 'lucide-react'
-import { ActionIcon } from '../components/ActionIcon'
 import { Field } from '../components/Field'
 import { useI18n } from '../i18n'
 import { RestoreBackup } from '../components/RestoreBackup'
@@ -10,6 +9,7 @@ import { UniverseForm } from '../components/UniverseForm'
 import { createUniverse, listUniverses } from '../universes/api'
 import type { UniversePage } from '../universes/types'
 import { EmptyState } from '../components/EmptyState'
+import { Button } from '../components/Button'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: UniversePage } | { kind: 'error'; message: string }
@@ -103,28 +103,25 @@ export default function UniversesPage() {
           <p className="home__lede">{t('universe.list.lede')}</p>
         </div>
         <div className="home__actions">
-          <button
-            className="button"
-            type="button"
+          <Button
+            icon={Plus}
             onClick={() => {
               setRestoring(false)
               setIsCreating(true)
             }}
             data-testid="new-universe"
           >
-            <ActionIcon icon={Plus} />
             {t('universe.list.new')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            icon={ArchiveRestore}
             aria-expanded={isRestoring}
             onClick={() => setRestoring(true)}
             data-testid="restore-backup"
           >
-            <ActionIcon icon={ArchiveRestore} />
             {t('universe.list.restore')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -214,13 +211,9 @@ export default function UniversesPage() {
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => setReloadKey((current) => current + 1)}
-          >
+          <Button tone="secondary" onClick={() => setReloadKey((current) => current + 1)}>
             {t('universe.list.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -247,17 +240,15 @@ export default function UniversesPage() {
           }
           action={
             isFiltered ? undefined : (
-              <button
-                className="button"
-                type="button"
+              <Button
+                icon={Plus}
                 onClick={() => {
                   setRestoring(false)
                   setIsCreating(true)
                 }}
               >
-                <ActionIcon icon={Plus} />
                 {t('universe.list.emptyNew')}
-              </button>
+              </Button>
             )
           }
         />
@@ -265,25 +256,23 @@ export default function UniversesPage() {
 
       {result && result.totalPages > 1 ? (
         <nav className="pager" aria-label={t('universe.list.pagination')}>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page <= 1}
             onClick={() => setPage((current) => current - 1)}
           >
             {t('universe.list.previous')}
-          </button>
+          </Button>
           <span className="pager__position">
             {t('universe.list.page', { page: result.page, total: result.totalPages })}
           </span>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page >= result.totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
             {t('universe.list.next')}
-          </button>
+          </Button>
         </nav>
       ) : null}
     </>
