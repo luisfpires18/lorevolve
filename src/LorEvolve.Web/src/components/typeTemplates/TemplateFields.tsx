@@ -4,7 +4,9 @@ import type { ProjectField } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
 import { FieldForm, kindLabel } from '../FieldForm'
 import { t } from '../../i18n'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
+import { Pencil, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** A template's open fields panel: each field with Edit and Delete, the field form, and Add field. */
 export function TemplateFields({
@@ -52,6 +54,7 @@ export function TemplateFields({
                       data-testid={`template-field-edit-${field.id}`}
                       onClick={() => setFieldForm({ templateId: template.id, field })}
                     >
+                      <ActionIcon icon={Pencil} />
                       {t('entityTypes.page.templates.editField')}
                     </button>
                     <button
@@ -66,6 +69,7 @@ export function TemplateFields({
                           .catch(failing)
                       }}
                     >
+                      <ActionIcon icon={Trash} />
                       {t('projects.schema.deleteField')}
                     </button>
                   </ActionMenu>
@@ -97,14 +101,14 @@ export function TemplateFields({
           }}
         />
       ) : canEdit ? (
-        <Button
-          tone="text"
+        <NewButton
+          tone="secondary"
           size="sm"
           data-testid={`template-field-add-${template.id}`}
           onClick={() => setFieldForm({ templateId: template.id, field: null })}
         >
           {t('projects.schema.addField')}
-        </Button>
+        </NewButton>
       ) : null}
     </div>
   )

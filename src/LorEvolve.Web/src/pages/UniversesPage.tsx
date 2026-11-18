@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArchiveRestore, Plus, Search } from 'lucide-react'
+import { ArchiveRestore, Search } from 'lucide-react'
 import { Field } from '../components/Field'
 import { useI18n } from '../i18n'
 import { RestoreBackup } from '../components/RestoreBackup'
@@ -10,6 +10,7 @@ import { createUniverse, listUniverses } from '../universes/api'
 import type { UniversePage } from '../universes/types'
 import { EmptyState } from '../components/EmptyState'
 import { Button } from '../components/Button'
+import { NewButton } from '../components/NewButton'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: UniversePage } | { kind: 'error'; message: string }
@@ -103,8 +104,7 @@ export default function UniversesPage() {
           <p className="home__lede">{t('universe.list.lede')}</p>
         </div>
         <div className="home__actions">
-          <Button
-            icon={Plus}
+          <NewButton
             onClick={() => {
               setRestoring(false)
               setIsCreating(true)
@@ -112,7 +112,7 @@ export default function UniversesPage() {
             data-testid="new-universe"
           >
             {t('universe.list.new')}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             icon={ArchiveRestore}
@@ -240,15 +240,14 @@ export default function UniversesPage() {
           }
           action={
             isFiltered ? undefined : (
-              <Button
-                icon={Plus}
+              <NewButton
                 onClick={() => {
                   setRestoring(false)
                   setIsCreating(true)
                 }}
               >
                 {t('universe.list.emptyNew')}
-              </Button>
+              </NewButton>
             )
           }
         />

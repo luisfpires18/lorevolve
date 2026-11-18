@@ -38,6 +38,13 @@ const shell: Dictionary['shell'] = {
     hint: 'O teu papel neste universo partilhado não a inclui. {back}',
     back: 'Voltar à vista geral',
   },
+  actions: {
+    cancel: 'Cancelar',
+    close: 'Fechar',
+    done: 'Concluído',
+    discard: 'Descartar alterações',
+    save: 'Guardar',
+  },
   confirm: {
     cancel: 'Cancelar',
     failed: 'Não foi possível fazer isso. Tenta de novo.',

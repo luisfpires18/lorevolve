@@ -96,7 +96,6 @@ const ideasBoard: Dictionary['ideas']['board'] = {
   listView: 'Vista de lista',
   cardsFull: 'Um quadro suporta até {max} cartões.',
   connecting: 'A traçar uma linha a partir de “{name}”: escolhe o cartão onde termina.',
-  cancel: 'Cancelar',
   noCards: 'Ainda não há cartões.',
   deletedIdea: 'Ideia eliminada',
   inTrash: 'Na Reciclagem',

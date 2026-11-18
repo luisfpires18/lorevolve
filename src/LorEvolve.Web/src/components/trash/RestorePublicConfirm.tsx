@@ -63,7 +63,7 @@ export function RestorePublicConfirm({
           {t('data.trash.publish.restorePrivate')}
         </Button>
         <Button tone="secondary" onClick={onCancel} data-testid="trash-confirm-cancel">
-          {t('data.trash.publish.cancel')}
+          {t('shell.actions.cancel')}
         </Button>
       </div>
     </div>

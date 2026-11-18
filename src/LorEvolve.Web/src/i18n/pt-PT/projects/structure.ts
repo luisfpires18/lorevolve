@@ -27,7 +27,7 @@ const projectsStructure: Dictionary['projects']['structure'] = {
   bodyLabel: 'Texto',
   bodyPlaceholder: 'Insira o texto',
   save: 'Guardar',
-  saving: 'A guardar',
+  saving: 'A guardar…',
   changed:
     'Isto foi alterado noutro sítio depois de ser aberto aqui. Nada foi substituído. Feche e abra de novo.',
   leave: 'Fechar sem guardar as alterações?',
@@ -42,7 +42,6 @@ const projectsStructure: Dictionary['projects']['structure'] = {
     sfxPlaceholder: 'Insira os efeitos sonoros',
     notes: 'Notas',
     notesPlaceholder: 'Insira notas para o artista',
-    save: 'Guardar vinheta',
     saved: 'Guardado',
     panels: 'Vinhetas',
     none: 'Esta página ainda não tem vinhetas. Adicione-as no esquema.',

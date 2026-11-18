@@ -172,7 +172,6 @@ const canon: Dictionary['canon'] = {
     nameOf: 'Nome do novo {word}',
     adding: 'A adicionar…',
     add: 'Adicionar {word}',
-    cancel: 'Cancelar',
   },
   terms: {
     notUsed: 'Não utilizado',
@@ -198,7 +197,6 @@ const canon: Dictionary['canon'] = {
     none: 'Ainda nenhum.',
     renameLabel: 'Mudar o nome de {name}',
     saveName: 'Guardar',
-    cancel: 'Cancelar',
     renameAria: 'Mudar o nome de {name}',
     rename: 'Mudar o nome',
     deleteAria: 'Eliminar {name}',

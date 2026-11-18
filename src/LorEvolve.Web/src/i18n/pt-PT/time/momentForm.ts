@@ -49,7 +49,6 @@ const timeMomentForm: Dictionary['time']['momentForm'] = {
   adding: 'A adicionar…',
   save: 'Guardar',
   create: 'Adicionar acontecimento',
-  cancel: 'Cancelar',
   stories: 'Histórias',
   storiesHint:
     'Liga este acontecimento às histórias a que interessa. Também aparece nas linhas do tempo delas.',

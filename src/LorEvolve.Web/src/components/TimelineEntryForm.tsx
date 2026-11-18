@@ -15,7 +15,7 @@ import { MomentBasics } from './timeline/MomentBasics'
 import { MomentDating } from './timeline/MomentDating'
 import { MomentDetails } from './timeline/MomentDetails'
 import { StoryLinks } from './timeline/StoryLinks'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface TimelineEntryFormProps {
   universeId: string
@@ -112,20 +112,14 @@ export function TimelineEntryForm({
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={isSaving} data-testid="save-moment">
-            {isSaving
-              ? entry
-                ? t('time.momentForm.saving')
-                : t('time.momentForm.adding')
-              : entry
-                ? t('time.momentForm.save')
-                : t('time.momentForm.create')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-moment">
-            {t('time.momentForm.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={entry ? t('time.momentForm.save') : t('time.momentForm.create')}
+          busy={isSaving}
+          busyLabel={entry ? t('time.momentForm.saving') : t('time.momentForm.adding')}
+          submitTestId="save-moment"
+          onCancel={close}
+          cancelTestId="cancel-moment"
+        />
       )}
     >
       {blocked ? (

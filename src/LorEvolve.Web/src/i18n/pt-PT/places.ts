@@ -80,7 +80,6 @@ const places: Dictionary['places'] = {
       'Listada com a família tal como a escreveste. Não coloca ninguém na árvore e não implica nenhum outro familiar.',
     creating: 'A adicionar…',
     create: 'Adicionar tipo',
-    cancel: 'Cancelar',
   },
   linkForm: {
     leave: 'Esta ligação familiar ainda não foi adicionada. Sair sem a guardar?',
@@ -105,7 +104,6 @@ const places: Dictionary['places'] = {
     statusGroup: 'Estado da ligação',
     saving: 'A adicionar…',
     add: 'Adicionar ligação',
-    cancel: 'Cancelar',
   },
   discovery: placesDiscovery,
   treeView: {
@@ -183,7 +181,6 @@ const places: Dictionary['places'] = {
     saving: 'A guardar…',
     save: 'Guardar',
     place: 'Colocar marcador',
-    cancel: 'Cancelar',
   },
   calibration: placesCalibration,
   viewer: {

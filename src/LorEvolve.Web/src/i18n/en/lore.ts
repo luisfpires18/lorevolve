@@ -43,7 +43,6 @@ const lore = {
     yesOption: 'Yes',
     noOption: 'No',
     apply: 'Apply',
-    cancel: 'Cancel',
   },
   search: loreSearch,
   onMaps: {
@@ -64,14 +63,11 @@ const lore = {
     rowAs: '“{term}” as {name}, {times}',
     times: { one: 'once', other: '{n} times' },
     apply: { one: 'Link 1 name', other: 'Link {n} names' },
-    cancel: 'Cancel',
-    close: 'Close',
   },
   editor: {
     linkPrompt: 'Link address',
     linkUnsafe: 'Links must be http, https or mailto addresses.',
     linkApply: 'Apply link',
-    linkCancel: 'Cancel',
     heading: 'Heading',
     bold: 'Bold',
     italic: 'Italic',
@@ -127,7 +123,6 @@ const lore = {
     chooseType: 'Choose a type',
     creating: 'Creating…',
     create: 'Create',
-    cancel: 'Cancel',
   },
   context: {
     triggerTitle: 'Lore',
@@ -170,7 +165,6 @@ const lore = {
     searchFailed: 'Search isn’t working right now. Try again in a moment.',
     searchingNote: 'Searching…',
     nothingMatches: 'Nothing matches “{term}”.',
-    close: 'Close',
   },
   preview: {
     back: 'Back to lore',

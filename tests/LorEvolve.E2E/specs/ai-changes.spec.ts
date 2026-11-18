@@ -155,7 +155,7 @@ test.describe('Pending AI Changes', () => {
     await page.getByTestId('ai-change-approve').click()
     const progress = page.getByTestId('ai-change-progress')
     await expect(progress).toContainText('Checking 3 changes')
-    await expect(page.getByTestId('ai-change-approve')).toHaveText('Applying')
+    await expect(page.getByTestId('ai-change-approve')).toHaveText('Applying…')
     count = { done: 2, total: 3 }
     await expect(progress).toContainText('2 of 3 applied')
     await expect(progress.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '2')

@@ -31,7 +31,7 @@ const projectsComics: Dictionary['projects']['comics'] = {
   deleteTitle: 'Eliminar {name}?',
   deleteMessage:
     'Só a lista e a sua ordem desaparecem. Cada número e capítulo fica na sua banda desenhada.',
-  addEntry: 'Adicionar um número ou capítulo',
+  addEntry: 'Adicionar número ou capítulo',
   addTitle: 'Adicionar a {name}',
   part: 'Número ou capítulo',
   choosePart: 'Escolha um',

@@ -8,7 +8,7 @@ import { labelFor, type RelationDraft } from '../../relationships/relationDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
 import { RelationFormFields } from './RelationFormFields'
 import { RelationFormPeriods } from './RelationFormPeriods'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 export function RelationForm({
   draft,
@@ -99,25 +99,21 @@ export function RelationForm({
         )}
       </Field>
 
-      <div className="relform__actions">
-        <Button onClick={save} disabled={isSaving} data-testid="save-relationship">
-          {isSaving
-            ? editingId
-              ? t('relationships.section.saving')
-              : t('relationships.section.adding')
-            : editingId
-              ? t('relationships.section.save')
-              : t('relationships.section.addSubmit')}
-        </Button>
-        <Button
-          tone="secondary"
-          onClick={() => {
-            void mayDiscard().then((discarding) => discarding && close())
-          }}
-        >
-          {t('relationships.section.cancel')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={
+          editingId ? t('relationships.section.save') : t('relationships.section.addSubmit')
+        }
+        busy={isSaving}
+        busyLabel={
+          editingId ? t('relationships.section.saving') : t('relationships.section.adding')
+        }
+        onSubmit={save}
+        submitTestId="save-relationship"
+        onCancel={() => {
+          void mayDiscard().then((discarding) => discarding && close())
+        }}
+        inline
+      />
     </div>
   )
 }

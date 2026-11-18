@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react'
+import { Pencil, Trash } from 'lucide-react'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import type { ProjectField } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
@@ -6,6 +6,7 @@ import { TypeIcon } from '../TypeIcon'
 import { t } from '../../i18n'
 import { TemplateFields } from './TemplateFields'
 import { Button } from '../Button'
+import { ActionIcon } from '../ActionIcon'
 
 /** One template's row: its icon, name and chip, Edit, Fields and the menu with Delete, then its fields when open. */
 export function TemplateRow({
@@ -89,6 +90,7 @@ export function TemplateRow({
                 data-testid={`template-delete-${template.id}`}
                 onClick={() => void remove(template)}
               >
+                <ActionIcon icon={Trash} />
                 {t('entityTypes.page.templates.delete')}
               </button>
             </ActionMenu>

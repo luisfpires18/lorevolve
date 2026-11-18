@@ -8,7 +8,6 @@ const canonWorldLogicMachine: Dictionary['canon']['worldLogic']['systems']['mach
   hint: 'Arraste para deslocar e use a roda para ampliar. Com a tela em foco, as setas deslocam, mais e menos ampliam e 0 mostra todos os estados. Tab chega a cada estado e à sua pega. Enter abre um estado e as setas movem-no. Enter numa pega começa uma transição.',
   hintConnecting: 'A desenhar uma transição: escolha o estado onde termina, ou prima Escape.',
   connecting: 'A desenhar uma transição a partir de {name}. Escolha o estado onde termina.',
-  cancel: 'Cancelar',
   zoom: 'Ampliação',
   zoomIn: 'Ampliar',
   zoomOut: 'Reduzir',

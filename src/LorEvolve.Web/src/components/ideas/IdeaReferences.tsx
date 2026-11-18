@@ -1,6 +1,6 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { referenceContext, referencePath } from '../../ideas/api'
 import { referenceKey, type Fields } from '../../ideas/ideaDraft'
 import {
@@ -10,6 +10,7 @@ import {
 } from '../../ideas/types'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** An idea editor's references: the list, each with Remove, and the way to add one. */
 export function IdeaReferences({
@@ -107,16 +108,15 @@ export function IdeaReferences({
         </ul>
       )}
 
-      <Button
+      <NewButton
         tone="secondary"
-        icon={Plus}
         ref={addButton}
         disabled={draft.universeId === null || isHeld}
         onClick={() => setIsPicking(true)}
         data-testid="idea-add-reference"
       >
         {t('ideas.editor.references.add')}
-      </Button>
+      </NewButton>
       {fieldErrors.references ? (
         <p className="field__error" data-testid="idea-references-error">
           {fieldErrors.references}

@@ -38,7 +38,6 @@ const placesMapForm = {
   createMap: 'Create map',
   saveDetails: 'Save',
   replacePicture: 'Replace picture',
-  cancel: 'Cancel',
 }
 
 export default placesMapForm

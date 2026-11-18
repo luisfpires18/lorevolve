@@ -1,0 +1,113 @@
+import type { ReactNode, Ref } from 'react'
+import { useI18n } from '../i18n'
+import type { ButtonSize } from '../lib/buttonClass'
+import { Button } from './Button'
+
+interface FormActionsProps {
+  /** Words at rest. Omitted: no submit (a Close-only drawer). */
+  submitLabel?: ReactNode
+  /** While true: the submit is busy (aria-busy, disabled) and says busyLabel, which ends in "…". */
+  busy?: boolean
+  busyLabel?: ReactNode
+  /** Any other reason the submit cannot go. */
+  disabled?: boolean
+  /** `danger` for a destructive confirm. */
+  submitTone?: 'primary' | 'danger'
+  /** Given: the submit is a plain button calling it. Absent: the form's own submit. */
+  onSubmit?: () => void
+  submitTestId?: string
+  submitRef?: Ref<HTMLButtonElement>
+  /** Given: a secondary Cancel (or Close) button. In a Drawer it is the guarded close. */
+  onCancel?: () => void
+  /** `cancel` (the default) or `close`, a drawer with nothing to save. */
+  dismiss?: 'cancel' | 'close'
+  /** Replaces the Cancel words: "Keep it". */
+  cancelLabel?: ReactNode
+  /** Cancel is disabled while busy. Default: it stays enabled. */
+  lockCancel?: boolean
+  cancelTestId?: string
+  /** Given: a danger-quiet button after Cancel, disabled while busy. */
+  onDelete?: () => void
+  deleteLabel?: ReactNode
+  deleteTestId?: string
+  /** `danger-quiet` (the default): this Delete opens a confirm. `danger` only when no confirm follows. */
+  deleteTone?: 'danger' | 'danger-quiet'
+  /** `sm` for an inline editor. All buttons share it. */
+  size?: ButtonSize
+  /** Wraps in `.form__actions`, a form's own footer. Default: a fragment, the host has its layout. */
+  inline?: boolean
+  /** Extra buttons or a status line between the submit and Cancel. */
+  children?: ReactNode
+}
+
+/**
+ * The Save and Cancel footer of a drawer, form, confirm or inline editor: submit, extras, Cancel or
+ * Close, Delete. Catalogue: `docs/design/ui-components.md`.
+ */
+export function FormActions({
+  submitLabel,
+  busy,
+  busyLabel,
+  disabled,
+  submitTone = 'primary',
+  onSubmit,
+  submitTestId,
+  submitRef,
+  onCancel,
+  dismiss = 'cancel',
+  cancelLabel,
+  lockCancel,
+  cancelTestId,
+  onDelete,
+  deleteLabel,
+  deleteTestId,
+  deleteTone = 'danger-quiet',
+  size,
+  inline,
+  children,
+}: FormActionsProps) {
+  const { t } = useI18n()
+  const buttons = (
+    <>
+      {submitLabel !== undefined ? (
+        <Button
+          type={onSubmit ? 'button' : 'submit'}
+          tone={submitTone}
+          size={size}
+          busy={busy}
+          busyLabel={busyLabel}
+          disabled={disabled}
+          onClick={onSubmit}
+          data-testid={submitTestId}
+          ref={submitRef}
+        >
+          {submitLabel}
+        </Button>
+      ) : null}
+      {children}
+      {onCancel ? (
+        <Button
+          tone="secondary"
+          size={size}
+          disabled={lockCancel && busy}
+          onClick={onCancel}
+          data-testid={cancelTestId}
+        >
+          {cancelLabel ?? t(dismiss === 'close' ? 'shell.actions.close' : 'shell.actions.cancel')}
+        </Button>
+      ) : null}
+      {onDelete ? (
+        <Button
+          tone={deleteTone}
+          size={size}
+          disabled={busy}
+          onClick={onDelete}
+          data-testid={deleteTestId}
+        >
+          {deleteLabel}
+        </Button>
+      ) : null}
+    </>
+  )
+  return inline ? <div className="form__actions">{buttons}</div> : buttons
+}

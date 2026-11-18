@@ -34,7 +34,6 @@ const placesCalibration: Dictionary['places']['calibration'] = {
   unitPlaceholder: 'Insere uma unidade',
   saving: 'A guardar…',
   save: 'Guardar',
-  cancel: 'Cancelar',
 }
 
 export default placesCalibration

@@ -1,7 +1,7 @@
 const universeConnect = {
   title: 'Connect an AI app',
   heading: 'Connect an AI app',
-  connecting: 'Connecting',
+  connecting: 'Connecting…',
   approve: 'Approve',
   deny: 'Deny',
   goBack: 'Go back to the app',

@@ -81,7 +81,6 @@ const timePeriods = {
   inUseHidden: 'In use. Move its dates to another date period before removing it.',
   save: 'Save',
   saved: 'Saved',
-  discard: 'Discard changes',
 }
 
 export default timePeriods

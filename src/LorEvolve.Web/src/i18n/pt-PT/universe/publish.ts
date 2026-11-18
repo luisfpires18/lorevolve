@@ -42,14 +42,14 @@ const universePublish: Dictionary['universe']['publish'] = {
     notPublished: 'Não publicado:',
     staysPrivate:
       'Qualquer entrada do lore, história, cena, texto de cena ou arco de enredo que não tenhas publicado onde foi escrito, as notas, as ideias, a linha do tempo, as regras do mundo, as relações, o Cânone, a reciclagem, e tudo o resto que editas no espaço de trabalho.',
-    publishing: 'A publicar',
+    publishing: 'A publicar…',
     publish: 'Publicar mundo',
     keepPrivate: 'Manter privado',
   },
   unpublish: {
     title: 'Tornar {name} privado?',
     note: 'A página pública e o lugar em Explorar deixam de estar disponíveis de imediato. Os detalhes públicos ficam aqui, e o endereço é mantido para quando o publicares de novo.',
-    working: 'A tornar privado',
+    working: 'A tornar privado…',
     confirm: 'Tornar privado',
     keep: 'Manter público',
   },
@@ -106,9 +106,8 @@ const universePublish: Dictionary['universe']['publish'] = {
     skipped: 'Ignoradas:',
     skippedNote:
       'estas histórias Concluídas precisam primeiro de um resumo público, na página de cada história.',
-    publishing: 'A publicar',
+    publishing: 'A publicar…',
     confirm: 'Publicar tudo',
-    close: 'Fechar',
     keepPrivate: 'Manter privado',
     again: 'A página de cada entrada e de cada história permite torná-la privada de novo.',
   },

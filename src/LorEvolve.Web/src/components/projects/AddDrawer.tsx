@@ -3,7 +3,7 @@ import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { CinemaPhase, CinemaProduction, CinemaSaga } from '../../projects/sagas'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 export function AddDrawer({
   production,
@@ -40,14 +40,12 @@ export function AddDrawer({
       onSubmit={add}
       busy={saving}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={saving || chosen === ''} data-testid="saga-add-save">
-            {t('projects.sagas.add')}
-          </Button>
-          <Button tone="secondary" onClick={close}>
-            {t('projects.common.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('projects.sagas.add')}
+          disabled={saving || chosen === ''}
+          submitTestId="saga-add-save"
+          onCancel={close}
+        />
       )}
     >
       <Field label={t('projects.sagas.phase')}>

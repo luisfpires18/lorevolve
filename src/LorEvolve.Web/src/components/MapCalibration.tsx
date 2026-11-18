@@ -8,6 +8,7 @@ import { calibrationActions } from '../maps/calibrationActions'
 import { useCalibrationFormState } from '../maps/useCalibrationFormState'
 import { CalibrationFields } from './maps/CalibrationFields'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /** A point of the picture, as fractions. */
 export interface Fraction {
@@ -179,18 +180,15 @@ export function MapCalibrationForm({
       />
 
       <div className="pincard__actions">
-        <Button
+        <FormActions
+          submitLabel={t('places.calibration.save')}
+          busy={isSaving}
+          busyLabel={t('places.calibration.saving')}
+          submitTestId="map-calibration-save"
+          onCancel={onCancel}
+          lockCancel
           size="sm"
-          type="submit"
-          disabled={isSaving}
-          aria-busy={isSaving || undefined}
-          data-testid="map-calibration-save"
-        >
-          {isSaving ? t('places.calibration.saving') : t('places.calibration.save')}
-        </Button>
-        <Button tone="secondary" size="sm" onClick={onCancel} disabled={isSaving}>
-          {t('places.calibration.cancel')}
-        </Button>
+        />
       </div>
     </form>
   )

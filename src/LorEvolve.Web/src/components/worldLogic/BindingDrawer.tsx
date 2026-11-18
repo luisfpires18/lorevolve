@@ -6,7 +6,7 @@ import type { MachineDoc } from '../../worldLogic/machine'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
-import { DrawerActions } from './DrawerActions'
+import { FormActions } from '../FormActions'
 
 export function BindingDrawer({
   binding,
@@ -36,7 +36,14 @@ export function BindingDrawer({
       onClose={onClose}
       onSubmit={() => onApply(form)}
       noValidate
-      actions={(close) => <DrawerActions close={close} isNew={false} testId="machine-binding" />}
+      actions={(close) => (
+        <FormActions
+          submitLabel={t(`${m}.save`)}
+          submitTestId="machine-binding-apply"
+          onCancel={close}
+          cancelTestId="machine-binding-cancel"
+        />
+      )}
     >
       <Field label={t(`${m}.fields.subjectType`)} error={errors?.subjecttype}>
         {textInput(

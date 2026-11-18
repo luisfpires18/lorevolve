@@ -63,7 +63,6 @@ const lorePage: Dictionary['lore']['page'] = {
   moveToTrash: 'Mover para a reciclagem',
   selectPage: 'Selecionar página',
   clearSelection: 'Limpar seleção',
-  done: 'Concluído',
   trash: {
     title: {
       one: 'Mover 1 entrada para a reciclagem?',

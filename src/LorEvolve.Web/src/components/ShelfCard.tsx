@@ -10,7 +10,7 @@ import {
 import { Link } from 'react-router-dom'
 import { t, useI18n } from '../i18n'
 import { StatusBadge } from './StatusBadge'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 /**
  * One thing an author is making, on its shelf: a game on a widescreen handheld, its picture on the screen; a film or
@@ -72,7 +72,7 @@ export function ShelfCard({
     <div className="shelfcard__empty">
       <EmptyIcon className="shelfcard__emptyicon" aria-hidden="true" strokeWidth={1.25} />
       {onAddPicture ? (
-        <Button
+        <NewButton
           tone="secondary"
           size="sm"
           icon={ImagePlus}
@@ -81,7 +81,7 @@ export function ShelfCard({
           data-testid="shelf-add-picture"
         >
           {t('projects.common.addPicture')}
-        </Button>
+        </NewButton>
       ) : null}
     </div>
   )

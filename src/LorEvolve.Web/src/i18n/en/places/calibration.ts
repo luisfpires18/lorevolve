@@ -32,7 +32,6 @@ const placesCalibration = {
   unitPlaceholder: 'Insert a unit',
   saving: 'Saving…',
   save: 'Save',
-  cancel: 'Cancel',
 }
 
 export default placesCalibration

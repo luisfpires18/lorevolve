@@ -5,7 +5,8 @@ import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { WORDS, type ProjectStructureWords } from '../projectEntities/seasonWords'
 import { SeasonItem } from './projectEntities/SeasonItem'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
+import { FormActions } from './FormActions'
 
 /**
  * The seasons of a project and the episodes in them (#145).
@@ -84,13 +85,13 @@ export function ProjectSeasons({
           <h2 className="sectionrule">{say.title()}</h2>
           <p className="projects__lede">{say.lede()}</p>
         </div>
-        <Button
+        <NewButton
           aria-expanded={adding}
           data-testid="project-season-add"
           onClick={() => setAdding((open) => !open)}
         >
           {say.add()}
-        </Button>
+        </NewButton>
       </header>
 
       {/* Asked for rather than standing open at the foot of the list. */}
@@ -123,18 +124,15 @@ export function ProjectSeasons({
               />
             )}
           </Field>
-          <div className="form__actions">
-            <Button type="submit" disabled={busy} data-testid="project-season-new-save">
-              {busy ? t('projects.seasons.saving') : say.add()}
-            </Button>
-            <Button
-              tone="secondary"
-              onClick={() => setAdding(false)}
-              data-testid="project-season-new-cancel"
-            >
-              {t('projects.common.cancel')}
-            </Button>
-          </div>
+          <FormActions
+            submitLabel={say.add()}
+            busy={busy}
+            busyLabel={t('projects.seasons.saving')}
+            submitTestId="project-season-new-save"
+            onCancel={() => setAdding(false)}
+            cancelTestId="project-season-new-cancel"
+            inline
+          />
         </form>
       ) : null}
 

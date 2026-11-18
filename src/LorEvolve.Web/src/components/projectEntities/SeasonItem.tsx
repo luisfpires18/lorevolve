@@ -12,7 +12,10 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
+import { FormActions } from '../FormActions'
+import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
 export function SeasonItem({
@@ -89,19 +92,16 @@ export function SeasonItem({
               />
             )}
           </Field>
-          <Button size="sm" type="submit" disabled={busy} data-testid="project-season-rename-save">
-            {t('projects.seasons.renameSave')}
-          </Button>
           {/* Without this the only way out of a rename the author thought better of was to save it. */}
-          <Button
-            tone="secondary"
+          <FormActions
+            submitLabel={t('projects.seasons.renameSave')}
+            busy={busy}
+            submitTestId="project-season-rename-save"
+            onCancel={() => setRenaming(null)}
+            cancelTestId="project-season-rename-cancel"
+            lockCancel
             size="sm"
-            disabled={busy}
-            onClick={() => setRenaming(null)}
-            data-testid="project-season-rename-cancel"
-          >
-            {t('projects.common.cancel')}
-          </Button>
+          />
         </form>
       ) : (
         <div className="projectcard__head">
@@ -126,6 +126,7 @@ export function SeasonItem({
                   data-testid={`project-season-up-${season.id}`}
                   onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
                 >
+                  <ActionIcon icon={ArrowUp} />
                   {t('projects.common.moveUp')}
                 </button>
               )}
@@ -137,6 +138,7 @@ export function SeasonItem({
                   data-testid={`project-season-down-${season.id}`}
                   onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
                 >
+                  <ActionIcon icon={ArrowDown} />
                   {t('projects.common.moveDown')}
                 </button>
               )}
@@ -149,6 +151,7 @@ export function SeasonItem({
                   setRenameTo(season.name)
                 }}
               >
+                <ActionIcon icon={Pencil} />
                 {t('projects.seasons.rename')}
               </button>
               <button
@@ -158,6 +161,7 @@ export function SeasonItem({
                 data-testid={`project-season-delete-${season.id}`}
                 onClick={() => run(deleteSeason(projectId, season.id))}
               >
+                <ActionIcon icon={Trash} />
                 {say.delete()}
               </button>
             </ActionMenu>
@@ -202,14 +206,14 @@ export function SeasonItem({
           }}
         />
       ) : (
-        <Button
-          tone="text"
+        <NewButton
+          tone="secondary"
           size="sm"
           data-testid={`project-episode-add-${season.id}`}
           onClick={() => setAddingTo(season.id)}
         >
           {say.addEpisode()}
-        </Button>
+        </NewButton>
       )}
     </li>
   )

@@ -3,6 +3,8 @@ import { deletePanel, movePanel, savePanel, type ProjectPage } from '../../proje
 import { ActionMenu } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
+import { ArrowDown, ArrowUp, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** A page's panels, each with what it shows, what is said, and its menu. */
 export function PagePanels({
@@ -87,6 +89,7 @@ export function PagePanels({
                     )
                   }
                 >
+                  <ActionIcon icon={ArrowUp} />
                   {t('projects.common.moveUp')}
                 </button>
               )}
@@ -104,6 +107,7 @@ export function PagePanels({
                     )
                   }
                 >
+                  <ActionIcon icon={ArrowDown} />
                   {t('projects.common.moveDown')}
                 </button>
               )}
@@ -114,6 +118,7 @@ export function PagePanels({
                 data-testid={`project-panel-delete-${panel.id}`}
                 onClick={() => run(deletePanel(projectId, volumeId, chapterId, page.id, panel.id))}
               >
+                <ActionIcon icon={Trash} />
                 {t('projects.pages.deletePanel')}
               </button>
             </ActionMenu>

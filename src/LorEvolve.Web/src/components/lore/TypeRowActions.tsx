@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, ListTree, Pencil } from 'lucide-react'
+import { ArrowDown, ArrowUp, ListTree, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import { useI18n } from '../../i18n'
 import type { EntityType } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** A type row's actions: Up and Down, Add child, Edit, Fields, and the menu with Add child, the moves and Delete. */
 export function TypeRowActions({
@@ -85,7 +86,7 @@ export function TypeRowActions({
           {/* A type straight inside this one, its parent already chosen - the quick way to build a branch.
                           Quiet like Up and Down; on a phone it waits in the row's menu instead. Coming back from the
                           drawer, the focus is on this button again, ready for the next sibling. */}
-          <Button
+          <NewButton
             tone="text"
             size="sm"
             icon={ListTree}
@@ -95,7 +96,7 @@ export function TypeRowActions({
             data-testid={`add-child-${type.name}`}
           >
             {t('entityTypes.page.addChild')}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             size="sm"
@@ -161,6 +162,7 @@ export function TypeRowActions({
             onClick={() => void removeType(type)}
             data-testid={`delete-type-${type.name}`}
           >
+            <ActionIcon icon={Trash} />
             {t('entityTypes.page.deleteType')}
           </button>
         </ActionMenu>

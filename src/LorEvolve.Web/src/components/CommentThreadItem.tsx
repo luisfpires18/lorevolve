@@ -5,6 +5,7 @@ import { Field } from './Field'
 import type { useUniverseAccess } from '../universes/access'
 import { confirmAction } from '../lib/confirm'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /** One comment thread: its comments, how it was resolved, the reply form or Reply, and Resolve or Reopen. */
 export function CommentThreadItem({
@@ -105,25 +106,19 @@ export function CommentThreadItem({
             )}
           </Field>
           <div className="reviewthread__tools">
-            <Button
-              size="sm"
-              type="submit"
+            <FormActions
+              submitLabel={t('review.comments.replyPost')}
+              busy={busy === thread.id}
+              busyLabel={t('review.comments.posting')}
               disabled={busy !== null}
-              data-testid="comment-reply-post"
-            >
-              {busy === thread.id ? t('review.comments.posting') : t('review.comments.replyPost')}
-            </Button>
-            <Button
-              tone="text"
-              size="sm"
-              onClick={() => {
+              submitTestId="comment-reply-post"
+              onCancel={() => {
                 setReplyTo(null)
                 setReply('')
                 setReplyError(null)
               }}
-            >
-              {t('review.comments.cancel')}
-            </Button>
+              size="sm"
+            />
           </div>
         </form>
       ) : (

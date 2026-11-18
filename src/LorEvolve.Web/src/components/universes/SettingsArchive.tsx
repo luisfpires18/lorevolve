@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** Settings → Advanced: archive or restore from the archive, with the confirm a public universe asks for. */
 export function SettingsArchive({
@@ -76,32 +77,27 @@ export function SettingsArchive({
               ? t('universe.settings.archiveConfirmPublicNote')
               : t('universe.settings.archiveConfirmUnknownNote')}
           </p>
-          <div className="form__actions">
-            <Button
-              onClick={() => void toggleArchived()}
-              disabled={busy}
-              data-testid="confirm-archive"
-            >
-              {busy
-                ? t('universe.settings.archiving')
-                : isPublic
-                  ? t('universe.settings.archiveKeepPublic')
-                  : t('universe.settings.archiveConfirmButton')}
-            </Button>
+          <FormActions
+            submitLabel={
+              isPublic
+                ? t('universe.settings.archiveKeepPublic')
+                : t('universe.settings.archiveConfirmButton')
+            }
+            busy={busy}
+            busyLabel={t('universe.settings.archiving')}
+            onSubmit={() => void toggleArchived()}
+            submitTestId="confirm-archive"
+            onCancel={() => {
+              archiveCancelled.current = true
+              setConfirmingArchive(false)
+            }}
+            cancelTestId="cancel-archive"
+            inline
+          >
             <Button tone="secondary" to={publishPath} data-testid="archive-go-private">
               {t('universe.settings.makePrivateFirst')}
             </Button>
-            <Button
-              tone="secondary"
-              onClick={() => {
-                archiveCancelled.current = true
-                setConfirmingArchive(false)
-              }}
-              data-testid="cancel-archive"
-            >
-              {t('universe.settings.archiveCancel')}
-            </Button>
-          </div>
+          </FormActions>
         </div>
       ) : (
         <Button

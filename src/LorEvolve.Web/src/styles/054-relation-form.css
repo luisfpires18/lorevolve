@@ -33,10 +33,3 @@
   gap: 1.25rem;
   align-items: start;
 }
-
-.relform__actions {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  flex-wrap: wrap;
-}

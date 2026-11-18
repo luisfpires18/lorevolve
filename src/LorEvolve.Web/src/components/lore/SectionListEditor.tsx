@@ -1,9 +1,10 @@
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
 import { Button } from '../Button'
 import { IconButton } from '../IconButton'
+import { NewButton } from '../NewButton'
 
 /** The sections drawer's list of sections: name, fold, move and remove each one, and Add section. */
 export function SectionListEditor({
@@ -77,7 +78,7 @@ export function SectionListEditor({
                   data-testid={`section-down-${index}`}
                 />
                 <Button
-                  tone="text"
+                  tone="danger-quiet"
                   size="sm"
                   icon={Trash2}
                   className="fieldlist__delete"
@@ -94,9 +95,9 @@ export function SectionListEditor({
           ))}
         </ol>
       )}
-      <Button tone="secondary" size="sm" icon={Plus} onClick={add} data-testid="add-section">
+      <NewButton tone="secondary" size="sm" onClick={add} data-testid="add-section">
         {t('entityTypes.sections.add')}
-      </Button>
+      </NewButton>
     </section>
   )
 }

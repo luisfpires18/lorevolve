@@ -67,7 +67,7 @@ export function TrashSelectBar({
           }}
           data-testid="trash-select-done"
         >
-          {t('data.trash.bar.done')}
+          {t('shell.actions.done')}
         </Button>
       </div>
     </footer>

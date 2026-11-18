@@ -7,6 +7,7 @@ import { useI18n } from '../i18n'
 import { getMcpConnectInfo, readable } from '../mcp/api'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 type Load =
   | { kind: 'loading' }
@@ -92,11 +93,7 @@ function ConnectDrawer({
       context={<p className="drawer__context">{t('ai.connect.context')}</p>}
       onClose={onClose}
       actions={(close) => (
-        <>
-          <Button tone="secondary" onClick={close} data-testid="connect-ai-close">
-            {t('ai.connect.close')}
-          </Button>
-        </>
+        <FormActions onCancel={close} dismiss="close" cancelTestId="connect-ai-close" />
       )}
     >
       {load.kind === 'loading' ? (

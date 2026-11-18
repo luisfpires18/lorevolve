@@ -1,7 +1,8 @@
-import { LayoutList, Plus } from 'lucide-react'
+import { LayoutList } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldSection } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** Under a type's fields: Add field, and Sections once there is anything to arrange. */
 export function TypeFieldTools({
@@ -20,10 +21,9 @@ export function TypeFieldTools({
   const { t } = useI18n()
   return (
     <p className="fieldlist__tools">
-      <Button
+      <NewButton
         tone="secondary"
         size="sm"
-        icon={Plus}
         onClick={() => {
           clear()
           setEditing('new')
@@ -31,7 +31,7 @@ export function TypeFieldTools({
         data-testid={`new-field-${type.name}`}
       >
         {t('entityTypes.fields.add')}
-      </Button>
+      </NewButton>
       {type.fields.length > 0 || sections.length > 0 ? (
         <Button
           tone="text"

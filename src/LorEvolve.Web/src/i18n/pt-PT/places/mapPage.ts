@@ -41,7 +41,6 @@ const placesMapPage: Dictionary['places']['mapPage'] = {
     'A definir a escala: clica no mapa para marcar o ponto A, depois o ponto B, ou escreve onde estão ao lado do mapa.',
   placing: 'Clica no mapa onde o marcador fica, ou {position}.',
   typePosition: 'escreve a posição dele',
-  cancel: 'Cancelar',
   markerA: 'A',
   markerB: 'B',
   panel: 'Marcadores e escala',

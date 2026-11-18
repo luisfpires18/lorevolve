@@ -6,6 +6,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { ScriptEditor } from './ScriptEditor'
 import { Button } from '../Button'
+import { ArrowDown, ArrowUp, FolderInput, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** A season's episodes, each with its menu, and with its pages or its script when opened. */
 export function SeasonEpisodes({
@@ -78,6 +80,7 @@ export function SeasonEpisodes({
                     run(moveEpisode(projectId, season.id, episode.id, { place: place - 1 }))
                   }
                 >
+                  <ActionIcon icon={ArrowUp} />
                   {t('projects.common.moveUp')}
                 </button>
               )}
@@ -91,6 +94,7 @@ export function SeasonEpisodes({
                     run(moveEpisode(projectId, season.id, episode.id, { place: place + 1 }))
                   }
                 >
+                  <ActionIcon icon={ArrowDown} />
                   {t('projects.common.moveDown')}
                 </button>
               )}
@@ -113,6 +117,7 @@ export function SeasonEpisodes({
                       )
                     }
                   >
+                    <ActionIcon icon={FolderInput} />
                     {say.moveToSeason()} {other.name}
                   </button>
                 ))}
@@ -123,6 +128,7 @@ export function SeasonEpisodes({
                 data-testid={`project-episode-delete-${episode.id}`}
                 onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
               >
+                <ActionIcon icon={Trash} />
                 {say.deleteEpisode()}
               </button>
             </ActionMenu>

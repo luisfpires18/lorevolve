@@ -17,7 +17,6 @@ const ai: Dictionary['ai'] = {
     loading: 'A obter o endereço deste universo…',
     loadFailed: 'Não foi possível obter o endereço. Fecha isto e tenta novamente.',
     unavailable: 'A ligação de aplicações de IA ainda não está configurada neste LorEvolve.',
-    close: 'Fechar',
     urlLabel: 'URL do servidor MCP',
     copy: 'Copiar URL',
     urlHint:
@@ -108,7 +107,6 @@ const ai: Dictionary['ai'] = {
       adding: 'A adicionar…',
       save: 'Guardar',
       add: 'Adicionar registo',
-      cancel: 'Cancelar',
     },
   },
 }

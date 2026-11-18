@@ -112,12 +112,11 @@ const entityPage: Dictionary['entity']['page'] = {
     unsaved: 'Alterações por guardar',
     newEntry: 'Nova entrada',
     noChanges: 'Ainda sem alterações',
-    sending: 'A enviar',
+    sending: 'A enviar…',
     send: 'Enviar sugestão',
     saving: 'A guardar…',
     create: 'Criar entrada',
     save: 'Guardar alterações',
-    cancel: 'Cancelar',
     closeSuggestion: {
       title: 'Fechar o formulário sem enviar a tua sugestão?',
       message: 'Vai perder-se.',

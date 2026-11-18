@@ -155,7 +155,6 @@ const stories: Dictionary['stories'] = {
     adding: 'A adicionar…',
     save: 'Guardar',
     add: 'Adicionar capítulo',
-    cancel: 'Cancelar',
   },
   sceneForm: storiesSceneForm,
   arcForm: {
@@ -177,7 +176,6 @@ const stories: Dictionary['stories'] = {
     adding: 'A adicionar…',
     save: 'Guardar',
     add: 'Adicionar arco',
-    cancel: 'Cancelar',
   },
   publication: storiesPublication,
   summaryForm: {
@@ -189,7 +187,6 @@ const stories: Dictionary['stories'] = {
     count: '{count} de {max} carateres',
     saving: 'A guardar…',
     save: 'Guardar',
-    cancel: 'Cancelar',
   },
   status: {
     planning: 'Em planeamento',

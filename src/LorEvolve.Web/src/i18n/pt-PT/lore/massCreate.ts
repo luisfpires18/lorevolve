@@ -31,7 +31,6 @@ const loreMassCreate: Dictionary['lore']['massCreate'] = {
     other: 'Valores predefinidos aplicados a {n} linhas.',
   },
   applyAll: 'Aplicar a todas',
-  cancel: 'Cancelar',
   chooseStatus: 'Escolher um estado',
   chooseType: 'Escolher um tipo',
   columnName: 'Nome',

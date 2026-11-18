@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react'
 import { Field } from './Field'
 import { EmptyState } from './EmptyState'
 import { SaveAction } from './SaveAction'
@@ -14,6 +13,7 @@ import { chronologyActions } from '../chronology/chronologyActions'
 import { ChronologyUnplaced } from './chronology/ChronologyUnplaced'
 import { ChronologyEraRow } from './chronology/ChronologyEraRow'
 import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 interface ChronologyEditorProps {
   universeId: string
@@ -88,9 +88,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         title={t('time.periods.title')}
         lede={<p>{t('time.periods.lede')}</p>}
         actions={
-          <Button icon={Plus} onClick={add} data-testid="add-era">
+          <NewButton onClick={add} data-testid="add-era">
             {t('time.periods.add')}
-          </Button>
+          </NewButton>
         }
       />
       <section className="chronology" aria-labelledby={headingId} data-testid="chronology-settings">
@@ -106,9 +106,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             }
             hint={t('time.periods.empty.hint')}
             action={
-              <Button icon={Plus} onClick={add} data-testid="add-era-empty">
+              <NewButton onClick={add} data-testid="add-era-empty">
                 {t('time.periods.add')}
-              </Button>
+              </NewButton>
             }
           />
         ) : (
@@ -200,7 +200,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             />
             {dirty ? (
               <Button tone="secondary" onClick={discard}>
-                {t('time.periods.discard')}
+                {t('shell.actions.discard')}
               </Button>
             ) : null}
           </div>

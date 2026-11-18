@@ -44,7 +44,6 @@ const lore: Dictionary['lore'] = {
     yesOption: 'Sim',
     noOption: 'Não',
     apply: 'Aplicar',
-    cancel: 'Cancelar',
   },
   search: loreSearch,
   onMaps: {
@@ -65,14 +64,11 @@ const lore: Dictionary['lore'] = {
     rowAs: '“{term}” como {name}, {times}',
     times: { one: 'uma vez', other: '{n} vezes' },
     apply: { one: 'Ligar 1 nome', other: 'Ligar {n} nomes' },
-    cancel: 'Cancelar',
-    close: 'Fechar',
   },
   editor: {
     linkPrompt: 'Endereço da ligação',
     linkUnsafe: 'As ligações têm de ser endereços http, https ou mailto.',
     linkApply: 'Aplicar ligação',
-    linkCancel: 'Cancelar',
     heading: 'Título',
     bold: 'Negrito',
     italic: 'Itálico',
@@ -130,7 +126,6 @@ const lore: Dictionary['lore'] = {
     chooseType: 'Escolher um tipo',
     creating: 'A criar…',
     create: 'Criar',
-    cancel: 'Cancelar',
   },
   context: {
     triggerTitle: 'Lore',
@@ -173,7 +168,6 @@ const lore: Dictionary['lore'] = {
     searchFailed: 'A pesquisa não está a funcionar neste momento. Tenta novamente daqui a pouco.',
     searchingNote: 'A pesquisar…',
     nothingMatches: 'Nada corresponde a “{term}”.',
-    close: 'Fechar',
   },
   preview: {
     back: 'Voltar ao lore',

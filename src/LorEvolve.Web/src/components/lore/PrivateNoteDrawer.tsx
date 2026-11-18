@@ -18,6 +18,7 @@ import { Field } from '../Field'
 import type { PrivateNotesProps } from '../PrivateNotes'
 import { PrivateNoteConflict } from './PrivateNoteConflict'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 const count = (value: number) => numberFormat({}, 'en').format(value)
 
@@ -146,9 +147,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       leaveMessage={t('entity.privateNote.discardGuard')}
       onClose={onClose}
       actions={(close) => (
-        <Button tone="secondary" onClick={close} data-testid="private-note-close">
-          {t('entity.privateNote.close')}
-        </Button>
+        <FormActions onCancel={close} dismiss="close" cancelTestId="private-note-close" />
       )}
     >
       {load === 'loading' ? (

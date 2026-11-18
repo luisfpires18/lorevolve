@@ -18,7 +18,7 @@ const auth = {
     password: 'Password',
     forgot: 'Forgot your password?',
     submit: 'Sign in',
-    submitting: 'Signing in',
+    submitting: 'Signing in…',
   },
   register: {
     heading: 'Create account',
@@ -44,7 +44,7 @@ const auth = {
     sent: 'If {email} has a LorEvolve account, a link is on its way. It works once, for 1 hour. Nothing arrived? Check your spam folder, or write to support@lorevolve.com.',
     email: 'Email',
     submit: 'Send the link',
-    submitting: 'Sending',
+    submitting: 'Sending…',
   },
   reset: {
     heading: 'Choose a new password',
@@ -83,7 +83,7 @@ const auth = {
     },
     ready: {
       intro: "You've been invited as {role}.",
-      working: 'Working',
+      working: 'Working…',
       accept: 'Accept invitation',
       decline: 'Decline',
     },

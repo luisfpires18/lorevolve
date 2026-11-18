@@ -93,7 +93,6 @@ const ideasBoard = {
   listView: 'List view',
   cardsFull: 'A board holds up to {max} cards.',
   connecting: 'Drawing a line from “{name}”: choose the card it ends at.',
-  cancel: 'Cancel',
   noCards: 'No cards yet.',
   deletedIdea: 'Deleted idea',
   inTrash: 'In the Trash',

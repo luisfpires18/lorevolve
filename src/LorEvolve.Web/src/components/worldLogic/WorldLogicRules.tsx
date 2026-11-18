@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { Plus } from 'lucide-react'
 import { EmptyState } from '../EmptyState'
 import { TabPanel } from '../QueryTabs'
 import { t, useI18n } from '../../i18n'
@@ -9,6 +8,7 @@ import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -106,9 +106,7 @@ export function WorldLogicRules({
           hint={t('canon.rules.empty.hint')}
           action={
             access.editContent ? (
-              <Button icon={Plus} to={`${base}/world-rules/new`}>
-                {t('canon.rules.newRule')}
-              </Button>
+              <NewButton to={`${base}/world-rules/new`}>{t('canon.rules.newRule')}</NewButton>
             ) : undefined
           }
         />

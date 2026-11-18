@@ -39,7 +39,6 @@ const entityArticle = {
     'This device could not keep a recovery copy of these changes. Save to keep them.',
   save: 'Save',
   saving: 'Saving…',
-  done: 'Done',
 }
 
 export default entityArticle

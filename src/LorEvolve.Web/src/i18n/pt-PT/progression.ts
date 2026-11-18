@@ -256,7 +256,6 @@ const progression: Dictionary['progression'] = {
     },
     saving: 'A guardar…',
     adding: 'A adicionar…',
-    cancel: 'Cancelar',
   },
 }
 

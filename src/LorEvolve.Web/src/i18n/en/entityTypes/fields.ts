@@ -143,7 +143,6 @@ const entityTypesFields = {
   saving: 'Saving…',
   saveChanges: 'Save',
   adding: 'Adding…',
-  cancel: 'Cancel',
 }
 
 export default entityTypesFields

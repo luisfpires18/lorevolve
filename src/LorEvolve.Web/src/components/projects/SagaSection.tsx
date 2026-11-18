@@ -14,6 +14,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import { MoveItems } from '../MoveItems'
 import { Production } from './Production'
 import type { Editing } from './GroupDrawer'
+import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
 
 /** One saga: its head and menu, and its phases with their productions. */
 export function SagaSection({
@@ -63,6 +65,7 @@ export function SagaSection({
             data-testid={`saga-phase-new-${saga.id}`}
             onClick={() => setEditing({ saga, phase: null, forPhase: true })}
           >
+            <ActionIcon icon={Plus} />
             {t('projects.sagas.newPhase')}
           </button>
           <button
@@ -71,6 +74,7 @@ export function SagaSection({
             data-testid={`saga-edit-${saga.id}`}
             onClick={() => setEditing({ saga, phase: null, forPhase: false })}
           >
+            <ActionIcon icon={Pencil} />
             {t('projects.sagas.editSaga')}
           </button>
           <button
@@ -85,6 +89,7 @@ export function SagaSection({
               )
             }
           >
+            <ActionIcon icon={Trash} />
             {t('projects.sagas.deleteSaga')}
           </button>
         </ActionMenu>
@@ -118,6 +123,7 @@ export function SagaSection({
                       data-testid={`phase-edit-${phase.id}`}
                       onClick={() => setEditing({ saga, phase, forPhase: true })}
                     >
+                      <ActionIcon icon={Pencil} />
                       {t('projects.sagas.editPhase')}
                     </button>
                     <button
@@ -132,6 +138,7 @@ export function SagaSection({
                         )
                       }
                     >
+                      <ActionIcon icon={Trash} />
                       {t('projects.sagas.deletePhase')}
                     </button>
                   </ActionMenu>
@@ -176,6 +183,7 @@ export function SagaSection({
                               )
                             }
                           >
+                            <ActionIcon icon={FolderInput} />
                             {t('projects.sagas.remove')}
                           </button>
                         </ActionMenu>

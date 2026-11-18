@@ -1,5 +1,4 @@
 import { useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { Plus } from 'lucide-react'
 import { Field } from '../Field'
 import { createIdea } from '../../ideas/api'
 import {
@@ -10,7 +9,7 @@ import {
 } from '../../ideas/types'
 import { ApiError } from '../../lib/api'
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /**
  * What a capture creates from where it was typed: no universe from all ideas, the universe from a universe's, and the
@@ -124,16 +123,15 @@ export function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptu
               onKeyDown={keyDown}
               data-testid="idea-capture-input"
             />
-            <Button
+            <NewButton
               tone="secondary"
-              icon={Plus}
               className="ideacapture__submit"
               type="submit"
               disabled={saving}
               data-testid="idea-capture-submit"
             >
               {saving ? t('ideas.capture.capturing') : t('ideas.capture.submit')}
-            </Button>
+            </NewButton>
           </div>
         )}
       </Field>

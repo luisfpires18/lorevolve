@@ -8,7 +8,7 @@ import { useLoreContextLinks } from '../../lore/useLoreContextLinks'
 import { LoreContextRow } from './LoreContextRow'
 import { LoreContextMentioned } from './LoreContextMentioned'
 import { LorePreview } from './LorePreview'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /**
  * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
@@ -116,11 +116,7 @@ export function LoreContextDrawer({
       // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
       onClose={onClose}
       actions={(close) => (
-        <>
-          <Button tone="secondary" onClick={close} data-testid="lore-context-close">
-            {t('lore.context.close')}
-          </Button>
-        </>
+        <FormActions onCancel={close} dismiss="close" cancelTestId="lore-context-close" />
       )}
     >
       {message ? (

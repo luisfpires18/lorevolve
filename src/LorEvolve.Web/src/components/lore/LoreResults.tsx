@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { EmptyState } from '../EmptyState'
 import { EntityCard } from '../EntityCard'
@@ -11,6 +11,7 @@ import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -112,9 +113,9 @@ export function LoreResults({
           }
           action={
             access.editContent ? (
-              <Button icon={Plus} to={createTo} data-testid="empty-new-entity">
+              <NewButton to={createTo} data-testid="empty-new-entity">
                 {tx('lore.page.emptyNewType', { type: <bdi>{selectedType.name}</bdi> })}
-              </Button>
+              </NewButton>
             ) : undefined
           }
         />

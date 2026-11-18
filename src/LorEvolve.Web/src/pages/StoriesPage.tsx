@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Plus } from 'lucide-react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { CoverDrawer } from '../components/CoverDrawer'
@@ -20,6 +19,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { StoryShelf } from '../components/stories/StoryShelf'
 import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
 import { Button } from '../components/Button'
+import { NewButton } from '../components/NewButton'
 
 type LoadState =
   | { kind: 'loading' }
@@ -116,9 +116,9 @@ export default function StoriesPage() {
         lede={t('stories.browse.lede')}
         actions={
           access.editContent ? (
-            <Button icon={Plus} onClick={() => setIsCreating(true)} data-testid="new-story">
+            <NewButton onClick={() => setIsCreating(true)} data-testid="new-story">
               {t('stories.browse.newStory')}
-            </Button>
+            </NewButton>
           ) : undefined
         }
       />
@@ -197,9 +197,9 @@ export default function StoriesPage() {
           hint={t('stories.browse.empty.hint')}
           action={
             access.editContent ? (
-              <Button icon={Plus} onClick={() => setIsCreating(true)} data-testid="empty-new-story">
+              <NewButton onClick={() => setIsCreating(true)} data-testid="empty-new-story">
                 {t('stories.browse.empty.newStory')}
-              </Button>
+              </NewButton>
             ) : undefined
           }
         />

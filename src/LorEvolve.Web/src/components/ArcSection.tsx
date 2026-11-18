@@ -1,14 +1,14 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
+import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { useFold } from './fold'
 import { FoldToggle } from './FoldToggle'
 import { arcLabel, arcNumber, chapterCountLabel } from '../stories/format'
 import type { PlotArc } from '../stories/types'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 interface ArcSectionProps {
   arc: PlotArc
@@ -97,9 +97,8 @@ export function ArcSection({
           {publication}
           {access.editContent ? (
             <>
-              <Button
-                tone="text"
-                icon={Plus}
+              <NewButton
+                tone="secondary"
                 onClick={() => {
                   setFoldOpen(true)
                   onAddChapter(arc)
@@ -108,7 +107,7 @@ export function ArcSection({
                 data-testid="arc-new-chapter"
               >
                 {t('stories.arc.addChapter')}
-              </Button>
+              </NewButton>
               <ActionMenu
                 label={t('stories.arc.moreActions', { label: arcLabel(index, arc.title) })}
                 triggerTestId="arc-actions"

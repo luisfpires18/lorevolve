@@ -1,8 +1,7 @@
 import { useI18n } from '../../i18n'
 import type { RelationshipType } from '../../relationships/types'
-import { Plus } from 'lucide-react'
 import type { useUniverseAccess } from '../../universes/access'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 export function RelationsHead({
   access,
@@ -25,9 +24,9 @@ export function RelationsHead({
         {t('relationships.section.heading')}
       </h2>
       {access.editContent && types.length > 0 && !isAdding && !editingId ? (
-        <Button tone="secondary" icon={Plus} onClick={openAdd} data-testid="add-relationship">
+        <NewButton tone="secondary" onClick={openAdd} data-testid="add-relationship">
           {t('relationships.section.add')}
-        </Button>
+        </NewButton>
       ) : null}
     </div>
   )

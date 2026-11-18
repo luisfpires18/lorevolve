@@ -47,7 +47,6 @@ const timeMomentForm = {
   adding: 'Adding…',
   save: 'Save',
   create: 'Add moment',
-  cancel: 'Cancel',
   stories: 'Stories',
   storiesHint: 'Link this moment to the stories it matters to. It shows up on their timelines too.',
   storyInTrash: '(in Trash)',

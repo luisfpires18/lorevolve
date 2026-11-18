@@ -28,7 +28,7 @@ const projectsComics = {
   delete: 'Delete',
   deleteTitle: 'Delete {name}?',
   deleteMessage: 'Only the list and its order go. Every issue and chapter stays in its comic.',
-  addEntry: 'Add an issue or chapter',
+  addEntry: 'Add issue or chapter',
   addTitle: 'Add to {name}',
   part: 'Issue or chapter',
   choosePart: 'Choose one',

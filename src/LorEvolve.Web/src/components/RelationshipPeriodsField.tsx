@@ -1,4 +1,4 @@
-import { Plus, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Field } from './Field'
 import {
   ChronologyPointFields,
@@ -8,8 +8,8 @@ import {
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
 import { newPeriod, type PeriodDraft } from '../relationships/periods'
-import { Button } from './Button'
 import { IconButton } from './IconButton'
+import { NewButton } from './NewButton'
 
 /** An era either end of the link has, offered as a period: "Frieza Saga (Goku)". */
 export interface EraChoice {
@@ -181,15 +181,14 @@ export function RelationshipPeriodsField({
         )
       })}
 
-      <Button
+      <NewButton
         tone="secondary"
         size="sm"
-        icon={Plus}
         onClick={() => onChange([...value, newPeriod()])}
         data-testid="relation-period-add"
       >
         {t('relationships.periods.add')}
-      </Button>
+      </NewButton>
     </Field>
   )
 }

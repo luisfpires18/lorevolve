@@ -1,7 +1,6 @@
-import { Plus } from 'lucide-react'
 import { EmptyState } from '../EmptyState'
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** What the boards list says when it has no boards to show. */
 export function BoardsEmpty({
@@ -32,9 +31,9 @@ export function BoardsEmpty({
       title={t('ideas.boards.empty.noneTitle')}
       hint={t('ideas.boards.empty.noneHint')}
       action={
-        <Button icon={Plus} to={`${basePath}/new`} data-testid="empty-new-board">
+        <NewButton to={`${basePath}/new`} data-testid="empty-new-board">
           {t('ideas.boards.newBoard')}
-        </Button>
+        </NewButton>
       }
     />
   )

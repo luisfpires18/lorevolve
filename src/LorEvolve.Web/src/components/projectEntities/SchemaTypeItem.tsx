@@ -1,4 +1,4 @@
-import { ListTree, Pencil } from 'lucide-react'
+import { ListTree, Pencil, Trash } from 'lucide-react'
 import { deleteProjectType } from '../../projectEntities/api'
 import { typePathLabel } from '../../lore/typeTree'
 import type { ProjectEntityType } from '../../projectEntities/types'
@@ -10,6 +10,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { buildTypeTree } from '../../lore/typeTree'
 import { SchemaTypeFields } from './SchemaTypeFields'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 type Tree = ReturnType<typeof buildTypeTree<ProjectEntityType>>
 
@@ -74,7 +75,7 @@ export function SchemaTypeItem({
         </span>
         <span className="types__actions">
           {/* Quiet like the universe's; on a phone it waits in the row's menu instead. */}
-          <Button
+          <NewButton
             tone="text"
             size="sm"
             icon={ListTree}
@@ -87,7 +88,7 @@ export function SchemaTypeItem({
             }}
           >
             {t('entityTypes.page.addChild')}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             size="sm"
@@ -136,6 +137,7 @@ export function SchemaTypeItem({
                 deleteProjectType(projectId, type.id).then(refresh).catch(failing)
               }}
             >
+              <ActionIcon icon={Trash} />
               {t('entityTypes.page.deleteType')}
             </button>
           </ActionMenu>

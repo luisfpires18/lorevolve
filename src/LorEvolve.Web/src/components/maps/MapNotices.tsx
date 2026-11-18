@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { PinForm } from '../../maps/useMapPageState'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 export function MapNotices({
   map,
@@ -55,9 +56,7 @@ export function MapNotices({
               </Button>
             ),
           })}{' '}
-          <Button tone="text" onClick={() => setPlacing(false)}>
-            {t('places.mapPage.cancel')}
-          </Button>
+          <FormActions onCancel={() => setPlacing(false)} />
         </p>
       ) : null}
 

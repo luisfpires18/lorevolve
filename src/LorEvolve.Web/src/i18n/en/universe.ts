@@ -54,7 +54,6 @@ const universe = {
     colourClear: 'No colour',
     colourHintSet: 'Marks this universe in your workspace.',
     colourHintUnset: 'No colour: the universe uses LorEvolve’s own.',
-    cancel: 'Cancel',
   },
   publicDetails: {
     leave: 'The public details have unsaved changes. Leave without saving them?',

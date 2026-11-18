@@ -35,6 +35,13 @@ const shell = {
     hint: 'Your role in this shared universe does not include it. {back}',
     back: 'Back to the overview',
   },
+  actions: {
+    cancel: 'Cancel',
+    close: 'Close',
+    done: 'Done',
+    discard: 'Discard changes',
+    save: 'Save',
+  },
   confirm: {
     cancel: 'Cancel',
     failed: 'That could not be done. Try again.',

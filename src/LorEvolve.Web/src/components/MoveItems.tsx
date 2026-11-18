@@ -1,4 +1,6 @@
 import { t } from '../i18n'
+import { ArrowDown, ArrowUp } from 'lucide-react'
+import { ActionIcon } from './ActionIcon'
 
 /** Move up / Move down items for a row of an ordered list, as the seasons list has them. */
 export function MoveItems({
@@ -24,6 +26,7 @@ export function MoveItems({
           data-testid={`${testId}-up`}
           onClick={() => onMove(index - 1)}
         >
+          <ActionIcon icon={ArrowUp} />
           {t('projects.common.moveUp')}
         </button>
       )}
@@ -35,6 +38,7 @@ export function MoveItems({
           data-testid={`${testId}-down`}
           onClick={() => onMove(index + 1)}
         >
+          <ActionIcon icon={ArrowDown} />
           {t('projects.common.moveDown')}
         </button>
       )}

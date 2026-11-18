@@ -22,6 +22,7 @@ import { ItemConflict } from './progression/ItemConflict'
 import { ItemNameFields } from './progression/ItemNameFields'
 import { ItemUnlockField } from './progression/ItemUnlockField'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /**
  * One form or one ability of an entry (Issue #42), in the drawer every LorEvolve form uses: what it is; when it was first unlocked
@@ -110,20 +111,14 @@ export function ProgressionItemForm({
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button ref={saveButton} type="submit" disabled={isSaving} data-testid={`save-${kind}`}>
-            {isSaving
-              ? item
-                ? t('progression.item.saving')
-                : t('progression.item.adding')
-              : item
-                ? words.save
-                : words.add}
-          </Button>
-          <Button tone="secondary" onClick={close}>
-            {t('progression.item.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={item ? words.save : words.add}
+          busy={isSaving}
+          busyLabel={item ? t('progression.item.saving') : t('progression.item.adding')}
+          submitTestId={`save-${kind}`}
+          submitRef={saveButton}
+          onCancel={close}
+        />
       )}
     >
       {message ? (

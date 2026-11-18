@@ -79,7 +79,6 @@ const places = {
       'Listed with the family as you wrote it. It places nobody in the tree and implies no other relative.',
     creating: 'Adding…',
     create: 'Add kind',
-    cancel: 'Cancel',
   },
   linkForm: {
     leave: 'This family connection has not been added. Leave without saving it?',
@@ -104,7 +103,6 @@ const places = {
     statusGroup: 'Connection status',
     saving: 'Adding…',
     add: 'Add connection',
-    cancel: 'Cancel',
   },
   discovery: placesDiscovery,
   treeView: {
@@ -181,7 +179,6 @@ const places = {
     saving: 'Saving…',
     save: 'Save',
     place: 'Place pin',
-    cancel: 'Cancel',
   },
   calibration: placesCalibration,
   viewer: {

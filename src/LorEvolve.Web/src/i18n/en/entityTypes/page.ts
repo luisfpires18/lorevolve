@@ -190,7 +190,6 @@ const entityTypesPage = {
     saveChanges: 'Save',
     creating: 'Adding…',
     create: 'Add type',
-    cancel: 'Cancel',
   },
 }
 

@@ -7,6 +7,7 @@ import { Field } from './Field'
 import { FieldInput } from './FieldInputs'
 import { useQuickCreate } from '../lore/useQuickCreate'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 export interface Props {
   universeId: string
@@ -84,23 +85,16 @@ export function QuickCreateDialog({
       busy={isSaving}
       onSubmit={() => void create()}
       actions={(close) => (
-        <>
-          <Button
-            type="submit"
-            disabled={isSaving || eligible.length === 0}
-            data-testid="quick-create-submit"
-          >
-            {isSaving ? t('lore.quickCreate.creating') : t('lore.quickCreate.create')}
-          </Button>
-          <Button
-            tone="secondary"
-            onClick={close}
-            disabled={isSaving}
-            data-testid="quick-create-cancel"
-          >
-            {t('lore.quickCreate.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('lore.quickCreate.create')}
+          busy={isSaving}
+          busyLabel={t('lore.quickCreate.creating')}
+          disabled={eligible.length === 0}
+          submitTestId="quick-create-submit"
+          onCancel={close}
+          lockCancel
+          cancelTestId="quick-create-cancel"
+        />
       )}
     >
       {message ? (

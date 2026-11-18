@@ -87,7 +87,7 @@ export function ArchivedFields({
                 </Button>
                 {field.entryCount === 0 && !field.usedInHistory ? (
                   <Button
-                    tone="text"
+                    tone="danger-quiet"
                     size="sm"
                     className="fieldlist__delete"
                     onClick={() => void remove(field)}

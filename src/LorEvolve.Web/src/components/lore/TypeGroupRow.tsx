@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { EntityTypeGroup } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** One group on the groups tab: its rename form or its row with the moves, rename and delete, and its problem. */
 export function TypeGroupRow({
@@ -76,18 +77,17 @@ export function TypeGroupRow({
                 }}
                 data-testid="type-group-rename-input"
               />
-              <Button
-                tone="secondary"
-                size="sm"
-                disabled={busy}
-                onClick={() => void rename(group)}
-                data-testid="type-group-rename-save"
-              >
-                {t('entityTypes.groupsPanel.rename')}
-              </Button>
-              <Button tone="text" size="sm" onClick={() => setRenaming(null)}>
-                {t('entityTypes.groupsPanel.cancel')}
-              </Button>
+              <FormActions onCancel={() => setRenaming(null)} size="sm">
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => void rename(group)}
+                  data-testid="type-group-rename-save"
+                >
+                  {t('entityTypes.groupsPanel.rename')}
+                </Button>
+              </FormActions>
             </div>
           )}
         </Field>
@@ -136,7 +136,7 @@ export function TypeGroupRow({
                 {t('entityTypes.groupsPanel.rename')}
               </Button>
               <Button
-                tone="text"
+                tone="danger-quiet"
                 size="sm"
                 className="typegroups__delete"
                 disabled={busy}

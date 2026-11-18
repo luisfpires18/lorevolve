@@ -90,7 +90,6 @@ const account: Dictionary['account'] = {
     uploadingPhoto: 'A carregar a fotografia',
     workingText: '{label}…',
     uploadingText: 'A carregar… {percent}%',
-    cancel: 'Cancelar',
   },
 }
 

@@ -151,7 +151,7 @@ export function ArticleEditing({
             disabled={isSaving}
             data-testid="article-done"
           >
-            {t('entity.article.done')}
+            {t('shell.actions.done')}
           </Button>
         </div>
       </div>

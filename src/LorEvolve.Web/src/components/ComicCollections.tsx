@@ -15,7 +15,7 @@ import { WORDS } from '../projects/comicCollectionWords'
 import { ComicCollectionItem } from './projects/ComicCollectionItem'
 import { CollectionDrawer, type Editing } from './projects/CollectionDrawer'
 import { EntryDrawer } from './projects/EntryDrawer'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 const ARCS_AND_EVENTS: ComicCollectionKind[] = ['story-arc', 'event']
 
@@ -94,14 +94,14 @@ export function ComicCollections({
                 <h2 className="sectionrule">{t(WORDS[kind].title)}</h2>
               </div>
               {canEdit ? (
-                <Button
+                <NewButton
                   tone="secondary"
                   size="sm"
                   data-testid={`comic-collection-add-${kind}`}
                   onClick={() => setEditing({ kind, collection: null })}
                 >
                   {t(WORDS[kind].add)}
-                </Button>
+                </NewButton>
               ) : null}
             </header>
 

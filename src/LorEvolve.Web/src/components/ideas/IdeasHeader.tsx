@@ -1,10 +1,9 @@
-import { Plus } from 'lucide-react'
 import { IdeasTabs } from '../IdeasTabs'
 import { PageHeader } from '../PageHeader'
 import { Quoted } from '../NameList'
 import type { IdeasScope } from '../../ideas/types'
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** An ideas list's heading: the nested intro inside a story or a project, or the page header and the tabs. */
 export function IdeasHeader({
@@ -49,9 +48,9 @@ export function IdeasHeader({
             </>
           }
           actions={
-            <Button icon={Plus} to={`${basePath}/new`} data-testid="new-idea">
+            <NewButton to={`${basePath}/new`} data-testid="new-idea">
               {t('ideas.browser.newIdea')}
-            </Button>
+            </NewButton>
           }
         />
       )}

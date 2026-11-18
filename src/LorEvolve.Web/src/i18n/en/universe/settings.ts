@@ -25,11 +25,11 @@ const universeSettings = {
   backup: 'Backup',
   backupNote:
     'One archive of this universe that LorEvolve can restore: its lore, types and fields, articles, relationships, timeline, stories and scenes, maps, world rules, ideas, your private notes, the Trash, saved versions and every picture as you uploaded it. No account data, collaborators or comments, and not whether it is public: a restored universe is always private.',
-  backupPreparing: 'Preparing backup',
+  backupPreparing: 'Preparing backup…',
   backupDownload: 'Download backup',
   readableNote:
     'A readable export is the same universe as Markdown pages, one per entry, story, scene and map, with the pictures beside them, to read in any editor or keep. It leaves out the Trash and saved versions, and LorEvolve cannot restore from it.',
-  readablePreparing: 'Preparing export',
+  readablePreparing: 'Preparing export…',
   readableDownload: 'Download readable export',
   exportSaved: 'Saved as {name}.',
   restore: 'Restore',
@@ -50,11 +50,10 @@ const universeSettings = {
     'Archiving only takes it out of your active list. Its public page, its place in Explore and everything you published in it stay available to anyone until you make it private on Publish.',
   archiveConfirmUnknownNote:
     'LorEvolve could not check whether this universe is public. Archiving never changes that: if it is public, it stays public until you make it private on Publish.',
-  archiving: 'Archiving',
+  archiving: 'Archiving…',
   archiveKeepPublic: 'Archive, keep public',
   archiveConfirmButton: 'Archive universe',
   makePrivateFirst: 'Make it private first',
-  archiveCancel: 'Cancel',
   restoreUniverse: 'Restore universe',
   archiveUniverse: 'Archive universe',
   deleteHeading: 'Delete universe',

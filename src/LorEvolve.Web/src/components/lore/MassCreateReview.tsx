@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { typeChoices } from '../../lore/typeTree'
 import { MASS_CREATE_MAX } from '../../lore/massCreate'
@@ -7,7 +6,7 @@ import type { useMassRows } from '../../lore/useMassRows'
 type Rows = ReturnType<typeof useMassRows>
 
 import { MassCreateRow } from './MassCreateRow'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** The rows to create, under their column names, and Add row. */
 export function MassCreateReview({
@@ -78,10 +77,9 @@ export function MassCreateReview({
         </>
       )}
 
-      <Button
+      <NewButton
         tone="secondary"
         size="sm"
-        icon={Plus}
         id={`${id}-add`}
         onClick={addRow}
         disabled={rows.length >= MASS_CREATE_MAX}
@@ -93,7 +91,7 @@ export function MassCreateReview({
         data-testid="mass-add-row"
       >
         {t('lore.massCreate.addRow')}
-      </Button>
+      </NewButton>
     </section>
   )
 }

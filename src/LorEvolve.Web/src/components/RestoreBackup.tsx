@@ -5,6 +5,7 @@ import { useRestoreBackupState } from '../backups/useRestoreBackupState'
 import { RestoreChooseForm } from './backups/RestoreChooseForm'
 import { RestoreReadyForm } from './backups/RestoreReadyForm'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface RestoreBackupProps {
   onCancel: () => void
@@ -69,14 +70,11 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
             </p>
           ) : null}
           <p className="restore__note">{t('admin.restore.refused.note')}</p>
-          <div className="form__actions">
+          <FormActions onCancel={onCancel} dismiss="close" inline>
             <Button tone="secondary" onClick={chooseAnother} data-testid="restore-choose-another">
               {t('admin.restore.refused.chooseAnother')}
             </Button>
-            <Button tone="secondary" onClick={onCancel}>
-              {t('admin.restore.refused.close')}
-            </Button>
-          </div>
+          </FormActions>
         </div>
       ) : null}
 

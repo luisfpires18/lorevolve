@@ -3,7 +3,7 @@ import type { Dictionary } from '../../en'
 const universeConnect: Dictionary['universe']['connect'] = {
   title: 'Ligar uma aplicação de IA',
   heading: 'Ligar uma aplicação de IA',
-  connecting: 'A ligar',
+  connecting: 'A ligar…',
   approve: 'Aprovar',
   deny: 'Recusar',
   goBack: 'Voltar à aplicação',

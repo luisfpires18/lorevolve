@@ -19,7 +19,6 @@ const projectsEntries: Dictionary['projects']['entries'] = {
   name: 'Nome',
   summary: 'Descrição',
   saving: 'A guardar…',
-  saveEdit: 'Guardar alterações',
   delete: 'Mover para o Lixo',
   canon: 'No Lore: {name}',
   values: 'Campos',

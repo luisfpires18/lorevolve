@@ -1,10 +1,11 @@
 import { useUniverseAccess } from '../../universes/access'
-import { CalendarRange, Plus } from 'lucide-react'
+import { CalendarRange } from 'lucide-react'
 import { t, useI18n } from '../../i18n'
 import { PageHeader } from '../PageHeader'
 import type { Dispatch, SetStateAction } from 'react'
 import type { FormState } from '../../timeline/useTimelineState'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** The page header, with the link to the configuration and New moment. */
 export function TimelineHeader({
@@ -31,9 +32,9 @@ export function TimelineHeader({
             {t('time.timeline.configuration')}
           </Button>
           {access.editContent ? (
-            <Button icon={Plus} onClick={() => setForm({ mode: 'new' })} data-testid="new-moment">
+            <NewButton onClick={() => setForm({ mode: 'new' })} data-testid="new-moment">
               {t('time.timeline.newMoment')}
-            </Button>
+            </NewButton>
           ) : null}
         </>
       }

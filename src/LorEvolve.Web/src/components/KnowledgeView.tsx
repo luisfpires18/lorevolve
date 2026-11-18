@@ -1,5 +1,4 @@
 import { useEffect, useId, useState } from 'react'
-import { Plus } from 'lucide-react'
 import { t, useI18n } from '../i18n'
 import { confirmAction } from '../lib/confirm'
 import { useUniverseAccess } from '../universes/access'
@@ -8,6 +7,7 @@ import type { Side } from '../knowledge/recordDraft'
 import { RecordList } from './knowledge/RecordList'
 import { RecordForm } from './knowledge/RecordForm'
 import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 interface KnowledgeViewProps {
   universeId: string
@@ -90,14 +90,13 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
           {t('ai.knowledge.title')}
         </h2>
         {access.editContent ? (
-          <Button
+          <NewButton
             tone="secondary"
-            icon={Plus}
             onClick={() => setEditing({ side: 'knows', record: null })}
             data-testid="knowledge-add"
           >
             {tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}
-          </Button>
+          </NewButton>
         ) : null}
       </div>
       <p className="relations__quiet">
@@ -139,14 +138,13 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
               {tx('ai.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
             </h3>
             {access.editContent ? (
-              <Button
-                tone="text"
-                icon={Plus}
+              <NewButton
+                tone="secondary"
                 onClick={() => setEditing({ side: 'about', record: null })}
                 data-testid="knowledge-add-about"
               >
                 {tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
-              </Button>
+              </NewButton>
             ) : null}
           </div>
           <RecordList

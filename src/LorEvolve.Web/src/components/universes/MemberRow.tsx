@@ -10,6 +10,7 @@ import {
 import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 // ---------- People ----------
 
@@ -123,19 +124,18 @@ export function MemberRow({
             {tx('universe.collab.removeConfirm', { name: <bdi>{member.username}</bdi> })}
           </p>
           <p className="settings__note">{t('universe.collab.removeNote')}</p>
-          <div className="form__actions">
-            <Button
-              tone="danger"
-              onClick={() => void remove()}
-              disabled={busy}
-              data-testid="confirm-remove-collaborator"
-            >
-              {busy ? t('universe.collab.removing') : t('universe.collab.removeConfirmButton')}
-            </Button>
-            <Button tone="secondary" onClick={() => setConfirming(false)} disabled={busy}>
-              {t('universe.collab.keep')}
-            </Button>
-          </div>
+          <FormActions
+            submitLabel={t('universe.collab.removeConfirmButton')}
+            busy={busy}
+            busyLabel={t('universe.collab.removing')}
+            submitTone="danger"
+            onSubmit={() => void remove()}
+            submitTestId="confirm-remove-collaborator"
+            onCancel={() => setConfirming(false)}
+            cancelLabel={t('universe.collab.keep')}
+            lockCancel
+            inline
+          />
         </div>
       ) : null}
       {error ? (

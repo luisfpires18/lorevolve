@@ -49,7 +49,7 @@ export function BoardLineInspector({
         data-testid="board-line-label"
       />
       <Button
-        tone="secondary"
+        tone="danger-quiet"
         icon={X}
         disabled={isHeld}
         onClick={() => removeLine(selectedLine.id)}

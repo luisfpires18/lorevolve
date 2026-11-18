@@ -97,7 +97,6 @@ const entityTypes = {
     newName: 'New group name',
     namePlaceholder: 'Insert a group name',
     add: 'Add',
-    cancel: 'Cancel',
     createdHint: 'Created when you save this type, with this type in it.',
     elsewhere: 'Rename, reorder or delete groups on the Groups tab.',
   },
@@ -144,7 +143,6 @@ const entityTypes = {
     empty: 'No groups yet.',
     newNameFor: 'New name for {name}',
     rename: 'Rename',
-    cancel: 'Cancel',
     renameHintMany:
       'The new name shows for every type in it. {used} Fields that link to it keep working.',
     renameHintOne: '{used} Fields that link to it keep working.',
@@ -193,7 +191,6 @@ const entityTypes = {
     moveFieldDownTitle: 'Move down',
     saving: 'Saving…',
     save: 'Save',
-    cancel: 'Cancel',
   },
   fields: entityTypesFields,
   page: entityTypesPage,

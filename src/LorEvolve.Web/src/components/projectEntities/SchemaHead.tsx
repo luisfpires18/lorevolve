@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
-import { Plus, Shapes } from 'lucide-react'
+import { Shapes } from 'lucide-react'
 import type { ProjectEntityType } from '../../projectEntities/types'
 import { PageHeader } from '../PageHeader'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** The head of the panel: the page header of a project's Types view, or the panel's own name and New type. */
 export function SchemaHead({
@@ -43,8 +44,7 @@ export function SchemaHead({
           }
           actions={
             <>
-              <Button
-                icon={Plus}
+              <NewButton
                 data-testid="project-type-add"
                 onClick={() => {
                   setChildOf(null)
@@ -52,7 +52,7 @@ export function SchemaHead({
                 }}
               >
                 {t('entityTypes.page.newType')}
-              </Button>
+              </NewButton>
               {canEdit && templates.length > 0 ? (
                 <Button
                   tone="secondary"
@@ -73,8 +73,7 @@ export function SchemaHead({
             <h2 className="sectionrule">{t('projects.schema.title')}</h2>
             <p className="projects__lede">{t('projects.schema.lede')}</p>
           </div>
-          <Button
-            icon={Plus}
+          <NewButton
             data-testid="project-type-add"
             onClick={() => {
               setChildOf(null)
@@ -82,7 +81,7 @@ export function SchemaHead({
             }}
           >
             {t('entityTypes.page.newType')}
-          </Button>
+          </NewButton>
           {canEdit && templates.length > 0 ? (
             <Button
               tone="secondary"

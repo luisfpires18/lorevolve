@@ -11,6 +11,7 @@ import {
   type ConnectedAppStatusValue,
 } from '../mcp/api'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; apps: ConnectedApp[] } | { kind: 'error' }
 
@@ -253,19 +254,18 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             })}
           </p>
           <p className="settings__note">{t('data.connectedApps.confirmNote')}</p>
-          <div className="form__actions">
-            <Button
-              tone="danger"
-              onClick={() => void disconnect()}
-              disabled={busy}
-              data-testid="confirm-disconnect-app"
-            >
-              {busy ? t('data.connectedApps.disconnecting') : t('data.connectedApps.disconnect')}
-            </Button>
-            <Button tone="secondary" onClick={() => setConfirming(false)} disabled={busy}>
-              {t('data.connectedApps.keep')}
-            </Button>
-          </div>
+          <FormActions
+            submitLabel={t('data.connectedApps.disconnect')}
+            busy={busy}
+            busyLabel={t('data.connectedApps.disconnecting')}
+            submitTone="danger"
+            onSubmit={() => void disconnect()}
+            submitTestId="confirm-disconnect-app"
+            onCancel={() => setConfirming(false)}
+            cancelLabel={t('data.connectedApps.keep')}
+            lockCancel
+            inline
+          />
         </div>
       ) : null}
       {stopped ? (

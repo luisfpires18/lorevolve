@@ -8,9 +8,10 @@ import type { SystemMachineState, SystemRuleSummary } from '../../worldLogic/typ
 import { m, gb, type Rules } from '../../worldLogic/machinePanelTypes'
 import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
-import { DrawerActions } from './DrawerActions'
+import { FormActions } from '../FormActions'
 import { GuardBuilderDrawer } from './GuardBuilderDrawer'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 export function TransitionDrawer({
   transition,
@@ -112,11 +113,14 @@ export function TransitionDrawer({
         }
         noValidate
         actions={(close) => (
-          <DrawerActions
-            close={close}
-            isNew={!transition}
+          <FormActions
+            submitLabel={!transition ? t(`${m}.add`) : t(`${m}.save`)}
+            submitTestId="machine-transition-apply"
+            onCancel={close}
+            cancelTestId="machine-transition-cancel"
             onDelete={onDelete ? () => void remove() : undefined}
-            testId="machine-transition"
+            deleteLabel={t(`${m}.delete`)}
+            deleteTestId="machine-transition-delete"
           />
         )}
       >
@@ -165,14 +169,14 @@ export function TransitionDrawer({
           )}
         </Field>
         <div className="form__actions">
-          <Button
+          <NewButton
             tone="secondary"
             size="sm"
             onClick={() => setBuilding({ ruleId: null })}
             data-testid="machine-transition-new-guard"
           >
             {t(`${gb}.newGuard`)}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             size="sm"

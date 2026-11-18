@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Field } from '../Field'
 import { getEpisode, saveEpisode, type ProjectEpisodeSummary } from '../../projectEntities/seasons'
 import { t, useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /**
  * One episode's script. Read on open rather than carried by the list, and saved over the version it was read at, so a
@@ -130,15 +130,14 @@ export function ScriptEditor({
         </Field>
       )}
 
-      <div className="form__actions">
-        <Button
-          type="submit"
-          disabled={saving || script === null}
-          data-testid={`project-script-save-${episode.id}`}
-        >
-          {saving ? t('projects.seasons.savingScript') : t('projects.seasons.saveScript')}
-        </Button>
-      </div>
+      <FormActions
+        submitLabel={t('projects.seasons.saveScript')}
+        busy={saving}
+        busyLabel={t('projects.seasons.savingScript')}
+        disabled={script === null}
+        submitTestId={`project-script-save-${episode.id}`}
+        inline
+      />
     </form>
   )
 }

@@ -37,7 +37,7 @@ export function CropperActions({
         onClick={cancel}
         data-testid="image-crop-cancel"
       >
-        {t('account.crop.cancel')}
+        {t('shell.actions.cancel')}
       </Button>
     </footer>
   )

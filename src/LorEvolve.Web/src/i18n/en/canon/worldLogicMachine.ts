@@ -7,7 +7,6 @@ const canonWorldLogicMachine = {
   hint: 'Drag to pan and scroll to zoom. With the canvas focused, the arrow keys pan, plus and minus zoom, and 0 fits every state. Tab reaches each state and its handle. Enter opens a state and the arrow keys move it. Enter on a handle starts a transition.',
   hintConnecting: 'Drawing a transition: choose the state it ends at, or press Escape.',
   connecting: 'Drawing a transition from {name}. Choose the state it ends at.',
-  cancel: 'Cancel',
   zoom: 'Zoom',
   zoomIn: 'Zoom in',
   zoomOut: 'Zoom out',

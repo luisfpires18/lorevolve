@@ -36,7 +36,7 @@ const entityHistory = {
   restoredVersion: 'restored version {number}',
   hide: 'Hide',
   view: 'View',
-  restoring: 'Restoring',
+  restoring: 'Restoring…',
   restore: 'Restore',
   opening: 'Opening…',
   alsoKnownAs: 'also known as {names}',

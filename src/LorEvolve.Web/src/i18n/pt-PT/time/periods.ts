@@ -89,7 +89,6 @@ const timePeriods: Dictionary['time']['periods'] = {
   inUseHidden: 'Em uso. Move as datas dele para outro período de datas antes de o remover.',
   save: 'Guardar',
   saved: 'Guardado',
-  discard: 'Descartar alterações',
 }
 
 export default timePeriods

@@ -20,7 +20,7 @@ import {
   type StoryDetail,
   type StoryStatusValue,
 } from '../stories/types'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface StoryDraft {
   title: string
@@ -151,29 +151,28 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button
-            ref={saveButton}
-            type="submit"
-            disabled={isSaving || (suggesting && !isDirty)}
-            data-testid="save-story"
-          >
-            {suggesting
-              ? isSaving
-                ? t('stories.storyForm.sending')
-                : t('stories.storyForm.sendSuggestion')
-              : isSaving
-                ? story
-                  ? t('stories.storyForm.saving')
-                  : t('stories.storyForm.creating')
-                : story
-                  ? t('stories.storyForm.save')
-                  : t('stories.storyForm.create')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-story">
-            {t('stories.storyForm.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={
+            suggesting
+              ? t('stories.storyForm.sendSuggestion')
+              : story
+                ? t('stories.storyForm.save')
+                : t('stories.storyForm.create')
+          }
+          busy={isSaving}
+          busyLabel={
+            suggesting
+              ? t('stories.storyForm.sending')
+              : story
+                ? t('stories.storyForm.saving')
+                : t('stories.storyForm.creating')
+          }
+          disabled={suggesting && !isDirty}
+          submitTestId="save-story"
+          submitRef={saveButton}
+          onCancel={close}
+          cancelTestId="cancel-story"
+        />
       )}
     >
       {suggesting ? (
