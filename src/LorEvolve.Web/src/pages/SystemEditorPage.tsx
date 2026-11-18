@@ -1,27 +1,13 @@
-import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
-import { Field } from '../components/Field'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { SystemMachinePanel } from '../components/SystemMachinePanel'
 import { PageHeader } from '../components/PageHeader'
 import { t, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
-import { confirmAction, confirmDiscard } from '../lib/confirm'
-import { useQueryTab } from '../lib/queryTab'
-import { createSystem, deleteSystem, getSystem, saveSystem } from '../worldLogic/api'
-import { advanceVersions, type BaseVersions } from '../worldLogic/machine'
-import {
-  SYSTEM_NAME_MAX_LENGTH,
-  SYSTEM_SUMMARY_MAX_LENGTH,
-  type SystemDetail,
-} from '../worldLogic/types'
+import { advanceVersions } from '../worldLogic/machine'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-type Load =
-  | { kind: 'loading' }
-  | { kind: 'ready'; system: SystemDetail | null }
-  | { kind: 'missing' }
-  | { kind: 'error' }
+import { useSystemEditorState } from '../worldLogic/useSystemEditorState'
+import { systemEditorActions } from '../worldLogic/systemEditorActions'
+import { SystemDetails } from '../components/worldLogic/SystemDetails'
 
 /**
  * Creates a System, or edits and deletes a saved one, at `world-logic/systems/new` or `world-logic/systems/:systemId`.
@@ -62,140 +48,36 @@ function SystemEditor({
   listPath: string
 }) {
   const navigate = useNavigate()
-  const headingId = useId()
-  const nameId = useId()
-  const summaryId = useId()
-  const [load, setLoad] = useState<Load>(
-    systemId ? { kind: 'loading' } : { kind: 'ready', system: null },
-  )
-  const [reads, setReads] = useState(0)
-  const [name, setName] = useState('')
-  const [summary, setSummary] = useState('')
-  const [saved, setSaved] = useState<SystemDetail | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [failure, setFailure] = useState<string | null>(null)
-  const [conflict, setConflict] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [announcement, setAnnouncement] = useState('')
-  const [bases, setBases] = useState<BaseVersions>({ details: 0, machine: 0 })
-  const machineDirty = useRef(false)
-
-  const tabs = [
-    { id: 'details' as const, label: t('canon.worldLogic.systems.editor.tabs.details') },
-    { id: 'machine' as const, label: t('canon.worldLogic.systems.editor.tabs.machine') },
-  ]
-  const [tab, choose] = useQueryTab(tabs)
-
-  useEffect(() => {
-    if (!systemId) return
-    const controller = new AbortController()
-
-    getSystem(universeId, systemId, controller.signal)
-      .then((system) => {
-        setSaved(system)
-        setBases({ details: system.version, machine: system.version })
-        setName(system.name)
-        setSummary(system.summary)
-        setLoad({ kind: 'ready', system })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setLoad(
-          error instanceof ApiError && error.status === 404
-            ? { kind: 'missing' }
-            : { kind: 'error' },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, systemId, reads])
-
-  async function reread() {
-    // Reading the System again starts the Machine tab over too, so an unsaved drawing is asked about first.
-    if (
-      machineDirty.current &&
-      !(await confirmDiscard(t('canon.worldLogic.systems.machine.discard')))
-    )
-      return
-    machineDirty.current = false
-    setConflict(false)
-    setFailure(null)
-    setFieldErrors({})
-    setLoad({ kind: 'loading' })
-    setReads((count) => count + 1)
-  }
-
-  async function save() {
-    if (saving) return
-    setSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(false)
-
-    const input = {
-      name: name.trim(),
-      summary,
-      projectId: saved?.projectId ?? null,
-      expectedVersion: saved ? bases.details : undefined,
-    }
-
-    try {
-      if (!systemId) {
-        await createSystem(universeId, input)
-        void navigate(listPath)
-        return
-      }
-
-      const next = await saveSystem(universeId, systemId, input)
-      setBases((current) =>
-        advanceVersions(current, 'details', input.expectedVersion!, next.version),
-      )
-      setSaved(next)
-      setName(next.name)
-      setSummary(next.summary)
-      setAnnouncement(t('canon.worldLogic.systems.editor.saved'))
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === 'system_changed') {
-        setConflict(true)
-      } else if (
-        error instanceof ApiError &&
-        error.status === 409 &&
-        error.code === 'system_name_taken'
-      ) {
-        setFieldErrors({ name: t('canon.worldLogic.systems.editor.nameTaken') })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('canon.worldLogic.systems.editor.gone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        setFailure(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('canon.worldLogic.systems.editor.invalid'),
-        )
-      } else {
-        setFailure(t('canon.worldLogic.systems.editor.saveFailed'))
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  async function remove() {
-    if (!systemId || !saved) return
-    await confirmAction({
-      title: t('canon.worldLogic.systems.editor.delete.title'),
-      message: t('canon.worldLogic.systems.editor.delete.message'),
-      confirmLabel: t('canon.worldLogic.systems.editor.delete.confirm'),
-      busyLabel: t('canon.worldLogic.systems.editor.delete.busy'),
-      variant: 'destructive',
-      action: async () => {
-        await deleteSystem(universeId, systemId)
-        void navigate(listPath)
-      },
-    })
-  }
+  const state = useSystemEditorState({ universeId, systemId })
+  const {
+    headingId,
+    nameId,
+    summaryId,
+    load,
+    name,
+    setName,
+    summary,
+    setSummary,
+    saved,
+    fieldErrors,
+    failure,
+    conflict,
+    saving,
+    announcement,
+    bases,
+    setBases,
+    machineDirty,
+    tabs,
+    tab,
+    choose,
+  } = state
+  const { reread, save, remove } = systemEditorActions({
+    ...state,
+    universeId,
+    systemId,
+    listPath,
+    navigate,
+  })
 
   if (load.kind === 'loading') {
     return (
@@ -228,113 +110,22 @@ function SystemEditor({
   const isNew = !systemId
 
   const details = (
-    <>
-      {conflict ? (
-        <div className="manuscript__conflict" role="alert" data-testid="system-editor-conflict">
-          <p className="manuscript__conflicttext">
-            {t('canon.worldLogic.systems.editor.conflict')}
-          </p>
-          <div className="manuscript__conflictactions">
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => void reread()}
-              data-testid="system-editor-load-saved"
-            >
-              {t('canon.worldLogic.systems.editor.loadSaved')}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {failure ? (
-        <p className="form__message" role="alert" data-testid="system-editor-error">
-          {failure}
-        </p>
-      ) : null}
-
-      <form
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save()
-        }}
-      >
-        <Field
-          label={t('canon.worldLogic.systems.editor.name')}
-          id={nameId}
-          error={
-            fieldErrors.name ? (
-              <span data-testid="system-editor-name-error">{fieldErrors.name}</span>
-            ) : undefined
-          }
-        >
-          {(control) => (
-            <input
-              id={control.id}
-              className="field__input field__input--title"
-              type="text"
-              dir="auto"
-              value={name}
-              maxLength={SYSTEM_NAME_MAX_LENGTH}
-              placeholder={t('canon.worldLogic.systems.editor.namePlaceholder')}
-              onChange={(event) => setName(event.target.value)}
-              aria-invalid={control['aria-invalid']}
-              aria-describedby={control['aria-describedby']}
-              aria-required="true"
-              data-testid="system-editor-name"
-            />
-          )}
-        </Field>
-
-        <Field
-          label={t('canon.worldLogic.systems.editor.summary')}
-          id={summaryId}
-          error={fieldErrors.summary}
-        >
-          {(control) => (
-            <textarea
-              id={control.id}
-              className="field__input field__input--area"
-              rows={8}
-              dir="auto"
-              value={summary}
-              maxLength={SYSTEM_SUMMARY_MAX_LENGTH}
-              placeholder={t('canon.worldLogic.systems.editor.summaryPlaceholder')}
-              onChange={(event) => setSummary(event.target.value)}
-              aria-invalid={control['aria-invalid']}
-              aria-describedby={control['aria-describedby']}
-              data-testid="system-editor-summary"
-            />
-          )}
-        </Field>
-
-        <div className="form__actions">
-          <button
-            className="button"
-            type="submit"
-            disabled={saving}
-            data-testid="system-editor-save"
-          >
-            {saving
-              ? t('canon.worldLogic.systems.editor.saving')
-              : isNew
-                ? t('canon.worldLogic.systems.editor.create')
-                : t('canon.worldLogic.systems.editor.save')}
-          </button>
-          {!isNew ? (
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => void remove()}
-              data-testid="system-editor-delete"
-            >
-              {t('canon.worldLogic.systems.editor.delete.open')}
-            </button>
-          ) : null}
-        </div>
-      </form>
-    </>
+    <SystemDetails
+      conflict={conflict}
+      saving={saving}
+      failure={failure}
+      nameId={nameId}
+      summaryId={summaryId}
+      fieldErrors={fieldErrors}
+      name={name}
+      setName={setName}
+      summary={summary}
+      setSummary={setSummary}
+      reread={reread}
+      save={save}
+      remove={remove}
+      isNew={isNew}
+    />
   )
 
   return (
