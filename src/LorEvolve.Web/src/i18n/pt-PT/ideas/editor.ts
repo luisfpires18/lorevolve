@@ -1,0 +1,105 @@
+import type { Dictionary } from '../../en'
+
+const ideasEditor: Dictionary['ideas']['editor'] = {
+  openFailed: 'Não foi possível abrir esta ideia.',
+  thisIdea: 'Esta ideia',
+  leaveGuard: '“{name}” tem alterações por guardar. Sair sem as guardar?',
+  titleRequired: 'Dá um título à ideia, para a poderes encontrar de novo.',
+  saveGone:
+    'Esta ideia já não está aqui, por isso não pôde ser guardada. Pode ter sido eliminada noutra janela. O que escreveste continua aqui: copia-o antes de saíres.',
+  saveNeedsChange: 'Algo precisa de ser alterado antes de esta ideia poder ser guardada.',
+  saveFailed: 'Não foi possível guardar a ideia. O que escreveste continua aqui. Tenta novamente.',
+  loadSaved: {
+    title: 'Substituir esta ideia pela versão guardada noutro local?',
+    message: 'O que alteraste aqui desde a última vez que guardaste será perdido.',
+    confirm: 'Usar a versão guardada',
+    cancel: 'Manter as minhas alterações',
+  },
+  recoveredUnassigned:
+    'O rascunho recuperado está no formulário, sem atribuição: o universo a que pertencia já não existe. Ainda não está guardado.',
+  recovered: 'O rascunho recuperado está no formulário. Ainda não está guardado.',
+  discardedNew: 'O rascunho recuperado foi descartado.',
+  discardedSaved: 'O rascunho recuperado foi descartado. A ideia guardada não foi alterada.',
+  changeUniverse: {
+    title: 'Mudar o universo desta ideia?',
+    message: {
+      one: 'As referências de uma ideia ficam dentro do seu universo. Mudar o universo retira desta ideia a sua 1 referência. Nada é guardado até guardares.',
+      other:
+        'As referências de uma ideia ficam dentro do seu universo. Mudar o universo retira desta ideia as suas {n} referências. Nada é guardado até guardares.',
+    },
+    confirm: 'Mudar universo',
+  },
+  universeChanged: 'Universo alterado. As suas referências foram retiradas da ideia por guardar.',
+  referenceAdded: 'Referência a “{name}” adicionada. Ainda não está guardada.',
+  referenceRemoved: 'Referência a “{name}” removida. Ainda não está guardada.',
+  delete: {
+    title: 'Eliminar “{title}”?',
+    messageDirty:
+      'As alterações por guardar serão perdidas. A ideia, tal como foi guardada pela última vez, vai para Eliminadas recentemente, onde a podes restaurar.',
+    message: 'Vai para Eliminadas recentemente, onde a podes restaurar.',
+    confirm: 'Eliminar ideia',
+    busy: 'A eliminar…',
+    gone: 'Esta ideia já não está aqui. Pode já ter sido eliminada noutra janela.',
+    failed: 'Não foi possível eliminar a ideia. Tenta novamente.',
+  },
+  loading: 'A abrir a ideia…',
+  missing: {
+    title: 'Esta ideia não está aqui.',
+    hint: 'Pode ter sido eliminada ou pertencer a outra pessoa. As ideias eliminadas ficam em {link}.',
+    link: 'Eliminadas recentemente',
+  },
+  elsewhere: {
+    title: 'Esta ideia não está em {universe}.',
+    hint: 'Pertence a outro universo, ou a nenhum, por isso não abre aqui. {open}, ou volta a {back}.',
+  },
+  openInAll: 'Abrir em todas as ideias',
+  retry: 'Tentar novamente',
+  newIdea: 'Nova ideia',
+  moreActions: 'Mais ações para {title}',
+  deleteIdea: 'Eliminar ideia',
+  lede: 'Uma possibilidade, não lore. Nada do que é guardado aqui altera o teu mundo.',
+  lastSaved: 'Guardada pela última vez {time}.',
+  belongsTo: 'Esta ideia pertence a {universe}, não a {context}.',
+  belongsToNone: 'Esta ideia não pertence a nenhum universo.',
+  recoveryNew: 'uma ideia nova',
+  recoveryThis: 'esta ideia',
+  recoveredDraft: 'O rascunho recuperado',
+  untitled: 'Sem título',
+  noBody: 'Este rascunho não tem texto.',
+  conflict: {
+    text: 'Esta ideia foi guardada noutro separador ou noutro dispositivo depois de a abrires aqui. Nada foi substituído, e a tua versão abaixo não está guardada.',
+    keepMine: 'Guardar a minha por cima',
+    loadSaved: 'Usar a versão guardada',
+  },
+  fields: {
+    title: 'Título',
+    titlePlaceholder: 'Insere um título',
+    body: 'Texto',
+    bodyHint: 'Opcional. Texto simples, guardado exatamente como o escreves.',
+    bodyPlaceholder: 'Insere a ideia',
+    bodyTooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
+    bodyCount: '{used} de {max} caracteres.',
+    universe: 'Universo',
+    universeHint: 'Opcional. Uma ideia pode pertencer a um dos teus universos ou a nenhum.',
+    noUniverse: 'Sem universo',
+    archivedUniverse: '{name} (arquivado)',
+  },
+  references: {
+    heading: 'Referências',
+    hint: 'Opcional. Aponta para conteúdo de lore ou de história sobre o qual esta ideia é. Uma referência não altera nada daquilo para que aponta.',
+    needUniverse: 'Escolhe um universo para referenciar o seu lore e as suas histórias.',
+    none: 'Sem referências.',
+    trashed: 'Na Reciclagem: restaura para abrir',
+    removeAria: 'Remover a referência: {kind} “{name}”',
+    remove: 'Remover',
+    add: 'Adicionar referência',
+  },
+  recoveryWarning:
+    'Este dispositivo não conseguiu guardar uma cópia de recuperação destas alterações. Guarda para as manter.',
+  create: 'Criar ideia',
+  save: 'Guardar alterações',
+  notSavedYet: 'Ainda não guardada',
+  saved: 'Guardada',
+}
+
+export default ideasEditor
