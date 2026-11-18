@@ -1,9 +1,9 @@
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import type { Ability, Appearance, Form } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
 import { ItemRow } from './ItemRow'
+import { Button } from '../Button'
 
 /** An entry's forms or abilities on the main profile: each as the author said it, nothing filled in. */
 export function ItemList({
@@ -59,16 +59,16 @@ export function ItemList({
           {words.title}
         </h3>
         {access.editContent ? (
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={Plus}
             onClick={onAdd}
             disabled={busy}
             data-testid={`add-${kind}`}
           >
-            <ActionIcon icon={Plus} />
             {words.add}
-          </button>
+          </Button>
         ) : null}
       </div>
       {items.length === 0 ? (

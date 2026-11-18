@@ -1,6 +1,5 @@
 import { BookPlus, Layers, Plus } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { ActionIcon } from '../ActionIcon'
 import { ArcSection } from '../ArcSection'
 import { EmptyState } from '../EmptyState'
 import { StoryPartPublication } from '../StoryPartPublication'
@@ -12,6 +11,7 @@ import type { storyRemovals } from '../../stories/storyRemovals'
 import type { useStoryState } from '../../stories/useStoryState'
 import { StorySceneCards } from './StorySceneCards'
 import { StoryChapterSections, type StoryChapterSectionsProps } from './StoryChapterSections'
+import { Button } from '../Button'
 
 /** The Scenes view: the toolbar, the story's scenes or chapters, and each arc with its chapters. */
 export function StoryScenes(
@@ -47,39 +47,35 @@ export function StoryScenes(
   const { t } = useI18n()
 
   const newScene = (
-    <button
-      className="button"
-      type="button"
+    <Button
+      icon={Plus}
       onClick={() => setSceneForm({ mode: 'new', chapterId: null })}
       data-testid="new-scene"
     >
-      <ActionIcon icon={Plus} />
       {t('stories.page.newScene')}
-    </button>
+    </Button>
   )
 
   const newChapter = (
-    <button
-      className="button button--secondary"
-      type="button"
+    <Button
+      tone="secondary"
+      icon={BookPlus}
       onClick={() => setChapterForm({ mode: 'new', arcId: null })}
       data-testid="new-chapter"
     >
-      <ActionIcon icon={BookPlus} />
       {t('stories.page.newChapter')}
-    </button>
+    </Button>
   )
 
   const newArc = (
-    <button
-      className="button button--secondary"
-      type="button"
+    <Button
+      tone="secondary"
+      icon={Layers}
       onClick={() => setArcForm({ mode: 'new' })}
       data-testid="new-arc"
     >
-      <ActionIcon icon={Layers} />
       {t('stories.page.newArc')}
-    </button>
+    </Button>
   )
 
   return (

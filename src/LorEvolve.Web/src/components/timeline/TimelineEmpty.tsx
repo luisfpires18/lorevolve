@@ -1,10 +1,10 @@
 import { useUniverseAccess } from '../../universes/access'
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { EmptyState } from '../EmptyState'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { FormState } from '../../timeline/useTimelineState'
+import { Button } from '../Button'
 
 /** The empty state, worded for a story, a filtered view or a universe with no moments yet. */
 export function TimelineEmpty({
@@ -37,15 +37,13 @@ export function TimelineEmpty({
       hint={emptyHint}
       action={
         isFiltered || !access.editContent ? null : (
-          <button
-            className="button"
-            type="button"
+          <Button
+            icon={Plus}
             onClick={() => setForm({ mode: 'new' })}
             data-testid="empty-new-moment"
           >
-            <ActionIcon icon={Plus} />
             {t('time.timeline.emptyNewMoment')}
-          </button>
+          </Button>
         )
       }
     />

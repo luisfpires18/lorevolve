@@ -4,6 +4,7 @@ import type { ProjectField } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
 import { FieldForm, kindLabel } from '../FieldForm'
 import { t } from '../../i18n'
+import { Button } from '../Button'
 
 /** A template's open fields panel: each field with Edit and Delete, the field form, and Add field. */
 export function TemplateFields({
@@ -96,14 +97,14 @@ export function TemplateFields({
           }}
         />
       ) : canEdit ? (
-        <button
-          className="button button--text button--sm"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
           data-testid={`template-field-add-${template.id}`}
           onClick={() => setFieldForm({ templateId: template.id, field: null })}
         >
           {t('projects.schema.addField')}
-        </button>
+        </Button>
       ) : null}
     </div>
   )

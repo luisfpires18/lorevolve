@@ -1,10 +1,10 @@
 import { ListFilter, X } from 'lucide-react'
 import type { ProjectEntityType } from '../../projectEntities/types'
 import { buildTypeTree } from '../../lore/typeTree'
-import { ActionIcon } from '../ActionIcon'
 import { t, useI18n } from '../../i18n'
 import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntriesRead'
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
+import { Button } from '../Button'
 
 /** Search, sort, nested and Clear for one type's entries. */
 export function ProjectEntriesFilters({
@@ -80,15 +80,9 @@ export function ProjectEntriesFilters({
             </label>
           ) : null}
           {filtered ? (
-            <button
-              className="button button--text"
-              type="button"
-              onClick={clearFilters}
-              data-testid="project-entries-clear"
-            >
-              <ActionIcon icon={X} />
+            <Button tone="text" icon={X} onClick={clearFilters} data-testid="project-entries-clear">
               {t('lore.page.clearFilters')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

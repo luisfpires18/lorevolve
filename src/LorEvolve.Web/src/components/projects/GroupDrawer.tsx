@@ -3,6 +3,7 @@ import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { CinemaPhase, CinemaSaga } from '../../projects/sagas'
+import { Button } from '../Button'
 
 /** What the edit drawer is for: a new or existing saga, or a new or existing phase of one saga. */
 export type Editing = { saga: CinemaSaga | null; phase: CinemaPhase | null; forPhase: boolean }
@@ -52,17 +53,16 @@ export function GroupDrawer({
       busy={saving}
       actions={(close) => (
         <>
-          <button
-            className="button"
+          <Button
             type="submit"
             disabled={saving || name.trim() === ''}
             data-testid="saga-drawer-save"
           >
             {saving ? t('projects.sagas.saving') : t('projects.sagas.save')}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
+          </Button>
+          <Button tone="secondary" onClick={close}>
             {t('projects.common.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

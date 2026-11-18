@@ -9,6 +9,7 @@ import { t, tn, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { buildTypeTree } from '../../lore/typeTree'
 import { SchemaTypeFields } from './SchemaTypeFields'
+import { Button } from '../Button'
 
 type Tree = ReturnType<typeof buildTypeTree<ProjectEntityType>>
 
@@ -73,9 +74,11 @@ export function SchemaTypeItem({
         </span>
         <span className="types__actions">
           {/* Quiet like the universe's; on a phone it waits in the row's menu instead. */}
-          <button
-            className="button button--text button--sm types__addchild"
-            type="button"
+          <Button
+            tone="text"
+            size="sm"
+            icon={ListTree}
+            className="types__addchild"
             aria-label={t('entityTypes.page.addChildLabel', { name: type.name })}
             data-testid={`project-type-add-child-${type.id}`}
             onClick={() => {
@@ -83,22 +86,21 @@ export function SchemaTypeItem({
               setEditing('new')
             }}
           >
-            <ActionIcon icon={ListTree} />
             {t('entityTypes.page.addChild')}
-          </button>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={Pencil}
             aria-label={t('entityTypes.page.editLabel', { name: type.name })}
             data-testid={`project-type-edit-${type.id}`}
             onClick={() => setEditing(type)}
           >
-            <ActionIcon icon={Pencil} />
             {t('entityTypes.page.edit')}
-          </button>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            size="sm"
             aria-expanded={openTypeId === type.id}
             aria-label={t('entityTypes.page.fieldsLabel', { name: type.name })}
             data-testid={`project-type-fields-open-${type.id}`}
@@ -108,7 +110,7 @@ export function SchemaTypeItem({
             {type.fields.length > 0 ? (
               <span className="types__fieldcount">{type.fields.length}</span>
             ) : null}
-          </button>
+          </Button>
           <ActionMenu
             label={t('entityTypes.page.moreActions', { name: type.name })}
             triggerTestId={`project-type-actions-${type.id}`}

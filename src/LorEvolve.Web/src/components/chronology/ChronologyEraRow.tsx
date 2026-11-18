@@ -1,9 +1,9 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { Field } from '../Field'
 import { usageOf, type EraDraft } from '../../chronology/eraDrafts'
 import { t, useI18n } from '../../i18n'
 import { ChronologyEraStyle } from './ChronologyEraStyle'
+import { Button } from '../Button'
 
 /** One date period: its name and label, direction and position, and the foot with Earlier, Later and Remove. */
 export function ChronologyEraRow({
@@ -87,31 +87,31 @@ export function ChronologyEraRow({
             {usage ?? (era.id ? t('time.periods.nothingDated') : t('time.periods.notSaved'))}
           </p>
           <div className="era__tools">
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
+              icon={ArrowUp}
               onClick={() => move(index, -1)}
               aria-disabled={first ? true : undefined}
               aria-label={t('time.periods.moveEarlier', { name })}
               data-testid="era-earlier"
             >
-              <ActionIcon icon={ArrowUp} />
               {t('time.periods.earlier')}
-            </button>
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
+              size="sm"
+              icon={ArrowDown}
               onClick={() => move(index, 1)}
               aria-disabled={last ? true : undefined}
               aria-label={t('time.periods.moveLater', { name })}
               data-testid="era-later"
             >
-              <ActionIcon icon={ArrowDown} />
               {t('time.periods.later')}
-            </button>
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
+              size="sm"
               onClick={() => {
                 if (!inUse) change(drafts.filter((_, position) => position !== index))
               }}
@@ -122,7 +122,7 @@ export function ChronologyEraRow({
               data-testid="era-remove"
             >
               {t('time.periods.remove')}
-            </button>
+            </Button>
             {inUse ? (
               <span className="visually-hidden" id={`${base}-keep`}>
                 {t('time.periods.inUseHidden')}

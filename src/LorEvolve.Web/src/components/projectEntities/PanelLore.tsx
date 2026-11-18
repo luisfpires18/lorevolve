@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EntityPicker } from '../EntityPicker'
 import { t, useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /**
  * Changes which lore entry a panel shows, with the same picker the rest of LorEvolve uses, so the search, the
@@ -25,15 +26,15 @@ export function PanelLore({
 
   if (!open) {
     return (
-      <button
-        className="button button--text button--sm"
-        type="button"
+      <Button
+        tone="text"
+        size="sm"
         disabled={busy}
         data-testid={`project-panel-shows-change-${panelId}`}
         onClick={() => setOpen(true)}
       >
         {chosen ? t('projects.pages.changeShows') : t('projects.pages.chooseShows')}
-      </button>
+      </Button>
     )
   }
 
@@ -48,14 +49,14 @@ export function PanelLore({
           onChange(choice ? { id: choice.id, name: choice.name } : null)
         }}
       />
-      <button
-        className="button button--secondary button--sm"
-        type="button"
+      <Button
+        tone="secondary"
+        size="sm"
         data-testid={`project-panel-shows-cancel-${panelId}`}
         onClick={() => setOpen(false)}
       >
         {t('projects.common.cancel')}
-      </button>
+      </Button>
     </div>
   )
 }

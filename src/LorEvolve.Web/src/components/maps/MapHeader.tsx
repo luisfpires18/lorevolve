@@ -10,6 +10,7 @@ import { useI18n } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { MapDialog } from '../../maps/useMapPageState'
+import { Button } from '../Button'
 
 export function MapHeader({
   map,
@@ -44,17 +45,15 @@ export function MapHeader({
       actions={
         canEdit ? (
           <>
-            <button
-              className="button"
-              type="button"
+            <Button
+              icon={Plus}
               aria-pressed={placing}
               disabled={calibrating !== null}
               onClick={() => setPlacing((current) => !current)}
               data-testid="map-add-pin"
             >
-              <ActionIcon icon={Plus} />
               {placing ? t('places.mapPage.placingButton') : t('places.mapPage.addPin')}
-            </button>
+            </Button>
             <ActionMenu
               label={t('places.mapPage.moreActions', { name: map.name })}
               triggerTestId="map-actions"

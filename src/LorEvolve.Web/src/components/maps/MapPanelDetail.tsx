@@ -1,6 +1,5 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { ActionIcon } from '../ActionIcon'
 import { MapCalibrationForm, type Fraction } from '../MapCalibration'
 import { TypeIcon } from '../TypeIcon'
 import type { MapDetail, MapPin } from '../../maps/types'
@@ -8,6 +7,7 @@ import { useI18n } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { LoadState, PinForm } from '../../maps/useMapPageState'
+import { Button } from '../Button'
 
 export function MapPanelDetail({
   universe,
@@ -98,24 +98,24 @@ export function MapPanelDetail({
           </p>
           {canEdit ? (
             <div className="pincard__actions">
-              <button
-                className="button button--secondary button--sm"
-                type="button"
+              <Button
+                tone="secondary"
+                size="sm"
+                icon={Pencil}
                 onClick={() => setPinForm({ kind: 'edit', pin: selected })}
                 data-testid="map-pin-edit"
               >
-                <ActionIcon icon={Pencil} />
                 {t('places.mapPage.editPin')}
-              </button>
-              <button
-                className="button button--secondary button--sm button--danger-quiet"
-                type="button"
+              </Button>
+              <Button
+                tone="danger-quiet"
+                size="sm"
+                icon={Trash2}
                 onClick={() => void removePin(selected)}
                 data-testid="map-pin-remove"
               >
-                <ActionIcon icon={Trash2} />
                 {t('places.mapPage.removePin')}
-              </button>
+              </Button>
             </div>
           ) : null}
         </div>

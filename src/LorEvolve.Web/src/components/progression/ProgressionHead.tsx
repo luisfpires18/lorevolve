@@ -1,8 +1,8 @@
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import type { useProgressionState } from '../../progression/useProgressionState'
+import { Button } from '../Button'
 
 /** The progression's heading, with Add era for whoever edits content. */
 export function ProgressionHead({
@@ -19,15 +19,15 @@ export function ProgressionHead({
         {t('progression.view.title')}
       </h2>
       {access.editContent ? (
-        <button
-          className="button button--secondary button--sm"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
+          icon={Plus}
           onClick={() => setEditing('new')}
           data-testid="add-era"
         >
-          <ActionIcon icon={Plus} />
           {t('progression.view.addStage')}
-        </button>
+        </Button>
       ) : null}
     </div>
   )

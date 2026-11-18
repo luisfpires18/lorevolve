@@ -1,4 +1,5 @@
 import { t } from '../../i18n'
+import { Button } from '../Button'
 
 export function ScriptPartNotices({
   changed,
@@ -14,14 +15,9 @@ export function ScriptPartNotices({
       {changed ? (
         <p className="form__message" role="alert" data-testid="project-script-changed">
           {t('projects.structure.changed')}{' '}
-          <button
-            className="button button--text"
-            type="button"
-            onClick={() => void load()}
-            data-testid="project-script-reload"
-          >
+          <Button tone="text" onClick={() => void load()} data-testid="project-script-reload">
             {t('projects.script.reload')}
-          </button>
+          </Button>
         </p>
       ) : null}
       {failure ? (

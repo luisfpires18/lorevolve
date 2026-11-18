@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, X } from 'lucide-react'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
 import { usageOf, type MonthDraft } from '../../chronology/monthDrafts'
+import { IconButton } from '../IconButton'
 
 /** One month of a custom calendar: name, short name, days, Earlier, Later, Remove and the use line. */
 export function CalendarMonthRow({
@@ -96,40 +97,31 @@ export function CalendarMonthRow({
       </div>
 
       <div className="month__tools">
-        <button
-          className="iconbutton"
-          type="button"
+        <IconButton
+          icon={ArrowUp}
+          label={t('time.calendar.moveEarlier', { name })}
+          title={t('time.calendar.earlier')}
           onClick={() => move(index, -1)}
           aria-disabled={first ? true : undefined}
-          aria-label={t('time.calendar.moveEarlier', { name })}
-          title={t('time.calendar.earlier')}
           data-testid="month-earlier"
-        >
-          <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-        <button
-          className="iconbutton"
-          type="button"
+        />
+        <IconButton
+          icon={ArrowDown}
+          label={t('time.calendar.moveLater', { name })}
+          title={t('time.calendar.later')}
           onClick={() => move(index, 1)}
           aria-disabled={last ? true : undefined}
-          aria-label={t('time.calendar.moveLater', { name })}
-          title={t('time.calendar.later')}
           data-testid="month-later"
-        >
-          <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-        <button
-          className="iconbutton"
-          type="button"
+        />
+        <IconButton
+          icon={X}
+          label={t('time.calendar.removeNamed', { name })}
+          title={inUse ? t('time.calendar.inUse') : t('time.calendar.remove')}
           onClick={() => remove(index)}
           aria-disabled={inUse || drafts.length === 1 ? true : undefined}
-          aria-label={t('time.calendar.removeNamed', { name })}
           aria-describedby={inUse ? `${useId} ${base}-keep` : undefined}
-          title={inUse ? t('time.calendar.inUse') : t('time.calendar.remove')}
           data-testid="month-remove"
-        >
-          <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
+        />
         {inUse ? (
           <span className="visually-hidden" id={`${base}-keep`}>
             {t('time.calendar.inUse')}

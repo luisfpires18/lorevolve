@@ -5,6 +5,7 @@ import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { ScriptEditor } from './ScriptEditor'
+import { Button } from '../Button'
 
 /** A season's episodes, each with its menu, and with its pages or its script when opened. */
 export function SeasonEpisodes({
@@ -53,16 +54,16 @@ export function SeasonEpisodes({
           {/* The script is what an author opens an episode for, so it stays on the row. Order, moving to
                       another season and deleting are the row's secondary verbs and go in its menu. */}
           <div className="fieldlist__actions">
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
               data-testid={`project-episode-open-${episode.id}`}
               onClick={() => setEditing(editing === episode.id ? null : episode.id)}
             >
               {editing === episode.id
                 ? t('projects.seasons.closeScript')
                 : t('projects.seasons.openScript')}
-            </button>
+            </Button>
             <ActionMenu
               label={t('projects.common.more', { name: episode.title })}
               triggerTestId={`project-episode-actions-${episode.id}`}

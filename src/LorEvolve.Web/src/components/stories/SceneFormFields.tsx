@@ -10,6 +10,7 @@ import { SceneBeatsField } from '../SceneBeatsField'
 import { EMPTY_POINT, type SceneDraft } from '../../stories/sceneDraft'
 import type { Chapter, PlotArc, Scene } from '../../stories/types'
 import type { RefObject } from 'react'
+import { Button } from '../Button'
 
 /** The scene form's fields: title, chapter, summary, beats, notes, point of view, date and lore. */
 export function SceneFormFields({
@@ -176,14 +177,15 @@ export function SceneFormFields({
         ) : null}
 
         {hasPoint ? (
-          <button
-            className="button button--secondary button--sm scenechron__clear"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            className="scenechron__clear"
             onClick={() => edit({ point: EMPTY_POINT })}
             data-testid="scene-chronology-clear"
           >
             {t('stories.sceneForm.clearWhen')}
-          </button>
+          </Button>
         ) : null}
       </Field>
 
