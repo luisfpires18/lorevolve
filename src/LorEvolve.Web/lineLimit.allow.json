@@ -13,7 +13,6 @@
   "components/RelationshipTypeManager.tsx": 568,
   "components/RestoreBackup.tsx": 556,
   "components/ReviewComments.tsx": 509,
-  "components/ReviewSuggestions.tsx": 392,
   "i18n/en/admin.ts": 357,
   "i18n/en/canon.ts": 628,
   "i18n/en/entity.ts": 445,
