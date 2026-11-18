@@ -11,7 +11,7 @@ import { useCommentsDrawerState } from '../comments/useCommentsDrawerState'
 import { commentsDrawerActions } from '../comments/commentsDrawerActions'
 import { CommentThreadItem } from './CommentThreadItem'
 import { CommentNewForm } from './CommentNewForm'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 const SUBJECT_WORDS = {
   entry: 'review.comments.subject.entry',
@@ -108,9 +108,7 @@ export function CommentsDrawer<T>({
       leaveMessage={t('review.comments.leave.title')}
       onClose={onClose}
       actions={(close) => (
-        <Button tone="secondary" onClick={close} data-testid="comments-close">
-          {t('review.comments.drawer.close')}
-        </Button>
+        <FormActions onCancel={close} dismiss="close" cancelTestId="comments-close" />
       )}
     >
       <QueryTabList

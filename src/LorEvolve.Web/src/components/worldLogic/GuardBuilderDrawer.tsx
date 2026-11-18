@@ -11,6 +11,7 @@ import { useGuardDrawerState } from '../../worldLogic/useGuardDrawerState'
 import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /**
  * The guard builder, opened from a transition (Issue #359): a rule definition's title and its condition, built from
@@ -79,18 +80,14 @@ export function GuardBuilderDrawer({
       noValidate
       busy={saving}
       actions={(close) => (
-        <>
-          <Button
-            type="submit"
-            disabled={load !== 'ready' || saving}
-            data-testid="guard-builder-save"
-          >
-            {t(`${m}.save`)}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="guard-builder-cancel">
-            {t(`${m}.cancel`)}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t(`${m}.save`)}
+          disabled={load !== 'ready' || saving}
+          submitTestId="guard-builder-save"
+          onCancel={close}
+          cancelLabel={t(`${m}.cancel`)}
+          cancelTestId="guard-builder-cancel"
+        />
       )}
     >
       {conflict ? (

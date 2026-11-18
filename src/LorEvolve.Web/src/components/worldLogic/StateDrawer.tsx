@@ -8,7 +8,7 @@ import type { SystemMachineState } from '../../worldLogic/types'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { errorOf, textInput } from '../../worldLogic/machineDrawerFields'
 import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
-import { DrawerActions } from './DrawerActions'
+import { FormActions } from '../FormActions'
 
 export function StateDrawer({
   state,
@@ -84,11 +84,14 @@ export function StateDrawer({
       onSubmit={apply}
       noValidate
       actions={(close) => (
-        <DrawerActions
-          close={close}
-          isNew={!state}
+        <FormActions
+          submitLabel={!state ? t(`${m}.add`) : t(`${m}.save`)}
+          submitTestId="machine-state-apply"
+          onCancel={close}
+          cancelTestId="machine-state-cancel"
           onDelete={onDelete ? () => void remove() : undefined}
-          testId="machine-state"
+          deleteLabel={t(`${m}.delete`)}
+          deleteTestId="machine-state-delete"
         />
       )}
     >

@@ -10,6 +10,7 @@ import { fieldSectionsActions } from '../lore/fieldSectionsActions'
 import { SectionListEditor } from './lore/SectionListEditor'
 import { SectionFieldPlacer } from './lore/SectionFieldPlacer'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /**
  * A type's field sections (Issue #26) in the drawer every LorEvolve form uses: name, order, fold and remove sections, put each
@@ -78,14 +79,14 @@ export function FieldSectionsDialog({
       noValidate
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={isSaving} data-testid="save-sections">
-            {isSaving ? t('entityTypes.sections.saving') : t('entityTypes.sections.save')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-sections">
-            {t('entityTypes.sections.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('entityTypes.sections.save')}
+          busy={isSaving}
+          busyLabel={t('entityTypes.sections.saving')}
+          submitTestId="save-sections"
+          onCancel={close}
+          cancelTestId="cancel-sections"
+        />
       )}
     >
       {message ? (

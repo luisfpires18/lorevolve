@@ -4,7 +4,7 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { ComicCollection, ComicCollectionKind } from '../../projects/comicCollections'
 import { WORDS } from '../../projects/comicCollectionWords'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** What the edit drawer is for: a new collection of one kind, or an existing one. */
 export type Editing = { kind: ComicCollectionKind; collection: ComicCollection | null }
@@ -46,18 +46,14 @@ export function CollectionDrawer({
       onSubmit={save}
       busy={saving}
       actions={(close) => (
-        <>
-          <Button
-            type="submit"
-            disabled={saving || name.trim() === ''}
-            data-testid="comic-collection-drawer-save"
-          >
-            {saving ? t('projects.comics.saving') : t('projects.comics.save')}
-          </Button>
-          <Button tone="secondary" onClick={close}>
-            {t('projects.common.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('projects.comics.save')}
+          busy={saving}
+          busyLabel={t('projects.comics.saving')}
+          disabled={name.trim() === ''}
+          submitTestId="comic-collection-drawer-save"
+          onCancel={close}
+        />
       )}
     >
       <Field label={t('projects.comics.name')}>

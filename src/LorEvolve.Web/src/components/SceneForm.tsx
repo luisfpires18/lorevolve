@@ -13,7 +13,7 @@ import { draftFrom, inputOf, sceneChangesIn, type SceneDraft } from '../stories/
 import type { Chapter, PlotArc, Scene } from '../stories/types'
 import { useSceneSave } from '../stories/useSceneSave'
 import { SceneFormFields } from './stories/SceneFormFields'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface SceneFormProps {
   universeId: string
@@ -164,29 +164,28 @@ export function SceneForm({
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button
-            ref={saveButton}
-            type="submit"
-            disabled={isSaving || (suggesting && !isDirty)}
-            data-testid="save-scene"
-          >
-            {suggesting
-              ? isSaving
-                ? t('stories.sceneForm.sending')
-                : t('stories.sceneForm.sendSuggestion')
-              : isSaving
-                ? scene
-                  ? t('stories.sceneForm.saving')
-                  : t('stories.sceneForm.adding')
-                : scene
-                  ? t('stories.sceneForm.save')
-                  : t('stories.sceneForm.add')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-scene">
-            {t('stories.sceneForm.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={
+            suggesting
+              ? t('stories.sceneForm.sendSuggestion')
+              : scene
+                ? t('stories.sceneForm.save')
+                : t('stories.sceneForm.add')
+          }
+          busy={isSaving}
+          busyLabel={
+            suggesting
+              ? t('stories.sceneForm.sending')
+              : scene
+                ? t('stories.sceneForm.saving')
+                : t('stories.sceneForm.adding')
+          }
+          disabled={suggesting && !isDirty}
+          submitTestId="save-scene"
+          submitRef={saveButton}
+          onCancel={close}
+          cancelTestId="cancel-scene"
+        />
       )}
     >
       {suggesting ? (

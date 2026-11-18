@@ -4,7 +4,7 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import { levelWord, nameOf } from '../../projectEntities/levelWords'
 import type { ComicCollection, ComicNode } from '../../projects/comicCollections'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 const nodeLabel = (node: ComicNode) =>
   `${node.projectName} - ${levelWord(node.level)} ${nameOf(node)}`
@@ -43,18 +43,12 @@ export function EntryDrawer({
       onSubmit={add}
       busy={saving}
       actions={(close) => (
-        <>
-          <Button
-            type="submit"
-            disabled={saving || chosen === ''}
-            data-testid="comic-entry-drawer-save"
-          >
-            {t('projects.comics.add')}
-          </Button>
-          <Button tone="secondary" onClick={close}>
-            {t('projects.common.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('projects.comics.add')}
+          disabled={saving || chosen === ''}
+          submitTestId="comic-entry-drawer-save"
+          onCancel={close}
+        />
       )}
     >
       {candidates.length === 0 ? (

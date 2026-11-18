@@ -13,7 +13,7 @@ import {
 } from '../maps/types'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { useI18n } from '../i18n'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface PinDraft {
   title: string
@@ -151,23 +151,14 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button
-            type="submit"
-            disabled={isSaving}
-            aria-busy={isSaving || undefined}
-            data-testid="map-pin-save"
-          >
-            {isSaving
-              ? t('places.pinForm.saving')
-              : pin
-                ? t('places.pinForm.save')
-                : t('places.pinForm.place')}
-          </Button>
-          <Button tone="secondary" onClick={() => close()} disabled={isSaving}>
-            {t('places.pinForm.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={pin ? t('places.pinForm.save') : t('places.pinForm.place')}
+          busy={isSaving}
+          busyLabel={t('places.pinForm.saving')}
+          submitTestId="map-pin-save"
+          onCancel={() => close()}
+          lockCancel
+        />
       )}
     >
       {message ? (

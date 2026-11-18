@@ -8,7 +8,7 @@ import type { MapFormProps } from '../maps/mapDraft'
 import { MapFormName } from './MapFormName'
 import { MapFormPicture } from './MapFormPicture'
 import { MapFormReplace } from './MapFormReplace'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /**
  * Three small forms in the one drawer: a new map (its picture and details in one request), a map's details (saved over
@@ -63,25 +63,20 @@ export function MapForm(props: MapFormProps) {
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button
-            type="submit"
-            disabled={isSaving}
-            aria-busy={isSaving || undefined}
-            data-testid="map-form-save"
-          >
-            {isSaving
-              ? t('places.mapForm.saving')
-              : props.mode === 'new'
-                ? t('places.mapForm.createMap')
-                : props.mode === 'details'
-                  ? t('places.mapForm.saveDetails')
-                  : t('places.mapForm.replacePicture')}
-          </Button>
-          <Button tone="secondary" onClick={() => close()} disabled={isSaving}>
-            {t('places.mapForm.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={
+            props.mode === 'new'
+              ? t('places.mapForm.createMap')
+              : props.mode === 'details'
+                ? t('places.mapForm.saveDetails')
+                : t('places.mapForm.replacePicture')
+          }
+          busy={isSaving}
+          busyLabel={t('places.mapForm.saving')}
+          submitTestId="map-form-save"
+          onCancel={() => close()}
+          lockCancel
+        />
       )}
     >
       {message ? (

@@ -6,7 +6,7 @@ import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { PUBLIC_SUMMARY_MAX, type ContentPublicationState } from '../publishing/types'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /**
  * A story's public summary (Task 011): the few lines readers of the public portal are shown about it, in the same
@@ -69,14 +69,14 @@ export function StoryPublicSummaryForm({
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={isSaving} data-testid="save-story-public-summary">
-            {isSaving ? t('stories.summaryForm.saving') : t('stories.summaryForm.save')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-story-public-summary">
-            {t('stories.summaryForm.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('stories.summaryForm.save')}
+          busy={isSaving}
+          busyLabel={t('stories.summaryForm.saving')}
+          submitTestId="save-story-public-summary"
+          onCancel={close}
+          cancelTestId="cancel-story-public-summary"
+        />
       )}
     >
       {error ? (

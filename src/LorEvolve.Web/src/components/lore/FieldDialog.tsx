@@ -13,7 +13,7 @@ import { FieldKindFields } from './FieldKindFields'
 import { FieldLinkTarget } from './FieldLinkTarget'
 import { FieldMeaningShape } from './FieldMeaningShape'
 import { FieldDefaultRequired } from './FieldDefaultRequired'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /**
  * One field's settings, new or existing, in the drawer every LorEvolve form uses: focus goes in, Escape and Cancel ask before
@@ -127,20 +127,16 @@ export function FieldDialog({
       noValidate
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={isSaving} data-testid="save-field">
-            {field
-              ? isSaving
-                ? t('entityTypes.fields.saving')
-                : t('entityTypes.fields.saveChanges')
-              : isSaving
-                ? t('entityTypes.fields.adding')
-                : t('entityTypes.fields.addTitle')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-field">
-            {t('entityTypes.fields.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={
+            field ? t('entityTypes.fields.saveChanges') : t('entityTypes.fields.addTitle')
+          }
+          busy={isSaving}
+          busyLabel={field ? t('entityTypes.fields.saving') : t('entityTypes.fields.adding')}
+          submitTestId="save-field"
+          onCancel={close}
+          cancelTestId="cancel-field"
+        />
       )}
     >
       {message ? (

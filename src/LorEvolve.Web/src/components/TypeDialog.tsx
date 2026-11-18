@@ -10,7 +10,7 @@ import { typeDialogSave } from '../lore/typeDialogSave'
 import { TypeDialogIdentity } from './TypeDialogIdentity'
 import { TypeDialogPlace } from './TypeDialogPlace'
 import { TypeDialogBehaviour } from './TypeDialogBehaviour'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /** What the drawer reads of the type it edits: a lore type, or a project's own type (#144). */
 export type DialogType = TreeType & { icon: string | null; familyTreeEligible?: boolean }
@@ -169,20 +169,18 @@ export function TypeDialog({
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={isSaving} data-testid="save-type">
-            {type
-              ? isSaving
-                ? t('entityTypes.page.dialog.saving')
-                : t('entityTypes.page.dialog.saveChanges')
-              : isSaving
-                ? t('entityTypes.page.dialog.creating')
-                : t('entityTypes.page.dialog.create')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-type">
-            {t('entityTypes.page.dialog.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={
+            type ? t('entityTypes.page.dialog.saveChanges') : t('entityTypes.page.dialog.create')
+          }
+          busy={isSaving}
+          busyLabel={
+            type ? t('entityTypes.page.dialog.saving') : t('entityTypes.page.dialog.creating')
+          }
+          submitTestId="save-type"
+          onCancel={close}
+          cancelTestId="cancel-type"
+        />
       )}
     >
       {message ? (

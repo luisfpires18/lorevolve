@@ -12,7 +12,7 @@ import {
   type FamilySemanticValue,
   type RelationshipType,
 } from '../relationships/types'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface Props {
   universeId: string
@@ -108,14 +108,14 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (
-        <>
-          <Button type="submit" disabled={isSaving} data-testid="create-family-kind">
-            {isSaving ? t('places.kindDialog.creating') : t('places.kindDialog.create')}
-          </Button>
-          <Button tone="secondary" onClick={close} data-testid="cancel-family-kind">
-            {t('places.kindDialog.cancel')}
-          </Button>
-        </>
+        <FormActions
+          submitLabel={t('places.kindDialog.create')}
+          busy={isSaving}
+          busyLabel={t('places.kindDialog.creating')}
+          submitTestId="create-family-kind"
+          onCancel={close}
+          cancelTestId="cancel-family-kind"
+        />
       )}
     >
       {message ? (

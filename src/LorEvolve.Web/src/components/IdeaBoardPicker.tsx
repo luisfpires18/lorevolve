@@ -6,7 +6,7 @@ import { listIdeas, listReferenceTargets } from '../ideas/api'
 import { IdeaReferenceKind } from '../ideas/types'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
-import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /** What a picked idea or entry puts on a card: its id and what the card shows of it. */
 export interface PickedTarget {
@@ -130,11 +130,7 @@ export function IdeaBoardPicker({
       title={what === 'idea' ? t('ideas.boardPicker.addIdea') : t('ideas.boardPicker.addEntry')}
       onClose={onClose}
       actions={() => (
-        <>
-          <Button tone="secondary" onClick={onClose} data-testid="board-picker-close">
-            {t('ideas.boardPicker.close')}
-          </Button>
-        </>
+        <FormActions onCancel={onClose} dismiss="close" cancelTestId="board-picker-close" />
       )}
     >
       <Field id={searchId} label={t('ideas.boardPicker.findByName')}>
