@@ -258,7 +258,7 @@ function PanelCard({
           <div className="comicpage__actions">
             {canEdit ? (
               <Button disabled={saving} onClick={save} data-testid={testId('save')}>
-                {saving ? t('projects.structure.saving') : t('projects.structure.panel.save')}
+                {saving ? t('projects.structure.saving') : t('shell.actions.save')}
               </Button>
             ) : null}
             {status ? (

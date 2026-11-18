@@ -160,7 +160,7 @@ export function FieldForm({
       )}
 
       <FormActions
-        submitLabel={initial ? t('projects.schema.saveField') : t('projects.schema.addField')}
+        submitLabel={initial ? t('shell.actions.save') : t('projects.schema.addField')}
         busy={busy}
         busyLabel={t('projects.schema.fieldSaving')}
         submitTestId="project-field-new-save"

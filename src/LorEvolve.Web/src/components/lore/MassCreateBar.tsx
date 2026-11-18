@@ -58,7 +58,7 @@ export function MassCreateBar({
                 : t('lore.massCreate.createNone')}
           </Button>
           <Button tone="secondary" to={backTo}>
-            {t('lore.massCreate.cancel')}
+            {t('shell.actions.cancel')}
           </Button>
         </div>
       </footer>

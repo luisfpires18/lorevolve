@@ -92,7 +92,7 @@ export function BulkEraseConfirm({
           onClick={onCancel}
           data-testid="trash-bulk-cancel"
         >
-          {t('data.trash.bulk.cancel')}
+          {t('shell.actions.cancel')}
         </Button>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { BOARD_MAX_CARDS, cardName, type BoardCard } from '../../ideas/boards'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** A board editor's toolbar, the hint when the board is full, and the line being drawn. */
 export function BoardToolbar({
@@ -72,14 +73,11 @@ export function BoardToolbar({
       {connecting ? (
         <p className="notice board__connecting" role="status" data-testid="board-connecting">
           {t('ideas.board.connecting', { name: cardName(cardsById.get(connecting)!) })}{' '}
-          <Button
-            tone="secondary"
+          <FormActions
+            onCancel={() => setConnecting(null)}
+            cancelTestId="board-connect-cancel"
             size="sm"
-            onClick={() => setConnecting(null)}
-            data-testid="board-connect-cancel"
-          >
-            {t('ideas.board.cancel')}
-          </Button>
+          />
         </p>
       ) : null}
     </>

@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { Field } from './Field'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }
@@ -195,20 +196,23 @@ export function TypeGroupsField({
                 onKeyDown={onNewKey}
                 data-testid="type-group-new-name"
               />
-              <Button tone="secondary" size="sm" onClick={addNew} data-testid="type-group-new-add">
-                {t('entityTypes.groupsField.add')}
-              </Button>
-              <Button
-                tone="text"
-                size="sm"
-                onClick={() => {
+              <FormActions
+                onCancel={() => {
                   setCreating(false)
                   setNewName('')
                   setNewError(null)
                 }}
+                size="sm"
               >
-                {t('entityTypes.groupsField.cancel')}
-              </Button>
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  onClick={addNew}
+                  data-testid="type-group-new-add"
+                >
+                  {t('entityTypes.groupsField.add')}
+                </Button>
+              </FormActions>
             </div>
           )}
         </Field>

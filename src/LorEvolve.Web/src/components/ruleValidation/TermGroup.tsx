@@ -12,6 +12,7 @@ import { usage } from '../../ruleValidation/termUsage'
 import type { useTermManagerState } from '../../ruleValidation/useTermManagerState'
 import type { termManagerActions } from '../../ruleValidation/termManagerActions'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** One kind's terms, each with its use, Rename and Delete, and the rename row in its place. */
 export function TermGroup({
@@ -79,16 +80,14 @@ export function TermGroup({
                           aria-describedby={control['aria-describedby']}
                           data-testid={`rename-term-input-${term.name}`}
                         />
-                        <Button
+                        <FormActions
+                          submitLabel={t('canon.terms.saveName')}
                           disabled={busyId === term.id}
-                          onClick={() => void saveRename()}
-                          data-testid={`save-term-${term.name}`}
-                        >
-                          {t('canon.terms.saveName')}
-                        </Button>
-                        <Button tone="secondary" size="sm" onClick={() => setRenaming(null)}>
-                          {t('canon.terms.cancel')}
-                        </Button>
+                          onSubmit={() => void saveRename()}
+                          submitTestId={`save-term-${term.name}`}
+                          onCancel={() => setRenaming(null)}
+                          size="sm"
+                        />
                       </div>
                     </>
                   )}

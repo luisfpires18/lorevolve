@@ -67,7 +67,7 @@ export function LoreSelectBar({
               {t('lore.page.clearSelection')}
             </Button>
             <Button tone="secondary" onClick={stopSelecting} data-testid="lore-select-done">
-              {t('lore.page.done')}
+              {t('shell.actions.done')}
             </Button>
           </div>
         </footer>

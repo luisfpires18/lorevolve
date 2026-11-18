@@ -150,7 +150,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
           />
           {dirty ? (
             <Button tone="secondary" onClick={discard}>
-              {t('time.calendar.discard')}
+              {t('shell.actions.discard')}
             </Button>
           ) : null}
         </div>

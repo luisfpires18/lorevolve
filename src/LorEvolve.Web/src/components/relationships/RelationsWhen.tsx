@@ -5,7 +5,7 @@ import type { Chronology } from '../../chronology/types'
 import { EMPTY_POINT } from '../../stories/sceneDraft'
 import type { chronologyOf } from '../../stories/sceneDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 export function RelationsWhen({
   chronology,
@@ -79,24 +79,16 @@ export function RelationsWhen({
               </p>
             ) : null}
             <div className="relwhen__actions">
-              <Button
-                size="sm"
-                type="submit"
+              <FormActions
+                submitLabel={t('relationships.section.show')}
                 disabled={!whenReady}
-                data-testid="relations-when-show"
-              >
-                {t('relationships.section.show')}
-              </Button>
-              <Button
-                tone="secondary"
-                size="sm"
-                onClick={() => {
+                submitTestId="relations-when-show"
+                onCancel={() => {
                   setWhen(null)
                   requestAnimationFrame(() => whenOpen.current?.focus())
                 }}
-              >
-                {t('relationships.section.whenCancel')}
-              </Button>
+                size="sm"
+              />
             </div>
           </form>
         )}

@@ -10,6 +10,7 @@ import {
   type ValidationTermKindValue,
 } from '../ruleValidation/types'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 
 interface ValidationTermSelectProps {
   universeId: string
@@ -191,18 +192,14 @@ export function ValidationTermSelect({
                       aria-describedby={nameControl['aria-describedby']}
                       data-testid={`${testId}-name`}
                     />
-                    <Button
-                      disabled={isCreating}
-                      onClick={() => void create()}
-                      data-testid={`${testId}-add`}
-                    >
-                      {isCreating
-                        ? t('canon.termSelect.adding')
-                        : t('canon.termSelect.add', { word })}
-                    </Button>
-                    <Button tone="secondary" onClick={cancel}>
-                      {t('canon.termSelect.cancel')}
-                    </Button>
+                    <FormActions
+                      submitLabel={t('canon.termSelect.add', { word })}
+                      busy={isCreating}
+                      busyLabel={t('canon.termSelect.adding')}
+                      onSubmit={() => void create()}
+                      submitTestId={`${testId}-add`}
+                      onCancel={cancel}
+                    />
                   </div>
                 </>
               )}

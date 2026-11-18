@@ -200,7 +200,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             />
             {dirty ? (
               <Button tone="secondary" onClick={discard}>
-                {t('time.periods.discard')}
+                {t('shell.actions.discard')}
               </Button>
             ) : null}
           </div>

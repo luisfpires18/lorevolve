@@ -158,7 +158,7 @@ export function ProjectEntryForm({
       )}
 
       <FormActions
-        submitLabel={entry ? t('projects.entries.saveEdit') : t('projects.entries.add')}
+        submitLabel={entry ? t('shell.actions.save') : t('projects.entries.add')}
         busy={busy}
         busyLabel={t('projects.entries.saving')}
         submitTestId={`${prefix}-save`}

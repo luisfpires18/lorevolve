@@ -81,7 +81,7 @@ export function EntryFormBar({
             }}
             data-testid="cancel-entity"
           >
-            {t('entity.page.bar.cancel')}
+            {t('shell.actions.cancel')}
           </Button>
         ) : null}
       </div>

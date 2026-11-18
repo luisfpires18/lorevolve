@@ -74,7 +74,7 @@ export function EraseConfirm({
           onClick={onCancel}
           data-testid="trash-erase-cancel"
         >
-          {t('data.trash.erase.cancel')}
+          {t('shell.actions.cancel')}
         </Button>
       </div>
     </div>

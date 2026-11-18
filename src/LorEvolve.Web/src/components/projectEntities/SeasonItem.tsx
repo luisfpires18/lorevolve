@@ -13,6 +13,7 @@ import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonW
 import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
 export function SeasonItem({
@@ -89,19 +90,16 @@ export function SeasonItem({
               />
             )}
           </Field>
-          <Button size="sm" type="submit" disabled={busy} data-testid="project-season-rename-save">
-            {t('projects.seasons.renameSave')}
-          </Button>
           {/* Without this the only way out of a rename the author thought better of was to save it. */}
-          <Button
-            tone="secondary"
+          <FormActions
+            submitLabel={t('projects.seasons.renameSave')}
+            busy={busy}
+            submitTestId="project-season-rename-save"
+            onCancel={() => setRenaming(null)}
+            cancelTestId="project-season-rename-cancel"
+            lockCancel
             size="sm"
-            disabled={busy}
-            onClick={() => setRenaming(null)}
-            data-testid="project-season-rename-cancel"
-          >
-            {t('projects.common.cancel')}
-          </Button>
+          />
         </form>
       ) : (
         <div className="projectcard__head">
