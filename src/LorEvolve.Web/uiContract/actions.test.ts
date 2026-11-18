@@ -30,6 +30,7 @@ const FORM_ACTIONS_ROWS = new Map<string, string>([
 // Files that read the shared Cancel or Close string themselves, because they cannot draw FormActions.
 const SHARED_CANCEL_READERS = new Set([
   'src/components/FormActions.tsx',
+  'src/components/CropperActions.tsx', // icons on both buttons, which FormActions cannot draw
   'src/components/trash/BulkEraseConfirm.tsx',
   'src/components/trash/EraseConfirm.tsx',
   'src/components/trash/RestorePublicConfirm.tsx',
@@ -68,6 +69,11 @@ const menuItemWithoutIcon = (source: string) =>
     ({ tag, body }) =>
       tag.includes('actionmenu__item') && !/<ActionIcon\b|<[A-Z]\w*\s+aria-hidden/.test(body),
   )
+const makesThings = (source: string) =>
+  elements(source, 'Button').some(({ body }) => {
+    const key = /\bt\(\s*['`]([^'`]+)['`]/.exec(body)?.[1]
+    return !!key && /^(new|add)/i.test(key.split('.').at(-1)!)
+  })
 const BAD_DELETE_TONE = /tone="(?!danger(-quiet)?")[a-z-]+"/
 const deleteButtonWithWrongTone = (source: string) =>
   elements(source, 'Button').some(({ tag, body }) => {
@@ -75,6 +81,14 @@ const deleteButtonWithWrongTone = (source: string) =>
     if (!key || !/^delete/i.test(key.split('.').at(-1)!)) return false
     return BAD_DELETE_TONE.test(tag) || !/tone="danger/.test(tag)
   })
+
+// Files with a plain `Button` labelled "New ..." or "Add ...", with the reason it is no New button.
+const PLAIN_NEW_BUTTONS = new Map<string, string>([
+  ['src/components/admin/FeedbackScreen.tsx', 'Newer is a pager step'],
+  ['src/components/lore/LoreContextMentioned.tsx', 'Add links an existing entry, nothing is made'],
+  ['src/components/lore/MassCreatePaste.tsx', 'adds typed text to a list before anything is saved'],
+  ['src/components/projects/SagasUnassigned.tsx', 'puts an existing production in a phase'],
+])
 
 const filesWhere = (check: (source: string) => boolean) =>
   tsxFiles.filter((file) => check(read(file)))
@@ -109,6 +123,10 @@ test('the guards fail on a bad snippet', () => {
     menuItemWithoutIcon('<button className="actionmenu__item"><ActionIcon icon={X} />Go</button>'),
     false,
   )
+  assert.equal(makesThings(`<Button onClick={x}>{t('a.newVolume')}</Button>`), true)
+  assert.equal(makesThings(`<Button onClick={x}>{t('a.addSection')}</Button>`), true)
+  assert.equal(makesThings(`<NewButton onClick={x}>{t('a.newVolume')}</NewButton>`), false)
+  assert.equal(makesThings(`<Button onClick={x}>{t('a.save')}</Button>`), false)
   assert.equal(
     deleteButtonWithWrongTone(`<Button tone="secondary" onClick={x}>{t('a.deleteIt')}</Button>`),
     true,
@@ -130,6 +148,10 @@ test('the shared Cancel and Close strings are read by FormActions and the listed
 
 test('Plus is imported only by NewButton and the listed files', () => {
   onlyAllowed(filesWhere(importsPlus), PLUS_IMPORTERS)
+})
+
+test('a Button labelled New or Add is a NewButton, except the listed files', () => {
+  onlyAllowed(filesWhere(makesThings), PLAIN_NEW_BUTTONS)
 })
 
 test('every menu item has an icon, except the listed files', () => {

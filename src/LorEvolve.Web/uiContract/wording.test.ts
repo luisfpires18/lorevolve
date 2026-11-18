@@ -31,11 +31,10 @@ function flatten(tree: Tree, prefix = ''): Map<string, string> {
 const enText = flatten(en)
 const ptText = flatten(pt)
 
-// Keys that say Cancel or Close for a reason of their own: the confirm dialog, the crop dialog,
+// Keys that say Cancel or Close for a reason of their own: the confirm dialog,
 // two hand-written dialogs and the rail's close control. Only shrinks.
 const CLOSE_TEXT_KEPT = new Set([
   'shell.confirm.cancel',
-  'account.crop.cancel',
   'places.memberDetails.close',
   'universe.imageViewer.close',
   'workspace.rail.close',
