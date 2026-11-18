@@ -7,7 +7,7 @@ import { typeManagerActions } from '../relationships/typeManagerActions'
 import { useTypeManagerState } from '../relationships/useTypeManagerState'
 import { KindForm } from './relationships/KindForm'
 import { KindRow } from './relationships/KindRow'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
   useI18n() // Re-render when the language changes; the module's `t` reads the new one.
@@ -75,7 +75,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
           {t('relationships.types.heading')}
         </h2>
         {access.editContent && !isAdding && !editingId ? (
-          <Button
+          <NewButton
             tone="secondary"
             onClick={() => {
               setMessage(null)
@@ -87,7 +87,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
             data-testid="add-relationship-type"
           >
             {t('relationships.types.addKind')}
-          </Button>
+          </NewButton>
         ) : null}
       </div>
 

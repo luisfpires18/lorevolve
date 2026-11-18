@@ -5,6 +5,7 @@ import { t, useI18n } from '../i18n'
 import { PageRow } from './projectEntities/PageRow'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { NewButton } from './NewButton'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -90,14 +91,15 @@ export function ChapterPages({
       <div className="projectcard__head">
         <h4 className="sectionrule sectionrule--accent">{t('projects.pages.title')}</h4>
         <div className="projectcard__actions">
-          <Button
+          <NewButton
+            tone="secondary"
             size="sm"
             aria-expanded={addingPage}
             data-testid={`chapter-page-add-${chapterId}`}
             onClick={() => setAddingPage((isOpen) => !isOpen)}
           >
             {t('projects.pages.add')}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             size="sm"

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Plus } from 'lucide-react'
 import {
   createTypeTemplate,
   deleteTypeTemplate,
@@ -15,7 +14,7 @@ import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
 import { t, useI18n } from '../i18n'
 import { TemplateRow } from './typeTemplates/TemplateRow'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 const NO_TYPES = buildTypeTree<TreeType>([])
 
@@ -86,9 +85,9 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
     <section className="projects" data-testid="type-templates">
       {canEdit ? (
         <div className="types__context">
-          <Button icon={Plus} data-testid="template-new" onClick={() => setEditing('new')}>
+          <NewButton data-testid="template-new" onClick={() => setEditing('new')}>
             {t('entityTypes.page.templates.new')}
-          </Button>
+          </NewButton>
         </div>
       ) : null}
 

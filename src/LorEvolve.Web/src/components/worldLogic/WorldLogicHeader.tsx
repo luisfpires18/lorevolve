@@ -1,8 +1,7 @@
-import { Plus } from 'lucide-react'
 import { PageHeader } from '../PageHeader'
 import { t } from '../../i18n'
 import type { useUniverseAccess } from '../../universes/access'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** The World Logic page's header, with New System on the Systems tab and New rule on the others. */
 export function WorldLogicHeader({
@@ -24,17 +23,13 @@ export function WorldLogicHeader({
       actions={
         access.editContent ? (
           tab === 'systems' ? (
-            <Button
-              icon={Plus}
-              to={`${base}/world-logic/systems/new`}
-              data-testid="world-logic-new-system"
-            >
+            <NewButton to={`${base}/world-logic/systems/new`} data-testid="world-logic-new-system">
               {t('canon.worldLogic.systems.newSystem')}
-            </Button>
+            </NewButton>
           ) : (
-            <Button icon={Plus} to={`${base}/world-rules/new`} data-testid="world-logic-new-rule">
+            <NewButton to={`${base}/world-rules/new`} data-testid="world-logic-new-rule">
               {t('canon.rules.newRule')}
-            </Button>
+            </NewButton>
           )
         ) : undefined
       }

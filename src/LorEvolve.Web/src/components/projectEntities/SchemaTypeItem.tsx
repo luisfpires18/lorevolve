@@ -10,6 +10,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { buildTypeTree } from '../../lore/typeTree'
 import { SchemaTypeFields } from './SchemaTypeFields'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 type Tree = ReturnType<typeof buildTypeTree<ProjectEntityType>>
 
@@ -74,8 +75,8 @@ export function SchemaTypeItem({
         </span>
         <span className="types__actions">
           {/* Quiet like the universe's; on a phone it waits in the row's menu instead. */}
-          <Button
-            tone="text"
+          <NewButton
+            tone="secondary"
             size="sm"
             icon={ListTree}
             className="types__addchild"
@@ -87,7 +88,7 @@ export function SchemaTypeItem({
             }}
           >
             {t('entityTypes.page.addChild')}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             size="sm"

@@ -1,14 +1,14 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Plus, Trash } from 'lucide-react'
+import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { useFold } from './fold'
 import { FoldToggle } from './FoldToggle'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
 import type { Chapter } from '../stories/types'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 /** An arc a chapter may move into, or no arc at all when `id` is null, named as the menu reads it. */
 export interface ArcTarget {
@@ -108,9 +108,8 @@ export function ChapterSection({
 
         {access.editContent ? (
           <div className="chapter__tools rowtools">
-            <Button
-              tone="text"
-              icon={Plus}
+            <NewButton
+              tone="secondary"
               onClick={() => {
                 setFoldOpen(true)
                 onAddScene(chapter)
@@ -119,7 +118,7 @@ export function ChapterSection({
               data-testid="chapter-new-scene"
             >
               {t('stories.chapter.addScene')}
-            </Button>
+            </NewButton>
             <ActionMenu
               label={t('stories.chapter.moreActions', {
                 label: chapterLabel(index, chapter.title),

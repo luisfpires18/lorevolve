@@ -1,7 +1,9 @@
 import { Plus, type LucideIcon } from 'lucide-react'
 import { Button, type ButtonProps } from './Button'
 
-type NewButtonProps = Omit<ButtonProps, 'tone' | 'icon'> & {
+type WithoutLook<T> = T extends unknown ? Omit<T, 'tone' | 'icon'> : never
+
+type NewButtonProps = WithoutLook<ButtonProps> & {
   /** Head and empty state: primary (the default). A repeated Add in a row or list: secondary. */
   tone?: 'primary' | 'secondary'
   /** Only for a different glyph than the Plus. */

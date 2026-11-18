@@ -4,7 +4,7 @@ import { t, tn, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { PagePanels } from './PagePanels'
 import { PanelForm } from './PanelForm'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 /** One page in a chapter: its name, its menu, its panels, and the form to add a panel. */
 export function PageRow({
@@ -119,14 +119,14 @@ export function PageRow({
             }}
           />
         ) : (
-          <Button
-            tone="text"
+          <NewButton
+            tone="secondary"
             size="sm"
             data-testid={`project-panel-add-${page.id}`}
             onClick={() => setAddingTo(page.id)}
           >
             {t('projects.pages.addPanel')}
-          </Button>
+          </NewButton>
         )}
       </div>
     </li>

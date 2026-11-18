@@ -11,6 +11,7 @@ import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
 import { FormActions } from '../FormActions'
 import { GuardBuilderDrawer } from './GuardBuilderDrawer'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 export function TransitionDrawer({
   transition,
@@ -168,14 +169,14 @@ export function TransitionDrawer({
           )}
         </Field>
         <div className="form__actions">
-          <Button
+          <NewButton
             tone="secondary"
             size="sm"
             onClick={() => setBuilding({ ruleId: null })}
             data-testid="machine-transition-new-guard"
           >
             {t(`${gb}.newGuard`)}
-          </Button>
+          </NewButton>
           <Button
             tone="secondary"
             size="sm"

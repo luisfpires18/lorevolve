@@ -1,10 +1,9 @@
 import { useId, useState, type KeyboardEvent } from 'react'
-import { Plus } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
-import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { NewButton } from './NewButton'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }
@@ -164,15 +163,14 @@ export function TypeGroupsField({
       ) : null}
 
       {!showPicker && !creating ? (
-        <Button
-          tone="text"
+        <NewButton
+          tone="secondary"
           size="sm"
-          icon={Plus}
           onClick={() => setAdding(true)}
           data-testid="type-group-another"
         >
           {t('entityTypes.groupsField.addAnother')}
-        </Button>
+        </NewButton>
       ) : null}
 
       {creating ? (
@@ -204,14 +202,14 @@ export function TypeGroupsField({
                 }}
                 size="sm"
               >
-                <Button
+                <NewButton
                   tone="secondary"
                   size="sm"
                   onClick={addNew}
                   data-testid="type-group-new-add"
                 >
                   {t('entityTypes.groupsField.add')}
-                </Button>
+                </NewButton>
               </FormActions>
             </div>
           )}

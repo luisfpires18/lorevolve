@@ -1,5 +1,4 @@
-import { Plus } from 'lucide-react'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 import {
   addableLevels,
   type ProjectNodeSummary,
@@ -25,16 +24,15 @@ export function OutlineAddButtons({
   const levels = addableLevels(tree as ProjectStructureTree, parent?.level ?? null)
   if (levels.length === 0) return null
   const buttons = levels.map((level) => (
-    <Button
+    <NewButton
       key={level}
-      tone={parent ? 'text' : 'primary'}
-      icon={parent ? Plus : undefined}
+      tone={parent ? 'secondary' : 'primary'}
       disabled={busy}
       data-testid={parent ? `project-node-add-${level}-${parent.id}` : `project-node-add-${level}`}
       onClick={() => add(level, parent?.id ?? null)}
     >
       {t('projects.structure.add', { level: levelWord(level) })}
-    </Button>
+    </NewButton>
   ))
   return parent ? buttons : <div className="form__actions">{buttons}</div>
 }

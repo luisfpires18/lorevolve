@@ -12,7 +12,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
@@ -200,14 +200,14 @@ export function SeasonItem({
           }}
         />
       ) : (
-        <Button
-          tone="text"
+        <NewButton
+          tone="secondary"
           size="sm"
           data-testid={`project-episode-add-${season.id}`}
           onClick={() => setAddingTo(season.id)}
         >
           {say.addEpisode()}
-        </Button>
+        </NewButton>
       )}
     </li>
   )

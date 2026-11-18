@@ -1,9 +1,10 @@
-import { Lightbulb, List, Plus, StickyNote } from 'lucide-react'
+import { Lightbulb, List, StickyNote } from 'lucide-react'
 import { BOARD_MAX_CARDS, cardName, type BoardCard } from '../../ideas/boards'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { NewButton } from '../NewButton'
 
 /** A board editor's toolbar, the hint when the board is full, and the line being drawn. */
 export function BoardToolbar({
@@ -26,7 +27,7 @@ export function BoardToolbar({
   return (
     <>
       <div className="board__toolbar" role="toolbar" aria-label={t('ideas.board.toolbar')}>
-        <Button
+        <NewButton
           tone="secondary"
           icon={StickyNote}
           disabled={isHeld || isFull}
@@ -34,8 +35,8 @@ export function BoardToolbar({
           data-testid="board-add-note"
         >
           {t('ideas.board.addNote')}
-        </Button>
-        <Button
+        </NewButton>
+        <NewButton
           tone="secondary"
           icon={Lightbulb}
           disabled={isHeld || isFull}
@@ -43,17 +44,16 @@ export function BoardToolbar({
           data-testid="board-add-idea"
         >
           {t('ideas.board.addIdea')}
-        </Button>
-        <Button
+        </NewButton>
+        <NewButton
           tone="secondary"
-          icon={Plus}
           disabled={isHeld || isFull || draft.universeId === null}
           title={draft.universeId === null ? t('ideas.board.addLoreNeedsUniverse') : undefined}
           onClick={() => setPicking('entry')}
           data-testid="board-add-entry"
         >
           {t('ideas.board.addLore')}
-        </Button>
+        </NewButton>
         <Button
           tone="secondary"
           icon={List}

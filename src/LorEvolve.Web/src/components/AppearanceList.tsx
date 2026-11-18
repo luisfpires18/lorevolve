@@ -3,7 +3,7 @@ import type { Appearance } from '../progression/types'
 import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
 import { AppearanceItem } from './lore/AppearanceItem'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -47,7 +47,7 @@ export function AppearanceList({
           {t('progression.appearanceList.heading')}
         </h3>
         {access.editContent ? (
-          <Button
+          <NewButton
             tone="secondary"
             size="sm"
             icon={ImagePlus}
@@ -56,7 +56,7 @@ export function AppearanceList({
             data-testid="add-appearance"
           >
             {t('progression.appearanceList.add')}
-          </Button>
+          </NewButton>
         ) : null}
       </div>
       {appearances.length === 0 ? (

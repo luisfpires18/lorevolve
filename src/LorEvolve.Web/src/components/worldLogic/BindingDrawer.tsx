@@ -38,7 +38,7 @@ export function BindingDrawer({
       noValidate
       actions={(close) => (
         <FormActions
-          submitLabel={false ? t(`${m}.add`) : t(`${m}.save`)}
+          submitLabel={t(`${m}.save`)}
           submitTestId="machine-binding-apply"
           onCancel={close}
           cancelTestId="machine-binding-cancel"

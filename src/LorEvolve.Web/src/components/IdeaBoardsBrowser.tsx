@@ -1,5 +1,4 @@
 import { useId } from 'react'
-import { Plus } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { IdeasTabs } from './IdeasTabs'
 import { Quoted } from './NameList'
@@ -14,6 +13,7 @@ import { useBoardsRead } from '../ideas/useBoardsRead'
 import { useBoardsState } from '../ideas/useBoardsState'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 /** What a board's editor says it did before handing back to the list. */
 export interface BoardsListNotice {
@@ -65,9 +65,9 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
           </p>
         }
         actions={
-          <Button icon={Plus} to={`${basePath}/new`} data-testid="new-board">
+          <NewButton to={`${basePath}/new`} data-testid="new-board">
             {t('ideas.boards.newBoard')}
-          </Button>
+          </NewButton>
         }
       />
 

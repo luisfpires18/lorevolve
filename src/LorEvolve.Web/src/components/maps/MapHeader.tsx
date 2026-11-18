@@ -1,4 +1,4 @@
-import { ImageUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ImageUp, Pencil, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
@@ -10,7 +10,7 @@ import { useI18n } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { MapDialog } from '../../maps/useMapPageState'
-import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 export function MapHeader({
   map,
@@ -45,15 +45,14 @@ export function MapHeader({
       actions={
         canEdit ? (
           <>
-            <Button
-              icon={Plus}
+            <NewButton
               aria-pressed={placing}
               disabled={calibrating !== null}
               onClick={() => setPlacing((current) => !current)}
               data-testid="map-add-pin"
             >
               {placing ? t('places.mapPage.placingButton') : t('places.mapPage.addPin')}
-            </Button>
+            </NewButton>
             <ActionMenu
               label={t('places.mapPage.moreActions', { name: map.name })}
               triggerTestId="map-actions"

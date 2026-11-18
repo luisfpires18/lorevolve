@@ -1,6 +1,5 @@
 import { useEffect, useId, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Plus } from 'lucide-react'
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
 import { Quoted } from '../components/NameList'
 import { t, useI18n } from '../i18n'
@@ -11,6 +10,7 @@ import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
+import { NewButton } from '../components/NewButton'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: WorldRulePage } | { kind: 'error'; message: string }
@@ -80,9 +80,9 @@ export default function WorldRulesPage() {
         lede={t('canon.rules.lede')}
         actions={
           access.editContent ? (
-            <Button icon={Plus} to={`${basePath}/new`} data-testid="new-world-rule">
+            <NewButton to={`${basePath}/new`} data-testid="new-world-rule">
               {t('canon.rules.newRule')}
-            </Button>
+            </NewButton>
           ) : undefined
         }
       />
@@ -163,9 +163,9 @@ export default function WorldRulesPage() {
           hint={t('canon.rules.empty.hint')}
           action={
             access.editContent ? (
-              <Button icon={Plus} to={`${basePath}/new`} data-testid="empty-new-world-rule">
+              <NewButton to={`${basePath}/new`} data-testid="empty-new-world-rule">
                 {t('canon.rules.emptyNewRule')}
-              </Button>
+              </NewButton>
             ) : undefined
           }
         />

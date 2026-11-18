@@ -1,5 +1,4 @@
 import { useEffect, useId, useState } from 'react'
-import { Plus } from 'lucide-react'
 import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { MapForm } from '../components/MapForm'
@@ -13,6 +12,7 @@ import { useUniverseAccess } from '../universes/access'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
+import { NewButton } from '../components/NewButton'
 
 type LoadState = { kind: 'loading' } | { kind: 'ready'; maps: MapSummary[] } | { kind: 'error' }
 
@@ -58,9 +58,9 @@ export default function MapsPage() {
   }, [universe.id, reads])
 
   const newMap = access.editContent ? (
-    <Button icon={Plus} onClick={() => setCreating(true)} data-testid="new-map">
+    <NewButton onClick={() => setCreating(true)} data-testid="new-map">
       {t('places.maps.new')}
-    </Button>
+    </NewButton>
   ) : undefined
 
   return (
@@ -162,9 +162,7 @@ export default function MapsPage() {
             }
             action={
               access.editContent ? (
-                <Button icon={Plus} onClick={() => setCreating(true)}>
-                  {t('places.maps.new')}
-                </Button>
+                <NewButton onClick={() => setCreating(true)}>{t('places.maps.new')}</NewButton>
               ) : undefined
             }
           />

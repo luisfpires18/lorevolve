@@ -9,8 +9,8 @@ import {
   type ValidationTerm,
   type ValidationTermKindValue,
 } from '../ruleValidation/types'
-import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { NewButton } from './NewButton'
 
 interface ValidationTermSelectProps {
   universeId: string
@@ -160,9 +160,14 @@ export function ValidationTermSelect({
               ))}
             </select>
             {!isAdding ? (
-              <Button tone="secondary" ref={newButton} onClick={open} data-testid={`${testId}-new`}>
+              <NewButton
+                tone="secondary"
+                ref={newButton}
+                onClick={open}
+                data-testid={`${testId}-new`}
+              >
                 {t('canon.termSelect.new', { word })}
-              </Button>
+              </NewButton>
             ) : null}
           </div>
 

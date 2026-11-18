@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
-import { ListFilter, ListPlus, Plus } from 'lucide-react'
+import { ListFilter, ListPlus } from 'lucide-react'
 import { PageHeader } from '../PageHeader'
 import { GroupSwitcher, TypeSwitcher } from '../TypeSwitcher'
 import { useI18n } from '../../i18n'
@@ -9,6 +9,7 @@ import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import { Button } from '../Button'
+import { NewButton } from '../NewButton'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -98,8 +99,7 @@ export function LoreHeader({
             >
               <span className="lore__masscreatelabel">{t('lore.page.massCreateLabel')}</span>
             </Button>
-            <Button
-              icon={Plus}
+            <NewButton
               className="lore__create"
               to={createTo}
               aria-label={
@@ -114,7 +114,7 @@ export function LoreHeader({
                   ? tx('lore.page.newType', { type: <bdi>{selectedType.name}</bdi> })
                   : t('lore.page.newEntry')}
               </span>
-            </Button>
+            </NewButton>
           </>
         ) : undefined
       }

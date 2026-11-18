@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Field } from './Field'
 import { useLocation } from 'react-router-dom'
-import { Plus } from 'lucide-react'
 import { FieldKind, type ProjectEntitySummary, type ProjectField } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
 import { EmptyState } from './EmptyState'
@@ -13,6 +12,7 @@ import { ProjectEntriesFilters } from './projectEntities/ProjectEntriesFilters'
 import { ProjectEntryList } from './projectEntities/ProjectEntryList'
 import { ProjectEntryForm } from './ProjectEntryForm'
 import { Button } from './Button'
+import { NewButton } from './NewButton'
 
 /**
  * The entries a project holds, by type (#144).
@@ -129,8 +129,7 @@ export function ProjectEntries({
         title={type ? <bdi>{type.name}</bdi> : t('projects.entries.title')}
         ancestors={ancestors}
         action={
-          <Button
-            icon={Plus}
+          <NewButton
             aria-expanded={adding}
             aria-label={type ? t('lore.page.newTypeLabel', { name: type.name }) : undefined}
             data-testid="project-entry-add"
@@ -141,7 +140,7 @@ export function ProjectEntries({
                 ? tx('lore.page.newType', { type: <bdi>{type.name}</bdi> })
                 : t('projects.entries.add')}
             </span>
-          </Button>
+          </NewButton>
         }
       />
 

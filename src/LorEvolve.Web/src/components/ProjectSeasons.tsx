@@ -5,7 +5,7 @@ import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { WORDS, type ProjectStructureWords } from '../projectEntities/seasonWords'
 import { SeasonItem } from './projectEntities/SeasonItem'
-import { Button } from './Button'
+import { NewButton } from './NewButton'
 import { FormActions } from './FormActions'
 
 /**
@@ -85,13 +85,13 @@ export function ProjectSeasons({
           <h2 className="sectionrule">{say.title()}</h2>
           <p className="projects__lede">{say.lede()}</p>
         </div>
-        <Button
+        <NewButton
           aria-expanded={adding}
           data-testid="project-season-add"
           onClick={() => setAdding((open) => !open)}
         >
           {say.add()}
-        </Button>
+        </NewButton>
       </header>
 
       {/* Asked for rather than standing open at the foot of the list. */}

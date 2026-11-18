@@ -1,10 +1,10 @@
 import { useRef } from 'react'
-import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, X } from 'lucide-react'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { beatKey, type BeatDraft } from '../stories/beats'
-import { Button } from './Button'
 import { IconButton } from './IconButton'
+import { NewButton } from './NewButton'
 
 interface SceneBeatsFieldProps {
   beats: BeatDraft[]
@@ -129,16 +129,15 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
         </ol>
       ) : null}
 
-      <Button
+      <NewButton
         tone="secondary"
         size="sm"
-        icon={Plus}
         className="scenebeats__add"
         onClick={add}
         data-testid="scene-beat-add"
       >
         {t('stories.beats.add')}
-      </Button>
+      </NewButton>
     </Field>
   )
 }
