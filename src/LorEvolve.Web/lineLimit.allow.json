@@ -9,7 +9,6 @@
   "components/MapForm.tsx": 334,
   "components/MapViewer.tsx": 341,
   "components/ProjectScript.tsx": 400,
-  "components/PublicDetailsForm.tsx": 365,
   "components/RelationshipSection.tsx": 773,
   "components/RelationshipTypeManager.tsx": 568,
   "components/RestoreBackup.tsx": 556,
