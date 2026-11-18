@@ -1,9 +1,8 @@
 import { Plus } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { EmptyState } from '../EmptyState'
-import { ActionIcon } from '../ActionIcon'
 import type { IdeasScope } from '../../ideas/types'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** What an ideas list says when it has no ideas to show. */
 export function IdeasEmpty({
@@ -48,10 +47,9 @@ export function IdeasEmpty({
       title={t('ideas.browser.empty.noneTitle')}
       hint={t('ideas.browser.empty.noneHint')}
       action={
-        <Link className="button" to={`${basePath}/new`} data-testid="empty-new-idea">
-          <ActionIcon icon={Plus} />
+        <Button icon={Plus} to={`${basePath}/new`} data-testid="empty-new-idea">
           {t('ideas.browser.newIdea')}
-        </Link>
+        </Button>
       }
     />
   )

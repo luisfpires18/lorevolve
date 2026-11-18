@@ -6,6 +6,7 @@ import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { SystemRow } from './SystemRow'
+import { Button } from '../Button'
 
 /** The Systems tab: one row per System, with its empty states and its pager. */
 export function WorldLogicSystems({
@@ -30,9 +31,9 @@ export function WorldLogicSystems({
       {systems.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="world-logic-systems-error">
           <p>{t('canon.worldLogic.systems.readFailed')}</p>
-          <button className="button button--secondary" type="button" onClick={retry}>
+          <Button tone="secondary" onClick={retry}>
             {t('canon.rules.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -59,13 +60,9 @@ export function WorldLogicSystems({
           testId="world-logic-systems-page-empty"
           title={t('canon.rules.pageEmpty.title')}
           action={
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => goTo('systemsPage', 1)}
-            >
+            <Button tone="secondary" onClick={() => goTo('systemsPage', 1)}>
               {t('canon.rules.pageEmpty.first')}
-            </button>
+            </Button>
           }
         />
       ) : null}

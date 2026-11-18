@@ -1,7 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { Spline, X } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { Field } from '../Field'
 import {
   BOARD_CARD_KIND_LABELS,
@@ -14,6 +13,7 @@ import {
 import type { Fields } from '../../ideas/boardDraft'
 import type { BoardSelection } from '../../ideas/boardSelection'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** The inspector for the chosen card: its note or what it points to, its lines, and drawing a line or taking it off. */
 export function BoardCardInspector({
@@ -121,27 +121,25 @@ export function BoardCardInspector({
       ) : null}
 
       <div className="board__inspectoractions">
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
+          icon={Spline}
           disabled={isHeld || draft.cards.length < 2}
           aria-pressed={connecting === selectedCard.id}
           onClick={() => setConnecting(connecting === selectedCard.id ? null : selectedCard.id)}
           data-testid="board-connect"
         >
-          <ActionIcon icon={Spline} />
           {t('ideas.board.inspector.drawLine')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
+          icon={X}
           disabled={isHeld}
           onClick={() => removeCard(selectedCard)}
           data-testid="board-remove-card"
         >
-          <ActionIcon icon={X} />
           {t('ideas.board.inspector.takeOff')}
-        </button>
+        </Button>
       </div>
     </>
   )

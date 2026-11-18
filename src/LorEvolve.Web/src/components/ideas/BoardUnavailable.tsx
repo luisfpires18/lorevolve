@@ -3,6 +3,7 @@ import { EmptyState } from '../EmptyState'
 import { Quoted } from '../NameList'
 import type { LoadState } from '../../ideas/boardDraft'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** What a board's editor shows instead of the board: loading, missing, in another universe, or failed to open. */
 export function BoardUnavailable({
@@ -55,9 +56,9 @@ export function BoardUnavailable({
     return (
       <div className="notice notice--error" role="alert" data-testid="board-load-error">
         <p>{load.message}</p>
-        <button className="button button--secondary" type="button" onClick={reread}>
+        <Button tone="secondary" onClick={reread}>
           {t('ideas.board.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

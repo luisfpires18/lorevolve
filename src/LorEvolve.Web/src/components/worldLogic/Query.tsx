@@ -4,6 +4,7 @@ import { clauseOperators, newClause, withField } from '../../worldLogic/guardBlo
 import { fieldType } from '../../worldLogic/guardClassify'
 import { tg, select } from '../../worldLogic/guardBuilderKeys'
 import { TypedValue } from './TypedValue'
+import { Button } from '../Button'
 
 /** A search over one source: the source, then up to eight clauses on its own fields. */
 export function Query({
@@ -87,28 +88,28 @@ export function Query({
                 testId="guard-clause"
               />
             )}
-            <button
-              className="button button--text button--sm"
-              type="button"
+            <Button
+              tone="text"
+              size="sm"
               aria-label={tg('removeClause')}
               onClick={() => onChange({ ...query, where: where.filter((_, at) => at !== index) })}
               data-testid="guard-clause-remove"
             >
               {tg('remove')}
-            </button>
+            </Button>
           </div>
         )
       })}
       <div className="guardblock__row">
-        <button
-          className="button button--secondary button--sm"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
           disabled={where.length >= MAX_WHERE_CLAUSES}
           onClick={() => onChange({ ...query, where: [...where, newClause(from)] })}
           data-testid="guard-add-clause"
         >
           {tg('addClause')}
-        </button>
+        </Button>
       </div>
     </div>
   )

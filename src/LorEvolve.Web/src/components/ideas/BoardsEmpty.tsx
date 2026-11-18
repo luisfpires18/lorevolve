@@ -1,8 +1,7 @@
 import { Plus } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { ActionIcon } from '../ActionIcon'
 import { EmptyState } from '../EmptyState'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** What the boards list says when it has no boards to show. */
 export function BoardsEmpty({
@@ -33,10 +32,9 @@ export function BoardsEmpty({
       title={t('ideas.boards.empty.noneTitle')}
       hint={t('ideas.boards.empty.noneHint')}
       action={
-        <Link className="button" to={`${basePath}/new`} data-testid="empty-new-board">
-          <ActionIcon icon={Plus} />
+        <Button icon={Plus} to={`${basePath}/new`} data-testid="empty-new-board">
           {t('ideas.boards.newBoard')}
-        </Link>
+        </Button>
       }
     />
   )

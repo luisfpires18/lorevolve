@@ -250,8 +250,6 @@ test('Field renders label, hint, control, error in that order', () => {
 // IconButton (#408) goes folder by folder, and each commit removes its entry. A listed folder with no raw
 // use left fails, so the list cannot go stale. Temporary: the last conversion commit deletes it.
 const RAW_BUTTON_PENDING = new Set<string>([
-  'src/components/worldLogic',
-  'src/components/ideas',
   'src/components/projectEntities',
   'src/components/trash',
   'src/components/universes',

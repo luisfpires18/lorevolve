@@ -2,6 +2,7 @@ import { t } from '../../i18n'
 import { formatDateTime } from '../../lib/dates'
 import type { WorldLogicFindingDetail, WorldLogicFindingRow } from '../../worldLogic/types'
 import { historyLabel } from '../../worldLogic/findingLabels'
+import { Button } from '../Button'
 
 /** An opened finding: the version it was checked at, its evidence, the rationale, its history and the decisions. */
 export function FindingDetail({
@@ -82,44 +83,35 @@ export function FindingDetail({
       {canDecide && detail.finding.status !== 'resolved' ? (
         <div className="controls">
           {detail.finding.status === 'dismissed' ? (
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={deciding}
-              aria-busy={deciding}
+            <Button
+              tone="secondary"
+              busy={deciding}
+              busyLabel={t('canon.worldLogic.integrity.deciding')}
               onClick={() => void decide('review')}
               data-testid="world-logic-finding-undismiss"
             >
-              {deciding
-                ? t('canon.worldLogic.integrity.deciding')
-                : t('canon.worldLogic.integrity.undismiss')}
-            </button>
+              {t('canon.worldLogic.integrity.undismiss')}
+            </Button>
           ) : (
             <div className="form__actions">
-              <button
-                className="button button--secondary"
-                type="button"
-                disabled={deciding}
-                aria-busy={deciding}
+              <Button
+                tone="secondary"
+                busy={deciding}
+                busyLabel={t('canon.worldLogic.integrity.deciding')}
                 onClick={() => void decide('resolve')}
                 data-testid="world-logic-finding-resolve"
               >
-                {deciding
-                  ? t('canon.worldLogic.integrity.deciding')
-                  : t('canon.worldLogic.integrity.resolve')}
-              </button>
-              <button
-                className="button button--secondary"
-                type="button"
-                disabled={deciding}
-                aria-busy={deciding}
+                {t('canon.worldLogic.integrity.resolve')}
+              </Button>
+              <Button
+                tone="secondary"
+                busy={deciding}
+                busyLabel={t('canon.worldLogic.integrity.deciding')}
                 onClick={() => void decide('dismiss')}
                 data-testid="world-logic-finding-dismiss"
               >
-                {deciding
-                  ? t('canon.worldLogic.integrity.deciding')
-                  : t('canon.worldLogic.integrity.dismiss')}
-              </button>
+                {t('canon.worldLogic.integrity.dismiss')}
+              </Button>
             </div>
           )}
         </div>

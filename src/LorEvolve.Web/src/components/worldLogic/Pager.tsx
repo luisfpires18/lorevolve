@@ -1,4 +1,5 @@
 import { t } from '../../i18n'
+import { Button } from '../Button'
 
 /**
  * One list's pages, drawn only when there is more than one. The same shape the rule book's own pager has, so the two
@@ -19,23 +20,13 @@ export function Pager({
 
   return (
     <nav className="pager" aria-label={t('canon.rules.pagination')} data-testid={testId}>
-      <button
-        className="button button--secondary"
-        type="button"
-        disabled={page <= 1}
-        onClick={() => onGo(page - 1)}
-      >
+      <Button tone="secondary" disabled={page <= 1} onClick={() => onGo(page - 1)}>
         {t('canon.rules.previous')}
-      </button>
+      </Button>
       <span className="pager__position">{t('canon.rules.position', { page, totalPages })}</span>
-      <button
-        className="button button--secondary"
-        type="button"
-        disabled={page >= totalPages}
-        onClick={() => onGo(page + 1)}
-      >
+      <Button tone="secondary" disabled={page >= totalPages} onClick={() => onGo(page + 1)}>
         {t('canon.rules.next')}
-      </button>
+      </Button>
     </nav>
   )
 }

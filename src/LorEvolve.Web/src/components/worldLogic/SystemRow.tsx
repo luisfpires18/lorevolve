@@ -1,11 +1,11 @@
 import { useEffect, useId, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { t, useI18n } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { getSystem } from '../../worldLogic/api'
 import type { SystemDetail, SystemSummary } from '../../worldLogic/types'
+import { Button } from '../Button'
 
 /**
  * One System, and the rule definitions it references once the author opens it.
@@ -69,13 +69,13 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
       </p>
 
       {access.editContent ? (
-        <Link
-          className="button button--secondary"
+        <Button
+          tone="secondary"
           to={`/app/universes/${universeId}/world-logic/systems/${system.id}`}
           data-testid="world-logic-system-edit"
         >
           {t('canon.worldLogic.systems.edit')}
-        </Link>
+        </Button>
       ) : null}
 
       <div id={panelId} hidden={!open} data-testid="world-logic-system-rules">

@@ -2,6 +2,7 @@ import { RecoveredDraft } from '../RecoveredDraft'
 import type { Fields, Stored } from '../../ideas/ideaDraft'
 import type { useIdeaDraft } from '../../ideas/useIdeaDraft'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** An idea editor's notices: the recovery copy offered, the stale-save choice, and why a save failed. */
 export function IdeaNotices({
@@ -66,24 +67,22 @@ export function IdeaNotices({
         <div className="manuscript__conflict" role="alert" data-testid="idea-conflict">
           <p className="manuscript__conflicttext">{t('ideas.editor.conflict.text')}</p>
           <div className="manuscript__conflictactions">
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
               disabled={isSaving}
               onClick={() => void save(conflict.updatedAt)}
               data-testid="idea-keep-mine"
             >
               {t('ideas.editor.conflict.keepMine')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
               disabled={isSaving}
               onClick={loadSavedVersion}
               data-testid="idea-load-saved"
             >
               {t('ideas.editor.conflict.loadSaved')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

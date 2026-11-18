@@ -10,6 +10,7 @@ import { m } from '../../worldLogic/machinePanelTypes'
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
 import type { GuardMarkValue } from '../../worldLogic/markText'
+import { Button } from '../Button'
 
 /** The machine panel's transitions group: one row per transition with its guard, and Add transition. */
 export function MachineTransitions({
@@ -72,15 +73,14 @@ export function MachineTransitions({
       ) : null}
       {draft.states.length === 1 ? <p className="field__hint">{t(`${m}.needTwoStates`)}</p> : null}
       <div className="form__actions">
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           disabled={draft.states.length < 2 || draft.transitions.length >= MACHINE_MAX_TRANSITIONS}
           onClick={() => setOpen({ kind: 'transition', id: null })}
           data-testid="machine-add-transition"
         >
           {t(`${m}.addTransition`)}
-        </button>
+        </Button>
       </div>
     </section>
   )

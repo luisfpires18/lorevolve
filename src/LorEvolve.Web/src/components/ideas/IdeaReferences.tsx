@@ -1,7 +1,6 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, X } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { referenceContext, referencePath } from '../../ideas/api'
 import { referenceKey, type Fields } from '../../ideas/ideaDraft'
 import {
@@ -10,6 +9,7 @@ import {
   type IdeaReference,
 } from '../../ideas/types'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** An idea editor's references: the list, each with Remove, and the way to add one. */
 export function IdeaReferences({
@@ -84,9 +84,11 @@ export function IdeaReferences({
                     </span>
                   ) : null}
                 </span>
-                <button
-                  className="button button--secondary button--sm idearef__remove"
-                  type="button"
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  icon={X}
+                  className="idearef__remove"
                   disabled={isHeld}
                   onClick={() => removeReference(reference)}
                   aria-label={t('ideas.editor.references.removeAria', {
@@ -95,28 +97,26 @@ export function IdeaReferences({
                   })}
                   data-testid="idea-reference-remove"
                 >
-                  <ActionIcon icon={X} />
                   <span className="idearef__removelabel">
                     {t('ideas.editor.references.remove')}
                   </span>
-                </button>
+                </Button>
               </li>
             )
           })}
         </ul>
       )}
 
-      <button
+      <Button
+        tone="secondary"
+        icon={Plus}
         ref={addButton}
-        className="button button--secondary"
-        type="button"
         disabled={draft.universeId === null || isHeld}
         onClick={() => setIsPicking(true)}
         data-testid="idea-add-reference"
       >
-        <ActionIcon icon={Plus} />
         {t('ideas.editor.references.add')}
-      </button>
+      </Button>
       {fieldErrors.references ? (
         <p className="field__error" data-testid="idea-references-error">
           {fieldErrors.references}

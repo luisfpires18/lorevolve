@@ -4,6 +4,7 @@ import { EmptyState } from '../EmptyState'
 import { Quoted } from '../NameList'
 import type { LoadState } from '../../ideas/ideaDraft'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** What an idea's editor shows instead of the idea: loading, missing, in another universe, or failed to open. */
 export function IdeaUnavailable({
@@ -59,9 +60,9 @@ export function IdeaUnavailable({
     return (
       <div className="notice notice--error" role="alert" data-testid="idea-load-error">
         <p>{load.message}</p>
-        <button className="button button--secondary" type="button" onClick={reread}>
+        <Button tone="secondary" onClick={reread}>
           {t('ideas.editor.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

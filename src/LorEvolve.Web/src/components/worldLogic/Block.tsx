@@ -15,6 +15,7 @@ import { tg, select, type Context } from '../../worldLogic/guardBuilderKeys'
 import { Compare } from './Compare'
 import { Related } from './Related'
 import { Query } from './Query'
+import { Button } from '../Button'
 
 export function Block({
   node,
@@ -71,15 +72,16 @@ export function Block({
           </span>
         ) : null}
         {onRemove ? (
-          <button
-            className="button button--text button--sm guardblock__remove"
-            type="button"
+          <Button
+            tone="text"
+            size="sm"
+            className="guardblock__remove"
             aria-label={tg('removeBlock')}
             onClick={onRemove}
             data-testid="guard-remove"
           >
             {tg('remove')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -174,14 +176,14 @@ export function Group({
             </option>
           ))}
         </select>
-        <button
-          className="button button--secondary button--sm"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
           onClick={() => onChange({ ...node, of: [...children, newNode(adding)] })}
           data-testid="guard-add"
         >
           {tg('add')}
-        </button>
+        </Button>
       </div>
     </>
   )
