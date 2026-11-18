@@ -1,48 +1,11 @@
-import type { KeyboardEvent } from 'react'
 import { Link, type To } from 'react-router-dom'
-import { ChevronDown, Layers } from 'lucide-react'
+import { Layers } from 'lucide-react'
 import { useI18n } from '../i18n'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import type { TypeNode, TypeTree } from '../lore/typeTree'
-import { ActionMenu } from './ActionMenu'
+import { levelsFor, move, type Level } from '../lore/typeLevels'
 import { TypeIcon } from './TypeIcon'
-
-/** One level of the navigation: the type whose children it lists (null for the top), and those children. */
-interface Level {
-  parent: TypeNode | null
-  nodes: TypeNode[]
-}
-
-/**
- * The levels on screen for a choice: the top-level categories always, then - for each type on the chosen path that holds
- * others - a row of what is inside it. Choosing Runes shows the categories and Runes' subtypes; choosing Original Runes
- * (inside Runes) shows the same two rows with Original Runes current; a subtype that itself holds types adds a third row.
- * Nothing nested is ever listed beside the top-level categories.
- */
-function levelsFor(tree: TypeTree, selected: TypeNode | null): Level[] {
-  const levels: Level[] = [{ parent: null, nodes: tree.roots }]
-  for (const type of selected?.path ?? []) {
-    const node = tree.byId.get(type.id)
-    if (node && node.children.length > 0) levels.push({ parent: node, nodes: node.children })
-  }
-  return levels
-}
-
-/** Arrow keys, Home and End move along one row of links. */
-function move(event: KeyboardEvent<HTMLUListElement>) {
-  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-  const links = [...event.currentTarget.querySelectorAll<HTMLAnchorElement>('a')]
-  const at = links.indexOf(document.activeElement as HTMLAnchorElement)
-  if (at === -1) return
-  event.preventDefault()
-  const next =
-    event.key === 'Home'
-      ? 0
-      : event.key === 'End'
-        ? links.length - 1
-        : Math.min(links.length - 1, Math.max(0, at + (event.key === 'ArrowLeft' ? -1 : 1)))
-  links[next]?.focus()
-}
+import { TypeLevelMenus } from './lore/TypeLevelMenus'
 
 /**
  * Lore's local navigation, in the hierarchy's own shape (Product refinement 028). The top row is the universe's top-level
@@ -175,96 +138,20 @@ export function TypeSwitcher({
         ))}
       </nav>
 
-      {levels.map((level, depth) => {
-        // On a phone the groups live in the Category menu, after the types; a chosen group is what that menu names.
-        const groupHere = depth === 0 && chosenGroup !== null
-        const chosen = groupHere ? chosenGroup.name : chosenOn(level)
-        const what = groupHere
-          ? t('entityTypes.switcher.whatGroup')
-          : level.parent
-            ? t('entityTypes.switcher.whatIn', { name: level.parent.type.name })
-            : t('entityTypes.switcher.whatCategory')
-        return (
-          <ActionMenu
-            key={level.parent?.type.id ?? 'top'}
-            className={depth === 0 ? 'typemenu' : 'typemenu typemenu--sub'}
-            panelClassName="actionmenu__panel--start typemenu__panel"
-            label={
-              chosen
-                ? t('entityTypes.switcher.menuChosen', { what, chosen })
-                : depth === 0
-                  ? t('entityTypes.switcher.chooseCategory')
-                  : t('entityTypes.switcher.chooseIn', { name: level.parent!.type.name })
-            }
-            triggerClassName="button button--secondary typemenu__trigger"
-            triggerTestId={depth === 0 ? 'lore-type-menu' : 'lore-subtype-menu'}
-            panelTestId={depth === 0 ? 'lore-type-menu-panel' : 'lore-subtype-menu-panel'}
-            trigger={
-              <>
-                {chosen ? <span className="typemenu__label">{what}</span> : null}
-                <span className="typemenu__current">
-                  <bdi>
-                    {chosen ??
-                      (depth === 0
-                        ? t('entityTypes.switcher.triggerCategory')
-                        : t('entityTypes.switcher.triggerAll', { name: level.parent!.type.name }))}
-                  </bdi>
-                </span>
-                <ChevronDown
-                  className="typemenu__chevron"
-                  aria-hidden="true"
-                  focusable="false"
-                  strokeWidth={1.75}
-                />
-              </>
-            }
-          >
-            {items(level).map(({ node, label, all }) => (
-              <Link
-                key={all ? `all-${node.type.id}` : node.type.id}
-                className="actionmenu__item typemenu__item"
-                to={hrefFor(node.type.id)}
-                aria-current={
-                  all ? (selected?.type.id === node.type.id ? 'page' : undefined) : current(node)
-                }
-                style={tint(node)}
-                data-type-name={node.type.name}
-              >
-                {all ? null : <TypeIcon iconKey={node.type.icon} className="typemenu__icon" />}
-                <bdi>{label}</bdi>
-              </Link>
-            ))}
-            {depth === 0 && showGroups ? (
-              <>
-                <p className="typemenu__heading" aria-hidden="true">
-                  {t('entityTypes.switcher.groups')}
-                </p>
-                {groups.map((group) => (
-                  <Link
-                    key={`group-${group.id}`}
-                    className="actionmenu__item typemenu__item"
-                    to={groupHref!(group.id)}
-                    aria-current={group.id === selectedGroupId ? 'page' : undefined}
-                    data-group-name={group.name}
-                  >
-                    <Layers
-                      className="typemenu__icon"
-                      aria-hidden="true"
-                      focusable="false"
-                      strokeWidth={1.75}
-                    />
-                    <bdi>{group.name}</bdi>
-                    <span className="visually-hidden">
-                      {' '}
-                      {t('entityTypes.switcher.groupSuffix')}
-                    </span>
-                  </Link>
-                ))}
-              </>
-            ) : null}
-          </ActionMenu>
-        )
-      })}
+      <TypeLevelMenus
+        levels={levels}
+        selected={selected}
+        hrefFor={hrefFor}
+        groups={groups}
+        selectedGroupId={selectedGroupId}
+        groupHref={groupHref}
+        showGroups={showGroups}
+        chosenGroup={chosenGroup}
+        tint={tint}
+        current={current}
+        items={items}
+        chosenOn={chosenOn}
+      />
     </>
   )
 }
