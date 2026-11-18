@@ -1,27 +1,18 @@
-import { useState } from 'react'
 import { Ruler } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
-import { Field } from './Field'
-import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
-import { removeMapCalibration, setMapCalibration } from '../maps/api'
+import { removeMapCalibration } from '../maps/api'
 import { approximate } from '../maps/format'
-import { MAP_UNIT_MAX_LENGTH, type MapCalibration, type MapDetail } from '../maps/types'
+import type { MapCalibration, MapDetail } from '../maps/types'
 import { useI18n } from '../i18n'
+import { calibrationActions } from '../maps/calibrationActions'
+import { useCalibrationFormState } from '../maps/useCalibrationFormState'
+import { CalibrationFields } from './maps/CalibrationFields'
 
 /** A point of the picture, as fractions. */
 export interface Fraction {
   x: number
   y: number
-}
-
-function percent(fraction: number) {
-  return (Math.round(fraction * 10000) / 100).toString()
-}
-
-function fraction(text: string) {
-  const value = Number.parseFloat(text.replace(',', '.'))
-  return Number.isFinite(value) ? value / 100 : Number.NaN
 }
 
 /**
@@ -122,90 +113,42 @@ export function MapCalibrationForm({
   onCancel: () => void
 }) {
   const { t } = useI18n()
-  const [distance, setDistance] = useState(map.calibration ? String(map.calibration.distance) : '')
-  const [unit, setUnit] = useState(map.calibration?.unit ?? '')
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const {
+    distance,
+    setDistance,
+    unit,
+    setUnit,
+    errors,
+    setErrors,
+    message,
+    setMessage,
+    isSaving,
+    setIsSaving,
+  } = useCalibrationFormState({ map })
 
   const a = points[0] ?? null
   const b = points[1] ?? null
 
-  function setPoint(index: 0 | 1, change: Partial<Fraction>) {
-    const next = [...points]
-    const current = next[index] ?? { x: 0.5, y: 0.5 }
-    next[index] = { ...current, ...change }
-    if (index === 1 && !next[0]) next[0] = { x: 0.5, y: 0.5 }
-    onPointsChange(next)
-  }
-
-  async function save() {
-    setMessage(null)
-    const problems: Record<string, string> = {}
-    if (!a) problems.a = t('places.calibration.firstMissing')
-    if (!b) problems.b = t('places.calibration.secondMissing')
-    const value = Number.parseFloat(distance.replace(',', '.'))
-    if (!Number.isFinite(value) || value <= 0)
-      problems.distance = t('places.calibration.distanceInvalid')
-    if (unit.trim() === '') problems.unit = t('places.calibration.unitMissing')
-    if (Object.keys(problems).length > 0) {
-      setErrors(problems)
-      return
-    }
-
-    setErrors({})
-    setIsSaving(true)
-    try {
-      onSaved(
-        await setMapCalibration(universeId, map.id, {
-          x1: a!.x,
-          y1: a!.y,
-          x2: b!.x,
-          y2: b!.y,
-          distance: value,
-          unit: unit.trim(),
-        }),
-      )
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.calibration.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.calibration.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  function coordinate(label: string, index: 0 | 1, axis: 'x' | 'y', value: Fraction | null) {
-    return (
-      <label className="mappinform__coord">
-        <span>{label}</span>
-        <input
-          className="field__input"
-          type="number"
-          inputMode="decimal"
-          min={0}
-          max={100}
-          step={0.01}
-          value={value ? percent(value[axis]) : ''}
-          onChange={(event) => {
-            const parsed = fraction(event.target.value)
-            setPoint(index, {
-              [axis]: Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : 0,
-            })
-          }}
-          data-testid={`map-calibration-${index === 0 ? 'a' : 'b'}-${axis}`}
-        />
-        <span aria-hidden="true">%</span>
-      </label>
-    )
-  }
+  const { setPoint, save } = calibrationActions({
+    distance,
+    setDistance,
+    unit,
+    setUnit,
+    errors,
+    setErrors,
+    message,
+    setMessage,
+    isSaving,
+    setIsSaving,
+    universeId,
+    map,
+    points,
+    onPointsChange,
+    onSaved,
+    a,
+    b,
+    t,
+  })
 
   return (
     <form
@@ -224,62 +167,16 @@ export function MapCalibrationForm({
         </p>
       ) : null}
 
-      <Field
-        group="fieldset"
-        className="mappinform__position"
-        label={a ? t('places.calibration.pointA') : t('places.calibration.pointANot')}
-        error={errors.a}
-      >
-        <div className="mappinform__coords">
-          {coordinate(t('places.calibration.across'), 0, 'x', a)}
-          {coordinate(t('places.calibration.down'), 0, 'y', a)}
-        </div>
-      </Field>
-
-      <Field
-        group="fieldset"
-        className="mappinform__position"
-        label={b ? t('places.calibration.pointB') : t('places.calibration.pointBNot')}
-        error={errors.b || errors.x2}
-      >
-        <div className="mappinform__coords">
-          {coordinate(t('places.calibration.across'), 1, 'x', b)}
-          {coordinate(t('places.calibration.down'), 1, 'y', b)}
-        </div>
-      </Field>
-
-      <div className="mappinform__coords">
-        <label className="mappinform__coord mapcalibration__distance">
-          <span>{t('places.calibration.distance')}</span>
-          <input
-            className="field__input"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="any"
-            value={distance}
-            onChange={(event) => setDistance(event.target.value)}
-            aria-invalid={errors.distance ? true : undefined}
-            data-testid="map-calibration-distance"
-          />
-        </label>
-        <label className="mappinform__coord mapcalibration__unit">
-          <span>{t('places.calibration.unit')}</span>
-          <input
-            className="field__input"
-            type="text"
-            dir="auto"
-            maxLength={MAP_UNIT_MAX_LENGTH}
-            placeholder={t('places.calibration.unitPlaceholder')}
-            value={unit}
-            onChange={(event) => setUnit(event.target.value)}
-            aria-invalid={errors.unit ? true : undefined}
-            data-testid="map-calibration-unit"
-          />
-        </label>
-      </div>
-      {errors.distance ? <p className="field__error">{errors.distance}</p> : null}
-      {errors.unit ? <p className="field__error">{errors.unit}</p> : null}
+      <CalibrationFields
+        a={a}
+        b={b}
+        errors={errors}
+        distance={distance}
+        unit={unit}
+        setDistance={setDistance}
+        setUnit={setUnit}
+        setPoint={setPoint}
+      />
 
       <div className="pincard__actions">
         <button
