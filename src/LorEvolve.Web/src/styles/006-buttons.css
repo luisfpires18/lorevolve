@@ -1,7 +1,7 @@
 /* ---------- Buttons ----------
 
-   One family, as classes on native `<button>` and `<a>` alike - never a component, so a link that
-   is an address stays a link. Primary is ink and means "the one thing this view is for"; secondary
+   One family, drawn by `components/Button.tsx` and `components/IconButton.tsx`; a `<label>` for a
+   file input and `ActionMenu`'s trigger take `buttonClass()` from `lib/buttonClass.ts`. Primary is ink and means "the one thing this view is for"; secondary
    is raised paper beside it; text is a quiet verb with no box; danger is only the final
    confirmation of something destructive; `.iconbutton` is an icon with a name. The primary never
    empties to an outline on hover and never marks where you are - that is the accent wash's job.

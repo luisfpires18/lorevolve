@@ -167,7 +167,6 @@ export function TypeGroupsField({
           tone="text"
           size="sm"
           icon={Plus}
-          className="typegroups__another"
           onClick={() => setAdding(true)}
           data-testid="type-group-another"
         >

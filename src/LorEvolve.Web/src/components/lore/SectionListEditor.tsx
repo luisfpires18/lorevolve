@@ -94,14 +94,7 @@ export function SectionListEditor({
           ))}
         </ol>
       )}
-      <Button
-        tone="secondary"
-        size="sm"
-        icon={Plus}
-        className="sectionlist__add"
-        onClick={add}
-        data-testid="add-section"
-      >
+      <Button tone="secondary" size="sm" icon={Plus} onClick={add} data-testid="add-section">
         {t('entityTypes.sections.add')}
       </Button>
     </section>

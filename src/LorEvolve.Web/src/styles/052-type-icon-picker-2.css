@@ -37,10 +37,6 @@
   margin-left: auto;
 }
 
-.sectionlist__add {
-  align-self: flex-start;
-}
-
 .sectionfields {
   gap: var(--space-3);
 }
