@@ -33,7 +33,6 @@
   "i18n/pt-PT/universe.ts": 413,
   "pages/AdminWorkspace.tsx": 1272,
   "pages/AiChangePage.tsx": 1002,
-  "pages/CategoryShelfPage.tsx": 335,
   "pages/ConnectAuthorizePage.tsx": 375,
   "pages/PublicWorldPage.tsx": 343,
   "pages/UniversePublish.tsx": 844,
