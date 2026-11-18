@@ -6,7 +6,6 @@
   "components/FamilyDiscovery.tsx": 305,
   "components/FamilyLinkForm.tsx": 324,
   "components/FamilyTreeView.tsx": 517,
-  "components/ImageCropDialog.tsx": 437,
   "components/MapCalibration.tsx": 305,
   "components/MapForm.tsx": 334,
   "components/MapViewer.tsx": 341,
