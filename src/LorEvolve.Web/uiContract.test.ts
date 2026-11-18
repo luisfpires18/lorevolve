@@ -246,6 +246,77 @@ test('Field renders label, hint, control, error in that order', () => {
   )
 })
 
+// Folders whose .tsx files still write a raw .button or .iconbutton class: the conversion to Button and
+// IconButton (#408) goes folder by folder, and each commit removes its entry. A listed folder with no raw
+// use left fails, so the list cannot go stale. Temporary: the last conversion commit deletes it.
+const RAW_BUTTON_PENDING = new Set<string>([
+  'src/components',
+  'src/components/lore',
+  'src/components/worldLogic',
+  'src/components/ideas',
+  'src/components/projectEntities',
+  'src/components/trash',
+  'src/components/universes',
+  'src/components/relationships',
+  'src/components/publishing',
+  'src/components/admin',
+  'src/components/projects',
+  'src/components/aiChanges',
+  'src/components/stories',
+  'src/components/maps',
+  'src/components/chronology',
+  'src/components/timeline',
+  'src/components/familyTree',
+  'src/components/backups',
+  'src/components/canon',
+  'src/components/ruleValidation',
+  'src/components/progression',
+  'src/components/typeTemplates',
+  'src/components/knowledge',
+  'src/components/suggestions',
+  'src/components/worldRules',
+  'src/components/search',
+  'src/pages',
+  'src/routes',
+  'src/auth',
+])
+
+// Every quoted class string in a file: className="..." or any prop ending in className/ClassName
+// (triggerClassName counts), and each literal inside className={...}.
+function classStrings(source: string): string[] {
+  const found: string[] = []
+  for (const m of source.matchAll(/[A-Za-z]*[cC]lassName\s*=\s*(["'])((?:(?!\1)[^\n])*)\1/g)) {
+    found.push(m[2])
+  }
+  for (const m of source.matchAll(/className=\{([^}]*)\}/g)) {
+    for (const q of m[1].matchAll(/(["'`])((?:(?!\1)[^\n])*)\1/g)) found.push(q[2])
+  }
+  return found
+}
+
+const RAW_BUTTON_CLASS = /(^|\s)(icon)?button(\s|$)/
+const rawButtonFiles = tsxFiles
+  .filter((file) => !['src/components/Button.tsx', 'src/components/IconButton.tsx'].includes(file))
+  .filter((file) => classStrings(read(file)).some((value) => RAW_BUTTON_CLASS.test(value)))
+const folderOf = (file: string) => file.slice(0, file.lastIndexOf('/'))
+
+test('no raw .button or .iconbutton class outside Button and IconButton', () => {
+  assert.deepEqual(
+    rawButtonFiles.filter((file) => !RAW_BUTTON_PENDING.has(folderOf(file))),
+    [],
+    'Use Button or IconButton from components/, see docs/design/ui-components.md',
+  )
+})
+
+test('RAW_BUTTON_PENDING lists only folders that still have a raw button class', () => {
+  const live = new Set(rawButtonFiles.map(folderOf))
+  assert.deepEqual(
+    [...RAW_BUTTON_PENDING].filter((folder) => !live.has(folder)),
+    [],
+    'Remove the folder from RAW_BUTTON_PENDING',
+  )
+})
+
 test('literal font sizes in src/styles/ do not grow', () => {
   let count = 0
   for (const match of stylesheet.matchAll(/(?<![-\w])font-size\s*:\s*([^;}]+)/g)) {
