@@ -18,6 +18,7 @@ import {
 } from '../projectEntities/structure'
 import { t } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
+import { Button } from './Button'
 
 const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
   dialogue: 4,
@@ -256,15 +257,9 @@ function PanelCard({
           ))}
           <div className="comicpage__actions">
             {canEdit ? (
-              <button
-                className="button"
-                type="button"
-                disabled={saving}
-                onClick={save}
-                data-testid={testId('save')}
-              >
+              <Button disabled={saving} onClick={save} data-testid={testId('save')}>
                 {saving ? t('projects.structure.saving') : t('projects.structure.panel.save')}
-              </button>
+              </Button>
             ) : null}
             {status ? (
               <span role="status" data-testid={testId('status')}>

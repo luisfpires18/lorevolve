@@ -1,7 +1,6 @@
 import { useId } from 'react'
 import { Plus } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { ActionIcon } from './ActionIcon'
 import { IdeasTabs } from './IdeasTabs'
 import { Quoted } from './NameList'
 import { PageHeader } from './PageHeader'
@@ -14,6 +13,7 @@ import { useBoardsFilters } from '../ideas/useBoardsFilters'
 import { useBoardsRead } from '../ideas/useBoardsRead'
 import { useBoardsState } from '../ideas/useBoardsState'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
 
 /** What a board's editor says it did before handing back to the list. */
 export interface BoardsListNotice {
@@ -65,10 +65,9 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
           </p>
         }
         actions={
-          <Link className="button" to={`${basePath}/new`} data-testid="new-board">
-            <ActionIcon icon={Plus} />
+          <Button icon={Plus} to={`${basePath}/new`} data-testid="new-board">
             {t('ideas.boards.newBoard')}
-          </Link>
+          </Button>
         }
       />
 
@@ -119,16 +118,15 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="boards-load-error">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((current) => current + 1)
             }}
           >
             {t('ideas.boards.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

@@ -9,31 +9,19 @@ import {
   setEntityThumbnail,
 } from '../lore/images'
 import type { EntityImageCrop, EntityImageRef } from '../lore/types'
+import type { Framing } from './entityImageFraming'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
+import { buttonClass } from '../lib/buttonClass'
 
 /** A picture chosen for an entry that does not exist yet, with the square the author framed. */
 export interface PendingImage {
   file: File
   crop: EntityImageCrop
 }
-
-/**
- * What the cropper is open on. A file just picked is framed before anything is uploaded; a
- * picture already stored is reframed from its own original, which is never sent again.
- */
-type Framing =
-  | {
-      kind: 'file'
-      file: File
-      source: string
-      /** Whether `source` was made for this cropper and is released with it. */
-      ownsSource: boolean
-      initial: EntityImageCrop | null
-    }
-  | { kind: 'stored'; image: EntityImageRef; source: string }
 
 /**
  * The editor's image control: pick one and frame it, reframe it, replace it, take it away.
@@ -239,33 +227,34 @@ export function EntityImageField({
                 data-testid="entity-image-input"
               />
 
-              <label className="button button--secondary imagefield__pick" htmlFor={inputId}>
+              <label
+                className={buttonClass({ tone: 'secondary', className: 'imagefield__pick' })}
+                htmlFor={inputId}
+              >
                 <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
                 {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
               </label>
 
               {hasPicture ? (
                 <>
-                  <button
-                    className="button button--secondary"
-                    type="button"
+                  <Button
+                    tone="secondary"
+                    icon={Crop}
                     disabled={busyOrDisabled}
                     onClick={reframe}
                     data-testid="entity-image-reframe"
                   >
-                    <ActionIcon icon={Crop} />
                     {t('entity.image.editThumbnail')}
-                  </button>
-                  <button
-                    className="button button--secondary button--danger-quiet"
-                    type="button"
+                  </Button>
+                  <Button
+                    tone="danger-quiet"
+                    icon={ImageMinus}
                     disabled={busyOrDisabled}
                     onClick={() => void remove()}
                     data-testid="entity-image-remove"
                   >
-                    <ActionIcon icon={ImageMinus} />
                     {busy ? t('entity.image.removing') : t('entity.image.remove')}
-                  </button>
+                  </Button>
                 </>
               ) : null}
             </div>

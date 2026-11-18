@@ -10,6 +10,7 @@ import {
 import type { CanonConflict, CanonConflictSubject } from '../canon/types'
 import { formatDate } from '../lib/dates'
 import { t, useI18n } from '../i18n'
+import { Button } from './Button'
 
 interface Props {
   universeId: string
@@ -74,15 +75,15 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
           {isResolved ? (
             <p className="finding__note">{t('review.conflict.closedNote')}</p>
           ) : !access.editContent ? null : (
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
               disabled={isBusy}
               onClick={isDismissed ? onReopen : onDismiss}
               data-testid={`${isDismissed ? 'reopen' : 'dismiss'}-${conflict.id}`}
             >
               {isDismissed ? t('review.conflict.reopen') : t('review.conflict.dismiss')}
-            </button>
+            </Button>
           )}
           {isDismissed ? (
             <p className="finding__note">{t('review.conflict.dismissedNote')}</p>

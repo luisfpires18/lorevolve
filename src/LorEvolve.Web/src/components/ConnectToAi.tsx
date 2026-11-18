@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Plug } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { getMcpConnectInfo, readable } from '../mcp/api'
 import { useReturnFocus } from '../lib/returnFocus'
+import { Button } from './Button'
 
 type Load =
   | { kind: 'loading' }
@@ -33,16 +33,15 @@ export function ConnectToAi({
 
   return (
     <>
-      <button
-        className="button button--secondary"
-        type="button"
+      <Button
+        tone="secondary"
+        icon={Plug}
         aria-haspopup="dialog"
         onClick={() => setOpenAt(location.key)}
         data-testid="connect-ai-trigger"
       >
-        <ActionIcon icon={Plug} />
         {t('ai.connect.trigger')}
-      </button>
+      </Button>
 
       {isOpen ? (
         <ConnectDrawer
@@ -94,14 +93,9 @@ function ConnectDrawer({
       onClose={onClose}
       actions={(close) => (
         <>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="connect-ai-close"
-          >
+          <Button tone="secondary" onClick={close} data-testid="connect-ai-close">
             {t('ai.connect.close')}
-          </button>
+          </Button>
         </>
       )}
     >
@@ -169,14 +163,9 @@ function ConnectSteps({
                 onFocus={(event) => event.target.select()}
                 data-testid="connect-ai-url"
               />
-              <button
-                className="button"
-                type="button"
-                onClick={() => void copy()}
-                data-testid="connect-ai-copy"
-              >
+              <Button onClick={() => void copy()} data-testid="connect-ai-copy">
                 {t('ai.connect.copy')}
-              </button>
+              </Button>
             </div>
             <p className="connect__hint" id={hintId}>
               {t('ai.connect.urlHint')}

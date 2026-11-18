@@ -17,6 +17,7 @@ import { EraNameFields } from './progression/EraNameFields'
 import { EraPoint } from './progression/EraPoint'
 import { EraFieldRow } from './progression/EraFieldRow'
 import { EraStories } from './progression/EraStories'
+import { Button } from './Button'
 
 interface EraFormProps {
   universeId: string
@@ -116,13 +117,7 @@ export function EraForm({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button
-            ref={saveButton}
-            className="button"
-            type="submit"
-            disabled={isSaving}
-            data-testid="save-era"
-          >
+          <Button ref={saveButton} type="submit" disabled={isSaving} data-testid="save-era">
             {isSaving
               ? era
                 ? t('time.eraForm.saving')
@@ -130,15 +125,10 @@ export function EraForm({
               : era
                 ? t('time.eraForm.save')
                 : t('time.eraForm.add')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-era"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="cancel-era">
             {t('time.eraForm.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

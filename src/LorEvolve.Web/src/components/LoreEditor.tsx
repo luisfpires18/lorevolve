@@ -6,6 +6,7 @@ import { useI18n } from '../i18n'
 import { ALLOWED_LINK_SCHEMES, isSafeHref } from '../lore/document'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
+import { Button } from './Button'
 
 /**
  * ProseMirror builds DOM nodes from the schema rather than parsing HTML, so authored text
@@ -83,12 +84,10 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
       onSubmit={apply}
       actions={(close) => (
         <>
-          <button className="button" type="submit">
-            {t('lore.editor.linkApply')}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
+          <Button type="submit">{t('lore.editor.linkApply')}</Button>
+          <Button tone="secondary" onClick={close}>
             {t('lore.editor.linkCancel')}
-          </button>
+          </Button>
         </>
       )}
     >

@@ -1,5 +1,4 @@
 import { Plus } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { EmptyState } from './EmptyState'
 import { SaveAction } from './SaveAction'
@@ -14,6 +13,7 @@ import { useFocusNewEra } from '../chronology/useFocusNewEra'
 import { chronologyActions } from '../chronology/chronologyActions'
 import { ChronologyUnplaced } from './chronology/ChronologyUnplaced'
 import { ChronologyEraRow } from './chronology/ChronologyEraRow'
+import { Button } from './Button'
 
 interface ChronologyEditorProps {
   universeId: string
@@ -88,10 +88,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
         title={t('time.periods.title')}
         lede={<p>{t('time.periods.lede')}</p>}
         actions={
-          <button className="button" type="button" onClick={add} data-testid="add-era">
-            <ActionIcon icon={Plus} />
+          <Button icon={Plus} onClick={add} data-testid="add-era">
             {t('time.periods.add')}
-          </button>
+          </Button>
         }
       />
       <section className="chronology" aria-labelledby={headingId} data-testid="chronology-settings">
@@ -107,10 +106,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             }
             hint={t('time.periods.empty.hint')}
             action={
-              <button className="button" type="button" onClick={add} data-testid="add-era-empty">
-                <ActionIcon icon={Plus} />
+              <Button icon={Plus} onClick={add} data-testid="add-era-empty">
                 {t('time.periods.add')}
-              </button>
+              </Button>
             }
           />
         ) : (
@@ -201,9 +199,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
               onSave={() => void save()}
             />
             {dirty ? (
-              <button className="button button--secondary" type="button" onClick={discard}>
+              <Button tone="secondary" onClick={discard}>
                 {t('time.periods.discard')}
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}

@@ -7,6 +7,8 @@ import { ActionIcon } from './ActionIcon'
 import { CroppedPicture } from './ImageCropDialog'
 import type { FieldImageApi, PendingFieldImage } from './FieldImageInput'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
+import { buttonClass } from '../lib/buttonClass'
 
 /** The picture row of an Image field: the preview, the file input, the pick label and the actions. */
 export function FieldImageRow({
@@ -91,33 +93,34 @@ export function FieldImageRow({
           data-testid={testId('input')}
         />
 
-        <label className="button button--secondary imagefield__pick" htmlFor={inputId}>
+        <label
+          className={buttonClass({ tone: 'secondary', className: 'imagefield__pick' })}
+          htmlFor={inputId}
+        >
           <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
           {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
         </label>
 
         {hasPicture ? (
           <>
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
+              icon={Crop}
               disabled={busyOrDisabled}
               onClick={() => void reframe()}
               data-testid={testId('reframe')}
             >
-              <ActionIcon icon={Crop} />
               {t('entity.fieldImage.reframe')}
-            </button>
-            <button
-              className="button button--secondary button--danger-quiet"
-              type="button"
+            </Button>
+            <Button
+              tone="danger-quiet"
+              icon={ImageMinus}
               disabled={busyOrDisabled}
               onClick={() => void remove()}
               data-testid={testId('remove')}
             >
-              <ActionIcon icon={ImageMinus} />
               {busy ? t('entity.image.removing') : t('entity.image.remove')}
-            </button>
+            </Button>
           </>
         ) : null}
       </div>

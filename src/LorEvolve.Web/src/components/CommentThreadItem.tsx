@@ -4,6 +4,7 @@ import { formatDateTime } from '../lib/dates'
 import { Field } from './Field'
 import type { useUniverseAccess } from '../universes/access'
 import { confirmAction } from '../lib/confirm'
+import { Button } from './Button'
 
 /** One comment thread: its comments, how it was resolved, the reply form or Reply, and Resolve or Reopen. */
 export function CommentThreadItem({
@@ -104,17 +105,17 @@ export function CommentThreadItem({
             )}
           </Field>
           <div className="reviewthread__tools">
-            <button
-              className="button button--sm"
+            <Button
+              size="sm"
               type="submit"
               disabled={busy !== null}
               data-testid="comment-reply-post"
             >
               {busy === thread.id ? t('review.comments.posting') : t('review.comments.replyPost')}
-            </button>
-            <button
-              className="button button--text button--sm"
-              type="button"
+            </Button>
+            <Button
+              tone="text"
+              size="sm"
               onClick={() => {
                 setReplyTo(null)
                 setReply('')
@@ -122,15 +123,15 @@ export function CommentThreadItem({
               }}
             >
               {t('review.comments.cancel')}
-            </button>
+            </Button>
           </div>
         </form>
       ) : (
         <div className="reviewthread__tools">
           {access.comment && !thread.isResolved ? (
-            <button
-              className="button button--text button--sm"
-              type="button"
+            <Button
+              tone="text"
+              size="sm"
               disabled={busy !== null}
               onClick={async () => {
                 if (
@@ -152,18 +153,18 @@ export function CommentThreadItem({
               data-testid="comment-reply"
             >
               {t('review.comments.reply')}
-            </button>
+            </Button>
           ) : null}
           {access.resolveComments ? (
-            <button
-              className="button button--text button--sm"
-              type="button"
+            <Button
+              tone="text"
+              size="sm"
               disabled={busy !== null}
               onClick={() => void resolve(thread)}
               data-testid={thread.isResolved ? 'comment-reopen' : 'comment-resolve'}
             >
               {thread.isResolved ? t('review.comments.reopen') : t('review.comments.resolve')}
-            </button>
+            </Button>
           ) : null}
         </div>
       )}

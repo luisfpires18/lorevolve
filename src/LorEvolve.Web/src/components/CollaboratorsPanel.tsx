@@ -9,6 +9,7 @@ import { CollaboratorInvitations } from './universes/CollaboratorInvitations'
 import { CollaboratorMembers } from './universes/CollaboratorMembers'
 import { CopyLink } from './universes/CopyLink'
 import { InviteForm } from './universes/InviteForm'
+import { Button } from './Button'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; data: Collaborators } | { kind: 'error'; message: string }
@@ -105,13 +106,9 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => setReloadKey((key) => key + 1)}
-          >
+          <Button tone="secondary" onClick={() => setReloadKey((key) => key + 1)}>
             {t('universe.collab.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

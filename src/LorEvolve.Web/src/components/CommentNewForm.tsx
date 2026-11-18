@@ -1,6 +1,7 @@
 import { COMMENT_MAX_LENGTH } from '../comments/api'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
+import { Button } from './Button'
 
 /** The review drawer's form for a new comment thread. */
 export function CommentNewForm({
@@ -42,14 +43,9 @@ export function CommentNewForm({
         )}
       </Field>
       <div>
-        <button
-          className="button button--sm"
-          type="submit"
-          disabled={busy !== null}
-          data-testid="comment-new-post"
-        >
+        <Button size="sm" type="submit" disabled={busy !== null} data-testid="comment-new-post">
           {busy === 'new' ? t('review.comments.posting') : t('review.comments.post')}
-        </button>
+        </Button>
       </div>
     </form>
   )

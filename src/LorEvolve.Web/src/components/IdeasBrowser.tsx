@@ -13,6 +13,7 @@ import { useIdeasFilters } from '../ideas/useIdeasFilters'
 import { useIdeasRead } from '../ideas/useIdeasRead'
 import { useIdeasState } from '../ideas/useIdeasState'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
 
 /** What an idea's editor says it did before handing back to the list. */
 export interface IdeasListNotice {
@@ -135,16 +136,15 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="ideas-load-error">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((current) => current + 1)
             }}
           >
             {t('ideas.browser.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

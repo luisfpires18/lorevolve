@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useReturnFocus } from '../lib/returnFocus'
+import { IconButton } from './IconButton'
 
 /**
  * An entry's picture, whole: the original the author uploaded, fitted inside the window with its
@@ -81,17 +82,14 @@ export function ImageViewer({
         <h2 className="viewer__title" id={titleId}>
           <bdi>{name}</bdi>
         </h2>
-        <button
-          className="iconbutton viewer__close"
-          type="button"
+        <IconButton
+          icon={X}
+          label={t('universe.imageViewer.close')}
+          className="viewer__close"
           onClick={onClose}
-          aria-label={t('universe.imageViewer.close')}
-          title={t('universe.imageViewer.close')}
           autoFocus
           data-testid="image-viewer-close"
-        >
-          <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
+        />
       </div>
       <div className="viewer__stage">
         <img

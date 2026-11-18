@@ -1,5 +1,4 @@
 import { Plus } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { SaveAction } from './SaveAction'
 import type { Chronology } from '../chronology/types'
@@ -9,6 +8,7 @@ import { draftsFrom, inputOf, type Mode } from '../chronology/monthDrafts'
 import { useCalendarEditorState } from '../chronology/useCalendarEditorState'
 import { calendarActions } from '../chronology/calendarActions'
 import { CalendarMonthRow } from './chronology/CalendarMonthRow'
+import { Button } from './Button'
 
 interface CalendarEditorProps {
   universeId: string
@@ -115,15 +115,9 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             ))}
           </ol>
 
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={add}
-            data-testid="add-month"
-          >
-            <ActionIcon icon={Plus} />
+          <Button tone="secondary" icon={Plus} onClick={add} data-testid="add-month">
             {t('time.calendar.add')}
-          </button>
+          </Button>
 
           {fieldErrors.months ? <p className="field__error">{fieldErrors.months}</p> : null}
         </>
@@ -155,9 +149,9 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             onSave={() => void save()}
           />
           {dirty ? (
-            <button className="button button--secondary" type="button" onClick={discard}>
+            <Button tone="secondary" onClick={discard}>
               {t('time.calendar.discard')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : (

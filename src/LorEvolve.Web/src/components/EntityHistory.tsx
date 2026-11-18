@@ -8,6 +8,7 @@ import { CANON_LABELS } from '../lore/types'
 import { useI18n } from '../i18n'
 import { useEntityRevisions } from '../lore/useEntityRevisions'
 import { Snapshot } from './lore/RevisionSnapshot'
+import { Button } from './Button'
 
 export interface EntityHistoryProps {
   universeId: string
@@ -95,16 +96,15 @@ export function EntityHistory({
       {status === 'loading' ? null : status === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{t('entity.history.readFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setStatus('loading')
               setReads((count) => count + 1)
             }}
           >
             {t('entity.history.retry')}
-          </button>
+          </Button>
         </div>
       ) : revisions.length === 0 ? (
         <EmptyState testId="history-empty" title={t('entity.history.empty')} />
@@ -144,19 +144,19 @@ export function EntityHistory({
               </div>
 
               <div className="version__tools">
-                <button
-                  className="button button--text button--sm"
-                  type="button"
+                <Button
+                  tone="text"
+                  size="sm"
                   aria-expanded={openId === revision.id}
                   onClick={() => void open(revision.id)}
                   data-testid="version-view"
                 >
                   {openId === revision.id ? t('entity.history.hide') : t('entity.history.view')}
-                </button>
+                </Button>
                 {index > 0 ? (
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
+                  <Button
+                    tone="text"
+                    size="sm"
                     disabled={busyId !== null}
                     onClick={() => void restore(revision)}
                     data-testid="version-restore"
@@ -164,7 +164,7 @@ export function EntityHistory({
                     {busyId === revision.id
                       ? t('entity.history.restoring')
                       : t('entity.history.restore')}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
 

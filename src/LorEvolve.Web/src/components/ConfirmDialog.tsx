@@ -16,6 +16,7 @@ import {
   subscribeConfirm,
   type ConfirmRequest,
 } from '../lib/confirm'
+import { Button } from './Button'
 
 /** Draws the confirmation on top of everything, if one is waiting. Mounted once, beside the router. */
 export function ConfirmHost() {
@@ -132,26 +133,24 @@ function ConfirmDialog({ request }: { request: ConfirmRequest }) {
           </p>
         ) : null}
         <div className="confirm__actions">
-          <button
+          <Button
             ref={confirmButton}
-            className={variant === 'destructive' ? 'button button--danger' : 'button'}
-            type="button"
+            tone={variant === 'destructive' ? 'danger' : 'primary'}
             disabled={busy}
             onClick={() => void confirm()}
             data-testid="confirm-dialog-confirm"
           >
             {busy ? (options.busyLabel ?? options.confirmLabel) : options.confirmLabel}
-          </button>
-          <button
+          </Button>
+          <Button
+            tone="secondary"
             ref={cancelButton}
-            className="button button--secondary"
-            type="button"
             disabled={busy}
             onClick={cancel}
             data-testid="confirm-dialog-cancel"
           >
             {options.cancelLabel ?? t('shell.confirm.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     </dialog>

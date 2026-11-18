@@ -15,6 +15,7 @@ import type { EntityType, FieldDefinition } from '../lore/typeDefinitions'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { FieldFilterEditor, type EntryName } from './lore/FieldFilterEditor'
+import { buttonClass } from '../lib/buttonClass'
 
 /**
  * Filtering a type's entries by its own fields (034), inside Lore's filters. It starts from what the author knows - a
@@ -101,7 +102,10 @@ export function LoreFieldFilters({
                 {t('lore.filters.add')}
               </>
             }
-            triggerClassName="button button--secondary lore__addfiltertrigger"
+            triggerClassName={buttonClass({
+              tone: 'secondary',
+              className: 'lore__addfiltertrigger',
+            })}
             triggerTestId="lore-add-field-filter"
             panelTestId="lore-field-filter-menu"
           >

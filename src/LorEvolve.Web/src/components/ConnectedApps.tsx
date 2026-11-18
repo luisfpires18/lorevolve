@@ -10,6 +10,7 @@ import {
   type ConnectedApp,
   type ConnectedAppStatusValue,
 } from '../mcp/api'
+import { Button } from './Button'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; apps: ConnectedApp[] } | { kind: 'error' }
 
@@ -96,13 +97,9 @@ export function ConnectedApps() {
       ) : load.kind === 'error' ? (
         <div className="form__message" role="alert" data-testid="connected-apps-error">
           <p>{t('data.connectedApps.loadFailed')}</p>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
-            onClick={() => read()}
-          >
+          <Button tone="secondary" size="sm" onClick={() => read()}>
             {t('data.connectedApps.retry')}
-          </button>
+          </Button>
         </div>
       ) : load.apps.length === 0 ? (
         <p className="connectedapps__empty" data-testid="connected-apps-empty">
@@ -213,9 +210,8 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
       </div>
       <div className="connectedapps__controls">
         {app.canPropose ? (
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => void stop()}
             disabled={busy || stopping}
             aria-label={t('data.connectedApps.makeReaderLabel', {
@@ -225,12 +221,11 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             data-testid="stop-app-proposals"
           >
             {stopping ? t('data.connectedApps.changing') : t('data.connectedApps.makeReader')}
-          </button>
+          </Button>
         ) : null}
-        <button
+        <Button
+          tone="danger-quiet"
           ref={button}
-          className="button button--secondary button--danger-quiet"
-          type="button"
           onClick={() => setConfirming(true)}
           disabled={busy || confirming}
           aria-label={t('data.connectedApps.disconnectLabel', {
@@ -240,7 +235,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           data-testid="disconnect-app"
         >
           {t('data.connectedApps.disconnect')}
-        </button>
+        </Button>
       </div>
       {confirming ? (
         <div
@@ -259,23 +254,17 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           </p>
           <p className="settings__note">{t('data.connectedApps.confirmNote')}</p>
           <div className="form__actions">
-            <button
-              className="button button--danger"
-              type="button"
+            <Button
+              tone="danger"
               onClick={() => void disconnect()}
               disabled={busy}
               data-testid="confirm-disconnect-app"
             >
               {busy ? t('data.connectedApps.disconnecting') : t('data.connectedApps.disconnect')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setConfirming(false)}
-              disabled={busy}
-            >
+            </Button>
+            <Button tone="secondary" onClick={() => setConfirming(false)} disabled={busy}>
               {t('data.connectedApps.keep')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

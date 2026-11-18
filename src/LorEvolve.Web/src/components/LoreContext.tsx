@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Library } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
 import type { Scene } from '../stories/types'
 import type { Mention } from '../lore/mentions'
 import { LoreContextDrawer } from './lore/LoreContextDrawer'
+import { Button } from './Button'
 
 export interface LoreContextProps {
   universeId: string
@@ -36,17 +36,17 @@ export function LoreContext(props: LoreContextProps) {
 
   return (
     <>
-      <button
-        className="button button--text loretrigger"
-        type="button"
+      <Button
+        tone="text"
+        icon={Library}
+        className="loretrigger"
         aria-haspopup="dialog"
         title={t('lore.context.triggerTitle')}
         onClick={() => setIsOpen(true)}
         data-testid="lore-context-trigger"
       >
-        <ActionIcon icon={Library} />
         <span className="loretrigger__label">{t('lore.context.triggerLabel')}</span>
-      </button>
+      </Button>
 
       {isOpen ? <LoreContextDrawer {...props} onClose={() => setIsOpen(false)} /> : null}
     </>

@@ -3,6 +3,7 @@ import { ApiError } from '../lib/api'
 import type { Change } from '../lib/editConflict'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
 
 type ReviewState<T> =
   | { kind: 'notice' }
@@ -101,14 +102,9 @@ export function EditConflict<T>({
 
       {state.kind === 'notice' || state.kind === 'failed' ? (
         <div className="editconflict__actions">
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => void review()}
-            data-testid={`${testId}-review`}
-          >
+          <Button tone="secondary" onClick={() => void review()} data-testid={`${testId}-review`}>
             {t('entity.conflict.review')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -141,23 +137,20 @@ export function EditConflict<T>({
           </h3>
           {renderLatest(state.latest)}
           <div className="editconflict__actions">
-            <button
-              className="button"
-              type="button"
+            <Button
               onClick={() => onKeepMine(state.latest)}
               aria-describedby={hintId}
               data-testid={`${testId}-keep`}
             >
               {t('entity.conflict.keepMine')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
               onClick={() => chooseLatest(state.latest)}
               data-testid={`${testId}-use-latest`}
             >
               {t('entity.conflict.useLatest')}
-            </button>
+            </Button>
           </div>
           <p className="editconflict__hint" id={hintId}>
             {suggesting ? t('entity.conflict.hint.suggestion') : t('entity.conflict.hint.edit')}

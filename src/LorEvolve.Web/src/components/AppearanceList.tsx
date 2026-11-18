@@ -1,9 +1,9 @@
 import { ImagePlus } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import type { Appearance } from '../progression/types'
 import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
 import { AppearanceItem } from './lore/AppearanceItem'
+import { Button } from './Button'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -47,16 +47,16 @@ export function AppearanceList({
           {t('progression.appearanceList.heading')}
         </h3>
         {access.editContent ? (
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={ImagePlus}
             onClick={onAdd}
             disabled={busy}
             data-testid="add-appearance"
           >
-            <ActionIcon icon={ImagePlus} />
             {t('progression.appearanceList.add')}
-          </button>
+          </Button>
         ) : null}
       </div>
       {appearances.length === 0 ? (
