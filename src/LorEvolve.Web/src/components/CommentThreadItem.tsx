@@ -1,0 +1,172 @@
+import { COMMENT_MAX_LENGTH, type CommentThread } from '../comments/api'
+import { useI18n } from '../i18n'
+import { formatDateTime } from '../lib/dates'
+import { Field } from './Field'
+import type { useUniverseAccess } from '../universes/access'
+import { confirmAction } from '../lib/confirm'
+
+/** One comment thread: its comments, how it was resolved, the reply form or Reply, and Resolve or Reopen. */
+export function CommentThreadItem({
+  thread,
+  newId,
+  access,
+  replyTo,
+  setReplyTo,
+  reply,
+  setReply,
+  replyError,
+  setReplyError,
+  busy,
+  postReply,
+  resolve,
+}: {
+  thread: CommentThread
+  newId: string
+  access: ReturnType<typeof useUniverseAccess>
+  replyTo: string | null
+  setReplyTo: (value: string | null) => void
+  reply: string
+  setReply: (value: string) => void
+  replyError: string | null
+  setReplyError: (value: string | null) => void
+  busy: string | null
+  postReply: (threadId: string) => Promise<void>
+  resolve: (thread: CommentThread) => Promise<void>
+}) {
+  const { t, tx } = useI18n()
+  const isReplying = replyTo === thread.id
+  const replyId = `${newId}-reply-${thread.id}`
+  return (
+    <li
+      className="reviewthread"
+      data-testid="comment-thread"
+      data-resolved={thread.isResolved ? 'true' : 'false'}
+    >
+      <ol className="reviewthread__comments">
+        {thread.comments.map((comment, index) => (
+          <li
+            className={index === 0 ? 'reviewcomment' : 'reviewcomment reviewcomment--reply'}
+            key={comment.id}
+            data-testid="comment"
+          >
+            <p className="reviewcomment__meta">
+              <span className="reviewcomment__author" data-testid="comment-author">
+                {comment.authorName === null ? (
+                  t('review.comments.unknownAuthor')
+                ) : (
+                  <bdi>{comment.authorName}</bdi>
+                )}
+              </span>
+              <time dateTime={comment.createdAt}>{formatDateTime(comment.createdAt)}</time>
+            </p>
+            <p className="reviewcomment__body" dir="auto" data-testid="comment-body">
+              {comment.body}
+            </p>
+          </li>
+        ))}
+      </ol>
+
+      {thread.isResolved ? (
+        <p className="reviewthread__resolved" data-testid="comment-resolved">
+          {tx('review.comments.resolvedBy', {
+            name:
+              thread.resolvedByName === null ? (
+                t('review.comments.unknownResolver')
+              ) : (
+                <bdi>{thread.resolvedByName}</bdi>
+              ),
+          })}
+          {thread.resolvedAt ? <> · {formatDateTime(thread.resolvedAt)}</> : null}
+        </p>
+      ) : null}
+
+      {isReplying ? (
+        <form
+          className="reviewthread__reply"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void postReply(thread.id)
+          }}
+        >
+          <Field id={replyId} label={t('review.comments.reply')} error={replyError}>
+            {(control) => (
+              <textarea
+                {...control}
+                className="field__input field__input--area"
+                rows={3}
+                dir="auto"
+                maxLength={COMMENT_MAX_LENGTH}
+                value={reply}
+                onChange={(event) => setReply(event.target.value)}
+                autoFocus
+                data-testid="comment-reply-text"
+              />
+            )}
+          </Field>
+          <div className="reviewthread__tools">
+            <button
+              className="button button--sm"
+              type="submit"
+              disabled={busy !== null}
+              data-testid="comment-reply-post"
+            >
+              {busy === thread.id ? t('review.comments.posting') : t('review.comments.replyPost')}
+            </button>
+            <button
+              className="button button--text button--sm"
+              type="button"
+              onClick={() => {
+                setReplyTo(null)
+                setReply('')
+                setReplyError(null)
+              }}
+            >
+              {t('review.comments.cancel')}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="reviewthread__tools">
+          {access.comment && !thread.isResolved ? (
+            <button
+              className="button button--text button--sm"
+              type="button"
+              disabled={busy !== null}
+              onClick={async () => {
+                if (
+                  replyTo !== null &&
+                  reply.trim() !== '' &&
+                  !(await confirmAction({
+                    title: t('review.comments.replyLeave.title'),
+                    confirmLabel: t('review.comments.replyLeave.confirm'),
+                    cancelLabel: t('review.comments.replyLeave.keep'),
+                    variant: 'destructive',
+                  }))
+                ) {
+                  return
+                }
+                setReplyTo(thread.id)
+                setReply('')
+                setReplyError(null)
+              }}
+              data-testid="comment-reply"
+            >
+              {t('review.comments.reply')}
+            </button>
+          ) : null}
+          {access.resolveComments ? (
+            <button
+              className="button button--text button--sm"
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void resolve(thread)}
+              data-testid={thread.isResolved ? 'comment-reopen' : 'comment-resolve'}
+            >
+              {thread.isResolved ? t('review.comments.reopen') : t('review.comments.resolve')}
+            </button>
+          ) : null}
+        </div>
+      )}
+    </li>
+  )
+}

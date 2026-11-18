@@ -1,60 +1,26 @@
-import { Fragment, useCallback, useEffect, useId, useRef, useState } from 'react'
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
-import { AccountMenu } from '../components/AccountMenu'
+import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
-import { listAllProjects } from '../projects/api'
-import { projectFamilies } from '../projects/sections'
-import { getChronology } from '../chronology/api'
 import type { Chronology } from '../chronology/types'
-import { listEntityTypeGroups, listEntityTypes } from '../lore/typesApi'
 import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
-import { getUniverse } from '../universes/api'
-import {
-  ALL_SECTIONS,
-  FRONT,
-  groupKey,
-  offered,
-  owns,
-  SECTION_GROUPS,
-  sectionLabel,
-  type ProjectFamily,
-} from '../universes/sections'
-import { capabilitiesOf, roleLabel, UniverseAccessContext } from '../universes/access'
+import { offered, SECTION_GROUPS, sectionLabel, type ProjectFamily } from '../universes/sections'
+import { capabilitiesOf, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
-import { preloadSections } from '../screens'
 import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
-import { EmptyState } from '../components/EmptyState'
-
-const SECTIONS = ALL_SECTIONS
-
-const GROUP_TEST_IDS = {
-  worldBuilding: 'sidebar-world-building',
-  creation: 'sidebar-creation',
-  management: 'sidebar-upkeep',
-} as const
-
-/** A group's name, drawn as a heading so a screen reader reads it as the group's name and can jump between them. */
-function GroupLabel({ id, label }: { id: string; label: string }) {
-  return (
-    // The small muted capitals the type switcher already uses for its row labels; no new style (#191).
-    <h2 className="sidebar__grouphead" id={id}>
-      {label}
-    </h2>
-  )
-}
-
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; universe: UniverseDetail; chronology: Chronology }
-  | { kind: 'missing' }
-  | { kind: 'error'; message: string }
+import { WorkspaceLoadError } from '../components/universes/WorkspaceLoadError'
+import { WorkspaceMissing } from '../components/universes/WorkspaceMissing'
+import { WorkspaceRail } from '../components/universes/WorkspaceRail'
+import { WorkspaceSidebar } from '../components/universes/WorkspaceSidebar'
+import { useWorkspaceNav } from '../universes/useWorkspaceNav'
+import { useWorkspaceReads } from '../universes/useWorkspaceReads'
+import { useWorkspaceSetters } from '../universes/useWorkspaceSetters'
+import { useWorkspaceState } from '../universes/useWorkspaceState'
+import { currentSection } from '../universes/workspaceSections'
 
 export interface WorkspaceContext {
   universe: UniverseDetail
@@ -89,22 +55,6 @@ export interface WorkspaceContext {
   families: ReadonlySet<ProjectFamily>
 }
 
-/** The part of the URL below this universe, without its surrounding slashes. */
-function pathWithin(pathname: string, id: string | undefined) {
-  const base = `/app/universes/${id ?? ''}`
-  const rest = pathname.startsWith(base) ? pathname.slice(base.length) : ''
-  return rest.replace(/^\/+|\/+$/g, '')
-}
-
-/**
- * Which section the current URL is in. `lore/:entityId` is still Lore. The section itself, not its name: the name is
- * read from the dictionary where it is shown, and nothing branches on words that change with the language.
- */
-function currentSection(pathname: string, id: string | undefined) {
-  const segment = pathWithin(pathname, id).split('/')[0] ?? ''
-  return SECTIONS.find((section) => owns(section, segment)) ?? FRONT[0]
-}
-
 /** One workspace per universe: another universe's address starts a new one, so nothing read for the last carries over. */
 export default function UniverseWorkspace() {
   const { id } = useParams<{ id: string }>()
@@ -118,194 +68,17 @@ function Workspace() {
   useI18n()
   const { id } = useParams<{ id: string }>()
   const { pathname } = useLocation()
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [types, setTypes] = useState<EntityType[] | 'failed' | null>(null)
-  const [typeGroups, setTypeGroups] = useState<EntityTypeGroup[] | 'failed' | null>(null)
-  // The families of project this universe has, which decide the sidebar's Creation and Game Entities (#272). Empty until read.
-  const [families, setFamilies] = useState<ReadonlySet<ProjectFamily>>(new Set())
-  const projectsRead = useRef<AbortController | null>(null)
-  const typesRead = useRef<AbortController | null>(null)
-  const typesClaimed = useRef(false)
-
-  // Only the narrow layout hides the section list; on a wide screen CSS keeps it open and
-  // the toggle is not shown at all, so one piece of state serves both without measuring
-  // the viewport in JavaScript.
-  //
-  // What is stored is the route the list was opened on, not a boolean, so "open" means
-  // "opened here". A section that has just been opened is then never read through the list
-  // that opened it, and arriving by the browser's own back and forward closes it too -
-  // both fall out of the render rather than out of an effect chasing the URL.
-  const [navOpenAt, setNavOpenAt] = useState<string | null>(null)
-  const isNavOpen = navOpenAt === pathname
-  const navId = useId()
-  const navRef = useRef<HTMLElement>(null)
-  const toggleRef = useRef<HTMLButtonElement>(null)
-
-  // Below 860px the open list is a drawer over the page (#274): focus goes into it, and back to the toggle when it
-  // closes, by the Sections toggle, Escape, the scrim, or a link pressed.
-  useEffect(() => {
-    if (!isNavOpen) return
-    const nav = navRef.current
-    const first =
-      nav?.querySelector<HTMLElement>('a[aria-current="page"]') ??
-      nav?.querySelector<HTMLElement>('a')
-    first?.focus()
-    const toggle = toggleRef.current
-    return () => toggle?.focus()
-  }, [isNavOpen])
-
-  // Resizing or rotating to the wide layout, where the list is always drawn, must not leave the page behind it inert.
-  useEffect(() => {
-    const wide = window.matchMedia('(min-width: 861px)')
-    const onChange = (event: MediaQueryListEvent) => {
-      if (event.matches) setNavOpenAt(null)
-    }
-    wide.addEventListener('change', onChange)
-    return () => wide.removeEventListener('change', onChange)
-  }, [])
-
-  const load = useCallback(
-    (signal?: AbortSignal) => {
-      if (!id) return
-      Promise.all([getUniverse(id, signal), getChronology(id, signal)])
-        .then(([universe, chronology]) => setState({ kind: 'ready', universe, chronology }))
-        .catch((error: unknown) => {
-          if (signal?.aborted) return
-          // The API answers 404 both for a missing universe and for someone else's.
-          const status = (error as { status?: number }).status
-          setState(
-            status === 404
-              ? { kind: 'missing' }
-              : {
-                  kind: 'error',
-                  message: error instanceof Error ? error.message : t('workspace.missing.failed'),
-                },
-          )
-        })
-    },
-    [id],
-  )
-
-  // The latest read wins: a new one cancels the one before, so an older answer never lands over a newer one.
-  const readTypes = useCallback(() => {
-    if (!id) return Promise.resolve()
-    typesRead.current?.abort()
-    const controller = new AbortController()
-    typesRead.current = controller
-    const { signal } = controller
-    return Promise.all([
-      listEntityTypes(id, signal).then(setTypes, (error: unknown) => {
-        if (!signal.aborted) setTypes((current) => (Array.isArray(current) ? current : 'failed'))
-        throw error
-      }),
-      listEntityTypeGroups(id, signal).then(setTypeGroups, (error: unknown) => {
-        if (!signal.aborted)
-          setTypeGroups((current) => (Array.isArray(current) ? current : 'failed'))
-        throw error
-      }),
-    ]).then(
-      () => undefined,
-      (error: unknown) => {
-        if (!signal.aborted) throw error
-      },
-    )
-  }, [id])
-
-  // Read again on request: a failure shown gives way to the read; a copy already read stays on screen while it is out.
-  const refreshTypes = useCallback(() => {
-    setTypes((current) => (current === 'failed' ? null : current))
-    setTypeGroups((current) => (current === 'failed' ? null : current))
-    return readTypes()
-  }, [readTypes])
-
-  // The latest read wins, as for the types. A failed read leaves what was read before.
-  const refreshProjects = useCallback(() => {
-    if (!id) return Promise.resolve()
-    projectsRead.current?.abort()
-    const controller = new AbortController()
-    projectsRead.current = controller
-    return listAllProjects({ universeId: id }, controller.signal).then(
-      (projects) => setFamilies(projectFamilies(projects)),
-      (error: unknown) => {
-        if (!controller.signal.aborted) throw error
-      },
-    )
-  }, [id])
-
-  const revalidateTypes = useCallback(() => {
-    if (!typesClaimed.current) {
-      typesClaimed.current = true
-      return
-    }
-    refreshTypes().catch(() => undefined)
-  }, [refreshTypes])
-
-  // The types leave with the universe and its chronology, not after the screen that needs them has loaded and mounted.
-  useEffect(() => {
-    const controller = new AbortController()
-    load(controller.signal)
-    readTypes().catch(() => undefined)
-    refreshProjects().catch(() => undefined)
-    return () => {
-      controller.abort()
-      typesRead.current?.abort()
-      projectsRead.current?.abort()
-    }
-  }, [load, readTypes, refreshProjects])
-
-  // Once the universe is open and the browser has nothing better to do, every section's code and an entry's are fetched,
-  // so the first visit to another one opens without a fallback.
-  const isReady = state.kind === 'ready'
-  useEffect(() => {
-    if (!isReady) return
-    // Not on a metered or slow connection: a visitor who asked for less data is not handed every section's code.
-    const connection = (
-      navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }
-    ).connection
-    if (connection?.saveData || /(^|-)[23]g$/.test(connection?.effectiveType ?? '')) return
-    // A pause first, then idle: a dynamic import is a high-priority fetch, and on a real network it was competing with
-    // the page's own reads and its pictures, which the browser fetches at low priority.
-    const timer = window.setTimeout(() => {
-      if (typeof window.requestIdleCallback === 'function')
-        window.requestIdleCallback(preloadSections)
-      else preloadSections()
-    }, 2500)
-    return () => window.clearTimeout(timer)
-  }, [isReady])
-
-  const setTypeList = useCallback((next: EntityType[]) => setTypes(next), [])
-  const setGroupList = useCallback((next: EntityTypeGroup[]) => setTypeGroups(next), [])
-
-  const refresh = useCallback(
-    (next?: UniverseDetail) => {
-      if (next) {
-        setState((current) => (current.kind === 'ready' ? { ...current, universe: next } : current))
-      } else {
-        load()
-      }
-    },
-    [load],
-  )
-
-  const setChronology = useCallback((chronology: Chronology) => {
-    setState((current) => (current.kind === 'ready' ? { ...current, chronology } : current))
-  }, [])
-
-  // Publish hands up a changed artwork; only its two ids are the universe's to hold, and they replace the ones the
-  // universe arrived with, so the atmosphere follows without a reload.
-  const setArtwork = useCallback((next: UniverseArtworkRef | null) => {
-    setState((current) =>
-      current.kind === 'ready'
-        ? {
-            ...current,
-            universe: {
-              ...current.universe,
-              artwork: next ? { assetId: next.assetId, cardId: next.cardId } : null,
-            },
-          }
-        : current,
-    )
-  }, [])
+  const workspace = useWorkspaceState()
+  const { state, types, typeGroups, families } = workspace
+  const { setNavOpenAt, isNavOpen, navId, navRef, toggleRef } = useWorkspaceNav({ pathname })
+  const { load, refreshTypes, refreshProjects, revalidateTypes } = useWorkspaceReads({
+    ...workspace,
+    id,
+  })
+  const { setTypeList, setGroupList, refresh, setChronology, setArtwork } = useWorkspaceSetters({
+    ...workspace,
+    load,
+  })
 
   // The tab names the section and then the universe - "Lore | Hollowmere | LorEvolve" - from the shell, which knows both;
   // an entry or a story inside a section is still that section here, and nothing beneath sets a title of its own.
@@ -324,36 +97,11 @@ function Workspace() {
   }
 
   if (state.kind === 'missing') {
-    return (
-      <EmptyState
-        testId="universe-missing"
-        title={t('workspace.missing.title')}
-        hint={
-          <>
-            It may have been deleted, or it belongs to someone else.{' '}
-            <Link to="/app">{t('workspace.missing.back')}</Link>
-          </>
-        }
-      />
-    )
+    return <WorkspaceMissing />
   }
 
   if (state.kind === 'error') {
-    return (
-      <div className="notice notice--error" role="alert">
-        <p>{state.message}</p>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={() => {
-            refresh()
-            refreshTypes().catch(() => undefined)
-          }}
-        >
-          {t('workspace.missing.tryAgain')}
-        </button>
-      </div>
-    )
+    return <WorkspaceLoadError state={state} refresh={refresh} refreshTypes={refreshTypes} />
   }
 
   const { universe, chronology } = state
@@ -379,157 +127,28 @@ function Workspace() {
       className="workspace"
       style={accent ? { ['--universe-accent' as string]: accent } : undefined}
     >
-      <nav className="rail" aria-label={t('workspace.rail.brand')}>
-        {/* The drawn L, deliberately, and not the LorEvolve symbol. The symbol was tried here: at
-            the ~30px this rail allows it reads as a red tangle rather than a sphere, and it
-            puts the only saturated colour in the chrome directly above the universe's accent
-            seal - which is the one thing in the rail that carries meaning. The mark is shown
-            large on the auth plate and small in the paper bars instead. */}
-        {/* LorEvolve's mark leads to LorEvolve's home, from everywhere (031), and its name says so. The universes are "All
-            universes", at the head of the sidebar and of the phone's Sections sheet; the account menu at the rail's
-            foot names Explore and My workspace. The glyph stays small and its target does not: a 40px square, the
-            rail's own width less its margins. */}
-        <Link className="rail__mark" to="/" aria-label={t('shell.brand.homeLabel')}>
-          L
-        </Link>
-        <span className="rail__seal" aria-hidden="true" />
-
-        {/* Only rendered into the narrow layout, where the sidebar head is folded away:
-            the bar has to keep saying which universe and which section this is. The name carries its own
-            direction rather than a <bdi>, because it is cut with an ellipsis: only the clipping element's
-            direction puts the cut at the end of a name written right to left, not at its start. */}
-        <p className="rail__where" data-testid="workspace-where">
-          <span className="rail__universe" dir="auto" title={universe.name}>
-            {universe.name}
-          </span>
-          <span className="rail__section">{sectionLabel(section)}</span>
-          {universe.isArchived ? (
-            <span className="rail__archived">{t('workspace.rail.archived')}</span>
-          ) : null}
-        </p>
-
-        <button
-          className="rail__toggle"
-          type="button"
-          ref={toggleRef}
-          aria-expanded={isNavOpen}
-          aria-controls={navId}
-          onClick={() => setNavOpenAt(isNavOpen ? null : pathname)}
-          data-testid="workspace-nav-toggle"
-        >
-          {isNavOpen ? t('workspace.rail.close') : t('workspace.rail.sections')}
-        </button>
-
-        {/* The account lives on the global rail, not in the sidebar: the sidebar is this
-            universe's sections, and an account is not one of them.
-
-            Last in the list, and on a wide screen pushed to the foot of the rail rather than
-            tucked under the "L". The mark and the accent seal are a pair - LorEvolve, and which world
-            this is - and putting a third circle between them would read as a third piece of the
-            same statement. At the foot it is where a global rail's account always is, and out of
-            the way of the one thing the rail is for.
-
-            On a narrow screen the rail is the sticky bar, this row is horizontal, and the same
-            node lands at the right-hand end - so the account is reachable on a phone without a
-            second account UI existing anywhere. */}
-        <AccountMenu variant="rail" />
-      </nav>
+      <WorkspaceRail
+        universe={universe}
+        section={section}
+        pathname={pathname}
+        isNavOpen={isNavOpen}
+        setNavOpenAt={setNavOpenAt}
+        navId={navId}
+        toggleRef={toggleRef}
+      />
 
       {/* One landmark for the universe: the way up out of it and its sections, read as one list of places. */}
-      <nav
-        className="sidebar"
-        id={navId}
-        ref={navRef}
-        data-open={isNavOpen ? 'true' : 'false'}
-        aria-label={t('workspace.rail.universe')}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape' && isNavOpen) setNavOpenAt(null)
-        }}
-      >
-        <div className="sidebar__head">
-          <Link className="sidebar__back" to="/app">
-            <ArrowLeft
-              className="sidebar__backicon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {t('workspace.rail.allUniverses')}
-          </Link>
-          {/* The world's artwork in miniature beside its name, when its owner has given it one. Decorative. */}
-          <div className="sidebar__identity">
-            {artwork ? (
-              <img
-                className="sidebar__art"
-                src={artwork}
-                alt=""
-                width={44}
-                height={44}
-                decoding="async"
-              />
-            ) : null}
-            {/* A name, not the screen's heading: each screen's own title is its h1. */}
-            <p className="sidebar__name" data-testid="workspace-name">
-              <bdi>{universe.name}</bdi>
-            </p>
-          </div>
-          {shared ? (
-            <span className="sidebar__role" data-testid="workspace-role">
-              {t('workspace.rail.sharedAs', { role: roleLabel(universe.accessRole) })}
-            </span>
-          ) : null}
-          {universe.isArchived ? (
-            <span className="sidebar__archived">{t('workspace.rail.archived')}</span>
-          ) : null}
-        </div>
-
-        <ul className="sidebar__nav">
-          {/* The universe's own sections: the front page, world building, creation, and management last - set apart
-              at the foot. */}
-          {groups.map(({ source, items }) => {
-            const key = groupKey(source)
-            const isManagement = key === 'management'
-            const labelId = key ? `sidebar-group-${key}` : undefined
-            return (
-              <Fragment key={`group-${key ?? 'front'}`}>
-                <li
-                  className={
-                    isManagement ? 'sidebar__group sidebar__group--upkeep' : 'sidebar__group'
-                  }
-                  data-testid={key ? GROUP_TEST_IDS[key] : undefined}
-                >
-                  {key && labelId ? (
-                    <GroupLabel id={labelId} label={t(`workspace.rail.groups.${key}`)} />
-                  ) : null}
-                  <ul className="sidebar__links" aria-labelledby={labelId}>
-                    {items.map((each) => (
-                      <li key={each.segment}>
-                        {/* A Link rather than a NavLink: which section is current is this component's answer, not a
-                            path match, because World Logic is still the current section at a world rule's own address
-                            (#152). The style keys off aria-current either way. */}
-                        <Link
-                          to={each.segment === '' ? '.' : each.segment}
-                          className="sidebar__link"
-                          aria-current={section.testId === each.testId ? 'page' : undefined}
-                          data-testid={each.testId}
-                        >
-                          <each.icon
-                            className="sidebar__icon"
-                            aria-hidden="true"
-                            focusable="false"
-                            strokeWidth={1.75}
-                          />
-                          {sectionLabel(each)}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              </Fragment>
-            )
-          })}
-        </ul>
-      </nav>
+      <WorkspaceSidebar
+        universe={universe}
+        artwork={artwork}
+        shared={shared}
+        groups={groups}
+        section={section}
+        isNavOpen={isNavOpen}
+        setNavOpenAt={setNavOpenAt}
+        navId={navId}
+        navRef={navRef}
+      />
 
       {isNavOpen ? (
         <div
