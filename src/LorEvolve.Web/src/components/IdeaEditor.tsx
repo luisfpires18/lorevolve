@@ -1,129 +1,19 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { SaveAction } from './SaveAction'
-import { Link } from 'react-router-dom'
-import { Plus, Trash2, X } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
-import { Field } from './Field'
+import { useId, type ReactNode } from 'react'
 import { IdeaReferencePicker } from './IdeaReferencePicker'
-import { Quoted } from './NameList'
-import { RecoveredDraft } from './RecoveredDraft'
-import { useAuth } from '../auth/useAuth'
-import {
-  createIdea,
-  deleteIdea,
-  getIdea,
-  IDEA_CHANGED,
-  listAllUniverses,
-  referenceContext,
-  referencePath,
-  saveIdea,
-} from '../ideas/api'
-import {
-  IDEA_BODY_MAX_LENGTH,
-  IDEA_REFERENCE_KIND_KEYS,
-  IDEA_REFERENCE_KIND_LABELS,
-  IDEA_TITLE_MAX_LENGTH,
-  type IdeaDetail,
-  type IdeaReference,
-  type IdeaUniverse,
-} from '../ideas/types'
-import { ApiError } from '../lib/api'
-import { formatDateTime } from '../lib/dates'
+import { IdeaFormFields } from './ideas/IdeaFormFields'
+import { IdeaHead } from './ideas/IdeaHead'
+import { IdeaNotices } from './ideas/IdeaNotices'
+import { IdeaReferences } from './ideas/IdeaReferences'
+import { IdeaSaveBar } from './ideas/IdeaSaveBar'
+import { IdeaUnavailable } from './ideas/IdeaUnavailable'
+import { ideaActions } from '../ideas/ideaActions'
+import { IDEA_BODY_MAX_LENGTH, type IdeaDetail } from '../ideas/types'
+import { useIdeaDraft } from '../ideas/useIdeaDraft'
+import { useIdeaRead } from '../ideas/useIdeaRead'
+import { useIdeaSave } from '../ideas/useIdeaSave'
+import { useIdeaState } from '../ideas/useIdeaState'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import { useLocalDraft } from '../lib/useLocalDraft'
-import type { UniverseSummary } from '../universes/types'
-import { EmptyState } from './EmptyState'
-import { confirmAction } from '../lib/confirm'
-import { numberFormat } from '../i18n/format'
 import { useI18n } from '../i18n'
-
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready' }
-  | { kind: 'missing' }
-  | { kind: 'elsewhere' }
-  | { kind: 'error'; message: string }
-
-/** What an author edits, and exactly what a recovery copy holds. */
-interface Fields {
-  title: string
-  body: string
-  universeId: string | null
-  references: IdeaReference[]
-}
-
-/** The idea as the API last confirmed it: what "unsaved" is measured against, and what the next save names. */
-interface Stored extends Fields {
-  universe: IdeaUniverse | null
-  updatedAt: string | null
-  /** The project the idea is a note for (#197). Not edited here: kept on every save while the universe stays. */
-  projectId: string | null
-}
-
-const count = (value: number) => numberFormat({}, 'en').format(value)
-
-function referenceKey(reference: { kind: number; id: string }) {
-  return `${reference.kind}:${reference.id}`
-}
-
-function sameFields(a: Fields, b: Fields) {
-  if (a.title !== b.title || a.body !== b.body || a.universeId !== b.universeId) return false
-  const left = a.references.map(referenceKey).sort()
-  const right = b.references.map(referenceKey).sort()
-  return left.length === right.length && left.every((key, index) => key === right[index])
-}
-
-function storedFrom(idea: IdeaDetail): Stored {
-  return {
-    title: idea.title,
-    body: idea.body,
-    universeId: idea.universe?.id ?? null,
-    universe: idea.universe,
-    references: idea.references,
-    updatedAt: idea.updatedAt,
-    projectId: idea.project?.id ?? null,
-  }
-}
-
-function fieldsOf({ title, body, universeId, references }: Fields): Fields {
-  return { title, body, universeId, references }
-}
-
-/** Nothing written yet: what a new idea is before a key is pressed, whatever universe it starts in. */
-function isBlank(fields: Fields) {
-  return fields.title === '' && fields.body === '' && fields.references.length === 0
-}
-
-/** A recovery copy read back, or null when it is not one this editor could have kept. */
-function parseCopy(content: string): Fields | null {
-  try {
-    const value = JSON.parse(content) as Partial<Fields> | null
-    if (
-      !value ||
-      typeof value.title !== 'string' ||
-      typeof value.body !== 'string' ||
-      !(value.universeId === null || typeof value.universeId === 'string') ||
-      !Array.isArray(value.references)
-    ) {
-      return null
-    }
-    return {
-      title: value.title,
-      body: value.body,
-      universeId: value.universeId,
-      references: value.references,
-    }
-  } catch {
-    return null
-  }
-}
-
-/** The stored moment a stale save's refusal reports, when it carries one. */
-function storedMomentOf(problem: unknown) {
-  const updatedAt = (problem as { updatedAt?: unknown } | null)?.updatedAt
-  return typeof updatedAt === 'string' ? updatedAt : null
-}
 
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
@@ -180,372 +70,56 @@ export function IdeaEditor({
   const recoveryId = useId()
   const bodyCountId = useId()
 
-  const isNew = ideaId === null
-  const { user } = useAuth()
-
-  // An existing idea's copy belongs to the account, not to a universe: the idea outlives any universe it is in. A new
-  // idea's copy is kept per place it was started, so one started in a universe is never offered in another.
-  const { found, keep, forget, discard, settle, failed } = useLocalDraft(
-    user
-      ? {
-          accountId: user.id,
-          universeId: isNew ? defaultUniverseId : null,
-          kind: 'idea',
-          contentId: ideaId ?? 'new',
-        }
-      : null,
-  )
-
-  const [load, setLoad] = useState<LoadState>(isNew ? { kind: 'ready' } : { kind: 'loading' })
-  const [reads, setReads] = useState(0)
-  const [stored, setStored] = useState<Stored>(() => ({
-    title: '',
-    body: '',
-    universeId: defaultUniverseId,
-    universe: null,
-    references: [],
-    updatedAt: null,
-    projectId: null,
-  }))
-  const [draft, setDraft] = useState<Fields>(() => fieldsOf(stored))
-  const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [saves, setSaves] = useState(0)
-  const [failure, setFailure] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
-  const [isPicking, setIsPicking] = useState(false)
-  const [announcement, setAnnouncement] = useState('')
-  const inFlight = useRef(false)
-  const titleInput = useRef<HTMLInputElement>(null)
-  const addButton = useRef<HTMLButtonElement>(null)
-  const shortcut = useRef<() => void>(() => {})
-  const contextUniverseId = contextUniverse?.id ?? null
-
-  useEffect(() => {
-    if (isNew) return
-    const controller = new AbortController()
-
-    getIdea(ideaId, controller.signal)
-      .then((idea) => {
-        // Inside a universe only that universe's ideas open. An address naming one of the account's ideas that belongs to
-        // another universe, or to none, shows nothing of it here and points to where it does open. An idea moved out while
-        // it is open here stays on screen, saying so - that was the author's own save, not an address.
-        if (contextUniverseId !== null && idea.universe?.id !== contextUniverseId) {
-          setLoad({ kind: 'elsewhere' })
-          return
-        }
-        const next = storedFrom(idea)
-        setStored(next)
-        setDraft(fieldsOf(next))
-        setLoad({ kind: 'ready' })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setLoad(
-          error instanceof ApiError && error.status === 404
-            ? { kind: 'missing' }
-            : { kind: 'error', message: t('ideas.editor.openFailed') },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [isNew, ideaId, reads, contextUniverseId, t])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listAllUniverses(controller.signal)
-      .then(setUniverses)
-      .catch(() => {
-        // Without the list, the field still shows the idea's own universe and "No universe"; choosing another waits.
-        if (!controller.signal.aborted) setUniverses(null)
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [])
-
-  const isReady = load.kind === 'ready'
-  const isDirty = isReady && (isNew ? !isBlank(draft) : !sameFields(draft, stored))
-  const isTooLong = draft.body.length > IDEA_BODY_MAX_LENGTH
-
-  // A copy is worth offering when it holds something the saved idea does not - for a new idea, anything written at all.
-  const copy = found ? parseCopy(found.content) : null
-  const isNothingToRecover = (fields: Fields) =>
-    isNew ? isBlank(fields) : sameFields(fields, stored)
-  const offer = isReady && found && copy && !isNothingToRecover(copy) ? found : null
-  const isHeld = isReady && (offer !== null || found === undefined)
-
-  // A copy identical to what is saved, or one this editor could not have written, goes without a word.
-  const isUselessCopy =
-    isReady && found !== undefined && found !== null && (copy === null || isNothingToRecover(copy))
-  useEffect(() => {
-    if (isUselessCopy) discard()
-  }, [isUselessCopy, discard])
-
-  // The recovery copy follows the writing: kept while it differs from what is saved, let go once it does not.
-  useEffect(() => {
-    if (!isReady || isHeld) return
-    if (isDirty) {
-      keep(JSON.stringify(draft), stored.updatedAt)
-    } else {
-      forget()
-    }
-  }, [isReady, isHeld, isDirty, draft, stored.updatedAt, keep, forget])
-
-  // A new idea starts in its title, once any copy has been looked for.
-  const focusedOnce = useRef(false)
-  useEffect(() => {
-    if (!isNew || isHeld || focusedOnce.current) return
-    focusedOnce.current = true
-    titleInput.current?.focus()
-  }, [isNew, isHeld])
+  const base = useIdeaState({ ideaId, defaultUniverseId, contextUniverse })
+  const {
+    isNew,
+    failed,
+    discard,
+    load,
+    stored,
+    draft,
+    universes,
+    isSaving,
+    saves,
+    failure,
+    fieldErrors,
+    conflict,
+    isPicking,
+    setIsPicking,
+    announcement,
+    titleInput,
+    addButton,
+  } = base
+  useIdeaRead({ ...base, ideaId, t })
+  const drafting = useIdeaDraft(base)
+  const { isDirty, isTooLong, copy, offer, isHeld } = drafting
 
   const name = draft.title.trim() || stored.title || t('ideas.editor.thisIdea')
   useLeaveGuard(isDirty ? t('ideas.editor.leaveGuard', { name }) : null, discard)
 
-  function edit(change: Partial<Fields>) {
-    setDraft((current) => ({ ...current, ...change }))
-    if (change.title !== undefined && fieldErrors.title) {
-      setFieldErrors((current) => {
-        const next = { ...current }
-        delete next.title
-        return next
-      })
-    }
-  }
+  const saving = useIdeaSave({ ...base, ...drafting, ideaId, onCreated, t })
+  const { edit, save } = saving
 
-  async function save(expectedUpdatedAt: string | null) {
-    if (inFlight.current || !isDirty || isTooLong || isHeld) return
+  const {
+    reread,
+    loadSavedVersion,
+    recoverDraft,
+    discardDraft,
+    changeUniverse,
+    addReference,
+    removeReference,
+    remove,
+  } = ideaActions({ ...base, ...drafting, ...saving, ideaId, onDeleted, t, tn, tx })
 
-    if (draft.title.trim() === '') {
-      setFieldErrors({ title: t('ideas.editor.titleRequired') })
-      titleInput.current?.focus()
-      return
-    }
-
-    const sent = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(null)
-
-    const input = {
-      title: sent.title.trim(),
-      body: sent.body,
-      universeId: sent.universeId,
-      references: sent.references.map(({ kind, id }) => ({ kind, id })),
-      expectedUpdatedAt,
-      // A project belongs to one universe, so moving the idea to another takes it off the project.
-      projectId: sent.universeId === stored.universeId ? stored.projectId : null,
-    }
-
-    try {
-      if (isNew) {
-        const created = await createIdea(input)
-        discard()
-        onCreated(created)
-        return
-      }
-
-      const saved = await saveIdea(ideaId, input)
-      const next = storedFrom(saved)
-      setStored(next)
-      // What was sent is now saved - trimmed, and with its references' names as they are. Anything typed while the save
-      // was in flight is still unsaved, and stays.
-      setDraft((current) => (sameFields(current, sent) ? fieldsOf(next) : current))
-      setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === IDEA_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('ideas.editor.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        setFailure(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('ideas.editor.saveNeedsChange'),
-        )
-      } else {
-        setFailure(t('ideas.editor.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-    }
-  }
-
-  useEffect(() => {
-    shortcut.current = () => void save(stored.updatedAt)
-  })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
-
-  function reread() {
-    setConflict(null)
-    setFailure(null)
-    setFieldErrors({})
-    setLoad({ kind: 'loading' })
-    setReads((current) => current + 1)
-  }
-
-  async function loadSavedVersion() {
-    if (
-      !(await confirmAction({
-        title: t('ideas.editor.loadSaved.title'),
-        message: t('ideas.editor.loadSaved.message'),
-        confirmLabel: t('ideas.editor.loadSaved.confirm'),
-        cancelLabel: t('ideas.editor.loadSaved.cancel'),
-        variant: 'destructive',
-      }))
-    ) {
-      return
-    }
-    discard()
-    reread()
-  }
-
-  function recoverDraft() {
-    if (!offer || !copy) return
-    settle()
-
-    // A copy may name a universe that has since been deleted: the idea is kept, unassigned, and so is the copy.
-    const universeGone =
-      copy.universeId !== null &&
-      universes !== null &&
-      !universes.some((universe) => universe.id === copy.universeId)
-
-    setDraft(universeGone ? { ...copy, universeId: null, references: [] } : copy)
-    setAnnouncement(
-      universeGone ? t('ideas.editor.recoveredUnassigned') : t('ideas.editor.recovered'),
-    )
-    requestAnimationFrame(() => titleInput.current?.focus())
-  }
-
-  function discardDraft() {
-    discard()
-    setAnnouncement(isNew ? t('ideas.editor.discardedNew') : t('ideas.editor.discardedSaved'))
-    requestAnimationFrame(() => titleInput.current?.focus())
-  }
-
-  async function changeUniverse(next: string | null) {
-    if (next === draft.universeId) return
-    if (draft.references.length > 0) {
-      const confirmed = await confirmAction({
-        title: t('ideas.editor.changeUniverse.title'),
-        message: tn('ideas.editor.changeUniverse.message', draft.references.length, {
-          n: draft.references.length,
-        }),
-        confirmLabel: t('ideas.editor.changeUniverse.confirm'),
-        variant: 'warning',
-      })
-      if (!confirmed) return
-      edit({ universeId: next, references: [] })
-      setAnnouncement(t('ideas.editor.universeChanged'))
-      return
-    }
-    edit({ universeId: next })
-  }
-
-  function addReference(reference: IdeaReference) {
-    setIsPicking(false)
-    if (!draft.references.some((current) => referenceKey(current) === referenceKey(reference))) {
-      edit({ references: [...draft.references, reference] })
-    }
-    setAnnouncement(t('ideas.editor.referenceAdded', { name: reference.name }))
-    requestAnimationFrame(() => addButton.current?.focus())
-  }
-
-  function removeReference(reference: IdeaReference) {
-    edit({
-      references: draft.references.filter(
-        (current) => referenceKey(current) !== referenceKey(reference),
-      ),
-    })
-    setAnnouncement(t('ideas.editor.referenceRemoved', { name: reference.name }))
-    requestAnimationFrame(() => addButton.current?.focus())
-  }
-
-  async function remove() {
-    if (isNew) return
-    const title = stored.title
-    setFailure(null)
-    const deleted = await confirmAction({
-      title: tx('ideas.editor.delete.title', { title: <bdi>{title}</bdi> }),
-      message: isDirty ? t('ideas.editor.delete.messageDirty') : t('ideas.editor.delete.message'),
-      confirmLabel: t('ideas.editor.delete.confirm'),
-      busyLabel: t('ideas.editor.delete.busy'),
-      variant: isDirty ? 'destructive' : 'warning',
-      failure: (error) =>
-        error instanceof ApiError && error.status === 404
-          ? t('ideas.editor.delete.gone')
-          : t('ideas.editor.delete.failed'),
-      action: () => deleteIdea(ideaId),
-    })
-    if (!deleted) return
-    discard()
-    onDeleted({ id: ideaId, title })
-  }
-
-  if (load.kind === 'loading') {
+  if (load.kind !== 'ready') {
     return (
-      <p className="notice" role="status" data-testid="idea-loading">
-        {t('ideas.editor.loading')}
-      </p>
-    )
-  }
-
-  if (load.kind === 'missing') {
-    return (
-      <EmptyState
-        testId="idea-missing"
-        title={t('ideas.editor.missing.title')}
-        hint={tx('ideas.editor.missing.hint', {
-          link: <Link to={`${listPath}?view=deleted`}>{t('ideas.editor.missing.link')}</Link>,
-        })}
+      <IdeaUnavailable
+        load={load}
+        listPath={listPath}
+        listLabel={listLabel}
+        contextUniverse={contextUniverse}
+        reread={reread}
       />
-    )
-  }
-
-  if (load.kind === 'elsewhere') {
-    return (
-      <EmptyState
-        testId="idea-not-in-universe"
-        title={tx('ideas.editor.elsewhere.title', {
-          universe: <Quoted text={contextUniverse?.name ?? ''} />,
-        })}
-        hint={tx('ideas.editor.elsewhere.hint', {
-          open: <Link to={listPath}>{t('ideas.editor.openInAll')}</Link>,
-          back: <Link to={listPath}>{listLabel}</Link>,
-        })}
-      />
-    )
-  }
-
-  if (load.kind === 'error') {
-    return (
-      <div className="notice notice--error" role="alert" data-testid="idea-load-error">
-        <p>{load.message}</p>
-        <button className="button button--secondary" type="button" onClick={reread}>
-          {t('ideas.editor.retry')}
-        </button>
-      </div>
     )
   }
 
@@ -554,124 +128,35 @@ export function IdeaEditor({
     (stored.universe && stored.universe.id === draft.universeId ? stored.universe : null)
 
   const nearLimit = draft.body.length > IDEA_BODY_MAX_LENGTH * 0.9
-  const belongsElsewhere =
-    !isNew && contextUniverse !== null && stored.universeId !== contextUniverse.id
 
   return (
     <article className="idea" aria-labelledby={headingId} data-testid="idea-editor">
-      <header className="idea__head">
-        <Link className="idea__back" to={listPath} data-testid="idea-back">
-          {listLabel}
-        </Link>
-        <div className="doc__titlerow">
-          <h1 className="idea__heading" id={headingId} data-testid="idea-heading">
-            {isNew ? t('ideas.editor.newIdea') : <bdi>{stored.title}</bdi>}
-          </h1>
-          {!isNew ? (
-            <ActionMenu
-              label={t('ideas.editor.moreActions', { title: stored.title })}
-              triggerTestId="idea-actions"
-            >
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
-                disabled={isSaving}
-                onClick={() => void remove()}
-                data-testid="idea-delete"
-              >
-                <ActionIcon icon={Trash2} />
-                {t('ideas.editor.deleteIdea')}
-              </button>
-            </ActionMenu>
-          ) : null}
-        </div>
-        <p className="idea__lede">
-          {t('ideas.editor.lede')}
-          {!isNew && stored.updatedAt ? (
-            <>
-              {' '}
-              {tx('ideas.editor.lastSaved', {
-                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
-              })}
-            </>
-          ) : null}
-        </p>
-        {belongsElsewhere ? (
-          <p className="idea__elsewhere" data-testid="idea-elsewhere">
-            {stored.universe
-              ? tx('ideas.editor.belongsTo', {
-                  universe: <Quoted text={stored.universe.name} />,
-                  context: <Quoted text={contextUniverse.name} />,
-                })
-              : t('ideas.editor.belongsToNone')}{' '}
-            {stored.universe ? (
-              <Link to={`/app/universes/${stored.universe.id}/ideas/${ideaId}`}>
-                {t('ideas.editor.openInAll')}
-              </Link>
-            ) : null}
-          </p>
-        ) : null}
-      </header>
+      <IdeaHead
+        listPath={listPath}
+        listLabel={listLabel}
+        headingId={headingId}
+        isNew={isNew}
+        stored={stored}
+        isSaving={isSaving}
+        remove={remove}
+        contextUniverse={contextUniverse}
+        ideaId={ideaId}
+      />
 
-      {offer && copy ? (
-        <div id={recoveryId}>
-          <RecoveredDraft
-            what={isNew ? t('ideas.editor.recoveryNew') : t('ideas.editor.recoveryThis')}
-            draft={offer}
-            savedUpdatedAt={stored.updatedAt}
-            preview={
-              <div
-                className="recovery__prose idea__preview prose"
-                role="region"
-                aria-label={t('ideas.editor.recoveredDraft')}
-                tabIndex={0}
-              >
-                <p className="idea__previewtitle">{copy.title || t('ideas.editor.untitled')}</p>
-                {copy.body === '' ? (
-                  <p className="entry__blank">{t('ideas.editor.noBody')}</p>
-                ) : (
-                  copy.body
-                )}
-              </div>
-            }
-            onRecover={recoverDraft}
-            onDiscard={discardDraft}
-            testId="idea-recovery"
-          />
-        </div>
-      ) : null}
-
-      {conflict ? (
-        <div className="manuscript__conflict" role="alert" data-testid="idea-conflict">
-          <p className="manuscript__conflicttext">{t('ideas.editor.conflict.text')}</p>
-          <div className="manuscript__conflictactions">
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={isSaving}
-              onClick={() => void save(conflict.updatedAt)}
-              data-testid="idea-keep-mine"
-            >
-              {t('ideas.editor.conflict.keepMine')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={isSaving}
-              onClick={loadSavedVersion}
-              data-testid="idea-load-saved"
-            >
-              {t('ideas.editor.conflict.loadSaved')}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {failure ? (
-        <p className="form__message idea__failure" role="alert" data-testid="idea-error">
-          {failure}
-        </p>
-      ) : null}
+      <IdeaNotices
+        offer={offer}
+        copy={copy}
+        recoveryId={recoveryId}
+        isNew={isNew}
+        stored={stored}
+        recoverDraft={recoverDraft}
+        discardDraft={discardDraft}
+        conflict={conflict}
+        isSaving={isSaving}
+        save={save}
+        loadSavedVersion={loadSavedVersion}
+        failure={failure}
+      />
 
       <form
         className="idea__form"
@@ -681,223 +166,44 @@ export function IdeaEditor({
         }}
         aria-describedby={offer ? recoveryId : undefined}
       >
-        <Field
-          id={titleId}
-          label={t('ideas.editor.fields.title')}
-          error={
-            fieldErrors.title ? (
-              <span data-testid="idea-title-error">{fieldErrors.title}</span>
-            ) : undefined
-          }
-        >
-          {(control) => (
-            <input
-              {...control}
-              ref={titleInput}
-              className="field__input field__input--title"
-              type="text"
-              dir="auto"
-              value={draft.title}
-              maxLength={IDEA_TITLE_MAX_LENGTH}
-              placeholder={t('ideas.editor.fields.titlePlaceholder')}
-              readOnly={isHeld}
-              onChange={(event) => edit({ title: event.target.value })}
-              aria-required="true"
-              data-testid="idea-title"
-            />
-          )}
-        </Field>
+        <IdeaFormFields
+          titleId={titleId}
+          bodyId={bodyId}
+          universeFieldId={universeFieldId}
+          bodyCountId={bodyCountId}
+          fieldErrors={fieldErrors}
+          titleInput={titleInput}
+          draft={draft}
+          isHeld={isHeld}
+          edit={edit}
+          isTooLong={isTooLong}
+          nearLimit={nearLimit}
+          changeUniverse={changeUniverse}
+          chosenUniverse={chosenUniverse}
+          universes={universes}
+        />
 
-        <Field
-          id={bodyId}
-          label={t('ideas.editor.fields.body')}
-          hint={t('ideas.editor.fields.bodyHint')}
-          error={fieldErrors.body}
-        >
-          {(control) => (
-            <>
-              <textarea
-                {...control}
-                className="field__input field__input--area idea__body"
-                rows={10}
-                value={draft.body}
-                placeholder={t('ideas.editor.fields.bodyPlaceholder')}
-                readOnly={isHeld}
-                spellCheck
-                onChange={(event) => edit({ body: event.target.value })}
-                aria-invalid={isTooLong || fieldErrors.body ? true : undefined}
-                aria-describedby={[control['aria-describedby'], nearLimit ? bodyCountId : null]
-                  .filter(Boolean)
-                  .join(' ')}
-                data-testid="idea-body"
-              />
-              {nearLimit ? (
-                <p
-                  className={isTooLong ? 'field__error' : 'field__hint idea__count'}
-                  id={bodyCountId}
-                  data-testid="idea-body-count"
-                >
-                  {t(
-                    isTooLong ? 'ideas.editor.fields.bodyTooLong' : 'ideas.editor.fields.bodyCount',
-                    {
-                      used: count(draft.body.length),
-                      max: count(IDEA_BODY_MAX_LENGTH),
-                    },
-                  )}
-                </p>
-              ) : null}
-            </>
-          )}
-        </Field>
+        <IdeaReferences
+          referencesId={referencesId}
+          draft={draft}
+          isHeld={isHeld}
+          removeReference={removeReference}
+          addButton={addButton}
+          setIsPicking={setIsPicking}
+          fieldErrors={fieldErrors}
+        />
 
-        <Field
-          id={universeFieldId}
-          label={t('ideas.editor.fields.universe')}
-          hint={t('ideas.editor.fields.universeHint')}
-          error={fieldErrors.universeid}
-        >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select idea__universe"
-              value={draft.universeId ?? ''}
-              disabled={isHeld}
-              onChange={(event) =>
-                changeUniverse(event.target.value === '' ? null : event.target.value)
-              }
-              data-testid="idea-universe"
-            >
-              {chosenUniverse &&
-              !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
-                <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
-              ) : null}
-              {(universes ?? []).map((universe) => (
-                <option key={universe.id} value={universe.id}>
-                  {universe.isArchived
-                    ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
-                    : universe.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-
-        <section
-          className="idea__references"
-          aria-labelledby={referencesId}
-          data-testid="idea-references"
-        >
-          <h2 className="idea__subheading" id={referencesId}>
-            {t('ideas.editor.references.heading')}
-          </h2>
-          <p className="field__hint">{t('ideas.editor.references.hint')}</p>
-
-          {draft.universeId === null ? (
-            <p className="idea__noreferences" data-testid="idea-references-need-universe">
-              {t('ideas.editor.references.needUniverse')}
-            </p>
-          ) : draft.references.length === 0 ? (
-            <p className="idea__noreferences">{t('ideas.editor.references.none')}</p>
-          ) : (
-            <ul className="idearefs" data-testid="idea-reference-list">
-              {draft.references.map((reference) => {
-                const kind = IDEA_REFERENCE_KIND_LABELS[reference.kind]
-                const kindKey = IDEA_REFERENCE_KIND_KEYS[reference.kind]
-                const context = referenceContext(reference)
-                return (
-                  <li
-                    className="idearef"
-                    key={referenceKey(reference)}
-                    data-testid="idea-reference"
-                    data-kind={kindKey.charAt(0).toUpperCase() + kindKey.slice(1)}
-                    data-name={reference.name}
-                    data-trashed={reference.isInTrash ? 'true' : 'false'}
-                  >
-                    <span className="idearef__kind">{kind}</span>
-                    <span className="idearef__what">
-                      {reference.isInTrash || draft.universeId === null ? (
-                        <span className="idearef__name">
-                          <bdi>{reference.name}</bdi>
-                        </span>
-                      ) : (
-                        <Link
-                          className="idearef__name"
-                          to={referencePath(draft.universeId, reference)}
-                          data-testid="idea-reference-open"
-                        >
-                          <bdi>{reference.name}</bdi>
-                        </Link>
-                      )}
-                      {context ? <span className="idearef__context">{context}</span> : null}
-                      {reference.isInTrash ? (
-                        <span className="idearef__trashed" data-testid="idea-reference-trashed">
-                          {t('ideas.editor.references.trashed')}
-                        </span>
-                      ) : null}
-                    </span>
-                    <button
-                      className="button button--secondary button--sm idearef__remove"
-                      type="button"
-                      disabled={isHeld}
-                      onClick={() => removeReference(reference)}
-                      aria-label={t('ideas.editor.references.removeAria', {
-                        kind: kind.toLowerCase(),
-                        name: reference.name,
-                      })}
-                      data-testid="idea-reference-remove"
-                    >
-                      <ActionIcon icon={X} />
-                      <span className="idearef__removelabel">
-                        {t('ideas.editor.references.remove')}
-                      </span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-
-          <button
-            ref={addButton}
-            className="button button--secondary"
-            type="button"
-            disabled={draft.universeId === null || isHeld}
-            onClick={() => setIsPicking(true)}
-            data-testid="idea-add-reference"
-          >
-            <ActionIcon icon={Plus} />
-            {t('ideas.editor.references.add')}
-          </button>
-          {fieldErrors.references ? (
-            <p className="field__error" data-testid="idea-references-error">
-              {fieldErrors.references}
-            </p>
-          ) : null}
-        </section>
-
-        <div className="manuscript__bar idea__bar">
-          {failed && isDirty ? (
-            <p className="recovery__warning" role="status" data-testid="idea-recovery-warning">
-              {t('ideas.editor.recoveryWarning')}
-            </p>
-          ) : null}
-          <div className="idea__actions">
-            <SaveAction
-              label={isNew ? t('ideas.editor.create') : t('ideas.editor.save')}
-              isDirty={isDirty}
-              isSaving={isSaving}
-              isBlocked={isTooLong || isHeld}
-              saves={saves}
-              restingStatus={
-                stored.updatedAt === null ? t('ideas.editor.notSavedYet') : t('ideas.editor.saved')
-              }
-              statusId={statusId}
-              statusTestId="idea-status"
-              testId="idea-save"
-              keyShortcuts="Control+S Meta+S"
-            />
-          </div>
-        </div>
+        <IdeaSaveBar
+          failed={failed}
+          isDirty={isDirty}
+          isNew={isNew}
+          isSaving={isSaving}
+          isTooLong={isTooLong}
+          isHeld={isHeld}
+          saves={saves}
+          stored={stored}
+          statusId={statusId}
+        />
       </form>
 
       {isPicking && draft.universeId !== null ? (
