@@ -29,55 +29,28 @@ import { SceneCard, type MoveTarget } from '../components/SceneCard'
 import { SceneForm } from '../components/SceneForm'
 import { StoryForm } from '../components/StoryForm'
 import { StoryPartPublication } from '../components/StoryPartPublication'
-import { ApiError } from '../lib/api'
-import { Visibility, type VisibilityValue } from '../publishing/types'
+import { Visibility } from '../publishing/types'
 import {
-  deleteChapter,
-  deletePlotArc,
-  deleteScene,
-  deleteStory,
-  moveChapterToArc,
-  moveScene,
-  reorderChapters,
-  reorderPlotArcs,
-  reorderScenes,
-  updateScene,
-} from '../stories/api'
-import {
-  arcCountLabel,
   arcLabel,
   arcNumber,
   chapterCountLabel,
-  chapterLabel,
   chapterNumber,
   sceneCountLabel,
   unchaptered as unchapteredLabel,
 } from '../stories/format'
 import { storyChanges } from '../stories/changes'
-import {
-  chapterChoices,
-  chapterGroups,
-  chapterNumbers,
-  readingOrder,
-  scenesIn,
-} from '../stories/structure'
-import {
-  STORY_STATUS_LABELS,
-  type Chapter,
-  type PlotArc,
-  type Scene,
-  type StoryDetail,
-} from '../stories/types'
+import { chapterChoices, chapterGroups, chapterNumbers, scenesIn } from '../stories/structure'
+import { STORY_STATUS_LABELS, type Chapter, type Scene } from '../stories/types'
 import { StatusBadge } from '../components/StatusBadge'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { confirmAction } from '../lib/confirm'
 import { projectPath } from '../projects/sections'
 import { useStoryState, type StoryViewName } from '../stories/useStoryState'
 import { useStoryLoad } from '../stories/useStoryLoad'
 import { useStoryArrival } from '../stories/useStoryArrival'
-
-/** Where the focus goes back to once a scene has moved: its ⋯ menu, wherever the scene now is. */
-const sceneMenu = (sceneId: string) => `#scene-${sceneId} [data-testid="scene-actions"]`
+import { storyPatches } from '../stories/storyPatches'
+import { storySceneMoves } from '../stories/storySceneMoves'
+import { storyChapterMoves } from '../stories/storyChapterMoves'
+import { storyRemovals } from '../stories/storyRemovals'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
@@ -140,8 +113,6 @@ function StoryView({ view }: { view: StoryViewName }) {
     setReloads,
     raised,
     setRaised,
-    isMoving,
-    pendingFocus,
     publication,
     setPublication,
   } = base
@@ -234,9 +205,9 @@ function StoryView({ view }: { view: StoryViewName }) {
       ]
     : []
 
-  function showStory(next: StoryDetail) {
-    setState((current) => (current.kind === 'ready' ? { ...current, story: next } : current))
-  }
+  const { showStory, patchScene, patchArc, showArcs, showContainer, showChapters } = storyPatches({
+    setState,
+  })
 
   /** Whether anyone can read the story now; null until known, when no part claims to be public. */
   const storyPublication = publication?.storyId === story.id ? publication : null
@@ -246,400 +217,52 @@ function StoryView({ view }: { view: StoryViewName }) {
       storyPublication.state.publicSummary !== null
     : null
 
-  /**
-   * The lore of one scene, dragged into a new order on its card. The chips move at once and the scene is saved behind
-   * them; a refused save puts the story back as the server has it and says so.
-   */
-  async function reorderLore(scene: Scene, entityIds: string[]) {
-    const byId = new Map(scene.entities.map((reference) => [reference.entityId, reference]))
-    const reordered = entityIds.map((id) => byId.get(id)).filter((one) => one !== undefined)
-    if (reordered.length !== scene.entities.length) return
+  const { reorderLore, moveWithin, moveTo } = storySceneMoves({
+    ...base,
+    t,
+    universe,
+    reload,
+    setMessage,
+    story,
+    scenes,
+    hasChapters,
+    containerName,
+    patchScene,
+    showStory,
+    showContainer,
+  })
 
-    setMessage(null)
-    patchScene(scene.id, { entities: reordered })
+  const { moveChapter, moveChapterArc, moveArc } = storyChapterMoves({
+    ...base,
+    t,
+    universe,
+    reload,
+    setMessage,
+    story,
+    chapters,
+    groups,
+    arcIndex,
+    showStory,
+    showArcs,
+    showChapters,
+  })
 
-    try {
-      const saved = await updateScene(universe.id, story.id, scene.id, {
-        title: scene.title,
-        summary: scene.summary,
-        notes: scene.notes,
-        povEntityId: scene.pov?.entityId ?? null,
-        chronology: scene.chronology,
-        entityIds,
-        chapterId: scene.chapterId,
-        expectedVersion: scene.version,
-      })
-      patchScene(scene.id, saved)
-      setAnnouncement(t('stories.page.loreReordered', { title: scene.title }))
-    } catch (error: unknown) {
-      patchScene(scene.id, { entities: scene.entities })
-      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
-      reload()
-    }
-  }
-
-  function patchScene(id: string, patch: Partial<Scene>) {
-    setState((current) =>
-      current.kind === 'ready'
-        ? {
-            ...current,
-            story: {
-              ...current.story,
-              scenes: current.story.scenes.map((scene) =>
-                scene.id === id ? { ...scene, ...patch } : scene,
-              ),
-            },
-          }
-        : current,
-    )
-  }
-
-  function patchArc(id: string, visibility: VisibilityValue) {
-    setState((current) =>
-      current.kind === 'ready'
-        ? {
-            ...current,
-            story: {
-              ...current.story,
-              arcs: current.story.arcs.map((arc) => (arc.id === id ? { ...arc, visibility } : arc)),
-            },
-          }
-        : current,
-    )
-  }
-
-  function showArcs(next: PlotArc[]) {
-    setState((current) =>
-      current.kind === 'ready'
-        ? {
-            ...current,
-            story: {
-              ...current.story,
-              arcs: next,
-              scenes: readingOrder(next, current.story.chapters, current.story.scenes),
-            },
-          }
-        : current,
-    )
-  }
-
-  /** One container's scenes replaced, the rest of the story left as it is. */
-  function showContainer(chapterId: string | null, replacement: Scene[]) {
-    setState((current) =>
-      current.kind === 'ready'
-        ? {
-            ...current,
-            story: {
-              ...current.story,
-              scenes: readingOrder(current.story.arcs, current.story.chapters, [
-                ...current.story.scenes.filter((scene) => scene.chapterId !== chapterId),
-                ...replacement,
-              ]),
-            },
-          }
-        : current,
-    )
-  }
-
-  function showChapters(nextChapters: Chapter[]) {
-    setState((current) =>
-      current.kind === 'ready'
-        ? {
-            ...current,
-            story: {
-              ...current.story,
-              chapters: nextChapters,
-              scenes: readingOrder(current.story.arcs, nextChapters, current.story.scenes),
-            },
-          }
-        : current,
-    )
-  }
-
-  /** Moves one scene one place inside its container, at once on screen, and puts it back if refused. */
-  async function moveWithin(scene: Scene, by: -1 | 1) {
-    if (isMoving.current) return
-
-    const container = scenesIn(scenes, scene.chapterId)
-    const from = container.findIndex((candidate) => candidate.id === scene.id)
-    const to = from + by
-    if (from < 0 || to < 0 || to >= container.length) return
-
-    const next = [...container]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
-
-    isMoving.current = true
-    setMessage(null)
-    pendingFocus.current = sceneMenu(scene.id)
-    showContainer(
-      scene.chapterId,
-      next.map((candidate, index) => ({ ...candidate, sortOrder: index })),
-    )
-
-    try {
-      showContainer(
-        scene.chapterId,
-        await reorderScenes(
-          universe.id,
-          story.id,
-          scene.chapterId,
-          next.map((candidate) => candidate.id),
-        ),
-      )
-      setAnnouncement(
-        hasChapters
-          ? t('stories.page.sceneMovedIn', {
-              title: scene.title,
-              n: to + 1,
-              total: next.length,
-              container: containerName(scene.chapterId),
-            })
-          : t('stories.page.sceneMoved', { title: scene.title, n: to + 1, total: next.length }),
-      )
-    } catch (error: unknown) {
-      showStory(story)
-      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
-    } finally {
-      isMoving.current = false
-    }
-  }
-
-  /** Moves one scene to the end of another chapter, or of Unchaptered. */
-  async function moveTo(scene: Scene, chapterId: string | null) {
-    if (isMoving.current) return
-
-    isMoving.current = true
-    setMessage(null)
-
-    try {
-      const saved = await moveScene(universe.id, story.id, scene.id, chapterId)
-      pendingFocus.current = sceneMenu(scene.id)
-      showStory(saved)
-
-      const count = scenesIn(saved.scenes, chapterId).length
-      setAnnouncement(
-        t('stories.page.sceneMovedTo', {
-          title: scene.title,
-          container: containerName(chapterId),
-          n: count,
-          total: count,
-        }),
-      )
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : t('stories.page.sceneMoveFailed'))
-      document.querySelector<HTMLElement>(sceneMenu(scene.id))?.focus()
-    } finally {
-      isMoving.current = false
-    }
-  }
-
-  /**
-   * Moves one chapter one place inside its arc - or among the chapters in no arc - at once on screen, and puts it back if
-   * refused. The story keeps one chapter order, so the move swaps it with its neighbour there.
-   */
-  async function moveChapter(chapter: Chapter, by: -1 | 1) {
-    if (isMoving.current) return
-
-    const arcId =
-      chapter.plotArcId !== null && arcIndex(chapter.plotArcId) >= 0 ? chapter.plotArcId : null
-    const group = arcId === null ? groups.unarced : groups.arcs[arcIndex(arcId)].chapters
-    const inGroup = group.findIndex((candidate) => candidate.id === chapter.id)
-    const neighbour = group[inGroup + by]
-    if (inGroup < 0 || !neighbour) return
-
-    const ordered = [...chapters].sort((a, b) => a.sortOrder - b.sortOrder)
-    const from = ordered.findIndex((candidate) => candidate.id === chapter.id)
-    const to = ordered.findIndex((candidate) => candidate.id === neighbour.id)
-    const next = [...ordered]
-    next[from] = neighbour
-    next[to] = chapter
-
-    isMoving.current = true
-    setMessage(null)
-    pendingFocus.current = `#chapter-${chapter.id} [data-testid="chapter-actions"]`
-    showChapters(next.map((candidate, index) => ({ ...candidate, sortOrder: index })))
-
-    try {
-      showChapters(
-        await reorderChapters(
-          universe.id,
-          story.id,
-          next.map((candidate) => candidate.id),
-        ),
-      )
-      setAnnouncement(
-        t('stories.page.chapterMoved', {
-          title: chapter.title,
-          n: inGroup + by + 1,
-          total: group.length,
-        }),
-      )
-    } catch (error: unknown) {
-      showStory(story)
-      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
-    } finally {
-      isMoving.current = false
-    }
-  }
-
-  /** Moves a chapter into another arc, last there, or out of every arc (ADR 0070). Its scenes go with it. */
-  async function moveChapterArc(chapter: Chapter, arcId: string | null) {
-    if (isMoving.current) return
-
-    isMoving.current = true
-    setMessage(null)
-    try {
-      await moveChapterToArc(universe.id, story.id, chapter.id, arcId)
-      pendingFocus.current = `#chapter-${chapter.id} [data-testid="chapter-actions"]`
-      const index = arcIndex(arcId)
-      setAnnouncement(
-        arcId === null || index < 0
-          ? t('stories.page.chapterNoArc', { title: chapter.title })
-          : t('stories.page.chapterMovedToArc', {
-              title: chapter.title,
-              label: arcLabel(index, groups.arcs[index].arc.title),
-            }),
-      )
-      reload()
-    } catch (error: unknown) {
-      setMessage(error instanceof ApiError ? error.message : t('stories.page.chapterMoveFailed'))
-    } finally {
-      isMoving.current = false
-    }
-  }
-
-  /** Moves one arc one place, at once on screen, and puts it back if refused. */
-  async function moveArc(arc: PlotArc, by: -1 | 1) {
-    if (isMoving.current) return
-
-    const ordered = groups.arcs.map((entry) => entry.arc)
-    const from = ordered.findIndex((candidate) => candidate.id === arc.id)
-    const to = from + by
-    if (from < 0 || to < 0 || to >= ordered.length) return
-
-    const next = [...ordered]
-    const [moved] = next.splice(from, 1)
-    next.splice(to, 0, moved)
-
-    isMoving.current = true
-    setMessage(null)
-    pendingFocus.current = `#arc-${arc.id} [data-testid="arc-actions"]`
-    showArcs(next.map((candidate, index) => ({ ...candidate, sortOrder: index })))
-
-    try {
-      showArcs(
-        await reorderPlotArcs(
-          universe.id,
-          story.id,
-          next.map((candidate) => candidate.id),
-        ),
-      )
-      setAnnouncement(
-        t('stories.page.arcMoved', { title: arc.title, n: to + 1, total: next.length }),
-      )
-    } catch (error: unknown) {
-      showStory(story)
-      setMessage(error instanceof ApiError ? error.message : t('stories.page.orderFailed'))
-    } finally {
-      isMoving.current = false
-    }
-  }
-
-  /** The arc alone goes to the Trash. Its chapters stay, in no arc until it is restored. */
-  async function removeArc(arc: PlotArc, index: number) {
-    const count = groups.arcs[index]?.chapters.length ?? 0
-    setMessage(null)
-    const removed = await confirmAction({
-      title: t('stories.page.removeArc.title', { label: arcLabel(index, arc.title) }),
-      message:
-        count === 0
-          ? t('stories.page.removeArc.empty')
-          : t('stories.page.removeArc.message', { chapters: chapterCountLabel(count) }),
-      confirmLabel: t('stories.page.removeArc.confirm'),
-      busyLabel: t('stories.page.removeArc.busy'),
-      variant: 'warning',
-      failure: t('stories.page.removeArc.failure'),
-      action: () => deletePlotArc(universe.id, story.id, arc.id),
-    })
-    if (!removed) return
-    setAnnouncement(t('stories.page.removeArc.done', { title: arc.title }))
-    reload()
-  }
-
-  async function removeScene(scene: Scene) {
-    setMessage(null)
-    const removed = await confirmAction({
-      title: tx('stories.page.removeScene.title', { title: <bdi>{scene.title}</bdi> }),
-      message:
-        scene.beats.length === 0
-          ? t('stories.page.removeScene.message')
-          : t('stories.page.removeScene.messageWithBeats'),
-      confirmLabel: t('stories.page.removeScene.confirm'),
-      busyLabel: t('stories.page.removeScene.busy'),
-      variant: 'warning',
-      failure: t('stories.page.removeScene.failure'),
-      action: () => deleteScene(universe.id, story.id, scene.id),
-    })
-    if (!removed) return
-    setAnnouncement(t('stories.page.removeScene.done', { title: scene.title }))
-    reload()
-  }
-
-  /** Removes the chapter only. Its scenes move, in order, to the end of Unchaptered. */
-  async function removeChapter(chapter: Chapter, index: number) {
-    const count = scenesIn(scenes, chapter.id).length
-    setMessage(null)
-    const removed = await confirmAction({
-      title: t('stories.page.removeChapter.title', { label: chapterLabel(index, chapter.title) }),
-      message:
-        count === 0
-          ? t('stories.page.removeChapter.messageEmpty')
-          : t('stories.page.removeChapter.message', { scenes: sceneCountLabel(count) }),
-      confirmLabel: t('stories.page.removeChapter.confirm'),
-      busyLabel: t('stories.page.removeChapter.busy'),
-      variant: 'warning',
-      failure: t('stories.page.removeChapter.failure'),
-      action: () => deleteChapter(universe.id, story.id, chapter.id),
-    })
-    if (!removed) return
-    setAnnouncement(
-      count === 0
-        ? t('stories.page.removeChapter.done', { title: chapter.title })
-        : t(
-            count === 1
-              ? 'stories.page.removeChapter.doneOne'
-              : 'stories.page.removeChapter.doneMany',
-            { title: chapter.title, scenes: sceneCountLabel(count) },
-          ),
-    )
-    reload()
-  }
-
-  async function removeStory() {
-    // What goes with the story, one line each, so its size is read before it is moved (Issue #50).
-    const details = [
-      ...(hasChapters ? [chapterCountLabel(chapters.length)] : []),
-      t('stories.page.removeStory.scenes', { scenes: sceneCountLabel(scenes.length) }),
-      ...(arcs.length > 0 ? [arcCountLabel(arcs.length)] : []),
-    ]
-    setMessage(null)
-    const removed = await confirmAction({
-      title: tx('stories.page.removeStory.title', { title: <bdi>{story.title}</bdi> }),
-      message: t('stories.page.removeStory.message'),
-      details,
-      confirmLabel: t('stories.page.removeStory.confirm'),
-      busyLabel: t('stories.page.removeStory.busy'),
-      variant: 'warning',
-      failure: t('stories.page.removeStory.failure'),
-      action: () => deleteStory(universe.id, story.id),
-    })
-    if (removed) {
-      // The last Writing project may have gone to the Trash: the sidebar follows (#272).
-      refreshProjects().catch(() => undefined)
-      navigate(`/app/universes/${universe.id}/writing`)
-    }
-  }
+  const { removeArc, removeScene, removeChapter, removeStory } = storyRemovals({
+    ...base,
+    t,
+    tx,
+    universe,
+    refreshProjects,
+    navigate,
+    reload,
+    setMessage,
+    story,
+    arcs,
+    chapters,
+    scenes,
+    hasChapters,
+    groups,
+  })
 
   function sceneCards(container: Scene[], titleLevel: 3 | 4 | 5) {
     return container.map((scene, index) => (
