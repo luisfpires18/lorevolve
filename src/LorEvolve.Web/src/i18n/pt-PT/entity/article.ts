@@ -42,7 +42,6 @@ const entityArticle: Dictionary['entity']['article'] = {
     'Este dispositivo não conseguiu manter uma cópia de recuperação destas alterações. Guarda para as manter.',
   save: 'Guardar',
   saving: 'A guardar…',
-  done: 'Concluído',
 }
 
 export default entityArticle

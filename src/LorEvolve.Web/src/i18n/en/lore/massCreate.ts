@@ -24,7 +24,6 @@ const loreMassCreate = {
     'Every type in this world has required fields, so its entries are created one at a time.',
   applied: { one: 'Applied the defaults to 1 row.', other: 'Applied the defaults to {n} rows.' },
   applyAll: 'Apply to all rows',
-  cancel: 'Cancel',
   chooseStatus: 'Choose a status',
   chooseType: 'Choose a type',
   columnName: 'Name',

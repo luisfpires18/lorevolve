@@ -15,7 +15,6 @@ const ai = {
     loading: 'Getting this universe’s address…',
     loadFailed: 'The address couldn’t be loaded. Close this and try again.',
     unavailable: 'Connecting AI apps isn’t set up on this LorEvolve yet.',
-    close: 'Close',
     urlLabel: 'MCP server URL',
     copy: 'Copy URL',
     urlHint:
@@ -106,7 +105,6 @@ const ai = {
       adding: 'Adding…',
       save: 'Save',
       add: 'Add record',
-      cancel: 'Cancel',
     },
   },
 }

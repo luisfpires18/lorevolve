@@ -153,7 +153,6 @@ const stories = {
     adding: 'Adding…',
     save: 'Save',
     add: 'Add chapter',
-    cancel: 'Cancel',
   },
   sceneForm: storiesSceneForm,
   arcForm: {
@@ -175,7 +174,6 @@ const stories = {
     adding: 'Adding…',
     save: 'Save',
     add: 'Add arc',
-    cancel: 'Cancel',
   },
   publication: storiesPublication,
   summaryForm: {
@@ -187,7 +185,6 @@ const stories = {
     count: '{count} of {max} characters',
     saving: 'Saving…',
     save: 'Save',
-    cancel: 'Cancel',
   },
   status: {
     planning: 'Planning',

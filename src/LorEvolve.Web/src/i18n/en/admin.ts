@@ -53,7 +53,7 @@ const admin = {
     heading: 'Database backups',
     reading: 'Reading…',
     startFailed: 'The backup could not be started.',
-    backingUp: 'Backing up',
+    backingUp: 'Backing up…',
     runNow: 'Run backup now',
     off: 'Off on this server. Turned on by the deployment’s settings: docs/recovery/database-backups.md.',
     lastVerified: {
@@ -124,7 +124,7 @@ const admin = {
     emailLabel: 'Their email address',
     emailFailed: 'The email could not be sent.',
     linkFailed: 'The link could not be made.',
-    sending: 'Sending',
+    sending: 'Sending…',
     emailLink: 'Email link',
     makeLink: 'Make link',
     sent: 'Sent to {to}. The link works until {time}.',

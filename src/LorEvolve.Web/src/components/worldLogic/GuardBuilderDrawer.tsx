@@ -85,7 +85,6 @@ export function GuardBuilderDrawer({
           disabled={load !== 'ready' || saving}
           submitTestId="guard-builder-save"
           onCancel={close}
-          cancelLabel={t(`${m}.cancel`)}
           cancelTestId="guard-builder-cancel"
         />
       )}

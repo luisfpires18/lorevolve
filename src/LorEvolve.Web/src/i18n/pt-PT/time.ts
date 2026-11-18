@@ -117,7 +117,6 @@ const time: Dictionary['time'] = {
     inUse: 'Em uso. Altera as datas que o usam antes de o remover.',
     add: 'Adicionar mês',
     saved: 'Guardado',
-    discard: 'Descartar alterações',
     savedStatus: 'Meses guardados.',
   },
   periods: timePeriods,
@@ -150,7 +149,6 @@ const time: Dictionary['time'] = {
     adding: 'A adicionar…',
     save: 'Guardar',
     add: 'Adicionar fase',
-    cancel: 'Cancelar',
     mode: {
       inherit: 'Do perfil principal',
       set: 'Definido para esta fase',

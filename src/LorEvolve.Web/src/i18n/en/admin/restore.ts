@@ -20,8 +20,7 @@ const adminRestore = {
     uploading: 'Uploading the backup… {percent}%',
   },
   check: 'Check backup',
-  checkBusy: 'Checking',
-  cancel: 'Cancel',
+  checkBusy: 'Checking…',
   refused: {
     heading: 'This backup cannot be restored',
     more: {
@@ -30,7 +29,6 @@ const adminRestore = {
     },
     note: 'No universe was created.',
     chooseAnother: 'Choose another file',
-    close: 'Close',
   },
   ready: {
     heading: 'Ready to restore',
@@ -41,7 +39,7 @@ const adminRestore = {
     archived: 'This universe was archived when it was backed up, and is restored archived.',
     nameLabel: 'Name of the new universe',
     submit: 'Restore as a new universe',
-    submitBusy: 'Restoring',
+    submitBusy: 'Restoring…',
     chooseAnother: 'Choose another file',
   },
   restoring: {

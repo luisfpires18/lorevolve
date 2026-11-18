@@ -162,7 +162,7 @@ export function FieldForm({
       <FormActions
         submitLabel={initial ? t('shell.actions.save') : t('projects.schema.addField')}
         busy={busy}
-        busyLabel={t('projects.schema.fieldSaving')}
+        busyLabel={initial ? t('projects.schema.fieldSaving') : t('projects.schema.fieldAdding')}
         submitTestId="project-field-new-save"
         onCancel={onCancel}
         cancelTestId="project-field-new-cancel"

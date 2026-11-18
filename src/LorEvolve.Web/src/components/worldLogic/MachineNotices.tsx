@@ -3,6 +3,7 @@ import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState
 import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -56,14 +57,11 @@ export function MachineNotices({
       {connecting ? (
         <div className="notice" role="status" data-testid="machine-connecting">
           <p>{t(`${m}.connecting`, { name: stateName.get(connecting) ?? '' })}</p>
-          <Button
-            tone="secondary"
+          <FormActions
             size="sm"
-            onClick={() => setConnecting(null)}
-            data-testid="machine-connecting-cancel"
-          >
-            {t(`${m}.cancel`)}
-          </Button>
+            onCancel={() => setConnecting(null)}
+            cancelTestId="machine-connecting-cancel"
+          />
         </div>
       ) : null}
     </>

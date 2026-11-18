@@ -41,7 +41,6 @@ const placesMapForm: Dictionary['places']['mapForm'] = {
   createMap: 'Criar mapa',
   saveDetails: 'Guardar',
   replacePicture: 'Substituir imagem',
-  cancel: 'Cancelar',
 }
 
 export default placesMapForm

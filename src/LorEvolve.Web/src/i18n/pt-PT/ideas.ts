@@ -52,7 +52,6 @@ const ideas: Dictionary['ideas'] = {
     emptyKind: 'Ainda não há nada deste tipo aqui. O conteúdo na Reciclagem não é apresentado.',
     added: 'Adicionada',
     add: 'Adicionar',
-    close: 'Fechar',
   },
   boardPicker: {
     inUniverse: 'Para um quadro em {universe}',
@@ -72,7 +71,6 @@ const ideas: Dictionary['ideas'] = {
     emptyEntries: 'Ainda não há lore neste universo.',
     placed: 'No quadro',
     add: 'Adicionar',
-    close: 'Fechar',
   },
   boards: {
     loadFailed: 'Não foi possível ler os quadros.',

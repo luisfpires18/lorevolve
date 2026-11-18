@@ -55,7 +55,6 @@ const universe: Dictionary['universe'] = {
     colourClear: 'Sem cor',
     colourHintSet: 'Assinala este universo no teu espaço de trabalho.',
     colourHintUnset: 'Sem cor: o universo usa a do próprio LorEvolve.',
-    cancel: 'Cancelar',
   },
   publicDetails: {
     leave: 'Os detalhes públicos têm alterações por guardar. Sair sem as guardar?',

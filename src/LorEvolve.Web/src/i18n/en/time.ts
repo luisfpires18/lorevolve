@@ -110,7 +110,6 @@ const time = {
     inUse: 'In use. Change its dates before removing it.',
     add: 'Add month',
     saved: 'Saved',
-    discard: 'Discard changes',
     savedStatus: 'Calendar saved.',
   },
   periods: timePeriods,
@@ -142,7 +141,6 @@ const time = {
     adding: 'Adding…',
     save: 'Save',
     add: 'Add stage',
-    cancel: 'Cancel',
     mode: {
       inherit: 'From the main profile',
       set: 'Set for this stage',

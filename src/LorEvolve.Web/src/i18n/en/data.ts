@@ -24,9 +24,8 @@ const data = {
       'What you did, what you expected, and what happened instead. The page you are on is sent with it.',
     hintFeature:
       'What it would let you do, and where you would use it. The page you are on is sent with it.',
-    sending: 'Sending',
+    sending: 'Sending…',
     send: 'Send',
-    cancel: 'Cancel',
   },
   connectedApps: {
     status: {
@@ -52,14 +51,14 @@ const data = {
     lastUsed: 'Last used {date}',
     neverUsed: 'Not used yet',
     makeReaderLabel: 'Make {client} a Reader of {universe}',
-    changing: 'Changing',
+    changing: 'Changing…',
     makeReader: 'Make Reader',
     disconnectLabel: 'Disconnect {client} from {universe}',
     disconnect: 'Disconnect',
     confirmTitle: 'Disconnect {client} from {universe}?',
     confirmNote:
       'The app loses access straight away. You stay signed in to LorEvolve, and your other connections keep working. You can connect it again later.',
-    disconnecting: 'Disconnecting',
+    disconnecting: 'Disconnecting…',
     keep: 'Keep',
     stopped:
       'It is a Reader now: it can still read, and can’t propose changes. What it already proposed can only be rejected.',
@@ -168,7 +167,6 @@ const data = {
       deleteNone: 'Delete permanently',
       selectPage: 'Select page',
       clear: 'Clear selection',
-      done: 'Done',
     },
     publish: {
       titleVisible: 'Restoring {name} makes it public again.',
@@ -184,14 +182,12 @@ const data = {
       restoreVisible: 'Restore and publish',
       restoreHidden: 'Restore, keep selected',
       restorePrivate: 'Restore as private',
-      cancel: 'Cancel',
     },
     erase: {
       title: 'Permanently delete the {kind} {name}?',
       cannotUndo: 'This cannot be undone.',
       deleting: 'Deleting…',
       delete: 'Delete permanently',
-      cancel: 'Cancel',
     },
     bulk: {
       title: {
@@ -203,7 +199,6 @@ const data = {
       cannotUndo: 'This cannot be undone.',
       deleting: 'Deleting…',
       delete: 'Delete permanently',
-      cancel: 'Cancel',
     },
   },
 }

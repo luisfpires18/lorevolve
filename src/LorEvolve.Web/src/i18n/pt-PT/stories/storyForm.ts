@@ -21,13 +21,12 @@ const storiesStoryForm: Dictionary['stories']['storyForm'] = {
   premisePlaceholder: 'Insere uma premissa',
   statusLabel: 'Estado',
   statusHint: 'Em que ponto estás da narração. Não diz nada sobre o cânone.',
-  sending: 'A enviar',
+  sending: 'A enviar…',
   sendSuggestion: 'Enviar sugestão',
   saving: 'A guardar…',
   creating: 'A criar…',
   save: 'Guardar',
   create: 'Criar história',
-  cancel: 'Cancelar',
 }
 
 export default storiesStoryForm

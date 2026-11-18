@@ -98,7 +98,6 @@ const entityTypes: Dictionary['entityTypes'] = {
     newName: 'Nome do novo grupo',
     namePlaceholder: 'Insere um nome de grupo',
     add: 'Adicionar',
-    cancel: 'Cancelar',
     createdHint: 'Criado quando guardares este tipo, com este tipo dentro.',
     elsewhere: 'Muda o nome, reordena ou elimina grupos no separador Grupos.',
   },
@@ -145,7 +144,6 @@ const entityTypes: Dictionary['entityTypes'] = {
     empty: 'Ainda não há grupos.',
     newNameFor: 'Novo nome para {name}',
     rename: 'Mudar o nome',
-    cancel: 'Cancelar',
     renameHintMany:
       'O novo nome aparece em todos os tipos que estão nele. {used} Os campos que ligam a ele continuam a funcionar.',
     renameHintOne: '{used} Os campos que ligam a ele continuam a funcionar.',
@@ -195,7 +193,6 @@ const entityTypes: Dictionary['entityTypes'] = {
     moveFieldDownTitle: 'Mover para baixo',
     saving: 'A guardar…',
     save: 'Guardar',
-    cancel: 'Cancelar',
   },
   fields: entityTypesFields,
   page: entityTypesPage,

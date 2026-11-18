@@ -27,11 +27,11 @@ const universeSettings: Dictionary['universe']['settings'] = {
   backup: 'Cópia de segurança',
   backupNote:
     'Um único ficheiro deste universo que o LorEvolve consegue restaurar: o lore, os tipos e campos, os artigos, as relações, a linha do tempo, as histórias e cenas, os mapas, as regras do mundo, as ideias, as tuas notas privadas, a reciclagem, as versões guardadas e todas as imagens tal como as carregaste. Sem dados da conta, colaboradores ou comentários, e sem indicar se é público: um universo restaurado é sempre privado.',
-  backupPreparing: 'A preparar a cópia de segurança',
+  backupPreparing: 'A preparar a cópia de segurança…',
   backupDownload: 'Transferir cópia de segurança',
   readableNote:
     'Uma exportação legível é o mesmo universo em páginas Markdown, uma por entrada, história, cena e mapa, com as imagens ao lado, para ler em qualquer editor ou guardar. Não inclui a reciclagem nem as versões guardadas, e o LorEvolve não consegue restaurar a partir dela.',
-  readablePreparing: 'A preparar a exportação',
+  readablePreparing: 'A preparar a exportação…',
   readableDownload: 'Transferir exportação legível',
   exportSaved: 'Guardado como {name}.',
   restore: 'Restaurar',
@@ -53,11 +53,10 @@ const universeSettings: Dictionary['universe']['settings'] = {
     'Arquivar apenas o tira da tua lista de ativos. A página pública, o lugar em Explorar e tudo o que publicaste nele continuam disponíveis para qualquer pessoa até o tornares privado em Publicação.',
   archiveConfirmUnknownNote:
     'O LorEvolve não conseguiu verificar se este universo é público. Arquivar nunca altera isso: se for público, continua público até o tornares privado em Publicação.',
-  archiving: 'A arquivar',
+  archiving: 'A arquivar…',
   archiveKeepPublic: 'Arquivar, manter público',
   archiveConfirmButton: 'Arquivar universo',
   makePrivateFirst: 'Torna-o privado primeiro',
-  archiveCancel: 'Cancelar',
   restoreUniverse: 'Restaurar universo',
   archiveUniverse: 'Arquivar universo',
   deleteHeading: 'Eliminar universo',

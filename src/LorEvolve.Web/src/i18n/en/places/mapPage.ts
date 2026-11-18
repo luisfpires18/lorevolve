@@ -39,7 +39,6 @@ const placesMapPage = {
     'Setting the scale: press the map to mark point A, then point B, or type where they are beside the map.',
   placing: 'Press the map where the pin goes, or {position}.',
   typePosition: 'type its position',
-  cancel: 'Cancel',
   markerA: 'A',
   markerB: 'B',
   panel: 'Pins and scale',

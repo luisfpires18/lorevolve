@@ -194,7 +194,6 @@ const entityTypesPage: Dictionary['entityTypes']['page'] = {
     saveChanges: 'Guardar',
     creating: 'A adicionar…',
     create: 'Adicionar tipo',
-    cancel: 'Cancelar',
   },
 }
 

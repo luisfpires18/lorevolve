@@ -23,8 +23,7 @@ const adminRestore: Dictionary['admin']['restore'] = {
     uploading: 'A carregar a cópia de segurança… {percent}%',
   },
   check: 'Verificar cópia',
-  checkBusy: 'A verificar',
-  cancel: 'Cancelar',
+  checkBusy: 'A verificar…',
   refused: {
     heading: 'Esta cópia de segurança não pode ser restaurada',
     more: {
@@ -33,7 +32,6 @@ const adminRestore: Dictionary['admin']['restore'] = {
     },
     note: 'Não foi criado nenhum universo.',
     chooseAnother: 'Escolher outro ficheiro',
-    close: 'Fechar',
   },
   ready: {
     heading: 'Pronta para restaurar',
@@ -44,7 +42,7 @@ const adminRestore: Dictionary['admin']['restore'] = {
     archived: 'Este universo estava arquivado quando foi copiado, e é restaurado arquivado.',
     nameLabel: 'Nome do novo universo',
     submit: 'Restaurar como novo universo',
-    submitBusy: 'A restaurar',
+    submitBusy: 'A restaurar…',
     chooseAnother: 'Escolher outro ficheiro',
   },
   restoring: {

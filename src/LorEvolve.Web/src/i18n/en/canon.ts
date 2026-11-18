@@ -170,7 +170,6 @@ const canon = {
     nameOf: 'Name of the new {word}',
     adding: 'Adding…',
     add: 'Add {word}',
-    cancel: 'Cancel',
   },
   terms: {
     notUsed: 'Not used',
@@ -196,7 +195,6 @@ const canon = {
     none: 'None yet.',
     renameLabel: 'Rename {name}',
     saveName: 'Save',
-    cancel: 'Cancel',
     renameAria: 'Rename {name}',
     rename: 'Rename',
     deleteAria: 'Delete {name}',

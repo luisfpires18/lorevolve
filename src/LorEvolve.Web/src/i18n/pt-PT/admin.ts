@@ -56,7 +56,7 @@ const admin: Dictionary['admin'] = {
     heading: 'Cópias de segurança da base de dados',
     reading: 'A ler…',
     startFailed: 'Não foi possível iniciar a cópia de segurança.',
-    backingUp: 'A copiar',
+    backingUp: 'A copiar…',
     runNow: 'Fazer cópia de segurança agora',
     off: 'Desativadas neste servidor. Ativam-se nas definições da implementação: docs/recovery/database-backups.md.',
     lastVerified: {
@@ -127,7 +127,7 @@ const admin: Dictionary['admin'] = {
     emailLabel: 'O endereço de email da pessoa',
     emailFailed: 'Não foi possível enviar o email.',
     linkFailed: 'Não foi possível criar a ligação.',
-    sending: 'A enviar',
+    sending: 'A enviar…',
     emailLink: 'Enviar por email',
     makeLink: 'Criar ligação',
     sent: 'Enviada para {to}. A ligação funciona até {time}.',

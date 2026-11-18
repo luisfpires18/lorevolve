@@ -18,7 +18,6 @@ const projectsEntries = {
   summary: 'Summary',
   saving: 'Saving…',
   delete: 'Move to Trash',
-  saveEdit: 'Save changes',
   canon: 'In the lore: {name}',
   values: 'Fields',
 }

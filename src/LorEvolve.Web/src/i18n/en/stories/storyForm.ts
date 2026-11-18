@@ -19,13 +19,12 @@ const storiesStoryForm = {
   premisePlaceholder: 'Insert a premise',
   statusLabel: 'Status',
   statusHint: 'Where you are with the telling. It says nothing about canon.',
-  sending: 'Sending',
+  sending: 'Sending…',
   sendSuggestion: 'Send suggestion',
   saving: 'Saving…',
   creating: 'Creating…',
   save: 'Save',
   create: 'Create story',
-  cancel: 'Cancel',
 }
 
 export default storiesStoryForm

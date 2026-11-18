@@ -60,7 +60,6 @@ const lorePage = {
   moveToTrash: 'Move to Trash',
   selectPage: 'Select page',
   clearSelection: 'Clear selection',
-  done: 'Done',
   trash: {
     title: { one: 'Move 1 entry to the Trash?', other: 'Move {n} entries to the Trash?' },
     message: {

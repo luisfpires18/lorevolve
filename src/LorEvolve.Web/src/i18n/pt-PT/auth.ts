@@ -20,7 +20,7 @@ const auth: Dictionary['auth'] = {
     password: 'Palavra-passe',
     forgot: 'Esqueceste-te da palavra-passe?',
     submit: 'Iniciar sessão',
-    submitting: 'A iniciar sessão',
+    submitting: 'A iniciar sessão…',
   },
   register: {
     heading: 'Criar conta',
@@ -46,7 +46,7 @@ const auth: Dictionary['auth'] = {
     sent: 'Se {email} tiver uma conta no LorEvolve, está um link a caminho. Funciona uma vez, durante 1 hora. Não chegou nada? Vê a pasta de spam, ou escreve para support@lorevolve.com.',
     email: 'Email',
     submit: 'Enviar o link',
-    submitting: 'A enviar',
+    submitting: 'A enviar…',
   },
   reset: {
     heading: 'Escolhe uma nova palavra-passe',
@@ -85,7 +85,7 @@ const auth: Dictionary['auth'] = {
     },
     ready: {
       intro: 'Foste convidado como {role}.',
-      working: 'A processar',
+      working: 'A processar…',
       accept: 'Aceitar o convite',
       decline: 'Recusar',
     },

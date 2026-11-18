@@ -25,7 +25,7 @@ const projectsStructure = {
   bodyLabel: 'Text',
   bodyPlaceholder: 'Insert the text',
   save: 'Save',
-  saving: 'Saving',
+  saving: 'Saving…',
   changed:
     'This was changed somewhere else after it was opened here. Nothing was overwritten. Close and open it again.',
   leave: 'Close without saving your changes?',
@@ -40,7 +40,6 @@ const projectsStructure = {
     sfxPlaceholder: 'Insert the sound effects',
     notes: 'Notes',
     notesPlaceholder: 'Insert notes for the artist',
-    save: 'Save panel',
     saved: 'Saved',
     panels: 'Panels',
     none: 'This page has no panels yet. Add them in the outline.',

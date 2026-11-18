@@ -36,11 +36,9 @@ const projects = {
    */
   common: {
     loading: 'Loading',
-    cancel: 'Cancel',
     more: 'More actions for {name}',
     moveUp: 'Move up',
     moveDown: 'Move down',
-    done: 'Done',
     addPicture: 'Add picture',
     changePicture: 'Change picture',
   },

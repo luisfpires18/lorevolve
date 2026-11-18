@@ -34,11 +34,9 @@ const projects = {
   },
   common: {
     loading: 'A ler',
-    cancel: 'Cancelar',
     more: 'Mais ações para {name}',
     moveUp: 'Mover para cima',
     moveDown: 'Mover para baixo',
-    done: 'Concluído',
     addPicture: 'Adicionar imagem',
     changePicture: 'Mudar imagem',
   },

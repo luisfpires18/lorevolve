@@ -51,7 +51,6 @@ const ideas = {
     emptyKind: 'Nothing of this kind here yet. Content in the Trash is not offered.',
     added: 'Added',
     add: 'Add',
-    close: 'Close',
   },
   boardPicker: {
     inUniverse: 'For a board in {universe}',
@@ -70,7 +69,6 @@ const ideas = {
     emptyEntries: 'No lore in this universe yet.',
     placed: 'On the board',
     add: 'Add',
-    close: 'Close',
   },
   boards: {
     loadFailed: 'The boards could not be read.',

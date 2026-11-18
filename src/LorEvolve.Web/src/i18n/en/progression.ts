@@ -249,7 +249,6 @@ const progression = {
     },
     saving: 'Saving…',
     adding: 'Adding…',
-    cancel: 'Cancel',
   },
 }
 

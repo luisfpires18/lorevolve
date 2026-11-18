@@ -39,7 +39,7 @@ const entityHistory: Dictionary['entity']['history'] = {
   restoredVersion: 'versão {number} restaurada',
   hide: 'Ocultar',
   view: 'Ver',
-  restoring: 'A restaurar',
+  restoring: 'A restaurar…',
   restore: 'Restaurar',
   opening: 'A abrir…',
   alsoKnownAs: 'também conhecida como {names}',

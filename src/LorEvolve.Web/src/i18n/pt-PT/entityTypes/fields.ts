@@ -147,7 +147,6 @@ const entityTypesFields: Dictionary['entityTypes']['fields'] = {
   saving: 'A guardar…',
   saveChanges: 'Guardar',
   adding: 'A adicionar…',
-  cancel: 'Cancelar',
 }
 
 export default entityTypesFields

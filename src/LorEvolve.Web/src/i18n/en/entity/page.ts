@@ -110,12 +110,11 @@ const entityPage = {
     unsaved: 'Unsaved changes',
     newEntry: 'New entry',
     noChanges: 'No changes yet',
-    sending: 'Sending',
+    sending: 'Sending…',
     send: 'Send suggestion',
     saving: 'Saving…',
     create: 'Create entry',
     save: 'Save changes',
-    cancel: 'Cancel',
     closeSuggestion: {
       title: 'Close the form without sending your suggestion?',
       message: 'It will be lost.',
