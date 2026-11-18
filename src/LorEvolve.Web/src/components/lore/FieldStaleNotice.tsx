@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
+import { Button } from '../Button'
 
 /** A field saved by someone else since the drawer opened: what is saved now, and the choice between it and the draft. */
 export function FieldStaleNotice({
@@ -29,23 +30,23 @@ export function FieldStaleNotice({
         )}
       </p>
       <p className="types__blockedlinks">
-        <button
-          className="button button--secondary button--sm"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
           onClick={() => takeSaved(latest)}
           data-testid="field-use-saved"
         >
           {t('entityTypes.fields.useSaved')}
-        </button>
+        </Button>
         {latest.archivedAt === null ? (
-          <button
-            className="button button--text button--sm"
-            type="button"
+          <Button
+            tone="text"
+            size="sm"
             onClick={() => keepMine(latest)}
             data-testid="field-keep-mine"
           >
             {t('entityTypes.fields.keepMine')}
-          </button>
+          </Button>
         ) : null}
       </p>
     </div>

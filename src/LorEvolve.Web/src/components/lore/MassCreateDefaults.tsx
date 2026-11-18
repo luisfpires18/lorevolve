@@ -5,6 +5,7 @@ import { hasRequiredFields } from '../../lore/massCreate'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue } from '../../lore/types'
 import type { EntityType } from '../../lore/typeDefinitions'
 import type { useMassRows } from '../../lore/useMassRows'
+import { Button } from '../Button'
 
 type Rows = ReturnType<typeof useMassRows>
 
@@ -82,14 +83,15 @@ export function MassCreateDefaults({
       </Field>
 
       {rows.length > 0 ? (
-        <button
-          className="button button--text button--sm masscreate__apply"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
+          className="masscreate__apply"
           onClick={applyDefaults}
           data-testid="mass-apply-defaults"
         >
           {t('lore.massCreate.applyAll')}
-        </button>
+        </Button>
       ) : null}
 
       {startingBlocked && startingType ? (

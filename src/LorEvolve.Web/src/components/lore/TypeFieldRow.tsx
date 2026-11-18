@@ -4,6 +4,7 @@ import { ActionMenu } from '../ActionMenu'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
+import { Button } from '../Button'
 
 /** One active field: its name and summary, Edit, the menu with Archive and Delete, and why it cannot be deleted. */
 export function TypeFieldRow({
@@ -48,9 +49,10 @@ export function TypeFieldRow({
       </div>
       {canEdit ? (
         <span className="fieldlist__actions">
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={Pencil}
             onClick={() => {
               clear()
               setEditing(field)
@@ -59,9 +61,8 @@ export function TypeFieldRow({
             aria-label={t('entityTypes.fields.editField', { name: field.name })}
             data-testid={`edit-field-${field.name}`}
           >
-            <ActionIcon icon={Pencil} />
             {t('entityTypes.fields.edit')}
-          </button>
+          </Button>
           <ActionMenu
             label={t('entityTypes.fields.moreActions', { name: field.name })}
             triggerTestId={`field-actions-${field.name}`}

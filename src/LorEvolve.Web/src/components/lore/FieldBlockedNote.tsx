@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Archive } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
+import { Button } from '../Button'
 
 /** Under a field that cannot be deleted: why, where its entries are, and archiving as the way out. */
 export function FieldBlockedNote({
@@ -29,15 +29,15 @@ export function FieldBlockedNote({
       <p className="types__blockedtext">{blocked.text}</p>
       <p className="types__blockedlinks">
         {field.archivedAt === null ? (
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={Archive}
             onClick={() => void archive(field)}
             data-testid={`archive-instead-${field.name}`}
           >
-            <ActionIcon icon={Archive} />
             {t('entityTypes.fields.archiveInstead')}
-          </button>
+          </Button>
         ) : null}
         {field.entryCount > field.trashedEntryCount ? (
           <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>

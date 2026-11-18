@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
+import { IconButton } from '../IconButton'
 
 /** The sections drawer's fields, under the group each is in: its section and its place in that group. */
 export function SectionFieldPlacer({
@@ -55,30 +56,24 @@ export function SectionFieldPlacer({
                   ))}
                 </select>
                 <span className="sectionlist__actions">
-                  <button
-                    className="iconbutton"
-                    type="button"
+                  <IconButton
+                    icon={ArrowUp}
+                    label={t('entityTypes.sections.moveFieldUp', { name: field.name })}
+                    title={t('entityTypes.sections.moveFieldUpTitle')}
                     onClick={() => shift(field.id, -1)}
                     disabled={index === 0}
-                    aria-label={t('entityTypes.sections.moveFieldUp', { name: field.name })}
-                    title={t('entityTypes.sections.moveFieldUpTitle')}
                     data-testid={`field-up-${field.name}`}
-                  >
-                    <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                  </button>
-                  <button
-                    className="iconbutton"
-                    type="button"
-                    onClick={() => shift(field.id, 1)}
-                    disabled={index === group.fields.length - 1}
-                    aria-label={t('entityTypes.sections.moveFieldDown', {
+                  />
+                  <IconButton
+                    icon={ArrowDown}
+                    label={t('entityTypes.sections.moveFieldDown', {
                       name: field.name,
                     })}
                     title={t('entityTypes.sections.moveFieldDownTitle')}
+                    onClick={() => shift(field.id, 1)}
+                    disabled={index === group.fields.length - 1}
                     data-testid={`field-down-${field.name}`}
-                  >
-                    <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                  </button>
+                  />
                 </span>
               </li>
             ))}

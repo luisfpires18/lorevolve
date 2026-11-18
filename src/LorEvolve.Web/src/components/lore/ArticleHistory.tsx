@@ -1,6 +1,5 @@
 import { useEffect, useId, useState } from 'react'
 import { History } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { LoreArticle } from '../ArticleView'
 import { VersionActor } from '../VersionActor'
 import { ApiError } from '../../lib/api'
@@ -20,6 +19,7 @@ import { RevisionKind } from '../../lore/revisions'
 import { confirmAction } from '../../lib/confirm'
 import { t, useI18n } from '../../i18n'
 import type { Stored } from '../../lore/useEntityArticle'
+import { Button } from '../Button'
 
 interface ArticleHistoryProps {
   universeId: string
@@ -150,17 +150,17 @@ export function ArticleHistory({
 
   return (
     <div className="article__history">
-      <button
-        className="button button--secondary article__historytoggle"
-        type="button"
+      <Button
+        tone="secondary"
+        icon={History}
+        className="article__historytoggle"
         aria-expanded={isOpen}
         aria-controls={bodyId}
         onClick={() => setIsOpen((open) => !open)}
         data-testid="article-history-toggle"
       >
-        <ActionIcon icon={History} />
         {t('entity.articleHistory.toggle')}
-      </button>
+      </Button>
 
       {isOpen ? (
         <div id={bodyId}>
@@ -204,9 +204,9 @@ export function ArticleHistory({
                   </div>
 
                   <div className="version__tools">
-                    <button
-                      className="button button--text button--sm"
-                      type="button"
+                    <Button
+                      tone="text"
+                      size="sm"
                       aria-expanded={viewing?.id === revision.id}
                       onClick={() => void view(revision.id)}
                       data-testid="article-version-view"
@@ -214,11 +214,11 @@ export function ArticleHistory({
                       {viewing?.id === revision.id
                         ? t('entity.articleHistory.hide')
                         : t('entity.articleHistory.view')}
-                    </button>
+                    </Button>
                     {index > 0 ? (
-                      <button
-                        className="button button--text button--sm"
-                        type="button"
+                      <Button
+                        tone="text"
+                        size="sm"
                         disabled={busyId !== null}
                         onClick={() => void restore(revision)}
                         data-testid="article-version-restore"
@@ -226,7 +226,7 @@ export function ArticleHistory({
                         {busyId === revision.id
                           ? t('entity.articleHistory.restoring')
                           : t('entity.articleHistory.restore')}
-                      </button>
+                      </Button>
                     ) : null}
                   </div>
 

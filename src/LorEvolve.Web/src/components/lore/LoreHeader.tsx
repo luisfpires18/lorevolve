@@ -1,7 +1,6 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { ListFilter, ListPlus, Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { PageHeader } from '../PageHeader'
 import { GroupSwitcher, TypeSwitcher } from '../TypeSwitcher'
 import { useI18n } from '../../i18n'
@@ -9,6 +8,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
+import { Button } from '../Button'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -88,17 +88,19 @@ export function LoreHeader({
         access.editContent ? (
           <>
             {/* Many names at once: beside New, never above it - the everyday way in stays the primary one. */}
-            <Link
-              className="button button--secondary lore__masscreate"
+            <Button
+              tone="secondary"
+              icon={ListPlus}
+              className="lore__masscreate"
               to={massCreateTo}
               title={t('lore.page.massCreateTitle')}
               data-testid="mass-create"
             >
-              <ActionIcon icon={ListPlus} />
               <span className="lore__masscreatelabel">{t('lore.page.massCreateLabel')}</span>
-            </Link>
-            <Link
-              className="button lore__create"
+            </Button>
+            <Button
+              icon={Plus}
+              className="lore__create"
               to={createTo}
               aria-label={
                 selectedType
@@ -107,13 +109,12 @@ export function LoreHeader({
               }
               data-testid="new-entity"
             >
-              <ActionIcon icon={Plus} />
               <span className="lore__createlabel">
                 {selectedType
                   ? tx('lore.page.newType', { type: <bdi>{selectedType.name}</bdi> })
                   : t('lore.page.newEntry')}
               </span>
-            </Link>
+            </Button>
           </>
         ) : undefined
       }
@@ -134,20 +135,20 @@ export function LoreHeader({
               groupHref={groupHref}
             />
             {chosenName ? (
-              <button
-                className="button button--secondary lore__filtertoggle"
-                type="button"
+              <Button
+                tone="secondary"
+                icon={ListFilter}
+                className="lore__filtertoggle"
                 aria-expanded={filtersOpen}
                 aria-controls={filtersId}
                 onClick={() => setFiltersOpen((open) => !open)}
                 data-testid="lore-filters-toggle"
               >
-                <ActionIcon icon={ListFilter} />
                 {t('lore.page.filters')}
                 {activeFilters > 0 ? (
                   <span className="lore__filtercount">{activeFilters}</span>
                 ) : null}
-              </button>
+              </Button>
             ) : null}
           </div>
           <GroupSwitcher

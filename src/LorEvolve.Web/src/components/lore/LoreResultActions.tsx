@@ -1,5 +1,4 @@
 import { ListChecks } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import { LORE_PAGE_SIZES } from '../../lore/api'
 import type { EntityPage, EntitySort } from '../../lore/types'
@@ -7,6 +6,7 @@ import { useUniverseAccess } from '../../universes/access'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
+import { Button } from '../Button'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -81,16 +81,16 @@ export function LoreResultActions({
             </div>
           ) : null}
           {access.manageTrash && (pageItems.length > 0 || isSelecting) ? (
-            <button
-              className="button button--secondary lore__select"
-              type="button"
+            <Button
+              tone="secondary"
+              icon={ListChecks}
+              className="lore__select"
               aria-pressed={isSelecting}
               onClick={() => (isSelecting ? stopSelecting() : setIsSelecting(true))}
               data-testid="lore-select"
             >
-              <ActionIcon icon={ListChecks} />
               {t('lore.page.select')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

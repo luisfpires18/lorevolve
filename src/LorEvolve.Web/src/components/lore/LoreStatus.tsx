@@ -7,6 +7,7 @@ import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
 import type { LoadState } from '../../lore/loreAddress'
 import type { ReactNode } from 'react'
+import { Button } from '../Button'
 type Entries = ReturnType<typeof useLoreEntries>
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -56,15 +57,14 @@ export function LoreStatus({
       {typesFailed ? (
         <div className="notice notice--error" role="alert" data-testid="lore-types-error">
           <p>{t('lore.page.typesFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               refreshTypes().catch(() => undefined)
             }}
           >
             {t('lore.page.retryTypes')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -101,16 +101,15 @@ export function LoreStatus({
       {view.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="lore-load-error">
           <p>{t('lore.page.loadFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((count) => count + 1)
             }}
           >
             {t('lore.page.retryLore')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </>

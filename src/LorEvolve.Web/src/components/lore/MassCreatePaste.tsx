@@ -1,6 +1,7 @@
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import type { useMassRows } from '../../lore/useMassRows'
+import { Button } from '../Button'
 
 type Rows = ReturnType<typeof useMassRows>
 
@@ -52,15 +53,15 @@ export function MassCreatePaste({
         )}
       </Field>
       <div>
-        <button
-          className="button button--secondary button--sm"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
           onClick={() => take(draft)}
           disabled={draft.trim() === ''}
           data-testid="mass-add-text"
         >
           {t('lore.massCreate.addToList')}
-        </button>
+        </Button>
       </div>
     </section>
   )

@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
+import { Button } from '../Button'
 
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -37,47 +37,38 @@ export function LoreSelectBar({
               : t('lore.page.selected', { n: selected.length })}
           </p>
           <div className="actionbar__actions">
-            <button
-              className="button"
-              type="button"
+            <Button
+              icon={Trash2}
               onClick={() => void trashSelected()}
               disabled={selected.length === 0 || isTrashing}
               aria-busy={isTrashing || undefined}
               data-testid="lore-trash-selected"
             >
-              <ActionIcon icon={Trash2} />
               {isTrashing
                 ? t('lore.page.moving')
                 : selected.length > 0
                   ? t('lore.page.moveSelected', { n: selected.length })
                   : t('lore.page.moveToTrash')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
               onClick={selectPage}
               disabled={pageItems.length === 0 || selected.length === pageItems.length}
               data-testid="lore-select-page"
             >
               {t('lore.page.selectPage')}
-            </button>
-            <button
-              className="button button--text"
-              type="button"
+            </Button>
+            <Button
+              tone="text"
               onClick={clearSelection}
               disabled={selected.length === 0}
               data-testid="lore-clear-selection"
             >
               {t('lore.page.clearSelection')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={stopSelecting}
-              data-testid="lore-select-done"
-            >
+            </Button>
+            <Button tone="secondary" onClick={stopSelecting} data-testid="lore-select-done">
               {t('lore.page.done')}
-            </button>
+            </Button>
           </div>
         </footer>
       ) : null}

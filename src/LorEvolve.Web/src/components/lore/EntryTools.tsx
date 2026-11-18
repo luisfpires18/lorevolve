@@ -7,6 +7,7 @@ import { ContentPublication } from '../ContentPublication'
 import type { EntityDetail } from '../../lore/types'
 import { useI18n } from '../../i18n'
 import type { UniverseCapabilities } from '../../universes/access'
+import { Button } from '../Button'
 
 /** The tools on the entry itself: publication, Edit or Suggest, Family tree, the private note and the menu. */
 export function EntryTools({
@@ -46,42 +47,40 @@ export function EntryTools({
         />
       ) : null}
       {access.editContent ? (
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
+          icon={Pencil}
           onClick={startEditing}
           disabled={isSaving}
           data-testid="edit-entity"
         >
-          <ActionIcon icon={Pencil} />
           {t('entity.page.tools.edit')}
-        </button>
+        </Button>
       ) : access.suggestChanges ? (
         // A Reviewer's way into the same form, where an Editor's Edit stands. Its icon alone on a phone.
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
+          icon={FilePenLine}
           onClick={startSuggesting}
           title={t('entity.page.tools.suggestTitle')}
           data-testid="suggest-entity"
         >
-          <ActionIcon icon={FilePenLine} />
           <span className="entry__toollabel">{t('entity.page.tools.suggestLabel')}</span>
-        </button>
+        </Button>
       ) : null}
       {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
                   already holding a family link - never decided by what the type is called (ADR 0040).
                   Its icon alone on a phone, still named, so the tools keep to one line. */}
       {offersFamilyTree ? (
-        <Link
-          className="button button--text"
+        <Button
+          tone="text"
+          icon={Network}
           to={`/app/universes/${universe.id}/family-tree/${entityId}`}
           title={t('entity.page.tools.familyTreeTitle')}
           data-testid="entity-family-tree"
         >
-          <ActionIcon icon={Network} />
           <span className="entry__toollabel">{t('entity.page.tools.familyTreeLabel')}</span>
-        </Link>
+        </Button>
       ) : null}
       {/* The owner's private note on the entry (issue 23): a tool on the entry itself, offered to the owner alone,
                   its icon alone on a phone like Family tree - the views line has no room for a second trigger at 390px. */}

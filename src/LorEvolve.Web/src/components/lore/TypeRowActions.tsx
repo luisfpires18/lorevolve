@@ -3,6 +3,7 @@ import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import { useI18n } from '../../i18n'
 import type { EntityType } from '../../lore/typeDefinitions'
+import { Button } from '../Button'
 
 /** A type row's actions: Up and Down, Add child, Edit, Fields, and the menu with Add child, the moves and Delete. */
 export function TypeRowActions({
@@ -47,15 +48,17 @@ export function TypeRowActions({
             {(['up', 'down'] as const).map((direction) => {
               const isEnd = direction === 'up' ? isFirst : isLast
               return (
-                <button
+                <Button
+                  tone="text"
+                  size="sm"
+                  icon={direction === 'up' ? ArrowUp : ArrowDown}
+                  className="types__movebutton"
                   key={direction}
                   ref={(element) => {
                     const key = `${type.id}:${direction}`
                     if (element) moveButtons.current.set(key, element)
                     else moveButtons.current.delete(key)
                   }}
-                  className="button button--text button--sm types__movebutton"
-                  type="button"
                   aria-disabled={isEnd || moving !== null || undefined}
                   aria-label={
                     direction === 'up'
@@ -74,28 +77,29 @@ export function TypeRowActions({
                   }}
                   data-testid={`move-${direction}-${type.name}`}
                 >
-                  <ActionIcon icon={direction === 'up' ? ArrowUp : ArrowDown} />
                   {direction === 'up' ? t('entityTypes.page.up') : t('entityTypes.page.down')}
-                </button>
+                </Button>
               )
             })}
           </span>
           {/* A type straight inside this one, its parent already chosen - the quick way to build a branch.
                           Quiet like Up and Down; on a phone it waits in the row's menu instead. Coming back from the
                           drawer, the focus is on this button again, ready for the next sibling. */}
-          <button
-            className="button button--text button--sm types__addchild"
-            type="button"
+          <Button
+            tone="text"
+            size="sm"
+            icon={ListTree}
+            className="types__addchild"
             onClick={() => openChild(type)}
             aria-label={t('entityTypes.page.addChildLabel', { name: type.name })}
             data-testid={`add-child-${type.name}`}
           >
-            <ActionIcon icon={ListTree} />
             {t('entityTypes.page.addChild')}
-          </button>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={Pencil}
             onClick={() => {
               setBlocked(null)
               setEditing(type)
@@ -103,14 +107,13 @@ export function TypeRowActions({
             aria-label={t('entityTypes.page.editLabel', { name: type.name })}
             data-testid={`edit-type-${type.name}`}
           >
-            <ActionIcon icon={Pencil} />
             {t('entityTypes.page.edit')}
-          </button>
+          </Button>
         </>
       ) : null}
-      <button
-        className="button button--secondary button--sm"
-        type="button"
+      <Button
+        tone="secondary"
+        size="sm"
         aria-expanded={openTypeId === type.id}
         aria-label={t('entityTypes.page.fieldsLabel', { name: type.name })}
         onClick={() => setOpenTypeId(openTypeId === type.id ? null : type.id)}
@@ -120,7 +123,7 @@ export function TypeRowActions({
         {type.fields.length > 0 ? (
           <span className="types__fieldcount">{type.fields.length}</span>
         ) : null}
-      </button>
+      </Button>
       {access.editContent ? (
         <ActionMenu
           label={t('entityTypes.page.moreActions', { name: type.name })}

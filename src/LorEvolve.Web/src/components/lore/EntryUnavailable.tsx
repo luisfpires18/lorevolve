@@ -3,6 +3,7 @@ import { EmptyState } from '../EmptyState'
 import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { UniverseCapabilities } from '../../universes/access'
+import { Button } from '../Button'
 
 /** The screens an entry shows instead of itself: missing, no types to make one of, a failed read, and opening. */
 export function EntryUnavailable({
@@ -48,9 +49,9 @@ export function EntryUnavailable({
         title={t('entity.page.noTypes.title')}
         hint={t('entity.page.noTypes.hint')}
         action={
-          <Link className="button" to={`/app/universes/${universe.id}/types`}>
+          <Button to={`/app/universes/${universe.id}/types`}>
             {t('entity.page.noTypes.action')}
-          </Link>
+          </Button>
         }
       />
     )
@@ -59,16 +60,15 @@ export function EntryUnavailable({
     return (
       <div className="notice notice--error" role="alert">
         <p>{t('entity.page.openFailed')}</p>
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           onClick={() => {
             setStatus('loading')
             setReads((count) => count + 1)
           }}
         >
           {t('entity.page.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

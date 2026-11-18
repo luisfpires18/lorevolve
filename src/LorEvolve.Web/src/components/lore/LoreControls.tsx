@@ -1,7 +1,6 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { ListFilter, X } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { LoreFieldFilters } from '../LoreFieldFilters'
 import { useI18n } from '../../i18n'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue, type EntityPage } from '../../lore/types'
@@ -9,6 +8,7 @@ import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { EntityType } from '../../lore/typeDefinitions'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
+import { Button } from '../Button'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -124,15 +124,16 @@ export function LoreControls({
 
       {/* Offered where the empty state does not offer it already. The focus goes to the search, which stays. */}
       {isFiltered && !(result && result.items.length === 0) ? (
-        <Link
-          className="button button--text lore__clearfilters"
+        <Button
+          tone="text"
+          icon={X}
+          className="lore__clearfilters"
           to={clearedSearch()}
           onClick={() => searchRef.current?.focus()}
           data-testid="lore-reset-filters"
         >
-          <ActionIcon icon={X} />
           {t('lore.page.clearFilters')}
-        </Link>
+        </Button>
       ) : null}
 
       {selectedGroup && fieldTypes.length > 0 ? (

@@ -9,6 +9,7 @@ import {
 } from '../../lore/massCreate'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue } from '../../lore/types'
 import type { useMassRows } from '../../lore/useMassRows'
+import { IconButton } from '../IconButton'
 
 type Rows = ReturnType<typeof useMassRows>
 
@@ -167,11 +168,9 @@ export function MassCreateRow({
         </select>
       </div>
 
-      <button
-        id={controlId('remove', row.key)}
-        className="iconbutton masscreate__remove"
-        type="button"
-        aria-label={
+      <IconButton
+        icon={X}
+        label={
           row.name.trim()
             ? t('lore.massCreate.removeRowNamed', {
                 number,
@@ -180,11 +179,11 @@ export function MassCreateRow({
             : t('lore.massCreate.removeRow', { number })
         }
         title={t('lore.massCreate.removeRowTitle')}
+        className="masscreate__remove"
+        id={controlId('remove', row.key)}
         onClick={() => removeRow(row.key)}
         data-testid="mass-row-remove"
-      >
-        <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-      </button>
+      />
 
       {hasMessages ? (
         <ul className="masscreate__messages" id={messagesId} data-testid="mass-row-messages">

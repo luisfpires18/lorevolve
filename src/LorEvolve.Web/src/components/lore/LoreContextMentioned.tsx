@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import type { SceneLoreReference } from '../../stories/types'
 import type { Mention } from '../../lore/mentions'
 import type { useUniverseAccess } from '../../universes/access'
+import { Button } from '../Button'
 
 /** The prose's @ mentions, each once, with its entry's name now, a preview, and Add to this scene's Lore. */
 export function LoreContextMentioned({
@@ -107,16 +108,16 @@ export function LoreContextMentioned({
                       </p>
                     </div>
                     {access.editContent && live && !isLinked ? (
-                      <button
-                        className="button button--text lorecontext__action"
-                        type="button"
+                      <Button
+                        tone="text"
+                        className="lorecontext__action"
                         aria-disabled={busy !== null}
                         aria-label={t('lore.context.addLabel', { name })}
                         onClick={() => void setLink({ id: mention.entityId, name }, true)}
                         data-testid="lore-context-mention-link"
                       >
                         {t('lore.context.add')}
-                      </button>
+                      </Button>
                     ) : null}
                   </li>
                 )
