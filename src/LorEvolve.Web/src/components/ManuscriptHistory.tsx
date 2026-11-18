@@ -1,22 +1,19 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { plainMentions } from '../lore/mentions'
-import { VersionActor } from './VersionActor'
-import { t, useI18n } from '../i18n'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { formatDateTime } from '../lib/dates'
 import {
   getManuscriptRevision,
   listManuscriptRevisions,
   MANUSCRIPT_CHANGED,
   restoreManuscriptRevision,
 } from '../stories/api'
-import {
-  ManuscriptRevisionKind,
-  type ManuscriptRevisionDetail,
-  type ManuscriptRevisionSummary,
-  type SceneManuscript,
+import type {
+  ManuscriptRevisionDetail,
+  ManuscriptRevisionSummary,
+  SceneManuscript,
 } from '../stories/types'
 import { confirmAction } from '../lib/confirm'
+import { ManuscriptRevision } from './stories/ManuscriptRevision'
 
 interface ManuscriptHistoryProps {
   /** The panel's id, which the toggle that opens it controls. */
@@ -38,23 +35,6 @@ interface ManuscriptHistoryProps {
 
   /** A restore found the prose had been saved elsewhere since: read it again. */
   onStale: () => void
-}
-
-/** What a version was, in a few words. */
-function describeVersion(
-  revision: ManuscriptRevisionSummary,
-  revisions: ManuscriptRevisionSummary[],
-) {
-  if (revision.kind === ManuscriptRevisionKind.Restored) {
-    const from = revisions.find((candidate) => candidate.id === revision.restoredFromRevisionId)
-    return from
-      ? t('manuscript.history.restoredFrom', { number: from.number })
-      : t('manuscript.history.restoredEarlier')
-  }
-  if (revision.isEmpty) return t('manuscript.history.emptied')
-  return revision.kind === ManuscriptRevisionKind.Created
-    ? t('manuscript.history.first')
-    : t('manuscript.history.saved')
 }
 
 /**
@@ -214,91 +194,21 @@ export function ManuscriptHistory({
         <p className="history__quiet">{t('manuscript.history.none')}</p>
       ) : (
         <ol className="history__list" data-testid="manuscript-history-list">
-          {revisions.map((revision, index) => {
-            const isViewing = viewing?.id === revision.id
-            const snapshotId = `${id}-version-${revision.number}`
-            return (
-              <li className="version" key={revision.id} data-version={revision.number}>
-                <p className="version__when">
-                  <time dateTime={revision.createdAt}>{formatDateTime(revision.createdAt)}</time>
-                </p>
-
-                <div className="version__body">
-                  <p className="version__what" data-testid="manuscript-version-what">
-                    {describeVersion(revision, revisions)}
-                    {index === 0 ? (
-                      <span className="version__now">{t('manuscript.history.savedNow')}</span>
-                    ) : null}
-                  </p>
-                  <p className="version__meta">
-                    <span>{t('manuscript.history.version', { number: revision.number })}</span>
-                    <VersionActor name={revision.actorName} />
-                  </p>
-                </div>
-
-                <div className="version__tools">
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    aria-expanded={isViewing}
-                    aria-controls={snapshotId}
-                    aria-label={t(
-                      isViewing
-                        ? 'manuscript.history.hideVersion'
-                        : 'manuscript.history.viewVersion',
-                      { number: revision.number },
-                    )}
-                    onClick={() => void view(revision.id)}
-                    data-testid="manuscript-version-view"
-                  >
-                    {isViewing ? t('manuscript.history.hide') : t('manuscript.history.view')}
-                  </button>
-                  {index > 0 ? (
-                    <button
-                      className="button button--text button--sm"
-                      type="button"
-                      disabled={blocked !== null}
-                      aria-describedby={blocked ? blockedId : undefined}
-                      aria-label={t('manuscript.history.restoreVersion', {
-                        number: revision.number,
-                      })}
-                      onClick={() => void restore(revision)}
-                      data-testid="manuscript-version-restore"
-                    >
-                      {busyId === revision.id
-                        ? t('manuscript.history.restoring')
-                        : t('manuscript.history.restoreButton')}
-                    </button>
-                  ) : null}
-                </div>
-
-                {isViewing ? (
-                  <div
-                    className="version__snapshot"
-                    id={snapshotId}
-                    data-testid="manuscript-version-snapshot"
-                  >
-                    {viewing.detail === null ? (
-                      <p className="history__quiet" role="status">
-                        {t('manuscript.history.opening')}
-                      </p>
-                    ) : viewing.detail.content === '' ? (
-                      <p className="entry__blank">{t('manuscript.history.noText')}</p>
-                    ) : (
-                      <div
-                        className="mshistory__text prose"
-                        role="region"
-                        aria-label={t('manuscript.history.textOf', { number: revision.number })}
-                        tabIndex={0}
-                      >
-                        {plainMentions(viewing.detail.content)}
-                      </div>
-                    )}
-                  </div>
-                ) : null}
-              </li>
-            )
-          })}
+          {revisions.map((revision, index) => (
+            <ManuscriptRevision
+              key={revision.id}
+              revision={revision}
+              index={index}
+              revisions={revisions}
+              id={id}
+              blocked={blocked}
+              blockedId={blockedId}
+              viewing={viewing}
+              busyId={busyId}
+              view={view}
+              restore={restore}
+            />
+          ))}
         </ol>
       )}
     </section>
