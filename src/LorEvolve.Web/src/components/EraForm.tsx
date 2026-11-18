@@ -1,55 +1,22 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import {
-  ChronologyPointFields,
-  type ChronologyPointDraft,
-  type ChronologyPointPart,
-} from './ChronologyPointFields'
-import { EditConflict } from './EditConflict'
-import type { EntityChoice } from './EntityPicker'
-import { FieldInput } from './FieldInputs'
+import { useEffect } from 'react'
 import { hasCalendar, namesEras } from '../chronology/format'
-import type { Chronology, ChronologyValue } from '../chronology/types'
+import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
-import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
-import { emptyValue } from '../lore/document'
-import { renderFact } from '../lore/facts'
-import type { FieldValue, FieldValueInput } from '../lore/types'
+import type { FieldValue } from '../lore/types'
 import type { FieldDefinition } from '../lore/typeDefinitions'
-import {
-  eraInputOf,
-  getProgression,
-  PROGRESSION_CHANGED,
-  saveProgression,
-} from '../progression/api'
-import type { Era, EraFieldInput, EraScene, EraStory, Progression } from '../progression/types'
-import { chronologyOf, EMPTY_POINT } from '../stories/sceneDraft'
-import { getStory, listStories } from '../stories/api'
-import { readingOrder } from '../stories/structure'
-import type { StorySummary } from '../stories/types'
-
-type Mode = 'inherit' | 'set' | 'cleared'
-
-interface FieldDraft {
-  mode: Mode
-  value: FieldValueInput
-  /** The entry an existing override links to, named as it was read, so the picker shows it until it is changed. */
-  held: EntityChoice | null
-}
-
-interface EraDraft {
-  name: string
-  description: string
-  start: ChronologyPointDraft
-  end: ChronologyPointDraft
-  stories: EraStory[]
-  scenes: EraScene[]
-  fields: Record<string, FieldDraft>
-}
+import type { Era, Progression } from '../progression/types'
+import { inputOf } from '../progression/eraDraft'
+import { useEraFormState } from '../progression/useEraFormState'
+import { eraFormActions } from '../progression/eraFormActions'
+import { EraConflict } from './progression/EraConflict'
+import { EraNameFields } from './progression/EraNameFields'
+import { EraPoint } from './progression/EraPoint'
+import { EraFieldRow } from './progression/EraFieldRow'
+import { EraStories } from './progression/EraStories'
 
 interface EraFormProps {
   universeId: string
@@ -65,99 +32,6 @@ interface EraFormProps {
   era: Era | null
   onClose: () => void
   onSaved: (progression: Progression) => void
-}
-
-function text(value: number | null | undefined) {
-  return value === null || value === undefined ? '' : String(value)
-}
-
-function pointDraft(value: ChronologyValue | null): ChronologyPointDraft {
-  return value
-    ? {
-        eraId: value.eraId ?? '',
-        year: text(value.year),
-        month: value.monthId ?? text(value.month),
-        day: text(value.day),
-      }
-    : EMPTY_POINT
-}
-
-function draftOf(era: Era | null, definitions: FieldDefinition[]): EraDraft {
-  const overrides = new Map((era?.fields ?? []).map((field) => [field.fieldDefinitionId, field]))
-
-  return {
-    name: era?.name ?? '',
-    description: era?.description ?? '',
-    start: pointDraft(era?.start ?? null),
-    end: pointDraft(era?.end ?? null),
-    stories: era?.stories ?? [],
-    scenes: era?.scenes ?? [],
-    fields: Object.fromEntries(
-      definitions.map((definition) => {
-        const override = overrides.get(definition.id)
-        const value: FieldValueInput = override
-          ? {
-              fieldDefinitionId: definition.id,
-              text: override.text,
-              number: override.number,
-              boolean: override.boolean,
-              date: override.date,
-              optionIds: override.optionIds,
-              referencedEntityId: override.referencedEntityId,
-              eraId: override.eraId,
-            }
-          : emptyValue(definition)
-        return [
-          definition.id,
-          {
-            mode: override ? (override.cleared ? 'cleared' : 'set') : 'inherit',
-            value,
-            held: override?.referencedEntityId
-              ? {
-                  id: override.referencedEntityId,
-                  name: override.referencedEntityIsTrashed
-                    ? t('time.eraForm.heldInTrash', {
-                        name: override.referencedEntityName ?? t('time.eraForm.unavailable'),
-                      })
-                    : (override.referencedEntityName ?? t('time.eraForm.unavailable')),
-                }
-              : null,
-          },
-        ]
-      }),
-    ),
-  }
-}
-
-function inputOf(draft: EraDraft, id: string | null, reckonsInEras: boolean, custom: boolean) {
-  const fields: EraFieldInput[] = Object.values(draft.fields)
-    .filter((field) => field.mode !== 'inherit')
-    .map((field) =>
-      field.mode === 'cleared'
-        ? {
-            fieldDefinitionId: field.value.fieldDefinitionId,
-            cleared: true,
-            text: null,
-            number: null,
-            boolean: null,
-            date: null,
-            optionIds: null,
-            referencedEntityId: null,
-            eraId: null,
-          }
-        : { ...field.value, cleared: false },
-    )
-
-  return {
-    id,
-    name: draft.name.trim(),
-    description: draft.description.trim() === '' ? null : draft.description.trim(),
-    start: chronologyOf(draft.start, reckonsInEras, custom),
-    end: chronologyOf(draft.end, reckonsInEras, custom),
-    storyIds: draft.stories.map((story) => story.id),
-    sceneIds: draft.scenes.map((scene) => scene.id),
-    fields,
-  }
 }
 
 /**
@@ -181,18 +55,24 @@ export function EraForm({
   onSaved,
 }: EraFormProps) {
   useI18n()
-  const nameInput = useRef<HTMLInputElement>(null)
-  const saveButton = useRef<HTMLButtonElement>(null)
+  const state = useEraFormState({ progression, era, definitions })
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
 
-  const [base, setBase] = useState(progression)
-  const [initial] = useState(() => draftOf(era, definitions))
-  const [draft, setDraft] = useState(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [conflict, setConflict] = useState(false)
+  const {
+    nameInput,
+    saveButton,
+    base,
+    setBase,
+    initial,
+    draft,
+    setDraft,
+    fieldErrors,
+    message,
+    isSaving,
+    conflict,
+    setConflict,
+  } = state
 
   const isDirty =
     payloadKey(inputOf(draft, null, reckonsInEras, custom)) !==
@@ -207,56 +87,16 @@ export function EraForm({
   const key = `eras[${index === -1 ? base.eras.length : index}]`
   const errorOf = (part: string) => fieldErrors[`${key}.${part}`.toLowerCase()]
 
-  function edit(change: Partial<EraDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
-  function editField(id: string, change: Partial<FieldDraft>) {
-    setDraft((current) => ({
-      ...current,
-      fields: { ...current.fields, [id]: { ...current.fields[id], ...change } },
-    }))
-  }
-
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
-
-    const shown = new Set(definitions.map((definition) => definition.id))
-    const typed = inputOf(draft, era?.id ?? null, reckonsInEras, custom)
-    // An override of a field this form does not show - the type's fields could not be read, say - goes back exactly as it
-    // was read: what the form cannot show, it never clears.
-    const kept = era
-      ? eraInputOf(era).fields.filter((field) => !shown.has(field.fieldDefinitionId))
-      : []
-    const mine = { ...typed, fields: [...kept, ...typed.fields] }
-    const eras = base.eras.map((one) => (one.id === era?.id ? mine : eraInputOf(one)))
-
-    try {
-      const saved = await saveProgression(universeId, entityId, {
-        eras: era && eras.some((one) => one.id === era.id) ? eras : [...eras, mine],
-        expectedVersion: base.version,
-      })
-      onSaved(saved)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('time.eraForm.needChange'),
-        )
-      } else {
-        setMessage(t('time.eraForm.saveFailed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { edit, editField, save } = eraFormActions({
+    ...state,
+    universeId,
+    entityId,
+    definitions,
+    era,
+    onSaved,
+    reckonsInEras,
+    custom,
+  })
 
   return (
     <Drawer
@@ -309,65 +149,26 @@ export function EraForm({
       ) : null}
 
       {conflict ? (
-        <EditConflict
-          what={t('time.eraForm.conflictWhat')}
-          read={() => getProgression(universeId, entityId)}
-          renderLatest={(latest) => (
-            <ul className="namelist">
-              {latest.eras.map((one) => (
-                <li key={one.id}>{one.name}</li>
-              ))}
-            </ul>
-          )}
-          onKeepMine={(latest) => {
-            setBase(latest)
-            setConflict(false)
-            requestAnimationFrame(() => saveButton.current?.focus())
-          }}
-          onUseLatest={(latest) => {
-            setBase(latest)
-            const reread = latest.eras.find((one) => one.id === era?.id) ?? null
-            setDraft(draftOf(reread, definitions))
-            setConflict(false)
-            requestAnimationFrame(() => nameInput.current?.focus())
-          }}
-          testId="era-conflict"
+        <EraConflict
+          universeId={universeId}
+          entityId={entityId}
+          era={era}
+          definitions={definitions}
+          setBase={setBase}
+          setDraft={setDraft}
+          setConflict={setConflict}
+          nameInput={nameInput}
+          saveButton={saveButton}
         />
       ) : null}
 
-      <Field id="era-name" label={t('time.eraForm.name')} error={errorOf('name')}>
-        {(control) => (
-          <input
-            {...control}
-            ref={nameInput}
-            className="field__input"
-            dir="auto"
-            placeholder={t('time.eraForm.namePlaceholder')}
-            value={draft.name}
-            onChange={(event) => edit({ name: event.target.value })}
-            data-testid="era-name-input"
-          />
-        )}
-      </Field>
-
-      <Field
-        id="era-description"
-        label={t('time.eraForm.happens')}
-        hint={t('time.eraForm.happensHint', { name: entityName })}
-        error={errorOf('description')}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            dir="auto"
-            value={draft.description}
-            onChange={(event) => edit({ description: event.target.value })}
-            data-testid="era-description-input"
-          />
-        )}
-      </Field>
+      <EraNameFields
+        entityName={entityName}
+        draft={draft}
+        edit={edit}
+        errorOf={errorOf}
+        nameInput={nameInput}
+      />
 
       <Field
         group="fieldset"
@@ -430,348 +231,5 @@ export function EraForm({
         </Field>
       ) : null}
     </Drawer>
-  )
-}
-
-function EraPoint({
-  label,
-  prefix,
-  errorKey,
-  chronology,
-  value,
-  fieldErrors,
-  onChange,
-}: {
-  label: string
-  prefix: string
-  errorKey: string
-  chronology: Chronology
-  value: ChronologyPointDraft
-  fieldErrors: Record<string, string>
-  onChange: (next: ChronologyPointDraft) => void
-}) {
-  useI18n()
-  const error = (part: string) => fieldErrors[`${errorKey}.${part}`.toLowerCase()]
-
-  return (
-    <fieldset className="erapoint" data-testid={prefix}>
-      <legend className="erapoint__label">{label}</legend>
-      <ChronologyPointFields
-        chronology={chronology}
-        ids={{
-          eraId: `${prefix}-eraId`,
-          year: `${prefix}-year`,
-          month: `${prefix}-month`,
-          day: `${prefix}-day`,
-        }}
-        eraLabel={t('time.eraForm.pointEra', { label })}
-        yearLabel={t('time.eraForm.pointYear', { label })}
-        value={value}
-        onChange={(part: ChronologyPointPart, next: string) => onChange({ ...value, [part]: next })}
-        errors={{
-          eraId: error('eraId'),
-          year: error('year'),
-          month: error('month'),
-          day: error('day'),
-        }}
-      />
-    </fieldset>
-  )
-}
-
-/** Looked up when drawn, never frozen at import, so a change of language shows. */
-function modeLabel(mode: Mode) {
-  if (mode === 'inherit') return t('time.eraForm.mode.inherit')
-  return mode === 'set' ? t('time.eraForm.mode.set') : t('time.eraForm.mode.cleared')
-}
-
-function EraFieldRow({
-  definition,
-  field,
-  inherited,
-  universeId,
-  entityId,
-  chronology,
-  error,
-  onChange,
-}: {
-  definition: FieldDefinition
-  field: FieldDraft
-  inherited: FieldValue | null
-  universeId: string
-  entityId: string
-  chronology: Chronology
-  error?: string
-  onChange: (change: Partial<FieldDraft>) => void
-}) {
-  useI18n()
-  const id = useId()
-  const errorId = `${id}-error`
-
-  return (
-    <div className="erafield" data-testid={`era-field-${definition.name}`}>
-      <div className="erafield__head">
-        <label className="erafield__name" htmlFor={id}>
-          {definition.name}
-        </label>
-        <select
-          id={id}
-          className="field__input field__input--select erafield__mode"
-          value={field.mode}
-          onChange={(event) => onChange({ mode: event.target.value as Mode })}
-          aria-label={t('time.eraForm.fieldInStage', { name: definition.name })}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
-          data-testid={`era-field-mode-${definition.name}`}
-        >
-          {(['inherit', 'set', 'cleared'] as Mode[])
-            .filter((mode) => mode !== 'cleared' || !definition.isRequired)
-            .map((mode) => (
-              <option key={mode} value={mode}>
-                {modeLabel(mode)}
-              </option>
-            ))}
-        </select>
-      </div>
-
-      {field.mode === 'inherit' ? (
-        <p className="erafield__inherited">
-          {inherited ? renderFact(inherited, chronology) : t('time.eraForm.notSetOnMain')}
-        </p>
-      ) : field.mode === 'set' ? (
-        <FieldInput
-          definition={definition}
-          value={field.value}
-          universeId={universeId}
-          excludeId={entityId}
-          heldReference={field.held}
-          chronology={chronology}
-          onChange={(value) => onChange({ value })}
-        />
-      ) : (
-        <p className="erafield__inherited">{t('time.eraForm.leftEmpty')}</p>
-      )}
-
-      {error ? (
-        <p className="field__error" id={errorId}>
-          {error}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-/**
- * The stories an era covers, and scenes of those stories: each chosen one as a token with Remove, the universe's other live
- * stories to add, and the chosen stories' scenes in reading order. A story or scene in the Trash stays chosen and says so; it
- * is never offered.
- */
-function EraStories({
-  universeId,
-  stories,
-  scenes,
-  onChange,
-  storyError,
-  sceneError,
-}: {
-  universeId: string
-  stories: EraStory[]
-  scenes: EraScene[]
-  onChange: (stories: EraStory[], scenes: EraScene[]) => void
-  storyError?: string
-  sceneError?: string
-}) {
-  useI18n()
-  const storySelect = useId()
-  const sceneSelect = useId()
-  const [available, setAvailable] = useState<StorySummary[] | null>(null)
-  const [storyScenes, setStoryScenes] = useState<Record<string, EraScene[]>>({})
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listStories(universeId, controller.signal)
-      .then(setAvailable)
-      .catch(() => {
-        if (!controller.signal.aborted) setAvailable([])
-      })
-    return () => controller.abort()
-  }, [universeId])
-
-  const storyKey = stories.map((story) => story.id).join(',')
-
-  useEffect(() => {
-    const controller = new AbortController()
-    for (const story of stories) {
-      if (story.isTrashed || storyScenes[story.id]) continue
-      getStory(universeId, story.id, controller.signal)
-        .then((detail) =>
-          setStoryScenes((current) => ({
-            ...current,
-            [story.id]: readingOrder(detail.arcs, detail.chapters, detail.scenes).map((scene) => ({
-              id: scene.id,
-              storyId: detail.id,
-              title: scene.title,
-              storyTitle: detail.title,
-              isTrashed: false,
-            })),
-          })),
-        )
-        .catch(() => undefined)
-    }
-    return () => controller.abort()
-    // Read again only when the chosen stories change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [universeId, storyKey])
-
-  const chosenStories = new Set(stories.map((story) => story.id))
-  const chosenScenes = new Set(scenes.map((scene) => scene.id))
-  const offeredStories = (available ?? []).filter((story) => !chosenStories.has(story.id))
-  const offeredScenes = stories.flatMap((story) =>
-    (storyScenes[story.id] ?? []).filter((scene) => !chosenScenes.has(scene.id)),
-  )
-
-  return (
-    <>
-      <Field
-        id={storySelect}
-        className="storylinks"
-        label={t('time.eraForm.stories')}
-        hint={t('time.eraForm.storiesHint')}
-        error={storyError}
-        data-testid="era-stories"
-      >
-        {(control) => (
-          <>
-            {stories.length > 0 ? (
-              <ul className="storylinks__list">
-                {stories.map((story) => (
-                  <li className="token" key={story.id} data-testid="era-story">
-                    <bdi>{story.title}</bdi>
-                    {story.isTrashed ? (
-                      <span className="token__note"> {t('time.eraForm.storyInTrash')}</span>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="token__remove"
-                      aria-label={t('time.eraForm.removeStory', { title: story.title })}
-                      onClick={() =>
-                        onChange(
-                          stories.filter((one) => one.id !== story.id),
-                          scenes.filter((scene) => scene.storyId !== story.id),
-                        )
-                      }
-                    >
-                      &times;
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value=""
-              disabled={available === null || offeredStories.length === 0}
-              onChange={(event) => {
-                const story = offeredStories.find((one) => one.id === event.target.value)
-                if (story)
-                  onChange(
-                    [...stories, { id: story.id, title: story.title, isTrashed: false }],
-                    scenes,
-                  )
-              }}
-              data-testid="era-story-add"
-            >
-              <option value="">
-                {available === null
-                  ? t('time.eraForm.readingStories')
-                  : available.length === 0
-                    ? t('time.eraForm.noStories')
-                    : offeredStories.length === 0
-                      ? t('time.eraForm.allChosen')
-                      : t('time.eraForm.addStory')}
-              </option>
-              {offeredStories.map((story) => (
-                <option key={story.id} value={story.id}>
-                  {story.title}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-      </Field>
-
-      {stories.length > 0 ? (
-        <Field
-          id={sceneSelect}
-          className="storylinks"
-          label={t('time.eraForm.scenes')}
-          hint={t('time.eraForm.scenesHint')}
-          error={sceneError}
-          data-testid="era-scenes"
-        >
-          {(control) => (
-            <>
-              {scenes.length > 0 ? (
-                <ul className="storylinks__list">
-                  {scenes.map((scene) => (
-                    <li className="token" key={scene.id} data-testid="era-scene">
-                      <bdi>{scene.title}</bdi>
-                      {scene.isTrashed ? (
-                        <span className="token__note"> {t('time.eraForm.sceneInTrash')}</span>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="token__remove"
-                        aria-label={t('time.eraForm.removeScene', { title: scene.title })}
-                        onClick={() =>
-                          onChange(
-                            stories,
-                            scenes.filter((one) => one.id !== scene.id),
-                          )
-                        }
-                      >
-                        &times;
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value=""
-                disabled={offeredScenes.length === 0}
-                onChange={(event) => {
-                  const scene = offeredScenes.find((one) => one.id === event.target.value)
-                  if (scene) onChange(stories, [...scenes, scene])
-                }}
-                data-testid="era-scene-add"
-              >
-                <option value="">
-                  {offeredScenes.length === 0
-                    ? t('time.eraForm.noMoreScenes')
-                    : t('time.eraForm.addScene')}
-                </option>
-                {stories.map((story) => {
-                  const options = (storyScenes[story.id] ?? []).filter(
-                    (scene) => !chosenScenes.has(scene.id),
-                  )
-                  return options.length === 0 ? null : (
-                    <optgroup key={story.id} label={story.title}>
-                      {options.map((scene) => (
-                        <option key={scene.id} value={scene.id}>
-                          {scene.title}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )
-                })}
-              </select>
-            </>
-          )}
-        </Field>
-      ) : null}
-    </>
   )
 }
