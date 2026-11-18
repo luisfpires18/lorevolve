@@ -1,28 +1,12 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { BrandMark } from '../components/BrandMark'
-import { MAIN_CONTENT_ID } from '../components/SkipLink'
-import { Wordmark } from '../components/Wordmark'
 import { useAuth } from '../auth/useAuth'
-import { ApiError } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
-import {
-  describeConnectionRequest,
-  getConsentToken,
-  PROPOSE_FIELD,
-  readable,
-  type ConnectionRequestDetails,
-  type ConsentToken,
-} from '../mcp/api'
-import { UniverseRole, type UniverseRoleValue } from '../universes/types'
+import type { ConsentToken } from '../mcp/api'
 import { useI18n } from '../i18n'
-
-type Load =
-  | { kind: 'loading' }
-  | { kind: 'ready'; details: ConnectionRequestDetails }
-  | { kind: 'invalid' }
-  | { kind: 'no-access' }
-  | { kind: 'error' }
+import { ConsentDetails } from '../components/mcp/ConsentDetails'
+import { ConsentLayout } from '../components/mcp/ConsentLayout'
+import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
 
 /** The field the decision travels in, beside the request's own parameters. Read by `OAuthEndpoints` on the server. */
 const DECISION_FIELD = 'lorevolve_decision'
@@ -48,33 +32,7 @@ export default function ConnectAuthorizePage() {
 
   useDocumentTitle(t('universe.connect.title'))
 
-  useEffect(() => {
-    const controller = new AbortController()
-    // A failure to read the antiforgery token (below) stands: without it there is nothing to decide with.
-    const settle = (next: Load) => setLoad((current) => (current.kind === 'error' ? current : next))
-    describeConnectionRequest(params, controller.signal)
-      .then((details) => settle({ kind: 'ready', details }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        if (error instanceof ApiError && error.code === 'universe_unavailable')
-          settle({ kind: 'no-access' })
-        else if (error instanceof ApiError && error.status === 400) settle({ kind: 'invalid' })
-        else settle({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [params])
-
-  // The antiforgery token the decision must carry. Without it nothing can be decided here, so failing to read it fails
-  // the screen.
-  useEffect(() => {
-    const controller = new AbortController()
-    getConsentToken(controller.signal)
-      .then(setToken)
-      .catch(() => {
-        if (!controller.signal.aborted) setLoad({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [])
+  useConnectionRequest({ params, setLoad, setToken })
 
   // The request exactly as it arrived, for the post back. Repeated names (more than one resource) stay repeated.
   const fields = [...params.entries()].filter(
@@ -197,179 +155,3 @@ export default function ConnectAuthorizePage() {
     </ConsentLayout>
   )
 }
-
-/**
- * The consent screen's own frame (issue 38): one card, centred, with the brand kept small. It is a decision, not a
- * landing page, so it does not take the sign-in plate's artwork - the request and its two buttons are the page. A card
- * taller than the screen grows down and scrolls with the page; nothing inside it scrolls on its own.
- */
-function ConsentLayout({
-  heading,
-  intro,
-  footer,
-  children,
-}: {
-  heading: string
-  intro: ReactNode
-  footer: ReactNode
-  children: ReactNode
-}) {
-  const { t } = useI18n()
-
-  return (
-    <div className="consent-page">
-      <main className="consent-card" id={MAIN_CONTENT_ID} tabIndex={-1} data-testid="consent-card">
-        <Link
-          className="consent-card__brand"
-          to="/"
-          aria-label={t('shell.brand.homeLabel')}
-          data-testid="auth-brand"
-        >
-          <BrandMark />
-          <Wordmark />
-        </Link>
-        <h1 className="auth__heading consent-card__heading" data-testid="auth-heading">
-          {heading}
-        </h1>
-        <p className="consent-card__intro" data-testid="consent-summary">
-          {intro}
-        </p>
-        {children}
-        {footer ? <p className="consent-card__footer">{footer}</p> : null}
-      </main>
-    </div>
-  )
-}
-
-function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id: string }) {
-  const { t, tx } = useI18n()
-
-  return (
-    <div className="consent" id={id} data-testid="consent-details">
-      <section className="consent__part" aria-label={t('universe.connect.appSection')}>
-        <p className="consent__label">{t('universe.connect.appLabel')}</p>
-        <p className="consent__app" data-testid="consent-app">
-          <bdi>{details.clientName}</bdi>
-        </p>
-        {details.verifiedHost ? (
-          <p className="consent__identity" data-testid="consent-verified">
-            {tx('universe.connect.verified', { host: <strong>{details.verifiedHost}</strong> })}
-          </p>
-        ) : (
-          <p className="callout callout--warning consent__warning" data-testid="consent-unverified">
-            {t('universe.connect.unverified')}
-          </p>
-        )}
-        <p className="consent__identity" data-testid="consent-return">
-          {tx('universe.connect.returnTo', { host: <strong>{details.redirectHost}</strong> })}
-        </p>
-        {details.loopbackOnly ? (
-          <p className="callout callout--warning consent__warning" data-testid="consent-loopback">
-            {t('universe.connect.loopback')}
-          </p>
-        ) : null}
-      </section>
-
-      <section className="consent__part" aria-label={t('universe.connect.universeSection')}>
-        <p className="consent__label">{t('universe.connect.universeLabel')}</p>
-        <p className="consent__universe" data-testid="consent-universe">
-          <bdi>{details.universeName}</bdi>
-        </p>
-        <p className="consent__identity">
-          {t(`universe.connect.youAre.${ROLE_SENTENCES[details.role]}`)}
-        </p>
-      </section>
-
-      <section className="consent__part" aria-label={t('universe.connect.canDoSection')}>
-        <p className="consent__label">{t('universe.connect.readOnlyAccess')}</p>
-        <ul className="consent__list" data-testid="consent-scope">
-          {readable().map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        <p className="consent__identity">{t('universe.connect.cannotWrite')}</p>
-      </section>
-
-      {details.proposalsRequested ? <ProposalChoice details={details} /> : null}
-
-      <section
-        className="consent__part consent__part--notes"
-        aria-label={t('universe.connect.notesSection')}
-      >
-        <p className="settings__note">{t('universe.connect.noteService')}</p>
-        <p className="settings__note">{t('universe.connect.noteStays')}</p>
-      </section>
-    </div>
-  )
-}
-
-/**
- * What the app may do, as one of two levels, offered only when the app asked to propose and the role could allow it:
- * Reader, the default, or Creator, which proposes changes of every kind the role allows - lore, types and fields included
- * (ADR 0047, ADR 0062). Proposing is not writing: what the app sends waits in Pending AI Changes.
- */
-function ProposalChoice({ details }: { details: ConnectionRequestDetails }) {
-  const { t, tx } = useI18n()
-
-  if (!details.canPropose) {
-    return (
-      <section className="consent__part" aria-label={t('universe.connect.levelSection')}>
-        <p className="consent__identity" data-testid="consent-propose-unavailable">
-          {t('universe.connect.proposeUnavailable')}
-        </p>
-      </section>
-    )
-  }
-
-  return (
-    <fieldset className="consent__part consent__propose" aria-describedby="consent-propose-what">
-      <legend className="consent__label">{t('universe.connect.level')}</legend>
-      <div className="consent__check">
-        <input
-          id="consent-reader"
-          type="radio"
-          name={PROPOSE_FIELD}
-          value="read"
-          defaultChecked
-          data-testid="consent-reader"
-        />
-        <label htmlFor="consent-reader">
-          {tx('universe.connect.levelReader', {
-            level: <strong>{t('universe.connect.levelReaderName')}</strong>,
-            app: <bdi>{details.clientName}</bdi>,
-          })}
-        </label>
-      </div>
-      <div className="consent__check">
-        <input
-          id="consent-propose"
-          type="radio"
-          name={PROPOSE_FIELD}
-          value="allow"
-          data-testid="consent-propose"
-        />
-        <label htmlFor="consent-propose">
-          {tx('universe.connect.levelCreator', {
-            level: <strong>{t('universe.connect.levelCreatorName')}</strong>,
-          })}
-        </label>
-      </div>
-      <p className="consent__identity" id="consent-propose-what">
-        {details.canProposeSchema
-          ? t('universe.connect.creatorCanSchema')
-          : t('universe.connect.creatorCan')}
-      </p>
-    </fieldset>
-  )
-}
-
-/**
- * Each role gets its own whole sentence: "the owner", "an Editor", "a Reviewer" are an article glued to a noun, which
- * no other language can follow, so nothing here is assembled from pieces.
- */
-const ROLE_SENTENCES = {
-  [UniverseRole.Owner]: 'owner',
-  [UniverseRole.Editor]: 'editor',
-  [UniverseRole.Reviewer]: 'reviewer',
-  [UniverseRole.Viewer]: 'viewer',
-} as const satisfies Record<UniverseRoleValue, string>

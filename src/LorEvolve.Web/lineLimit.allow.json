@@ -1,14 +1,5 @@
 {
-  "aiChanges/api.ts": 343,
   "App.tsx": 569,
-  "components/CollaboratorsPanel.tsx": 701,
-  "components/ContentPublication.tsx": 323,
-  "components/PublicDetailsForm.tsx": 365,
-  "components/RestoreBackup.tsx": 556,
-  "components/ReviewComments.tsx": 509,
-  "components/ReviewSuggestions.tsx": 392,
-  "components/UniverseForm.tsx": 302,
-  "components/UniverseSearch.tsx": 355,
   "i18n/en/admin.ts": 357,
   "i18n/en/canon.ts": 628,
   "i18n/en/entity.ts": 445,
@@ -30,13 +21,5 @@
   "i18n/pt-PT/projects.ts": 504,
   "i18n/pt-PT/stories.ts": 466,
   "i18n/pt-PT/time.ts": 412,
-  "i18n/pt-PT/universe.ts": 413,
-  "pages/AdminWorkspace.tsx": 1272,
-  "pages/AiChangePage.tsx": 1002,
-  "pages/ConnectAuthorizePage.tsx": 375,
-  "pages/PublicWorldPage.tsx": 343,
-  "pages/UniversePublish.tsx": 844,
-  "pages/UniverseSettings.tsx": 474,
-  "pages/UniverseTrash.tsx": 1128,
-  "pages/UniverseWorkspace.tsx": 593
+  "i18n/pt-PT/universe.ts": 413
 }
