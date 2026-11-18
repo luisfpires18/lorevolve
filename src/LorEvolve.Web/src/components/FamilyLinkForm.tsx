@@ -1,27 +1,20 @@
 import { useState } from 'react'
-import { Field } from './Field'
-import { Plus } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { EntityPicker, type EntityChoice } from './EntityPicker'
+import { EntityPicker } from './EntityPicker'
 import { FamilyKindDialog } from './FamilyKindDialog'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import { createRelationship } from '../relationships/api'
 import {
   FAMILY_SEMANTIC_WORDS,
   isParentSemantic,
   type RelationshipType,
 } from '../relationships/types'
-import {
-  CANON_LABELS,
-  CANON_ORDER,
-  CanonStatus,
-  type CanonStatusValue,
-  CANON_KEYS,
-} from '../lore/types'
-import { confirmDiscard } from '../lib/confirm'
 import { useI18n } from '../i18n'
+import { familyLinkActions } from '../relationships/familyLinkActions'
+import { useFamilyLinkState } from '../relationships/useFamilyLinkState'
+import { FamilyLinkKindField } from './relationships/FamilyLinkKindField'
+import { FamilyLinkPreview } from './relationships/FamilyLinkPreview'
+import { FamilyLinkSide } from './relationships/FamilyLinkSide'
+import { FamilyLinkStatus } from './relationships/FamilyLinkStatus'
 
 interface Props {
   universeId: string
@@ -52,15 +45,22 @@ export function FamilyLinkForm({
   onCancel,
 }: Props) {
   const { t } = useI18n()
-  const [kindId, setKindId] = useState(kinds[0]?.id ?? '')
-  // The stored row runs source to target; for a parent kind the source is the parent.
-  const [focalIsSource, setFocalIsSource] = useState(true)
-  const [related, setRelated] = useState<EntityChoice | null>(null)
-  const [canonStatus, setCanonStatus] = useState<CanonStatusValue>(CanonStatus.Idea)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isCreatingKind, setIsCreatingKind] = useState(false)
+  const state = useFamilyLinkState({ kinds })
+  const {
+    kindId,
+    focalIsSource,
+    setFocalIsSource,
+    related,
+    setRelated,
+    canonStatus,
+    setCanonStatus,
+    fieldErrors,
+    message,
+    isSaving,
+    isCreatingKind,
+    setKindId,
+    setIsCreatingKind,
+  } = state
 
   const kind = kinds.find((candidate) => candidate.id === kindId) ?? kinds[0]
   const isParentKind = !!kind && isParentSemantic(kind.familySemantic)
@@ -77,20 +77,17 @@ export function FamilyLinkForm({
     payloadKey({ kindId, focalIsSource, relatedId: related?.id ?? null, canonStatus }) !== initial
   useLeaveGuard(isDirty ? t('places.linkForm.leave') : null)
 
-  /** How a kind is named in the Connection choice: a parent kind says which, any other family kind says nothing more. */
-  function kindOption(candidate: RelationshipType) {
-    return isParentSemantic(candidate.familySemantic)
-      ? t('places.linkForm.parentKind', {
-          name: candidate.name,
-          word: FAMILY_SEMANTIC_WORDS[candidate.familySemantic],
-        })
-      : candidate.name
-  }
-
-  async function cancel() {
-    if (isDirty && !(await confirmDiscard())) return
-    onCancel()
-  }
+  const { cancel, save } = familyLinkActions({
+    ...state,
+    universeId,
+    focal,
+    kind,
+    asSource,
+    isDirty,
+    onSaved,
+    onCancel,
+    t,
+  })
 
   const otherName = related?.name ?? '…'
   const preview = !kind
@@ -107,60 +104,9 @@ export function FamilyLinkForm({
           object: otherName,
         }
 
-  async function save() {
-    if (!kind) return
-
-    if (!related) {
-      setFieldErrors({ targetentityid: t('places.linkForm.chooseEntry') })
-      return
-    }
-
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-
-    try {
-      await createRelationship(universeId, {
-        relationshipTypeId: kind.id,
-        sourceEntityId: asSource ? focal.id : related.id,
-        targetEntityId: asSource ? related.id : focal.id,
-        canonStatus,
-        startDate: null,
-        endDate: null,
-        notes: null,
-      })
-      onSaved()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.linkForm.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.linkForm.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
   return (
     <div className="relform familylink" data-testid="family-link-form">
-      {preview ? (
-        <p className="relform__reads" data-testid="family-link-preview">
-          <span className="relform__subject">
-            <bdi>{preview.subject}</bdi>
-          </span>{' '}
-          <span className="relform__verb">
-            <bdi>{preview.verb}</bdi>
-          </span>{' '}
-          <span className="relform__object">
-            <bdi>{preview.object}</bdi>
-          </span>
-        </p>
-      ) : null}
+      {preview ? <FamilyLinkPreview preview={preview} /> : null}
       {kind ? (
         <p className="field__hint">
           {isParentKind
@@ -170,85 +116,23 @@ export function FamilyLinkForm({
       ) : null}
 
       <div className="relform__grid">
-        <Field label={t('places.linkForm.connection')} id="family-link-kind">
-          {(control) => (
-            <>
-              <select
-                {...control}
-                aria-invalid={fieldErrors.relationshiptypeid ? true : undefined}
-                aria-describedby={
-                  fieldErrors.relationshiptypeid ? 'family-link-kind-error' : undefined
-                }
-                className="field__input field__input--select"
-                value={kind?.id ?? ''}
-                onChange={(event) => {
-                  setKindId(event.target.value)
-                  setFocalIsSource(true)
-                }}
-                data-testid="family-link-kind"
-              >
-                {kinds.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {kindOption(candidate)}
-                  </option>
-                ))}
-              </select>
-              {fieldErrors.relationshiptypeid ? (
-                <p className="field__error" id="family-link-kind-error">
-                  {fieldErrors.relationshiptypeid}
-                </p>
-              ) : null}
-              <button
-                className="button button--text button--sm familylink__newkind"
-                type="button"
-                onClick={() => setIsCreatingKind(true)}
-                data-testid="new-family-kind"
-              >
-                <ActionIcon icon={Plus} />
-                {t('places.linkForm.newKind')}
-              </button>
-            </>
-          )}
-        </Field>
+        <FamilyLinkKindField
+          kinds={kinds}
+          kind={kind}
+          fieldErrors={fieldErrors}
+          setKindId={setKindId}
+          setFocalIsSource={setFocalIsSource}
+          setIsCreatingKind={setIsCreatingKind}
+        />
 
-        {isParentKind ? (
-          <Field label={t('places.linkForm.side')} id="family-link-side">
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={focalIsSource ? 'parent' : 'child'}
-                onChange={(event) => setFocalIsSource(event.target.value === 'parent')}
-                data-testid="family-link-side"
-              >
-                <option value="parent">
-                  {t('places.linkForm.focalParent', { name: focal.name })}
-                </option>
-                <option value="child">
-                  {t('places.linkForm.focalChild', { name: focal.name })}
-                </option>
-              </select>
-            )}
-          </Field>
-        ) : hasTwoReadings && kind ? (
-          <Field
-            label={t('places.linkForm.focalIs', { name: focal.name })}
-            id="family-link-reading"
-          >
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={focalIsSource ? 'forward' : 'inverse'}
-                onChange={(event) => setFocalIsSource(event.target.value === 'forward')}
-                data-testid="family-link-reading"
-              >
-                <option value="forward">{kind.name}</option>
-                <option value="inverse">{kind.inverseName}</option>
-              </select>
-            )}
-          </Field>
-        ) : null}
+        <FamilyLinkSide
+          isParentKind={isParentKind}
+          hasTwoReadings={hasTwoReadings}
+          kind={kind}
+          focal={focal}
+          focalIsSource={focalIsSource}
+          setFocalIsSource={setFocalIsSource}
+        />
 
         <EntityPicker
           label={
@@ -266,24 +150,7 @@ export function FamilyLinkForm({
           error={fieldErrors.targetentityid ?? fieldErrors.sourceentityid}
         />
 
-        <Field label={t('places.linkForm.status')} group>
-          {(control) => (
-            <div className="canon" {...control}>
-              {CANON_ORDER.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className="canon__step"
-                  aria-pressed={canonStatus === option}
-                  onClick={() => setCanonStatus(option)}
-                  data-testid={`family-link-canon-${CANON_KEYS[option]}`}
-                >
-                  {CANON_LABELS[option]}
-                </button>
-              ))}
-            </div>
-          )}
-        </Field>
+        <FamilyLinkStatus canonStatus={canonStatus} setCanonStatus={setCanonStatus} />
       </div>
 
       {message ? (

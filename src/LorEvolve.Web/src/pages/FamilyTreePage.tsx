@@ -1,44 +1,25 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useId, useMemo } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus } from 'lucide-react'
-import { ActionIcon } from '../components/ActionIcon'
-import { EntityPicker, type EntityChoice } from '../components/EntityPicker'
-import { FamilyDiscovery, type FamiliesReturn } from '../components/FamilyDiscovery'
-import { FamilyKindDialog } from '../components/FamilyKindDialog'
-import { FamilyLinkForm } from '../components/FamilyLinkForm'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import type { EntityChoice } from '../components/EntityPicker'
+import type { FamiliesReturn } from '../components/FamilyDiscovery'
 import { FamilyTreeTypes } from '../components/FamilyTreeTypes'
 import { FamilyTreeView } from '../components/FamilyTreeView'
-import { StatusBadge } from '../components/StatusBadge'
-import { getFamilyTree } from '../familyTree/api'
 import { confirmLeaving } from '../lib/leaveGuard'
-import { linkSentence } from '../familyTree/reading'
-import type { FamilyTree } from '../familyTree/types'
-import { CANON_LABELS, CanonStatus } from '../lore/types'
-import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
-import { listEntityRelationships, listRelationshipTypes } from '../relationships/api'
-import {
-  FamilySemantic,
-  type RelationshipType,
-  type RelationshipView,
-} from '../relationships/types'
+import { FamilySemantic, type RelationshipType } from '../relationships/types'
 import { PageHeader } from '../components/PageHeader'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
-import { EmptyState } from '../components/EmptyState'
 import { useI18n } from '../i18n'
-
-/** The types and groups the page reads to say where the tree is offered: none yet, read, or not readable. */
-type Setup = { types: EntityType[]; groups: EntityTypeGroup[] } | 'failed' | null
-
-/**
- * Every answered state carries the entry it is about, so a tree, a refusal or a failure that belongs to the
- * entry before this one is never shown for this one - it reads as still on its way instead.
- */
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; entityId: string; tree: FamilyTree }
-  | { kind: 'missing'; entityId: string }
-  | { kind: 'error'; entityId: string }
+import type { LoadState, Setup } from '../familyTree/useFamilyTreeState'
+import { useFamilyTreeReads } from '../familyTree/useFamilyTreeReads'
+import { useFamilyTreeState } from '../familyTree/useFamilyTreeState'
+import { FamilyAddLink } from '../components/familyTree/FamilyAddLink'
+import { FamilyEntityBar } from '../components/familyTree/FamilyEntityBar'
+import { FamilyLoadStates } from '../components/familyTree/FamilyLoadStates'
+import { FamilyOtherRelations } from '../components/familyTree/FamilyOtherRelations'
+import { FamilySetupNotices } from '../components/familyTree/FamilySetupNotices'
+import { FamilyStart } from '../components/familyTree/FamilyStart'
+import { FamilyTreeNotes } from '../components/familyTree/FamilyTreeNotes'
 
 /**
  * The Family Tree: one entry's family, worked out from the parent connections recorded on entries (ADR 0035).
@@ -59,7 +40,7 @@ type LoadState =
  * names and a size each, opening the tree on one of them. "Browse families" on a tree goes back to that list.
  */
 export default function FamilyTreePage() {
-  const { t, tx } = useI18n()
+  const { t } = useI18n()
   const access = useUniverseAccess()
   const { universe, types, groups, setGroups, refreshTypes } = useWorkspaceTypes()
   const { entityId } = useParams<{ entityId: string }>()
@@ -67,8 +48,22 @@ export default function FamilyTreePage() {
   const location = useLocation()
   const headingId = useId()
 
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [kinds, setKinds] = useState<RelationshipType[] | null>(null)
+  const pageState = useFamilyTreeState()
+  const {
+    state,
+    setState,
+    kinds,
+    setKinds,
+    setupReads,
+    setSetupReads,
+    others,
+    addingFor,
+    setAddingFor,
+    isCreatingKind,
+    setIsCreatingKind,
+    setReads,
+  } = pageState
+
   // The types and groups, read with the universe: where the tree is offered.
   const setup: Setup =
     types === 'failed' || groups === 'failed'
@@ -76,65 +71,8 @@ export default function FamilyTreePage() {
       : types && groups
         ? { types, groups }
         : null
-  const [setupReads, setSetupReads] = useState(0)
-  const [others, setOthers] = useState<{ entityId: string; views: RelationshipView[] } | null>(null)
-  const [addingFor, setAddingFor] = useState<string | null>(null)
-  const [isCreatingKind, setIsCreatingKind] = useState(false)
-  const [reads, setReads] = useState(0)
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listRelationshipTypes(universe.id, controller.signal)
-      .then(setKinds)
-      .catch(() => {
-        if (!controller.signal.aborted) setKinds([])
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, reads])
-
-  useEffect(() => {
-    if (!entityId) return
-
-    const controller = new AbortController()
-
-    getFamilyTree(universe.id, entityId, controller.signal)
-      .then((tree) => setState({ kind: 'ready', entityId, tree }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        // The API answers 404 for an entry that is not here, belongs to another universe, or is in the Trash.
-        setState(
-          (error as { status?: number }).status === 404
-            ? { kind: 'missing', entityId }
-            : { kind: 'error', entityId },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, entityId, reads])
-
-  // The focal entry's relationships, for the ones that are not family. Read beside the tree, never into it.
-  useEffect(() => {
-    if (!entityId) return
-
-    const controller = new AbortController()
-
-    listEntityRelationships(universe.id, entityId, controller.signal)
-      .then((views) => setOthers({ entityId, views }))
-      .catch(() => {
-        // Not readable is left unsaid: the tree above is complete without it.
-        if (!controller.signal.aborted) setOthers({ entityId, views: [] })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, entityId, reads])
+  useFamilyTreeReads({ ...pageState, universe, entityId })
 
   // Worked out while rendering rather than stored: no entry in the address is the empty state, and an answer
   // about another entry is a tree still on its way.
@@ -202,165 +140,43 @@ export default function FamilyTreePage() {
       />
 
       {entityId ? (
-        <>
-          {/* Back to the families: the search and page this tree was opened from, if it was. */}
-          <Link
-            className="family__browse"
-            to={`/app/universes/${universe.id}/family-tree${familiesFrom}`}
-            data-testid="family-browse"
-          >
-            <ArrowLeft
-              className="family__browseicon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {t('places.familyPage.browse')}
-          </Link>
-          <div className="family__picker">
-            <EntityPicker
-              label={focal ? t('places.familyPage.shownFor') : t('places.familyPage.whose')}
-              universeId={universe.id}
-              value={focal ? { id: focal.entityId, name: focal.name } : null}
-              onChange={show}
-              familyTreeOnly
-              placeholder={t('places.familyPage.pickerPlaceholder')}
-            />
-          </div>
-        </>
-      ) : null}
-
-      {hasEligibleType === false ? (
-        <p className="notice" data-testid="family-no-types">
-          {tx('places.familyPage.noTypes', {
-            link: <Link to={typesPath}>{t('places.familyPage.noTypesLink')}</Link>,
-          })}
-        </p>
-      ) : null}
-
-      {hasEligibleType && kinds !== null && familyKinds.length === 0 ? (
-        <div className="notice family__nokinds" data-testid="family-no-kinds">
-          <p>
-            {tx('places.familyPage.noKinds', {
-              link: <Link to={relationKindsPath}>{t('places.familyPage.noKindsLink')}</Link>,
-            })}
-          </p>
-          {access.editContent ? (
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setIsCreatingKind(true)}
-              data-testid="family-new-kind"
-            >
-              <ActionIcon icon={Plus} />
-              {t('places.familyPage.newKind')}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {isCreatingKind ? (
-        <FamilyKindDialog
-          universeId={universe.id}
-          onClose={() => setIsCreatingKind(false)}
-          onCreated={(created) => {
-            addKind(created)
-            setIsCreatingKind(false)
-          }}
+        <FamilyEntityBar
+          universe={universe}
+          familiesFrom={familiesFrom}
+          focal={focal}
+          show={show}
         />
       ) : null}
 
-      {/* No entry in the address: the families already recorded, once there can be any - a type enabled for the tree
-          and a kind with a family meaning. Asked for alongside those checks rather than after them. */}
-      {view.kind === 'idle' &&
-      hasEligibleType !== false &&
-      !(kinds !== null && familyKinds.length === 0) ? (
-        <FamilyDiscovery
-          key={setupReads}
-          universeId={universe.id}
-          canEdit={access.editContent}
-          onChoose={show}
-        />
-      ) : null}
+      <FamilySetupNotices
+        universe={universe}
+        access={access}
+        hasEligibleType={hasEligibleType}
+        kinds={kinds}
+        familyKinds={familyKinds}
+        typesPath={typesPath}
+        relationKindsPath={relationKindsPath}
+        isCreatingKind={isCreatingKind}
+        setIsCreatingKind={setIsCreatingKind}
+        addKind={addKind}
+      />
 
-      {/* No family kind yet means no family to discover: someone can still be opened, as before, while one is made. */}
-      {view.kind === 'idle' && hasEligibleType && kinds !== null && familyKinds.length === 0 ? (
-        <div className="family__picker">
-          <EntityPicker
-            label={t('places.familyPage.whose')}
-            universeId={universe.id}
-            value={null}
-            onChange={show}
-            familyTreeOnly
-            placeholder={t('places.familyPage.pickerPlaceholder')}
-          />
-        </div>
-      ) : null}
+      <FamilyStart
+        universe={universe}
+        access={access}
+        view={view}
+        hasEligibleType={hasEligibleType}
+        kinds={kinds}
+        familyKinds={familyKinds}
+        setupReads={setupReads}
+        show={show}
+      />
 
-      {view.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('places.familyPage.loading')}
-        </p>
-      ) : null}
-
-      {view.kind === 'missing' ? (
-        <EmptyState
-          testId="family-missing"
-          title={t('places.familyPage.missingTitle')}
-          hint={tx('places.familyPage.missingHint', {
-            link: (
-              <Link to={`/app/universes/${universe.id}/lore`}>
-                {t('places.familyPage.missingLink')}
-              </Link>
-            ),
-          })}
-        />
-      ) : null}
-
-      {view.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="family-error">
-          <p>{t('places.familyPage.error')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('places.familyPage.retry')}
-          </button>
-        </div>
-      ) : null}
+      <FamilyLoadStates universe={universe} view={view} setState={setState} setReads={setReads} />
 
       {tree && focal ? (
         <>
-          {focal.entityTypeFamilyTreeEligible ? null : (
-            <p className="notice" data-testid="family-type-not-enabled">
-              {tx('places.familyPage.typeNotEnabled', {
-                type: <bdi>{focal.entityTypeName}</bdi>,
-              })}
-            </p>
-          )}
-
-          {tree.loops.length > 0 ? (
-            <div className="callout callout--warning family__loopnote" data-testid="family-loop">
-              <p className="callout__title">{t('places.familyPage.loopTitle')}</p>
-              <p>{t('places.familyPage.loopBody')}</p>
-              <ul className="family__loop">
-                {tree.loops.flatMap((loop) =>
-                  loop.relationshipIds.map((id) => {
-                    const link = tree.links.find((candidate) => candidate.relationshipId === id)
-                    return link ? (
-                      <li key={id} dir="auto">
-                        {linkSentence(link, nodes)}
-                      </li>
-                    ) : null
-                  }),
-                )}
-              </ul>
-            </div>
-          ) : null}
+          <FamilyTreeNotes tree={tree} focal={focal} nodes={nodes} />
 
           <FamilyTreeView
             universeId={universe.id}
@@ -371,73 +187,25 @@ export default function FamilyTreePage() {
           <p className="family__note">{t('places.familyPage.note')}</p>
 
           {otherRelations.length > 0 ? (
-            <section
-              className="family__others"
-              aria-labelledby={`${headingId}-others`}
-              data-testid="family-other-relationships"
-            >
-              <h2 className="settings__heading" id={`${headingId}-others`}>
-                {t('places.familyPage.othersHeading')}
-              </h2>
-              <p className="settings__note">
-                {tx('places.familyPage.othersNote', {
-                  name: <bdi>{focal.name}</bdi>,
-                  link: (
-                    <Link to={`/app/universes/${universe.id}/lore/${focal.entityId}/relations`}>
-                      {t('places.familyPage.othersLink')}
-                    </Link>
-                  ),
-                })}
-              </p>
-              <ul className="family__otherlist">
-                {otherRelations.map((relation) => (
-                  <li key={relation.id} data-testid="family-other-relationship">
-                    <bdi className="family__othername">{focal.name}</bdi>{' '}
-                    <bdi className="family__otherlabel">{relation.label}</bdi>{' '}
-                    <Link
-                      className="family__otherlink"
-                      to={`/app/universes/${universe.id}/lore/${relation.relatedEntityId}`}
-                    >
-                      <bdi>{relation.relatedEntityName}</bdi>
-                    </Link>
-                    {relation.canonStatus === CanonStatus.Canon ? null : (
-                      <StatusBadge
-                        step={relation.canonStatus}
-                        label={t('places.familyPage.relationshipStatus', {
-                          status: CANON_LABELS[relation.canonStatus],
-                        })}
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <FamilyOtherRelations
+              universe={universe}
+              headingId={headingId}
+              focal={focal}
+              otherRelations={otherRelations}
+            />
           ) : null}
 
           {access.editContent && familyKinds.length > 0 ? (
-            isAdding ? (
-              <FamilyLinkForm
-                universeId={universe.id}
-                focal={{ id: focal.entityId, name: focal.name }}
-                kinds={familyKinds}
-                onKindCreated={addKind}
-                onSaved={() => {
-                  setAddingFor(null)
-                  setReads((current) => current + 1)
-                }}
-                onCancel={() => setAddingFor(null)}
-              />
-            ) : (
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={() => setAddingFor(entityId ?? null)}
-                data-testid="add-family-link"
-              >
-                <ActionIcon icon={Plus} />
-                {t('places.familyPage.add')}
-              </button>
-            )
+            <FamilyAddLink
+              universe={universe}
+              entityId={entityId}
+              focal={focal}
+              familyKinds={familyKinds}
+              isAdding={isAdding}
+              addKind={addKind}
+              setAddingFor={setAddingFor}
+              setReads={setReads}
+            />
           ) : null}
         </>
       ) : null}
