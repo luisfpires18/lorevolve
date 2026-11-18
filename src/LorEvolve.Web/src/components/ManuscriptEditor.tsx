@@ -1,7 +1,5 @@
-import { closeHistory } from '@tiptap/pm/history'
-import type { Editor } from '@tiptap/react'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { t, tn, useI18n } from '../i18n'
+import type { ReactNode } from 'react'
+import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { SaveAction } from './SaveAction'
 import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
@@ -10,7 +8,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EditConflict, LatestText } from './EditConflict'
 import { LoreContext } from './LoreContext'
-import { findMentions, manuscriptDoc, plainMentions } from '../lore/mentions'
+import { findMentions, plainMentions } from '../lore/mentions'
 import { MentionProse } from './MentionProse'
 import { ManuscriptWriter } from './ManuscriptWriter'
 import { NameLinker } from './NameLinker'
@@ -19,41 +17,18 @@ import { ReviewComments } from './ReviewComments'
 import { describeSceneSuggestion } from '../stories/sceneDraft'
 import { RecoveredDraft } from './RecoveredDraft'
 import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
-import { useAuth } from '../auth/useAuth'
 import type { Chronology } from '../chronology/types'
-import { ApiError } from '../lib/api'
-import { isChangedElsewhere } from '../lib/editConflict'
-import { useLeaveGuard } from '../lib/leaveGuard'
-import { useLocalDraft } from '../lib/useLocalDraft'
-import { getSceneManuscript, MANUSCRIPT_CHANGED, saveSceneManuscript } from '../stories/api'
+import { getSceneManuscript } from '../stories/api'
 import { sceneWhen } from '../stories/format'
-import {
-  MANUSCRIPT_MAX_LENGTH,
-  type Chapter,
-  type Scene,
-  type SceneManuscript,
-} from '../stories/types'
+import { MANUSCRIPT_MAX_LENGTH, type Chapter, type Scene } from '../stories/types'
 import { EmptyState } from './EmptyState'
 import { numberFormat } from '../i18n/format'
 import { storyProjectPath } from '../projects/sections'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
-
-/** The manuscript as the API last confirmed it: what "unsaved" is measured against, and what the next save names. */
-interface Stored {
-  content: string
-  updatedAt: string | null
-  version: number
-}
-
-function storedOf(manuscript: SceneManuscript): Stored {
-  return {
-    content: manuscript.content,
-    updatedAt: manuscript.updatedAt,
-    version: manuscript.version,
-  }
-}
+import { storedOf, useManuscriptState } from '../stories/useManuscriptState'
+import { useManuscriptLoad } from '../stories/useManuscriptLoad'
+import { useManuscriptRecovery } from '../stories/useManuscriptRecovery'
+import { useManuscriptSave } from '../stories/useManuscriptSave'
+import { useManuscriptActions } from '../stories/useManuscriptActions'
 
 const count = (value: number) => numberFormat({}, 'en').format(value)
 
@@ -116,62 +91,42 @@ export function ManuscriptEditor({
 }: ManuscriptEditorProps) {
   useI18n() // Re-renders on a language change; the words are read through the module's t.
   const access = useUniverseAccess()
-  const sceneId = scene.id
-  const titleId = useId()
-  const statusId = useId()
-  const tooLongId = useId()
-  const recoveryId = useId()
-  const historyId = useId()
-  const contextId = useId()
+  const state = useManuscriptState({ universeId, scene })
+  const {
+    sceneId,
+    titleId,
+    statusId,
+    tooLongId,
+    recoveryId,
+    historyId,
+    contextId,
+    found,
+    failed,
+    load,
+    stored,
+    setStored,
+    draft,
+    setDraft,
+    isSaving,
+    saves,
+    failure,
+    conflict,
+    isHistoryOpen,
+    setIsHistoryOpen,
+    isContextOpen,
+    setIsContextOpen,
+    historyKey,
+    setHistoryKey,
+    isReading,
+    setIsReading,
+    isLinking,
+    setIsLinking,
+    announcement,
+    setAnnouncement,
+    editor,
+  } = state
 
-  const { user } = useAuth()
-  const { found, keep, forget, discard, settle, failed } = useLocalDraft(
-    user ? { accountId: user.id, universeId, kind: 'manuscript', contentId: sceneId } : null,
-  )
-
-  const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-  const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null, version: 0 })
-  const [draft, setDraft] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [saves, setSaves] = useState(0)
-  const [failure, setFailure] = useState<string | null>(null)
-  const [conflict, setConflict] = useState(false)
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  // On a phone the scene's planning folds behind Details, so the prose starts on the first screen. Wider, it is always shown.
-  const [isContextOpen, setIsContextOpen] = useState(false)
-  const [historyKey, setHistoryKey] = useState(0)
-  // Write is the editor, each mention a chip; Read shows the prose as a reader reads it, each mention a link.
-  const [isReading, setIsReading] = useState(false)
-  const [isLinking, setIsLinking] = useState(false)
-  const [announcement, setAnnouncement] = useState('')
-  const inFlight = useRef(false)
-  const editor = useRef<Editor | null>(null)
-  const shortcut = useRef<() => void>(() => {})
-  const focusEditor = () => editor.current?.commands.focus(null, { scrollIntoView: false })
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    getSceneManuscript(universeId, storyId, sceneId, controller.signal)
-      .then((manuscript) => {
-        setStored(storedOf(manuscript))
-        setDraft(manuscript.content)
-        setLoad({ kind: 'ready' })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setLoad(
-          error instanceof ApiError && error.status === 404
-            ? { kind: 'missing' }
-            : { kind: 'error', message: t('manuscript.editor.openFailed') },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, storyId, sceneId, reads])
+  useManuscriptLoad({ ...state, universeId, storyId })
 
   const isReady = load.kind === 'ready'
   const isDirty = isReady && draft !== stored.content
@@ -183,140 +138,12 @@ export function ManuscriptEditor({
   const isHeld = isReady && (offer !== null || found === undefined)
   const mentioned = isReady ? findMentions(draft) : []
 
-  // A copy identical to what is saved is nothing to recover: it goes without a word.
-  useEffect(() => {
-    if (isReady && found && found.content === stored.content) discard()
-  }, [isReady, found, stored.content, discard])
+  useManuscriptRecovery({ ...state, isReady, isDirty, isHeld, scene })
 
-  // The recovery copy follows the writing: kept while it differs from what is saved, let go once it does not.
-  useEffect(() => {
-    if (!isReady || isHeld) return
-    if (isDirty) {
-      keep(draft, stored.updatedAt)
-    } else {
-      forget()
-    }
-  }, [isReady, isHeld, isDirty, draft, stored.updatedAt, keep, forget])
+  const { save } = useManuscriptSave({ ...state, universeId, storyId, isDirty, isTooLong })
 
-  useLeaveGuard(isDirty ? t('manuscript.editor.unsaved', { title: scene.title }) : null, discard)
-
-  /** Saves the text as it stands, naming the stored manuscript's version it was written over. */
-  async function save(expectedVersion: number) {
-    if (inFlight.current || !isDirty || isTooLong) return
-
-    const content = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setConflict(false)
-
-    try {
-      const saved = await saveSceneManuscript(universeId, storyId, sceneId, {
-        content,
-        expectedVersion,
-      })
-      // Measured against what was sent, so anything typed while the save was in flight is still unsaved.
-      setStored(storedOf(saved))
-      setHistoryKey((key) => key + 1)
-      setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, MANUSCRIPT_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('manuscript.editor.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFailure(error.message)
-      } else {
-        setFailure(t('manuscript.editor.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-      // Save keeps the focus through a save (it is only aria-disabled). Should the focus have been let go anyway, rather
-      // than leave it nowhere, it goes back to the prose.
-      requestAnimationFrame(() => {
-        const active = document.activeElement
-        if (!active || active === document.body) focusEditor()
-      })
-    }
-  }
-
-  // Ctrl+S / Cmd+S saves from anywhere while a scene is open - the outline, the tools, or after Save has let go of the
-  // focus - and never opens the browser's "Save page". The listener reads the latest save through a ref, so it is
-  // added once rather than on every keystroke.
-  useEffect(() => {
-    shortcut.current = () => void save(stored.version)
-  })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
-
-  /** The names the author confirmed, made mentions as one edit: one undo step, unsaved until Save. */
-  function linkFromLore(next: string, count: number) {
-    setIsLinking(false)
-    if (!editor.current) return
-    editor.current
-      .chain()
-      .command(({ tr }) => {
-        closeHistory(tr)
-        return true
-      })
-      .setContent(manuscriptDoc(next))
-      .run()
-    focusEditor()
-    setAnnouncement(tn('manuscript.editor.linked', count, { n: count }))
-  }
-
-  function reread() {
-    setConflict(false)
-    setFailure(null)
-    setLoad({ kind: 'loading' })
-    setReads((current) => current + 1)
-  }
-
-  /**
-   * The author has seen the latest prose and keeps their own: it stays in the box, still unsaved, now measured against the
-   * latest - and the next save names the version they reviewed, so it is refused again if that moved on too.
-   */
-  function keepMine(latest: SceneManuscript) {
-    setStored(storedOf(latest))
-    setConflict(false)
-    setHistoryKey((key) => key + 1)
-    setAnnouncement(t('manuscript.editor.keptMine'))
-    requestAnimationFrame(() => editor.current?.commands.focus())
-  }
-
-  /** Lets this window's unsaved prose go for the latest. The conflict notice has already asked. */
-  function takeLatest() {
-    discard()
-    reread()
-  }
-
-  /** Puts the recovery copy in the box as unsaved writing. Saving it is still the author's to do. */
-  function recoverDraft() {
-    if (!offer) return
-    settle()
-    setDraft(offer.content)
-    setAnnouncement(t('manuscript.editor.recovered'))
-    requestAnimationFrame(() => editor.current?.commands.focus())
-  }
-
-  function discardDraft() {
-    discard()
-    setAnnouncement(t('manuscript.editor.discarded'))
-    requestAnimationFrame(() => editor.current?.commands.focus())
-  }
+  const { linkFromLore, reread, keepMine, takeLatest, recoverDraft, discardDraft } =
+    useManuscriptActions({ ...state, offer })
 
   const hasContext =
     sceneWhen(chronology, scene.chronology) !== null ||
