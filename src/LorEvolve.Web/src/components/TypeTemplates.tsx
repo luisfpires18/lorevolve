@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Pencil, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import {
-  addTemplateField,
   createTypeTemplate,
-  deleteTemplateField,
   deleteTypeTemplate,
   listTypeTemplates,
-  saveTemplateField,
   saveTypeTemplate,
 } from '../typeTemplates/api'
 import type { TypeTemplate } from '../typeTemplates/types'
@@ -15,12 +12,10 @@ import { buildTypeTree, type TreeType } from '../lore/typeTree'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
-import { FieldForm, kindLabel } from './FieldForm'
 import { TypeDialog } from './TypeDialog'
-import { TypeIcon } from './TypeIcon'
 import { t, useI18n } from '../i18n'
+import { TemplateRow } from './typeTemplates/TemplateRow'
 
 const NO_TYPES = buildTypeTree<TreeType>([])
 
@@ -156,146 +151,22 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
 
       <ul className="types__list" data-testid="template-list">
         {templates.map((template) => (
-          <li
+          <TemplateRow
             key={template.id}
-            className="types__row"
-            data-testid={`template-${template.id}`}
-            data-template-name={template.name}
-          >
-            <div className="types__head">
-              <span className="types__icon">
-                <TypeIcon iconKey={template.icon} />
-              </span>
-              <span className="types__name">
-                <bdi>{template.name}</bdi>
-              </span>
-              <span className="chip">{t('entityTypes.page.templates.chip')}</span>
-              <span className="types__actions">
-                {canEdit ? (
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
-                    aria-label={t('entityTypes.page.editLabel', { name: template.name })}
-                    data-testid={`template-edit-${template.id}`}
-                    onClick={() => setEditing(template)}
-                  >
-                    <ActionIcon icon={Pencil} />
-                    {t('entityTypes.page.edit')}
-                  </button>
-                ) : null}
-                <button
-                  className="button button--secondary button--sm"
-                  type="button"
-                  aria-expanded={openId === template.id}
-                  aria-label={t('entityTypes.page.fieldsLabel', { name: template.name })}
-                  data-testid={`template-fields-open-${template.id}`}
-                  onClick={() => setOpenId(openId === template.id ? null : template.id)}
-                >
-                  {t('entityTypes.page.fields')}
-                  {template.fields.length > 0 ? (
-                    <span className="types__fieldcount">{template.fields.length}</span>
-                  ) : null}
-                </button>
-                {canEdit ? (
-                  <ActionMenu
-                    label={t('entityTypes.page.moreActions', { name: template.name })}
-                    triggerTestId={`template-actions-${template.id}`}
-                  >
-                    <button
-                      className="actionmenu__item actionmenu__item--danger"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`template-delete-${template.id}`}
-                      onClick={() => void remove(template)}
-                    >
-                      {t('entityTypes.page.templates.delete')}
-                    </button>
-                  </ActionMenu>
-                ) : null}
-              </span>
-            </div>
-
-            {openId === template.id ? (
-              <div className="types__fields" data-testid={`template-fields-panel-${template.id}`}>
-                {template.fields.length === 0 ? (
-                  <p className="projectcard__meta">{t('projects.schema.noFields')}</p>
-                ) : (
-                  <ul className="fieldlist" data-testid={`template-fields-${template.id}`}>
-                    {template.fields.map((field) => (
-                      <li key={field.id} className="fieldlist__row">
-                        <span className="fieldlist__text">
-                          <span className="fieldlist__name">{field.name}</span>
-                          <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
-                        </span>
-                        {canEdit ? (
-                          <div className="fieldlist__actions">
-                            <ActionMenu
-                              label={t('projects.common.more', { name: field.name })}
-                              triggerTestId={`template-field-actions-${field.id}`}
-                            >
-                              <button
-                                className="actionmenu__item"
-                                type="button"
-                                data-testid={`template-field-edit-${field.id}`}
-                                onClick={() => setFieldForm({ templateId: template.id, field })}
-                              >
-                                {t('entityTypes.page.templates.editField')}
-                              </button>
-                              <button
-                                className="actionmenu__item actionmenu__item--danger"
-                                type="button"
-                                disabled={busy}
-                                data-testid={`template-field-delete-${field.id}`}
-                                onClick={() => {
-                                  setBusy(true)
-                                  deleteTemplateField(universeId, template.id, field.id)
-                                    .then(refresh)
-                                    .catch(failing)
-                                }}
-                              >
-                                {t('projects.schema.deleteField')}
-                              </button>
-                            </ActionMenu>
-                          </div>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {canEdit && fieldForm?.templateId === template.id ? (
-                  <FieldForm
-                    key={fieldForm.field?.id ?? 'new'}
-                    busy={busy}
-                    initial={fieldForm.field ?? undefined}
-                    onCancel={() => setFieldForm(null)}
-                    onSubmit={(input) => {
-                      setBusy(true)
-                      const field = fieldForm.field
-                      ;(field
-                        ? saveTemplateField(universeId, template.id, field.id, input)
-                        : addTemplateField(universeId, template.id, input)
-                      )
-                        .then(() => {
-                          setFieldForm(null)
-                          refresh()
-                        })
-                        .catch(failing)
-                    }}
-                  />
-                ) : canEdit ? (
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    data-testid={`template-field-add-${template.id}`}
-                    onClick={() => setFieldForm({ templateId: template.id, field: null })}
-                  >
-                    {t('projects.schema.addField')}
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-          </li>
+            universeId={universeId}
+            canEdit={canEdit}
+            template={template}
+            busy={busy}
+            setBusy={setBusy}
+            setEditing={setEditing}
+            openId={openId}
+            setOpenId={setOpenId}
+            fieldForm={fieldForm}
+            setFieldForm={setFieldForm}
+            refresh={refresh}
+            failing={failing}
+            remove={remove}
+          />
         ))}
       </ul>
     </section>
