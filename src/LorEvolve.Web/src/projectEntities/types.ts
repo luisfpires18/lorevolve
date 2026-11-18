@@ -1,4 +1,5 @@
-import type { EntityImageRef, FieldImageRef, FieldImageShapeValue } from '../lore/types'
+import type { EntityImageRef, FieldImageRef } from '../lore/types'
+import type { FieldImageShapeValue } from '../lore/fieldKinds'
 
 /**
  * A project's own schema and entries (#144).

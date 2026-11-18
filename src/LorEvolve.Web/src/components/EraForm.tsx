@@ -18,7 +18,8 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { emptyValue } from '../lore/document'
 import { renderFact } from '../lore/facts'
-import type { FieldDefinition, FieldValue, FieldValueInput } from '../lore/types'
+import type { FieldValue, FieldValueInput } from '../lore/types'
+import type { FieldDefinition } from '../lore/typeDefinitions'
 import {
   eraInputOf,
   getProgression,

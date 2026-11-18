@@ -1,8 +1,8 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../lib/api'
-import { setEntityTypeGroupFamilyTree } from '../lore/api'
-import type { EntityType, EntityTypeGroup } from '../lore/types'
+import { setEntityTypeGroupFamilyTree } from '../lore/typesApi'
+import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { useI18n } from '../i18n'
 
 interface Props {

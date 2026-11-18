@@ -1,7 +1,8 @@
 import { t } from '../i18n'
 import { formatChronologyPoint } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
-import type { FieldDefinition, FieldValue } from '../lore/types'
+import type { FieldValue } from '../lore/types'
+import type { FieldDefinition } from '../lore/typeDefinitions'
 import type { Era, EraField } from './types'
 
 /** Where a field's value in an era comes from: the era's own override, its "none in this era", or the entry itself. */

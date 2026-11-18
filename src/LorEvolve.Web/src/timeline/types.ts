@@ -1,5 +1,6 @@
 import { t } from '../i18n'
-import type { CanonStatusValue, FieldSemanticValue } from '../lore/types'
+import type { CanonStatusValue } from '../lore/types'
+import type { FieldSemanticValue } from '../lore/fieldKinds'
 import type { TimelineValidation, TimelineValidationInput } from '../ruleValidation/types'
 
 /** Mirrors the backend enum. What a moment actually claims about when it happened. */

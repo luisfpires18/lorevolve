@@ -9,14 +9,13 @@ import {
   setFieldImage,
   setFieldImageCrop,
 } from '../lore/images'
+import type { EntityImageCrop, FieldImageRef } from '../lore/types'
 import {
   FIELD_IMAGE_SHAPE_LABELS,
   FieldImageShape,
   aspectOfShape,
-  type EntityImageCrop,
-  type FieldImageRef,
   type FieldImageShapeValue,
-} from '../lore/types'
+} from '../lore/fieldKinds'
 import { showsArt } from '../projectEntities/structureTree'
 import { ActionIcon } from './ActionIcon'
 import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'

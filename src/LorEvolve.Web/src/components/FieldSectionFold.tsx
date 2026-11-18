@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { ChevronRight } from 'lucide-react'
-import type { FieldSection } from '../lore/types'
+import type { FieldSection } from '../lore/typeDefinitions'
 
 interface FieldSectionFoldProps {
   section: FieldSection

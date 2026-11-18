@@ -14,7 +14,8 @@ import { getFamilyTree } from '../familyTree/api'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { linkSentence } from '../familyTree/reading'
 import type { FamilyTree } from '../familyTree/types'
-import { CANON_LABELS, CanonStatus, type EntityType, type EntityTypeGroup } from '../lore/types'
+import { CANON_LABELS, CanonStatus } from '../lore/types'
+import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { listEntityRelationships, listRelationshipTypes } from '../relationships/api'
 import {
   FamilySemantic,

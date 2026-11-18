@@ -2,13 +2,9 @@ import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
-import {
-  FieldKind,
-  isYearMeaning,
-  type FieldDefinition,
-  type FieldImageRef,
-  type FieldValueInput,
-} from '../lore/types'
+import type { FieldImageRef, FieldValueInput } from '../lore/types'
+import { FieldKind, isYearMeaning } from '../lore/fieldKinds'
+import type { FieldDefinition } from '../lore/typeDefinitions'
 import { Field } from './Field'
 import { FieldImageInput, type PendingFieldImage } from './FieldImageInput'
 import { EntityPicker, type EntityChoice, type QuickCreateOptions } from './EntityPicker'

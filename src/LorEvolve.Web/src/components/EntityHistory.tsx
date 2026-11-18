@@ -1,36 +1,15 @@
-import { useCallback, useEffect, useState } from 'react'
-import { LoreArticle } from './ArticleView'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
-import { NameList } from './NameList'
 import { VersionActor } from './VersionActor'
-import { blockingFindingsOf } from '../canon/blocked'
-import type { CanonBlockingFinding } from '../canon/types'
-import { findEra, formatChronologyYear, formatSignedYear, withEraLabel } from '../chronology/format'
-import { EraLabelPosition, type Chronology } from '../chronology/types'
-import { ApiError } from '../lib/api'
-import { isChangedElsewhere } from '../lib/editConflict'
-import { ENTRY_CHANGED } from '../lore/api'
-import { formatDate, formatDateTime } from '../lib/dates'
-import { isEmptyDocument } from '../lore/document'
-import {
-  describeChanges,
-  getRevision,
-  imagesNotRestored,
-  isNotRestorable,
-  listRevisions,
-  mentionsImage,
-  restoreRevision,
-  RevisionKind,
-  type EntityRevisionDetail,
-  type EntityRevisionSummary,
-  type RevisionFieldValue,
-} from '../lore/revisions'
-import { CANON_LABELS, FieldKind } from '../lore/types'
-import { confirmAction } from '../lib/confirm'
-import { t, useI18n } from '../i18n'
+import type { Chronology } from '../chronology/types'
+import { formatDateTime } from '../lib/dates'
+import { describeChanges, imagesNotRestored, RevisionKind } from '../lore/revisions'
+import { CANON_LABELS } from '../lore/types'
+import { useI18n } from '../i18n'
+import { useEntityRevisions } from '../lore/useEntityRevisions'
+import { Snapshot } from './lore/RevisionSnapshot'
 
-interface EntityHistoryProps {
+export interface EntityHistoryProps {
   universeId: string
   entityId: string
 
@@ -70,98 +49,20 @@ export function EntityHistory({
   onRestored,
 }: EntityHistoryProps) {
   const { t } = useI18n()
-  const [revisions, setRevisions] = useState<EntityRevisionSummary[]>([])
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [expanded, setExpanded] = useState<{ id: string; key: number } | null>(null)
-  const [opened, setOpened] = useState<EntityRevisionDetail | null>(null)
-  const [busyId, setBusyId] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
-  const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
-  const [reads, setReads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listRevisions(universeId, entityId, controller.signal)
-      .then((loaded) => {
-        setRevisions(loaded)
-        setStatus('ready')
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setStatus('error')
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, entityId, reloadKey, reads])
-
-  // A version stays open only for the history it was opened against. When a write moves
-  // the list underneath it, the expansion is stale rather than closed by an effect, so
-  // nothing is left showing a snapshot the list no longer explains.
-  const openId = expanded?.key === reloadKey ? expanded.id : null
-
-  const open = useCallback(
-    async (revisionId: string) => {
-      if (openId === revisionId) {
-        setExpanded(null)
-        setOpened(null)
-        return
-      }
-
-      setExpanded({ id: revisionId, key: reloadKey })
-      setOpened(null)
-      setMessage(null)
-
-      try {
-        setOpened(await getRevision(universeId, entityId, revisionId))
-      } catch {
-        setExpanded(null)
-        setMessage(t('entity.history.openFailed'))
-      }
-    },
-    [openId, reloadKey, universeId, entityId, t],
-  )
-
-  // Said once, where a version is about to be put back and where the list is read - not on
-  // every row, and not at all for an entry that has never had a picture.
-  const carriesImages = mentionsImage(revisions)
-
-  async function restore(revision: EntityRevisionSummary) {
-    if (
-      !(await confirmAction({
-        title: t('entity.history.restoreConfirm.title', { number: revision.number }),
-        message: t('entity.history.restoreConfirm.message'),
-        details: carriesImages ? [imagesNotRestored()] : undefined,
-        confirmLabel: t('entity.history.restoreConfirm.confirm'),
-      }))
-    ) {
-      return
-    }
-
-    setMessage(null)
-    setBlocked(null)
-    setBusyId(revision.id)
-
-    try {
-      await restoreRevision(universeId, entityId, revision.id, currentVersion)
-      onRestored()
-    } catch (error: unknown) {
-      const blocking = blockingFindingsOf(error)
-      if (blocking) {
-        setBlocked(blocking)
-      } else if (isChangedElsewhere(error, ENTRY_CHANGED)) {
-        setMessage(t('entity.history.changedElsewhere'))
-        onRestored()
-      } else if (isNotRestorable(error) || error instanceof ApiError) {
-        setMessage((error as ApiError).message)
-      } else {
-        setMessage(t('entity.history.restoreFailed'))
-      }
-    } finally {
-      setBusyId(null)
-    }
-  }
+  const {
+    revisions,
+    status,
+    setStatus,
+    opened,
+    busyId,
+    message,
+    blocked,
+    setReads,
+    openId,
+    open,
+    carriesImages,
+    restore,
+  } = useEntityRevisions({ universeId, entityId, reloadKey, currentVersion, onRestored })
 
   return (
     <section className="history" aria-labelledby="history-heading">
@@ -284,97 +185,4 @@ export function EntityHistory({
       )}
     </section>
   )
-}
-
-/** One version read whole, in the same shapes the dossier uses for the live entry. */
-function Snapshot({
-  revision,
-  chronology,
-}: {
-  revision: EntityRevisionDetail
-  chronology: Chronology
-}) {
-  const { t, tx } = useI18n()
-  return (
-    <>
-      <h3 className="snapshot__name">
-        <bdi>{revision.name}</bdi>
-      </h3>
-      <p className="snapshot__kind">
-        <bdi>{revision.entityTypeName}</bdi> &middot; {CANON_LABELS[revision.canonStatus]}
-      </p>
-
-      {revision.aliases.length > 0 ? (
-        <p className="entry__aliases">
-          {tx('entity.history.alsoKnownAs', { names: <NameList names={revision.aliases} /> })}
-        </p>
-      ) : null}
-
-      {revision.summary ? <p className="entry__summary prose">{revision.summary}</p> : null}
-
-      {/* Only a version recorded before the article kept its own history holds a copy of it, and a restore never
-          applies that copy - so it is shown as what it is, and a version without one says nothing about the article. */}
-      {!isEmptyDocument(revision.content) ? (
-        <div className="snapshot__article" data-testid="version-article">
-          <p className="snapshot__articlenote">{t('entity.history.articleThen')}</p>
-          <LoreArticle content={revision.content} />
-        </div>
-      ) : null}
-
-      {revision.fields.length > 0 ? (
-        <dl className="facts">
-          {revision.fields.map((value) => (
-            <div className="facts__row" key={value.fieldDefinitionId}>
-              <dt className="facts__key">{value.name}</dt>
-              <dd className="facts__value prose">{renderRevisionFact(value, chronology)}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-
-      {revision.tags.length > 0 ? (
-        <p className="dossier__tags">
-          {revision.tags.map((tag) => (
-            <span className="chip" key={tag}>
-              {tag}
-            </span>
-          ))}
-        </p>
-      ) : null}
-    </>
-  )
-}
-
-/**
- * A stored value as it read then. Names come from the snapshot rather than a live lookup,
- * so a version still reads correctly once the field or the entry it pointed at is gone.
- */
-function renderRevisionFact(value: RevisionFieldValue, chronology: Chronology) {
-  switch (value.kind) {
-    case FieldKind.ShortText:
-    case FieldKind.LongText:
-      return value.text ?? '—'
-    case FieldKind.Number:
-      if (value.number === null) return '—'
-      if (value.eraId === null) return value.number
-      // An era that still exists is written the way it is written now. One since removed is
-      // written with the label the version remembered, which is all that is left of it.
-      if (findEra(chronology, value.eraId)) {
-        return formatChronologyYear(chronology, value.number, value.eraId)
-      }
-      return value.eraLabel
-        ? withEraLabel(formatSignedYear(value.number), value.eraLabel, EraLabelPosition.BeforeYear)
-        : value.number
-    case FieldKind.Boolean:
-      return value.boolean ? t('entity.fact.yes') : t('entity.fact.no')
-    case FieldKind.Date:
-      return value.date ? formatDate(value.date) : '—'
-    case FieldKind.Select:
-    case FieldKind.MultiSelect:
-      return value.optionValues.length > 0 ? value.optionValues.join(', ') : '—'
-    case FieldKind.EntityReference:
-      return value.referencedEntityName ?? '—'
-    default:
-      return '—'
-  }
 }

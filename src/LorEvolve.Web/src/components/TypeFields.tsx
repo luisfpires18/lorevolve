@@ -19,7 +19,7 @@ import {
   restoreField,
   updateField,
   type FieldInput,
-} from '../lore/api'
+} from '../lore/fieldsApi'
 import {
   FIELD_IMAGE_SHAPE_LABELS,
   FIELD_IMAGE_SHAPE_ORDER,
@@ -29,12 +29,10 @@ import {
   FIELD_SEMANTIC_LABELS,
   FieldKind,
   semanticsFor,
-  type EntityType,
-  type EntityTypeGroup,
-  type FieldDefinition,
   type FieldKindValue,
   type FieldSemanticValue,
-} from '../lore/types'
+} from '../lore/fieldKinds'
+import type { EntityType, EntityTypeGroup, FieldDefinition } from '../lore/typeDefinitions'
 import { typePathLabel, type TypeTree } from '../lore/typeTree'
 import { groupBySection } from '../lore/fieldSections'
 import { confirmAction } from '../lib/confirm'

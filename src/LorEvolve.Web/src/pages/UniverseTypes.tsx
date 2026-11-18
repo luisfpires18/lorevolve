@@ -30,8 +30,8 @@ import {
   moveEntityType,
   reorderEntityType,
   updateEntityType,
-} from '../lore/api'
-import { type EntityType, type EntityTypeGroup } from '../lore/types'
+} from '../lore/typesApi'
+import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { buildTypeTree, branchIds, typePathLabel, type TypeNode } from '../lore/typeTree'
 import { PageHeader } from '../components/PageHeader'
 import { Field } from '../components/Field'
