@@ -1,3 +1,7 @@
+import adminMain from './admin/main'
+import adminUser from './admin/user'
+import adminRestore from './admin/restore'
+
 /** LorEvolve Admin: accounts, invitations, backups and the deploy log (#105). */
 const admin = {
   loadFailed: 'Could not load this.',
@@ -44,51 +48,7 @@ const admin = {
     member: 'Member',
     admin: 'Admin',
   },
-  main: {
-    title: 'Main',
-    lede: 'What LorEvolve records about the service, counted when this page opened. Times are UTC.',
-    counting: 'Counting…',
-    measured: 'Measured',
-    counted: 'Counted {time}.',
-    stats: {
-      accounts: {
-        label: 'Accounts',
-        source: 'Every account that exists.',
-      },
-      admins: {
-        label: 'Admins',
-        source: 'Accounts with the Admin role.',
-      },
-      blocked: {
-        label: 'Blocked accounts',
-        source: 'Blocked now.',
-      },
-      universes: {
-        label: 'Universes',
-        source: 'Every universe that exists, archived included.',
-      },
-      public: {
-        label: 'Public universes',
-        source: 'Published on the portal now.',
-      },
-      collaborations: {
-        label: 'Collaborations',
-        source: 'Collaborator places across all universes.',
-      },
-      storage: {
-        label: 'Stored pictures',
-        source: 'Originals of Lore pictures, Trash included, as storage allowances count them.',
-      },
-      apps: {
-        label: 'Connected AI apps',
-        source: 'Live MCP connections.',
-      },
-    },
-    trend: {
-      heading: 'Universes created per month',
-      note: 'By creation date, UTC. Universes deleted since are not counted.',
-    },
-  },
+  main: adminMain,
   backups: {
     heading: 'Database backups',
     reading: 'Reading…',
@@ -148,40 +108,7 @@ const admin = {
       position: 'Page {page} of {total}',
     },
   },
-  user: {
-    notFound: 'There is no account with this id.',
-    all: 'All users',
-    opening: 'Opening the account…',
-    publicName: 'Public name: {name}',
-    beforeRecords: 'Before records began',
-    account: {
-      heading: 'Account',
-      id: 'User ID',
-      email: 'Email',
-      role: 'Platform role',
-      status: 'Status',
-      blockedSince: 'Blocked since {time}',
-      blockedSinceUnknown: 'Blocked since an unknown time',
-      active: 'Active',
-      owned: 'Universes owned',
-      shared: 'Universes shared with them',
-      storage: 'Storage',
-      storageValue: '{used} used of {quota}',
-      created: 'Account created',
-      subscription: 'Subscription',
-    },
-    signIn: {
-      heading: 'Sign-in and access',
-      last: 'Last sign-in',
-      failed: 'Wrong passwords since then',
-      lockout: 'Sign-in lockout',
-      lockedUntil: 'Locked until {time}',
-      lockoutNone: 'None',
-      apps: 'Connected AI apps',
-      appsUsed: 'AI apps last used',
-      appsNever: 'Never',
-    },
-  },
+  user: adminUser,
   history: {
     heading: 'Admin actions',
     empty: 'No admin action has been taken on this account.',
@@ -266,92 +193,7 @@ const admin = {
       older: 'Older',
     },
   },
-  restore: {
-    label: 'Restore a backup',
-    title: 'Restore a backup',
-    lead: 'A backup becomes a new universe of its own. Nothing you already have is changed, replaced or merged.',
-    chooseFirst: 'Choose a backup file first.',
-    tooLarge: 'That file is larger than LorEvolve restores ({mb} MB).',
-    nameTaken:
-      'You already have a universe with that name. Choose another name for the restored one.',
-    serverTooLarge: 'This backup is larger than LorEvolve restores.',
-    sendFailed: 'The backup could not be sent. Check your connection and try again.',
-    restoreFailed: 'The backup could not be restored. Check your connection and try again.',
-    file: {
-      label: 'Backup file',
-      hint: 'The .zip file LorEvolve downloaded from a universe’s Settings.',
-    },
-    progress: {
-      checkingLabel: 'Checking the backup',
-      uploadingLabel: 'Uploading the backup',
-      checking: 'Checking the backup…',
-      uploading: 'Uploading the backup… {percent}%',
-    },
-    check: 'Check backup',
-    checkBusy: 'Checking',
-    cancel: 'Cancel',
-    refused: {
-      heading: 'This backup cannot be restored',
-      more: {
-        one: 'and {n} more problem.',
-        other: 'and {n} more problems.',
-      },
-      note: 'No universe was created.',
-      chooseAnother: 'Choose another file',
-      close: 'Close',
-    },
-    ready: {
-      heading: 'Ready to restore',
-      universe: 'Universe',
-      backedUp: 'Backed up',
-      format: 'Backup format',
-      version: 'Version {version}',
-      archived: 'This universe was archived when it was backed up, and is restored archived.',
-      nameLabel: 'Name of the new universe',
-      submit: 'Restore as a new universe',
-      submitBusy: 'Restoring',
-      chooseAnother: 'Choose another file',
-    },
-    restoring: {
-      label: 'Restoring the universe',
-      stage: 'Restoring the universe and its pictures… {elapsed}',
-      note: 'A large backup can take a few minutes. Keep this page open.',
-    },
-    summary: {
-      lore: 'Lore',
-      pictures: 'Pictures',
-      stories: 'Stories',
-      ideas: 'Ideas',
-      ideaBoards: 'Idea boards',
-      worldRules: 'World Rules',
-      maps: 'Maps',
-      versions: 'Saved versions',
-      trash: 'In the Trash',
-      recentlyDeleted: '{n} recently deleted',
-    },
-    counts: {
-      entry: { one: '{n} entry', other: '{n} entries' },
-      type: { one: '{n} type', other: '{n} types' },
-      relationship: { one: '{n} relationship', other: '{n} relationships' },
-      moment: { one: '{n} moment', other: '{n} moments' },
-      datePeriod: { one: '{n} date period', other: '{n} date periods' },
-      article: { one: '{n} article', other: '{n} articles' },
-      picture: { one: '{n} picture', other: '{n} pictures' },
-      story: { one: '{n} story', other: '{n} stories' },
-      chapter: { one: '{n} chapter', other: '{n} chapters' },
-      scene: { one: '{n} scene', other: '{n} scenes' },
-      arc: { one: '{n} arc', other: '{n} arcs' },
-      beat: { one: '{n} beat', other: '{n} beats' },
-      sceneWithProse: { one: '{n} scene with prose', other: '{n} scenes with prose' },
-      idea: { one: '{n} idea', other: '{n} ideas' },
-      board: { one: '{n} board', other: '{n} boards' },
-      worldRule: { one: '{n} world rule', other: '{n} world rules' },
-      map: { one: '{n} map', other: '{n} maps' },
-      pin: { one: '{n} pin', other: '{n} pins' },
-      savedVersion: { one: '{n} saved version', other: '{n} saved versions' },
-      item: { one: '{n} item', other: '{n} items' },
-    },
-  },
+  restore: adminRestore,
 }
 
 export default admin

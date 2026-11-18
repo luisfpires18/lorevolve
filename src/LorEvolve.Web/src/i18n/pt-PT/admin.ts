@@ -1,4 +1,7 @@
 import type { Dictionary } from '../en'
+import adminMain from './admin/main'
+import adminUser from './admin/user'
+import adminRestore from './admin/restore'
 
 /** LorEvolve Admin: accounts, invitations, backups and the deploy log (#105). */
 const admin: Dictionary['admin'] = {
@@ -48,52 +51,7 @@ const admin: Dictionary['admin'] = {
     member: 'Membro',
     admin: 'Administrador',
   },
-  main: {
-    title: 'Principal',
-    lede: 'O que o LorEvolve regista sobre o serviço, contado quando esta página foi aberta. As horas são UTC.',
-    counting: 'A contar…',
-    measured: 'Medido',
-    counted: 'Contado {time}.',
-    stats: {
-      accounts: {
-        label: 'Contas',
-        source: 'Todas as contas que existem.',
-      },
-      admins: {
-        label: 'Administradores',
-        source: 'Contas com a função de Administrador.',
-      },
-      blocked: {
-        label: 'Contas bloqueadas',
-        source: 'Bloqueadas neste momento.',
-      },
-      universes: {
-        label: 'Universos',
-        source: 'Todos os universos que existem, incluindo os arquivados.',
-      },
-      public: {
-        label: 'Universos públicos',
-        source: 'Publicados agora no portal.',
-      },
-      collaborations: {
-        label: 'Colaborações',
-        source: 'Lugares de colaborador em todos os universos.',
-      },
-      storage: {
-        label: 'Imagens guardadas',
-        source:
-          'Originais das imagens do Lore, incluindo as da reciclagem, tal como as contam os limites de armazenamento.',
-      },
-      apps: {
-        label: 'Aplicações de IA ligadas',
-        source: 'Ligações MCP ativas.',
-      },
-    },
-    trend: {
-      heading: 'Universos criados por mês',
-      note: 'Por data de criação, em UTC. Os universos entretanto eliminados não são contados.',
-    },
-  },
+  main: adminMain,
   backups: {
     heading: 'Cópias de segurança da base de dados',
     reading: 'A ler…',
@@ -153,40 +111,7 @@ const admin: Dictionary['admin'] = {
       position: 'Página {page} de {total}',
     },
   },
-  user: {
-    notFound: 'Não existe nenhuma conta com este identificador.',
-    all: 'Todos os utilizadores',
-    opening: 'A abrir a conta…',
-    publicName: 'Nome público: {name}',
-    beforeRecords: 'Antes de haver registos',
-    account: {
-      heading: 'Conta',
-      id: 'ID do utilizador',
-      email: 'Email',
-      role: 'Função na plataforma',
-      status: 'Estado',
-      blockedSince: 'Bloqueada desde {time}',
-      blockedSinceUnknown: 'Bloqueada desde um momento desconhecido',
-      active: 'Ativa',
-      owned: 'Universos próprios',
-      shared: 'Universos partilhados com a conta',
-      storage: 'Armazenamento',
-      storageValue: '{used} usados de {quota}',
-      created: 'Conta criada',
-      subscription: 'Subscrição',
-    },
-    signIn: {
-      heading: 'Início de sessão e acesso',
-      last: 'Último início de sessão',
-      failed: 'Palavras-passe erradas desde então',
-      lockout: 'Bloqueio de início de sessão',
-      lockedUntil: 'Bloqueado até {time}',
-      lockoutNone: 'Nenhum',
-      apps: 'Aplicações de IA ligadas',
-      appsUsed: 'Última utilização das aplicações de IA',
-      appsNever: 'Nunca',
-    },
-  },
+  user: adminUser,
   history: {
     heading: 'Ações de administração',
     empty: 'Não foi tomada nenhuma ação de administração sobre esta conta.',
@@ -271,93 +196,7 @@ const admin: Dictionary['admin'] = {
       older: 'Mais antigos',
     },
   },
-  restore: {
-    label: 'Restaurar uma cópia de segurança',
-    title: 'Restaurar uma cópia de segurança',
-    lead: 'Uma cópia de segurança torna-se um novo universo, separado. Nada do que já tens é alterado, substituído ou fundido.',
-    chooseFirst: 'Escolhe primeiro um ficheiro de cópia de segurança.',
-    tooLarge: 'Esse ficheiro é maior do que o LorEvolve restaura ({mb} MB).',
-    nameTaken: 'Já tens um universo com esse nome. Escolhe outro nome para o universo restaurado.',
-    serverTooLarge: 'Esta cópia de segurança é maior do que o LorEvolve restaura.',
-    sendFailed:
-      'Não foi possível enviar a cópia de segurança. Verifica a tua ligação e tenta novamente.',
-    restoreFailed:
-      'Não foi possível restaurar a cópia de segurança. Verifica a tua ligação e tenta novamente.',
-    file: {
-      label: 'Ficheiro da cópia de segurança',
-      hint: 'O ficheiro .zip que o LorEvolve transferiu das Definições de um universo.',
-    },
-    progress: {
-      checkingLabel: 'A verificar a cópia de segurança',
-      uploadingLabel: 'A carregar a cópia de segurança',
-      checking: 'A verificar a cópia de segurança…',
-      uploading: 'A carregar a cópia de segurança… {percent}%',
-    },
-    check: 'Verificar cópia',
-    checkBusy: 'A verificar',
-    cancel: 'Cancelar',
-    refused: {
-      heading: 'Esta cópia de segurança não pode ser restaurada',
-      more: {
-        one: 'e mais {n} problema.',
-        other: 'e mais {n} problemas.',
-      },
-      note: 'Não foi criado nenhum universo.',
-      chooseAnother: 'Escolher outro ficheiro',
-      close: 'Fechar',
-    },
-    ready: {
-      heading: 'Pronta para restaurar',
-      universe: 'Universo',
-      backedUp: 'Copiado em',
-      format: 'Formato da cópia de segurança',
-      version: 'Versão {version}',
-      archived: 'Este universo estava arquivado quando foi copiado, e é restaurado arquivado.',
-      nameLabel: 'Nome do novo universo',
-      submit: 'Restaurar como novo universo',
-      submitBusy: 'A restaurar',
-      chooseAnother: 'Escolher outro ficheiro',
-    },
-    restoring: {
-      label: 'A restaurar o universo',
-      stage: 'A restaurar o universo e as suas imagens… {elapsed}',
-      note: 'Uma cópia de segurança grande pode demorar alguns minutos. Mantém esta página aberta.',
-    },
-    summary: {
-      lore: 'Lore',
-      pictures: 'Imagens',
-      stories: 'Histórias',
-      ideas: 'Ideias',
-      ideaBoards: 'Quadros de ideias',
-      worldRules: 'Regras do mundo',
-      maps: 'Mapas',
-      versions: 'Versões guardadas',
-      trash: 'Na reciclagem',
-      recentlyDeleted: '{n} eliminados recentemente',
-    },
-    counts: {
-      entry: { one: '{n} entrada', other: '{n} entradas' },
-      type: { one: '{n} tipo', other: '{n} tipos' },
-      relationship: { one: '{n} relação', other: '{n} relações' },
-      moment: { one: '{n} acontecimento', other: '{n} acontecimentos' },
-      datePeriod: { one: '{n} período de datas', other: '{n} períodos de datas' },
-      article: { one: '{n} artigo', other: '{n} artigos' },
-      picture: { one: '{n} imagem', other: '{n} imagens' },
-      story: { one: '{n} história', other: '{n} histórias' },
-      chapter: { one: '{n} capítulo', other: '{n} capítulos' },
-      scene: { one: '{n} cena', other: '{n} cenas' },
-      arc: { one: '{n} arco', other: '{n} arcos' },
-      beat: { one: '{n} momento da cena', other: '{n} momentos da cena' },
-      sceneWithProse: { one: '{n} cena com texto', other: '{n} cenas com texto' },
-      idea: { one: '{n} ideia', other: '{n} ideias' },
-      board: { one: '{n} quadro', other: '{n} quadros' },
-      worldRule: { one: '{n} regra do mundo', other: '{n} regras do mundo' },
-      map: { one: '{n} mapa', other: '{n} mapas' },
-      pin: { one: '{n} marcador', other: '{n} marcadores' },
-      savedVersion: { one: '{n} versão guardada', other: '{n} versões guardadas' },
-      item: { one: '{n} item', other: '{n} itens' },
-    },
-  },
+  restore: adminRestore,
 }
 
 export default admin
