@@ -5,20 +5,16 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { Field } from './Field'
 import { FieldSectionsDialog } from './FieldSectionsDialog'
-import { tn as translateN, useI18n } from '../i18n'
+import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import {
-  FIELD_CHANGED_CODE,
   FIELD_REQUIRED_MISSING_CODE,
-  addField,
   archiveField,
   deleteField,
   restoreField,
-  updateField,
-  type FieldInput,
 } from '../lore/fieldsApi'
 import {
   FIELD_IMAGE_SHAPE_LABELS,
@@ -36,18 +32,10 @@ import type { EntityType, EntityTypeGroup, FieldDefinition } from '../lore/typeD
 import { typePathLabel, type TypeTree } from '../lore/typeTree'
 import { groupBySection } from '../lore/fieldSections'
 import { confirmAction } from '../lib/confirm'
-
-const KIND_ORDER: FieldKindValue[] = [
-  FieldKind.ShortText,
-  FieldKind.LongText,
-  FieldKind.Number,
-  FieldKind.Boolean,
-  FieldKind.Date,
-  FieldKind.Select,
-  FieldKind.MultiSelect,
-  FieldKind.EntityReference,
-  FieldKind.Image,
-]
+import { KIND_ORDER, type TargetChoice } from '../lore/fieldDraft'
+import { entries, fieldInUseDetail } from '../lore/fieldInUse'
+import { useFieldDialogState } from '../lore/useFieldDialogState'
+import { fieldDialogActions } from '../lore/fieldDialogActions'
 
 interface TypeFieldsProps {
   universeId: string
@@ -631,42 +619,6 @@ export function TypeFields({
   )
 }
 
-function entries(count: number) {
-  return translateN('entityTypes.fields.entries', count, { n: count })
-}
-
-/** Why a field holding values cannot be deleted: the sentence the API's refusal carries (`FieldInUseDetail`). */
-function fieldInUseDetail(entryCount: number, trashed: number) {
-  if (trashed === 0) return translateN('entityTypes.fields.inUse', entryCount, { n: entryCount })
-  if (trashed === entryCount)
-    return translateN('entityTypes.fields.inUseAllTrashed', entryCount, { n: entryCount })
-  return translateN('entityTypes.fields.inUseSomeTrashed', entryCount, { n: entryCount, trashed })
-}
-
-/** A link field's allowed target as one select value. `null` is a new field's "not chosen yet". */
-type TargetChoice = 'any' | `type:${string}` | `group:${string}` | null
-
-function targetChoice(field: FieldDefinition): TargetChoice {
-  if (field.targetGroupId) return `group:${field.targetGroupId}`
-  return field.targetEntityTypeId ? `type:${field.targetEntityTypeId}` : 'any'
-}
-
-function parseTarget(
-  value: TargetChoice,
-): Pick<FieldInput, 'targetEntityTypeId' | 'targetGroupId'> {
-  if (value?.startsWith('group:'))
-    return { targetEntityTypeId: null, targetGroupId: value.slice(6) }
-  if (value?.startsWith('type:')) return { targetEntityTypeId: value.slice(5), targetGroupId: null }
-  return { targetEntityTypeId: null, targetGroupId: null }
-}
-
-function splitOptions(text: string) {
-  return text
-    .split(',')
-    .map((option) => option.trim())
-    .filter(Boolean)
-}
-
 /**
  * One field's settings, new or existing, in the drawer every LorEvolve form uses: focus goes in, Escape and Cancel ask before
  * an edit is lost, a failed save keeps the draft and says why, and focus returns to the button that opened it.
@@ -676,20 +628,6 @@ function splitOptions(text: string) {
  * target until the author picks one, "Any Lore type" included: nothing is chosen for them, and nothing from the name.
  * The kind of a field that holds values is shown but cannot change, because the API refuses it.
  */
-/** What the drawer edits, as it reads for a field (or a new one). */
-function draftOf(field: FieldDefinition | null) {
-  return {
-    name: field?.name ?? '',
-    kind: field?.kind ?? FieldKind.ShortText,
-    isRequired: field?.isRequired ?? false,
-    options: field ? field.options.map((option) => option.value).join(', ') : '',
-    semantic: field?.semantic ?? null,
-    defaultValue: field?.defaultValue ?? '',
-    imageShape: field?.imageShape ?? FieldImageShape.Free,
-    target: (field ? targetChoice(field) : null) as TargetChoice,
-  }
-}
-
 function FieldDialog({
   universeId,
   type,
@@ -717,23 +655,29 @@ function FieldDialog({
   onSaved: (name: string, wasNew: boolean) => Promise<void>
 }) {
   const { t, tn, tx } = useI18n()
-  // What this drawer was opened over: the settings an unsaved change is measured against, and the version an edit names.
-  // A refused stale save moves it on only when the author chooses (ADR 0043).
-  const [base, setBase] = useState(() => ({ draft: draftOf(field), version: field?.version ?? 0 }))
-  const initial = base.draft
-  // Someone else saved this field after the drawer opened; the draft is kept until the author decides.
-  const [stale, setStale] = useState(false)
-  const [name, setName] = useState(initial.name)
-  const [kind, setKind] = useState<FieldKindValue>(initial.kind)
-  const [isRequired, setIsRequired] = useState(initial.isRequired)
-  const [options, setOptions] = useState(initial.options)
-  const [semantic, setSemantic] = useState<FieldSemanticValue | null>(initial.semantic)
-  const [defaultValue, setDefaultValue] = useState(initial.defaultValue)
-  const [imageShape, setImageShape] = useState<FieldImageShapeValue>(initial.imageShape)
-  const [target, setTarget] = useState<TargetChoice>(initial.target)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const state = useFieldDialogState({ field })
+  const {
+    initial,
+    stale,
+    name,
+    setName,
+    kind,
+    isRequired,
+    setIsRequired,
+    options,
+    setOptions,
+    semantic,
+    setSemantic,
+    defaultValue,
+    setDefaultValue,
+    imageShape,
+    setImageShape,
+    target,
+    setTarget,
+    fieldErrors,
+    message,
+    isSaving,
+  } = state
 
   // The kind is frozen while any entry holds a value, or any older version recorded one (Issue #39).
   const held = field === null ? null : (latest ?? field)
@@ -760,103 +704,19 @@ function FieldDialog({
     document.getElementById('field-name')?.focus()
   }, [])
 
-  function chooseKind(next: FieldKindValue) {
-    setKind(next)
-    // A meaning belongs to a shape: switching away from one that can carry it drops it rather than sending a pair the
-    // API refuses. A link target belongs to a link field alone.
-    setSemantic((current) =>
-      current !== null && semanticsFor(next).includes(current) ? current : null,
-    )
-    if (next !== FieldKind.EntityReference) setTarget(field ? targetChoice(field) : null)
-  }
-
-  /** Puts the saved settings in the drawer, the version with them, and drops the draft. */
-  function takeSaved(saved: FieldDefinition) {
-    const next = draftOf(saved)
-    setBase({ draft: next, version: saved.version })
-    setName(next.name)
-    setKind(next.kind)
-    setIsRequired(next.isRequired)
-    setOptions(next.options)
-    setSemantic(next.semantic)
-    setDefaultValue(next.defaultValue)
-    setImageShape(next.imageShape)
-    setTarget(next.target)
-    setStale(false)
-    setMessage(null)
-    setFieldErrors({})
-  }
-
-  /** Keeps the draft and takes the saved version, so the next Save deliberately replaces what is saved now. */
-  function keepMine(saved: FieldDefinition) {
-    setBase((current) => ({ ...current, version: saved.version }))
-    setStale(false)
-    setMessage(t('entityTypes.fields.keptMine'))
-  }
-
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setStale(false)
-    const errors: Record<string, string> = {}
-    if (!name.trim()) errors.name = t('entityTypes.fields.nameRequired')
-    if (hasOptions && splitOptions(options).length === 0)
-      errors.options = t('entityTypes.fields.optionsRequired')
-    if (isLink && target === null) errors.target = t('entityTypes.fields.targetRequired')
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      return
-    }
-
-    const input: FieldInput = {
-      name: name.trim(),
-      kind,
-      // A picture is optional by nature: the API refuses a required Image field.
-      isRequired: isImage ? false : isRequired,
-      // A new field goes last, and an edit keeps its place: the order is the Sections drawer's (Issue #26).
-      displayOrder: null,
-      defaultValue: isText ? defaultValue.trim() || null : null,
-      options: hasOptions ? splitOptions(options) : null,
-      semantic,
-      imageShape: isImage ? imageShape : null,
-      ...parseTarget(isLink ? target : null),
-      ...(field ? { expectedVersion: base.version } : {}),
-    }
-
-    setIsSaving(true)
-    try {
-      if (field) await updateField(universeId, type.id, field.id, input)
-      else await addField(universeId, type.id, input)
-      await onSaved(input.name, field === null)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.code === FIELD_CHANGED_CODE) {
-        // Saved by someone else since this opened: nothing was written, the draft stays, and the latest is read so the
-        // author can compare and choose.
-        setMessage(t('entityTypes.fields.changedMeanwhile'))
-        setStale(true)
-        await onChanged().catch(() => undefined)
-      } else if (error instanceof ApiError) {
-        const mapped: Record<string, string> = {}
-        for (const [key, text] of Object.entries(error.fieldErrors)) {
-          mapped[key === 'targetentitytypeid' || key === 'targetgroupid' ? 'target' : key] = text
-        }
-        setFieldErrors(mapped)
-        setMessage(
-          Object.keys(mapped).length === 0
-            ? error.message
-            : field
-              ? t('entityTypes.fields.detailsSave')
-              : t('entityTypes.fields.detailsAdd'),
-        )
-        // Changed elsewhere since this opened (archived, say): the list behind should say so too.
-        if (error.status === 409) await onChanged().catch(() => undefined)
-      } else {
-        setMessage(field ? t('entityTypes.fields.saveFailed') : t('entityTypes.fields.addFailed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { chooseKind, takeSaved, keepMine, save } = fieldDialogActions({
+    ...state,
+    universeId,
+    type,
+    field,
+    onChanged,
+    onSaved,
+    t,
+    hasOptions,
+    isLink,
+    isText,
+    isImage,
+  })
 
   return (
     <Drawer
