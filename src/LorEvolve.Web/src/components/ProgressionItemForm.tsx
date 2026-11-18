@@ -21,6 +21,7 @@ import { itemFormActions } from '../progression/itemFormActions'
 import { ItemConflict } from './progression/ItemConflict'
 import { ItemNameFields } from './progression/ItemNameFields'
 import { ItemUnlockField } from './progression/ItemUnlockField'
+import { Button } from './Button'
 
 /**
  * One form or one ability of an entry (Issue #42), in the drawer every LorEvolve form uses: what it is; when it was first unlocked
@@ -110,13 +111,7 @@ export function ProgressionItemForm({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button
-            ref={saveButton}
-            className="button"
-            type="submit"
-            disabled={isSaving}
-            data-testid={`save-${kind}`}
-          >
+          <Button ref={saveButton} type="submit" disabled={isSaving} data-testid={`save-${kind}`}>
             {isSaving
               ? item
                 ? t('progression.item.saving')
@@ -124,10 +119,10 @@ export function ProgressionItemForm({
               : item
                 ? words.save
                 : words.add}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
+          </Button>
+          <Button tone="secondary" onClick={close}>
             {t('progression.item.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >
@@ -195,14 +190,14 @@ export function ProgressionItemForm({
             </label>
           ))}
           {!isLook && unlockAt !== -1 ? (
-            <button
-              type="button"
-              className="button button--secondary button--sm"
+            <Button
+              tone="secondary"
+              size="sm"
               onClick={fromUnlockOn}
               data-testid={`${kind}-eras-from-unlock`}
             >
               {t('progression.item.eras.fromUnlock', { name: base.eras[unlockAt].name })}
-            </button>
+            </Button>
           ) : null}
         </Field>
       ) : null}

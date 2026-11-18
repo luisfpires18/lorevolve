@@ -18,6 +18,7 @@ import { EraPanel } from './progression/EraPanel'
 import { EraList } from './progression/EraList'
 import { ProgressionItems } from './progression/ProgressionItems'
 import { ProgressionHistory } from './progression/ProgressionHistory'
+import { Button } from './Button'
 
 interface ProgressionViewProps {
   universeId: string
@@ -73,9 +74,9 @@ export function ProgressionView({
     return (
       <div className="notice notice--error" role="alert">
         <p>{t('progression.view.readFailed')}</p>
-        <button className="button button--secondary" type="button" onClick={() => void load()}>
+        <Button tone="secondary" onClick={() => void load()}>
           {t('progression.view.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { EmptyState } from '../EmptyState'
 import type { useStoryState } from '../../stories/useStoryState'
+import { Button } from '../Button'
 
 /** What the page shows while its story is read, missing, or could not be read. */
 export function StoryUnavailable({
@@ -43,9 +44,9 @@ export function StoryUnavailable({
     return (
       <div className="notice notice--error" role="alert" data-testid="story-load-error">
         <p>{t('stories.page.loadError')}</p>
-        <button className="button button--secondary" type="button" onClick={retry}>
+        <Button tone="secondary" onClick={retry}>
           {t('stories.page.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

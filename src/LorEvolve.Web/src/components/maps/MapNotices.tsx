@@ -3,6 +3,7 @@ import type { MapDetail } from '../../maps/types'
 import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { PinForm } from '../../maps/useMapPageState'
+import { Button } from '../Button'
 
 export function MapNotices({
   map,
@@ -45,19 +46,18 @@ export function MapNotices({
         <p className="callout mapscreen__placing" role="status" data-testid="map-placing-hint">
           {tx('places.mapPage.placing', {
             position: (
-              <button
-                className="button button--text"
-                type="button"
+              <Button
+                tone="text"
                 onClick={() => setPinForm({ kind: 'new', at: { x: 0.5, y: 0.5 } })}
                 data-testid="map-place-centre"
               >
                 {t('places.mapPage.typePosition')}
-              </button>
+              </Button>
             ),
           })}{' '}
-          <button className="button button--text" type="button" onClick={() => setPlacing(false)}>
+          <Button tone="text" onClick={() => setPlacing(false)}>
             {t('places.mapPage.cancel')}
-          </button>
+          </Button>
         </p>
       ) : null}
 

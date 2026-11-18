@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Globe } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import { getPublishEverything, publishEverything } from '../../publishing/api'
 import type { PublishEverythingPreview, PublishEverythingResult } from '../../publishing/types'
 import { PublishEverythingConfirm } from './PublishEverythingConfirm'
+import { Button } from '../Button'
 
 /**
  * Publish everything: every Canon lore entry and every Complete story, with its scenes and their text, in one action. The
@@ -77,17 +77,15 @@ export function PublishEverything({
     <div className="publish__everything" data-testid="publish-everything">
       <p className="settings__note">{t('universe.publish.everything.note')}</p>
       {!preview ? (
-        <button
-          className="button button--secondary"
-          type="button"
-          disabled={busy}
-          aria-busy={busy}
+        <Button
+          tone="secondary"
+          icon={Globe}
+          busy={busy}
           onClick={() => void ask()}
           data-testid="publish-everything-open"
         >
-          <ActionIcon icon={Globe} />
           {t('universe.publish.everything.open')}
-        </button>
+        </Button>
       ) : null}
 
       {error ? (

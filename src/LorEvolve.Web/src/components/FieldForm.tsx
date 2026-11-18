@@ -8,6 +8,7 @@ import {
 } from '../lore/fieldKinds'
 import { FieldKind, type FieldKindValue, type ProjectField } from '../projectEntities/types'
 import { t, useI18n } from '../i18n'
+import { Button } from './Button'
 
 /** The kinds an author can choose in this screen. EntityReference is not among them: a link field needs a target. */
 const KINDS: readonly { kind: FieldKindValue; label: () => string }[] = [
@@ -159,26 +160,16 @@ export function FieldForm({
       )}
 
       <div className="form__actions">
-        <button
-          className="button"
-          type="submit"
-          disabled={busy}
-          data-testid="project-field-new-save"
-        >
+        <Button type="submit" disabled={busy} data-testid="project-field-new-save">
           {busy
             ? t('projects.schema.fieldSaving')
             : initial
               ? t('projects.schema.saveField')
               : t('projects.schema.addField')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={onCancel}
-          data-testid="project-field-new-cancel"
-        >
+        </Button>
+        <Button tone="secondary" onClick={onCancel} data-testid="project-field-new-cancel">
           {t('projects.common.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   )

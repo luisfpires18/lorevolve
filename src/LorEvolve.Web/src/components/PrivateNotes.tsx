@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { NotebookPen } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { useI18n } from '../i18n'
 import { PrivateNoteDrawer } from './lore/PrivateNoteDrawer'
+import { Button } from './Button'
 
 export interface PrivateNotesProps {
   universeId: string
@@ -27,17 +27,16 @@ export function PrivateNotes({ universeId, entityId, entryName }: PrivateNotesPr
 
   return (
     <>
-      <button
-        className="button button--text"
-        type="button"
+      <Button
+        tone="text"
+        icon={NotebookPen}
         aria-haspopup="dialog"
         title={t('entity.privateNote.triggerTitle')}
         onClick={() => setIsOpen(true)}
         data-testid="private-note-trigger"
       >
-        <ActionIcon icon={NotebookPen} />
         <span className="entry__toollabel">{t('entity.privateNote.triggerLabel')}</span>
-      </button>
+      </Button>
 
       {isOpen ? (
         <PrivateNoteDrawer

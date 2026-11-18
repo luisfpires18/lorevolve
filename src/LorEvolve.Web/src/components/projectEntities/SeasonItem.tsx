@@ -12,6 +12,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
+import { Button } from '../Button'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
 export function SeasonItem({
@@ -88,24 +89,19 @@ export function SeasonItem({
               />
             )}
           </Field>
-          <button
-            className="button button--sm"
-            type="submit"
-            disabled={busy}
-            data-testid="project-season-rename-save"
-          >
+          <Button size="sm" type="submit" disabled={busy} data-testid="project-season-rename-save">
             {t('projects.seasons.renameSave')}
-          </button>
+          </Button>
           {/* Without this the only way out of a rename the author thought better of was to save it. */}
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             disabled={busy}
             onClick={() => setRenaming(null)}
             data-testid="project-season-rename-cancel"
           >
             {t('projects.common.cancel')}
-          </button>
+          </Button>
         </form>
       ) : (
         <div className="projectcard__head">
@@ -206,14 +202,14 @@ export function SeasonItem({
           }}
         />
       ) : (
-        <button
-          className="button button--text button--sm"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
           data-testid={`project-episode-add-${season.id}`}
           onClick={() => setAddingTo(season.id)}
         >
           {say.addEpisode()}
-        </button>
+        </Button>
       )}
     </li>
   )

@@ -13,6 +13,7 @@ import { MassCreateDefaults } from '../components/lore/MassCreateDefaults'
 import { MassCreatePaste } from '../components/lore/MassCreatePaste'
 import { MassCreateReview } from '../components/lore/MassCreateReview'
 import { MassCreateBar } from '../components/lore/MassCreateBar'
+import { Button } from '../components/Button'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; types: EntityType[] } | { kind: 'error' }
 
@@ -93,15 +94,14 @@ export default function MassCreatePage() {
       {load.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{t('lore.massCreate.typesFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               refreshTypes().catch(() => undefined)
             }}
           >
             {t('lore.massCreate.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

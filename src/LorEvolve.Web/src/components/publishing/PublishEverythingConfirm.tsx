@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import { useI18n } from '../../i18n'
 import type { PublishEverythingPreview } from '../../publishing/types'
+import { Button } from '../Button'
 
 /** The confirm before Publish everything: each entry and story it would publish, and the stories it would skip. */
 export function PublishEverythingConfirm({
@@ -115,29 +116,20 @@ export function PublishEverythingConfirm({
       ) : null}
       <div className="form__actions">
         {nothing ? null : (
-          <button
-            className="button"
-            type="button"
-            disabled={busy}
-            aria-busy={busy}
+          <Button
+            busy={busy}
+            busyLabel={t('universe.publish.everything.publishing')}
             onClick={() => void confirm()}
             data-testid="publish-everything-confirm-button"
           >
-            {busy
-              ? t('universe.publish.everything.publishing')
-              : t('universe.publish.everything.confirm')}
-          </button>
+            {t('universe.publish.everything.confirm')}
+          </Button>
         )}
-        <button
-          className="button button--secondary"
-          type="button"
-          disabled={busy}
-          onClick={() => setPreview(null)}
-        >
+        <Button tone="secondary" disabled={busy} onClick={() => setPreview(null)}>
           {nothing
             ? t('universe.publish.everything.close')
             : t('universe.publish.everything.keepPrivate')}
-        </button>
+        </Button>
       </div>
       {nothing ? null : <p className="settings__note">{t('universe.publish.everything.again')}</p>}
     </div>

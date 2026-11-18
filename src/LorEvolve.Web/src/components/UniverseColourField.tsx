@@ -1,8 +1,8 @@
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { HEX, PICKER_IDLE, normalizeHex } from '../universes/universeFormInput'
+import { Button } from './Button'
 
 export function UniverseColourField({
   colourId,
@@ -71,18 +71,18 @@ export function UniverseColourField({
               data-testid="universe-colour-hex"
             />
             {accentColor ? (
-              <button
-                className="button button--text button--sm"
-                type="button"
+              <Button
+                tone="text"
+                size="sm"
+                icon={X}
                 onClick={() => {
                   setAccentColor('')
                   setColourText('')
                 }}
                 data-testid="universe-colour-clear"
               >
-                <ActionIcon icon={X} />
                 {t('universe.form.colourClear')}
-              </button>
+              </Button>
             ) : null}
           </div>
           <p className="field__hint" id={`${colourId}-hint`}>

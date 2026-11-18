@@ -70,10 +70,6 @@
   font-size: var(--text-xs);
 }
 
-.typegroups__another {
-  align-self: flex-start;
-}
-
 .typegroups__newrow {
   display: flex;
   flex-wrap: wrap;

@@ -8,6 +8,7 @@ import { useI18n } from '../i18n'
 import { createChapter, moveChapterToArc, updateChapter } from '../stories/api'
 import { arcLabel } from '../stories/format'
 import type { Chapter, PlotArc } from '../stories/types'
+import { Button } from './Button'
 
 interface ChapterDraft {
   title: string
@@ -142,7 +143,7 @@ export function ChapterForm({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button className="button" type="submit" disabled={isSaving} data-testid="save-chapter">
+          <Button type="submit" disabled={isSaving} data-testid="save-chapter">
             {isSaving
               ? chapter
                 ? t('stories.chapterForm.saving')
@@ -150,15 +151,10 @@ export function ChapterForm({
               : chapter
                 ? t('stories.chapterForm.save')
                 : t('stories.chapterForm.add')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-chapter"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="cancel-chapter">
             {t('stories.chapterForm.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

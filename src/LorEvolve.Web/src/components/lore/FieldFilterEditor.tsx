@@ -8,6 +8,7 @@ import {
 } from '../../lore/fieldFilters'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
 import { EntityPicker, type EntityChoice } from '../EntityPicker'
+import { Button } from '../Button'
 
 export type EntryName = { name: string; typeName: string }
 
@@ -158,22 +159,12 @@ export function FieldFilterEditor({
       </div>
 
       <div className="lore__fieldeditoractions">
-        <button
-          className="button button--sm"
-          type="submit"
-          disabled={!complete}
-          data-testid="lore-field-filter-apply"
-        >
+        <Button size="sm" type="submit" disabled={!complete} data-testid="lore-field-filter-apply">
           {t('lore.filters.apply')}
-        </button>
-        <button
-          className="button button--text button--sm"
-          type="button"
-          onClick={onCancel}
-          data-testid="lore-field-filter-cancel"
-        >
+        </Button>
+        <Button tone="text" size="sm" onClick={onCancel} data-testid="lore-field-filter-cancel">
           {t('lore.filters.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   )

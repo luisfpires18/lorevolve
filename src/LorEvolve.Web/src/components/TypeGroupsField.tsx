@@ -1,9 +1,9 @@
 import { useId, useState, type KeyboardEvent } from 'react'
 import { Plus } from 'lucide-react'
 import { useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
+import { Button } from './Button'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }
@@ -163,15 +163,15 @@ export function TypeGroupsField({
       ) : null}
 
       {!showPicker && !creating ? (
-        <button
-          className="button button--text button--sm typegroups__another"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
+          icon={Plus}
           onClick={() => setAdding(true)}
           data-testid="type-group-another"
         >
-          <ActionIcon icon={Plus} />
           {t('entityTypes.groupsField.addAnother')}
-        </button>
+        </Button>
       ) : null}
 
       {creating ? (
@@ -195,17 +195,12 @@ export function TypeGroupsField({
                 onKeyDown={onNewKey}
                 data-testid="type-group-new-name"
               />
-              <button
-                className="button button--secondary button--sm"
-                type="button"
-                onClick={addNew}
-                data-testid="type-group-new-add"
-              >
+              <Button tone="secondary" size="sm" onClick={addNew} data-testid="type-group-new-add">
                 {t('entityTypes.groupsField.add')}
-              </button>
-              <button
-                className="button button--text button--sm"
-                type="button"
+              </Button>
+              <Button
+                tone="text"
+                size="sm"
                 onClick={() => {
                   setCreating(false)
                   setNewName('')
@@ -213,7 +208,7 @@ export function TypeGroupsField({
                 }}
               >
                 {t('entityTypes.groupsField.cancel')}
-              </button>
+              </Button>
             </div>
           )}
         </Field>

@@ -15,6 +15,7 @@ import { MapPanelActions } from '../components/maps/MapPanelActions'
 import { MapPanelDetail } from '../components/maps/MapPanelDetail'
 import { MapPinList } from '../components/maps/MapPinList'
 import { MapStage } from '../components/maps/MapStage'
+import { Button } from '../components/Button'
 
 /**
  * One map (issue #52, ADR 0060): the picture panned and zoomed, its pins on it and beside it, and - for an Editor or the
@@ -90,13 +91,9 @@ export default function MapPage() {
     return (
       <div className="notice notice--error" role="alert" data-testid="map-load-error">
         <p>{t('places.mapPage.error')}</p>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={() => setReads((current) => current + 1)}
-        >
+        <Button tone="secondary" onClick={() => setReads((current) => current + 1)}>
           {t('places.mapPage.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

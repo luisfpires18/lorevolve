@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { listUsers, type AdminUserPage } from '../../admin/api'
 import { Avatar } from '../Avatar'
@@ -11,6 +10,7 @@ import { useLoad } from '../../admin/useLoad'
 import { Failure } from './Failure'
 import { Heading } from './Heading'
 import { SignUpLink } from './SignUpLink'
+import { Button } from '../Button'
 
 // ---------- Users ----------
 
@@ -109,14 +109,15 @@ export function UsersScreen() {
                       ) : null}
                     </p>
                   </div>
-                  <Link
-                    className="button button--secondary adminuser__open"
+                  <Button
+                    tone="secondary"
+                    className="adminuser__open"
                     to={`/admin/users/${encodeURIComponent(user.id)}`}
                     aria-label={t('admin.users.viewDetailsFor', { username: user.username })}
                     data-testid="admin-user-open"
                   >
                     {t('admin.users.viewDetails')}
-                  </Link>
+                  </Button>
                 </article>
               </li>
             ))}
@@ -134,25 +135,23 @@ export function UsersScreen() {
 
       {result && result.totalPages > 1 ? (
         <nav className="pager" aria-label={t('admin.users.pager.label')}>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page <= 1}
             onClick={() => setPage((current) => current - 1)}
           >
             {t('admin.users.pager.previous')}
-          </button>
+          </Button>
           <span className="pager__position">
             {t('admin.users.pager.position', { page: result.page, total: result.totalPages })}
           </span>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page >= result.totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
             {t('admin.users.pager.next')}
-          </button>
+          </Button>
         </nav>
       ) : null}
     </>

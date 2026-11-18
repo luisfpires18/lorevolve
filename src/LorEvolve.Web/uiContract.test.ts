@@ -246,6 +246,139 @@ test('Field renders label, hint, control, error in that order', () => {
   )
 })
 
+// The text between a `{` at `open` and its matching `}`. Braces inside quotes do not count; the
+// braces of a template's `${...}` balance themselves.
+function braceBody(source: string, open: number): string {
+  let depth = 0
+  let quote = ''
+  for (let i = open; i < source.length; i++) {
+    const c = source[i]
+    if (quote) {
+      if (c === quote) quote = ''
+    } else if (c === '"' || c === "'") quote = c
+    else if (c === '{') depth++
+    else if (c === '}' && --depth === 0) return source.slice(open + 1, i)
+  }
+  return source.slice(open + 1)
+}
+
+// Every string literal in a piece of code. A template literal keeps its own text, with each
+// `${...}` replaced by one mark that is not a space, so "button ${x}" still reads as the class
+// "button" and "button--${tone}" does not.
+function literals(code: string): string[] {
+  const found: string[] = []
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i]
+    if (c === '"' || c === "'") {
+      const end = code.indexOf(c, i + 1)
+      if (end < 0) break
+      found.push(code.slice(i + 1, end))
+      i = end
+    } else if (c === '`') {
+      let text = ''
+      let j = i + 1
+      for (; j < code.length && code[j] !== '`'; j++) {
+        if (code[j] === '$' && code[j + 1] === '{') {
+          const inner = braceBody(code, j + 1)
+          found.push(...literals(inner))
+          text += '\u0001'
+          j += inner.length + 2
+        } else text += code[j]
+      }
+      found.push(text)
+      i = j
+    }
+  }
+  return found
+}
+
+// Every class string in a file, for any prop ending in className or ClassName (triggerClassName
+// counts): className="...", and each literal inside className={...}, template literals included.
+function classStrings(source: string): string[] {
+  const found: string[] = []
+  for (const m of source.matchAll(/[A-Za-z]*[cC]lassName\s*=\s*(["'])((?:(?!\1)[^\n])*)\1/g)) {
+    found.push(m[2])
+  }
+  for (const m of source.matchAll(/[A-Za-z]*[cC]lassName\s*=\s*\{/g)) {
+    found.push(...literals(braceBody(source, m.index + m[0].length - 1)))
+  }
+  return found
+}
+
+const RAW_BUTTON_CLASS = /(^|\s)(icon)?button(\s|$)/
+const isRawButton = (source: string) =>
+  classStrings(source).some((value) => RAW_BUTTON_CLASS.test(value))
+
+const rawButtonFiles = tsxFiles
+  .filter((file) => !['src/components/Button.tsx', 'src/components/IconButton.tsx'].includes(file))
+  .filter((file) => isRawButton(read(file)))
+
+test('the raw button guard sees every way a class can be written', () => {
+  for (const raw of [
+    'className="button button--secondary"',
+    "className={'iconbutton'}",
+    'className={`button ${tone}`}',
+    'className={`${extra} iconbutton`}',
+    'className={`button button--sm ${extra}`}',
+    "className={busy ? 'button' : 'quiet'}",
+    'className={`row ${wide ? "button" : ""}`}',
+    "triggerClassName={'button'}",
+    'triggerClassName={`button ${extra}`}',
+    'className={`a\n  button\n  ${b}`}',
+  ]) {
+    assert.equal(isRawButton(`<x ${raw} />`), true, raw)
+  }
+  for (const fine of [
+    'className="buttonrow"',
+    'className={`button--${tone}`}',
+    'className={buttonClass(tone)}',
+    'className="feedbackbutton__thanks"',
+  ]) {
+    assert.equal(isRawButton(`<x ${fine} />`), false, fine)
+  }
+})
+
+test('no raw .button or .iconbutton class outside Button and IconButton', () => {
+  assert.deepEqual(
+    rawButtonFiles,
+    [],
+    'Use Button or IconButton from components/, see docs/design/ui-components.md',
+  )
+})
+
+// The only files that may call buttonClass() or iconButtonClass(): each draws something that is not
+// a <button> or a Link, so it cannot render Button. Fixed, not a list that shrinks.
+const BUTTON_CLASS_CALLERS = new Map<string, string>([
+  [
+    'src/components/ActionMenu.tsx',
+    'its trigger can be an avatar or a pill, so it keeps its own button',
+  ],
+  ['src/components/LoreFieldFilters.tsx', 'an ActionMenu trigger styled as a button'],
+  ['src/components/ProjectEntitiesView.tsx', 'an ActionMenu trigger styled as a button'],
+  ['src/components/lore/TypeLevelMenus.tsx', 'an ActionMenu trigger styled as a button'],
+  ['src/components/EntityImageField.tsx', 'a label that opens the file input'],
+  ['src/components/FieldImageRow.tsx', 'a label that opens the file input'],
+  ['src/components/ProfileAvatar.tsx', 'a label that opens the file input'],
+  ['src/components/UniverseArtworkField.tsx', 'a label that opens the file input'],
+  ['src/components/lore/AppearanceGallery.tsx', 'a label that opens the file input'],
+])
+
+test('buttonClass() and iconButtonClass() are called only where a component cannot go', () => {
+  const callers = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
+    .map((file) => 'src/' + file.replaceAll('\\', '/'))
+    .filter((file) => /\.tsx?$/.test(file))
+    .filter(
+      (file) => !/^src\/(lib\/buttonClass\.ts|components\/(Button|IconButton)\.tsx)$/.test(file),
+    )
+    .filter((file) => /\b(buttonClass|iconButtonClass)\(/.test(read(file)))
+    .sort()
+  assert.deepEqual(
+    callers,
+    [...BUTTON_CLASS_CALLERS.keys()].sort(),
+    'Draw a button with Button or IconButton; only a file input label or ActionMenu trigger takes the class helper',
+  )
+})
+
 test('literal font sizes in src/styles/ do not grow', () => {
   let count = 0
   for (const match of stylesheet.matchAll(/(?<![-\w])font-size\s*:\s*([^;}]+)/g)) {

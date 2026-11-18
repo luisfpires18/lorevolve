@@ -3,6 +3,7 @@ import { t, useI18n } from '../i18n'
 import type { UniverseArtworkRef } from '../publishing/types'
 import { Drawer } from './Drawer'
 import { UniverseArtworkField } from './UniverseArtworkField'
+import { Button } from './Button'
 
 /**
  * A game's or a story's cover, set from its card's ⋯ menu. The same picture field the universe's artwork uses, at the
@@ -32,9 +33,9 @@ export function CoverDrawer({
       eyebrow={t(`${store.words}.upload`)}
       onClose={onClose}
       actions={(close) => (
-        <button className="button button--secondary" type="button" onClick={close}>
+        <Button tone="secondary" onClick={close}>
           {t('projects.common.done')}
-        </button>
+        </Button>
       )}
     >
       <UniverseArtworkField

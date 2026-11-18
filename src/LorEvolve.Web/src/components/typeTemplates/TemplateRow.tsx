@@ -1,11 +1,11 @@
 import { Pencil } from 'lucide-react'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import type { ProjectField } from '../../projectEntities/types'
-import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import { TypeIcon } from '../TypeIcon'
 import { t } from '../../i18n'
 import { TemplateFields } from './TemplateFields'
+import { Button } from '../Button'
 
 /** One template's row: its icon, name and chip, Edit, Fields and the menu with Delete, then its fields when open. */
 export function TemplateRow({
@@ -53,20 +53,20 @@ export function TemplateRow({
         <span className="chip">{t('entityTypes.page.templates.chip')}</span>
         <span className="types__actions">
           {canEdit ? (
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
+              icon={Pencil}
               aria-label={t('entityTypes.page.editLabel', { name: template.name })}
               data-testid={`template-edit-${template.id}`}
               onClick={() => setEditing(template)}
             >
-              <ActionIcon icon={Pencil} />
               {t('entityTypes.page.edit')}
-            </button>
+            </Button>
           ) : null}
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             aria-expanded={openId === template.id}
             aria-label={t('entityTypes.page.fieldsLabel', { name: template.name })}
             data-testid={`template-fields-open-${template.id}`}
@@ -76,7 +76,7 @@ export function TemplateRow({
             {template.fields.length > 0 ? (
               <span className="types__fieldcount">{template.fields.length}</span>
             ) : null}
-          </button>
+          </Button>
           {canEdit ? (
             <ActionMenu
               label={t('entityTypes.page.moreActions', { name: template.name })}

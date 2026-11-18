@@ -10,6 +10,7 @@ import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
 import { DrawerActions } from './DrawerActions'
 import { GuardBuilderDrawer } from './GuardBuilderDrawer'
+import { Button } from '../Button'
 
 export function TransitionDrawer({
   transition,
@@ -164,23 +165,23 @@ export function TransitionDrawer({
           )}
         </Field>
         <div className="form__actions">
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             onClick={() => setBuilding({ ruleId: null })}
             data-testid="machine-transition-new-guard"
           >
             {t(`${gb}.newGuard`)}
-          </button>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            size="sm"
             disabled={form.guardRuleId === '' || unknownGuard}
             onClick={() => setBuilding({ ruleId: form.guardRuleId })}
             data-testid="machine-transition-edit-guard"
           >
             {t(`${gb}.editGuard`)}
-          </button>
+          </Button>
         </div>
       </Drawer>
       {/* A sibling, not a child: a form inside the transition's form would submit both. */}

@@ -1,8 +1,9 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
+import { Button } from '../Button'
+import { IconButton } from '../IconButton'
 
 /** The sections drawer's list of sections: name, fold, move and remove each one, and Add section. */
 export function SectionListEditor({
@@ -55,58 +56,47 @@ export function SectionListEditor({
                 <span>{t('entityTypes.sections.startsCollapsed')}</span>
               </label>
               <span className="sectionlist__actions">
-                <button
-                  className="iconbutton"
-                  type="button"
-                  onClick={() => move(index, -1)}
-                  disabled={index === 0}
-                  aria-label={t('entityTypes.sections.moveSectionUp', {
+                <IconButton
+                  icon={ArrowUp}
+                  label={t('entityTypes.sections.moveSectionUp', {
                     name: sectionLabel(section, index),
                   })}
                   title={t('entityTypes.sections.moveUp')}
+                  onClick={() => move(index, -1)}
+                  disabled={index === 0}
                   data-testid={`section-up-${index}`}
-                >
-                  <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                </button>
-                <button
-                  className="iconbutton"
-                  type="button"
-                  onClick={() => move(index, 1)}
-                  disabled={index === sections.length - 1}
-                  aria-label={t('entityTypes.sections.moveSectionDown', {
+                />
+                <IconButton
+                  icon={ArrowDown}
+                  label={t('entityTypes.sections.moveSectionDown', {
                     name: sectionLabel(section, index),
                   })}
                   title={t('entityTypes.sections.moveDown')}
+                  onClick={() => move(index, 1)}
+                  disabled={index === sections.length - 1}
                   data-testid={`section-down-${index}`}
-                >
-                  <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                </button>
-                <button
-                  className="button button--text button--sm fieldlist__delete"
-                  type="button"
+                />
+                <Button
+                  tone="text"
+                  size="sm"
+                  icon={Trash2}
+                  className="fieldlist__delete"
                   onClick={() => remove(section.key)}
                   aria-label={t('entityTypes.sections.removeSection', {
                     name: sectionLabel(section, index),
                   })}
                   data-testid={`section-remove-${index}`}
                 >
-                  <ActionIcon icon={Trash2} />
                   {t('entityTypes.sections.remove')}
-                </button>
+                </Button>
               </span>
             </li>
           ))}
         </ol>
       )}
-      <button
-        className="button button--secondary button--sm sectionlist__add"
-        type="button"
-        onClick={add}
-        data-testid="add-section"
-      >
-        <ActionIcon icon={Plus} />
+      <Button tone="secondary" size="sm" icon={Plus} onClick={add} data-testid="add-section">
         {t('entityTypes.sections.add')}
-      </button>
+      </Button>
     </section>
   )
 }

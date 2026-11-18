@@ -5,6 +5,7 @@ import { Field } from '../Field'
 import { summaryRows } from '../../backups/summaryRows'
 import type { Stage, useRestoreBackupState } from '../../backups/useRestoreBackupState'
 import { Restoring } from './Restoring'
+import { Button } from '../Button'
 
 /** The checked file: what it holds, the name to restore it under, a failure, and Restore or Choose another. */
 export function RestoreReadyForm({
@@ -95,24 +96,14 @@ export function RestoreReadyForm({
       {stage.kind === 'restoring' ? <Restoring /> : null}
 
       <div className="form__actions">
-        <button
-          className="button"
-          type="submit"
-          disabled={stage.kind === 'restoring'}
-          data-testid="restore-submit"
-        >
+        <Button type="submit" disabled={stage.kind === 'restoring'} data-testid="restore-submit">
           {stage.kind === 'restoring'
             ? t('admin.restore.ready.submitBusy')
             : t('admin.restore.ready.submit')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          disabled={stage.kind === 'restoring'}
-          onClick={chooseAnother}
-        >
+        </Button>
+        <Button tone="secondary" disabled={stage.kind === 'restoring'} onClick={chooseAnother}>
           {t('admin.restore.ready.chooseAnother')}
-        </button>
+        </Button>
       </div>
     </form>
   )

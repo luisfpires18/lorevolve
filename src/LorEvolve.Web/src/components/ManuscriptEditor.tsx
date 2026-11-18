@@ -16,6 +16,7 @@ import { ManuscriptHead } from './stories/ManuscriptHead'
 import { ManuscriptNotices } from './stories/ManuscriptNotices'
 import { ManuscriptBody } from './stories/ManuscriptBody'
 import { ManuscriptSaveBar } from './stories/ManuscriptSaveBar'
+import { Button } from './Button'
 
 interface ManuscriptEditorProps {
   universeId: string
@@ -206,14 +207,9 @@ export function ManuscriptEditor({
       {load.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="manuscript-load-error">
           <p>{load.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={reread}
-            data-testid="manuscript-retry"
-          >
+          <Button tone="secondary" onClick={reread} data-testid="manuscript-retry">
             {t('manuscript.editor.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

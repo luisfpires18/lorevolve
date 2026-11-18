@@ -7,6 +7,7 @@ import { formatLabel, formatsFor, kindLabel, projectPath } from '../../projects/
 import { ProjectKind, ProjectLifecycle, type ProjectKindValue } from '../../projects/types'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { t, useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
 function kindFromParam(raw: string | null): ProjectKindValue {
@@ -179,9 +180,9 @@ export function NewProject() {
         ) : null}
 
         <div className="form__actions">
-          <button className="button" type="submit" disabled={saving} data-testid="project-new-save">
+          <Button type="submit" disabled={saving} data-testid="project-new-save">
             {saving ? t('projects.new.saving') : t('projects.new.save')}
-          </button>
+          </Button>
         </div>
       </form>
     </section>

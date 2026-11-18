@@ -12,6 +12,7 @@ import type { Chronology } from '../../chronology/types'
 import type { Chapter, Scene } from '../../stories/types'
 import { storyProjectPath } from '../../projects/sections'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
+import { Button } from '../Button'
 
 export type ManuscriptToolsProps = ReturnType<typeof useManuscriptState> & {
   universeId: string
@@ -58,35 +59,34 @@ export function ManuscriptTools({
   return (
     <div className="manuscript__tools rowtools">
       {hasContext ? (
-        <button
-          className="button button--text manuscript__detailstoggle"
-          type="button"
+        <Button
+          tone="text"
+          icon={Info}
+          className="manuscript__detailstoggle"
           aria-expanded={isContextOpen}
           aria-controls={contextId}
           onClick={() => setIsContextOpen((open) => !open)}
           title={t('manuscript.editor.detailsTitle')}
           data-testid="manuscript-details-toggle"
         >
-          <ActionIcon icon={Info} />
           <span className="visually-hidden">{t('manuscript.editor.detailsName')}</span>
-        </button>
+        </Button>
       ) : null}
       {access.manageHistory && (stored.updatedAt !== null || isHistoryOpen) ? (
-        <button
-          className="button button--text"
-          type="button"
+        <Button
+          tone="text"
+          icon={History}
           aria-expanded={isHistoryOpen}
           aria-controls={historyId}
           aria-describedby={titleId}
           onClick={() => setIsHistoryOpen((open) => !open)}
           data-testid="manuscript-history-toggle"
         >
-          <ActionIcon icon={History} />
           <span className="manuscript__toolname">{t('manuscript.editor.historyName')}</span>
           <span className="manuscript__toolshort" aria-hidden="true">
             {t('manuscript.editor.historyShort')}
           </span>
-        </button>
+        </Button>
       ) : null}
       <LoreContext
         universeId={universeId}

@@ -2,7 +2,6 @@ import { useEffect, useId, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { Plus } from 'lucide-react'
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
-import { ActionIcon } from '../components/ActionIcon'
 import { Quoted } from '../components/NameList'
 import { t, useI18n } from '../i18n'
 import { formatDate } from '../lib/dates'
@@ -11,6 +10,7 @@ import type { WorldRulePage } from '../worldRules/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { Button } from '../components/Button'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: WorldRulePage } | { kind: 'error'; message: string }
@@ -80,10 +80,9 @@ export default function WorldRulesPage() {
         lede={t('canon.rules.lede')}
         actions={
           access.editContent ? (
-            <Link className="button" to={`${basePath}/new`} data-testid="new-world-rule">
-              <ActionIcon icon={Plus} />
+            <Button icon={Plus} to={`${basePath}/new`} data-testid="new-world-rule">
               {t('canon.rules.newRule')}
-            </Link>
+            </Button>
           ) : undefined
         }
       />
@@ -108,16 +107,15 @@ export default function WorldRulesPage() {
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="world-rules-load-error">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((current) => current + 1)
             }}
           >
             {t('canon.rules.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -165,10 +163,9 @@ export default function WorldRulesPage() {
           hint={t('canon.rules.empty.hint')}
           action={
             access.editContent ? (
-              <Link className="button" to={`${basePath}/new`} data-testid="empty-new-world-rule">
-                <ActionIcon icon={Plus} />
+              <Button icon={Plus} to={`${basePath}/new`} data-testid="empty-new-world-rule">
                 {t('canon.rules.emptyNewRule')}
-              </Link>
+              </Button>
             ) : undefined
           }
         />
@@ -179,34 +176,32 @@ export default function WorldRulesPage() {
           testId="world-rules-page-empty"
           title={t('canon.rules.pageEmpty.title')}
           action={
-            <button className="button button--secondary" type="button" onClick={() => goToPage(1)}>
+            <Button tone="secondary" onClick={() => goToPage(1)}>
               {t('canon.rules.pageEmpty.first')}
-            </button>
+            </Button>
           }
         />
       ) : null}
 
       {result && result.totalPages > 1 ? (
         <nav className="pager" aria-label={t('canon.rules.pagination')}>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page <= 1}
             onClick={() => goToPage(result.page - 1)}
           >
             {t('canon.rules.previous')}
-          </button>
+          </Button>
           <span className="pager__position">
             {t('canon.rules.position', { page: result.page, totalPages: result.totalPages })}
           </span>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page >= result.totalPages}
             onClick={() => goToPage(result.page + 1)}
           >
             {t('canon.rules.next')}
-          </button>
+          </Button>
         </nav>
       ) : null}
     </section>

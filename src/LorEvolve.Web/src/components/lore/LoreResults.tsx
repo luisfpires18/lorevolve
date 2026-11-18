@@ -10,6 +10,7 @@ import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
+import { Button } from '../Button'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -74,13 +75,9 @@ export function LoreResults({
               : t('lore.page.noMatch')
           }
           action={
-            <Link
-              className="button button--secondary"
-              to={clearedSearch()}
-              data-testid="lore-clear-filters"
-            >
+            <Button tone="secondary" to={clearedSearch()} data-testid="lore-clear-filters">
               {t('lore.page.clearFiltersEmpty')}
-            </Link>
+            </Button>
           }
         />
       ) : null}
@@ -115,10 +112,9 @@ export function LoreResults({
           }
           action={
             access.editContent ? (
-              <Link className="button" to={createTo} data-testid="empty-new-entity">
-                <ActionIcon icon={Plus} />
+              <Button icon={Plus} to={createTo} data-testid="empty-new-entity">
                 {tx('lore.page.emptyNewType', { type: <bdi>{selectedType.name}</bdi> })}
-              </Link>
+              </Button>
             ) : undefined
           }
         />
@@ -126,27 +122,25 @@ export function LoreResults({
 
       {chosenName && result && result.totalPages > 1 ? (
         <nav className="pager" aria-label={t('lore.page.pagination')}>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
+            icon={ArrowLeft}
             disabled={page <= 1}
             onClick={() => goToPage(page - 1)}
           >
-            <ActionIcon icon={ArrowLeft} />
             {t('lore.page.previous')}
-          </button>
+          </Button>
           <span className="pager__position">
             {t('lore.page.pageOf', { page: result.page, total: result.totalPages })}
           </span>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={page >= result.totalPages}
             onClick={() => goToPage(page + 1)}
           >
             {t('lore.page.next')}
             <ActionIcon icon={ArrowRight} />
-          </button>
+          </Button>
         </nav>
       ) : null}
     </>

@@ -12,6 +12,7 @@ import {
 import { FieldImageInput, type PendingFieldImage } from './FieldImageInput'
 import { t, useI18n } from '../i18n'
 import { ValueField } from './projectEntities/ValueField'
+import { Button } from './Button'
 
 /**
  * The one entry form (#287): New on the list, and Edit on an entry's own screen. Edit starts from the stored entry and
@@ -157,21 +158,16 @@ export function ProjectEntryForm({
       )}
 
       <div className="form__actions">
-        <button className="button" type="submit" disabled={busy} data-testid={`${prefix}-save`}>
+        <Button type="submit" disabled={busy} data-testid={`${prefix}-save`}>
           {busy
             ? t('projects.entries.saving')
             : entry
               ? t('projects.entries.saveEdit')
               : t('projects.entries.add')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={onCancel}
-          data-testid={`${prefix}-cancel`}
-        >
+        </Button>
+        <Button tone="secondary" onClick={onCancel} data-testid={`${prefix}-cancel`}>
           {t('projects.common.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   )

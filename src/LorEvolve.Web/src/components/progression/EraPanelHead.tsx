@@ -6,6 +6,7 @@ import type { EntityDetail } from '../../lore/types'
 import type { Era } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
 import type { RefObject } from 'react'
+import { Button } from '../Button'
 
 /** The era's eyebrow, title and span, with Edit and the menu holding Earlier, Later and Remove. */
 export function EraPanelHead({
@@ -55,15 +56,9 @@ export function EraPanelHead({
       </div>
       {access.editContent ? (
         <div className="erapanel__tools">
-          <button
-            className="button button--secondary button--sm"
-            type="button"
-            onClick={onEdit}
-            data-testid="edit-era"
-          >
-            <ActionIcon icon={Pencil} />
+          <Button tone="secondary" size="sm" icon={Pencil} onClick={onEdit} data-testid="edit-era">
             {t('progression.era.edit')}
-          </button>
+          </Button>
           <ActionMenu
             label={t('progression.era.moreActions', { name: era.name })}
             triggerTestId="era-actions"

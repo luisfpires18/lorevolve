@@ -6,6 +6,7 @@ import type { TypeNode } from '../../lore/typeTree'
 import type { Level } from '../../lore/typeLevels'
 import { ActionMenu } from '../ActionMenu'
 import { TypeIcon } from '../TypeIcon'
+import { buttonClass } from '../../lib/buttonClass'
 
 /** Lore's type navigation on a phone: one compact menu per level, with the groups under the first. */
 export function TypeLevelMenus({
@@ -59,7 +60,7 @@ export function TypeLevelMenus({
                   ? t('entityTypes.switcher.chooseCategory')
                   : t('entityTypes.switcher.chooseIn', { name: level.parent!.type.name })
             }
-            triggerClassName="button button--secondary typemenu__trigger"
+            triggerClassName={buttonClass({ tone: 'secondary', className: 'typemenu__trigger' })}
             triggerTestId={depth === 0 ? 'lore-type-menu' : 'lore-subtype-menu'}
             panelTestId={depth === 0 ? 'lore-type-menu-panel' : 'lore-subtype-menu-panel'}
             trigger={

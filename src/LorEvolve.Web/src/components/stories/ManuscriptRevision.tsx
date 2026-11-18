@@ -7,6 +7,7 @@ import {
   type ManuscriptRevisionDetail,
   type ManuscriptRevisionSummary,
 } from '../../stories/types'
+import { Button } from '../Button'
 
 /** What a version was, in a few words. */
 function describeVersion(
@@ -72,9 +73,9 @@ export function ManuscriptRevision({
       </div>
 
       <div className="version__tools">
-        <button
-          className="button button--text button--sm"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
           aria-expanded={isViewing}
           aria-controls={snapshotId}
           aria-label={t(
@@ -85,11 +86,11 @@ export function ManuscriptRevision({
           data-testid="manuscript-version-view"
         >
           {isViewing ? t('manuscript.history.hide') : t('manuscript.history.view')}
-        </button>
+        </Button>
         {index > 0 ? (
-          <button
-            className="button button--text button--sm"
-            type="button"
+          <Button
+            tone="text"
+            size="sm"
             disabled={blocked !== null}
             aria-describedby={blocked ? blockedId : undefined}
             aria-label={t('manuscript.history.restoreVersion', {
@@ -101,7 +102,7 @@ export function ManuscriptRevision({
             {busyId === revision.id
               ? t('manuscript.history.restoring')
               : t('manuscript.history.restoreButton')}
-          </button>
+          </Button>
         ) : null}
       </div>
 

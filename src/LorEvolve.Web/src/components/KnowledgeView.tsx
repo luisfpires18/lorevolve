@@ -1,6 +1,5 @@
 import { useEffect, useId, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { t, useI18n } from '../i18n'
 import { confirmAction } from '../lib/confirm'
 import { useUniverseAccess } from '../universes/access'
@@ -8,6 +7,7 @@ import { deleteKnowledgeRecord, listKnowledge, type KnowledgeRecord } from '../k
 import type { Side } from '../knowledge/recordDraft'
 import { RecordList } from './knowledge/RecordList'
 import { RecordForm } from './knowledge/RecordForm'
+import { Button } from './Button'
 
 interface KnowledgeViewProps {
   universeId: string
@@ -90,15 +90,14 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
           {t('ai.knowledge.title')}
         </h2>
         {access.editContent ? (
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
+            icon={Plus}
             onClick={() => setEditing({ side: 'knows', record: null })}
             data-testid="knowledge-add"
           >
-            <ActionIcon icon={Plus} />
             {tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}
-          </button>
+          </Button>
         ) : null}
       </div>
       <p className="relations__quiet">
@@ -114,9 +113,9 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
       {failed ? (
         <div className="notice notice--error" role="alert" data-testid="knowledge-load-error">
           <p>{t('ai.knowledge.loadFailed')}</p>
-          <button className="button button--secondary" type="button" onClick={reload}>
+          <Button tone="secondary" onClick={reload}>
             {t('ai.knowledge.retry')}
-          </button>
+          </Button>
         </div>
       ) : isLoading ? (
         <p className="relations__quiet" role="status">
@@ -140,15 +139,14 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
               {tx('ai.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
             </h3>
             {access.editContent ? (
-              <button
-                className="button button--text"
-                type="button"
+              <Button
+                tone="text"
+                icon={Plus}
                 onClick={() => setEditing({ side: 'about', record: null })}
                 data-testid="knowledge-add-about"
               >
-                <ActionIcon icon={Plus} />
                 {tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
-              </button>
+              </Button>
             ) : null}
           </div>
           <RecordList

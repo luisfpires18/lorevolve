@@ -16,6 +16,7 @@ import { SagaSection } from './projects/SagaSection'
 import { SagasUnassigned } from './projects/SagasUnassigned'
 import { AddDrawer } from './projects/AddDrawer'
 import { GroupDrawer, type Editing } from './projects/GroupDrawer'
+import { Button } from './Button'
 
 /**
  * Cinema Sagas and Phases (#289): a universe's release order across its independent films and series. Every action
@@ -80,14 +81,12 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
   return (
     <div data-testid="cinema-sagas">
       <div className="form__actions">
-        <button
-          className="button"
-          type="button"
+        <Button
           data-testid="saga-new"
           onClick={() => setEditing({ saga: null, phase: null, forPhase: false })}
         >
           {t('projects.sagas.newSaga')}
-        </button>
+        </Button>
       </div>
 
       {failed ? (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 export function EpisodeForm({
   busy,
@@ -52,22 +53,12 @@ export function EpisodeForm({
         )}
       </Field>
       <div className="form__actions">
-        <button
-          className="button"
-          type="submit"
-          disabled={busy}
-          data-testid="project-episode-new-save"
-        >
+        <Button type="submit" disabled={busy} data-testid="project-episode-new-save">
           {addLabel}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={onCancel}
-          data-testid="project-episode-new-cancel"
-        >
+        </Button>
+        <Button tone="secondary" onClick={onCancel} data-testid="project-episode-new-cancel">
           {t('projects.common.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   )

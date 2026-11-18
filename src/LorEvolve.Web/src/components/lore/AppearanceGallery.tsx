@@ -7,6 +7,7 @@ import type { Appearance, AppearanceImage } from '../../progression/types'
 import type { useUniverseAccess } from '../../universes/access'
 import { t } from '../../i18n'
 import type { useAppearanceImages } from '../../lore/useAppearanceImages'
+import { buttonClass } from '../../lib/buttonClass'
 
 type Pictures = ReturnType<typeof useAppearanceImages>
 
@@ -131,7 +132,14 @@ export function AppearanceGallery({
             }}
             data-testid="appearance-picture-input"
           />
-          <label className="button button--secondary button--sm imagefield__pick" htmlFor={inputId}>
+          <label
+            className={buttonClass({
+              tone: 'secondary',
+              size: 'sm',
+              className: 'imagefield__pick',
+            })}
+            htmlFor={inputId}
+          >
             <ActionIcon icon={ImagePlus} />
             {t('progression.appearanceList.addPictures')}
           </label>

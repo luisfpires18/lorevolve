@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { Plus, Shapes } from 'lucide-react'
 import type { ProjectEntityType } from '../../projectEntities/types'
-import { ActionIcon } from '../ActionIcon'
 import { PageHeader } from '../PageHeader'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
+import { Button } from '../Button'
 
 /** The head of the panel: the page header of a project's Types view, or the panel's own name and New type. */
 export function SchemaHead({
@@ -43,28 +43,25 @@ export function SchemaHead({
           }
           actions={
             <>
-              <button
-                className="button"
-                type="button"
+              <Button
+                icon={Plus}
                 data-testid="project-type-add"
                 onClick={() => {
                   setChildOf(null)
                   setEditing('new')
                 }}
               >
-                <ActionIcon icon={Plus} />
                 {t('entityTypes.page.newType')}
-              </button>
+              </Button>
               {canEdit && templates.length > 0 ? (
-                <button
-                  className="button button--secondary"
-                  type="button"
+                <Button
+                  tone="secondary"
+                  icon={Shapes}
                   data-testid="project-type-from-template"
                   onClick={() => setFromTemplate(true)}
                 >
-                  <ActionIcon icon={Shapes} />
                   {t('projects.schema.fromTemplate.button')}
-                </button>
+                </Button>
               ) : null}
             </>
           }
@@ -76,28 +73,25 @@ export function SchemaHead({
             <h2 className="sectionrule">{t('projects.schema.title')}</h2>
             <p className="projects__lede">{t('projects.schema.lede')}</p>
           </div>
-          <button
-            className="button"
-            type="button"
+          <Button
+            icon={Plus}
             data-testid="project-type-add"
             onClick={() => {
               setChildOf(null)
               setEditing('new')
             }}
           >
-            <ActionIcon icon={Plus} />
             {t('entityTypes.page.newType')}
-          </button>
+          </Button>
           {canEdit && templates.length > 0 ? (
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
+              icon={Shapes}
               data-testid="project-type-from-template"
               onClick={() => setFromTemplate(true)}
             >
-              <ActionIcon icon={Shapes} />
               {t('projects.schema.fromTemplate.button')}
-            </button>
+            </Button>
           ) : null}
         </header>
       )}

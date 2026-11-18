@@ -8,6 +8,7 @@ import { useFold } from './fold'
 import { FoldToggle } from './FoldToggle'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
 import type { Chapter } from '../stories/types'
+import { Button } from './Button'
 
 /** An arc a chapter may move into, or no arc at all when `id` is null, named as the menu reads it. */
 export interface ArcTarget {
@@ -107,9 +108,9 @@ export function ChapterSection({
 
         {access.editContent ? (
           <div className="chapter__tools rowtools">
-            <button
-              className="button button--text"
-              type="button"
+            <Button
+              tone="text"
+              icon={Plus}
               onClick={() => {
                 setFoldOpen(true)
                 onAddScene(chapter)
@@ -117,9 +118,8 @@ export function ChapterSection({
               aria-describedby={headingId}
               data-testid="chapter-new-scene"
             >
-              <ActionIcon icon={Plus} />
               {t('stories.chapter.addScene')}
-            </button>
+            </Button>
             <ActionMenu
               label={t('stories.chapter.moreActions', {
                 label: chapterLabel(index, chapter.title),

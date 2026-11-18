@@ -4,6 +4,7 @@ import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 /**
  * Forgot password (#69). The answer is the same whether or not the address has an account, so the page never says
@@ -61,9 +62,9 @@ export default function ForgotPasswordPage() {
             onChange={(event) => setEmail(event.target.value)}
           />
 
-          <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? t('auth.forgot.submitting') : t('auth.forgot.submit')}
-          </button>
+          <Button busy={isSubmitting} busyLabel={t('auth.forgot.submitting')} type="submit">
+            {t('auth.forgot.submit')}
+          </Button>
         </form>
       )}
     </AuthLayout>

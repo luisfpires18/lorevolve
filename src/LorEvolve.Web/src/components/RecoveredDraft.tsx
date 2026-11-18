@@ -4,6 +4,7 @@ import type { LocalDraft } from '../lib/localDrafts'
 import { sameSave } from '../lib/useLocalDraft'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
 
 interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
@@ -93,34 +94,31 @@ export function RecoveredDraft({
       </div>
 
       <div className="recovery__actions">
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           onClick={onRecover}
           aria-describedby={bodyId}
           data-testid={`${testId}-recover`}
         >
           {t('entity.recovered.recover')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           onClick={discard}
           aria-describedby={bodyId}
           data-testid={`${testId}-discard`}
         >
           {t('entity.recovered.discard')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           aria-expanded={isShowing}
           aria-controls={previewId}
           onClick={() => setIsShowing((showing) => !showing)}
           data-testid={`${testId}-preview-toggle`}
         >
           {isShowing ? t('entity.recovered.hide') : t('entity.recovered.show')}
-        </button>
+        </Button>
       </div>
 
       {isShowing ? (

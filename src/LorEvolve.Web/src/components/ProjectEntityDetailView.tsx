@@ -8,10 +8,10 @@ import { ApiError } from '../lib/api'
 import { formatDate } from '../lib/dates'
 import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
 import { TypeIcon } from './TypeIcon'
+import { Button } from './Button'
 
 type LoadState =
   | { kind: 'ready'; for: string; entity: ProjectEntityDetail }
@@ -170,15 +170,14 @@ export function ProjectEntityDetailView({
         <div className="entry__bar">
           <div className="entry__lenses" />
           <div className="entry__tools">
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
+              icon={Pencil}
               onClick={() => setEditing(true)}
               data-testid="project-entity-edit"
             >
-              <ActionIcon icon={Pencil} />
               {t('projects.gameEntities.entity.edit')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

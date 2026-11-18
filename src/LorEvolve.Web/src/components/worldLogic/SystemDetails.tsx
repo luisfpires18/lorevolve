@@ -3,6 +3,7 @@ import { t } from '../../i18n'
 import { SYSTEM_NAME_MAX_LENGTH, SYSTEM_SUMMARY_MAX_LENGTH } from '../../worldLogic/types'
 import type { useSystemEditorState } from '../../worldLogic/useSystemEditorState'
 import type { systemEditorActions } from '../../worldLogic/systemEditorActions'
+import { Button } from '../Button'
 
 type State = ReturnType<typeof useSystemEditorState>
 type Actions = ReturnType<typeof systemEditorActions>
@@ -45,14 +46,13 @@ export function SystemDetails({
             {t('canon.worldLogic.systems.editor.conflict')}
           </p>
           <div className="manuscript__conflictactions">
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
               onClick={() => void reread()}
               data-testid="system-editor-load-saved"
             >
               {t('canon.worldLogic.systems.editor.loadSaved')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -120,27 +120,21 @@ export function SystemDetails({
         </Field>
 
         <div className="form__actions">
-          <button
-            className="button"
-            type="submit"
-            disabled={saving}
-            data-testid="system-editor-save"
-          >
+          <Button type="submit" disabled={saving} data-testid="system-editor-save">
             {saving
               ? t('canon.worldLogic.systems.editor.saving')
               : isNew
                 ? t('canon.worldLogic.systems.editor.create')
                 : t('canon.worldLogic.systems.editor.save')}
-          </button>
+          </Button>
           {!isNew ? (
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
               onClick={() => void remove()}
               data-testid="system-editor-delete"
             >
               {t('canon.worldLogic.systems.editor.delete.open')}
-            </button>
+            </Button>
           ) : null}
         </div>
       </form>

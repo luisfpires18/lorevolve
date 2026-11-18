@@ -16,6 +16,7 @@ import {
 import { attributionOf, detailsOf, type Attribution } from '../publishing/publicDetailsDraft'
 import { publicDetailsActions } from '../publishing/publicDetailsActions'
 import { PublicAttributionField } from './publishing/PublicAttributionField'
+import { Button } from './Button'
 
 /**
  * The public details a universe is published with: its summary, its category and its genres. Its own form and
@@ -204,14 +205,9 @@ export function PublicDetailsForm({
       />
 
       <div className="form__actions">
-        <button
-          className="button"
-          type="submit"
-          disabled={isSaving}
-          data-testid="save-public-details"
-        >
+        <Button type="submit" disabled={isSaving} data-testid="save-public-details">
           {isSaving ? t('universe.publicDetails.saving') : t('universe.publicDetails.save')}
-        </button>
+        </Button>
         {savedMessage && !isDirty ? (
           <p className="settings__saved" role="status" data-testid="public-details-saved">
             {t('universe.publicDetails.saved')}

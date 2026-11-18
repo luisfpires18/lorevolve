@@ -21,6 +21,7 @@ import { StoryBar } from '../components/stories/StoryBar'
 import { StoryManuscript } from '../components/stories/StoryManuscript'
 import { StoryScenes } from '../components/stories/StoryScenes'
 import { StoryForms } from '../components/stories/StoryForms'
+import { Button } from '../components/Button'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
@@ -221,9 +222,9 @@ function StoryView({ view }: { view: StoryViewName }) {
       {stale ? (
         <div className="notice notice--error story__stale" role="alert" data-testid="story-stale">
           <p>{t('stories.page.stale')}</p>
-          <button className="button button--secondary" type="button" onClick={reload}>
+          <Button tone="secondary" onClick={reload}>
             {t('stories.page.staleRetry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

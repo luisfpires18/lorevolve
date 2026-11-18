@@ -6,6 +6,7 @@ import { useI18n } from '../../i18n'
 import { useLoad } from '../../admin/useLoad'
 import { Failure } from './Failure'
 import { Heading } from './Heading'
+import { Button } from '../Button'
 
 /** Bug reports and feature requests from the button on every signed-in page, newest first. Read only. */
 export function FeedbackScreen() {
@@ -56,22 +57,16 @@ export function FeedbackScreen() {
           </ul>
           {state.value.totalCount > state.value.pageSize ? (
             <nav className="pager" aria-label={t('admin.feedback.pager.label')}>
-              <button
-                className="button button--secondary"
-                type="button"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
+              <Button tone="secondary" disabled={page === 1} onClick={() => setPage(page - 1)}>
                 {t('admin.feedback.pager.newer')}
-              </button>
-              <button
-                className="button button--secondary"
-                type="button"
+              </Button>
+              <Button
+                tone="secondary"
                 disabled={page * state.value.pageSize >= state.value.totalCount}
                 onClick={() => setPage(page + 1)}
               >
                 {t('admin.feedback.pager.older')}
-              </button>
+              </Button>
             </nav>
           ) : null}
         </>

@@ -1,7 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
-import { ActionIcon } from '../components/ActionIcon'
 import { EmptyState } from '../components/EmptyState'
 import { MapForm } from '../components/MapForm'
 import { Quoted } from '../components/NameList'
@@ -13,6 +12,7 @@ import type { MapSummary } from '../maps/types'
 import { useUniverseAccess } from '../universes/access'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { Button } from '../components/Button'
 
 type LoadState = { kind: 'loading' } | { kind: 'ready'; maps: MapSummary[] } | { kind: 'error' }
 
@@ -58,15 +58,9 @@ export default function MapsPage() {
   }, [universe.id, reads])
 
   const newMap = access.editContent ? (
-    <button
-      className="button"
-      type="button"
-      onClick={() => setCreating(true)}
-      data-testid="new-map"
-    >
-      <ActionIcon icon={Plus} />
+    <Button icon={Plus} onClick={() => setCreating(true)} data-testid="new-map">
       {t('places.maps.new')}
-    </button>
+    </Button>
   ) : undefined
 
   return (
@@ -104,16 +98,15 @@ export default function MapsPage() {
         {state.kind === 'error' ? (
           <div className="notice notice--error" role="alert" data-testid="maps-load-error">
             <p>{t('places.maps.error')}</p>
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
               onClick={() => {
                 setState({ kind: 'loading' })
                 setReads((current) => current + 1)
               }}
             >
               {t('places.maps.retry')}
-            </button>
+            </Button>
           </div>
         ) : null}
 
@@ -169,10 +162,9 @@ export default function MapsPage() {
             }
             action={
               access.editContent ? (
-                <button className="button" type="button" onClick={() => setCreating(true)}>
-                  <ActionIcon icon={Plus} />
+                <Button icon={Plus} onClick={() => setCreating(true)}>
                   {t('places.maps.new')}
-                </button>
+                </Button>
               ) : undefined
             }
           />

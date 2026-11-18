@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Search, UserSearch } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { EmptyState } from './EmptyState'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { useI18n } from '../i18n'
@@ -10,6 +9,7 @@ import { useDiscoveryReads } from '../familyTree/useDiscoveryReads'
 import { useDiscoverySearch } from '../familyTree/useDiscoverySearch'
 import { useDiscoveryState } from '../familyTree/useDiscoveryState'
 import { DiscoveryFamilies } from './familyTree/DiscoveryFamilies'
+import { Button } from './Button'
 
 /** What a family summary carries in history, so "Browse families" on its tree can come back to this search and page. */
 export interface FamiliesReturn {
@@ -114,17 +114,16 @@ export function FamilyDiscovery({
               </span>
             )}
           </Field>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
+            icon={UserSearch}
             aria-expanded={isFinding}
             aria-controls={pickerId}
             onClick={() => setIsFinding((open) => !open)}
             data-testid="family-find-character"
           >
-            <ActionIcon icon={UserSearch} />
             {t('places.discovery.find')}
-          </button>
+          </Button>
         </div>
       )}
 

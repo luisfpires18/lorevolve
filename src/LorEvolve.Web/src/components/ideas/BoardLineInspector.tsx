@@ -1,5 +1,4 @@
 import { X } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { Field } from '../Field'
 import {
   BOARD_LABEL_MAX_LENGTH,
@@ -8,6 +7,7 @@ import {
   type BoardConnection,
 } from '../../ideas/boards'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** The inspector for the chosen line: the cards it joins, its label, and Remove. */
 export function BoardLineInspector({
@@ -48,16 +48,15 @@ export function BoardLineInspector({
         onChange={(event) => editLine(selectedLine.id, event.target.value)}
         data-testid="board-line-label"
       />
-      <button
-        className="button button--secondary"
-        type="button"
+      <Button
+        tone="secondary"
+        icon={X}
         disabled={isHeld}
         onClick={() => removeLine(selectedLine.id)}
         data-testid="board-remove-line"
       >
-        <ActionIcon icon={X} />
         {t('ideas.board.inspector.removeLine')}
-      </button>
+      </Button>
     </>
   )
 }

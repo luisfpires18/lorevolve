@@ -4,6 +4,7 @@ import { Field } from '../Field'
 import { ApiError } from '../../lib/api'
 import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /**
  * A sign-up link for someone with no universe to be invited into. While registration is invitation-only it lets that one
@@ -78,24 +79,22 @@ export function SignUpLink() {
           </p>
         ) : null}
         <div className="form__actions">
-          <button
-            className="button"
-            type="button"
+          <Button
+            busy={sending}
+            busyLabel={t('admin.signUp.sending')}
             onClick={() => void sendEmail()}
-            disabled={sending}
-            aria-busy={sending}
             data-testid="admin-signup-email-send"
           >
-            {sending ? t('admin.signUp.sending') : t('admin.signUp.emailLink')}
-          </button>
-          <button
-            className="button button--secondary"
+            {t('admin.signUp.emailLink')}
+          </Button>
+          <Button
+            tone="secondary"
             type="submit"
             disabled={sending}
             data-testid="admin-signup-create"
           >
             {t('admin.signUp.makeLink')}
-          </button>
+          </Button>
         </div>
       </form>
       {sent ? (

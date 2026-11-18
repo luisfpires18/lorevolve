@@ -1,5 +1,4 @@
 import { Plus, X } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import {
   ChronologyPointFields,
@@ -9,6 +8,8 @@ import {
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
 import { newPeriod, type PeriodDraft } from '../relationships/periods'
+import { Button } from './Button'
+import { IconButton } from './IconButton'
 
 /** An era either end of the link has, offered as a period: "Frieza Saga (Goku)". */
 export interface EraChoice {
@@ -113,16 +114,12 @@ export function RelationshipPeriodsField({
                   {t('relationships.periods.stage')}
                 </button>
               </div>
-              <button
-                type="button"
-                className="iconbutton"
-                aria-label={t('relationships.periods.remove', { n: index + 1 })}
-                title={t('relationships.periods.remove', { n: index + 1 })}
+              <IconButton
+                icon={X}
+                label={t('relationships.periods.remove', { n: index + 1 })}
                 onClick={() => onChange(value.filter((_, at) => at !== index))}
                 data-testid={`relation-period-${index}-remove`}
-              >
-                <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              </button>
+              />
             </div>
 
             {errors[key] ? <p className="field__error">{errors[key]}</p> : null}
@@ -184,15 +181,15 @@ export function RelationshipPeriodsField({
         )
       })}
 
-      <button
-        type="button"
-        className="button button--secondary button--sm"
+      <Button
+        tone="secondary"
+        size="sm"
+        icon={Plus}
         onClick={() => onChange([...value, newPeriod()])}
         data-testid="relation-period-add"
       >
-        <ActionIcon icon={Plus} />
         {t('relationships.periods.add')}
-      </button>
+      </Button>
     </Field>
   )
 }

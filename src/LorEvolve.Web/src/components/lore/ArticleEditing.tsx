@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react'
 import { Check, X } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { EditConflict, LatestText } from '../EditConflict'
 import { LoreArticle } from '../ArticleView'
 import { getEntityArticle } from '../../lore/article'
@@ -8,6 +7,7 @@ import { isEmptyDocument } from '../../lore/document'
 import { useI18n } from '../../i18n'
 import type { useEntityArticle } from '../../lore/useEntityArticle'
 import type { useArticleEditing } from '../../lore/useArticleEditing'
+import { Button } from '../Button'
 
 // The editor and its 125 KB of Tiptap and ProseMirror come only when an author presses Edit; reading needs neither.
 const LoreEditor = lazy(() =>
@@ -134,28 +134,25 @@ export function ArticleEditing({
           </p>
         ) : null}
         <div className="article__actions">
-          <button
-            className="button"
-            type="button"
+          <Button
+            icon={Check}
             disabled={!isDirty || isSaving || isTooLong}
             onClick={() => void save(stored.version)}
             aria-describedby={statusId}
             aria-keyshortcuts="Control+S Meta+S"
             data-testid="article-save"
           >
-            <ActionIcon icon={Check} />
             {isSaving ? t('entity.article.saving') : t('entity.article.save')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            icon={X}
             onClick={finishEditing}
             disabled={isSaving}
             data-testid="article-done"
           >
-            <ActionIcon icon={X} />
             {t('entity.article.done')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

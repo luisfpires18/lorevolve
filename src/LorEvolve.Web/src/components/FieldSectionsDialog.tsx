@@ -9,6 +9,7 @@ import { useFieldSectionsState } from '../lore/useFieldSectionsState'
 import { fieldSectionsActions } from '../lore/fieldSectionsActions'
 import { SectionListEditor } from './lore/SectionListEditor'
 import { SectionFieldPlacer } from './lore/SectionFieldPlacer'
+import { Button } from './Button'
 
 /**
  * A type's field sections (Issue #26) in the drawer every LorEvolve form uses: name, order, fold and remove sections, put each
@@ -78,17 +79,12 @@ export function FieldSectionsDialog({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button className="button" type="submit" disabled={isSaving} data-testid="save-sections">
+          <Button type="submit" disabled={isSaving} data-testid="save-sections">
             {isSaving ? t('entityTypes.sections.saving') : t('entityTypes.sections.save')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-sections"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="cancel-sections">
             {t('entityTypes.sections.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >
@@ -107,22 +103,12 @@ export function FieldSectionsDialog({
               : type.fieldSections.map((section) => section.name).join(', ')}
           </p>
           <p className="types__blockedlinks">
-            <button
-              className="button button--secondary button--sm"
-              type="button"
-              onClick={takeSaved}
-              data-testid="sections-use-saved"
-            >
+            <Button tone="secondary" size="sm" onClick={takeSaved} data-testid="sections-use-saved">
               {t('entityTypes.sections.useSaved')}
-            </button>
-            <button
-              className="button button--text button--sm"
-              type="button"
-              onClick={keepMine}
-              data-testid="sections-keep-mine"
-            >
+            </Button>
+            <Button tone="text" size="sm" onClick={keepMine} data-testid="sections-keep-mine">
               {t('entityTypes.sections.keepMine')}
-            </button>
+            </Button>
           </p>
         </div>
       ) : null}

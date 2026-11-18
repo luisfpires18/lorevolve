@@ -13,6 +13,7 @@ import { sameFields } from '../worldRules/ruleDraft'
 import { WorldRuleHead } from './worldRules/WorldRuleHead'
 import { WorldRuleConflict } from './worldRules/WorldRuleConflict'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
+import { Button } from './Button'
 
 interface WorldRuleEditorProps {
   universeId: string
@@ -124,9 +125,9 @@ export function WorldRuleEditor({
     return (
       <div className="notice notice--error" role="alert" data-testid="world-rule-load-error">
         <p>{load.message}</p>
-        <button className="button button--secondary" type="button" onClick={reread}>
+        <Button tone="secondary" onClick={reread}>
           {t('canon.editor.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

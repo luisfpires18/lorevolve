@@ -6,6 +6,7 @@ import { TimelineSource } from '../../timeline/types'
 import type { Dispatch, SetStateAction } from 'react'
 import type { LoadState } from '../../timeline/useTimelineState'
 import type { SOURCES } from '../../timeline/timelineSources'
+import { Button } from '../Button'
 
 /** Above the spine: the story scope with its clear button, the status, era and error lines, and the reading state. */
 export function TimelineNotices({
@@ -51,14 +52,13 @@ export function TimelineNotices({
             : stories
               ? t('time.timeline.storyNotAvailable')
               : null}{' '}
-          <button
-            className="button button--text"
-            type="button"
+          <Button
+            tone="text"
             onClick={() => update({ story: null })}
             data-testid="chron-story-clear"
           >
             {t('time.timeline.showEvery')}
-          </button>
+          </Button>
         </p>
       ) : null}
 
@@ -90,16 +90,15 @@ export function TimelineNotices({
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               reload()
             }}
           >
             {t('time.timeline.tryAgain')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </>

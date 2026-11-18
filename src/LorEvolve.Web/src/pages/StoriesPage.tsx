@@ -3,7 +3,6 @@ import { useUniverseAccess } from '../universes/access'
 import { Plus } from 'lucide-react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
-import { ActionIcon } from '../components/ActionIcon'
 import { CoverDrawer } from '../components/CoverDrawer'
 import { storyCoverStore } from '../covers/api'
 import { ApiError } from '../lib/api'
@@ -20,6 +19,7 @@ import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { StoryShelf } from '../components/stories/StoryShelf'
 import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
+import { Button } from '../components/Button'
 
 type LoadState =
   | { kind: 'loading' }
@@ -116,15 +116,9 @@ export default function StoriesPage() {
         lede={t('stories.browse.lede')}
         actions={
           access.editContent ? (
-            <button
-              className="button"
-              type="button"
-              onClick={() => setIsCreating(true)}
-              data-testid="new-story"
-            >
-              <ActionIcon icon={Plus} />
+            <Button icon={Plus} onClick={() => setIsCreating(true)} data-testid="new-story">
               {t('stories.browse.newStory')}
-            </button>
+            </Button>
           ) : undefined
         }
       />
@@ -138,16 +132,15 @@ export default function StoriesPage() {
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="stories-load-error">
           <p>{t('stories.browse.loadError')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((count) => count + 1)
             }}
           >
             {t('stories.browse.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -204,15 +197,9 @@ export default function StoriesPage() {
           hint={t('stories.browse.empty.hint')}
           action={
             access.editContent ? (
-              <button
-                className="button"
-                type="button"
-                onClick={() => setIsCreating(true)}
-                data-testid="empty-new-story"
-              >
-                <ActionIcon icon={Plus} />
+              <Button icon={Plus} onClick={() => setIsCreating(true)} data-testid="empty-new-story">
                 {t('stories.browse.empty.newStory')}
-              </button>
+              </Button>
             ) : undefined
           }
         />

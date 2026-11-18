@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ArchiveRestore } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { entries } from '../../lore/fieldInUse'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
+import { Button } from '../Button'
 
 /** A type's archived fields, folded apart: each with Restore, Delete when it is empty, and the way back as optional. */
 export function ArchivedFields({
@@ -74,28 +74,29 @@ export function ArchivedFields({
             </div>
             {canEdit ? (
               <span className="fieldlist__actions">
-                <button
-                  className="button button--secondary button--sm"
-                  type="button"
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  icon={ArchiveRestore}
                   onClick={() => void restore(field)}
                   disabled={busyFieldId === field.id}
                   aria-label={t('entityTypes.fields.restoreField', { name: field.name })}
                   data-testid={`restore-field-${field.name}`}
                 >
-                  <ActionIcon icon={ArchiveRestore} />
                   {t('entityTypes.fields.restore')}
-                </button>
+                </Button>
                 {field.entryCount === 0 && !field.usedInHistory ? (
-                  <button
-                    className="button button--text button--sm fieldlist__delete"
-                    type="button"
+                  <Button
+                    tone="text"
+                    size="sm"
+                    className="fieldlist__delete"
                     onClick={() => void remove(field)}
                     disabled={busyFieldId === field.id}
                     aria-label={t('entityTypes.fields.deleteForGood', { name: field.name })}
                     data-testid={`delete-archived-field-${field.name}`}
                   >
                     {t('entityTypes.fields.delete')}
-                  </button>
+                  </Button>
                 ) : null}
               </span>
             ) : null}
@@ -107,15 +108,15 @@ export function ArchivedFields({
               >
                 <p className="types__blockedtext">{restoreOffer.text}</p>
                 <p className="types__blockedlinks">
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
+                  <Button
+                    tone="secondary"
+                    size="sm"
                     onClick={() => void restore(field, true)}
                     disabled={busyFieldId === field.id}
                     data-testid={`restore-optional-${field.name}`}
                   >
                     {t('entityTypes.fields.restoreOptional')}
-                  </button>
+                  </Button>
                   <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
                     {t('entityTypes.fields.restoreShowEntries', { name: type.name })}
                   </Link>

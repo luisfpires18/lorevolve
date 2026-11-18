@@ -1,4 +1,4 @@
-import { Link, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { SystemMachinePanel } from '../components/SystemMachinePanel'
 import { PageHeader } from '../components/PageHeader'
@@ -8,6 +8,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { useSystemEditorState } from '../worldLogic/useSystemEditorState'
 import { systemEditorActions } from '../worldLogic/systemEditorActions'
 import { SystemDetails } from '../components/worldLogic/SystemDetails'
+import { Button } from '../components/Button'
 
 /**
  * Creates a System, or edits and deletes a saved one, at `world-logic/systems/new` or `world-logic/systems/:systemId`.
@@ -96,13 +97,13 @@ function SystemEditor({
             : t('canon.worldLogic.systems.readFailed')}
         </p>
         {load.kind === 'error' ? (
-          <button className="button button--secondary" type="button" onClick={() => void reread()}>
+          <Button tone="secondary" onClick={() => void reread()}>
             {t('canon.rules.retry')}
-          </button>
+          </Button>
         ) : null}
-        <Link className="button button--secondary" to={listPath}>
+        <Button tone="secondary" to={listPath}>
           {t('canon.worldLogic.systems.editor.back')}
-        </Link>
+        </Button>
       </div>
     )
   }
@@ -139,9 +140,9 @@ function SystemEditor({
         titleId={headingId}
         lede={t('canon.worldLogic.systems.editor.lede')}
         actions={
-          <Link className="button button--secondary" to={listPath} data-testid="system-editor-back">
+          <Button tone="secondary" to={listPath} data-testid="system-editor-back">
             {t('canon.worldLogic.systems.editor.back')}
-          </Link>
+          </Button>
         }
       />
 

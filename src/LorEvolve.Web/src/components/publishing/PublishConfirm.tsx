@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import { categoryLabel, genreLabel } from '../../publishing/types'
 import type { Confirming, usePublishState } from '../../publishing/usePublishState'
 import { SelectedLoreReview } from './SelectedLoreReview'
+import { Button } from '../Button'
 
 /** The confirm before publishing: exactly what becomes public, read fresh, and the lore that goes with it. */
 export function PublishConfirm({
@@ -89,23 +90,12 @@ export function PublishConfirm({
         {t('universe.publish.confirm.staysPrivate')}
       </p>
       <div className="form__actions">
-        <button
-          className="button"
-          type="button"
-          disabled={busy}
-          onClick={() => void publish()}
-          data-testid="confirm-publish"
-        >
+        <Button disabled={busy} onClick={() => void publish()} data-testid="confirm-publish">
           {busy ? t('universe.publish.confirm.publishing') : t('universe.publish.confirm.publish')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          disabled={busy}
-          onClick={() => setConfirming(null)}
-        >
+        </Button>
+        <Button tone="secondary" disabled={busy} onClick={() => setConfirming(null)}>
           {t('universe.publish.confirm.keepPrivate')}
-        </button>
+        </Button>
       </div>
     </div>
   )

@@ -13,6 +13,7 @@ import { capital, levelWord, nameOf } from '../../projectEntities/levelWords'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { OutlineAddButtons } from './OutlineAddButtons'
+import { Button } from '../Button'
 
 type OutlineBranchProps = {
   parentId: string | null
@@ -55,14 +56,13 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                 {leaf ? null : (
                   <OutlineAddButtons parent={node} tree={tree} busy={busy} add={add} />
                 )}
-                <button
-                  className="button button--text"
-                  type="button"
+                <Button
+                  tone="text"
                   data-testid={`project-node-open-${node.id}`}
                   onClick={() => setEditing(node.id)}
                 >
                   {t('projects.structure.edit')}
-                </button>
+                </Button>
                 <ActionMenu
                   label={t('projects.common.more', { name: nameOf(node) })}
                   triggerTestId={`project-node-actions-${node.id}`}

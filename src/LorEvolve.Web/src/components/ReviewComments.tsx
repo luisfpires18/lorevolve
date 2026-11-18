@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { MessageSquare } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { commentsPath, type CommentSubject } from '../comments/api'
 import { useI18n } from '../i18n'
 import type { Change } from '../lib/editConflict'
 import { suggestionsPath } from '../suggestions/api'
 import { CommentsDrawer } from './CommentsDrawer'
+import { Button } from './Button'
 
 interface ReviewCommentsProps<T> {
   universeId: string
@@ -41,17 +41,17 @@ export function ReviewComments<T>({
 
   return (
     <>
-      <button
-        className="button button--text reviewtrigger"
-        type="button"
+      <Button
+        tone="text"
+        icon={MessageSquare}
+        className="reviewtrigger"
         aria-haspopup="dialog"
         title={t('review.comments.trigger.title')}
         onClick={() => setIsOpen(true)}
         data-testid="comments-trigger"
       >
-        <ActionIcon icon={MessageSquare} />
         <span className="reviewtrigger__label">{t('review.comments.trigger.label')}</span>
-      </button>
+      </Button>
 
       {isOpen ? (
         <CommentsDrawer

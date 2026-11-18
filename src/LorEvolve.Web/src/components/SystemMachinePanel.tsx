@@ -6,6 +6,7 @@ import { m } from '../worldLogic/machinePanelTypes'
 import { useMachinePanelState } from '../worldLogic/useMachinePanelState'
 import { machinePanelActions } from '../worldLogic/machinePanelActions'
 import { MachinePanelBody } from './worldLogic/MachinePanelBody'
+import { Button } from './Button'
 
 /**
  * A System's machine on the System editor's Machine tab (ADR 0073): the canvas, the same states and transitions as
@@ -61,16 +62,15 @@ export function SystemMachinePanel({
     return (
       <div className="notice notice--error" role="alert" data-testid="machine-unavailable">
         <p>{t(`${m}.readFailed`)}</p>
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           onClick={() => {
             setLoad('loading')
             setReads((count) => count + 1)
           }}
         >
           {t('canon.rules.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

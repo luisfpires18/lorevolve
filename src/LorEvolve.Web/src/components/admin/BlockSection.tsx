@@ -4,6 +4,7 @@ import { Field } from '../Field'
 import { ApiError } from '../../lib/api'
 import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 export function BlockSection({
   user,
@@ -102,13 +103,13 @@ export function BlockSection({
             />
           )}
         </Field>
-        <button
-          className={block ? 'button button--secondary button--danger-quiet' : 'button'}
+        <Button
+          tone={block ? 'danger-quiet' : 'primary'}
           type="submit"
           data-testid={block ? 'admin-block' : 'admin-unblock'}
         >
           {t(block ? 'admin.block.block.submit' : 'admin.block.unblock.submit')}
-        </button>
+        </Button>
       </form>
     </section>
   )

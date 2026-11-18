@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { IdeaBoardPage, IdeaBoardSummary } from '../../ideas/boards'
 import { formatDate, formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /** The rows of the boards list: each board opens, or in Recently deleted, restores. */
 export function BoardsListRows({
@@ -72,16 +73,16 @@ export function BoardsListRows({
             </p>
           </div>
           {deleted ? (
-            <button
-              className="button button--secondary idearow__restore"
-              type="button"
+            <Button
+              tone="secondary"
+              className="idearow__restore"
               disabled={restoring !== null}
               onClick={() => void restore(board)}
               aria-label={t('ideas.boards.restoreAria', { title: board.title })}
               data-testid="board-restore"
             >
               {restoring === board.id ? t('ideas.boards.restoring') : t('ideas.boards.restore')}
-            </button>
+            </Button>
           ) : null}
         </li>
       ))}

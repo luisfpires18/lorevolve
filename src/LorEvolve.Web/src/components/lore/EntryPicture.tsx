@@ -3,6 +3,7 @@ import type { EntityDetail } from '../../lore/types'
 import { useI18n } from '../../i18n'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import type { StagePicture } from '../../progression/stagePictures'
+import { IconButton } from '../IconButton'
 
 type ShownPicture = { src: string; fullSrc: string; width: number; height: number }
 
@@ -75,17 +76,15 @@ export function EntryPicture({
         height={picture.height}
         decoding="async"
       />
-      <button
-        ref={expandButton}
-        className="iconbutton entry__expand"
-        type="button"
-        onClick={() => setIsViewing(true)}
-        aria-label={t('entity.page.picture.viewLabel')}
+      <IconButton
+        icon={Maximize2}
+        label={t('entity.page.picture.viewLabel')}
         title={t('entity.page.picture.viewTitle')}
+        className="entry__expand"
+        ref={expandButton}
+        onClick={() => setIsViewing(true)}
         data-testid="entry-image-expand"
-      >
-        <Maximize2 aria-hidden="true" focusable="false" strokeWidth={1.75} />
-      </button>
+      />
     </figure>
   ) : null
 }

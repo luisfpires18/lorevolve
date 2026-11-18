@@ -4,6 +4,7 @@ import { classifyNode } from '../worldLogic/guardClassify'
 import { blockFor, blockPaths, pathKey } from '../worldLogic/guardPaths'
 import { tg, type Context } from '../worldLogic/guardBuilderKeys'
 import { Block } from './worldLogic/Block'
+import { Button } from './Button'
 
 /**
  * A condition built from blocks (Issue #359): groups of all or any, a not, and comparison, exists and related rows,
@@ -44,14 +45,14 @@ export function GuardBuilder({
       <Block node={condition} path={[]} level={1} onChange={onChange} context={context} />
       {rootKind !== 'all' && rootKind !== 'any' ? (
         <div className="guardblock__row">
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             onClick={() => onChange(wrap(condition))}
             data-testid="guard-wrap"
           >
             {tg('wrap')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

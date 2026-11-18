@@ -1,11 +1,11 @@
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { Field } from '../Field'
 import { PageHeader } from '../PageHeader'
 import { QueryTabList } from '../QueryTabs'
 import { useI18n } from '../../i18n'
 import type { QueryTab } from '../../lib/queryTab'
 import type { useTypesGames } from '../../lore/useTypesGames'
+import { Button } from '../Button'
 
 type TypesTab = 'lore' | 'groups' | 'relations' | 'events'
 
@@ -58,18 +58,16 @@ export function TypesHeader({
       }
       actions={
         showLore && tab === 'lore' && access.editContent ? (
-          <button
-            className="button"
-            type="button"
+          <Button
+            icon={Plus}
             onClick={() => {
               setChildOf(null)
               setEditing('new')
             }}
             data-testid="new-type"
           >
-            <ActionIcon icon={Plus} />
             {t('entityTypes.page.newType')}
-          </button>
+          </Button>
         ) : null
       }
     >

@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { EntityTypeGroup } from '../../lore/typeDefinitions'
+import { Button } from '../Button'
 
 /** One group on the groups tab: its rename form or its row with the moves, rename and delete, and its problem. */
 export function TypeGroupRow({
@@ -75,22 +76,18 @@ export function TypeGroupRow({
                 }}
                 data-testid="type-group-rename-input"
               />
-              <button
-                className="button button--secondary button--sm"
-                type="button"
+              <Button
+                tone="secondary"
+                size="sm"
                 disabled={busy}
                 onClick={() => void rename(group)}
                 data-testid="type-group-rename-save"
               >
                 {t('entityTypes.groupsPanel.rename')}
-              </button>
-              <button
-                className="button button--text button--sm"
-                type="button"
-                onClick={() => setRenaming(null)}
-              >
+              </Button>
+              <Button tone="text" size="sm" onClick={() => setRenaming(null)}>
                 {t('entityTypes.groupsPanel.cancel')}
-              </button>
+              </Button>
             </div>
           )}
         </Field>
@@ -102,29 +99,31 @@ export function TypeGroupRow({
           </span>
           {canEdit ? (
             <span className="typegroups__actions">
-              <button
-                className="button button--text button--sm typegroups__move"
-                type="button"
+              <Button
+                tone="text"
+                size="sm"
+                className="typegroups__move"
                 disabled={busy || index === 0}
                 onClick={() => void move(index, -1)}
                 aria-label={t('entityTypes.groupsPanel.moveUp', { name: group.name })}
                 data-testid={`type-group-up-${group.name}`}
               >
                 <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              </button>
-              <button
-                className="button button--text button--sm typegroups__move"
-                type="button"
+              </Button>
+              <Button
+                tone="text"
+                size="sm"
+                className="typegroups__move"
                 disabled={busy || index === groups.length - 1}
                 onClick={() => void move(index, 1)}
                 aria-label={t('entityTypes.groupsPanel.moveDown', { name: group.name })}
                 data-testid={`type-group-down-${group.name}`}
               >
                 <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              </button>
-              <button
-                className="button button--text button--sm"
-                type="button"
+              </Button>
+              <Button
+                tone="text"
+                size="sm"
                 disabled={busy}
                 onClick={() => {
                   setProblem(null)
@@ -135,17 +134,18 @@ export function TypeGroupRow({
                 data-testid={`type-group-rename-${group.name}`}
               >
                 {t('entityTypes.groupsPanel.rename')}
-              </button>
-              <button
-                className="button button--text button--sm typegroups__delete"
-                type="button"
+              </Button>
+              <Button
+                tone="text"
+                size="sm"
+                className="typegroups__delete"
                 disabled={busy}
                 onClick={() => void remove(group)}
                 aria-label={t('entityTypes.groupsPanel.deleteGroup', { name: group.name })}
                 data-testid={`type-group-delete-${group.name}`}
               >
                 {t('entityTypes.groupsPanel.delete')}
-              </button>
+              </Button>
             </span>
           ) : null}
         </div>

@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import type { UsageLoad } from '../lib/useUsageLoad'
+import { Button } from './Button'
 
 /**
  * One allowance in the Usage section: its name, then its numbers once read, or the loading and failed states in its own
@@ -41,9 +42,9 @@ export function UsageItem<T>({
           data-testid={`${testId}-error`}
         >
           <p>{t('account.usage.failed')}</p>
-          <button className="button button--secondary" type="button" onClick={onRetry}>
+          <Button tone="secondary" onClick={onRetry}>
             {t('account.usage.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

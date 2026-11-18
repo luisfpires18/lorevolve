@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { EntityType } from '../../lore/typeDefinitions'
+import { Button } from '../Button'
 
 /** Above the Lore types: a failure with Retry when the list could not be read, and the status line. */
 export function TypesNotices({
@@ -22,16 +23,15 @@ export function TypesNotices({
         <div className="notice notice--error" role="alert" data-testid="types-error">
           <p>{message}</p>
           {!types ? (
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
               onClick={() => {
                 setMessage(null)
                 refresh().catch(() => undefined)
               }}
             >
               {t('entityTypes.page.retry')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

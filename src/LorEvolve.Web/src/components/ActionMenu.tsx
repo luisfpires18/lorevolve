@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Ellipsis } from 'lucide-react'
+import { iconButtonClass } from '../lib/buttonClass'
 
 interface ActionMenuProps {
   /** The trigger's accessible name. Say whose: "More actions for The door that should be shut". */
@@ -55,7 +56,7 @@ function reachable(panel: HTMLElement | null) {
 export function ActionMenu({
   label,
   trigger,
-  triggerClassName = 'iconbutton',
+  triggerClassName = iconButtonClass(),
   className,
   panelClassName,
   testId,

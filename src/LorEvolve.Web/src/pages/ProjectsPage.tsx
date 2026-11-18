@@ -9,6 +9,7 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { Button } from '../components/Button'
 
 /**
  * What was read, and what it was read for. Keeping the request's own key beside the result is what lets the screen say
@@ -98,13 +99,12 @@ export default function ProjectsPage({
            * away from any row here.
            */
           universeId ? (
-            <Link
-              className="button"
+            <Button
               to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
               data-testid="projects-page-new"
             >
               {t('projects.nav.new')}
-            </Link>
+            </Button>
           ) : null
         }
       />

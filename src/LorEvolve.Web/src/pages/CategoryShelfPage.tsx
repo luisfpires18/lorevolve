@@ -1,6 +1,5 @@
 import { Plus } from 'lucide-react'
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
-import { ActionIcon } from '../components/ActionIcon'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { CoverDrawer } from '../components/CoverDrawer'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
@@ -18,6 +17,7 @@ import { useShelfRead } from '../projects/useShelfRead'
 import { useShelfState } from '../projects/useShelfState'
 import { ShelfCards } from '../components/projects/ShelfCards'
 import { ShelfViewNav } from '../components/projects/ShelfViewNav'
+import { Button } from '../components/Button'
 
 /**
  * One Creation category's projects, each drawn as the thing it will be (owner, 2026-11-17): Gaming on a handheld,
@@ -58,14 +58,13 @@ export default function CategoryShelfPage({
   const { neighbour, move } = shelfActions({ ...shelf, universe, kinds })
 
   const newProject = (
-    <Link
-      className="button"
+    <Button
+      icon={Plus}
       to={`/app/projects/new?universeId=${universe.id}&kind=${kinds[0]}`}
       data-testid="projects-page-new"
     >
-      <ActionIcon icon={Plus} />
       {t('projects.nav.new')}
-    </Link>
+    </Button>
   )
 
   return (

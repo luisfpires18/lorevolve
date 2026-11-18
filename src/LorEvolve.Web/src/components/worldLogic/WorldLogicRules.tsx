@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { EmptyState } from '../EmptyState'
 import { TabPanel } from '../QueryTabs'
 import { t, useI18n } from '../../i18n'
@@ -9,6 +8,7 @@ import type { useUniverseAccess } from '../../universes/access'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
+import { Button } from '../Button'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -37,9 +37,9 @@ export function WorldLogicRules({
       {rules.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="world-logic-rules-error">
           <p>{t('canon.rules.readFailed')}</p>
-          <button className="button button--secondary" type="button" onClick={retry}>
+          <Button tone="secondary" onClick={retry}>
             {t('canon.rules.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -106,10 +106,9 @@ export function WorldLogicRules({
           hint={t('canon.rules.empty.hint')}
           action={
             access.editContent ? (
-              <Link className="button" to={`${base}/world-rules/new`}>
-                <ActionIcon icon={Plus} />
+              <Button icon={Plus} to={`${base}/world-rules/new`}>
                 {t('canon.rules.newRule')}
-              </Link>
+              </Button>
             ) : undefined
           }
         />
@@ -120,13 +119,9 @@ export function WorldLogicRules({
           testId="world-logic-rules-page-empty"
           title={t('canon.rules.pageEmpty.title')}
           action={
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => goTo('rulesPage', 1)}
-            >
+            <Button tone="secondary" onClick={() => goTo('rulesPage', 1)}>
               {t('canon.rules.pageEmpty.first')}
-            </button>
+            </Button>
           }
         />
       ) : null}

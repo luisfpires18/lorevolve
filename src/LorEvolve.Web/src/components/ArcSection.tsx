@@ -8,6 +8,7 @@ import { useFold } from './fold'
 import { FoldToggle } from './FoldToggle'
 import { arcLabel, arcNumber, chapterCountLabel } from '../stories/format'
 import type { PlotArc } from '../stories/types'
+import { Button } from './Button'
 
 interface ArcSectionProps {
   arc: PlotArc
@@ -96,9 +97,9 @@ export function ArcSection({
           {publication}
           {access.editContent ? (
             <>
-              <button
-                className="button button--text"
-                type="button"
+              <Button
+                tone="text"
+                icon={Plus}
                 onClick={() => {
                   setFoldOpen(true)
                   onAddChapter(arc)
@@ -106,9 +107,8 @@ export function ArcSection({
                 aria-describedby={headingId}
                 data-testid="arc-new-chapter"
               >
-                <ActionIcon icon={Plus} />
                 {t('stories.arc.addChapter')}
-              </button>
+              </Button>
               <ActionMenu
                 label={t('stories.arc.moreActions', { label: arcLabel(index, arc.title) })}
                 triggerTestId="arc-actions"

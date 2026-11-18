@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom'
 import { ArrowUpRight, Globe, Lock } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import { worldPath } from '../../portal/api'
 import type { usePublishState } from '../../publishing/usePublishState'
+import { Button } from '../Button'
 
 /** The head of Publish: the public address and Make private while public, Publish world while private. */
 export function PublishHeaderActions({
@@ -27,18 +27,14 @@ export function PublishHeaderActions({
   return isPublic ? (
     <>
       {slug ? (
-        <Link
-          className="button button--secondary"
-          to={worldPath(slug)}
-          data-testid="view-public-page"
-        >
+        <Button tone="secondary" to={worldPath(slug)} data-testid="view-public-page">
           {t('universe.publish.viewPublic')}
           <ActionIcon icon={ArrowUpRight} />
-        </Link>
+        </Button>
       ) : null}
-      <button
-        className="button button--secondary button--danger-quiet"
-        type="button"
+      <Button
+        tone="danger-quiet"
+        icon={Lock}
         disabled={busy}
         onClick={() => {
           setProblem(null)
@@ -47,20 +43,12 @@ export function PublishHeaderActions({
         }}
         data-testid="unpublish"
       >
-        <ActionIcon icon={Lock} />
         {t('universe.publish.makePrivate')}
-      </button>
+      </Button>
     </>
   ) : (
-    <button
-      className="button"
-      type="button"
-      disabled={busy}
-      onClick={() => void askToPublish()}
-      data-testid="publish"
-    >
-      <ActionIcon icon={Globe} />
+    <Button icon={Globe} disabled={busy} onClick={() => void askToPublish()} data-testid="publish">
       {t('universe.publish.publishWorld')}
-    </button>
+    </Button>
   )
 }

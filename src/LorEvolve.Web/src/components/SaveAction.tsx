@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
 
 /** How long "Saved" stays on the button after a save, before it goes quiet again. */
 const SAVED_FOR_MS = 2000
@@ -82,8 +83,8 @@ export function SaveAction({
               ? t('entity.save.status.saved')
               : restingStatus}
       </span>
-      <button
-        className="button saveaction"
+      <Button
+        className="saveaction"
         type={type}
         aria-disabled={unavailable || undefined}
         aria-describedby={statusId}
@@ -108,7 +109,7 @@ export function SaveAction({
         ) : (
           label
         )}
-      </button>
+      </Button>
     </>
   )
 }

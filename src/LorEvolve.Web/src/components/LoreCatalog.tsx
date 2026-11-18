@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import type { TypeTree } from '../lore/typeTree'
 import { listedEntries, TypeCard, type CatalogType } from './lore/LoreTypeCard'
+import { Button } from './Button'
 
 /** How many card shapes stand in for the catalog while the types are read. */
 const SKELETON_CARDS = 6
@@ -174,9 +175,10 @@ export function LoreCatalog({
                 />
                 {/* Inside the card's lower corner, beside the link rather than in it: a button can't sit in a link. */}
                 {expandable ? (
-                  <button
-                    className="button button--text button--sm lorecatalog__expand"
-                    type="button"
+                  <Button
+                    tone="text"
+                    size="sm"
+                    className="lorecatalog__expand"
                     aria-expanded={isOpen}
                     onClick={() => toggle(node.type.id)}
                     data-testid="lore-type-expand"
@@ -192,7 +194,7 @@ export function LoreCatalog({
                   >
                     <Chevron aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     <span aria-hidden="true">{node.children.length}</span>
-                  </button>
+                  </Button>
                 ) : null}
               </li>
             )

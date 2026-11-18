@@ -3,6 +3,7 @@ import { EntityTile } from '../EntityTile'
 import { useI18n } from '../../i18n'
 import type { EntityImageRef } from '../../lore/types'
 import type { useUniverseAccess } from '../../universes/access'
+import { Button } from '../Button'
 
 /** One row as the drawer draws it, from a scene's reference or a search result alike. */
 export interface LoreRow {
@@ -82,9 +83,9 @@ export function LoreContextRow({
         </p>
       </div>
       {access.editContent ? (
-        <button
-          className="button button--text lorecontext__action"
-          type="button"
+        <Button
+          tone="text"
+          className="lorecontext__action"
           aria-disabled={busy !== null}
           aria-label={
             isLinked
@@ -101,7 +102,7 @@ export function LoreContextRow({
             : isLinked
               ? t('lore.context.unlink')
               : t('lore.context.link')}
-        </button>
+        </Button>
       ) : null}
     </li>
   )

@@ -11,6 +11,7 @@ import { useRecordStories } from '../../knowledge/useRecordStories'
 import { recordFormSave } from '../../knowledge/recordFormSave'
 import { RecordOtherField } from './RecordOtherField'
 import { RecordSceneFields } from './RecordSceneFields'
+import { Button } from '../Button'
 
 // ---------- The form ----------
 
@@ -108,7 +109,7 @@ export function RecordForm({
       noValidate
       actions={(close) => (
         <>
-          <button className="button" type="submit" disabled={isSaving} data-testid="knowledge-save">
+          <Button type="submit" disabled={isSaving} data-testid="knowledge-save">
             {isSaving
               ? record
                 ? t('ai.knowledge.form.saving')
@@ -116,15 +117,10 @@ export function RecordForm({
               : record
                 ? t('ai.knowledge.form.save')
                 : t('ai.knowledge.form.add')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => void close()}
-            data-testid="knowledge-cancel"
-          >
+          </Button>
+          <Button tone="secondary" onClick={() => void close()} data-testid="knowledge-cancel">
             {t('ai.knowledge.form.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

@@ -10,6 +10,7 @@ import {
 import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
 import { CopyLink } from './CopyLink'
+import { Button } from '../Button'
 
 // ---------- Pending invitations ----------
 
@@ -97,16 +98,15 @@ export function InvitationRow({
           label={t('universe.collab.copyInvite')}
           testId="copy-invite-link"
         />
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           onClick={() => void revoke()}
           disabled={busy}
           aria-label={t('universe.collab.revokeLabel', { email: invitation.email })}
           data-testid="revoke-invitation"
         >
           {t('universe.collab.revoke')}
-        </button>
+        </Button>
       </div>
       {error ? (
         <p className="form__message collab__error" role="alert">

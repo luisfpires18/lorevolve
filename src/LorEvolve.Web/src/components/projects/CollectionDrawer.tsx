@@ -4,6 +4,7 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { ComicCollection, ComicCollectionKind } from '../../projects/comicCollections'
 import { WORDS } from '../../projects/comicCollectionWords'
+import { Button } from '../Button'
 
 /** What the edit drawer is for: a new collection of one kind, or an existing one. */
 export type Editing = { kind: ComicCollectionKind; collection: ComicCollection | null }
@@ -46,17 +47,16 @@ export function CollectionDrawer({
       busy={saving}
       actions={(close) => (
         <>
-          <button
-            className="button"
+          <Button
             type="submit"
             disabled={saving || name.trim() === ''}
             data-testid="comic-collection-drawer-save"
           >
             {saving ? t('projects.comics.saving') : t('projects.comics.save')}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
+          </Button>
+          <Button tone="secondary" onClick={close}>
             {t('projects.common.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

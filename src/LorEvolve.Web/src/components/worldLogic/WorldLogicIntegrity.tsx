@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { EmptyState } from '../EmptyState'
 import { TabPanel } from '../QueryTabs'
 import { t, useI18n } from '../../i18n'
@@ -9,6 +8,7 @@ import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { FindingRow } from './FindingRow'
+import { Button } from '../Button'
 
 /** The Integrity tab: the check and what it last said, one row per finding, the empty states and the pager. */
 export function WorldLogicIntegrity({
@@ -38,18 +38,15 @@ export function WorldLogicIntegrity({
       {/* Checking writes the findings, so it is editing (ADR 0041); everyone reads what the last check found. */}
       {access.editContent ? (
         <div className="controls">
-          <button
-            className="button button--secondary"
-            type="button"
-            disabled={sweeping}
-            aria-busy={sweeping}
+          <Button
+            tone="secondary"
+            busy={sweeping}
+            busyLabel={t('canon.worldLogic.integrity.checking')}
             onClick={() => void check()}
             data-testid="world-logic-integrity-check"
           >
-            {sweeping
-              ? t('canon.worldLogic.integrity.checking')
-              : t('canon.worldLogic.integrity.check')}
-          </button>
+            {t('canon.worldLogic.integrity.check')}
+          </Button>
         </div>
       ) : null}
 
@@ -90,9 +87,9 @@ export function WorldLogicIntegrity({
       {findings.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="world-logic-findings-error">
           <p>{t('canon.worldLogic.integrity.readFailed')}</p>
-          <button className="button button--secondary" type="button" onClick={retry}>
+          <Button tone="secondary" onClick={retry}>
             {t('canon.rules.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -124,13 +121,9 @@ export function WorldLogicIntegrity({
               : t('canon.worldLogic.integrity.empty.hint')
           }
           action={
-            <Link
-              className="button button--secondary"
-              to={`${base}/canon`}
-              data-testid="world-logic-canon-link"
-            >
+            <Button tone="secondary" to={`${base}/canon`} data-testid="world-logic-canon-link">
               {t('canon.worldLogic.integrity.canonLink')}
-            </Link>
+            </Button>
           }
         />
       ) : null}
@@ -142,13 +135,9 @@ export function WorldLogicIntegrity({
           testId="world-logic-findings-page-empty"
           title={t('canon.rules.pageEmpty.title')}
           action={
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => goTo('findingsPage', 1)}
-            >
+            <Button tone="secondary" onClick={() => goTo('findingsPage', 1)}>
               {t('canon.rules.pageEmpty.first')}
-            </button>
+            </Button>
           }
         />
       ) : null}

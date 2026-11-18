@@ -7,6 +7,7 @@ import { useEntitySearch } from '../lore/useEntitySearch'
 import { listKeyDown, useCloseOnOutside, useKeepListInView } from './entityPickerList'
 import { EntityPickerCreate } from './lore/EntityPickerCreate'
 import { usePickerQuickCreate } from '../lore/usePickerQuickCreate'
+import { Button } from './Button'
 
 /** What a picker hands back: enough to show a name without a second request. */
 export interface EntityChoice {
@@ -122,10 +123,10 @@ export function EntityPicker({
               <span className="picker__chosenname">
                 <bdi>{value.name}</bdi>
               </span>
-              <button
+              <Button
+                tone="secondary"
+                size="sm"
                 ref={change}
-                className="button button--secondary button--sm"
-                type="button"
                 aria-describedby={note ? noteId : undefined}
                 onClick={() => {
                   focusInput.current = true
@@ -135,7 +136,7 @@ export function EntityPicker({
                 data-testid="picker-clear"
               >
                 {t('entity.picker.change')}
-              </button>
+              </Button>
             </p>
           ) : (
             <>

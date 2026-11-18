@@ -1,7 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { EntityTile } from '../EntityTile'
 import { StatusBadge } from '../StatusBadge'
 import type { Chronology } from '../../chronology/types'
@@ -12,6 +10,7 @@ import { EMPTY_FACT, renderFact } from '../../lore/facts'
 import { CANON_LABELS, type EntityDetail } from '../../lore/types'
 import { listEntityRelationships } from '../../relationships/api'
 import type { RelationshipView } from '../../relationships/types'
+import { Button } from '../Button'
 
 const MAX_RELATIONS = 8
 
@@ -82,16 +81,16 @@ export function LorePreview({
 
   return (
     <article className="lorepreview" aria-labelledby={nameId} data-testid="lore-preview">
-      <button
+      <Button
+        tone="text"
+        icon={ArrowLeft}
+        className="lorepreview__back"
         ref={back}
-        className="button button--text lorepreview__back"
-        type="button"
         onClick={onBack}
         data-testid="lore-preview-back"
       >
-        <ActionIcon icon={ArrowLeft} />
         {t('lore.preview.back')}
-      </button>
+      </Button>
 
       {state.kind === 'loading' ? (
         <p className="entry__blank" role="status" id={nameId}>
@@ -177,23 +176,22 @@ export function LorePreview({
 
           <div className="lorepreview__actions">
             {canLink ? (
-              <button
-                className={isLinked ? 'button button--secondary' : 'button'}
-                type="button"
+              <Button
+                tone={isLinked ? 'secondary' : 'primary'}
                 aria-disabled={busy}
                 onClick={() => onLink({ id: state.entity.id, name: state.entity.name }, !isLinked)}
                 data-testid={isLinked ? 'lore-preview-unlink' : 'lore-preview-link'}
               >
                 {isLinked ? t('lore.preview.unlinkScene') : t('lore.preview.linkScene')}
-              </button>
+              </Button>
             ) : null}
-            <Link
-              className="button button--text"
+            <Button
+              tone="text"
               to={`/app/universes/${universeId}/lore/${state.entity.id}`}
               data-testid="lore-preview-open"
             >
               {t('lore.preview.open')}
-            </Link>
+            </Button>
           </div>
         </>
       ) : null}

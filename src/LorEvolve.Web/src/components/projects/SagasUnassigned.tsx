@@ -7,6 +7,7 @@ import type {
 } from '../../projects/sagas'
 import type { Dispatch, SetStateAction } from 'react'
 import { Production } from './Production'
+import { Button } from '../Button'
 
 /** The productions that belong to no phase, each with the way to add it to one. */
 export function SagasUnassigned({
@@ -44,16 +45,16 @@ export function SagasUnassigned({
             >
               <Production universeId={universeId} production={production} />
               <div className="fieldlist__actions">
-                <button
-                  className="button button--secondary button--sm"
-                  type="button"
+                <Button
+                  tone="secondary"
+                  size="sm"
                   disabled={busy || phaseChoices.length === 0}
                   title={phaseChoices.length === 0 ? t('projects.sagas.needsPhase') : undefined}
                   data-testid={`unassigned-add-${production.projectId}`}
                   onClick={() => setAdding(production)}
                 >
                   {t('projects.sagas.addToPhase')}
-                </button>
+                </Button>
               </div>
             </li>
           ))}

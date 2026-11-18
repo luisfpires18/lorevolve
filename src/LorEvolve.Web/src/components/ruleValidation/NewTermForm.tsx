@@ -10,6 +10,7 @@ import {
 } from '../../ruleValidation/types'
 import type { useTermManagerState } from '../../ruleValidation/useTermManagerState'
 import type { termManagerActions } from '../../ruleValidation/termManagerActions'
+import { Button } from '../Button'
 
 /** The new term's kind, its name and Add. */
 export function NewTermForm({
@@ -81,9 +82,9 @@ export function NewTermForm({
           />
         )}
       </Field>
-      <button className="button" type="button" onClick={() => void add()} data-testid="add-term">
+      <Button onClick={() => void add()} data-testid="add-term">
         {t('canon.terms.add', { word: TERM_KIND_WORDS[newKind] })}
-      </button>
+      </Button>
     </div>
   )
 }

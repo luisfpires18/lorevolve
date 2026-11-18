@@ -4,6 +4,7 @@ import { ActionMenu } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { FieldForm, kindLabel } from '../FieldForm'
+import { Button } from '../Button'
 
 /** A type's open field list: the fields it hands down, its own, and the form to add one. */
 export function SchemaTypeFields({
@@ -108,14 +109,14 @@ export function SchemaTypeFields({
               }}
             />
           ) : (
-            <button
-              className="button button--text button--sm"
-              type="button"
+            <Button
+              tone="text"
+              size="sm"
               data-testid={`project-field-add-${type.id}`}
               onClick={() => setAddingFieldTo(type.id)}
             >
               {t('projects.schema.addField')}
-            </button>
+            </Button>
           )}
         </div>
       ) : null}

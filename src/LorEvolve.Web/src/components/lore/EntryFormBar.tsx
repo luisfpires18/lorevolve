@@ -1,8 +1,8 @@
 import { Check, FilePenLine, X } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import type { RefObject } from 'react'
+import { Button } from '../Button'
 
 /** The form's bar: what state the form is in, Save or Send, and Cancel. */
 export function EntryFormBar({
@@ -35,16 +35,14 @@ export function EntryFormBar({
             : t('entity.page.bar.noChanges')}
       </p>
       <div className="actionbar__actions">
-        <button
+        <Button
+          icon={suggesting ? FilePenLine : Check}
           ref={saveButton}
-          className="button"
-          type="button"
           onClick={save}
           disabled={isSaving || (suggesting && !isDirty)}
           aria-busy={isSaving}
           data-testid="save-entity"
         >
-          <ActionIcon icon={suggesting ? FilePenLine : Check} />
           {suggesting
             ? isSaving
               ? t('entity.page.bar.sending')
@@ -54,11 +52,11 @@ export function EntryFormBar({
               : isNew
                 ? t('entity.page.bar.create')
                 : t('entity.page.bar.save')}
-        </button>
+        </Button>
         {!isNew ? (
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
+            icon={X}
             onClick={async () => {
               // Cancel is the choice to discard, so it asks once, and only when there is something to lose.
               if (
@@ -83,9 +81,8 @@ export function EntryFormBar({
             }}
             data-testid="cancel-entity"
           >
-            <ActionIcon icon={X} />
             {t('entity.page.bar.cancel')}
-          </button>
+          </Button>
         ) : null}
       </div>
     </footer>

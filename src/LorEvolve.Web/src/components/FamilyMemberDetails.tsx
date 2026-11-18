@@ -8,6 +8,8 @@ import { linkSentence, type FamilyReading } from '../familyTree/reading'
 import { POSITION_LABELS, type FamilyTree } from '../familyTree/types'
 import { CANON_LABELS, CanonStatus } from '../lore/types'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
+import { IconButton } from './IconButton'
 
 /** Where the tree stops drawing lines and the details become a sheet: the tree's own phone width. */
 const SHEET_QUERY = '(max-width: 640px)'
@@ -152,16 +154,13 @@ export function FamilyMemberDetails({
               <StatusBadge step={node.canonStatus} label={CANON_LABELS[node.canonStatus]} />
             </p>
           </div>
-          <button
-            className="iconbutton familydetails__close"
-            type="button"
+          <IconButton
+            icon={X}
+            label={t('places.memberDetails.close')}
+            className="familydetails__close"
             onClick={close}
-            aria-label={t('places.memberDetails.close')}
-            title={t('places.memberDetails.close')}
             data-testid="family-details-close"
-          >
-            <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-          </button>
+          />
         </header>
 
         <div className="familydetails__body">
@@ -245,20 +244,19 @@ export function FamilyMemberDetails({
         </div>
 
         <footer className="familydetails__actions">
-          <Link className="button button--secondary" to={entryPath(node.entityId)}>
+          <Button tone="secondary" to={entryPath(node.entityId)}>
             {t('places.memberDetails.openEntry')}
-          </Link>
+          </Button>
           {isFocal ? null : (
-            <button
-              className="button button--text"
-              type="button"
+            <Button
+              tone="text"
               onClick={() => {
                 onClose()
                 onFocus(node.entityId)
               }}
             >
               {t('places.memberDetails.showFamily')}
-            </button>
+            </Button>
           )}
         </footer>
       </div>

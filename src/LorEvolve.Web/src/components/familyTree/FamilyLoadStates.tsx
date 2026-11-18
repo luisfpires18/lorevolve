@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { LoadState } from '../../familyTree/useFamilyTreeState'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
+import { Button } from '../Button'
 
 export function FamilyLoadStates({
   universe,
@@ -43,16 +44,15 @@ export function FamilyLoadStates({
       {view.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="family-error">
           <p>{t('places.familyPage.error')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             onClick={() => {
               setState({ kind: 'loading' })
               setReads((current) => current + 1)
             }}
           >
             {t('places.familyPage.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </>

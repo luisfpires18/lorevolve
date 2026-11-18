@@ -12,6 +12,7 @@ import { ScriptPartBar } from './ScriptPartBar'
 import { ScriptPartFields } from './ScriptPartFields'
 import { ScriptPartHead } from './ScriptPartHead'
 import { ScriptPartNotices } from './ScriptPartNotices'
+import { Button } from '../Button'
 
 /** One part's text, and a panel's four script fields, with its own save. */
 export function ScriptPart({
@@ -74,9 +75,8 @@ export function ScriptPart({
     return failure ? (
       <p className="form__message" role="alert" data-testid="project-script-part-failed">
         {failure}{' '}
-        <button
-          className="button button--text"
-          type="button"
+        <Button
+          tone="text"
           onClick={() => {
             setFailure(null)
             void load()
@@ -84,7 +84,7 @@ export function ScriptPart({
           data-testid="project-script-part-retry"
         >
           {t('projects.script.retry')}
-        </button>
+        </Button>
       </p>
     ) : (
       <p className="projectcard__meta">{t('projects.common.loading')}</p>

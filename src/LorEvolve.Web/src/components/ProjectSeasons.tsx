@@ -5,6 +5,7 @@ import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { WORDS, type ProjectStructureWords } from '../projectEntities/seasonWords'
 import { SeasonItem } from './projectEntities/SeasonItem'
+import { Button } from './Button'
 
 /**
  * The seasons of a project and the episodes in them (#145).
@@ -83,15 +84,13 @@ export function ProjectSeasons({
           <h2 className="sectionrule">{say.title()}</h2>
           <p className="projects__lede">{say.lede()}</p>
         </div>
-        <button
-          className="button"
-          type="button"
+        <Button
           aria-expanded={adding}
           data-testid="project-season-add"
           onClick={() => setAdding((open) => !open)}
         >
           {say.add()}
-        </button>
+        </Button>
       </header>
 
       {/* Asked for rather than standing open at the foot of the list. */}
@@ -125,22 +124,16 @@ export function ProjectSeasons({
             )}
           </Field>
           <div className="form__actions">
-            <button
-              className="button"
-              type="submit"
-              disabled={busy}
-              data-testid="project-season-new-save"
-            >
+            <Button type="submit" disabled={busy} data-testid="project-season-new-save">
               {busy ? t('projects.seasons.saving') : say.add()}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
               onClick={() => setAdding(false)}
               data-testid="project-season-new-cancel"
             >
               {t('projects.common.cancel')}
-            </button>
+            </Button>
           </div>
         </form>
       ) : null}

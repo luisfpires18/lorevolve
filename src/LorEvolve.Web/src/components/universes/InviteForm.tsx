@@ -10,6 +10,7 @@ import {
 import { UniverseRole, type UniverseRoleValue } from '../../universes/types'
 import { Field } from '../Field'
 import { RoleSelect } from './RoleSelect'
+import { Button } from '../Button'
 
 // ---------- Inviting ----------
 
@@ -119,9 +120,9 @@ export function InviteForm({
         </p>
       ) : null}
       <div className="form__actions">
-        <button className="button" type="submit" disabled={busy} data-testid="create-invitation">
+        <Button type="submit" disabled={busy} data-testid="create-invitation">
           {busy ? t('universe.collab.creating') : t('universe.collab.create')}
-        </button>
+        </Button>
       </div>
     </form>
   )

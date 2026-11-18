@@ -7,6 +7,7 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
+import { Button } from './Button'
 
 /**
  * Report a bug or ask for a feature, from any signed-in page: a small button at the window's corner opens a dialog, and what
@@ -99,17 +100,12 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
       busy={sending}
       actions={(close) => (
         <>
-          <button className="button" type="submit" disabled={sending} data-testid="feedback-send">
+          <Button type="submit" disabled={sending} data-testid="feedback-send">
             {sending ? t('data.feedback.sending') : t('data.feedback.send')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            disabled={sending}
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} disabled={sending}>
             {t('data.feedback.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

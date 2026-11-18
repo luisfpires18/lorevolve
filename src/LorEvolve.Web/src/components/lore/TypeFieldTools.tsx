@@ -1,7 +1,7 @@
 import { LayoutList, Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldSection } from '../../lore/typeDefinitions'
+import { Button } from '../Button'
 
 /** Under a type's fields: Add field, and Sections once there is anything to arrange. */
 export function TypeFieldTools({
@@ -20,31 +20,31 @@ export function TypeFieldTools({
   const { t } = useI18n()
   return (
     <p className="fieldlist__tools">
-      <button
-        className="button button--secondary button--sm"
-        type="button"
+      <Button
+        tone="secondary"
+        size="sm"
+        icon={Plus}
         onClick={() => {
           clear()
           setEditing('new')
         }}
         data-testid={`new-field-${type.name}`}
       >
-        <ActionIcon icon={Plus} />
         {t('entityTypes.fields.add')}
-      </button>
+      </Button>
       {type.fields.length > 0 || sections.length > 0 ? (
-        <button
-          className="button button--text button--sm"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
+          icon={LayoutList}
           onClick={() => {
             clear()
             setArranging(true)
           }}
           data-testid={`arrange-sections-${type.name}`}
         >
-          <ActionIcon icon={LayoutList} />
           {t('entityTypes.fields.sections')}
-        </button>
+        </Button>
       ) : null}
     </p>
   )

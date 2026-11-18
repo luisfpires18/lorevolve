@@ -17,6 +17,7 @@ import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { PrivateNotesProps } from '../PrivateNotes'
 import { PrivateNoteConflict } from './PrivateNoteConflict'
+import { Button } from '../Button'
 
 const count = (value: number) => numberFormat({}, 'en').format(value)
 
@@ -145,14 +146,9 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       leaveMessage={t('entity.privateNote.discardGuard')}
       onClose={onClose}
       actions={(close) => (
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={close}
-          data-testid="private-note-close"
-        >
+        <Button tone="secondary" onClick={close} data-testid="private-note-close">
           {t('entity.privateNote.close')}
-        </button>
+        </Button>
       )}
     >
       {load === 'loading' ? (
@@ -164,9 +160,9 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       {load === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="private-note-load-error">
           <p>{t('entity.privateNote.openFailed')}</p>
-          <button className="button button--secondary" type="button" onClick={reread}>
+          <Button tone="secondary" onClick={reread}>
             {t('entity.privateNote.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

@@ -3,6 +3,7 @@ import { Field } from './Field'
 import { createPage, listPages, type ProjectPage } from '../projectEntities/pages'
 import { t, useI18n } from '../i18n'
 import { PageRow } from './projectEntities/PageRow'
+import { Button } from './Button'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -72,14 +73,14 @@ export function ChapterPages({
 
   if (!open) {
     return (
-      <button
-        className="button button--secondary button--sm"
-        type="button"
+      <Button
+        tone="secondary"
+        size="sm"
         data-testid={`chapter-pages-open-${chapterId}`}
         onClick={() => setOpen(true)}
       >
         {t('projects.pages.open')}
-      </button>
+      </Button>
     )
   }
 
@@ -88,23 +89,22 @@ export function ChapterPages({
       <div className="projectcard__head">
         <h4 className="sectionrule sectionrule--accent">{t('projects.pages.title')}</h4>
         <div className="projectcard__actions">
-          <button
-            className="button button--sm"
-            type="button"
+          <Button
+            size="sm"
             aria-expanded={addingPage}
             data-testid={`chapter-page-add-${chapterId}`}
             onClick={() => setAddingPage((isOpen) => !isOpen)}
           >
             {t('projects.pages.add')}
-          </button>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
+            size="sm"
             data-testid={`chapter-pages-close-${chapterId}`}
             onClick={() => setOpen(false)}
           >
             {t('projects.pages.close')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -150,22 +150,20 @@ export function ChapterPages({
             )}
           </Field>
           <div className="form__actions">
-            <button
-              className="button"
+            <Button
               type="submit"
               disabled={busy}
               data-testid={`project-page-new-save-${chapterId}`}
             >
               {t('projects.pages.add')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
               onClick={() => setAddingPage(false)}
               data-testid={`project-page-new-cancel-${chapterId}`}
             >
               {t('projects.common.cancel')}
-            </button>
+            </Button>
           </div>
         </form>
       ) : null}

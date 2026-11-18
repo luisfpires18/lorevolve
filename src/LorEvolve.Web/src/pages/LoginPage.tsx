@@ -6,6 +6,7 @@ import { returnPath } from '../auth/returnPath'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 export default function LoginPage() {
   const { t, tx } = useI18n()
@@ -80,9 +81,9 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-          {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
-        </button>
+        <Button busy={isSubmitting} busyLabel={t('auth.login.submitting')} type="submit">
+          {t('auth.login.submit')}
+        </Button>
       </form>
     </AuthLayout>
   )

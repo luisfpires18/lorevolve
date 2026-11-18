@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { IdeaSummary } from '../../ideas/types'
 import { formatDate, formatDateTime } from '../../lib/dates'
 import { tn, useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 function referenceCountLabel(total: number) {
   return tn('ideas.browser.references', total, { n: total })
@@ -88,16 +89,16 @@ export function IdeaRow({
         </p>
       </div>
       {deleted ? (
-        <button
-          className="button button--secondary idearow__restore"
-          type="button"
+        <Button
+          tone="secondary"
+          className="idearow__restore"
           disabled={restoring !== null}
           onClick={() => void restore(idea)}
           aria-label={t('ideas.browser.restoreAria', { title: idea.title })}
           data-testid="idea-restore"
         >
           {restoring === idea.id ? t('ideas.browser.restoring') : t('ideas.browser.restore')}
-        </button>
+        </Button>
       ) : null}
     </li>
   )

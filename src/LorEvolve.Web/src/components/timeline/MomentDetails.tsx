@@ -6,6 +6,7 @@ import { useValidationTerms } from '../../ruleValidation/useValidationTerms'
 import type { TimelineEntry } from '../../timeline/types'
 import type { Dispatch, SetStateAction } from 'react'
 import { DETAIL_ERROR_KEYS, type MomentDraft } from '../../timeline/momentDraft'
+import { Button } from '../Button'
 
 /** The folded validation details: the kind of event, the method and the one who took part. */
 export function MomentDetails({
@@ -61,13 +62,9 @@ export function MomentDetails({
         {termsFailed ? (
           <p className="form__message" role="alert">
             {t('time.momentForm.termsFailed')}{' '}
-            <button
-              className="button button--secondary button--sm"
-              type="button"
-              onClick={reloadTerms}
-            >
+            <Button tone="secondary" size="sm" onClick={reloadTerms}>
               {t('time.momentForm.tryAgain')}
-            </button>
+            </Button>
           </p>
         ) : null}
 

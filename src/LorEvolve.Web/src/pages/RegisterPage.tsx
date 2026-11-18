@@ -6,6 +6,7 @@ import { returnPath } from '../auth/returnPath'
 import { useAuth } from '../auth/useAuth'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 /**
  * The token that lets this visitor register while registration is invitation-only: an Admin's sign-up link
@@ -143,9 +144,9 @@ export default function RegisterPage() {
             onChange={(event) => setConfirmPassword(event.target.value)}
           />
 
-          <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? t('auth.register.submitting') : t('auth.register.submit')}
-          </button>
+          <Button busy={isSubmitting} busyLabel={t('auth.register.submitting')} type="submit">
+            {t('auth.register.submit')}
+          </Button>
         </form>
       )}
     </AuthLayout>

@@ -17,6 +17,7 @@ import {
 import { capital, levelWord, nameOf } from '../../projectEntities/levelWords'
 import { t } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
+import { Button } from '../Button'
 
 /**
  * One node's title, summary and text, saved over the version it was opened at (ADR 0043). A panel adds its script, a
@@ -113,18 +114,13 @@ export function NodeEditor({
       actions={(close) => (
         <>
           {canEdit ? (
-            <button
-              className="button"
-              type="submit"
-              disabled={saving || !node}
-              data-testid="project-node-save"
-            >
+            <Button type="submit" disabled={saving || !node} data-testid="project-node-save">
               {saving ? t('projects.structure.saving') : t('projects.structure.save')}
-            </button>
+            </Button>
           ) : null}
-          <button className="button button--secondary" type="button" onClick={close}>
+          <Button tone="secondary" onClick={close}>
             {t('projects.common.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

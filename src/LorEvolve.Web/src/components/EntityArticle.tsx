@@ -1,6 +1,5 @@
 import { useId } from 'react'
 import { Pencil } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { LoreArticle } from './ArticleView'
 import { RecoveredDraft } from './RecoveredDraft'
 import { isEmptyDocument } from '../lore/document'
@@ -9,6 +8,7 @@ import { storedOf, useEntityArticle } from '../lore/useEntityArticle'
 import { useArticleEditing } from '../lore/useArticleEditing'
 import { ArticleEditing } from './lore/ArticleEditing'
 import { ArticleHistory } from './lore/ArticleHistory'
+import { Button } from './Button'
 
 export interface EntityArticleSectionProps {
   universeId: string
@@ -117,18 +117,17 @@ export function EntityArticleSection({
           {t('entity.article.title')}
         </h2>
         {isReady && !isEditing && hasArticle && access.editContent ? (
-          <button
+          <Button
+            tone="secondary"
+            icon={Pencil}
             ref={startButton}
-            className="button button--secondary"
-            type="button"
             onClick={() => startEditing()}
             disabled={!canStart}
             aria-describedby={note ? noteId : undefined}
             data-testid="article-edit"
           >
-            <ActionIcon icon={Pencil} />
             {t('entity.article.edit')}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -154,14 +153,9 @@ export function EntityArticleSection({
       {load.kind === 'error' ? (
         <div className="notice notice--error" role="alert" data-testid="article-load-error">
           <p>{t('entity.article.openFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={reread}
-            data-testid="article-retry"
-          >
+          <Button tone="secondary" onClick={reread} data-testid="article-retry">
             {t('entity.article.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -194,18 +188,16 @@ export function EntityArticleSection({
                 <p className="article__emptyhint">
                   {tx('entity.article.empty.hint', { name: <bdi>{entityName}</bdi> })}
                 </p>
-                <button
+                <Button
+                  icon={Pencil}
                   ref={startButton}
-                  className="button"
-                  type="button"
                   onClick={() => startEditing()}
                   disabled={!canStart}
                   aria-describedby={note ? noteId : undefined}
                   data-testid="article-write"
                 >
-                  <ActionIcon icon={Pencil} />
                   {t('entity.article.empty.write')}
-                </button>
+                </Button>
               </>
             ) : null}
           </div>

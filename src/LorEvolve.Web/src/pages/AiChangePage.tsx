@@ -12,6 +12,7 @@ import { AiChangeDecision } from '../components/aiChanges/AiChangeDecision'
 import { AiChangeHeader } from '../components/aiChanges/AiChangeHeader'
 import { AiChangeNotices } from '../components/aiChanges/AiChangeNotices'
 import { ChangeItem } from '../components/aiChanges/ChangeItem'
+import { Button } from '../components/Button'
 
 /**
  * One proposal's review (ADR 0047). Every change an AI proposed, described by LorEvolve - what it creates, what it changes
@@ -62,13 +63,9 @@ export default function AiChangePage() {
     return (
       <div className="notice notice--error" role="alert">
         <p>{t('review.aiChange.loadFailed')}</p>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={() => setReads((count) => count + 1)}
-        >
+        <Button tone="secondary" onClick={() => setReads((count) => count + 1)}>
           {t('review.aiChange.retry')}
-        </button>
+        </Button>
       </div>
     )
   }

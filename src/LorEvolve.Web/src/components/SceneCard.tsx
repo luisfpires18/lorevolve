@@ -12,7 +12,6 @@ import {
   Pencil,
   Trash,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { useFold } from './fold'
@@ -23,6 +22,7 @@ import type { Chronology } from '../chronology/types'
 import { chapterLabel, unchaptered } from '../stories/format'
 import type { Scene } from '../stories/types'
 import { storyProjectPath } from '../projects/sections'
+import { Button } from './Button'
 
 /** A container a scene can be moved into: a chapter, or Unchaptered when `chapterId` is null. */
 export interface MoveTarget {
@@ -164,26 +164,25 @@ export function SceneCard({
       <div className="scene__tools rowtools">
         {publication}
         {access.editContent ? (
-          <button
-            className="button button--text"
-            type="button"
+          <Button
+            tone="text"
+            icon={Pencil}
             onClick={() => onEdit(scene)}
             aria-describedby={titleId}
             data-testid="scene-edit"
           >
-            <ActionIcon icon={Pencil} />
             {t('stories.scene.edit')}
-          </button>
+          </Button>
         ) : null}
-        <Link
-          className="button button--text"
+        <Button
+          tone="text"
+          icon={access.editContent ? PenLine : BookOpen}
           to={storyProjectPath(universeId, scene.storyId, 'manuscript', scene.id)}
           aria-describedby={titleId}
           data-testid="scene-write"
         >
-          <ActionIcon icon={access.editContent ? PenLine : BookOpen} />
           {access.editContent ? t('stories.scene.write') : t('stories.scene.read')}
-        </Link>
+        </Button>
         {access.editContent || access.suggestChanges ? (
           <ActionMenu
             label={t('stories.scene.moreActions', { title: scene.title })}

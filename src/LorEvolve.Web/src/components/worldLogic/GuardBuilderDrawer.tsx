@@ -10,6 +10,7 @@ import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useGuardDrawerState } from '../../worldLogic/useGuardDrawerState'
 import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
+import { Button } from '../Button'
 
 /**
  * The guard builder, opened from a transition (Issue #359): a rule definition's title and its condition, built from
@@ -79,22 +80,16 @@ export function GuardBuilderDrawer({
       busy={saving}
       actions={(close) => (
         <>
-          <button
-            className="button"
+          <Button
             type="submit"
             disabled={load !== 'ready' || saving}
             data-testid="guard-builder-save"
           >
             {t(`${m}.save`)}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="guard-builder-cancel"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="guard-builder-cancel">
             {t(`${m}.cancel`)}
-          </button>
+          </Button>
         </>
       )}
     >
@@ -102,24 +97,24 @@ export function GuardBuilderDrawer({
         <div className="callout callout--warning" role="alert" data-testid="guard-conflict">
           <p className="callout__title">{t(`${gb}.conflict`)}</p>
           <div className="manuscript__conflictactions">
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
               disabled={saving}
               onClick={() => void keepMine()}
               data-testid="guard-keep-mine"
             >
               {t(`${m}.keepMine`)}
-            </button>
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
+              size="sm"
               disabled={saving}
               onClick={() => void loadSaved()}
               data-testid="guard-load-saved"
             >
               {t(`${m}.loadSaved`)}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

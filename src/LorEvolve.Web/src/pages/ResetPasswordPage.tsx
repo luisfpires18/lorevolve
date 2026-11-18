@@ -4,6 +4,7 @@ import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 /**
  * The page a password reset email opens (#69): `/reset-password#user=&token=`, the token in the fragment so it never
@@ -105,9 +106,9 @@ export default function ResetPasswordPage() {
             onChange={(event) => setConfirmPassword(event.target.value)}
           />
 
-          <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? t('auth.reset.submitting') : t('auth.reset.submit')}
-          </button>
+          <Button busy={isSubmitting} busyLabel={t('auth.reset.submitting')} type="submit">
+            {t('auth.reset.submit')}
+          </Button>
         </form>
       )}
     </AuthLayout>

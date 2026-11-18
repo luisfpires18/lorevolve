@@ -1,6 +1,7 @@
 import { t } from '../../i18n'
 import type { TrashItem } from '../../trash/types'
 import type { useTrashState } from '../../trash/useTrashState'
+import { Button } from '../Button'
 
 /** The bar while selecting: how many are selected, Delete permanently, Select page, Clear and Done. */
 export function TrashSelectBar({
@@ -30,10 +31,9 @@ export function TrashSelectBar({
       </p>
       <div className="actionbar__actions">
         {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
-        <button
+        <Button
+          tone="danger-quiet"
           ref={bulkDeleteRef}
-          className="button button--secondary button--danger-quiet"
-          type="button"
           onClick={askToBulkErase}
           disabled={selected.length === 0}
           data-testid="trash-bulk-delete"
@@ -41,29 +41,26 @@ export function TrashSelectBar({
           {selected.length > 0
             ? t('data.trash.bar.delete', { n: selected.length })
             : t('data.trash.bar.deleteNone')}
-        </button>
-        <button
+        </Button>
+        <Button
+          tone="secondary"
           ref={selectPageRef}
-          className="button button--secondary"
-          type="button"
           onClick={selectPage}
           disabled={pageItems.length === 0 || selected.length === pageItems.length}
           data-testid="trash-select-page"
         >
           {t('data.trash.bar.selectPage')}
-        </button>
-        <button
-          className="button button--text"
-          type="button"
+        </Button>
+        <Button
+          tone="text"
           onClick={clearSelection}
           disabled={selected.length === 0}
           data-testid="trash-clear-selection"
         >
           {t('data.trash.bar.clear')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           onClick={() => {
             stopSelecting()
             requestAnimationFrame(() => selectToggleRef.current?.focus())
@@ -71,7 +68,7 @@ export function TrashSelectBar({
           data-testid="trash-select-done"
         >
           {t('data.trash.bar.done')}
-        </button>
+        </Button>
       </div>
     </footer>
   )

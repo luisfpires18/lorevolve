@@ -13,6 +13,7 @@ import {
 } from '../ideas/types'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
 
 /** What to type, per kind, in the words the rest of LorEvolve uses for it. Message keys, read in render. */
 const PLACEHOLDERS = {
@@ -113,14 +114,9 @@ export function IdeaReferencePicker({
       onClose={onClose}
       actions={() => (
         <>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={onClose}
-            data-testid="idea-picker-close"
-          >
+          <Button tone="secondary" onClick={onClose} data-testid="idea-picker-close">
             {t('ideas.picker.close')}
-          </button>
+          </Button>
         </>
       )}
     >
