@@ -1,0 +1,107 @@
+import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { ActionIcon } from '../ActionIcon'
+import { ActionMenu } from '../ActionMenu'
+import { useI18n } from '../../i18n'
+import type { EntityDetail } from '../../lore/types'
+import type { Era } from '../../progression/types'
+import { useUniverseAccess } from '../../universes/access'
+import type { RefObject } from 'react'
+
+/** The era's eyebrow, title and span, with Edit and the menu holding Earlier, Later and Remove. */
+export function EraPanelHead({
+  era,
+  entry,
+  title,
+  span,
+  access,
+  busy,
+  isFirst,
+  isLast,
+  onEdit,
+  onMove,
+  onRemove,
+}: {
+  era: Era
+  entry: EntityDetail
+  title: RefObject<HTMLHeadingElement | null>
+  span: string | null
+  access: ReturnType<typeof useUniverseAccess>
+  busy: boolean
+  isFirst: boolean
+  isLast: boolean
+  onEdit: () => void
+  onMove: (by: number) => void
+  onRemove: () => void
+}) {
+  const { t } = useI18n()
+  return (
+    <header className="erapanel__head">
+      <div>
+        <p className="erapanel__eyebrow">{t('progression.era.eyebrow', { name: entry.name })}</p>
+        <h3
+          className="erapanel__title"
+          id="era-title"
+          ref={title}
+          tabIndex={-1}
+          data-testid="era-title"
+        >
+          {era.name}
+        </h3>
+        {span ? (
+          <p className="erapanel__span" data-testid="era-span">
+            {span}
+          </p>
+        ) : null}
+      </div>
+      {access.editContent ? (
+        <div className="erapanel__tools">
+          <button
+            className="button button--secondary button--sm"
+            type="button"
+            onClick={onEdit}
+            data-testid="edit-era"
+          >
+            <ActionIcon icon={Pencil} />
+            {t('progression.era.edit')}
+          </button>
+          <ActionMenu
+            label={t('progression.era.moreActions', { name: era.name })}
+            triggerTestId="era-actions"
+          >
+            <button
+              className="actionmenu__item"
+              type="button"
+              disabled={busy || isFirst}
+              onClick={() => onMove(-1)}
+              data-testid="era-earlier"
+            >
+              <ActionIcon icon={ArrowUp} />
+              {t('progression.era.moveEarlier')}
+            </button>
+            <button
+              className="actionmenu__item"
+              type="button"
+              disabled={busy || isLast}
+              onClick={() => onMove(1)}
+              data-testid="era-later"
+            >
+              <ActionIcon icon={ArrowDown} />
+              {t('progression.era.moveLater')}
+            </button>
+            <hr className="actionmenu__divider" />
+            <button
+              className="actionmenu__item actionmenu__item--danger"
+              type="button"
+              disabled={busy}
+              onClick={onRemove}
+              data-testid="remove-era"
+            >
+              <ActionIcon icon={Trash} />
+              {t('progression.era.remove')}
+            </button>
+          </ActionMenu>
+        </div>
+      ) : null}
+    </header>
+  )
+}

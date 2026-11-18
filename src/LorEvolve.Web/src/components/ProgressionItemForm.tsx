@@ -1,155 +1,26 @@
-import { useEffect, useRef, useState } from 'react'
-import { EditConflict } from './EditConflict'
-import { MomentPick } from './MomentPick'
+import { useEffect } from 'react'
 import { ScenePicks } from './ScenePicks'
-import { t, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
+import { useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
-import { isChangedElsewhere } from '../lib/editConflict'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
+import type { Progression } from '../progression/types'
 import {
-  abilityInputOf,
-  appearanceInputOf,
-  eraInputOf,
-  formInputOf,
-  getProgression,
-  PROGRESSION_CHANGED,
-  saveProgression,
-} from '../progression/api'
-import type {
-  Ability,
-  AbilityInput,
-  Appearance,
-  AppearanceInput,
-  EraScene,
-  Form,
-  FormInput,
-  MomentRef,
-  Progression,
-} from '../progression/types'
-
-type Kind = 'form' | 'ability' | 'appearance'
-
-type Item = Form | Ability | Appearance
-
-function nameOf(item: Item) {
-  return 'label' in item ? item.label : item.name
-}
-
-function listOf(progression: Progression, kind: Kind): Item[] {
-  return kind === 'form'
-    ? progression.forms
-    : kind === 'ability'
-      ? progression.abilities
-      : progression.appearances
-}
-
-interface ItemDraft {
-  name: string
-  description: string
-  unlockEraId: string
-  unlockScene: EraScene[]
-  unlockMoment: MomentRef | null
-  eraIds: string[]
-  scenes: EraScene[]
-  formIds: string[]
-}
-
-function draftOf(item: Item | null): ItemDraft {
-  const unlock = item && 'unlock' in item ? item.unlock : null
-  return {
-    name: item ? nameOf(item) : '',
-    description: (item && ('notes' in item ? item.notes : item.description)) ?? '',
-    unlockEraId: unlock?.era?.id ?? '',
-    unlockScene: unlock?.scene ? [unlock.scene] : [],
-    unlockMoment: unlock?.moment ?? null,
-    eraIds: item?.eras.map((era) => era.id) ?? [],
-    scenes: item?.scenes ?? [],
-    formIds: item && 'forms' in item ? item.forms.map((form) => form.id) : [],
-  }
-}
-
-function inputOf(draft: ItemDraft, id: string | null): AbilityInput {
-  return {
-    id,
-    name: draft.name.trim(),
-    description: draft.description.trim() === '' ? null : draft.description.trim(),
-    unlockEraId: draft.unlockEraId || null,
-    unlockSceneId: draft.unlockScene[0]?.id ?? null,
-    unlockMomentId: draft.unlockMoment?.id ?? null,
-    eraIds: draft.eraIds,
-    sceneIds: draft.scenes.map((scene) => scene.id),
-    formIds: draft.formIds,
-  }
-}
-
-/** The parts of a form or ability that show their own error; any other refusal is said in the message above them. */
-const SHOWN = [
-  'name',
-  'description',
-  'unlockEraId',
-  'unlockSceneId',
-  'unlockMomentId',
-  'eraIds',
-  'sceneIds',
-  'formIds',
-]
-
-/** The server's limit on what a form or ability is (`ProgressionLimits.DescriptionMaxLength`). */
-const DESCRIPTION_MAX = 10000
-
-/** The name each kind goes by in the progression's error keys (`forms[0].name`): the server's, not shown. */
-const LISTS: Record<Kind, string> = {
-  form: 'forms',
-  ability: 'abilities',
-  appearance: 'appearances',
-}
-
-/** Every sentence that names the kind, whole, so another language can inflect each one. */
-function wordsOf(kind: Kind) {
-  if (kind === 'form') {
-    return {
-      unsaved: t('progression.item.form.unsaved'),
-      someDetails: t('progression.item.form.someDetails'),
-      saveFailed: t('progression.item.form.saveFailed'),
-      heading: t('progression.item.form.heading'),
-      eyebrow: (name: string) => t('progression.item.form.eyebrow', { name }),
-      eyebrowNew: (name: string) => t('progression.item.form.eyebrowNew', { name }),
-      save: t('progression.item.form.save'),
-      add: t('progression.item.form.add'),
-    }
-  }
-  if (kind === 'ability') {
-    return {
-      unsaved: t('progression.item.ability.unsaved'),
-      someDetails: t('progression.item.ability.someDetails'),
-      saveFailed: t('progression.item.ability.saveFailed'),
-      heading: t('progression.item.ability.heading'),
-      eyebrow: (name: string) => t('progression.item.ability.eyebrow', { name }),
-      eyebrowNew: (name: string) => t('progression.item.ability.eyebrowNew', { name }),
-      save: t('progression.item.ability.save'),
-      add: t('progression.item.ability.add'),
-    }
-  }
-  return {
-    unsaved: t('progression.item.appearance.unsaved'),
-    someDetails: t('progression.item.appearance.someDetails'),
-    saveFailed: t('progression.item.appearance.saveFailed'),
-    heading: t('progression.item.appearance.heading'),
-    eyebrow: (name: string) => t('progression.item.appearance.eyebrow', { name }),
-    eyebrowNew: (name: string) => t('progression.item.appearance.eyebrowNew', { name }),
-    save: t('progression.item.appearance.save'),
-    add: t('progression.item.appearance.add'),
-  }
-}
-
-/** An appearance's name and description are its label and notes (Issue #43), in its errors too. */
-function partOf(kind: Kind, part: string) {
-  if (kind !== 'appearance') return part
-  return part === 'name' ? 'label' : part === 'description' ? 'notes' : part
-}
+  LISTS,
+  inputOf,
+  listOf,
+  nameOf,
+  partOf,
+  wordsOf,
+  type Item,
+  type Kind,
+} from '../progression/itemDraft'
+import { useItemFormState } from '../progression/useItemFormState'
+import { itemFormActions } from '../progression/itemFormActions'
+import { ItemConflict } from './progression/ItemConflict'
+import { ItemNameFields } from './progression/ItemNameFields'
+import { ItemUnlockField } from './progression/ItemUnlockField'
 
 /**
  * One form or one ability of an entry (Issue #42), in the drawer every LorEvolve form uses: what it is; when it was first unlocked
@@ -180,16 +51,23 @@ export function ProgressionItemForm({
   onSaved: (progression: Progression) => void
 }) {
   const { t } = useI18n()
-  const nameInput = useRef<HTMLInputElement>(null)
-  const saveButton = useRef<HTMLButtonElement>(null)
+  const state = useItemFormState({ progression, item })
   const words = wordsOf(kind)
-  const [base, setBase] = useState(progression)
-  const [initial, setInitial] = useState(() => draftOf(item))
-  const [draft, setDraft] = useState(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [conflict, setConflict] = useState(false)
+  const {
+    nameInput,
+    saveButton,
+    base,
+    setBase,
+    initial,
+    setInitial,
+    draft,
+    setDraft,
+    fieldErrors,
+    message,
+    isSaving,
+    conflict,
+    setConflict,
+  } = state
 
   const isDirty = payloadKey(inputOf(draft, null)) !== payloadKey(inputOf(initial, null))
   useReturnFocus()
@@ -204,87 +82,16 @@ export function ProgressionItemForm({
   const errorOf = (part: string) => fieldErrors[`${key}.${partOf(kind, part)}`.toLowerCase()]
   const isLook = kind === 'appearance'
 
-  function edit(change: Partial<ItemDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
-  function toggle(list: string[], id: string, on: boolean) {
-    return on ? [...new Set([...list, id])] : list.filter((one) => one !== id)
-  }
-
-  /** Ticks the era chosen as the first unlock and every era after it in the author's order - explicit ticks, saved as such. */
-  function fromUnlockOn() {
-    const at = base.eras.findIndex((era) => era.id === draft.unlockEraId)
-    if (at === -1) return
-    edit({ eraIds: [...new Set([...draft.eraIds, ...base.eras.slice(at).map((era) => era.id)])] })
-  }
-
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
-
-    const mine = inputOf(draft, item?.id ?? null)
-    const forms: FormInput[] = base.forms.map((form) => formInputOf(form))
-    const abilities: AbilityInput[] = base.abilities.map((ability) => abilityInputOf(ability))
-    const appearances: AppearanceInput[] = base.appearances.map((one) => appearanceInputOf(one))
-
-    if (kind === 'appearance') {
-      const look: AppearanceInput = {
-        id: mine.id,
-        label: mine.name,
-        notes: mine.description,
-        eraIds: mine.eraIds,
-        formIds: mine.formIds,
-        sceneIds: mine.sceneIds,
-      }
-      const at = appearances.findIndex((one) => one.id === item?.id)
-      if (at === -1) appearances.push(look)
-      else appearances[at] = look
-    } else if (kind === 'form') {
-      // A form carries no forms of its own.
-      const { formIds: _forms, ...form } = mine
-      const at = forms.findIndex((one) => one.id === item?.id)
-      if (at === -1) forms.push(form)
-      else forms[at] = form
-    } else {
-      const at = abilities.findIndex((one) => one.id === item?.id)
-      if (at === -1) abilities.push(mine)
-      else abilities[at] = mine
-    }
-
-    try {
-      onSaved(
-        await saveProgression(universeId, entityId, {
-          eras: base.eras.map(eraInputOf),
-          expectedVersion: base.version,
-          forms,
-          abilities,
-          appearances,
-        }),
-      )
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        // A refusal no field below shows - this one removed meanwhile, say - is said here in its own words.
-        const unshown = Object.entries(error.fieldErrors).find(
-          ([name]) => !SHOWN.some((part) => name === `${key}.${partOf(kind, part)}`.toLowerCase()),
-        )
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : (unshown?.[1] ?? words.someDetails),
-        )
-      } else {
-        setMessage(words.saveFailed)
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { edit, toggle, fromUnlockOn, save } = itemFormActions({
+    ...state,
+    universeId,
+    entityId,
+    kind,
+    item,
+    onSaved,
+    words,
+    key,
+  })
 
   const heading = item ? nameOf(item) : words.heading
   const unlockAt = base.eras.findIndex((era) => era.id === draft.unlockEraId)
@@ -331,136 +138,38 @@ export function ProgressionItemForm({
       ) : null}
 
       {conflict ? (
-        <EditConflict
-          what={t('progression.item.conflictWhat')}
-          read={() => getProgression(universeId, entityId)}
-          renderLatest={(latest) => (
-            <ul className="namelist">
-              {listOf(latest, kind).map((one) => (
-                <li key={one.id}>{nameOf(one)}</li>
-              ))}
-            </ul>
-          )}
-          onKeepMine={(latest) => {
-            setBase(latest)
-            setConflict(false)
-            requestAnimationFrame(() => saveButton.current?.focus())
-          }}
-          onUseLatest={(latest) => {
-            setBase(latest)
-            const reread = listOf(latest, kind).find((one) => one.id === item?.id) ?? null
-            setDraft(draftOf(reread))
-            setInitial(draftOf(reread))
-            setConflict(false)
-            requestAnimationFrame(() => nameInput.current?.focus())
-          }}
-          testId={`${kind}-conflict`}
+        <ItemConflict
+          universeId={universeId}
+          entityId={entityId}
+          kind={kind}
+          item={item}
+          setBase={setBase}
+          setInitial={setInitial}
+          setDraft={setDraft}
+          setConflict={setConflict}
+          nameInput={nameInput}
+          saveButton={saveButton}
         />
       ) : null}
 
-      <Field
-        label={isLook ? t('progression.item.label') : t('progression.item.name')}
-        id="item-name"
-        error={errorOf('name')}
-      >
-        {(control) => (
-          <input
-            {...control}
-            ref={nameInput}
-            className="field__input"
-            dir="auto"
-            placeholder={
-              isLook
-                ? t('progression.item.labelPlaceholder')
-                : t('progression.item.namePlaceholder')
-            }
-            value={draft.name}
-            onChange={(event) => edit({ name: event.target.value })}
-            data-testid={`${kind}-name-input`}
-          />
-        )}
-      </Field>
-
-      <Field
-        label={isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
-        id="item-description"
-        hint={
-          kind === 'form'
-            ? t('progression.item.hint.form')
-            : kind === 'ability'
-              ? t('progression.item.hint.ability')
-              : t('progression.item.hint.appearance')
-        }
-        error={errorOf('description')}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            dir="auto"
-            maxLength={DESCRIPTION_MAX}
-            value={draft.description}
-            onChange={(event) => edit({ description: event.target.value })}
-            data-testid={`${kind}-description-input`}
-          />
-        )}
-      </Field>
+      <ItemNameFields
+        kind={kind}
+        isLook={isLook}
+        draft={draft}
+        edit={edit}
+        errorOf={errorOf}
+        nameInput={nameInput}
+      />
 
       {isLook ? null : (
-        <Field
-          label={t('progression.item.unlock.title')}
-          group="fieldset"
-          className="itemunlock"
-          data-testid={`${kind}-unlock`}
-          hint={t('progression.item.unlock.hint')}
-        >
-          <Field
-            label={t('progression.item.unlock.stage')}
-            id="item-unlock-era"
-            error={errorOf('unlockEraId')}
-          >
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={draft.unlockEraId}
-                onChange={(event) => edit({ unlockEraId: event.target.value })}
-                data-testid={`${kind}-unlock-era`}
-              >
-                <option value="">
-                  {base.eras.length === 0
-                    ? t('progression.item.unlock.noStages')
-                    : t('progression.item.unlock.notSaid')}
-                </option>
-                {base.eras.map((era) => (
-                  <option key={era.id} value={era.id}>
-                    {era.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-
-          <ScenePicks
-            universeId={universeId}
-            label={t('progression.item.unlock.scene')}
-            value={draft.unlockScene}
-            onChange={(unlockScene) => edit({ unlockScene })}
-            single
-            error={errorOf('unlockSceneId')}
-            testId={`${kind}-unlock-scene`}
-          />
-
-          <MomentPick
-            universeId={universeId}
-            label={t('progression.item.unlock.moment')}
-            value={draft.unlockMoment}
-            onChange={(unlockMoment) => edit({ unlockMoment })}
-            error={errorOf('unlockMomentId')}
-            testId={`${kind}-unlock-moment`}
-          />
-        </Field>
+        <ItemUnlockField
+          universeId={universeId}
+          kind={kind}
+          base={base}
+          draft={draft}
+          edit={edit}
+          errorOf={errorOf}
+        />
       )}
 
       {base.eras.length > 0 ? (

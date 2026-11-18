@@ -1,63 +1,14 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { SaveAction } from './SaveAction'
-import { removeCalendar, saveCalendar } from '../chronology/api'
-import type {
-  Chronology,
-  ChronologyCalendar,
-  ChronologyCalendarMonthInput,
-} from '../chronology/types'
-import { t, tn, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
+import type { Chronology } from '../chronology/types'
+import { t, useI18n } from '../i18n'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import { confirmAction, confirmDiscard } from '../lib/confirm'
-
-type Mode = 'simple' | 'custom'
-
-/** One month as it is being edited. Days stay text until sent, so an emptied box is empty rather than zero. */
-interface MonthDraft {
-  /** Stable across reordering, so React keeps each row's inputs with its month. */
-  key: string
-  id: string | null
-  name: string
-  abbreviation: string
-  days: string
-  useCount: number
-  maxDayUsed: number | null
-}
-
-function draftsFrom(calendar: ChronologyCalendar | null): MonthDraft[] {
-  return (calendar?.months ?? []).map((month) => ({
-    key: month.id,
-    id: month.id,
-    name: month.name,
-    abbreviation: month.abbreviation ?? '',
-    days: String(month.dayCount),
-    useCount: month.useCount,
-    maxDayUsed: month.maxDayUsed,
-  }))
-}
-
-function inputOf(drafts: MonthDraft[]): ChronologyCalendarMonthInput[] {
-  return drafts.map((month) => ({
-    id: month.id,
-    name: month.name.trim(),
-    abbreviation: month.abbreviation.trim() || null,
-    dayCount: Number(month.days.trim() || 0),
-  }))
-}
-
-/** Said only when it matters: a new month, or one dates still use. A saved month nothing uses needs no line of its own. */
-function usageOf(month: MonthDraft) {
-  if (!month.id) return t('time.calendar.usage.new')
-  if (month.useCount === 0) return null
-  const dates = tn('time.calendar.usage.dates', month.useCount, { n: month.useCount })
-  return month.maxDayUsed
-    ? t('time.calendar.usage.upToDay', { dates, day: month.maxDayUsed })
-    : dates
-}
+import { draftsFrom, inputOf, type Mode } from '../chronology/monthDrafts'
+import { useCalendarEditorState } from '../chronology/useCalendarEditorState'
+import { calendarActions } from '../chronology/calendarActions'
+import { CalendarMonthRow } from './chronology/CalendarMonthRow'
 
 interface CalendarEditorProps {
   universeId: string
@@ -80,32 +31,8 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
   useI18n()
   const stored = chronology.calendar
   const storedMode: Mode = stored ? 'custom' : 'simple'
-  const [mode, setMode] = useState<Mode>(storedMode)
-  const [drafts, setDrafts] = useState(() => draftsFrom(stored))
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [saves, setSaves] = useState(0)
-  const [moved, setMoved] = useState('')
-  const headingId = useId()
-  const statusId = useId()
-  const touched = useRef(false)
-  const created = useRef(0)
-  const focusNew = useRef<string | null>(null)
-
-  // The workspace's chronology can be read again under this screen - the date periods' editor does on opening - and an
-  // untouched calendar follows it.
-  useEffect(() => {
-    if (touched.current) return
-    setMode(stored ? 'custom' : 'simple')
-    setDrafts(draftsFrom(stored))
-  }, [stored])
-
-  useEffect(() => {
-    if (!focusNew.current) return
-    document.getElementById(focusNew.current)?.focus()
-    focusNew.current = null
-  }, [drafts])
+  const state = useCalendarEditorState({ stored, storedMode })
+  const { mode, drafts, fieldErrors, message, saving, saves, moved, headingId, statusId } = state
 
   const dirty =
     mode !== storedMode ||
@@ -113,124 +40,13 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
       JSON.stringify(inputOf(drafts)) !== JSON.stringify(inputOf(draftsFrom(stored))))
   useLeaveGuard(dirty ? t('time.calendar.leaveGuard') : null)
 
-  function change(next: MonthDraft[]) {
-    touched.current = true
-    setDrafts(next)
-  }
-
-  function update(index: number, part: Partial<MonthDraft>) {
-    change(drafts.map((month, position) => (position === index ? { ...month, ...part } : month)))
-  }
-
-  function newMonth(): MonthDraft {
-    created.current += 1
-    return {
-      key: `new-${created.current}`,
-      id: null,
-      name: '',
-      abbreviation: '',
-      days: '30',
-      useCount: 0,
-      maxDayUsed: null,
-    }
-  }
-
-  function add() {
-    const month = newMonth()
-    focusNew.current = `month-${month.key}-name`
-    change([...drafts, month])
-  }
-
-  function choose(next: Mode) {
-    touched.current = true
-    setMode(next)
-    setMessage(null)
-    setFieldErrors({})
-    // A custom calendar starts with one month to name, rather than an empty list to puzzle over.
-    if (next === 'custom' && drafts.length === 0) {
-      const month = newMonth()
-      focusNew.current = `month-${month.key}-name`
-      setDrafts([month])
-    }
-  }
-
-  function move(index: number, by: -1 | 1) {
-    const to = index + by
-    if (to < 0 || to >= drafts.length) return
-    const next = [...drafts]
-    const [month] = next.splice(index, 1)
-    next.splice(to, 0, month)
-    change(next)
-    setMoved(
-      t('time.calendar.moved', {
-        name: month.name.trim() || t('time.calendar.newMonthCap'),
-        position: to + 1,
-        total: next.length,
-      }),
-    )
-  }
-
-  function remove(index: number) {
-    const month = drafts[index]
-    // A calendar keeps at least one month; to have none is simple dates, chosen above.
-    if (month.useCount > 0 || drafts.length === 1) return
-    change(drafts.filter((_, position) => position !== index))
-    setMoved(
-      t('time.calendar.removed', { name: month.name.trim() || t('time.calendar.newMonthCap') }),
-    )
-  }
-
-  async function discard() {
-    if (!(await confirmDiscard(t('time.calendar.discardConfirm')))) return
-    touched.current = false
-    setMode(storedMode)
-    setDrafts(draftsFrom(stored))
-    setFieldErrors({})
-    setMessage(null)
-  }
-
-  async function save() {
-    if (
-      mode === 'simple' &&
-      !(await confirmAction({
-        title: t('time.calendar.switchConfirm.title'),
-        message: t('time.calendar.switchConfirm.message'),
-        confirmLabel: t('time.calendar.switchConfirm.confirm'),
-        variant: 'destructive',
-      }))
-    ) {
-      return
-    }
-
-    setSaving(true)
-    setMessage(null)
-    setFieldErrors({})
-
-    try {
-      const next =
-        mode === 'custom'
-          ? await saveCalendar(universeId, inputOf(drafts))
-          : await removeCalendar(universeId)
-      touched.current = false
-      setMode(next.calendar ? 'custom' : 'simple')
-      setDrafts(draftsFrom(next.calendar))
-      onSaved(next)
-      setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0 || error.fieldErrors.months
-            ? error.message
-            : t('time.calendar.monthsNeedChange'),
-        )
-      } else {
-        setMessage(t('time.calendar.saveFailed'))
-      }
-    } finally {
-      setSaving(false)
-    }
-  }
+  const { update, add, choose, move, remove, discard, save } = calendarActions({
+    ...state,
+    universeId,
+    onSaved,
+    stored,
+    storedMode,
+  })
 
   const label =
     mode === 'simple'
@@ -285,135 +101,18 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
           </p>
 
           <ol className="months" data-testid="months">
-            {drafts.map((month, index) => {
-              const prefix = `months[${index}]`
-              const base = `month-${month.key}`
-              const name = month.name.trim() || t('time.calendar.newMonthLower')
-              const inUse = month.useCount > 0
-              const usage = usageOf(month)
-              const useId = usage ? `${base}-use` : undefined
-              const first = index === 0
-              const last = index === drafts.length - 1
-              const nameError = fieldErrors[`${prefix}.name`]
-              const shortError = fieldErrors[`${prefix}.abbreviation`]
-              const daysError = fieldErrors[`${prefix}.daycount`]
-
-              return (
-                <li className="month" key={month.key} data-testid="month">
-                  <span className="month__ordinal" aria-hidden="true">
-                    {index + 1}
-                  </span>
-
-                  <div className="month__fields">
-                    <Field label={t('time.calendar.name')} id={`${base}-name`} error={nameError}>
-                      {(control) => (
-                        <input
-                          {...control}
-                          className="field__input"
-                          placeholder={t('time.calendar.namePlaceholder')}
-                          autoComplete="off"
-                          value={month.name}
-                          onChange={(event) => update(index, { name: event.target.value })}
-                          data-testid="month-name"
-                        />
-                      )}
-                    </Field>
-
-                    <Field
-                      label={t('time.calendar.shortName')}
-                      id={`${base}-short`}
-                      error={shortError}
-                    >
-                      {(control) => (
-                        <input
-                          {...control}
-                          className="field__input"
-                          placeholder={t('time.calendar.optional')}
-                          autoComplete="off"
-                          value={month.abbreviation}
-                          onChange={(event) => update(index, { abbreviation: event.target.value })}
-                          data-testid="month-abbreviation"
-                        />
-                      )}
-                    </Field>
-
-                    <Field
-                      label={t('time.calendar.days')}
-                      id={`${base}-days`}
-                      error={daysError}
-                      className="month__days"
-                    >
-                      {(control) => (
-                        <input
-                          {...control}
-                          className="field__input"
-                          type="number"
-                          inputMode="numeric"
-                          step="1"
-                          min={Math.max(1, month.maxDayUsed ?? 1)}
-                          max={1000}
-                          value={month.days}
-                          onChange={(event) => update(index, { days: event.target.value })}
-                          aria-describedby={
-                            [control['aria-describedby'], useId].filter(Boolean).join(' ') ||
-                            undefined
-                          }
-                          data-testid="month-days"
-                        />
-                      )}
-                    </Field>
-                  </div>
-
-                  <div className="month__tools">
-                    <button
-                      className="iconbutton"
-                      type="button"
-                      onClick={() => move(index, -1)}
-                      aria-disabled={first ? true : undefined}
-                      aria-label={t('time.calendar.moveEarlier', { name })}
-                      title={t('time.calendar.earlier')}
-                      data-testid="month-earlier"
-                    >
-                      <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                    </button>
-                    <button
-                      className="iconbutton"
-                      type="button"
-                      onClick={() => move(index, 1)}
-                      aria-disabled={last ? true : undefined}
-                      aria-label={t('time.calendar.moveLater', { name })}
-                      title={t('time.calendar.later')}
-                      data-testid="month-later"
-                    >
-                      <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                    </button>
-                    <button
-                      className="iconbutton"
-                      type="button"
-                      onClick={() => remove(index)}
-                      aria-disabled={inUse || drafts.length === 1 ? true : undefined}
-                      aria-label={t('time.calendar.removeNamed', { name })}
-                      aria-describedby={inUse ? `${useId} ${base}-keep` : undefined}
-                      title={inUse ? t('time.calendar.inUse') : t('time.calendar.remove')}
-                      data-testid="month-remove"
-                    >
-                      <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                    </button>
-                    {inUse ? (
-                      <span className="visually-hidden" id={`${base}-keep`}>
-                        {t('time.calendar.inUse')}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {usage ? (
-                    <p className="month__use" id={useId} data-testid="month-use">
-                      {usage}
-                    </p>
-                  ) : null}
-                </li>
-              )
-            })}
+            {drafts.map((month, index) => (
+              <CalendarMonthRow
+                key={month.key}
+                month={month}
+                index={index}
+                drafts={drafts}
+                fieldErrors={fieldErrors}
+                update={update}
+                move={move}
+                remove={remove}
+              />
+            ))}
           </ol>
 
           <button
