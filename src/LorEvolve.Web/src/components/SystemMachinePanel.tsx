@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Drawer } from './Drawer'
 import { EmptyState } from './EmptyState'
 import { Field } from './Field'
@@ -52,31 +52,27 @@ import {
 import {
   MACHINE_MAX_STATES,
   MACHINE_MAX_TRANSITIONS,
-  MACHINE_TEXT_MAX_LENGTH,
   type SystemMachineDetail,
   type SystemMachineState,
   type SystemMachineTryResult,
   type SystemRuleDetail,
   type SystemRuleSummary,
 } from '../worldLogic/types'
-
-const SYSTEM_CHANGED = 'system_changed'
-const SYSTEM_RULE_CHANGED = 'system_rule_changed'
-
-type Open =
-  | { kind: 'state'; id: string; place?: undefined }
-  | { kind: 'state'; id: null; place: Point }
-  | { kind: 'transition'; id: string | null }
-  | { kind: 'binding' }
-  | null
-
-/** Refusals by where they belong: an item's id, or `binding`, then the property the API named ('' for the item). */
-type Errors = Record<string, Record<string, string>>
-
-type Rules = SystemRuleSummary[] | 'failed' | null
-
-const m = 'canon.worldLogic.systems.machine'
-const gb = `${m}.guardBuilder` as const
+import {
+  SYSTEM_CHANGED,
+  SYSTEM_RULE_CHANGED,
+  m,
+  gb,
+  type Open,
+  type Errors,
+  type Rules,
+} from '../worldLogic/machinePanelTypes'
+import { textInput } from '../worldLogic/machineDrawerFields'
+import { useDrawerFocus } from '../worldLogic/useDrawerFocus'
+import { summaryOf } from '../worldLogic/ruleSummary'
+import { DrawerActions } from './worldLogic/DrawerActions'
+import { StateDrawer } from './worldLogic/StateDrawer'
+import { BindingDrawer } from './worldLogic/BindingDrawer'
 
 /**
  * A System's machine on the System editor's Machine tab (ADR 0073): the canvas, the same states and transitions as
@@ -674,232 +670,6 @@ export function SystemMachinePanel({
   )
 }
 
-/** A drawer's Add or Save, Delete for an item that exists, and Cancel. */
-function DrawerActions({
-  close,
-  isNew,
-  onDelete,
-  testId,
-}: {
-  close: () => void
-  isNew: boolean
-  onDelete?: () => void
-  testId: string
-}) {
-  return (
-    <>
-      <button className="button" type="submit" data-testid={`${testId}-apply`}>
-        {isNew ? t(`${m}.add`) : t(`${m}.save`)}
-      </button>
-      <button
-        className="button button--secondary"
-        type="button"
-        onClick={close}
-        data-testid={`${testId}-cancel`}
-      >
-        {t(`${m}.cancel`)}
-      </button>
-      {onDelete ? (
-        <button
-          className="button button--danger"
-          type="button"
-          onClick={onDelete}
-          data-testid={`${testId}-delete`}
-        >
-          {t(`${m}.delete`)}
-        </button>
-      ) : null}
-    </>
-  )
-}
-
-/** The message a field shows: the drawer's own check first, then what the last refused save said about it. */
-function errorOf(
-  local: Record<string, string>,
-  saved: Record<string, string> | undefined,
-  prop: string,
-) {
-  return local[prop] ?? saved?.[prop]
-}
-
-function textInput(
-  value: string,
-  onChange: (next: string) => void,
-  placeholder: string,
-  testId: string,
-  required = false,
-) {
-  return (control: {
-    id: string
-    'aria-describedby'?: string
-    'aria-invalid'?: true
-  }): ReactNode => (
-    <input
-      id={control.id}
-      className="field__input"
-      type="text"
-      dir="auto"
-      value={value}
-      maxLength={MACHINE_TEXT_MAX_LENGTH}
-      placeholder={placeholder}
-      onChange={(event) => onChange(event.target.value)}
-      aria-invalid={control['aria-invalid']}
-      aria-describedby={control['aria-describedby']}
-      aria-required={required || undefined}
-      data-testid={testId}
-    />
-  )
-}
-
-/** Puts the focus on the drawer's first field, and back on whatever opened it once it closes. */
-function useDrawerFocus(dialog: RefObject<HTMLDialogElement | null>) {
-  useReturnFocus()
-  useEffect(() => {
-    dialog.current?.querySelector<HTMLElement>('input, select')?.focus()
-  }, [dialog])
-}
-
-function StateDrawer({
-  state,
-  place,
-  isFirst,
-  errors,
-  onApply,
-  onDelete,
-  onClose,
-}: {
-  state: SystemMachineState | null
-  place: Point | null
-  isFirst: boolean
-  errors?: Record<string, string>
-  onApply: (values: Omit<SystemMachineState, 'id'>) => void
-  onDelete?: () => void
-  onClose: () => void
-}) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  const [initial] = useState(() => ({
-    name: state?.name ?? '',
-    value: state?.value ?? '',
-    x: String(state?.x ?? place?.x ?? 0),
-    y: String(state?.y ?? place?.y ?? 0),
-    initial: state?.initial ?? isFirst,
-  }))
-  const [form, setForm] = useState(initial)
-  const [local, setLocal] = useState<Record<string, string>>({})
-  useDrawerFocus(dialog)
-
-  const isDirty = JSON.stringify(form) !== JSON.stringify(initial)
-  const number = (text: string) => (Number.isFinite(Number(text)) ? Number(text) : 0)
-
-  function apply() {
-    const missing: Record<string, string> = {}
-    if (form.name.trim() === '') missing.name = t(`${m}.nameRequired`)
-    if (form.value.trim() === '') missing.value = t(`${m}.valueRequired`)
-    setLocal(missing)
-    if (Object.keys(missing).length > 0) {
-      dialog.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-      return
-    }
-    onApply({
-      name: form.name,
-      value: form.value,
-      x: number(form.x),
-      y: number(form.y),
-      initial: form.initial,
-    })
-  }
-
-  async function remove() {
-    if (!state || !onDelete) return
-    const confirmed = await confirmAction({
-      title: t(`${m}.deleteState.title`, { name: state.name }),
-      message: t(`${m}.deleteState.message`),
-      confirmLabel: t(`${m}.deleteState.confirm`),
-      variant: 'destructive',
-    })
-    if (confirmed) onDelete()
-  }
-
-  return (
-    <Drawer
-      testId="machine-state-drawer"
-      titleId={titleId}
-      title={state ? state.name : t(`${m}.newState`)}
-      dialogRef={dialog}
-      isDirty={isDirty}
-      leaveMessage={t(`${m}.leaveGuard`)}
-      onClose={onClose}
-      onSubmit={apply}
-      noValidate
-      actions={(close) => (
-        <DrawerActions
-          close={close}
-          isNew={!state}
-          onDelete={onDelete ? () => void remove() : undefined}
-          testId="machine-state"
-        />
-      )}
-    >
-      <Field label={t(`${m}.fields.name`)} error={errorOf(local, errors, 'name')}>
-        {textInput(
-          form.name,
-          (name) => setForm((current) => ({ ...current, name })),
-          t(`${m}.placeholders.name`),
-          'machine-state-name',
-          true,
-        )}
-      </Field>
-      <Field
-        label={t(`${m}.fields.value`)}
-        hint={t(`${m}.fields.valueHint`)}
-        error={errorOf(local, errors, 'value')}
-      >
-        {textInput(
-          form.value,
-          (value) => setForm((current) => ({ ...current, value })),
-          t(`${m}.placeholders.value`),
-          'machine-state-value',
-          true,
-        )}
-      </Field>
-      <Field
-        name="machine-state-x"
-        label={t(`${m}.fields.x`)}
-        type="number"
-        step="1"
-        inputMode="numeric"
-        value={form.x}
-        onChange={(event) => setForm((current) => ({ ...current, x: event.target.value }))}
-        error={errors?.x}
-        data-testid="machine-state-x"
-      />
-      <Field
-        name="machine-state-y"
-        label={t(`${m}.fields.y`)}
-        type="number"
-        step="1"
-        inputMode="numeric"
-        value={form.y}
-        onChange={(event) => setForm((current) => ({ ...current, y: event.target.value }))}
-        error={errors?.y}
-        data-testid="machine-state-y"
-      />
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={form.initial}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, initial: event.target.checked }))
-          }
-          data-testid="machine-state-initial"
-        />
-        <span>{t(`${m}.fields.initial`)}</span>
-      </label>
-    </Drawer>
-  )
-}
-
 function TransitionDrawer({
   transition,
   states,
@@ -1089,23 +859,6 @@ function TransitionDrawer({
       ) : null}
     </>
   )
-}
-
-/** A rule's list row, from the rule itself, so a guard just saved can be chosen without reading the list again. */
-function summaryOf(rule: SystemRuleDetail): SystemRuleSummary {
-  return {
-    id: rule.id,
-    title: rule.title,
-    excerpt: '',
-    isExcerptShortened: false,
-    scope: rule.scope,
-    projectId: rule.projectId,
-    hasCondition: rule.condition !== null && rule.condition !== undefined,
-    systemCount: rule.systems.length,
-    version: rule.version,
-    createdAt: rule.createdAt,
-    updatedAt: rule.updatedAt,
-  }
 }
 
 /**
@@ -1390,56 +1143,6 @@ function GuardBuilderDrawer({
           </div>
         </>
       ) : null}
-    </Drawer>
-  )
-}
-
-function BindingDrawer({
-  binding,
-  errors,
-  onApply,
-  onClose,
-}: {
-  binding: MachineDoc['binding']
-  errors?: Record<string, string>
-  onApply: (binding: MachineDoc['binding']) => void
-  onClose: () => void
-}) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  const [form, setForm] = useState(binding)
-  useDrawerFocus(dialog)
-
-  return (
-    <Drawer
-      testId="machine-binding-drawer"
-      titleId={titleId}
-      title={t(`${m}.binding`)}
-      context={<p className="drawer__context">{t(`${m}.fields.bindingHint`)}</p>}
-      dialogRef={dialog}
-      isDirty={JSON.stringify(form) !== JSON.stringify(binding)}
-      leaveMessage={t(`${m}.leaveGuard`)}
-      onClose={onClose}
-      onSubmit={() => onApply(form)}
-      noValidate
-      actions={(close) => <DrawerActions close={close} isNew={false} testId="machine-binding" />}
-    >
-      <Field label={t(`${m}.fields.subjectType`)} error={errors?.subjecttype}>
-        {textInput(
-          form.subjectType,
-          (subjectType) => setForm((current) => ({ ...current, subjectType })),
-          t(`${m}.placeholders.subjectType`),
-          'machine-binding-subject-type',
-        )}
-      </Field>
-      <Field label={t(`${m}.fields.attribute`)} error={errors?.attribute}>
-        {textInput(
-          form.attribute,
-          (attribute) => setForm((current) => ({ ...current, attribute })),
-          t(`${m}.placeholders.attribute`),
-          'machine-binding-attribute',
-        )}
-      </Field>
     </Drawer>
   )
 }
