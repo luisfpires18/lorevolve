@@ -4,8 +4,8 @@ import { Button, type ButtonProps } from './Button'
 type WithoutLook<T> = T extends unknown ? Omit<T, 'tone' | 'icon'> : never
 
 type NewButtonProps = WithoutLook<ButtonProps> & {
-  /** Head and empty state: primary (the default). A repeated Add in a row or list: secondary. */
-  tone?: 'primary' | 'secondary'
+  /** Head and empty state: primary (the default). A repeated Add in a row or list: secondary, or text beside other quiet text buttons. */
+  tone?: 'primary' | 'secondary' | 'text'
   /** Only for a different glyph than the Plus. */
   icon?: LucideIcon
 }

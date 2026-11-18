@@ -76,7 +76,7 @@ export function SchemaTypeItem({
         <span className="types__actions">
           {/* Quiet like the universe's; on a phone it waits in the row's menu instead. */}
           <NewButton
-            tone="secondary"
+            tone="text"
             size="sm"
             icon={ListTree}
             className="types__addchild"

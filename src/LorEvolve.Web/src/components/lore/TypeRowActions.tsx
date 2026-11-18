@@ -87,7 +87,7 @@ export function TypeRowActions({
                           Quiet like Up and Down; on a phone it waits in the row's menu instead. Coming back from the
                           drawer, the focus is on this button again, ready for the next sibling. */}
           <NewButton
-            tone="secondary"
+            tone="text"
             size="sm"
             icon={ListTree}
             className="types__addchild"

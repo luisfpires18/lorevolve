@@ -26,10 +26,12 @@ interface FormActionsProps {
   /** Cancel is disabled while busy. Default: it stays enabled. */
   lockCancel?: boolean
   cancelTestId?: string
-  /** Given: a danger button after Cancel, disabled while busy. */
+  /** Given: a danger-quiet button after Cancel, disabled while busy. */
   onDelete?: () => void
   deleteLabel?: ReactNode
   deleteTestId?: string
+  /** `danger-quiet` (the default): this Delete opens a confirm. `danger` only when no confirm follows. */
+  deleteTone?: 'danger' | 'danger-quiet'
   /** `sm` for an inline editor. All buttons share it. */
   size?: ButtonSize
   /** Wraps in `.form__actions`, a form's own footer. Default: a fragment, the host has its layout. */
@@ -59,6 +61,7 @@ export function FormActions({
   onDelete,
   deleteLabel,
   deleteTestId,
+  deleteTone = 'danger-quiet',
   size,
   inline,
   children,
@@ -95,7 +98,7 @@ export function FormActions({
       ) : null}
       {onDelete ? (
         <Button
-          tone="danger"
+          tone={deleteTone}
           size={size}
           disabled={busy}
           onClick={onDelete}
