@@ -1,47 +1,13 @@
 import { useId, useState, type FormEvent } from 'react'
-import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import type { UniverseInput } from '../universes/types'
 import { confirmDiscard } from '../lib/confirm'
-
-/**
- * A universe's colour is the author's own (UI refinement 014): any `#rrggbb` - the one shape the API accepts - or none.
- * No palette is offered. Colours chosen from the old palette are ordinary values and stay exactly as they were.
- */
-const HEX = /^#[0-9a-fA-F]{6}$/
-
-/** What the picker shows while there is no colour: a neutral it never saves on its own. */
-const PICKER_IDLE = '#7a7468'
-
-/** The text as typed, made into the stored shape where it plainly is one: trimmed, `#` added, lower case. */
-function normalizeHex(text: string) {
-  const value = text.trim()
-  if (value === '') return ''
-  const withHash = value.startsWith('#') ? value : `#${value}`
-  return HEX.test(withHash) ? withHash.toLowerCase() : value
-}
-
-/** The universe as a save sends it. */
-function inputOf(
-  name: string,
-  description: string,
-  accentColor: string,
-  aiHelp: boolean | undefined,
-  starterTypes?: boolean,
-): UniverseInput {
-  return {
-    name: name.trim(),
-    description: description.trim() || null,
-    accentColor: accentColor || null,
-    aiHelp,
-    ...(starterTypes === undefined ? {} : { starterTypes }),
-  }
-}
+import { HEX, inputOf, normalizeHex } from '../universes/universeFormInput'
+import { UniverseColourField } from './UniverseColourField'
 
 interface UniverseFormProps {
   initial?: UniverseInput
@@ -215,76 +181,15 @@ export function UniverseForm({
       ) : null}
 
       {showColour ? (
-        <Field
-          label={t('universe.form.colour')}
-          id={`${colourId}-hex`}
-          className="colourfield"
-          error={
-            fieldErrors.accentcolor ? (
-              <span role="alert">{fieldErrors.accentcolor}</span>
-            ) : colourInvalid ? (
-              <span role="alert">{t('universe.form.colourInvalid')}</span>
-            ) : undefined
-          }
-        >
-          {(control) => (
-            <>
-              <div className="colourfield__row">
-                <input
-                  className="colourfield__picker"
-                  type="color"
-                  aria-label={t('universe.form.colourPick')}
-                  value={HEX.test(accentColor) ? accentColor : PICKER_IDLE}
-                  onChange={(event) => {
-                    setAccentColor(event.target.value)
-                    setColourText(event.target.value)
-                  }}
-                  data-testid="universe-colour-picker"
-                />
-                <input
-                  id={control.id}
-                  className="field__input colourfield__hex"
-                  type="text"
-                  inputMode="text"
-                  spellCheck={false}
-                  autoComplete="off"
-                  maxLength={7}
-                  placeholder={t('universe.form.colourNone')}
-                  value={colourText}
-                  aria-invalid={control['aria-invalid']}
-                  aria-describedby={`${colourId}-hint ${control['aria-describedby'] ?? ''}`.trim()}
-                  onChange={(event) => {
-                    setColourText(event.target.value)
-                    const next = normalizeHex(event.target.value)
-                    // The saved value follows the text only while the text is a colour, or empty for none.
-                    if (next === '' || HEX.test(next)) setAccentColor(next)
-                  }}
-                  onBlur={() => setColourText(normalizeHex(colourText))}
-                  data-testid="universe-colour-hex"
-                />
-                {accentColor ? (
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    onClick={() => {
-                      setAccentColor('')
-                      setColourText('')
-                    }}
-                    data-testid="universe-colour-clear"
-                  >
-                    <ActionIcon icon={X} />
-                    {t('universe.form.colourClear')}
-                  </button>
-                ) : null}
-              </div>
-              <p className="field__hint" id={`${colourId}-hint`}>
-                {accentColor
-                  ? t('universe.form.colourHintSet')
-                  : t('universe.form.colourHintUnset')}
-              </p>
-            </>
-          )}
-        </Field>
+        <UniverseColourField
+          colourId={colourId}
+          fieldErrors={fieldErrors}
+          colourInvalid={colourInvalid}
+          accentColor={accentColor}
+          setAccentColor={setAccentColor}
+          colourText={colourText}
+          setColourText={setColourText}
+        />
       ) : null}
 
       <div className="form__actions">
