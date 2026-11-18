@@ -7,6 +7,7 @@ import type { FieldValue } from '../../lore/types'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
 import type { FieldDraft, Mode } from '../../progression/eraDraft'
 
+/** Looked up when drawn, never frozen at import, so a change of language shows. */
 function modeLabel(mode: Mode) {
   if (mode === 'inherit') return t('time.eraForm.mode.inherit')
   return mode === 'set' ? t('time.eraForm.mode.set') : t('time.eraForm.mode.cleared')
