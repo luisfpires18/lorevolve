@@ -7,6 +7,7 @@ import { t, useI18n } from '../i18n'
 import { useProjectSchema } from '../projectEntities/useProjectSchema'
 import { SchemaHead } from './projectEntities/SchemaHead'
 import { SchemaTypeItem } from './projectEntities/SchemaTypeItem'
+import { Button } from './Button'
 
 /**
  * A project's own types, and the fields on them (#144).
@@ -148,9 +149,7 @@ export function ProjectSchema({
           title={t('projects.schema.starterOffer', { types: template.types.join(', ') })}
           hint={t('projects.schema.starterHint')}
           action={
-            <button
-              className="button"
-              type="button"
+            <Button
               disabled={busy}
               data-testid="project-schema-starters"
               onClick={() => {
@@ -159,7 +158,7 @@ export function ProjectSchema({
               }}
             >
               {busy ? t('projects.schema.starterApplying') : t('projects.schema.starterApply')}
-            </button>
+            </Button>
           }
           testId="project-schema-offer"
         />

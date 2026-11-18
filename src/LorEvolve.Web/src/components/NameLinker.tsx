@@ -3,6 +3,7 @@ import { useI18n } from '../i18n'
 import { getEntity } from '../lore/api'
 import { findNames, linkNames, type NameSource } from '../lore/mentions'
 import type { SceneLoreReference } from '../stories/types'
+import { Button } from './Button'
 
 /**
  * "Link names from this scene's Lore" (ADR 0058 amendment): finds where the prose names an entry of the scene's Lore in
@@ -123,24 +124,17 @@ export function NameLinker({
       )}
       <div className="recovery__actions">
         {rows.length > 0 ? (
-          <button
-            className="button"
-            type="button"
+          <Button
             disabled={chosen.length === 0}
             onClick={() => onLink(linkNames(text, chosen), chosen.length)}
             data-testid="name-linker-apply"
           >
             {tn('lore.nameLinker.apply', chosen.length, { n: chosen.length })}
-          </button>
+          </Button>
         ) : null}
-        <button
-          className="button button--text"
-          type="button"
-          onClick={onClose}
-          data-testid="name-linker-close"
-        >
+        <Button tone="text" onClick={onClose} data-testid="name-linker-close">
           {rows.length > 0 ? t('lore.nameLinker.cancel') : t('lore.nameLinker.close')}
-        </button>
+        </Button>
       </div>
     </section>
   )

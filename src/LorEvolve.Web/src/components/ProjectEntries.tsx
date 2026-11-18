@@ -4,7 +4,6 @@ import { useLocation } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { FieldKind, type ProjectEntitySummary, type ProjectField } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
-import { ActionIcon } from './ActionIcon'
 import { EmptyState } from './EmptyState'
 import { t, tx, useI18n } from '../i18n'
 import { useProjectEntriesState } from '../projectEntities/useProjectEntriesState'
@@ -13,6 +12,7 @@ import { ProjectEntriesHead } from './projectEntities/ProjectEntriesHead'
 import { ProjectEntriesFilters } from './projectEntities/ProjectEntriesFilters'
 import { ProjectEntryList } from './projectEntities/ProjectEntryList'
 import { ProjectEntryForm } from './ProjectEntryForm'
+import { Button } from './Button'
 
 /**
  * The entries a project holds, by type (#144).
@@ -129,21 +129,19 @@ export function ProjectEntries({
         title={type ? <bdi>{type.name}</bdi> : t('projects.entries.title')}
         ancestors={ancestors}
         action={
-          <button
-            className="button"
-            type="button"
+          <Button
+            icon={Plus}
             aria-expanded={adding}
             aria-label={type ? t('lore.page.newTypeLabel', { name: type.name }) : undefined}
             data-testid="project-entry-add"
             onClick={() => setAdding((open) => !open)}
           >
-            <ActionIcon icon={Plus} />
             <span className="lore__createlabel">
               {type
                 ? tx('lore.page.newType', { type: <bdi>{type.name}</bdi> })
                 : t('projects.entries.add')}
             </span>
-          </button>
+          </Button>
         }
       />
 
@@ -238,15 +236,14 @@ export function ProjectEntries({
         />
       )}
       {more ? (
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           disabled={busy}
           data-testid="project-entries-more"
           onClick={loadMore}
         >
           {t('projects.entries.more')}
-        </button>
+        </Button>
       ) : null}
     </section>
   )

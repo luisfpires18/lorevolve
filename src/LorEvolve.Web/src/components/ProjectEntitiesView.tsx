@@ -12,6 +12,8 @@ import { useUniverseAccess } from '../universes/access'
 import { ProjectEntries } from './ProjectEntries'
 import { ProjectSchema } from './ProjectSchema'
 import { t, tx, useI18n } from '../i18n'
+import { Button } from './Button'
+import { buttonClass } from '../lib/buttonClass'
 
 /**
  * A project's Entities view (#196): its types as cards, one type's entries a page at a time, and the type editor as an
@@ -170,7 +172,7 @@ function TypeCards({
             access.editContent && types.length > 0 ? (
               <ActionMenu
                 label={t('lore.page.newEntry')}
-                triggerClassName="button"
+                triggerClassName={buttonClass()}
                 triggerTestId="project-entities-new"
                 trigger={
                   <>
@@ -199,13 +201,13 @@ function TypeCards({
             <h2 className="sectionrule">{t('projects.entities.title')}</h2>
             <p className="projects__lede">{t('projects.entities.lede')}</p>
           </div>
-          <Link
+          <Button
+            tone="secondary"
             to={`${pathname}?manage=types`}
-            className="button button--secondary"
             data-testid="project-types-manage"
           >
             {t('projects.entities.manage')}
-          </Link>
+          </Button>
         </header>
       )}
 

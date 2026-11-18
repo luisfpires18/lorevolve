@@ -14,6 +14,8 @@ import {
 import type { UniverseArtworkRef } from '../publishing/types'
 import { ActionIcon } from './ActionIcon'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
+import { Button } from './Button'
+import { buttonClass } from '../lib/buttonClass'
 
 type Framing =
   { kind: 'file'; file: File } | { kind: 'stored'; artwork: UniverseArtworkRef; source: string }
@@ -143,7 +145,7 @@ export function UniverseArtworkField({
           data-testid={`${testId}-input`}
         />
         <label
-          className="button button--secondary avatar__pick"
+          className={buttonClass({ tone: 'secondary', className: 'avatar__pick' })}
           htmlFor={inputId}
           data-testid={`${testId}-pick`}
         >
@@ -152,9 +154,9 @@ export function UniverseArtworkField({
         </label>
 
         {artwork ? (
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
+            icon={Crop}
             disabled={busy}
             onClick={() => {
               setError(null)
@@ -166,22 +168,20 @@ export function UniverseArtworkField({
             }}
             data-testid={`${testId}-reframe`}
           >
-            <ActionIcon icon={Crop} />
             {t(`${w}.editFraming`)}
-          </button>
+          </Button>
         ) : null}
 
         {artwork && !isPublic ? (
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
+            icon={ImageMinus}
             disabled={busy}
             onClick={() => void remove()}
             data-testid={`${testId}-remove`}
           >
-            <ActionIcon icon={ImageMinus} />
             {busy ? t(`${w}.removing`) : t(`${w}.remove`)}
-          </button>
+          </Button>
         ) : null}
       </div>
 

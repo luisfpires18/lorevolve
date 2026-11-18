@@ -5,6 +5,7 @@ import { getPublicName, setPublicName } from '../profile/api'
 import { PUBLIC_NAME_MAX } from '../publishing/types'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
+import { Button } from './Button'
 
 /**
  * The account's public name: the "by …" on its published universes, and the only thing about the account the
@@ -108,14 +109,9 @@ export function PublicNameForm() {
         )}
       </Field>
       <div className="form__actions">
-        <button
-          className="button"
-          type="submit"
-          disabled={isSaving || !loaded}
-          data-testid="save-public-name"
-        >
+        <Button type="submit" disabled={isSaving || !loaded} data-testid="save-public-name">
           {isSaving ? t('account.publicName.saving') : t('account.publicName.save')}
-        </button>
+        </Button>
         {done && !isDirty ? (
           <p className="settings__saved" role="status" data-testid="public-name-saved">
             {t('account.publicName.saved')}

@@ -1,5 +1,4 @@
 import { Ruler } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { confirmAction } from '../lib/confirm'
 import { removeMapCalibration } from '../maps/api'
 import { approximate } from '../maps/format'
@@ -8,6 +7,7 @@ import { useI18n } from '../i18n'
 import { calibrationActions } from '../maps/calibrationActions'
 import { useCalibrationFormState } from '../maps/useCalibrationFormState'
 import { CalibrationFields } from './maps/CalibrationFields'
+import { Button } from './Button'
 
 /** A point of the picture, as fractions. */
 export interface Fraction {
@@ -68,24 +68,24 @@ export function MapScaleSummary({
       )}
       {canEdit ? (
         <div className="pincard__actions">
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={Ruler}
             onClick={onStartCalibrating}
             data-testid="map-calibrate"
           >
-            <ActionIcon icon={Ruler} />
             {scale ? t('places.calibration.setAgain') : t('places.calibration.set')}
-          </button>
+          </Button>
           {scale ? (
-            <button
-              className="button button--secondary button--sm button--danger-quiet"
-              type="button"
+            <Button
+              tone="danger-quiet"
+              size="sm"
               onClick={() => void remove()}
               data-testid="map-scale-remove"
             >
               {t('places.calibration.remove')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -179,23 +179,18 @@ export function MapCalibrationForm({
       />
 
       <div className="pincard__actions">
-        <button
-          className="button button--sm"
+        <Button
+          size="sm"
           type="submit"
           disabled={isSaving}
           aria-busy={isSaving || undefined}
           data-testid="map-calibration-save"
         >
           {isSaving ? t('places.calibration.saving') : t('places.calibration.save')}
-        </button>
-        <button
-          className="button button--secondary button--sm"
-          type="button"
-          onClick={onCancel}
-          disabled={isSaving}
-        >
+        </Button>
+        <Button tone="secondary" size="sm" onClick={onCancel} disabled={isSaving}>
           {t('places.calibration.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   )

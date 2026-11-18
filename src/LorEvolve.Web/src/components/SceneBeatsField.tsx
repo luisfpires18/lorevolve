@@ -1,9 +1,10 @@
 import { useRef } from 'react'
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { beatKey, type BeatDraft } from '../stories/beats'
+import { Button } from './Button'
+import { IconButton } from './IconButton'
 
 interface SceneBeatsFieldProps {
   beats: BeatDraft[]
@@ -98,38 +99,29 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                   {noteError ? <p className="field__error">{noteError}</p> : null}
                 </div>
                 <div className="scenebeats__tools">
-                  <button
-                    className="iconbutton"
-                    type="button"
+                  <IconButton
+                    icon={ArrowUp}
+                    label={t('stories.beats.moveUp', { n: index + 1 })}
+                    title={t('stories.beats.earlier')}
                     onClick={() => move(index, -1)}
                     aria-disabled={index === 0 ? true : undefined}
-                    title={t('stories.beats.earlier')}
-                    aria-label={t('stories.beats.moveUp', { n: index + 1 })}
                     data-testid="scene-beat-up"
-                  >
-                    <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                  </button>
-                  <button
-                    className="iconbutton"
-                    type="button"
+                  />
+                  <IconButton
+                    icon={ArrowDown}
+                    label={t('stories.beats.moveDown', { n: index + 1 })}
+                    title={t('stories.beats.later')}
                     onClick={() => move(index, 1)}
                     aria-disabled={index === beats.length - 1 ? true : undefined}
-                    title={t('stories.beats.later')}
-                    aria-label={t('stories.beats.moveDown', { n: index + 1 })}
                     data-testid="scene-beat-down"
-                  >
-                    <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                  </button>
-                  <button
-                    className="iconbutton"
-                    type="button"
-                    onClick={() => remove(index)}
-                    aria-label={t('stories.beats.removeLabel', { n: index + 1 })}
+                  />
+                  <IconButton
+                    icon={X}
+                    label={t('stories.beats.removeLabel', { n: index + 1 })}
                     title={t('stories.beats.remove')}
+                    onClick={() => remove(index)}
                     data-testid="scene-beat-remove"
-                  >
-                    <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-                  </button>
+                  />
                 </div>
               </li>
             )
@@ -137,15 +129,16 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
         </ol>
       ) : null}
 
-      <button
-        className="button button--secondary button--sm scenebeats__add"
-        type="button"
+      <Button
+        tone="secondary"
+        size="sm"
+        icon={Plus}
+        className="scenebeats__add"
         onClick={add}
         data-testid="scene-beat-add"
       >
-        <ActionIcon icon={Plus} />
         {t('stories.beats.add')}
-      </button>
+      </Button>
     </Field>
   )
 }

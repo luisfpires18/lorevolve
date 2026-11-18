@@ -6,6 +6,7 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { FieldInput } from './FieldInputs'
 import { useQuickCreate } from '../lore/useQuickCreate'
+import { Button } from './Button'
 
 export interface Props {
   universeId: string
@@ -84,23 +85,21 @@ export function QuickCreateDialog({
       onSubmit={() => void create()}
       actions={(close) => (
         <>
-          <button
-            className="button"
+          <Button
             type="submit"
             disabled={isSaving || eligible.length === 0}
             data-testid="quick-create-submit"
           >
             {isSaving ? t('lore.quickCreate.creating') : t('lore.quickCreate.create')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
+          </Button>
+          <Button
+            tone="secondary"
             onClick={close}
             disabled={isSaving}
             data-testid="quick-create-cancel"
           >
             {t('lore.quickCreate.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >
@@ -151,9 +150,9 @@ export function QuickCreateDialog({
                       <bdi>{item.entityTypeName}</bdi>
                     </span>
                   </span>
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
+                  <Button
+                    tone="secondary"
+                    size="sm"
                     onClick={() =>
                       onChooseExisting({
                         id: item.id,
@@ -168,7 +167,7 @@ export function QuickCreateDialog({
                     data-testid={`quick-create-use-${item.name}`}
                   >
                     {t('lore.quickCreate.useThis')}
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>

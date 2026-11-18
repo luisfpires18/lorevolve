@@ -1,5 +1,4 @@
 import { FilePenLine } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
 import { useI18n } from '../i18n'
 import type { Change } from '../lib/editConflict'
 import { SuggestionStatus, type SuggestionState } from '../suggestions/api'
@@ -9,6 +8,7 @@ import { useReviewSuggestionsState } from '../suggestions/useReviewSuggestionsSt
 import { useSuggestionReads } from '../suggestions/useSuggestionReads'
 import { reviewSuggestionsActions } from '../suggestions/reviewSuggestionsActions'
 import { SuggestionItem } from './suggestions/SuggestionItem'
+import { Button } from './Button'
 
 interface ReviewSuggestionsProps<T> {
   universeId: string
@@ -66,16 +66,16 @@ export function ReviewSuggestions<T>({
   function moreButton(state: SuggestionState) {
     return loaded?.more[state] ? (
       <div>
-        <button
-          className="button button--text button--sm"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
           disabled={reading !== null}
           aria-busy={reading === state}
           onClick={() => void readMore(state)}
           data-testid={`suggestions-more-${state}`}
         >
           {t('review.suggestions.showMore')}
-        </button>
+        </Button>
       </div>
     ) : null
   }
@@ -96,15 +96,15 @@ export function ReviewSuggestions<T>({
 
       {access.suggestChanges ? (
         <div>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={FilePenLine}
             onClick={onSuggest}
             data-testid="suggestions-new"
           >
-            <ActionIcon icon={FilePenLine} />
             {t('review.suggestions.suggest')}
-          </button>
+          </Button>
         </div>
       ) : (
         <p className="history__quiet" data-testid="suggestions-read-only">

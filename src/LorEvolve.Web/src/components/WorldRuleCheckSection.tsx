@@ -14,6 +14,7 @@ import {
   type WorldRuleCheck,
   type WorldRuleValidation,
 } from '../ruleValidation/types'
+import { Button } from './Button'
 
 interface WorldRuleCheckSectionProps {
   universeId: string
@@ -95,13 +96,9 @@ export function WorldRuleCheckSection({
           {failed ? (
             <p className="form__message rule__checkwide" role="alert">
               {t('canon.check.termsFailed')}{' '}
-              <button
-                className="button button--secondary button--sm"
-                type="button"
-                onClick={reload}
-              >
+              <Button tone="secondary" size="sm" onClick={reload}>
                 {t('canon.check.retry')}
-              </button>
+              </Button>
             </p>
           ) : null}
 

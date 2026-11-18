@@ -20,6 +20,7 @@ import {
   type StoryDetail,
   type StoryStatusValue,
 } from '../stories/types'
+import { Button } from './Button'
 
 interface StoryDraft {
   title: string
@@ -151,9 +152,8 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button
+          <Button
             ref={saveButton}
-            className="button"
             type="submit"
             disabled={isSaving || (suggesting && !isDirty)}
             data-testid="save-story"
@@ -169,15 +169,10 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
                 : story
                   ? t('stories.storyForm.save')
                   : t('stories.storyForm.create')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-story"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="cancel-story">
             {t('stories.storyForm.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

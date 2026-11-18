@@ -8,6 +8,7 @@ import type { MapFormProps } from '../maps/mapDraft'
 import { MapFormName } from './MapFormName'
 import { MapFormPicture } from './MapFormPicture'
 import { MapFormReplace } from './MapFormReplace'
+import { Button } from './Button'
 
 /**
  * Three small forms in the one drawer: a new map (its picture and details in one request), a map's details (saved over
@@ -63,8 +64,7 @@ export function MapForm(props: MapFormProps) {
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button
-            className="button"
+          <Button
             type="submit"
             disabled={isSaving}
             aria-busy={isSaving || undefined}
@@ -77,15 +77,10 @@ export function MapForm(props: MapFormProps) {
                 : props.mode === 'details'
                   ? t('places.mapForm.saveDetails')
                   : t('places.mapForm.replacePicture')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => close()}
-            disabled={isSaving}
-          >
+          </Button>
+          <Button tone="secondary" onClick={() => close()} disabled={isSaving}>
             {t('places.mapForm.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

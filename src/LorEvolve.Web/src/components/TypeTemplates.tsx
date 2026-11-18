@@ -11,11 +11,11 @@ import type { ProjectField } from '../projectEntities/types'
 import { buildTypeTree, type TreeType } from '../lore/typeTree'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
-import { ActionIcon } from './ActionIcon'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
 import { t, useI18n } from '../i18n'
 import { TemplateRow } from './typeTemplates/TemplateRow'
+import { Button } from './Button'
 
 const NO_TYPES = buildTypeTree<TreeType>([])
 
@@ -86,15 +86,9 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
     <section className="projects" data-testid="type-templates">
       {canEdit ? (
         <div className="types__context">
-          <button
-            className="button"
-            type="button"
-            data-testid="template-new"
-            onClick={() => setEditing('new')}
-          >
-            <ActionIcon icon={Plus} />
+          <Button icon={Plus} data-testid="template-new" onClick={() => setEditing('new')}>
             {t('entityTypes.page.templates.new')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

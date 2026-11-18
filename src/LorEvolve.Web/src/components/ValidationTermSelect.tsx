@@ -9,6 +9,7 @@ import {
   type ValidationTerm,
   type ValidationTermKindValue,
 } from '../ruleValidation/types'
+import { Button } from './Button'
 
 interface ValidationTermSelectProps {
   universeId: string
@@ -158,15 +159,9 @@ export function ValidationTermSelect({
               ))}
             </select>
             {!isAdding ? (
-              <button
-                ref={newButton}
-                className="button button--secondary"
-                type="button"
-                onClick={open}
-                data-testid={`${testId}-new`}
-              >
+              <Button tone="secondary" ref={newButton} onClick={open} data-testid={`${testId}-new`}>
                 {t('canon.termSelect.new', { word })}
-              </button>
+              </Button>
             ) : null}
           </div>
 
@@ -196,9 +191,7 @@ export function ValidationTermSelect({
                       aria-describedby={nameControl['aria-describedby']}
                       data-testid={`${testId}-name`}
                     />
-                    <button
-                      className="button"
-                      type="button"
+                    <Button
                       disabled={isCreating}
                       onClick={() => void create()}
                       data-testid={`${testId}-add`}
@@ -206,10 +199,10 @@ export function ValidationTermSelect({
                       {isCreating
                         ? t('canon.termSelect.adding')
                         : t('canon.termSelect.add', { word })}
-                    </button>
-                    <button className="button button--secondary" type="button" onClick={cancel}>
+                    </Button>
+                    <Button tone="secondary" onClick={cancel}>
                       {t('canon.termSelect.cancel')}
-                    </button>
+                    </Button>
                   </div>
                 </>
               )}

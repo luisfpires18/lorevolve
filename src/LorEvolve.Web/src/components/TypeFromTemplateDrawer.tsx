@@ -6,6 +6,7 @@ import { ApiError } from '../lib/api'
 import { useReturnFocus } from '../lib/returnFocus'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
+import { Button } from './Button'
 
 /**
  * A game type made from one of the universe's templates (#283). The game gets its own copy: nothing links it back, so
@@ -65,17 +66,16 @@ export function TypeFromTemplateDrawer({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button
-            className="button"
+          <Button
             type="submit"
             disabled={isSaving || !templateId}
             data-testid="save-type-from-template"
           >
             {isSaving ? t('entityTypes.page.dialog.creating') : t('entityTypes.page.dialog.create')}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
+          </Button>
+          <Button tone="secondary" onClick={close}>
             {t('entityTypes.page.dialog.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

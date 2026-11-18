@@ -15,6 +15,8 @@ import { useI18n } from '../i18n'
 import { ActionIcon } from './ActionIcon'
 import { Avatar } from './Avatar'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
+import { Button } from './Button'
+import { buttonClass } from '../lib/buttonClass'
 
 /**
  * What the cropper is open on. A file just picked is framed before anything is uploaded; a photo
@@ -143,7 +145,7 @@ export function ProfileAvatar({ name }: { name: string }) {
         />
 
         <label
-          className="button button--secondary avatar__pick"
+          className={buttonClass({ tone: 'secondary', className: 'avatar__pick' })}
           htmlFor="profile-photo-input"
           data-testid="profile-photo-pick"
         >
@@ -153,26 +155,24 @@ export function ProfileAvatar({ name }: { name: string }) {
 
         {image ? (
           <>
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
+              icon={Crop}
               disabled={busy}
               onClick={reframe}
               data-testid="profile-photo-reframe"
             >
-              <ActionIcon icon={Crop} />
               {t('account.avatar.edit')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
+              icon={ImageMinus}
               disabled={busy}
               onClick={() => void remove()}
               data-testid="profile-photo-remove"
             >
-              <ActionIcon icon={ImageMinus} />
               {busy ? t('account.avatar.removing') : t('account.avatar.remove')}
-            </button>
+            </Button>
           </>
         ) : null}
       </div>

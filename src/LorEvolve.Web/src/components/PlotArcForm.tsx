@@ -7,6 +7,7 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { createPlotArc, updatePlotArc } from '../stories/api'
 import type { PlotArc } from '../stories/types'
+import { Button } from './Button'
 
 interface PlotArcDraft {
   title: string
@@ -125,7 +126,7 @@ export function PlotArcForm({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button className="button" type="submit" disabled={isSaving} data-testid="save-plot-arc">
+          <Button type="submit" disabled={isSaving} data-testid="save-plot-arc">
             {isSaving
               ? arc
                 ? t('stories.arcForm.saving')
@@ -133,15 +134,10 @@ export function PlotArcForm({
               : arc
                 ? t('stories.arcForm.save')
                 : t('stories.arcForm.add')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-plot-arc"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="cancel-plot-arc">
             {t('stories.arcForm.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

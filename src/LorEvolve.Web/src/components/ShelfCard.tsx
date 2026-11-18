@@ -9,8 +9,8 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { t, useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { StatusBadge } from './StatusBadge'
+import { Button } from './Button'
 
 /**
  * One thing an author is making, on its shelf: a game on a widescreen handheld, its picture on the screen; a film or
@@ -72,15 +72,16 @@ export function ShelfCard({
     <div className="shelfcard__empty">
       <EmptyIcon className="shelfcard__emptyicon" aria-hidden="true" strokeWidth={1.25} />
       {onAddPicture ? (
-        <button
-          className="button button--secondary button--sm shelfcard__add"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
+          icon={ImagePlus}
+          className="shelfcard__add"
           onClick={onAddPicture}
           data-testid="shelf-add-picture"
         >
-          <ActionIcon icon={ImagePlus} />
           {t('projects.common.addPicture')}
-        </button>
+        </Button>
       ) : null}
     </div>
   )

@@ -13,6 +13,7 @@ import { draftFrom, inputOf, sceneChangesIn, type SceneDraft } from '../stories/
 import type { Chapter, PlotArc, Scene } from '../stories/types'
 import { useSceneSave } from '../stories/useSceneSave'
 import { SceneFormFields } from './stories/SceneFormFields'
+import { Button } from './Button'
 
 interface SceneFormProps {
   universeId: string
@@ -164,9 +165,8 @@ export function SceneForm({
       onSubmit={() => void save()}
       actions={(close) => (
         <>
-          <button
+          <Button
             ref={saveButton}
-            className="button"
             type="submit"
             disabled={isSaving || (suggesting && !isDirty)}
             data-testid="save-scene"
@@ -182,15 +182,10 @@ export function SceneForm({
                 : scene
                   ? t('stories.sceneForm.save')
                   : t('stories.sceneForm.add')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-scene"
-          >
+          </Button>
+          <Button tone="secondary" onClick={close} data-testid="cancel-scene">
             {t('stories.sceneForm.cancel')}
-          </button>
+          </Button>
         </>
       )}
     >

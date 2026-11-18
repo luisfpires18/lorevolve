@@ -5,6 +5,7 @@ import { Field } from './Field'
 import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { typeGroupActions } from '../lore/typeGroupActions'
 import { TypeGroupRow } from './lore/TypeGroupRow'
+import { Button } from './Button'
 
 /**
  * The universe's groups on their own tab of Types: their priority, first first, and who is in each. The priority orders a
@@ -84,16 +85,16 @@ export function TypeGroupsPanel({
                 }}
                 data-testid="type-group-create-name"
               />
-              <button
-                className="button button--secondary button--sm"
-                type="button"
+              <Button
+                tone="secondary"
+                size="sm"
                 disabled={busy || !newName.trim()}
                 onClick={() => void create()}
                 data-testid="type-group-create"
               >
                 <Plus aria-hidden="true" focusable="false" strokeWidth={1.75} />
                 {t('entityTypes.groupsPanel.add')}
-              </button>
+              </Button>
             </div>
           )}
         </Field>
