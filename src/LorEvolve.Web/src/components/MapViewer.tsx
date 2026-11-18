@@ -1,16 +1,10 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type ReactNode,
-} from 'react'
-import { Maximize, ZoomIn, ZoomOut } from 'lucide-react'
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { MapPin } from '../maps/types'
-import { clamp, usePanZoom, ZOOM_STEP, type StageSize, type View } from '../lib/usePanZoom'
+import { clamp, usePanZoom, type StageSize, type View } from '../lib/usePanZoom'
 import { useI18n } from '../i18n'
+import { mapViewerActions } from '../maps/mapViewerActions'
+import { MapViewerControls } from './maps/MapViewerControls'
+import { MapViewerLayer } from './maps/MapViewerLayer'
 
 /** A marker that is not a pin - a calibration point (#53) - drawn the same way, at a fraction of the picture. */
 export interface MapMarker {
@@ -43,8 +37,6 @@ interface MapViewerProps {
   /** Drawn inside the stage, over the picture: a calibration line (#53). Receives the current view. */
   overlay?: (view: View, size: { width: number; height: number }) => ReactNode
 }
-
-const PAN_STEP = 48
 
 /**
  * The map: one picture panned and zoomed with the pointer, the wheel, two fingers or the keyboard, with pins drawn at
@@ -153,73 +145,21 @@ export function MapViewer({
     return { x: clamp(at.x / width, 0, 1), y: clamp(at.y / height, 0, 1) }
   }
 
-  /**
-   * The press is the pin's: released without moving it selects the pin; dragged, and only for someone who may edit, it
-   * moves the pin.
-   */
-  function pinDrag(pin: MapPin) {
-    return {
-      onMove: (clientX: number, clientY: number) => {
-        if (canEdit && !placing) setDragging({ id: pin.id, ...fractionAt(clientX, clientY) })
-      },
-      onEnd: (moved: boolean, clientX: number, clientY: number) => {
-        if (moved && canEdit && !placing) {
-          const at = fractionAt(clientX, clientY)
-          setDragging(null)
-          onMovePin?.(pin, at.x, at.y)
-        } else {
-          // A press always selects; the empty map or Escape clears. Never a toggle, so a press is never a surprise.
-          onSelectPin(pin.id)
-        }
-      },
-      onCancel: () => setDragging(null),
-    }
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget) return
-    const about = { x: size.width / 2, y: size.height / 2 }
-    switch (event.key) {
-      case 'ArrowLeft':
-        setView((current) => ({ ...current, x: current.x + PAN_STEP }))
-        break
-      case 'ArrowRight':
-        setView((current) => ({ ...current, x: current.x - PAN_STEP }))
-        break
-      case 'ArrowUp':
-        setView((current) => ({ ...current, y: current.y + PAN_STEP }))
-        break
-      case 'ArrowDown':
-        setView((current) => ({ ...current, y: current.y - PAN_STEP }))
-        break
-      case '+':
-      case '=':
-        zoomAbout(ZOOM_STEP, about.x, about.y)
-        break
-      case '-':
-      case '_':
-        zoomAbout(1 / ZOOM_STEP, about.x, about.y)
-        break
-      case '0':
-        setView(fit(size.width, size.height))
-        break
-      case 'Escape':
-        if (!selectedPinId) return
-        onSelectPin(null)
-        break
-      case 'Enter':
-        if (placing && onPlace) {
-          const rect = stage.current!.getBoundingClientRect()
-          const at = fractionAt(rect.left + about.x, rect.top + about.y)
-          onPlace(at.x, at.y)
-          break
-        }
-        return
-      default:
-        return
-    }
-    event.preventDefault()
-  }
+  const { pinDrag, onKeyDown } = mapViewerActions({
+    canEdit,
+    placing,
+    selectedPinId,
+    onSelectPin,
+    onPlace,
+    onMovePin,
+    stage,
+    size,
+    setDragging,
+    setView,
+    zoomAbout,
+    fit,
+    fractionAt,
+  })
 
   const layerStyle = {
     width: `${width}px`,
@@ -242,100 +182,33 @@ export function MapViewer({
         {...stageHandlers}
         onKeyDown={onKeyDown}
       >
-        <div className="mapviewer__layer" style={layerStyle} data-testid="map-layer">
-          <img
-            className="mapviewer__image"
-            src={src}
-            alt={name}
-            width={width}
-            height={height}
-            draggable={false}
-            decoding="async"
-          />
-          {markers.map((marker) => (
-            <span
-              className="mapmarker"
-              key={marker.id}
-              style={{ left: `${marker.x * 100}%`, top: `${marker.y * 100}%` }}
-              data-testid="map-marker"
-            >
-              <span className="mapmarker__dot" aria-hidden="true" />
-              <span className="mapmarker__label">{marker.label}</span>
-            </span>
-          ))}
-          {pins.map((pin) => {
-            const at = dragging?.id === pin.id ? dragging : pin
-            const selected = pin.id === selectedPinId
-            return (
-              <button
-                className="mappin"
-                key={pin.id}
-                type="button"
-                style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}
-                aria-label={
-                  pin.placedOnCurrentImage
-                    ? pin.title
-                    : t('places.viewer.pinReview', { title: pin.title })
-                }
-                aria-pressed={selected}
-                data-testid="map-pin"
-                data-pin-id={pin.id}
-                data-pin-title={pin.title}
-                data-review={pin.placedOnCurrentImage ? undefined : true}
-                data-dragging={dragging?.id === pin.id || undefined}
-                onPointerDown={(event) => beginItemDrag(event, pinDrag(pin))}
-                onClick={(event) => {
-                  // A pointer press is handled on release above; the keyboard's Enter and Space land here.
-                  if (event.detail === 0) onSelectPin(pin.id)
-                }}
-              >
-                <span className="mappin__head" aria-hidden="true" />
-                <span className="mappin__label" aria-hidden="true">
-                  <bdi>{pin.title}</bdi>
-                </span>
-              </button>
-            )
-          })}
-          {overlay?.(view, size)}
-        </div>
+        <MapViewerLayer
+          layerStyle={layerStyle}
+          src={src}
+          name={name}
+          width={width}
+          height={height}
+          markers={markers}
+          pins={pins}
+          dragging={dragging}
+          selectedPinId={selectedPinId}
+          beginItemDrag={beginItemDrag}
+          pinDrag={pinDrag}
+          onSelectPin={onSelectPin}
+          overlay={overlay}
+          view={view}
+          size={size}
+        />
       </div>
 
-      <div className="mapviewer__controls" role="group" aria-label={t('places.viewer.zoom')}>
-        <button
-          className="iconbutton"
-          type="button"
-          aria-label={t('places.viewer.zoomIn')}
-          title={t('places.viewer.zoomIn')}
-          onClick={() => zoomAbout(ZOOM_STEP, size.width / 2, size.height / 2)}
-          data-testid="map-zoom-in"
-        >
-          <ZoomIn aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-        <button
-          className="iconbutton"
-          type="button"
-          aria-label={t('places.viewer.zoomOut')}
-          title={t('places.viewer.zoomOut')}
-          onClick={() => zoomAbout(1 / ZOOM_STEP, size.width / 2, size.height / 2)}
-          data-testid="map-zoom-out"
-        >
-          <ZoomOut aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-        <button
-          className="iconbutton"
-          type="button"
-          aria-label={t('places.viewer.fit')}
-          title={t('places.viewer.fit')}
-          onClick={() => setView(fit(size.width, size.height))}
-          data-testid="map-fit"
-        >
-          <Maximize aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-      </div>
-
-      <p className="visually-hidden" id={hintId}>
-        {placing ? t('places.viewer.hintPlacing') : t('places.viewer.hint')}
-      </p>
+      <MapViewerControls
+        zoomAbout={zoomAbout}
+        setView={setView}
+        fit={fit}
+        size={size}
+        placing={placing}
+        hintId={hintId}
+      />
     </div>
   )
 }

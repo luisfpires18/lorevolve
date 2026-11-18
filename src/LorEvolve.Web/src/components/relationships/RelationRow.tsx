@@ -1,0 +1,110 @@
+import { Link } from 'react-router-dom'
+import { useI18n } from '../../i18n'
+import { formatSpan } from '../../lib/dates'
+import type { Chronology } from '../../chronology/types'
+import { periodText } from '../../relationships/periods'
+import { Validity, type RelationshipView } from '../../relationships/types'
+import { CANON_LABELS } from '../../lore/types'
+import { StatusBadge } from '../StatusBadge'
+import { ActionIcon } from '../ActionIcon'
+import { ActionMenu } from '../ActionMenu'
+import { EntityTile } from '../EntityTile'
+import { Pencil, Trash } from 'lucide-react'
+import type { useUniverseAccess } from '../../universes/access'
+
+export function RelationRow({
+  view,
+  universeId,
+  chronology,
+  access,
+  openEdit,
+  remove,
+}: {
+  view: RelationshipView
+  universeId: string
+  chronology: Chronology
+  access: ReturnType<typeof useUniverseAccess>
+  openEdit: (view: RelationshipView) => Promise<void>
+  remove: (view: RelationshipView) => Promise<void>
+}) {
+  const { t } = useI18n()
+
+  return (
+    <li className="relation" data-relation-label={view.label}>
+      <EntityTile
+        className="relation__tile"
+        universeId={universeId}
+        entityId={view.relatedEntityId}
+        image={null}
+        typeIcon={view.relatedEntityTypeIcon}
+        typeAccent={view.relatedEntityTypeAccentColor}
+      />
+
+      <div className="relation__body">
+        <Link
+          className="relation__name"
+          to={`/app/universes/${universeId}/lore/${view.relatedEntityId}`}
+        >
+          <bdi>{view.relatedEntityName}</bdi>
+        </Link>
+        <p className="relation__meta">
+          <span className="relation__kind">
+            <bdi>{view.relatedEntityTypeName}</bdi>
+          </span>
+          <StatusBadge step={view.canonStatus} label={CANON_LABELS[view.canonStatus]} />
+          {(view.periods ?? []).length > 0 ? (
+            <span className="relation__span" data-testid="relation-periods-text">
+              {(view.periods ?? []).map((period) => periodText(period, chronology)).join('; ')}
+            </span>
+          ) : null}
+          {formatSpan(view.startDate, view.endDate) ? (
+            <span className="relation__span">
+              {t('relationships.section.realWorld', {
+                span: formatSpan(view.startDate, view.endDate) ?? '',
+              })}
+            </span>
+          ) : null}
+          {view.validity === Validity.Timeless ? (
+            <span className="relation__validity">{t('relationships.section.always')}</span>
+          ) : view.validity === Validity.Unplaced ? (
+            <span className="relation__validity" data-testid="relation-unplaced">
+              {t('relationships.section.unplaced')}
+            </span>
+          ) : null}
+        </p>
+        {view.notes ? <p className="relation__notes prose">{view.notes}</p> : null}
+      </div>
+
+      {access.editContent ? (
+        <ActionMenu
+          className="relation__menu"
+          label={t('relationships.section.moreActions', {
+            label: view.label,
+            related: view.relatedEntityName,
+          })}
+          triggerTestId={`relationship-actions-${view.relatedEntityName}`}
+        >
+          <button
+            className="actionmenu__item"
+            type="button"
+            onClick={() => openEdit(view)}
+            data-testid={`edit-relationship-${view.relatedEntityName}`}
+          >
+            <ActionIcon icon={Pencil} />
+            {t('relationships.section.edit')}
+          </button>
+          <hr className="actionmenu__divider" />
+          <button
+            className="actionmenu__item actionmenu__item--danger"
+            type="button"
+            onClick={() => void remove(view)}
+            data-testid={`delete-relationship-${view.relatedEntityName}`}
+          >
+            <ActionIcon icon={Trash} />
+            {t('relationships.section.remove')}
+          </button>
+        </ActionMenu>
+      ) : null}
+    </li>
+  )
+}
