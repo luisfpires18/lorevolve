@@ -5,7 +5,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { EmptyState } from './EmptyState'
 import { Field } from './Field'
-import { IdeaBoardCanvas, type BoardSelection } from './IdeaBoardCanvas'
+import { IdeaBoardCanvas } from './IdeaBoardCanvas'
 import { IdeaBoardPicker, type PickedTarget } from './IdeaBoardPicker'
 import { Quoted } from './NameList'
 import { RecoveredDraft } from './RecoveredDraft'
@@ -32,6 +32,7 @@ import {
   type IdeaBoardDetail,
   type IdeaBoardInput,
 } from '../ideas/boards'
+import type { BoardSelection } from '../ideas/boardSelection'
 import type { IdeaUniverse } from '../ideas/types'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
