@@ -249,25 +249,7 @@ test('Field renders label, hint, control, error in that order', () => {
 // Folders whose .tsx files still write a raw .button or .iconbutton class: the conversion to Button and
 // IconButton (#408) goes folder by folder, and each commit removes its entry. A listed folder with no raw
 // use left fails, so the list cannot go stale. Temporary: the last conversion commit deletes it.
-const RAW_BUTTON_PENDING = new Set<string>([
-  'src/components/trash',
-  'src/components/universes',
-  'src/components/relationships',
-  'src/components/publishing',
-  'src/components/admin',
-  'src/components/aiChanges',
-  'src/components/familyTree',
-  'src/components/backups',
-  'src/components/canon',
-  'src/components/ruleValidation',
-  'src/components/knowledge',
-  'src/components/suggestions',
-  'src/components/worldRules',
-  'src/components/search',
-  'src/pages',
-  'src/routes',
-  'src/auth',
-])
+const RAW_BUTTON_PENDING = new Set<string>(['src/pages', 'src/routes', 'src/auth'])
 
 // Every quoted class string in a file: className="..." or any prop ending in className/ClassName
 // (triggerClassName counts), and each literal inside className={...}.

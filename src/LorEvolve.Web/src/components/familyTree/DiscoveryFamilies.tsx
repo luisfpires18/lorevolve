@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 import { DiscoveryPager } from './DiscoveryPager'
 import type { useDiscoveryState } from '../../familyTree/useDiscoveryState'
 import type { FamiliesReturn } from '../FamilyDiscovery'
+import { Button } from '../Button'
 
 export function DiscoveryFamilies({
   universeId,
@@ -56,13 +57,9 @@ export function DiscoveryFamilies({
       {state.kind === 'error' && isCurrent ? (
         <div className="notice notice--error" role="alert" data-testid="family-discovery-error">
           <p>{t('places.discovery.error')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => setReads((current) => current + 1)}
-          >
+          <Button tone="secondary" onClick={() => setReads((current) => current + 1)}>
             {t('places.discovery.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 

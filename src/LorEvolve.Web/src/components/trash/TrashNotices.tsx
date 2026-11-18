@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { CanonBlockNotice } from '../CanonBlockNotice'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useTrashState } from '../../trash/useTrashState'
+import { Button } from '../Button'
 
 /** What stands above the list: a refused restore's findings, what a restore did, loading, and a failed read. */
 export function TrashNotices({
@@ -44,9 +45,9 @@ export function TrashNotices({
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
-          <button className="button button--secondary" type="button" onClick={() => load()}>
+          <Button tone="secondary" onClick={() => load()}>
             {t('data.trash.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </>

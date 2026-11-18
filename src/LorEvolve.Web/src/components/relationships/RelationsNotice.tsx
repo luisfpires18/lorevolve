@@ -1,4 +1,5 @@
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 export function RelationsNotice({
   message,
@@ -15,9 +16,9 @@ export function RelationsNotice({
     <div className="notice notice--error" role="alert" data-testid="relationship-error">
       <p>{message ?? readError}</p>
       {readError && !message ? (
-        <button className="button button--secondary" type="button" onClick={() => void load()}>
+        <Button tone="secondary" onClick={() => void load()}>
           {t('relationships.section.retry')}
-        </button>
+        </Button>
       ) : null}
     </div>
   )

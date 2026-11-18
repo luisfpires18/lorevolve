@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import { useLoad } from '../../admin/useLoad'
 import { BackupFacts } from './BackupFacts'
 import { Failure } from './Failure'
+import { Button } from '../Button'
 
 /**
  * Database backups (#54): the age of the last backup that was uploaded and read back, the last attempt and its error, and
@@ -47,15 +48,14 @@ export function DatabaseBackups() {
       {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' ? <BackupFacts status={state.value} /> : null}
       {state.kind === 'ready' && state.value.enabled && !state.value.problem ? (
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           onClick={() => void runNow()}
           disabled={starting || running}
           data-testid="admin-backup-run"
         >
           {running ? t('admin.backups.backingUp') : t('admin.backups.runNow')}
-        </button>
+        </Button>
       ) : null}
       {message ? (
         <p className="form__message" role="alert">

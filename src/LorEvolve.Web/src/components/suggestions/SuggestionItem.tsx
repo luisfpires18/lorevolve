@@ -5,6 +5,7 @@ import type { Change } from '../../lib/editConflict'
 import { SuggestionStatus, type Suggestion } from '../../suggestions/api'
 import type { useUniverseAccess } from '../../universes/access'
 import { CHANGED_SINCE } from '../../suggestions/suggestionList'
+import { Button } from '../Button'
 
 /** One suggestion: who and when, its changed fields, how it was decided, and Accept and Reject while it is open. */
 export function SuggestionItem<T>({
@@ -90,9 +91,8 @@ export function SuggestionItem<T>({
       {isOpen && access.resolveSuggestions ? (
         <div className="reviewthread__tools">
           {suggestion.targetChanged ? null : (
-            <button
-              className="button button--sm"
-              type="button"
+            <Button
+              size="sm"
               disabled={busy !== null}
               onClick={() => void decide(suggestion, 'accept')}
               data-testid="suggestion-accept"
@@ -100,17 +100,17 @@ export function SuggestionItem<T>({
               {busy === suggestion.id
                 ? t('review.suggestions.accepting')
                 : t('review.suggestions.accept')}
-            </button>
+            </Button>
           )}
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             disabled={busy !== null}
             onClick={() => void decide(suggestion, 'reject')}
             data-testid="suggestion-reject"
           >
             {t('review.suggestions.reject')}
-          </button>
+          </Button>
         </div>
       ) : null}
     </li>

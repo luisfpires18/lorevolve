@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { useUniverseAccess } from '../../universes/access'
 import { draftFrom, type TypeDraft } from '../../relationships/typeDraft'
 import { constraintSummary, familySummary, reading } from '../../relationships/typeSummaries'
+import { Button } from '../Button'
 
 export function KindRow({
   type,
@@ -39,9 +40,9 @@ export function KindRow({
           })}
         </span>
         {access.editContent ? (
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             onClick={() => {
               setMessage(null)
               setFieldErrors({})
@@ -52,17 +53,17 @@ export function KindRow({
             data-testid={`edit-reltype-${type.name}`}
           >
             {t('relationships.types.edit')}
-          </button>
+          </Button>
         ) : null}
         {access.editContent && type.relationshipCount === 0 ? (
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
             onClick={() => remove(type)}
             data-testid={`delete-reltype-${type.name}`}
           >
             {t('relationships.types.delete')}
-          </button>
+          </Button>
         ) : null}
       </div>
 

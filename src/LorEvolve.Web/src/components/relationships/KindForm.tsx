@@ -3,6 +3,7 @@ import { Field } from '../Field'
 import type { TypeDraft } from '../../relationships/typeDraft'
 import { KindFormCanon } from './KindFormCanon'
 import { KindFormFamily } from './KindFormFamily'
+import { Button } from '../Button'
 
 export function KindForm({
   draft,
@@ -77,13 +78,7 @@ export function KindForm({
       <KindFormFamily draft={draft} edit={edit} fieldErrors={fieldErrors} />
 
       <div className="relform__actions">
-        <button
-          className="button"
-          type="button"
-          onClick={save}
-          disabled={isSaving}
-          data-testid="save-relationship-type"
-        >
+        <Button onClick={save} disabled={isSaving} data-testid="save-relationship-type">
           {isSaving
             ? editingId
               ? t('relationships.types.saving')
@@ -91,10 +86,10 @@ export function KindForm({
             : editingId
               ? t('relationships.types.saveKind')
               : t('relationships.types.addKindSubmit')}
-        </button>
-        <button className="button button--secondary" type="button" onClick={close}>
+        </Button>
+        <Button tone="secondary" onClick={close}>
           {t('relationships.types.cancel')}
-        </button>
+        </Button>
       </div>
     </div>
   )

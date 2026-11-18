@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { FamilyKindDialog } from '../FamilyKindDialog'
 import type { RelationshipType } from '../../relationships/types'
 import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseAccess } from '../../universes/access'
+import { Button } from '../Button'
 
 export function FamilySetupNotices({
   universe,
@@ -51,15 +51,14 @@ export function FamilySetupNotices({
             })}
           </p>
           {access.editContent ? (
-            <button
-              className="button button--secondary"
-              type="button"
+            <Button
+              tone="secondary"
+              icon={Plus}
               onClick={() => setIsCreatingKind(true)}
               data-testid="family-new-kind"
             >
-              <ActionIcon icon={Plus} />
               {t('places.familyPage.newKind')}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

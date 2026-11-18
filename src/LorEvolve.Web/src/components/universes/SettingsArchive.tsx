@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
+import { Button } from '../Button'
 
 /** Settings → Advanced: archive or restore from the archive, with the confirm a public universe asks for. */
 export function SettingsArchive({
@@ -76,9 +77,7 @@ export function SettingsArchive({
               : t('universe.settings.archiveConfirmUnknownNote')}
           </p>
           <div className="form__actions">
-            <button
-              className="button"
-              type="button"
+            <Button
               onClick={() => void toggleArchived()}
               disabled={busy}
               data-testid="confirm-archive"
@@ -88,17 +87,12 @@ export function SettingsArchive({
                 : isPublic
                   ? t('universe.settings.archiveKeepPublic')
                   : t('universe.settings.archiveConfirmButton')}
-            </button>
-            <Link
-              className="button button--secondary"
-              to={publishPath}
-              data-testid="archive-go-private"
-            >
+            </Button>
+            <Button tone="secondary" to={publishPath} data-testid="archive-go-private">
               {t('universe.settings.makePrivateFirst')}
-            </Link>
-            <button
-              className="button button--secondary"
-              type="button"
+            </Button>
+            <Button
+              tone="secondary"
               onClick={() => {
                 archiveCancelled.current = true
                 setConfirmingArchive(false)
@@ -106,14 +100,13 @@ export function SettingsArchive({
               data-testid="cancel-archive"
             >
               {t('universe.settings.archiveCancel')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
-        <button
+        <Button
+          tone="secondary"
           ref={archiveButton}
-          className="button button--secondary"
-          type="button"
           onClick={() => void askToArchive()}
           disabled={busy}
           data-testid="toggle-archive"
@@ -121,7 +114,7 @@ export function SettingsArchive({
           {universe.isArchived
             ? t('universe.settings.restoreUniverse')
             : t('universe.settings.archiveUniverse')}
-        </button>
+        </Button>
       )}
     </section>
   )

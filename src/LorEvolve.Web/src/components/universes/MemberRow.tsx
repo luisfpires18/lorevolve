@@ -9,6 +9,7 @@ import {
 } from '../../universes/collaborators'
 import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
+import { Button } from '../Button'
 
 // ---------- People ----------
 
@@ -98,17 +99,16 @@ export function MemberRow({
           disabled={busy}
           testId="collaborator-role"
         />
-        <button
+        <Button
+          tone="danger-quiet"
           ref={removeButton}
-          className="button button--secondary button--danger-quiet"
-          type="button"
           onClick={() => setConfirming(true)}
           disabled={busy || confirming}
           aria-label={t('universe.collab.removeLabel', { name: member.username })}
           data-testid="remove-collaborator"
         >
           {t('universe.collab.remove')}
-        </button>
+        </Button>
       </div>
       {confirming ? (
         <div
@@ -124,23 +124,17 @@ export function MemberRow({
           </p>
           <p className="settings__note">{t('universe.collab.removeNote')}</p>
           <div className="form__actions">
-            <button
-              className="button button--danger"
-              type="button"
+            <Button
+              tone="danger"
               onClick={() => void remove()}
               disabled={busy}
               data-testid="confirm-remove-collaborator"
             >
               {busy ? t('universe.collab.removing') : t('universe.collab.removeConfirmButton')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setConfirming(false)}
-              disabled={busy}
-            >
+            </Button>
+            <Button tone="secondary" onClick={() => setConfirming(false)} disabled={busy}>
               {t('universe.collab.keep')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

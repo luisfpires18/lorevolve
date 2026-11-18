@@ -8,6 +8,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useCanonConflicts } from '../../canon/useCanonConflicts'
 import type { canonActions } from '../../canon/canonActions'
 import { emptyLine, hint } from '../../canon/canonEmptyCopy'
+import { Button } from '../Button'
 
 /** The Canon page's results: the last run, the error, loading and failed lines, the ledger, the empty state and the pager. */
 export function CanonResults({
@@ -70,9 +71,9 @@ export function CanonResults({
       {state.kind === 'error' ? (
         <div className="notice notice--error" role="alert">
           <p>{state.message}</p>
-          <button className="button button--secondary" type="button" onClick={reload}>
+          <Button tone="secondary" onClick={reload}>
             {t('canon.page.retry')}
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -104,15 +105,14 @@ export function CanonResults({
           hint={severity !== null ? t('canon.page.otherSeverity') : hint(status)}
           action={
             access.editContent && severity === null && status === CanonConflictStatus.Pending ? (
-              <button
-                className="button button--secondary"
-                type="button"
+              <Button
+                tone="secondary"
                 onClick={() => void evaluate()}
                 disabled={isEvaluating}
                 data-testid="empty-evaluate-canon"
               >
                 {isEvaluating ? t('canon.page.emptyEvaluating') : t('canon.page.emptyEvaluate')}
-              </button>
+              </Button>
             ) : undefined
           }
         />
@@ -120,25 +120,23 @@ export function CanonResults({
 
       {result && result.totalPages > 1 ? (
         <nav className="pager" aria-label={t('canon.page.pagination')}>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page <= 1}
             onClick={() => setPage((current) => current - 1)}
           >
             {t('canon.page.previous')}
-          </button>
+          </Button>
           <span className="pager__position">
             {t('canon.page.position', { page: result.page, totalPages: result.totalPages })}
           </span>
-          <button
-            className="button button--secondary"
-            type="button"
+          <Button
+            tone="secondary"
             disabled={result.page >= result.totalPages}
             onClick={() => setPage((current) => current + 1)}
           >
             {t('canon.page.next')}
-          </button>
+          </Button>
         </nav>
       ) : null}
     </>

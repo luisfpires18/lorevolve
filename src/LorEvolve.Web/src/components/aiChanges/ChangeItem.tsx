@@ -1,11 +1,11 @@
 import { useId } from 'react'
-import { Link } from 'react-router-dom'
 import { ChangeStatus, type Change, type Proposal } from '../../aiChanges/types'
 import { itemPath } from '../../aiChanges/itemPath'
 import { useI18n } from '../../i18n'
 import { actionWords, isProse } from '../../aiChanges/changeTraits'
 import { ChangeDetails } from './ChangeDetails'
 import { EditChange } from './EditChange'
+import { Button } from '../Button'
 
 export function ChangeItem({
   universeId,
@@ -106,25 +106,21 @@ export function ChangeItem({
       />
 
       {link ? (
-        <Link
-          className="button button--text button--sm"
-          to={link}
-          data-testid="ai-change-open-item"
-        >
+        <Button tone="text" size="sm" to={link} data-testid="ai-change-open-item">
           {t('review.aiChange.item.open')}
-        </Link>
+        </Button>
       ) : null}
 
       {change.editable && !editing ? (
-        <button
-          className="button button--text button--sm"
-          type="button"
+        <Button
+          tone="text"
+          size="sm"
           onClick={() => onEdit(true)}
           aria-label={t('review.aiChange.item.editLabel', { title: change.title })}
           data-testid="ai-change-edit"
         >
           {t('review.aiChange.item.edit')}
-        </button>
+        </Button>
       ) : null}
 
       {editing && change.editable ? (

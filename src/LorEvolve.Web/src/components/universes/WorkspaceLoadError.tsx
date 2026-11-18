@@ -1,5 +1,6 @@
 import { t } from '../../i18n'
 import type { LoadState } from '../../universes/useWorkspaceState'
+import { Button } from '../Button'
 
 /** The universe could not be read: what went wrong, and Try again for the universe and its types. */
 export function WorkspaceLoadError({
@@ -14,16 +15,15 @@ export function WorkspaceLoadError({
   return (
     <div className="notice notice--error" role="alert">
       <p>{state.message}</p>
-      <button
-        className="button button--secondary"
-        type="button"
+      <Button
+        tone="secondary"
         onClick={() => {
           refresh()
           refreshTypes().catch(() => undefined)
         }}
       >
         {t('workspace.missing.tryAgain')}
-      </button>
+      </Button>
     </div>
   )
 }

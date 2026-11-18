@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom'
 import { Feather, Library } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { useI18n } from '../../i18n'
 import type { Published, usePublishState } from '../../publishing/usePublishState'
 import { PublishEverything } from './PublishEverything'
+import { Button } from '../Button'
 
 /** What readers can see inside the universe, with links to its lore and stories, and Publish everything while public. */
 export function PublishContent({
@@ -30,9 +30,9 @@ export function PublishContent({
           <span className="publish__contentcount" data-testid="published-lore">
             {published ? t('universe.publish.loreCount', { n: published.lore }) : null}
           </span>
-          <Link className="button button--secondary button--sm" to={`${base}/lore`}>
+          <Button tone="secondary" size="sm" to={`${base}/lore`}>
             {t('universe.publish.viewLore')}
-          </Link>
+          </Button>
         </li>
         <li>
           <ActionIcon icon={Feather} />
@@ -40,9 +40,9 @@ export function PublishContent({
           <span className="publish__contentcount" data-testid="published-stories">
             {published ? t('universe.publish.storiesCount', { n: published.stories }) : null}
           </span>
-          <Link className="button button--secondary button--sm" to={`${base}/writing`}>
+          <Button tone="secondary" size="sm" to={`${base}/writing`}>
             {t('universe.publish.viewStories')}
-          </Link>
+          </Button>
         </li>
       </ul>
       {isPublic ? (

@@ -7,6 +7,7 @@ import {
   type SearchResponse,
   type SearchResult,
 } from '../../search/types'
+import { Button } from '../Button'
 
 /** The search bar's panel: the idle, searching, empty and error notes, the option list and More. */
 export function UniverseSearchList({
@@ -61,9 +62,9 @@ export function UniverseSearchList({
         {status === 'error' ? (
           <div className="unisearch__note unisearch__failure" data-testid="universe-search-error">
             <p>{t('lore.search.unreachable')}</p>
-            <button className="button button--secondary" type="button" onClick={retry}>
+            <Button tone="secondary" onClick={retry}>
               {t('lore.search.retry')}
-            </button>
+            </Button>
           </div>
         ) : null}
 

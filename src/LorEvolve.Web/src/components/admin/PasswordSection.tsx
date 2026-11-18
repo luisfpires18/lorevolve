@@ -3,6 +3,7 @@ import { emailPasswordReset, type AdminUserDetail } from '../../admin/api'
 import { ApiError } from '../../lib/api'
 import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 /**
  * Forgot password on the account's behalf (#69): LorEvolve emails the account its own reset link. The Admin sees
@@ -49,15 +50,14 @@ export function PasswordSection({
         {user.isBlocked ? t('admin.password.noteBlocked') : t('admin.password.note')}
       </p>
       <div className="form__actions">
-        <button
-          className="button button--secondary"
-          type="button"
+        <Button
+          tone="secondary"
           disabled={user.isBlocked}
           onClick={() => void send()}
           data-testid="admin-password-reset"
         >
           {t('admin.password.send')}
-        </button>
+        </Button>
       </div>
       {sent ? (
         <p className="settings__note" role="status" data-testid="admin-password-reset-sent">

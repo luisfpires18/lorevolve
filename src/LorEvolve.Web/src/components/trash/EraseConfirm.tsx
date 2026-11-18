@@ -3,6 +3,7 @@ import { t, tx, useI18n } from '../../i18n'
 import { Quoted } from '../NameList'
 import { TRASH_KIND_LABELS, type TrashItem } from '../../trash/types'
 import { eraseText } from '../../trash/trashText'
+import { Button } from '../Button'
 
 /**
  * The one question before something is erased for good: what it is, what goes with it, and that it cannot be undone. One
@@ -59,24 +60,22 @@ export function EraseConfirm({
         </p>
       ) : null}
       <div className="form__actions">
-        <button
-          className="button button--danger"
-          type="button"
+        <Button
+          tone="danger"
           aria-disabled={busy || undefined}
           onClick={onErase}
           data-testid="trash-erase-delete"
         >
           {busy ? t('data.trash.erase.deleting') : t('data.trash.erase.delete')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           aria-disabled={busy || undefined}
           onClick={onCancel}
           data-testid="trash-erase-cancel"
         >
           {t('data.trash.erase.cancel')}
-        </button>
+        </Button>
       </div>
     </div>
   )

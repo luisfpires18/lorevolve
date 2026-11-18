@@ -1,12 +1,12 @@
 import { Field } from '../Field'
 import { Plus } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import {
   FAMILY_SEMANTIC_WORDS,
   isParentSemantic,
   type RelationshipType,
 } from '../../relationships/types'
 import { useI18n } from '../../i18n'
+import { Button } from '../Button'
 
 export function FamilyLinkKindField({
   kinds,
@@ -62,15 +62,16 @@ export function FamilyLinkKindField({
               {fieldErrors.relationshiptypeid}
             </p>
           ) : null}
-          <button
-            className="button button--text button--sm familylink__newkind"
-            type="button"
+          <Button
+            tone="text"
+            size="sm"
+            icon={Plus}
+            className="familylink__newkind"
             onClick={() => setIsCreatingKind(true)}
             data-testid="new-family-kind"
           >
-            <ActionIcon icon={Plus} />
             {t('places.linkForm.newKind')}
-          </button>
+          </Button>
         </>
       )}
     </Field>

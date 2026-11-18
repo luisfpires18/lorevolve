@@ -1,6 +1,7 @@
 import type { Change, Proposal } from '../../aiChanges/types'
 import { useI18n } from '../../i18n'
 import type { useAiChangeState } from '../../aiChanges/useAiChangeState'
+import { Button } from '../Button'
 
 /** The decision bar: what is chosen, Select all, Approve, Reject and Reject all, with the running approval's progress; or Withdraw. */
 export function AiChangeDecision({
@@ -45,18 +46,17 @@ export function AiChangeDecision({
       <div className="aichange__buttons">
         {canApprove ? (
           <>
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
               disabled={busy !== null || ready.length === 0}
               onClick={() => setSelected(new Set(ready.map((change) => change.id)))}
               data-testid="ai-change-select-all"
             >
               {t('review.aiChange.toolbar.selectAll')}
-            </button>
-            <button
-              className="button button--sm"
-              type="button"
+            </Button>
+            <Button
+              size="sm"
               disabled={busy !== null || chosen.length === 0}
               aria-describedby={listId}
               onClick={() => void approve(chosen.map((change) => change.id))}
@@ -69,12 +69,12 @@ export function AiChangeDecision({
                   : tn('review.aiChange.toolbar.approveCount', chosen.length, {
                       n: chosen.length,
                     })}
-            </button>
+            </Button>
           </>
         ) : null}
-        <button
-          className="button button--secondary button--sm"
-          type="button"
+        <Button
+          tone="secondary"
+          size="sm"
           disabled={busy !== null || chosen.length === 0}
           onClick={() => void reject(chosen.map((change) => change.id))}
           data-testid="ai-change-reject"
@@ -82,16 +82,16 @@ export function AiChangeDecision({
           {busy === 'reject'
             ? t('review.aiChange.toolbar.rejecting')
             : t('review.aiChange.toolbar.rejectSelected')}
-        </button>
-        <button
-          className="button button--secondary button--danger-quiet button--sm"
-          type="button"
+        </Button>
+        <Button
+          tone="danger-quiet"
+          size="sm"
           disabled={busy !== null}
           onClick={() => void reject(null)}
           data-testid="ai-change-reject-all"
         >
           {t('review.aiChange.toolbar.rejectAll')}
-        </button>
+        </Button>
       </div>
       {applied ? (
         <div className="aichange__progress" data-testid="ai-change-progress">
@@ -130,15 +130,15 @@ export function AiChangeDecision({
     </div>
   ) : !proposal.canReview && open && proposal.proposal.proposedByMe ? (
     <div className="aichange__toolbar">
-      <button
-        className="button button--secondary button--sm"
-        type="button"
+      <Button
+        tone="secondary"
+        size="sm"
         disabled={busy !== null}
         onClick={() => void reject(null)}
         data-testid="ai-change-withdraw"
       >
         {t('review.aiChange.toolbar.withdraw')}
-      </button>
+      </Button>
     </div>
   ) : null
 }

@@ -1,7 +1,6 @@
 import { t, tx } from '../../i18n'
 import type { useUniverseAccess } from '../../universes/access'
 import { ArchiveRestore } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { formatDateTime } from '../../lib/dates'
 import { TRASH_KIND_KEYS, TRASH_KIND_LABELS, TrashKind, type TrashItem } from '../../trash/types'
 import { EntityTile } from '../EntityTile'
@@ -11,6 +10,7 @@ import { blockedText, keyOf, whereItWas } from '../../trash/trashText'
 import { EraseConfirm } from './EraseConfirm'
 import { KindTile } from './KindTile'
 import { RestorePublicConfirm } from './RestorePublicConfirm'
+import { Button } from '../Button'
 
 /** One row of the Trash: what it was and where, and Restore and Delete permanently with their questions; or its checkbox while selecting. */
 export function TrashRow({
@@ -147,13 +147,13 @@ export function TrashRow({
     >
       {what}
       <div className="trash__actions">
-        <button
+        <Button
+          tone="secondary"
+          icon={ArchiveRestore}
           ref={(node) => {
             if (node) restoreButtons.current.set(item.id, node)
             else restoreButtons.current.delete(item.id)
           }}
-          className="button button--secondary"
-          type="button"
           disabled={busy || waiting !== null}
           aria-label={t('data.trash.row.restoreLabel', {
             kind: kind.toLowerCase(),
@@ -163,17 +163,16 @@ export function TrashRow({
           onClick={() => askToRestore(item)}
           data-testid={`restore-${item.name}`}
         >
-          <ActionIcon icon={ArchiveRestore} />
           {restoring === item.id ? t('data.trash.row.restoring') : t('data.trash.row.restore')}
-        </button>
+        </Button>
         {access.permanentlyDelete ? (
-          <button
+          <Button
+            tone="text"
+            className="trash__erase"
             ref={(node) => {
               if (node) eraseButtons.current.set(item.id, node)
               else eraseButtons.current.delete(item.id)
             }}
-            className="button button--text trash__erase"
-            type="button"
             disabled={busy}
             aria-label={t('data.trash.row.eraseLabel', {
               kind: kind.toLowerCase(),
@@ -183,7 +182,7 @@ export function TrashRow({
             data-testid={`erase-${item.name}`}
           >
             {t('data.trash.row.erase')}
-          </button>
+          </Button>
         ) : null}
       </div>
       {confirming?.id === item.id && confirming.kind === item.kind ? (

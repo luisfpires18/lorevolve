@@ -11,6 +11,7 @@ import {
 import { usage } from '../../ruleValidation/termUsage'
 import type { useTermManagerState } from '../../ruleValidation/useTermManagerState'
 import type { termManagerActions } from '../../ruleValidation/termManagerActions'
+import { Button } from '../Button'
 
 /** One kind's terms, each with its use, Rename and Delete, and the rename row in its place. */
 export function TermGroup({
@@ -78,22 +79,16 @@ export function TermGroup({
                           aria-describedby={control['aria-describedby']}
                           data-testid={`rename-term-input-${term.name}`}
                         />
-                        <button
-                          className="button"
-                          type="button"
+                        <Button
                           disabled={busyId === term.id}
                           onClick={() => void saveRename()}
                           data-testid={`save-term-${term.name}`}
                         >
                           {t('canon.terms.saveName')}
-                        </button>
-                        <button
-                          className="button button--secondary button--sm"
-                          type="button"
-                          onClick={() => setRenaming(null)}
-                        >
+                        </Button>
+                        <Button tone="secondary" size="sm" onClick={() => setRenaming(null)}>
                           {t('canon.terms.cancel')}
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
@@ -107,27 +102,27 @@ export function TermGroup({
                   </span>
                   <span className="types__count">{usage(term)}</span>
                   {access.editContent ? (
-                    <button
-                      className="button button--secondary button--sm"
-                      type="button"
+                    <Button
+                      tone="secondary"
+                      size="sm"
                       aria-label={t('canon.terms.renameAria', { name: term.name })}
                       onClick={() => setRenaming({ id: term.id, text: term.name, error: null })}
                       data-testid={`rename-term-${term.name}`}
                     >
                       {t('canon.terms.rename')}
-                    </button>
+                    </Button>
                   ) : null}
                   {access.editContent && term.ruleCount === 0 && term.momentCount === 0 ? (
-                    <button
-                      className="button button--secondary button--sm"
-                      type="button"
+                    <Button
+                      tone="secondary"
+                      size="sm"
                       aria-label={t('canon.terms.deleteAria', { name: term.name })}
                       disabled={busyId === term.id}
                       onClick={() => void remove(term)}
                       data-testid={`delete-term-${term.name}`}
                     >
                       {t('canon.terms.deleteButton')}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </li>

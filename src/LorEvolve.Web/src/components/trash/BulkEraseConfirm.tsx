@@ -1,6 +1,7 @@
 import { t, useI18n } from '../../i18n'
 import { TRASH_KIND_KEYS, TRASH_KIND_LABELS, type TrashItem } from '../../trash/types'
 import { eraseText, keyOf } from '../../trash/trashText'
+import { Button } from '../Button'
 
 /**
  * The one question before a selection is erased for good: how many, which ones by kind and name, what goes with each kind
@@ -77,24 +78,22 @@ export function BulkEraseConfirm({
         </p>
       ) : null}
       <div className="form__actions">
-        <button
-          className="button button--danger"
-          type="button"
+        <Button
+          tone="danger"
           aria-disabled={busy || undefined}
           onClick={onErase}
           data-testid="trash-bulk-delete-confirm"
         >
           {busy ? t('data.trash.bulk.deleting') : t('data.trash.bulk.delete')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           aria-disabled={busy || undefined}
           onClick={onCancel}
           data-testid="trash-bulk-cancel"
         >
           {t('data.trash.bulk.cancel')}
-        </button>
+        </Button>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import { RelationshipPeriodsField, type EraChoice } from '../RelationshipPeriods
 import type { Chronology } from '../../chronology/types'
 import type { RelationDraft } from '../../relationships/relationDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
+import { Button } from '../Button'
 
 export function RelationFormPeriods({
   chronology,
@@ -52,14 +53,14 @@ export function RelationFormPeriods({
         >
           {(control) => (
             <div {...control}>
-              <button
-                type="button"
-                className="button button--secondary button--sm"
+              <Button
+                tone="secondary"
+                size="sm"
                 onClick={() => edit({ legacyStart: null, legacyEnd: null })}
                 data-testid="relation-legacy-clear"
               >
                 {t('relationships.section.legacyClear')}
-              </button>
+              </Button>
             </div>
           )}
         </Field>

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { invitationLink } from '../../universes/collaborators'
 import { Field } from '../Field'
+import { Button } from '../Button'
 
 /**
  * Copies an invitation's link. When the clipboard cannot be written - an older browser, a denied permission, a page not
@@ -38,14 +39,9 @@ export function CopyLink({
 
   return (
     <span className="collab__copy">
-      <button
-        className="button button--secondary"
-        type="button"
-        onClick={() => void copy()}
-        data-testid={testId}
-      >
+      <Button tone="secondary" onClick={() => void copy()} data-testid={testId}>
         {label}
-      </button>
+      </Button>
       <span className="collab__copystatus" role="status" data-testid={`${testId}-status`}>
         {status === 'copied' ? t('universe.collab.copied') : ''}
       </span>

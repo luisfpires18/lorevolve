@@ -8,6 +8,7 @@ import { labelFor, type RelationDraft } from '../../relationships/relationDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
 import { RelationFormFields } from './RelationFormFields'
 import { RelationFormPeriods } from './RelationFormPeriods'
+import { Button } from '../Button'
 
 export function RelationForm({
   draft,
@@ -99,13 +100,7 @@ export function RelationForm({
       </Field>
 
       <div className="relform__actions">
-        <button
-          className="button"
-          type="button"
-          onClick={save}
-          disabled={isSaving}
-          data-testid="save-relationship"
-        >
+        <Button onClick={save} disabled={isSaving} data-testid="save-relationship">
           {isSaving
             ? editingId
               ? t('relationships.section.saving')
@@ -113,16 +108,15 @@ export function RelationForm({
             : editingId
               ? t('relationships.section.save')
               : t('relationships.section.addSubmit')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           onClick={() => {
             void mayDiscard().then((discarding) => discarding && close())
           }}
         >
           {t('relationships.section.cancel')}
-        </button>
+        </Button>
       </div>
     </div>
   )

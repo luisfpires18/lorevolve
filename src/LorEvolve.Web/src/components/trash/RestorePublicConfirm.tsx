@@ -1,6 +1,7 @@
 import { t, tx, useI18n } from '../../i18n'
 import { Quoted } from '../NameList'
 import { TrashKind, TrashPublication, type TrashItem } from '../../trash/types'
+import { Button } from '../Button'
 
 /**
  * The question before a restore that touches the public portal. Trash keeps an entry's or story's public selection, so
@@ -55,30 +56,15 @@ export function RestorePublicConfirm({
             : t('data.trash.publish.textHidden')}
       </p>
       <div className="form__actions">
-        <button
-          className="button"
-          type="button"
-          onClick={onRestore}
-          data-testid="trash-confirm-restore"
-        >
+        <Button onClick={onRestore} data-testid="trash-confirm-restore">
           {visible ? t('data.trash.publish.restoreVisible') : t('data.trash.publish.restoreHidden')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={onRestorePrivate}
-          data-testid="trash-confirm-private"
-        >
+        </Button>
+        <Button tone="secondary" onClick={onRestorePrivate} data-testid="trash-confirm-private">
           {t('data.trash.publish.restorePrivate')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          onClick={onCancel}
-          data-testid="trash-confirm-cancel"
-        >
+        </Button>
+        <Button tone="secondary" onClick={onCancel} data-testid="trash-confirm-cancel">
           {t('data.trash.publish.cancel')}
-        </button>
+        </Button>
       </div>
     </div>
   )

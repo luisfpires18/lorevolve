@@ -10,6 +10,7 @@ import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { CANON_LABELS, CanonStatus, type CanonStatusValue } from '../../lore/types'
+import { Button } from '../Button'
 
 /** The plain values a reviewer may change before approving. Saved over the proposal's revision, then checked again. */
 export function EditChange({
@@ -129,22 +130,12 @@ export function EditChange({
         </p>
       ) : null}
       <div className="form__actions">
-        <button
-          className="button button--sm"
-          type="submit"
-          disabled={saving}
-          data-testid="ai-change-edit-save"
-        >
+        <Button size="sm" type="submit" disabled={saving} data-testid="ai-change-edit-save">
           {saving ? t('review.aiChange.edit.saving') : t('review.aiChange.edit.save')}
-        </button>
-        <button
-          className="button button--secondary button--sm"
-          type="button"
-          onClick={onCancel}
-          disabled={saving}
-        >
+        </Button>
+        <Button tone="secondary" size="sm" onClick={onCancel} disabled={saving}>
           {t('review.aiChange.edit.cancel')}
-        </button>
+        </Button>
       </div>
     </form>
   )

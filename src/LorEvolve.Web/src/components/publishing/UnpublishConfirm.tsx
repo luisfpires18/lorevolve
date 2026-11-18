@@ -1,6 +1,7 @@
 import { useI18n } from '../../i18n'
 import type { PublicationState } from '../../publishing/types'
 import type { usePublishState } from '../../publishing/usePublishState'
+import { Button } from '../Button'
 
 /** The confirm before making the universe private. */
 export function UnpublishConfirm({
@@ -29,23 +30,12 @@ export function UnpublishConfirm({
       </h3>
       <p className="settings__note">{t('universe.publish.unpublish.note')}</p>
       <div className="form__actions">
-        <button
-          className="button"
-          type="button"
-          disabled={busy}
-          onClick={() => void unpublish()}
-          data-testid="confirm-unpublish"
-        >
+        <Button disabled={busy} onClick={() => void unpublish()} data-testid="confirm-unpublish">
           {busy ? t('universe.publish.unpublish.working') : t('universe.publish.unpublish.confirm')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          disabled={busy}
-          onClick={() => setConfirming(null)}
-        >
+        </Button>
+        <Button tone="secondary" disabled={busy} onClick={() => setConfirming(null)}>
           {t('universe.publish.unpublish.keep')}
-        </button>
+        </Button>
       </div>
     </div>
   )
