@@ -12,7 +12,6 @@
   "components/RelationshipSection.tsx": 773,
   "components/RelationshipTypeManager.tsx": 568,
   "components/RestoreBackup.tsx": 556,
-  "components/ReviewComments.tsx": 509,
   "i18n/en/admin.ts": 357,
   "i18n/en/canon.ts": 628,
   "i18n/en/entity.ts": 445,
