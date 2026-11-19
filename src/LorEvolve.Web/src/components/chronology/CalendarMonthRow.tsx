@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
 import { usageOf, type MonthDraft } from '../../chronology/monthDrafts'
 import { IconButton } from '../IconButton'
+import { MoveItems } from '../MoveItems'
 
 /** One month of a custom calendar: name, short name, days, Earlier, Later, Remove and the use line. */
 export function CalendarMonthRow({
@@ -97,21 +98,14 @@ export function CalendarMonthRow({
       </div>
 
       <div className="month__tools">
-        <IconButton
-          icon={ArrowUp}
-          label={t('time.calendar.moveEarlier', { name })}
-          title={t('time.calendar.earlier')}
-          onClick={() => move(index, -1)}
-          aria-disabled={first ? true : undefined}
-          data-testid="month-earlier"
-        />
-        <IconButton
-          icon={ArrowDown}
-          label={t('time.calendar.moveLater', { name })}
-          title={t('time.calendar.later')}
-          onClick={() => move(index, 1)}
-          aria-disabled={last ? true : undefined}
-          data-testid="month-later"
+        <MoveItems
+          look="icon"
+          wording="earlier-later"
+          name={name}
+          first={first}
+          last={last}
+          testIds={{ up: 'month-earlier', down: 'month-later' }}
+          onMove={(step) => move(index, step)}
         />
         <IconButton
           icon={X}

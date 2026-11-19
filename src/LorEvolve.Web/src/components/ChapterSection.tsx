@@ -1,9 +1,10 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { ArrowRightLeft, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
 import { OutlineItem } from './OutlineItem'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
@@ -114,28 +115,12 @@ export function ChapterSection({
                 <ActionIcon icon={Pencil} />
                 {t('stories.chapter.edit')}
               </button>
-              {index > 0 ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onMove(chapter, -1)}
-                  data-testid="chapter-move-up"
-                >
-                  <ActionIcon icon={ArrowUp} />
-                  {t('stories.chapter.moveUp')}
-                </button>
-              ) : null}
-              {index < count - 1 ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onMove(chapter, 1)}
-                  data-testid="chapter-move-down"
-                >
-                  <ActionIcon icon={ArrowDown} />
-                  {t('stories.chapter.moveDown')}
-                </button>
-              ) : null}
+              <MoveItems
+                first={index === 0}
+                last={index === count - 1}
+                testIds={{ up: 'chapter-move-up', down: 'chapter-move-down' }}
+                onMove={(step) => onMove(chapter, step)}
+              />
               {onMoveToArc
                 ? arcTargets.map((target) => (
                     <button

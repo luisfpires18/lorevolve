@@ -1,8 +1,7 @@
-import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
-import { IconButton } from '../IconButton'
+import { MoveItems } from '../MoveItems'
 
 /** The sections drawer's fields, under the group each is in: its section and its place in that group. */
 export function SectionFieldPlacer({
@@ -56,23 +55,13 @@ export function SectionFieldPlacer({
                   ))}
                 </select>
                 <span className="sectionlist__actions">
-                  <IconButton
-                    icon={ArrowUp}
-                    label={t('entityTypes.sections.moveFieldUp', { name: field.name })}
-                    title={t('entityTypes.sections.moveFieldUpTitle')}
-                    onClick={() => shift(field.id, -1)}
-                    disabled={index === 0}
-                    data-testid={`field-up-${field.name}`}
-                  />
-                  <IconButton
-                    icon={ArrowDown}
-                    label={t('entityTypes.sections.moveFieldDown', {
-                      name: field.name,
-                    })}
-                    title={t('entityTypes.sections.moveFieldDownTitle')}
-                    onClick={() => shift(field.id, 1)}
-                    disabled={index === group.fields.length - 1}
-                    data-testid={`field-down-${field.name}`}
+                  <MoveItems
+                    look="icon"
+                    name={field.name}
+                    first={index === 0}
+                    last={index === group.fields.length - 1}
+                    testIds={{ up: `field-up-${field.name}`, down: `field-down-${field.name}` }}
+                    onMove={(step) => shift(field.id, step)}
                   />
                 </span>
               </li>

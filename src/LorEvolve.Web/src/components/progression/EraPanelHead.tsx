@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { useI18n } from '../../i18n'
 import type { EntityDetail } from '../../lore/types'
 import type { Era } from '../../progression/types'
@@ -66,26 +67,15 @@ export function EraPanelHead({
             label={t('progression.era.moreActions', { name: era.name })}
             triggerTestId="era-actions"
           >
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy || isFirst}
-              onClick={() => onMove(-1)}
-              data-testid="era-earlier"
-            >
-              <ActionIcon icon={ArrowUp} />
-              {t('progression.era.moveEarlier')}
-            </button>
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy || isLast}
-              onClick={() => onMove(1)}
-              data-testid="era-later"
-            >
-              <ActionIcon icon={ArrowDown} />
-              {t('progression.era.moveLater')}
-            </button>
+            <MoveItems
+              first={isFirst}
+              last={isLast}
+              busy={busy}
+              wording="earlier-later"
+              edge="disable"
+              testIds={{ up: 'era-earlier', down: 'era-later' }}
+              onMove={onMove}
+            />
             <hr className="actionmenu__divider" />
             <button
               className="actionmenu__item actionmenu__item--danger"

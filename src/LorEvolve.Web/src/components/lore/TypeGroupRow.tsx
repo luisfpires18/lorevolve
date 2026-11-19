@@ -1,8 +1,8 @@
-import { ArrowDown, ArrowUp } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { EntityTypeGroup } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
+import { MoveItems } from '../MoveItems'
 import { FormActions } from '../FormActions'
 
 /** One group on the groups tab: its rename form or its row with the moves, rename and delete, and its problem. */
@@ -99,28 +99,18 @@ export function TypeGroupRow({
           </span>
           {canEdit ? (
             <span className="typegroups__actions">
-              <Button
-                tone="text"
-                size="sm"
-                className="typegroups__move"
-                disabled={busy || index === 0}
-                onClick={() => void move(index, -1)}
-                aria-label={t('entityTypes.groupsPanel.moveUp', { name: group.name })}
-                data-testid={`type-group-up-${group.name}`}
-              >
-                <ArrowUp aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              </Button>
-              <Button
-                tone="text"
-                size="sm"
-                className="typegroups__move"
-                disabled={busy || index === groups.length - 1}
-                onClick={() => void move(index, 1)}
-                aria-label={t('entityTypes.groupsPanel.moveDown', { name: group.name })}
-                data-testid={`type-group-down-${group.name}`}
-              >
-                <ArrowDown aria-hidden="true" focusable="false" strokeWidth={1.75} />
-              </Button>
+              <MoveItems
+                look="icon"
+                name={group.name}
+                first={index === 0}
+                last={index === groups.length - 1}
+                busy={busy}
+                testIds={{
+                  up: `type-group-up-${group.name}`,
+                  down: `type-group-down-${group.name}`,
+                }}
+                onMove={(step) => void move(index, step)}
+              />
               <Button
                 tone="text"
                 size="sm"

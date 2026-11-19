@@ -205,19 +205,20 @@ a.button--danger:visited {
 }
 
 @media (hover: hover) {
-  .iconbutton:hover:not(:disabled) {
+  .iconbutton:hover:not(:disabled):not([aria-disabled='true']) {
     background: var(--hover-wash);
     color: var(--ink);
   }
 }
 
-.iconbutton:active:not(:disabled),
+.iconbutton:active:not(:disabled):not([aria-disabled='true']),
 .iconbutton[aria-expanded='true'] {
   background: var(--press-wash);
   color: var(--ink);
 }
 
-.iconbutton:disabled {
+.iconbutton:disabled,
+.iconbutton[aria-disabled='true'] {
   opacity: 0.45;
   cursor: not-allowed;
 }

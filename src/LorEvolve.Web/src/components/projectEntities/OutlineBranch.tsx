@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { OutlineItem } from '../OutlineItem'
 import {
   addableLevels,
@@ -14,7 +15,7 @@ import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { OutlineAddButtons } from './OutlineAddButtons'
 import { Button } from '../Button'
-import { ArrowDown, ArrowUp, FolderInput, Trash } from 'lucide-react'
+import { FolderInput, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 
 type OutlineBranchProps = {
@@ -69,34 +70,18 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                   label={t('projects.common.more', { name: nameOf(node) })}
                   triggerTestId={`project-node-actions-${node.id}`}
                 >
-                  {index === 0 ? null : (
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-node-up-${node.id}`}
-                      onClick={() =>
-                        run(moveNode(projectId, node.id, { place: index - 1, parentId }))
-                      }
-                    >
-                      <ActionIcon icon={ArrowUp} />
-                      {t('projects.common.moveUp')}
-                    </button>
-                  )}
-                  {index === nodes.length - 1 ? null : (
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      disabled={busy}
-                      data-testid={`project-node-down-${node.id}`}
-                      onClick={() =>
-                        run(moveNode(projectId, node.id, { place: index + 1, parentId }))
-                      }
-                    >
-                      <ActionIcon icon={ArrowDown} />
-                      {t('projects.common.moveDown')}
-                    </button>
-                  )}
+                  <MoveItems
+                    first={index === 0}
+                    last={index === nodes.length - 1}
+                    busy={busy}
+                    testIds={{
+                      up: `project-node-up-${node.id}`,
+                      down: `project-node-down-${node.id}`,
+                    }}
+                    onMove={(step) =>
+                      run(moveNode(projectId, node.id, { place: index + step, parentId }))
+                    }
+                  />
                   {moveTargets(current, node).map((target) => (
                     <button
                       key={target?.id ?? 'root'}

@@ -1,9 +1,9 @@
-import { ArrowDown, ArrowUp } from 'lucide-react'
 import { Field } from '../Field'
 import { usageOf, type EraDraft } from '../../chronology/eraDrafts'
 import { t, useI18n } from '../../i18n'
 import { ChronologyEraStyle } from './ChronologyEraStyle'
 import { Button } from '../Button'
+import { MoveItems } from '../MoveItems'
 import { QuietNote } from '../QuietNote'
 
 /** One date period: its name and label, direction and position, and the foot with Earlier, Later and Remove. */
@@ -88,28 +88,15 @@ export function ChronologyEraRow({
             {usage ?? (era.id ? t('time.periods.nothingDated') : t('time.periods.notSaved'))}
           </QuietNote>
           <div className="era__tools">
-            <Button
-              tone="secondary"
-              size="sm"
-              icon={ArrowUp}
-              onClick={() => move(index, -1)}
-              aria-disabled={first ? true : undefined}
-              aria-label={t('time.periods.moveEarlier', { name })}
-              data-testid="era-earlier"
-            >
-              {t('time.periods.earlier')}
-            </Button>
-            <Button
-              tone="secondary"
-              size="sm"
-              icon={ArrowDown}
-              onClick={() => move(index, 1)}
-              aria-disabled={last ? true : undefined}
-              aria-label={t('time.periods.moveLater', { name })}
-              data-testid="era-later"
-            >
-              {t('time.periods.later')}
-            </Button>
+            <MoveItems
+              look="labelled"
+              wording="earlier-later"
+              name={name}
+              first={first}
+              last={last}
+              testIds={{ up: 'era-earlier', down: 'era-later' }}
+              onMove={(step) => move(index, step)}
+            />
             <Button
               tone="danger-quiet"
               size="sm"

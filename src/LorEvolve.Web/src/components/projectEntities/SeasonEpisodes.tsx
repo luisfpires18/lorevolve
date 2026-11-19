@@ -1,12 +1,13 @@
 import { deleteEpisode, moveEpisode, type ProjectSeason } from '../../projectEntities/seasons'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { ChapterPages } from '../ChapterPages'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { ScriptEditor } from './ScriptEditor'
 import { Button } from '../Button'
-import { ArrowDown, ArrowUp, FolderInput, Trash } from 'lucide-react'
+import { FolderInput, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 
 /** A season's episodes, each with its menu, and with its pages or its script when opened. */
@@ -70,34 +71,18 @@ export function SeasonEpisodes({
               label={t('projects.common.more', { name: episode.title })}
               triggerTestId={`project-episode-actions-${episode.id}`}
             >
-              {place === 0 ? null : (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  disabled={busy}
-                  data-testid={`project-episode-up-${episode.id}`}
-                  onClick={() =>
-                    run(moveEpisode(projectId, season.id, episode.id, { place: place - 1 }))
-                  }
-                >
-                  <ActionIcon icon={ArrowUp} />
-                  {t('projects.common.moveUp')}
-                </button>
-              )}
-              {place === season.episodes.length - 1 ? null : (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  disabled={busy}
-                  data-testid={`project-episode-down-${episode.id}`}
-                  onClick={() =>
-                    run(moveEpisode(projectId, season.id, episode.id, { place: place + 1 }))
-                  }
-                >
-                  <ActionIcon icon={ArrowDown} />
-                  {t('projects.common.moveDown')}
-                </button>
-              )}
+              <MoveItems
+                first={place === 0}
+                last={place === season.episodes.length - 1}
+                busy={busy}
+                testIds={{
+                  up: `project-episode-up-${episode.id}`,
+                  down: `project-episode-down-${episode.id}`,
+                }}
+                onMove={(step) =>
+                  run(moveEpisode(projectId, season.id, episode.id, { place: place + step }))
+                }
+              />
               {/* Moving between seasons needs no drag: the other seasons are a short list of items. */}
               {seasons
                 .filter((other) => other.id !== season.id)

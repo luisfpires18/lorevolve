@@ -54,11 +54,11 @@ export function SagaSection({
             triggerTestId={`saga-actions-${saga.id}`}
           >
             <MoveItems
-              index={sagaIndex}
-              count={data.sagas.length}
+              first={sagaIndex === 0}
+              last={sagaIndex === data.sagas.length - 1}
               busy={busy}
-              testId={`saga-${saga.id}`}
-              onMove={(place) => run(() => moveSaga(universeId, saga.id, place))}
+              testIds={{ up: `saga-${saga.id}-up`, down: `saga-${saga.id}-down` }}
+              onMove={(step) => run(() => moveSaga(universeId, saga.id, sagaIndex + step))}
             />
             <button
               className="actionmenu__item"
@@ -112,11 +112,13 @@ export function SagaSection({
                   triggerTestId={`phase-actions-${phase.id}`}
                 >
                   <MoveItems
-                    index={phaseIndex}
-                    count={saga.phases.length}
+                    first={phaseIndex === 0}
+                    last={phaseIndex === saga.phases.length - 1}
                     busy={busy}
-                    testId={`phase-${phase.id}`}
-                    onMove={(place) => run(() => movePhase(universeId, saga.id, phase.id, place))}
+                    testIds={{ up: `phase-${phase.id}-up`, down: `phase-${phase.id}-down` }}
+                    onMove={(step) =>
+                      run(() => movePhase(universeId, saga.id, phase.id, phaseIndex + step))
+                    }
                   />
                   <button
                     className="actionmenu__item"
@@ -163,13 +165,22 @@ export function SagaSection({
                           triggerTestId={`member-actions-${member.projectId}`}
                         >
                           <MoveItems
-                            index={memberIndex}
-                            count={phase.members.length}
+                            first={memberIndex === 0}
+                            last={memberIndex === phase.members.length - 1}
                             busy={busy}
-                            testId={`member-${member.projectId}`}
-                            onMove={(place) =>
+                            testIds={{
+                              up: `member-${member.projectId}-up`,
+                              down: `member-${member.projectId}-down`,
+                            }}
+                            onMove={(step) =>
                               run(() =>
-                                moveMember(universeId, saga.id, phase.id, member.projectId, place),
+                                moveMember(
+                                  universeId,
+                                  saga.id,
+                                  phase.id,
+                                  member.projectId,
+                                  memberIndex + step,
+                                ),
                               )
                             }
                           />

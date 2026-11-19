@@ -201,11 +201,6 @@
   gap: 2px;
 }
 
-.types__movebutton[aria-disabled='true'] {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
 /* A phone: a smaller step that stops after four levels, and a row's tools always on a line of their own, so a deep row
    wraps the same way a top-level one does instead of scattering its buttons. */
 /* A phone: the rows go edge to edge again, no panel round them, so a row's tools keep their one line. */

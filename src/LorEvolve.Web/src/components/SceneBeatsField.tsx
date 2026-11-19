@@ -1,9 +1,10 @@
 import { useRef } from 'react'
-import { ArrowDown, ArrowUp, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { beatKey, type BeatDraft } from '../stories/beats'
 import { IconButton } from './IconButton'
+import { MoveItems } from './MoveItems'
 import { NewButton } from './NewButton'
 
 interface SceneBeatsFieldProps {
@@ -99,21 +100,13 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                   {noteError ? <p className="field__error">{noteError}</p> : null}
                 </div>
                 <div className="scenebeats__tools">
-                  <IconButton
-                    icon={ArrowUp}
-                    label={t('stories.beats.moveUp', { n: index + 1 })}
-                    title={t('stories.beats.earlier')}
-                    onClick={() => move(index, -1)}
-                    aria-disabled={index === 0 ? true : undefined}
-                    data-testid="scene-beat-up"
-                  />
-                  <IconButton
-                    icon={ArrowDown}
-                    label={t('stories.beats.moveDown', { n: index + 1 })}
-                    title={t('stories.beats.later')}
-                    onClick={() => move(index, 1)}
-                    aria-disabled={index === beats.length - 1 ? true : undefined}
-                    data-testid="scene-beat-down"
+                  <MoveItems
+                    look="icon"
+                    name={t('stories.beats.named', { n: index + 1 })}
+                    first={index === 0}
+                    last={index === beats.length - 1}
+                    testIds={{ up: 'scene-beat-up', down: 'scene-beat-down' }}
+                    onMove={(step) => move(index, step)}
                   />
                   <IconButton
                     icon={X}

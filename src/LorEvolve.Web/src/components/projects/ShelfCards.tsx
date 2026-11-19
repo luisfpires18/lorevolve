@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, Image as ImageIcon } from 'lucide-react'
+import { Image as ImageIcon } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { ShelfCard, shelfStep, type ShelfFrame } from '../ShelfCard'
 import { pictureUrl, projectCoverStore } from '../../covers/api'
 import { t } from '../../i18n'
@@ -79,28 +80,12 @@ export function ShelfCards({
                     project.cover ? 'projects.common.changePicture' : 'projects.common.addPicture',
                   )}
                 </button>
-                {neighbour(state.value, index, -1) >= 0 ? (
-                  <button
-                    className="actionmenu__item"
-                    type="button"
-                    onClick={() => void move(project, -1)}
-                    data-testid="shelf-move-up"
-                  >
-                    <ActionIcon icon={ArrowUp} />
-                    {t('projects.common.moveUp')}
-                  </button>
-                ) : null}
-                {neighbour(state.value, index, 1) >= 0 ? (
-                  <button
-                    className="actionmenu__item"
-                    type="button"
-                    onClick={() => void move(project, 1)}
-                    data-testid="shelf-move-down"
-                  >
-                    <ActionIcon icon={ArrowDown} />
-                    {t('projects.common.moveDown')}
-                  </button>
-                ) : null}
+                <MoveItems
+                  first={neighbour(state.value, index, -1) < 0}
+                  last={neighbour(state.value, index, 1) < 0}
+                  testIds={{ up: 'shelf-move-up', down: 'shelf-move-down' }}
+                  onMove={(step) => void move(project, step)}
+                />
               </ActionMenu>
             ) : null
           }

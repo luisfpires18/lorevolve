@@ -1,8 +1,9 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { ImageViewer } from '../ImageViewer'
 import { appearanceImageUrl } from '../../progression/api'
 import type { Appearance, AppearanceImage } from '../../progression/types'
@@ -80,28 +81,13 @@ export function AppearanceItem({
               <ActionIcon icon={Pencil} />
               {t('progression.appearanceList.edit')}
             </button>
-            {canMoveEarlier ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                disabled={locked}
-                onClick={() => onMove(-1)}
-              >
-                <ActionIcon icon={ArrowUp} />
-                {t('progression.appearanceList.moveEarlier')}
-              </button>
-            ) : null}
-            {canMoveLater ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                disabled={locked}
-                onClick={() => onMove(1)}
-              >
-                <ActionIcon icon={ArrowDown} />
-                {t('progression.appearanceList.moveLater')}
-              </button>
-            ) : null}
+            <MoveItems
+              first={!canMoveEarlier}
+              last={!canMoveLater}
+              busy={locked}
+              wording="earlier-later"
+              onMove={onMove}
+            />
             <button
               className="actionmenu__item actionmenu__item--danger"
               type="button"

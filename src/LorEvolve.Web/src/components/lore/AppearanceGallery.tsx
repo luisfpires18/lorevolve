@@ -1,6 +1,7 @@
-import { ArrowLeft, ArrowRight, ImagePlus, Trash } from 'lucide-react'
+import { ImagePlus, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { IMAGE_ACCEPT } from '../../lib/imageCrop'
 import { appearanceDisplayUrl } from '../../progression/api'
 import type { Appearance, AppearanceImage } from '../../progression/types'
@@ -75,28 +76,14 @@ export function AppearanceGallery({
                     label={t('progression.appearanceList.pictureActions', { name })}
                     triggerTestId={`picture-actions-${index + 1}`}
                   >
-                    {index > 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        disabled={locked}
-                        onClick={() => void move(image, -1)}
-                      >
-                        <ActionIcon icon={ArrowLeft} />
-                        {t('progression.appearanceList.moveEarlier')}
-                      </button>
-                    ) : null}
-                    {index < appearance.images.length - 1 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        disabled={locked}
-                        onClick={() => void move(image, 1)}
-                      >
-                        <ActionIcon icon={ArrowRight} />
-                        {t('progression.appearanceList.moveLater')}
-                      </button>
-                    ) : null}
+                    <MoveItems
+                      first={index === 0}
+                      last={index === appearance.images.length - 1}
+                      busy={locked}
+                      wording="earlier-later"
+                      axis="horizontal"
+                      onMove={(step) => void move(image, step)}
+                    />
                     <button
                       className="actionmenu__item actionmenu__item--danger"
                       type="button"
