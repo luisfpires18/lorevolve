@@ -85,7 +85,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("An entry's pictures", ["entities/image", "entities/appearances"], ["list_lore_images", "get_lore_image"], ["Media"]),
         Excepted("An entry's image field pictures", ["entities/field-images"], Why.MediaBytes),
         Excepted("An entry's history", ["entities/revisions"], Why.LiveOnly),
-        Excepted("An entry's private note", ["entities/private-note"], Why.PersonOnly),
+        new("An entry's private note", ["entities/private-note"], [], Why.PersonOnly, ["add_private_note"], ""),
         ReadOnly("An entry's map pins", ["entities/map-pins"], ["get_map_location"]),
         ReadOnly("Tags", ["tags"], ["get_lore_entry"]),
         Mapped("Lore types and their fields", ["entity-types"], ["get_change_options"], ["LoreType", "LoreField"]),
@@ -193,7 +193,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
     /// <summary>
     /// The names a proposal may name. A write cell holds one of these, or the name of a tool that writes the domain
-    /// itself - today only <c>submit_semantic_finding</c>, which stages a claim rather than a change.
+    /// itself - <c>submit_semantic_finding</c>, which stages a claim rather than a change, and <c>add_private_note</c>.
     /// </summary>
     private static readonly HashSet<string> Resources = [.. Enum.GetNames<AiChangeResource>()];
 
@@ -235,7 +235,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
         Nothing("Tools the server offers that the matrix does not map", [.. offered.Except(mapped).Order(StringComparer.Ordinal)]);
         Nothing("Names the matrix maps that the server does not offer", [.. mapped.Except(offered).Order(StringComparer.Ordinal)]);
-        Assert.Equal(36, offered.Count);
+        Assert.Equal(37, offered.Count);
     }
 
     [Fact]
