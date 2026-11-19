@@ -27,11 +27,8 @@
   margin: 0;
 }
 
-.family__setupheading {
+.family__setupbody .sectiontitle {
   margin: 0 0 0.35rem;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--muted);
 }
 
 .family__grouplist {

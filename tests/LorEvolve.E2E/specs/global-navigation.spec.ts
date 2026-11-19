@@ -247,6 +247,22 @@ test.describe('A universe: up is All universes, inside its navigation', () => {
     await nav.getByRole('link', { name: 'Settings' }).click()
     await expect(page).toHaveTitle(`Settings | ${w.name} | LorEvolve`)
 
+    // The shell owns the title, so a screen that loads data keeps the section and the universe (#412).
+    await page.goto(`/app/universes/${w.id}/writing`)
+    await expect(page).toHaveTitle(`Writing | ${w.name} | LorEvolve`)
+    const game = await api<{ id: string }>(page, 'POST', '/api/projects', {
+      name: 'Ember Road',
+      kind: 1,
+      lifecycle: 0,
+      subtype: null,
+      format: null,
+      summary: '',
+      universeId: w.id,
+      expectedVersion: null,
+    })
+    await page.goto(`/app/universes/${w.id}/game-entities/${game.id}`)
+    await expect(page).toHaveTitle(`Ember Road | Projects | ${w.name} | LorEvolve`)
+
     await nav.getByRole('link', { name: 'All universes' }).click()
     await expect(page).toHaveURL('/app')
     await expect(page).toHaveTitle('Universes | LorEvolve')

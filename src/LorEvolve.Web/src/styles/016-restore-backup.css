@@ -1,19 +1,5 @@
 /* ---------- Restore a backup ---------- */
 
-/* The universes header holds two actions now: making a world and restoring one. They wrap
-   under the title together rather than one being pushed off a narrow screen. */
-.home__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-/* A button starts itself at the top of its row; here the primary and the quiet one share a centre line. */
-.home__actions .button {
-  align-self: center;
-}
-
 /* The composer's shape, and a measure: a preview is read, not scanned across a wide display. */
 .restore {
   max-width: 44rem;

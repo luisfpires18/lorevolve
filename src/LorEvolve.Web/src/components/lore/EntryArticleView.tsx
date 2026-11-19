@@ -10,6 +10,7 @@ import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { Chronology } from '../../chronology/types'
 import type { SectionGroup } from '../../lore/fieldSections'
+import { SectionTitle } from '../Section'
 
 /** The Article view beside the picture: the article itself, and the rail of facts, pictures, tags, maps and dates. */
 export function EntryArticleView({
@@ -96,7 +97,7 @@ export function EntryArticleView({
                   key={picture.fieldId}
                   data-testid={`entry-field-image-${picture.fieldId}`}
                 >
-                  <figcaption className="rail__heading">{name}</figcaption>
+                  <figcaption className="sectiontitle sectiontitle--label">{name}</figcaption>
                   <img src={fieldImageUrl(universe.id, detail!.id, picture, 'crop')} alt={name} />
                 </figure>
               )
@@ -106,7 +107,9 @@ export function EntryArticleView({
 
         {(detail?.tags.length ?? 0) > 0 ? (
           <div className="rail__block">
-            <h2 className="rail__heading">{t('entity.page.rail.tags')}</h2>
+            <SectionTitle level={2} tone="label">
+              {t('entity.page.rail.tags')}
+            </SectionTitle>
             <p className="dossier__tags" data-testid="entry-tags">
               {detail!.tags.map((tag) => (
                 <span className="chip" key={tag}>

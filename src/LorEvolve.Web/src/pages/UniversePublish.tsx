@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
+import { Section } from '../components/Section'
 import { PublicDetailsForm } from '../components/PublicDetailsForm'
 import { UniverseArtworkField } from '../components/UniverseArtworkField'
 import { useI18n } from '../i18n'
@@ -98,7 +99,11 @@ export default function UniversePublish() {
           unpublish={unpublish}
         />
 
-        <Section id="publish-details" title={t('universe.publish.detailsSection')}>
+        <Section
+          id="publish-details"
+          titleId="publish-details-heading"
+          title={t('universe.publish.detailsSection')}
+        >
           <PublicDetailsForm
             universeId={universeId}
             state={state}
@@ -107,7 +112,11 @@ export default function UniversePublish() {
           />
         </Section>
 
-        <Section id="publish-artwork" title={t('universe.publish.artworkSection')}>
+        <Section
+          id="publish-artwork"
+          titleId="publish-artwork-heading"
+          title={t('universe.publish.artworkSection')}
+        >
           <UniverseArtworkField
             universeId={universeId}
             artwork={state.artwork}
@@ -119,11 +128,19 @@ export default function UniversePublish() {
           />
         </Section>
 
-        <Section id="publish-author" title={t('universe.publish.authorSection')}>
+        <Section
+          id="publish-author"
+          titleId="publish-author-heading"
+          title={t('universe.publish.authorSection')}
+        >
           <PublishAuthor state={state} />
         </Section>
 
-        <Section id="publish-content" title={t('universe.publish.contentSection')}>
+        <Section
+          id="publish-content"
+          titleId="publish-content-heading"
+          title={t('universe.publish.contentSection')}
+        >
           <PublishContent
             {...page}
             universeId={universeId}
@@ -134,16 +151,5 @@ export default function UniversePublish() {
         </Section>
       </div>
     </article>
-  )
-}
-
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
-  return (
-    <section className="publish__section" aria-labelledby={`${id}-heading`} id={id}>
-      <h2 className="publish__heading" id={`${id}-heading`}>
-        {title}
-      </h2>
-      {children}
-    </section>
   )
 }

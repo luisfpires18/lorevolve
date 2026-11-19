@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 import type { Proposal } from '../../aiChanges/types'
 import { countWords, sourceWords, STATUS_WORDS } from '../../aiChanges/words'
+import { Crumb } from '../Crumb'
 import { PageHeader } from '../PageHeader'
 import { useI18n } from '../../i18n'
 import { formatDateTime } from '../../lib/dates'
@@ -21,10 +20,10 @@ export function AiChangeHeader({
   return (
     <PageHeader
       crumb={
-        <Link className="aichange__back" to={backTo} data-testid="ai-change-back">
-          <ArrowLeft aria-hidden="true" focusable="false" strokeWidth={1.75} />
-          {t('review.aiChange.back')}
-        </Link>
+        <Crumb
+          back
+          items={[{ to: backTo, label: t('review.aiChange.back'), testId: 'ai-change-back' }]}
+        />
       }
       title={
         <span dir="auto">

@@ -238,17 +238,3 @@
 .typemenu__item[aria-current='true'] {
   font-weight: 600;
 }
-
-/* The chosen type's path above its name: Lore, then each ancestor, every one a way back up. */
-.lore__path {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-1);
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.lore__pathsep {
-  color: var(--muted);
-}

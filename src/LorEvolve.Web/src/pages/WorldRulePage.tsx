@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { WorldRuleEditor } from '../components/WorldRuleEditor'
 import { t, useI18n } from '../i18n'
 import { formatDate } from '../lib/dates'
@@ -11,6 +11,7 @@ import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { EmptyState } from '../components/EmptyState'
+import { DocumentHead } from '../components/DocumentHead'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -86,14 +87,11 @@ function WorldRuleReading({
 
   return (
     <article className="rule" data-testid="world-rule-reading">
-      <header className="rule__head">
-        <Link className="rule__back" to={listPath} data-testid="world-rule-back">
-          {t('canon.rule.back')}
-        </Link>
-        <h1 className="rule__heading" data-testid="world-rule-heading">
-          {state.kind === 'ready' ? <bdi>{state.value.title}</bdi> : t('canon.rule.heading')}
-        </h1>
-      </header>
+      <DocumentHead
+        back={{ to: listPath, label: t('canon.rule.back'), testId: 'world-rule-back' }}
+        title={state.kind === 'ready' ? <bdi>{state.value.title}</bdi> : t('canon.rule.heading')}
+        titleTestId="world-rule-heading"
+      />
       {state.kind === 'loading' ? <LoadingNote>{t('canon.rule.opening')}</LoadingNote> : null}
       {state.kind === 'missing' ? (
         <EmptyState title={t('canon.rule.missing')} testId="world-rule-missing" />

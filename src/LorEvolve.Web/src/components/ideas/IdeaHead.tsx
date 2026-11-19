@@ -7,7 +7,7 @@ import { Quoted } from '../NameList'
 import type { Stored } from '../../ideas/ideaDraft'
 import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
-import { QuietNote } from '../QuietNote'
+import { DocumentHead } from '../DocumentHead'
 
 /** An idea editor's head: the way back, the heading with its actions menu, the lede, and where the idea belongs. */
 export function IdeaHead({
@@ -36,15 +36,13 @@ export function IdeaHead({
     !isNew && contextUniverse !== null && stored.universeId !== contextUniverse.id
 
   return (
-    <header className="idea__head">
-      <Link className="idea__back" to={listPath} data-testid="idea-back">
-        {listLabel}
-      </Link>
-      <div className="doc__titlerow">
-        <h1 className="idea__heading" id={headingId} data-testid="idea-heading">
-          {isNew ? t('ideas.editor.newIdea') : <bdi>{stored.title}</bdi>}
-        </h1>
-        {!isNew ? (
+    <DocumentHead
+      back={{ to: listPath, label: listLabel, testId: 'idea-back' }}
+      title={isNew ? t('ideas.editor.newIdea') : <bdi>{stored.title}</bdi>}
+      titleId={headingId}
+      titleTestId="idea-heading"
+      actions={
+        !isNew ? (
           <ActionMenu
             label={t('ideas.editor.moreActions', { title: stored.title })}
             triggerTestId="idea-actions"
@@ -60,19 +58,22 @@ export function IdeaHead({
               {t('ideas.editor.deleteIdea')}
             </button>
           </ActionMenu>
-        ) : null}
-      </div>
-      <QuietNote className="idea__lede">
-        {t('ideas.editor.lede')}
-        {!isNew && stored.updatedAt ? (
-          <>
-            {' '}
-            {tx('ideas.editor.lastSaved', {
-              time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
-            })}
-          </>
-        ) : null}
-      </QuietNote>
+        ) : null
+      }
+      lede={
+        <>
+          {t('ideas.editor.lede')}
+          {!isNew && stored.updatedAt ? (
+            <>
+              {' '}
+              {tx('ideas.editor.lastSaved', {
+                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+              })}
+            </>
+          ) : null}
+        </>
+      }
+    >
       {belongsElsewhere ? (
         <p className="idea__elsewhere" data-testid="idea-elsewhere">
           {stored.universe
@@ -88,6 +89,6 @@ export function IdeaHead({
           ) : null}
         </p>
       ) : null}
-    </header>
+    </DocumentHead>
   )
 }

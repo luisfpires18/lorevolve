@@ -5,6 +5,7 @@ import type { RelationshipView } from '../../relationships/types'
 import { useI18n } from '../../i18n'
 import type { FamilyTreeNode } from '../../familyTree/types'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
+import { SectionTitle } from '../Section'
 
 export function FamilyOtherRelations({
   universe,
@@ -25,9 +26,7 @@ export function FamilyOtherRelations({
       aria-labelledby={`${headingId}-others`}
       data-testid="family-other-relationships"
     >
-      <h2 className="settings__heading" id={`${headingId}-others`}>
-        {t('places.familyPage.othersHeading')}
-      </h2>
+      <SectionTitle id={`${headingId}-others`}>{t('places.familyPage.othersHeading')}</SectionTitle>
       <p className="settings__note">
         {tx('places.familyPage.othersNote', {
           name: <bdi>{focal.name}</bdi>,

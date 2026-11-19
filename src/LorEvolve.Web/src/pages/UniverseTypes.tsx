@@ -149,6 +149,7 @@ export default function UniverseTypes() {
       {gaming ? (
         <ProjectSchema
           key={game.id}
+          head="actions"
           projectId={game.id}
           reloadKey={0}
           universeId={universe.id}

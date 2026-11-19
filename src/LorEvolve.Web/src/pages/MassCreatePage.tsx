@@ -1,5 +1,6 @@
 import { useId, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Crumb } from '../components/Crumb'
 import { PageHeader } from '../components/PageHeader'
 import { useI18n } from '../i18n'
 import { typeChoices } from '../lore/typeTree'
@@ -77,9 +78,9 @@ export default function MassCreatePage() {
     <article className="masscreate">
       <PageHeader
         crumb={
-          <Link to={backTo} data-testid="mass-create-back">
-            {t('lore.massCreate.crumb')}
-          </Link>
+          <Crumb
+            items={[{ to: backTo, label: t('lore.massCreate.crumb'), testId: 'mass-create-back' }]}
+          />
         }
         title={t('lore.massCreate.title')}
         titleTestId="mass-create-title"

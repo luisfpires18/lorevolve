@@ -10,7 +10,6 @@ import { listAllProjects } from '../projects/api'
 import { storyProjectPath } from '../projects/sections'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { listStories, reorderStories } from '../stories/api'
 import type { StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
@@ -41,7 +40,6 @@ export default function StoriesPage() {
   const { universe } = useOutletContext<WorkspaceContext>()
   const navigate = useNavigate()
   const heading = sectionLabel(WRITING_PROJECTS)
-  useDocumentTitle(heading)
   const read = useCallback(
     (signal: AbortSignal) => {
       // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.

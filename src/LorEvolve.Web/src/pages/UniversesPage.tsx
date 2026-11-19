@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore } from 'lucide-react'
+import { PageHeader } from '../components/PageHeader'
 import { SearchField } from '../components/SearchField'
 import { Pager } from '../components/Pager'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
@@ -77,32 +78,32 @@ export default function UniversesPage() {
 
   return (
     <>
-      <div className="home__heading">
-        <div>
-          <h1 className="home__title">{t('universe.list.title')}</h1>
-          <p className="home__lede">{t('universe.list.lede')}</p>
-        </div>
-        <div className="home__actions">
-          <NewButton
-            onClick={() => {
-              setRestoring(false)
-              setIsCreating(true)
-            }}
-            data-testid="new-universe"
-          >
-            {t('universe.list.new')}
-          </NewButton>
-          <Button
-            tone="secondary"
-            icon={ArchiveRestore}
-            aria-expanded={isRestoring}
-            onClick={() => setRestoring(true)}
-            data-testid="restore-backup"
-          >
-            {t('universe.list.restore')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={t('universe.list.title')}
+        lede={t('universe.list.lede')}
+        actions={
+          <>
+            <NewButton
+              onClick={() => {
+                setRestoring(false)
+                setIsCreating(true)
+              }}
+              data-testid="new-universe"
+            >
+              {t('universe.list.new')}
+            </NewButton>
+            <Button
+              tone="secondary"
+              icon={ArchiveRestore}
+              aria-expanded={isRestoring}
+              onClick={() => setRestoring(true)}
+              data-testid="restore-backup"
+            >
+              {t('universe.list.restore')}
+            </Button>
+          </>
+        }
+      />
 
       {isRestoring ? (
         <RestoreBackup

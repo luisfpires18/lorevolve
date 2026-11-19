@@ -8,6 +8,7 @@ import type { FamiliesReturn } from '../FamilyDiscovery'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
+import { SectionTitle } from '../Section'
 
 export function DiscoveryFamilies({
   universeId,
@@ -33,9 +34,9 @@ export function DiscoveryFamilies({
   return (
     <section className="discovery__families" aria-labelledby={headingId}>
       <div className="discovery__head">
-        <h2 className="settings__heading" id={headingId} ref={headingRef} tabIndex={-1}>
+        <SectionTitle id={headingId} ref={headingRef} tabIndex={-1}>
           {t('places.discovery.heading')}
-        </h2>
+        </SectionTitle>
         {result ? (
           <QuietNote className="discovery__count" wrap testId="family-count" role="status">
             {result.totalCount === 0

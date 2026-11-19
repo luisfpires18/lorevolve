@@ -8,7 +8,7 @@
   max-width: 46rem;
 }
 
-.settings--tabbed .settings__section {
+.settings--tabbed .section {
   max-width: none;
 }
 
@@ -74,7 +74,7 @@
   border-radius: var(--radius-sm);
 }
 
-.tabs__panel > .settings__section:first-child {
+.tabs__panel > .section:first-child {
   border-top: 0;
   padding-top: 0;
 }
@@ -83,23 +83,6 @@
   .tabs__tab {
     min-height: var(--control-touch);
   }
-}
-
-/* Publish: sections spaced and ruled like Settings', headed at the section size, status first. */
-.publish__section {
-  padding: var(--space-7) 0;
-  border-top: 1px solid var(--rule);
-}
-
-.publish__section:first-of-type {
-  padding-top: 0;
-  border-top: 0;
-}
-
-.publish__heading {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-body);
-  font-weight: 600;
 }
 
 .publish__content {
@@ -140,12 +123,6 @@
   font-size: var(--text-ui);
 }
 
-.settings__heading {
-  font-size: var(--text-body);
-  font-weight: 600;
-  margin: 0 0 var(--space-3);
-}
-
 .settings__note {
   margin: 0 0 var(--space-4);
   color: var(--muted);
@@ -159,10 +136,26 @@
   color: var(--accent);
 }
 
+/* `Section`: a titled block of a screen - Settings, Publish, Profile, Chronology, Admin. Ruled (the default): a hairline
+   above it and room around it, none above the first. Bare: only a margin above (Admin). Narrow: the measure a form reads at. */
+.section--ruled {
+  padding: var(--space-7) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.section--ruled:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.section--narrow {
+  max-width: 34rem;
+}
+
 /* The one place in Settings where something cannot be taken back: its own ruled panel, set apart from
    ordinary configuration by a hairline in the danger ink and a faint wash - restrained, never an alarm. The
    first step is a quiet button in the danger ink; only the confirmation's last step is filled. */
-.settings__section--danger {
+.section--danger {
   margin-top: var(--space-5);
   padding: var(--space-5);
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--rule));
@@ -170,8 +163,44 @@
   background: color-mix(in srgb, var(--danger) 4%, var(--surface));
 }
 
-.settings__section--danger .settings__heading {
+.section--danger .sectiontitle {
   color: var(--danger);
+}
+
+.section--bare {
+  margin-top: var(--space-7);
+}
+
+/* Chronology's blocks sit in the page's own flow: no room above them. The Calendar keeps its own rule and room (030). */
+.section.chronology:not(.calendar) {
+  margin-top: 0;
+}
+
+/* The heading of a block: the body size, set heavier. `--label` is the small muted label over a list. */
+.sectiontitle {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sectiontitle:focus {
+  outline: none;
+}
+
+.sectiontitle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.sectiontitle--label {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.sectiontitle--xs {
+  font-size: var(--text-xs);
 }
 
 /* Attribution (ADR 0039): one checkbox, and the creator and work under it only when it is ticked. */
@@ -225,7 +254,7 @@
   outline-offset: 2px;
 }
 
-.settings__section--danger .settings__confirm {
+.section--danger .settings__confirm {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--rule));
 }
 

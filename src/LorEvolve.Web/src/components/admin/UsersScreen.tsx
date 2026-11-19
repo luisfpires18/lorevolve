@@ -9,7 +9,7 @@ import { useI18n } from '../../i18n'
 import { ROLE_KEYS } from '../../admin/adminConstants'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { LoadError } from '../LoadError'
-import { Heading } from './Heading'
+import { PageHeader } from '../PageHeader'
 import { SignUpLink } from './SignUpLink'
 import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
@@ -38,7 +38,7 @@ export function UsersScreen() {
 
   return (
     <>
-      <Heading title={t('admin.users.title')} lede={t('admin.users.lede')} />
+      <PageHeader title={t('admin.users.title')} lede={t('admin.users.lede')} />
 
       <SignUpLink />
 

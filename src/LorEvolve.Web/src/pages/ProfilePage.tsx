@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
 import { ConnectedApps } from '../components/ConnectedApps'
 import { ProfileAvatar } from '../components/ProfileAvatar'
+import { PageHeader } from '../components/PageHeader'
+import { Section } from '../components/Section'
 import { PublicAuthorSection } from '../components/PublicAuthorSection'
 import { PublicNameForm } from '../components/PublicNameForm'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
@@ -59,7 +61,7 @@ export default function ProfilePage() {
 
   return (
     <article className="profile" data-testid="profile">
-      <h1 className="profile__title">{t('account.profile.title')}</h1>
+      <PageHeader title={t('account.profile.title')} />
 
       <ProfileAvatar name={user.username} />
 
@@ -93,37 +95,29 @@ export default function ProfilePage() {
           )}
         </dl>
 
-        <section className="profile__public" aria-labelledby="profile-public-heading">
-          <h2 className="profile__subtitle" id="profile-public-heading">
-            {t('account.profile.publishing')}
-          </h2>
+        <Section title={t('account.profile.publishing')} titleId="profile-public-heading">
           <PublicNameForm />
           <PublicAuthorSection />
-        </section>
+        </Section>
 
-        <section className="profile__public" aria-labelledby="profile-appearance-heading">
-          <h2 className="profile__subtitle" id="profile-appearance-heading">
-            {t('account.profile.appearance')}
-          </h2>
+        <Section title={t('account.profile.appearance')} titleId="profile-appearance-heading">
           <p className="settings__note">{t('account.profile.themeNote')}</p>
           <ThemeSwitch />
           <LanguageSwitch />
-        </section>
+        </Section>
 
         <p className="profile__note">{t('account.profile.note')}</p>
       </TabPanel>
 
       <TabPanel idPrefix="profile" id="usage" tab={tab}>
-        <section
-          className="profile__public usage"
-          aria-labelledby="profile-usage-heading"
-          data-testid="profile-usage"
+        <Section
+          title={t('account.profile.usageHeading')}
+          titleId="profile-usage-heading"
+          className="usage"
+          testId="profile-usage"
         >
-          <h2 className="profile__subtitle" id="profile-usage-heading">
-            {t('account.profile.usageHeading')}
-          </h2>
           <StorageUsage />
-        </section>
+        </Section>
       </TabPanel>
 
       <TabPanel idPrefix="profile" id="connected-apps" tab={tab}>

@@ -142,29 +142,3 @@
      a universe's do at every width. */
   padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) 4rem;
 }
-
-.home__heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-5) var(--space-6);
-  flex-wrap: wrap;
-  padding-top: clamp(0rem, 3vw, var(--space-7));
-}
-
-.home__title {
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: var(--text-document);
-  line-height: 1.05;
-  letter-spacing: var(--title-tracking);
-  margin: 0;
-}
-
-.home__lede {
-  margin: var(--space-3) 0 0;
-  max-width: 52ch;
-  color: var(--muted);
-  font-size: 1.0625rem;
-  line-height: 1.55;
-}

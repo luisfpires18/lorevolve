@@ -23,7 +23,7 @@
   flex-wrap: wrap;
 }
 
-.progression__head .sectiontitle {
+.progression__title {
   margin: 0;
   font-family: var(--display);
   font-weight: 400;

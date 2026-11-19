@@ -110,10 +110,6 @@
   margin-bottom: 0;
 }
 
-.story__crumbs a {
-  color: var(--muted);
-}
-
 /* The views as the project's chips (#377) and the story's one menu at the end of the same line. On a 360px phone the
    chips wrap, two lines at worst. */
 .story__bar {

@@ -13,6 +13,7 @@ import { LoadError } from './LoadError'
 import { Announce } from './Announce'
 import { LoadingNote } from './LoadingNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { Section } from './Section'
 
 /**
  * Settings → Collaborators (ADR 0041 amendment): invite someone by email, and manage who works here. The owner's alone -
@@ -51,10 +52,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
     <div className="collab" data-testid="collaborators-panel">
       <Announce testId="collaborators-announcer">{announcement}</Announce>
 
-      <section className="settings__section" aria-labelledby="collab-invite-heading">
-        <h2 className="settings__heading" id="collab-invite-heading">
-          {t('universe.collab.inviteHeading')}
-        </h2>
+      <Section title={t('universe.collab.inviteHeading')} titleId="collab-invite-heading" narrow>
         <p className="settings__note">{t('universe.collab.inviteNote')}</p>
         <InviteForm
           universeId={universeId}
@@ -86,7 +84,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
             />
           </div>
         ) : null}
-      </section>
+      </Section>
 
       {state.kind === 'loading' ? <LoadingNote>{t('universe.collab.loading')}</LoadingNote> : null}
 

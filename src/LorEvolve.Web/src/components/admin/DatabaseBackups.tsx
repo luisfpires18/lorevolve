@@ -7,6 +7,7 @@ import { LoadError } from '../LoadError'
 import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
 import { errorText } from '../../lib/errorText'
+import { Section } from '../Section'
 
 /**
  * Database backups (#54): the age of the last backup that was uploaded and read back, the last attempt and its error, and
@@ -38,10 +39,12 @@ export function DatabaseBackups() {
   }
 
   return (
-    <section className="adminsection" aria-labelledby="admin-backups" data-testid="admin-backups">
-      <h2 className="settings__heading" id="admin-backups">
-        {t('admin.backups.heading')}
-      </h2>
+    <Section
+      title={t('admin.backups.heading')}
+      titleId="admin-backups"
+      testId="admin-backups"
+      rule={false}
+    >
       {state.kind === 'loading' ? <LoadingNote>{t('admin.backups.reading')}</LoadingNote> : null}
       {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' ? <BackupFacts status={state.value} /> : null}
@@ -60,6 +63,6 @@ export function DatabaseBackups() {
           {message}
         </p>
       ) : null}
-    </section>
+    </Section>
   )
 }

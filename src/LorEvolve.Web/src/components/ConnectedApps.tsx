@@ -12,6 +12,7 @@ import {
 } from '../mcp/api'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { Section } from './Section'
 import { Announce } from './Announce'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
@@ -62,20 +63,14 @@ export function ConnectedApps() {
   }
 
   return (
-    <section
-      className="profile__public connectedapps"
+    <Section
+      className="connectedapps"
       id="connected-apps"
-      aria-labelledby="profile-connected-heading"
-      data-testid="connected-apps"
+      title={t('data.connectedApps.title')}
+      titleId="profile-connected-heading"
+      titleProps={{ ref: headingRef, tabIndex: -1 }}
+      testId="connected-apps"
     >
-      <h2
-        className="profile__subtitle"
-        id="profile-connected-heading"
-        ref={headingRef}
-        tabIndex={-1}
-      >
-        {t('data.connectedApps.title')}
-      </h2>
       <p className="settings__note">{t('data.connectedApps.note')}</p>
 
       {load.kind === 'loading' ? (
@@ -102,7 +97,7 @@ export function ConnectedApps() {
       )}
 
       <Announce testId="connected-apps-announcer">{announcement}</Announce>
-    </section>
+    </Section>
   )
 }
 

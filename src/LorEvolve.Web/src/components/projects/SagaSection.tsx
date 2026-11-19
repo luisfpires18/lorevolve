@@ -16,6 +16,7 @@ import { Production } from './Production'
 import type { Editing } from './GroupDrawer'
 import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
+import { PageHeader } from '../PageHeader'
 
 /** One saga: its head and menu, and its phases with their productions. */
 export function SagaSection({
@@ -41,59 +42,59 @@ export function SagaSection({
 
   return (
     <section className="projects" data-testid={`saga-${saga.id}`}>
-      <header className="projects__head">
-        <div className="projects__headtext">
-          <h2 className="sectionrule">
-            <bdi>{saga.name}</bdi>
-          </h2>
-          {saga.summary ? <p className="projects__lede">{saga.summary}</p> : null}
-        </div>
-        <ActionMenu
-          label={t('projects.common.more', { name: saga.name })}
-          triggerTestId={`saga-actions-${saga.id}`}
-        >
-          <MoveItems
-            index={sagaIndex}
-            count={data.sagas.length}
-            busy={busy}
-            testId={`saga-${saga.id}`}
-            onMove={(place) => run(() => moveSaga(universeId, saga.id, place))}
-          />
-          <button
-            className="actionmenu__item"
-            type="button"
-            data-testid={`saga-phase-new-${saga.id}`}
-            onClick={() => setEditing({ saga, phase: null, forPhase: true })}
+      <PageHeader
+        level={2}
+        size="panel"
+        title={<bdi>{saga.name}</bdi>}
+        lede={saga.summary || undefined}
+        actions={
+          <ActionMenu
+            label={t('projects.common.more', { name: saga.name })}
+            triggerTestId={`saga-actions-${saga.id}`}
           >
-            <ActionIcon icon={Plus} />
-            {t('projects.sagas.newPhase')}
-          </button>
-          <button
-            className="actionmenu__item"
-            type="button"
-            data-testid={`saga-edit-${saga.id}`}
-            onClick={() => setEditing({ saga, phase: null, forPhase: false })}
-          >
-            <ActionIcon icon={Pencil} />
-            {t('projects.sagas.editSaga')}
-          </button>
-          <button
-            className="actionmenu__item actionmenu__item--danger"
-            type="button"
-            data-testid={`saga-delete-${saga.id}`}
-            onClick={() =>
-              confirmDelete(
-                t('projects.sagas.deleteSagaTitle', { name: saga.name }),
-                t('projects.sagas.deleteSaga'),
-                () => deleteSaga(universeId, saga.id),
-              )
-            }
-          >
-            <ActionIcon icon={Trash} />
-            {t('projects.sagas.deleteSaga')}
-          </button>
-        </ActionMenu>
-      </header>
+            <MoveItems
+              index={sagaIndex}
+              count={data.sagas.length}
+              busy={busy}
+              testId={`saga-${saga.id}`}
+              onMove={(place) => run(() => moveSaga(universeId, saga.id, place))}
+            />
+            <button
+              className="actionmenu__item"
+              type="button"
+              data-testid={`saga-phase-new-${saga.id}`}
+              onClick={() => setEditing({ saga, phase: null, forPhase: true })}
+            >
+              <ActionIcon icon={Plus} />
+              {t('projects.sagas.newPhase')}
+            </button>
+            <button
+              className="actionmenu__item"
+              type="button"
+              data-testid={`saga-edit-${saga.id}`}
+              onClick={() => setEditing({ saga, phase: null, forPhase: false })}
+            >
+              <ActionIcon icon={Pencil} />
+              {t('projects.sagas.editSaga')}
+            </button>
+            <button
+              className="actionmenu__item actionmenu__item--danger"
+              type="button"
+              data-testid={`saga-delete-${saga.id}`}
+              onClick={() =>
+                confirmDelete(
+                  t('projects.sagas.deleteSagaTitle', { name: saga.name }),
+                  t('projects.sagas.deleteSaga'),
+                  () => deleteSaga(universeId, saga.id),
+                )
+              }
+            >
+              <ActionIcon icon={Trash} />
+              {t('projects.sagas.deleteSaga')}
+            </button>
+          </ActionMenu>
+        }
+      />
 
       {saga.phases.length === 0 ? (
         <p className="projectcard__meta">{t('projects.sagas.noPhases')}</p>

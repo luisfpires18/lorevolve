@@ -4,6 +4,7 @@ import { ApiError } from '../lib/api'
 import { setEntityTypeGroupFamilyTree } from '../lore/typesApi'
 import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { useI18n } from '../i18n'
+import { SectionTitle } from './Section'
 
 interface Props {
   universeId: string
@@ -70,9 +71,9 @@ export function FamilyTreeTypes({
         <p className="settings__note">{t('places.familyTypes.intro')}</p>
 
         <section aria-labelledby={`${headingId}-types`}>
-          <h3 className="family__setupheading" id={`${headingId}-types`}>
+          <SectionTitle level={3} tone="label" size="xs" id={`${headingId}-types`}>
             {t('places.familyTypes.oneByOne')}
-          </h3>
+          </SectionTitle>
           <p data-testid="family-setup-types">
             {ownTypes.length > 0 ? ownTypes.join(', ') : t('places.familyTypes.none')}{' '}
             <span className="settings__note">
@@ -84,9 +85,9 @@ export function FamilyTreeTypes({
         </section>
 
         <section aria-labelledby={`${headingId}-groups`}>
-          <h3 className="family__setupheading" id={`${headingId}-groups`}>
+          <SectionTitle level={3} tone="label" size="xs" id={`${headingId}-groups`}>
             {t('places.familyTypes.groups')}
-          </h3>
+          </SectionTitle>
           {groups.length === 0 ? (
             <p className="settings__note">
               {tx('places.familyTypes.noGroups', {

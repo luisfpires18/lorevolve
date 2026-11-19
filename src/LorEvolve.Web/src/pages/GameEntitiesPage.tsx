@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
+import { Crumb } from '../components/Crumb'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
 import { useGameProject } from '../projects/useGameProject'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useTitleDetail } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
-import { GAME_ENTITIES, sectionLabel } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { LoadingNote } from '../components/LoadingNote'
 import { LoadError } from '../components/LoadError'
@@ -24,13 +24,13 @@ export default function GameEntitiesPage() {
   const [schemaVersion, setSchemaVersion] = useState(0)
   // Only a game of this universe counts: a foreign project's name must not reach the tab title either.
   const { loading, failed, retry, game: project } = useGameProject(projectId, universeId)
-  useDocumentTitle(project?.name ?? sectionLabel(GAME_ENTITIES))
+  useTitleDetail(project?.name ?? null)
 
-  const back = (
-    <Link to={`/app/universes/${universeId}/game-entities`} data-testid="game-entities-back">
-      {t('projects.gameEntities.back')}
-    </Link>
-  )
+  const back = {
+    to: `/app/universes/${universeId}/game-entities`,
+    label: t('projects.gameEntities.back'),
+    testId: 'game-entities-back',
+  }
 
   if (loading) return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
 
@@ -45,7 +45,11 @@ export default function GameEntitiesPage() {
       <EmptyState
         title={t('projects.gameEntities.notFound')}
         hint={t('projects.gameEntities.notFoundHint')}
-        action={back}
+        action={
+          <Link to={back.to} data-testid={back.testId}>
+            {back.label}
+          </Link>
+        }
         testId="game-entities-missing"
       />
     )
@@ -54,7 +58,7 @@ export default function GameEntitiesPage() {
   return (
     <section className="projects" data-testid="game-entities-page">
       <PageHeader
-        crumb={back}
+        crumb={<Crumb items={[back]} />}
         title={<bdi>{project.name}</bdi>}
         titleTestId="game-entities-title"
         lede={t('projects.gameEntities.lede')}

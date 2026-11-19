@@ -7,6 +7,7 @@ import { termManagerActions } from '../ruleValidation/termManagerActions'
 import { TermGroup } from './ruleValidation/TermGroup'
 import { NewTermForm } from './ruleValidation/NewTermForm'
 import { LoadingNote } from './LoadingNote'
+import { SectionTitle } from './Section'
 
 /**
  * The universe's event kinds and methods on the Types screen (ADR 0034): renamed here, deleted here once nothing names them, and
@@ -40,9 +41,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
   return (
     <section className="reltypes terms" aria-labelledby={headingId} data-testid="validation-terms">
       <div className="relations__head">
-        <h2 className="settings__heading" id={headingId}>
-          {t('canon.terms.heading')}
-        </h2>
+        <SectionTitle id={headingId}>{t('canon.terms.heading')}</SectionTitle>
       </div>
 
       <p className="settings__note">{t('canon.terms.note')}</p>

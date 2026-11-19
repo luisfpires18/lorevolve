@@ -66,7 +66,6 @@ const storiesPage: Dictionary['stories']['page'] = {
   newScene: 'Nova cena',
   newChapter: 'Novo capítulo',
   newArc: 'Novo arco',
-  breadcrumb: 'Caminho',
   crumb: 'Histórias',
   timeline: 'Ver na linha do tempo',
   views: 'Vistas da história',

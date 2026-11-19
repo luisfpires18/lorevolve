@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
 import { t } from '../../i18n'
 import { VIEWS } from '../../projects/shelfViews'
+import { ViewLinks } from '../ViewLinks'
 
 export function ShelfViewNav({
   views,
@@ -12,27 +12,23 @@ export function ShelfViewNav({
   showView: boolean
 }) {
   return (
-    <nav
-      className="views"
-      aria-label={t(`projects.${views.words}.viewsLabel`)}
-      data-testid={`${views.testId}-views`}
-    >
-      <Link
-        className="views__link"
-        to="?"
-        aria-current={showView ? undefined : 'page'}
-        data-testid={`${views.testId}-view-projects`}
-      >
-        {t(`projects.${views.words}.projectsView`)}
-      </Link>
-      <Link
-        className="views__link"
-        to={`?view=${view}`}
-        aria-current={showView ? 'page' : undefined}
-        data-testid={views.secondTestId}
-      >
-        {t(`projects.${views.words}.${views.second}` as 'projects.sagas.sagasView')}
-      </Link>
-    </nav>
+    <ViewLinks
+      label={t(`projects.${views.words}.viewsLabel`)}
+      testId={`${views.testId}-views`}
+      items={[
+        {
+          to: '?',
+          label: t(`projects.${views.words}.projectsView`),
+          current: !showView,
+          testId: `${views.testId}-view-projects`,
+        },
+        {
+          to: `?view=${view}`,
+          label: t(`projects.${views.words}.${views.second}` as 'projects.sagas.sagasView'),
+          current: showView,
+          testId: views.secondTestId,
+        },
+      ]}
+    />
   )
 }

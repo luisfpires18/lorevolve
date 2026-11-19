@@ -14,7 +14,7 @@ export function ProgressionHead({
   const { t } = useI18n()
   return (
     <div className="progression__head">
-      <h2 className="sectiontitle" id="progression-heading">
+      <h2 className="progression__title" id="progression-heading">
         {t('progression.view.title')}
       </h2>
       {access.editContent ? (

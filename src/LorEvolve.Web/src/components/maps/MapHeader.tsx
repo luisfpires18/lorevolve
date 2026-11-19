@@ -1,5 +1,5 @@
 import { ImageUp, Pencil, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Crumb } from '../Crumb'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import type { Fraction } from '../MapCalibration'
@@ -40,7 +40,7 @@ export function MapHeader({
       title={<bdi>{map.name}</bdi>}
       titleId={headingId}
       titleTestId="map-name"
-      crumb={<Link to={mapsPath(universe.id)}>{t('places.mapPage.crumb')}</Link>}
+      crumb={<Crumb items={[{ to: mapsPath(universe.id), label: t('places.mapPage.crumb') }]} />}
       lede={map.description ? <span dir="auto">{map.description}</span> : undefined}
       actions={
         canEdit ? (

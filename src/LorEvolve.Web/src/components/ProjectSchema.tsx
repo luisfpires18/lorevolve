@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CrumbItem } from './Crumb'
 import { applyProjectTemplate, createProjectType, saveProjectType } from '../projectEntities/api'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
@@ -26,7 +26,7 @@ export function ProjectSchema({
   crumb,
   universeId,
   canEdit = false,
-  asPage = false,
+  head = 'panel',
   projectName,
 }: {
   projectId: string
@@ -38,12 +38,15 @@ export function ProjectSchema({
   reloadKey: number
   /** Called after any write, so the entries panel beside this one re-reads the types it offers. */
   onChanged?: () => void
-  /** A project's own Types view (a Game): headed as the universe's Types page is, with its title and New type. */
-  asPage?: boolean
+  /**
+   * `page`: a project's own Types view (a Game), headed as the universe's Types page is. `panel` (the default): the
+   * panel's own name, lede and buttons. `actions`: only the buttons, under a title that already names the screen.
+   */
+  head?: 'page' | 'panel' | 'actions'
   /** The project the page is for, named in the lede as the universe Types page's Gaming view names its game. */
   projectName?: string
   /** The way back to the type cards, above the panel's name, when the panel is a screen of its own. */
-  crumb?: ReactNode
+  crumb?: CrumbItem
   /** When given, the universe's type templates are offered as a second way to make a type (#283). */
   universeId?: string
   /** Whether the reader may edit this universe's content: the template copy is offered only then. */
@@ -84,7 +87,7 @@ export function ProjectSchema({
       <SchemaHead
         crumb={crumb}
         canEdit={canEdit}
-        asPage={asPage}
+        head={head}
         projectName={projectName}
         setEditing={setEditing}
         setChildOf={setChildOf}

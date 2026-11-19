@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import { roleLabel } from '../../universes/access'
 import type { Collaborators } from '../../universes/collaborators'
 import { MemberRow } from './MemberRow'
+import { Section } from '../Section'
 
 /** The people who work here, each with a role to change and a way to remove them. */
 export function CollaboratorMembers({
@@ -18,10 +19,11 @@ export function CollaboratorMembers({
   const { t } = useI18n()
 
   return (
-    <section className="settings__section collab__section" aria-labelledby="collab-people-heading">
-      <h2 className="settings__heading" id="collab-people-heading">
-        {t('universe.collab.people')}
-      </h2>
+    <Section
+      title={t('universe.collab.people')}
+      className="collab__section"
+      titleId="collab-people-heading"
+    >
       {data.members.length === 0 ? (
         <p className="settings__note" data-testid="collaborators-empty">
           {t('universe.collab.peopleEmpty')}
@@ -58,6 +60,6 @@ export function CollaboratorMembers({
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   )
 }

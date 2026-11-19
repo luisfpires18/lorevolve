@@ -5,6 +5,7 @@ import { ApiError } from '../../lib/api'
 import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { Section } from '../Section'
 
 export function BlockSection({
   user,
@@ -24,14 +25,11 @@ export function BlockSection({
 
   if (user.role === 'Admin') {
     return (
-      <section className="adminsection" aria-labelledby="admin-access">
-        <h2 className="settings__heading" id="admin-access">
-          {t('admin.block.access')}
-        </h2>
+      <Section title={t('admin.block.access')} titleId="admin-access" rule={false}>
         <p className="settings__note" data-testid="admin-block-unavailable">
           {t(isSelf ? 'admin.block.unavailableSelf' : 'admin.block.unavailable')}
         </p>
-      </section>
+      </Section>
     )
   }
 
@@ -67,13 +65,12 @@ export function BlockSection({
   }
 
   return (
-    <section
-      className={block ? 'adminsection settings__section--danger' : 'adminsection'}
-      aria-labelledby="admin-access"
+    <Section
+      title={t(block ? 'admin.block.block.heading' : 'admin.block.unblock.heading')}
+      titleId="admin-access"
+      rule={false}
+      tone={block ? 'danger' : 'default'}
     >
-      <h2 className="settings__heading" id="admin-access">
-        {t(block ? 'admin.block.block.heading' : 'admin.block.unblock.heading')}
-      </h2>
       <p className="settings__note">
         {t(block ? 'admin.block.block.note' : 'admin.block.unblock.note')}
       </p>
@@ -111,6 +108,6 @@ export function BlockSection({
           {t(block ? 'admin.block.block.submit' : 'admin.block.unblock.submit')}
         </Button>
       </form>
-    </section>
+    </Section>
   )
 }

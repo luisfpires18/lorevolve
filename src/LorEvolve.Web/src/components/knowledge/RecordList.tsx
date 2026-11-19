@@ -5,6 +5,7 @@ import { ActionMenu } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
 import { describeScene, type KnowledgeIssue, type KnowledgeRecord } from '../../knowledge/api'
 import type { Side } from '../../knowledge/recordDraft'
+import { SectionTitle } from '../Section'
 
 // ---------- The list ----------
 
@@ -71,9 +72,9 @@ export function RecordList({
     <ul className="relations__list knowledge__list" data-testid={testId}>
       {groups.map((group) => (
         <li className="relations__group" key={group.label}>
-          <h4 className="relations__reading">
+          <SectionTitle level={4} tone="label">
             <bdi>{group.label}</bdi>
-          </h4>
+          </SectionTitle>
           <ul className="relations__rows">
             {group.records.map((record) => (
               <li

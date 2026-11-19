@@ -3,6 +3,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { Section } from '../Section'
 
 /** Settings → Advanced: the danger section with its confirm once archived, or the note that deleting needs the archive. */
 export function SettingsDelete({
@@ -29,14 +30,13 @@ export function SettingsDelete({
   const { t, tx } = useI18n()
 
   return universe.isArchived ? (
-    <section
-      className="settings__section settings__section--danger"
-      aria-labelledby="danger-heading"
-      data-testid="danger-section"
+    <Section
+      title={t('universe.settings.deleteHeading')}
+      titleId="danger-heading"
+      testId="danger-section"
+      narrow
+      tone="danger"
     >
-      <h2 className="settings__heading" id="danger-heading">
-        {t('universe.settings.deleteHeading')}
-      </h2>
       <p className="settings__note">
         {isPublic ? t('universe.settings.deleteNotePublic') : t('universe.settings.deleteNote')}
       </p>
@@ -75,7 +75,7 @@ export function SettingsDelete({
           {t('universe.settings.deleteButton')}
         </Button>
       )}
-    </section>
+    </Section>
   ) : (
     <p className="settings__note" data-testid="delete-needs-archive">
       {t('universe.settings.deleteNeedsArchive')}

@@ -7,6 +7,7 @@ import { PageHeader } from '../components/PageHeader'
 import { EraDirection, EraLabelPosition, type Chronology } from '../chronology/types'
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { Section } from '../components/Section'
 
 /**
  * A universe's chronology as a workspace section of its own, beside World Rules: the eras its dates are written and
@@ -51,10 +52,12 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
         title={t('time.chronology.reading.title')}
         lede={<p>{t('time.chronology.reading.lede')}</p>}
       />
-      <section className="chronology" aria-labelledby="chronology-reading-heading">
-        <h2 className="settings__heading" id="chronology-reading-heading">
-          {t('time.chronology.reading.periods')}
-        </h2>
+      <Section
+        title={t('time.chronology.reading.periods')}
+        className="chronology"
+        titleId="chronology-reading-heading"
+        rule={false}
+      >
         {chronology.eras.length === 0 ? (
           <EmptyState testId="chronology-empty" title={t('time.chronology.reading.plain')} />
         ) : (
@@ -86,11 +89,13 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
             })}
           </ol>
         )}
-      </section>
-      <section className="chronology calendar" aria-labelledby="calendar-reading-heading">
-        <h2 className="settings__heading" id="calendar-reading-heading">
-          {t('time.chronology.reading.calendar')}
-        </h2>
+      </Section>
+      <Section
+        title={t('time.chronology.reading.calendar')}
+        className="chronology calendar"
+        titleId="calendar-reading-heading"
+        rule={false}
+      >
         {chronology.calendar ? (
           <ol className="months months--reading" data-testid="months-reading">
             {chronology.calendar.months.map((month, index) => (
@@ -110,7 +115,7 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
             {t('time.chronology.reading.simple')}
           </p>
         )}
-      </section>
+      </Section>
     </>
   )
 }

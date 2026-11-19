@@ -110,13 +110,6 @@
   min-width: 0;
 }
 
-.mapscreen__pinsheading {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--muted);
-}
-
 .mapscreen__count {
   font-weight: 400;
 }

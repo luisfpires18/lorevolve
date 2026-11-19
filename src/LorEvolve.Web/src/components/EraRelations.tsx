@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { listEntityRelationships } from '../relationships/api'
 import { Validity, type RelationshipView } from '../relationships/types'
 import { LoadingNote } from './LoadingNote'
+import { SectionTitle } from './Section'
 
 /**
  * The relations of one entry that hold in one of its eras (Issues #18, #44), as the relationships list reads them for that era:
@@ -56,7 +57,9 @@ export function EraRelations({
 
   return (
     <div className="rail__block" data-testid="era-relations">
-      <h4 className="rail__heading">{t('time.eraRelations.heading')}</h4>
+      <SectionTitle level={4} tone="label">
+        {t('time.eraRelations.heading')}
+      </SectionTitle>
       {holding.length > 0 ? (
         <RelationRows universeId={universeId} views={holding} testId="era-relations-holding" />
       ) : null}

@@ -11,6 +11,9 @@ const shell = {
       reload: 'Reload',
     },
   },
+  crumb: {
+    label: 'Breadcrumb',
+  },
   pager: {
     label: 'Pagination',
     previous: 'Previous',

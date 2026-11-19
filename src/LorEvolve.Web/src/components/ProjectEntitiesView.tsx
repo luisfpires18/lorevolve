@@ -7,6 +7,7 @@ import { buildTypeTree } from '../lore/typeTree'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
+import type { CrumbItem } from './Crumb'
 import { PageHeader } from './PageHeader'
 import { useUniverseAccess } from '../universes/access'
 import { ProjectEntries } from './ProjectEntries'
@@ -55,11 +56,11 @@ export function ProjectEntitiesView({
   // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
   const entryId = params.get('entry')
   // The way back to the cards, said as Lore says it above a type: a quiet crumb over the screen's own name.
-  const back = (
-    <Link to={pathname} data-testid="project-entities-back">
-      {t('projects.entities.title')}
-    </Link>
-  )
+  const back: CrumbItem = {
+    to: pathname,
+    label: t('projects.entities.title'),
+    testId: 'project-entities-back',
+  }
 
   if (managing && typesHref) {
     // The old address keeps whatever else it carried, as every other project address does on its way to its view.
@@ -166,6 +167,7 @@ function TypeCards({
       {typesHref ? (
         // Lore's own page head: the screen's name, one line on what it holds, and New entry by type on the right.
         <PageHeader
+          level={2}
           title={t('projects.entities.title')}
           titleTestId="project-entities-title"
           lede={t('projects.entities.lede')}
@@ -197,19 +199,21 @@ function TypeCards({
           }
         />
       ) : (
-        <header className="projects__head">
-          <div className="projects__headtext">
-            <h2 className="sectionrule">{t('projects.entities.title')}</h2>
-            <p className="projects__lede">{t('projects.entities.lede')}</p>
-          </div>
-          <Button
-            tone="secondary"
-            to={`${pathname}?manage=types`}
-            data-testid="project-types-manage"
-          >
-            {t('projects.entities.manage')}
-          </Button>
-        </header>
+        <PageHeader
+          level={2}
+          size="panel"
+          title={t('projects.entities.title')}
+          lede={t('projects.entities.lede')}
+          actions={
+            <Button
+              tone="secondary"
+              to={`${pathname}?manage=types`}
+              data-testid="project-types-manage"
+            >
+              {t('projects.entities.manage')}
+            </Button>
+          }
+        />
       )}
 
       {failed ? (

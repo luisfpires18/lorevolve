@@ -4,6 +4,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { Section } from '../Section'
 
 /** Settings → Advanced: archive or restore from the archive, with the confirm a public universe asks for. */
 export function SettingsArchive({
@@ -36,12 +37,15 @@ export function SettingsArchive({
   const { t, tx } = useI18n()
 
   return (
-    <section className="settings__section" data-testid="archive-section">
-      <h2 className="settings__heading">
-        {universe.isArchived
+    <Section
+      title={
+        universe.isArchived
           ? t('universe.settings.restoreHeading')
-          : t('universe.settings.archiveHeading')}
-      </h2>
+          : t('universe.settings.archiveHeading')
+      }
+      testId="archive-section"
+      narrow
+    >
       <p className="settings__note">
         {universe.isArchived
           ? t('universe.settings.archivedNote')
@@ -112,6 +116,6 @@ export function SettingsArchive({
             : t('universe.settings.archiveUniverse')}
         </Button>
       )}
-    </section>
+    </Section>
   )
 }

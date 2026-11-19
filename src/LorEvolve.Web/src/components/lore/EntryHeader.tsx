@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import { Crumb } from '../Crumb'
+import { EntryHead } from '../EntryHead'
 import type { PendingFieldImage } from '../FieldImageInput'
 import { NameList } from '../NameList'
 import { TypeIcon } from '../TypeIcon'
@@ -52,18 +54,20 @@ export function EntryHeader({
 }) {
   const { t, tx } = useI18n()
   return (
-    <header className="entry__head">
-      <div className="entry__kind">
-        <nav className="entry__crumbs" aria-label={t('entity.page.head.breadcrumb')}>
-          {/* Lore lists nothing until a type is chosen, so the way back is to this entry's own type. */}
-          <Link
-            to={`/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`}
-          >
-            {t('entity.page.head.lore')}
-          </Link>
-        </nav>
-
-        {isEditing ? (
+    <EntryHead
+      crumb={
+        // Lore lists nothing until a type is chosen, so the way back is to this entry's own type.
+        <Crumb
+          items={[
+            {
+              to: `/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`,
+              label: t('entity.page.head.lore'),
+            },
+          ]}
+        />
+      }
+      type={
+        isEditing ? (
           <select
             className="field__input field__input--select entry__typepick"
             aria-label={t('entity.page.head.typeLabel')}
@@ -95,11 +99,12 @@ export function EntryHeader({
             <TypeIcon iconKey={selectedType?.icon ?? null} className="entry__typeicon" />
             <bdi>{detail?.entityTypeName ?? selectedType?.name}</bdi>
           </Link>
-        )}
-
-        {/* How settled the entry is, changed in one press. A choice, not an action: the chosen step is
-              raised paper with its glyph and word, never a filled block louder than the name. */}
-        {access.editContent || isNew || suggesting ? (
+        )
+      }
+      // How settled the entry is, changed in one press. A choice, not an action: the chosen step is raised paper with its
+      // glyph and word, never a filled block louder than the name.
+      status={
+        access.editContent || isNew || suggesting ? (
           <div className="canon" role="group" aria-label={t('entity.page.head.canonGroup')}>
             {CANON_ORDER.map((option) => (
               <button
@@ -123,33 +128,30 @@ export function EntryHeader({
             label={CANON_LABELS[draft.canonStatus]}
             testId="entry-canon-status"
           />
-        )}
-      </div>
-
-      {isEditing ? (
-        // The screen still has its one heading while the name is a field.
-        <h1 className="visually-hidden">
-          {isNew
-            ? t('entity.page.head.newEntry')
-            : suggesting
-              ? tx('entity.page.head.suggesting', { name: <bdi>{detail?.name}</bdi> })
-              : tx('entity.page.head.editing', { name: <bdi>{detail?.name}</bdi> })}
-        </h1>
-      ) : null}
-      {isEditing ? (
-        <input
-          className="entry__nameinput"
-          aria-label={t('entity.page.head.nameLabel')}
-          placeholder={t('entity.page.head.namePlaceholder')}
-          dir="auto"
-          value={draft.name}
-          onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-        />
-      ) : (
-        <h1 className="entry__name titlerule" data-testid="entry-name">
-          <bdi>{detail?.name}</bdi>
-        </h1>
-      )}
+        )
+      }
+      name={<bdi>{detail?.name}</bdi>}
+      nameTestId="entry-name"
+      hiddenHeading={
+        isNew
+          ? t('entity.page.head.newEntry')
+          : suggesting
+            ? tx('entity.page.head.suggesting', { name: <bdi>{detail?.name}</bdi> })
+            : tx('entity.page.head.editing', { name: <bdi>{detail?.name}</bdi> })
+      }
+      nameField={
+        isEditing ? (
+          <input
+            className="entry__nameinput"
+            aria-label={t('entity.page.head.nameLabel')}
+            placeholder={t('entity.page.head.namePlaceholder')}
+            dir="auto"
+            value={draft.name}
+            onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+          />
+        ) : undefined
+      }
+    >
       {fieldErrors.name ? <p className="field__error">{fieldErrors.name}</p> : null}
 
       {!isEditing && (detail?.aliases.length ?? 0) > 0 ? (
@@ -172,6 +174,6 @@ export function EntryHeader({
           {detail.summary}
         </p>
       ) : null}
-    </header>
+    </EntryHead>
   )
 }

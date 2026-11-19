@@ -5,7 +5,6 @@ import { PageHeader } from '../components/PageHeader'
 import type { ShelfFrame } from '../components/ShelfCard'
 import { projectCoverStore } from '../covers/api'
 import { t, useI18n } from '../i18n'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 import type { ProjectKindValue } from '../projects/types'
 import { useUniverseAccess } from '../universes/access'
 import { sectionLabel, type Section } from '../universes/sections'
@@ -48,7 +47,6 @@ export default function CategoryShelfPage({
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const heading = sectionLabel(section)
-  useDocumentTitle(heading)
   const [params] = useSearchParams()
   const views = view ? VIEWS[view] : null
   const showView = view !== undefined && params.get('view') === view

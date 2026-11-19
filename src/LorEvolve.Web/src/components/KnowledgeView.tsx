@@ -8,6 +8,7 @@ import { RecordList } from './knowledge/RecordList'
 import { RecordForm } from './knowledge/RecordForm'
 import { NewButton } from './NewButton'
 import { LoadError } from './LoadError'
+import { SectionTitle } from './Section'
 
 interface KnowledgeViewProps {
   universeId: string
@@ -134,9 +135,9 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
           />
 
           <div className="relations__head knowledge__abouthead">
-            <h3 className="relations__reading knowledge__abouttitle">
+            <SectionTitle level={3} tone="label" className="knowledge__abouttitle">
               {tx('ai.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
-            </h3>
+            </SectionTitle>
             {access.editContent ? (
               <NewButton
                 tone="secondary"

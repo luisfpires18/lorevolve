@@ -8,6 +8,7 @@ import { ProjectKind, ProjectLifecycle, type ProjectKindValue } from '../../proj
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
+import { PageHeader } from '../PageHeader'
 import { errorText } from '../../lib/errorText'
 
 /** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
@@ -64,18 +65,21 @@ export function NewProject() {
   // universe, it says so and points at the universes rather than offering a form whose save can only be refused.
   if (!universeId) {
     return (
-      <EmptyState
-        title={t('projects.new.needsUniverse')}
-        hint={t('projects.new.needsUniverseHint')}
-        action={<Link to="/app">{t('projects.new.chooseUniverse')}</Link>}
-        testId="project-new-needs-universe"
-      />
+      <section className="projects">
+        <PageHeader title={t('projects.new.title')} />
+        <EmptyState
+          title={t('projects.new.needsUniverse')}
+          hint={t('projects.new.needsUniverseHint')}
+          action={<Link to="/app">{t('projects.new.chooseUniverse')}</Link>}
+          testId="project-new-needs-universe"
+        />
+      </section>
     )
   }
 
   return (
     <section className="projects" data-testid="project-new">
-      <h1>{t('projects.new.title')}</h1>
+      <PageHeader title={t('projects.new.title')} />
 
       <form
         className="form"

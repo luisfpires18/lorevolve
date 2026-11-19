@@ -8,6 +8,7 @@ import type {
 import type { Dispatch, SetStateAction } from 'react'
 import { Production } from './Production'
 import { Button } from '../Button'
+import { PageHeader } from '../PageHeader'
 
 /** The productions that belong to no phase, each with the way to add it to one. */
 export function SagasUnassigned({
@@ -27,12 +28,12 @@ export function SagasUnassigned({
 
   return (
     <section className="projects" data-testid="sagas-unassigned">
-      <header className="projects__head">
-        <div className="projects__headtext">
-          <h2 className="sectionrule">{t('projects.sagas.unassigned')}</h2>
-          <p className="projects__lede">{t('projects.sagas.unassignedHint')}</p>
-        </div>
-      </header>
+      <PageHeader
+        level={2}
+        size="panel"
+        title={t('projects.sagas.unassigned')}
+        lede={t('projects.sagas.unassignedHint')}
+      />
       {data.unassigned.length === 0 ? (
         <p className="projectcard__meta">{t('projects.sagas.noUnassigned')}</p>
       ) : (

@@ -54,7 +54,6 @@ const entityPage = {
     viewTitle: 'View full image',
   },
   head: {
-    breadcrumb: 'Breadcrumb',
     lore: 'Lore',
     typeLabel: 'Entry type',
     canonGroup: 'Canon status',

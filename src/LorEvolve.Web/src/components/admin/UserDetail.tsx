@@ -1,6 +1,7 @@
 import type { AdminUserDetail } from '../../admin/api'
 import { useAuth } from '../../auth/useAuth'
 import { Avatar } from '../Avatar'
+import { PageHeader } from '../PageHeader'
 import { formatBytes } from '../../lib/bytes'
 import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
@@ -9,6 +10,7 @@ import { BlockSection } from './BlockSection'
 import { Fact } from './Fact'
 import { PasswordSection } from './PasswordSection'
 import { QuietNote } from '../QuietNote'
+import { Section } from '../Section'
 
 const HISTORY_KEYS = {
   Block: 'admin.history.blocked',
@@ -30,24 +32,18 @@ export function UserDetail({
 
   return (
     <>
-      <div className="adminprofile">
-        <Avatar image={null} name={user.username} className="adminuser__avatar" />
-        <div>
-          <h1 className="home__title" dir="auto" data-testid="admin-user-title">
-            {user.username}
-          </h1>
-          {user.publicDisplayName ? (
-            <p className="home__lede" dir="auto">
-              {t('admin.user.publicName', { name: user.publicDisplayName })}
-            </p>
-          ) : null}
-        </div>
-      </div>
+      <PageHeader
+        lead={<Avatar image={null} name={user.username} className="adminuser__avatar" />}
+        title={<span dir="auto">{user.username}</span>}
+        titleTestId="admin-user-title"
+        lede={
+          user.publicDisplayName ? (
+            <span dir="auto">{t('admin.user.publicName', { name: user.publicDisplayName })}</span>
+          ) : undefined
+        }
+      />
 
-      <section className="adminsection" aria-labelledby="admin-account">
-        <h2 className="settings__heading" id="admin-account">
-          {t('admin.user.account.heading')}
-        </h2>
+      <Section title={t('admin.user.account.heading')} titleId="admin-account" rule={false}>
         <dl className="facts admindetail" data-testid="admin-user-facts">
           <Fact
             label={t('admin.user.account.id')}
@@ -104,12 +100,9 @@ export function UserDetail({
             testId="admin-user-subscription"
           />
         </dl>
-      </section>
+      </Section>
 
-      <section className="adminsection" aria-labelledby="admin-sign-in">
-        <h2 className="settings__heading" id="admin-sign-in">
-          {t('admin.user.signIn.heading')}
-        </h2>
+      <Section title={t('admin.user.signIn.heading')} titleId="admin-sign-in" rule={false}>
         <dl className="facts admindetail" data-testid="admin-user-sign-in">
           <Fact
             label={t('admin.user.signIn.last')}
@@ -145,16 +138,13 @@ export function UserDetail({
             testId="admin-user-apps-used"
           />
         </dl>
-      </section>
+      </Section>
 
       <BlockSection user={user} isSelf={me?.id === user.id} onChange={onChange} onStale={onStale} />
 
       <PasswordSection user={user} onChange={onChange} onStale={onStale} />
 
-      <section className="adminsection" aria-labelledby="admin-history">
-        <h2 className="settings__heading" id="admin-history">
-          {t('admin.history.heading')}
-        </h2>
+      <Section title={t('admin.history.heading')} titleId="admin-history" rule={false}>
         {user.history.length === 0 ? (
           <p className="settings__note" data-testid="admin-history-empty">
             {t('admin.history.empty')}
@@ -179,7 +169,7 @@ export function UserDetail({
             ))}
           </ol>
         )}
-      </section>
+      </Section>
     </>
   )
 }

@@ -5,6 +5,7 @@ import { t, useI18n } from '../i18n'
 import { AppearanceItem } from './lore/AppearanceItem'
 import { NewButton } from './NewButton'
 import { QuietNote } from './QuietNote'
+import { SectionTitle } from './Section'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -44,9 +45,9 @@ export function AppearanceList({
       data-testid="appearance-list"
     >
       <div className="progression__head">
-        <h3 className="rail__heading" id="appearance-list-heading">
+        <SectionTitle level={3} tone="label" id="appearance-list-heading">
           {t('progression.appearanceList.heading')}
-        </h3>
+        </SectionTitle>
         {access.editContent ? (
           <NewButton
             tone="secondary"

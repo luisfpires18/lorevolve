@@ -3,10 +3,6 @@
    The service's own workspace, in My workspace's frame. Plain ruled cards on raised paper: figures, accounts and an
    account's facts. A figure LorEvolve does not record is set in the muted ink and says so in words. */
 
-.adminsection {
-  margin-top: var(--space-7);
-}
-
 .adminstats {
   list-style: none;
   margin: 0;
@@ -134,8 +130,10 @@
   color: var(--muted);
 }
 
-.adminprofile .adminuser__avatar {
+/* The avatar in an account's head (`PageHeader` `lead`), larger than in the list. */
+.pageheader__main > .adminuser__avatar {
   flex: none;
+  align-self: center;
   width: 4.5rem;
   height: 4.5rem;
   font-size: 1.75rem;
@@ -192,18 +190,6 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-}
-
-.adminprofile {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-  min-width: 0;
-}
-
-.adminprofile .home__title {
-  overflow-wrap: anywhere;
 }
 
 .admindetail {

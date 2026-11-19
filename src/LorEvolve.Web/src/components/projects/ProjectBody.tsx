@@ -67,7 +67,7 @@ export function ProjectBody({
       ) : section.segment === 'types' ? (
         // The type editor, the same `ProjectSchema` Entities used to open behind "Manage types".
         <ProjectSchema
-          asPage
+          head="page"
           projectName={project.name}
           universeId={project.universe.id}
           canEdit={access.editContent}

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { listEntityMapPins, mapPath } from '../maps/api'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { SectionTitle } from './Section'
 
 /**
  * Where an entry is on the maps (issue #52): one link per map it is pinned on, each opening that map on its pin. An entry
@@ -23,7 +24,9 @@ export function LoreOnMaps({ universeId, entityId }: { universeId: string; entit
 
   return (
     <div className="rail__block" data-testid="entry-maps">
-      <h2 className="rail__heading">{t('lore.onMaps.heading')}</h2>
+      <SectionTitle level={2} tone="label">
+        {t('lore.onMaps.heading')}
+      </SectionTitle>
       <ul className="entrymaps" data-testid="entry-maps-list">
         {state.value.map((pin) => (
           <li key={pin.pinId}>

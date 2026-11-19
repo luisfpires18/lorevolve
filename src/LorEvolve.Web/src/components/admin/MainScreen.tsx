@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { DatabaseBackups } from './DatabaseBackups'
 import { LoadError } from '../LoadError'
-import { Heading } from './Heading'
+import { PageHeader } from '../PageHeader'
 import { Overview } from './Overview'
 import { LoadingNote } from '../LoadingNote'
 
@@ -13,7 +13,7 @@ export function MainScreen() {
 
   return (
     <>
-      <Heading title={t('admin.main.title')} lede={t('admin.main.lede')} />
+      <PageHeader title={t('admin.main.title')} lede={t('admin.main.lede')} />
 
       {state.kind === 'loading' ? <LoadingNote>{t('admin.main.counting')}</LoadingNote> : null}
       {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}

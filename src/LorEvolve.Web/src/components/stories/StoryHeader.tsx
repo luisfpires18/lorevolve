@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Crumb } from '../Crumb'
 import { useI18n } from '../../i18n'
 import { ContentPublication } from '../ContentPublication'
 import { PageHeader } from '../PageHeader'
@@ -46,9 +47,9 @@ export function StoryHeader({
   return (
     <PageHeader
       crumb={
-        <nav className="story__crumbs" aria-label={t('stories.page.breadcrumb')}>
-          <Link to={`/app/universes/${universe.id}/writing`}>{t('stories.page.crumb')}</Link>
-        </nav>
+        <Crumb
+          items={[{ to: `/app/universes/${universe.id}/writing`, label: t('stories.page.crumb') }]}
+        />
       }
       title={<bdi>{story.title}</bdi>}
       titleTestId="story-title"
