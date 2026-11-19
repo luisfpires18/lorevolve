@@ -64,7 +64,6 @@ const storiesPage = {
   newScene: 'New scene',
   newChapter: 'New chapter',
   newArc: 'New arc',
-  breadcrumb: 'Breadcrumb',
   crumb: 'Stories',
   timeline: 'View on timeline',
   views: 'Story views',

@@ -56,7 +56,6 @@ const entityPage: Dictionary['entity']['page'] = {
     viewTitle: 'Ver imagem completa',
   },
   head: {
-    breadcrumb: 'Caminho de navegação',
     lore: 'Lore',
     typeLabel: 'Tipo de entrada',
     canonGroup: 'Estado de cânone',

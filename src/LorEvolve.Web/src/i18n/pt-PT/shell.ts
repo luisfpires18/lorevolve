@@ -14,6 +14,9 @@ const shell: Dictionary['shell'] = {
       reload: 'Recarregar',
     },
   },
+  crumb: {
+    label: 'Caminho de navegação',
+  },
   pager: {
     label: 'Paginação',
     previous: 'Anterior',

@@ -174,49 +174,9 @@ a.idearow__title:focus-visible {
   flex: none;
 }
 
-/* A document's title and its ⋯ - an idea's, a rule's - on one line: what can be done to it beside its name, and
-   never beside Save. */
-.doc__titlerow {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.doc__titlerow > h1 {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.doc__titlerow > .actionmenu {
-  margin-top: 0.6rem;
-}
-
 /* One idea. A single readable column, like a settings section: the form is short and the body is a note, not a book. */
 .idea {
   max-width: 46rem;
-}
-
-.idea__head {
-  margin-bottom: 1.25rem;
-}
-
-.idea__back {
-  font-size: 0.875rem;
-}
-
-.idea__heading {
-  margin: 0.5rem 0 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.idea__lede {
-  margin: 0.4rem 0 0;
-  font-size: 0.875rem;
 }
 
 .idea__elsewhere {
@@ -289,4 +249,41 @@ a.idearow__title:focus-visible {
   gap: 0.5rem 0.8rem;
   padding: 0.6rem 0;
   border-bottom: 1px solid var(--rule);
+}
+
+/* A document's head, an idea's, a board's or a rule's: the way back, the title with its ⋯ on one line (what can be done
+   to the document beside its name, and never beside Save), and the lede. */
+.dochead {
+  margin-bottom: 1.25rem;
+}
+
+.dochead__back {
+  font-size: 0.875rem;
+}
+
+.dochead__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dochead__row > .actionmenu {
+  margin-top: 0.6rem;
+}
+
+.dochead__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0.5rem 0 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.dochead__lede {
+  margin: 0.4rem 0 0;
+  font-size: 0.875rem;
 }
