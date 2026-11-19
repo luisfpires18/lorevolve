@@ -1,0 +1,155 @@
+# Evidence for #410: shared loading, failed, empty and announcement states
+
+Everything here was produced for PR #428 (branch `feat/shared-states`, code head `63be5d15`) against a local stack, the way #409 did it: API on port 5185 with a scratch database, one registered capture account and one seeded universe, and two Vite servers on the same API. The "before" side is a detached worktree of `origin/dev` at `a442101b` with its own `npm ci`, served on port 5194. The "after" side is the main checkout at the branch head, served on port 5193. Both sides use the same database and the same account, so a difference between them comes from the code and nothing else.
+
+## Setup and seed
+
+The seed runs first, with writes, against the scratch database (modelled on the #409 seed): a public universe with entries, types, fields, a story with a scene, a comic, a Game with its template types and one entity, two Systems and evaluated findings, a second member, a connected app with one pending AI proposal, an archived universe, two ideas, an idea board, a world rule and a map. A second pass registers an OAuth client and has another account create a universe the capture account cannot read (for the consent screen). The capture account is made admin by a direct write of `AspNetUsers.PlatformRole`, as `tests/LorEvolve.E2E/specs/support/admin.ts` does. The database file is then snapshotted. Before each side the API is stopped, the snapshot is put back and the API is started again. During the capture every request that is not a read is refused.
+
+The capture script and the logs live outside the repository; only the PNGs, this file and `dom-diff-lines.txt` are committed.
+
+## How each state is reached
+
+The same interception runs on both sides, per page, with Playwright `page.route`:
+
+| State | Method |
+| --- | --- |
+| failed | the screen's read answers 500 with a problem body; every other read goes to the API |
+| loading | the screen's read is held: the response never comes, the shot is taken while it waits |
+| missing, not found | no interception: the address carries an id that does not exist (`00000000-0000-4000-8000-000000000410`) and the API answers its real 404 |
+| announcement (deleted notice) | the list page is opened with the router state the delete action sets (`{ deleted: ... }`), then reloaded; nothing is deleted |
+| consent no access, invalid | no interception: the real API answer for a universe the account cannot read, and for an unknown client |
+
+A state counts as reached only when its interception matched at least once; the script records the hit count per shot.
+
+## Result in one place
+
+| Proof | Result |
+| --- | --- |
+| Planned screens | 38 of 38 reached (every page file in the plan's list) |
+| Planned states | 87 states, all reached on both sides; 0 interceptions that never matched in the final files (one after shot, `stories-failed` desktop dark, missed on the first pass and was captured again) |
+| DOM dump (desktop 1440x900, light, attributes and class tokens sorted, React ids and guids normalised, `<time>` ignored) | 87 per side: 77 differ, 10 identical |
+| Screenshots | 696 PNG (87 states x 4 variants x 2 sides), 348 pairs, 270 pixel-identical, 78 differ. Folder about 15 MB |
+| Phone width scroll | `scrollWidth - clientWidth` on every phone shot: 0 px everywhere, both sides |
+| Failed read is never not found | `game-entities`, `game-entity`, `project`, `story`: before, a failed read drew the not-found screen; after, it draws the failed-load box with its retry button. The not-found screens now show only for a real 404 (`*-notfound`, `*-missing`) |
+
+The screenshots are 256-colour PNGs (palette quantised) to keep the folder small. Identical renders stay identical.
+
+## The intended differences
+
+| Change | Example (before `-`, after `+`) |
+| --- | --- |
+| Quiet lines become `QuietNote` | `-<p class="sitefooter__heading" ...>` then `+<p class="quietnote sitefooter__heading" ...>` (every page with the site footer), same look |
+| `Announce` adds `aria-live` | `-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">` then `+<p aria-live="polite" class="visually-hidden" ...>` |
+| Failed read shows `LoadError` instead of not found | `game-entities-failed`, `game-entity-failed`, `project-failed`, `story-failed`: the "This game is not in this universe" or "This project is not here" screen becomes `div.notice.notice--error` with the message and "Try again" |
+| Failed read shows `LoadError` instead of a plain line | `projects-failed`, `projects-directory-failed`, `category-shelf-failed`: "Your projects could not be read." as a lede becomes the error box with "Try again" (`projects-failed` test id kept) |
+| Missing is `EmptyState`, failed stays `LoadError` | `admin-user-missing`: the red box "There is no account with this id." becomes a quiet empty state; `system-editor-missing` likewise (`world-rule-missing` looks the same before and after) |
+| Loading lines become `LoadingNote` | `p.notice[role=status]` keeps its text; small spacing changes in `game-entities-loading`, `project-loading`, `story-loading`, `mass-create-loading` |
+| Deleted and created notices become `OutcomeNotice` | `ideas-deleted-notice`, `maps-deleted`: same markup and look |
+
+## Looks worth a glance
+
+1. `system-editor-failed`: before, the failed box held "Try again" and "Back to Systems"; after, only "Try again". The page header's own back control is still there. The PR text says failed is `LoadError` with retry, so this looks intended, but the second button is gone.
+2. `universe-workspace-loading` is a blank page on both sides (no loading line); unchanged by this PR.
+3. `projects-directory-loading` shows the tiles at once on both sides (deviation 10 in the PR).
+4. `world-logic-failed` shows the Rules tab's failed box; the Systems and Integrity tabs are behind their tabs and fail the same way.
+
+## The screens
+
+`{W}` is the seeded universe; the other names are seeded ids. Every row has 8 PNGs: `<screen>-<desktop|phone>-<light|dark>-<before|after>.png`.
+
+| # | State | Address | Method | DOM before and after | Screenshots |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `game-entities-failed` | /app/universes/{W}/game-entities/{game} | 500 on GET /api/projects/{game} | 13 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 2 | `game-entities-loading` | /app/universes/{W}/game-entities/{game} | GET /api/projects/{game} held open | 6 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 3 | `game-entities-notfound` | /app/universes/{W}/game-entities/{game} | real 404, address /app/universes/{W}/game-entities/{unknown id} | 4 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 4 | `game-entity-failed` | /app/universes/{W}/game-entities/{game}/{gameEntity} | 500 on GET /api/projects/{game} | 13 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 5 | `game-entity-loading` | /app/universes/{W}/game-entities/{game}/{gameEntity} | GET /api/projects/{game} held open | 6 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 6 | `game-entity-notfound` | /app/universes/{W}/game-entities/{game}/{gameEntity} | real 404, address /app/universes/{W}/game-entities/{unknown id}/{gameEntity} | 4 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 7 | `category-shelf-failed` | /app/universes/{W}/gaming | 500 on GET /api/projects | 13 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 8 | `projects-failed` | /app/projects | 500 on GET /api/projects | 7 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 9 | `projects-loading` | /app/projects | GET /api/projects held open | 4 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 10 | `project-failed` | /app/universes/{W}/projects/{game} | 500 on GET /api/projects/{game} | 9 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 11 | `project-loading` | /app/universes/{W}/projects/{game} | GET /api/projects/{game} held open | 6 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 12 | `project-notfound` | /app/universes/{W}/projects/{game} | real 404, address /app/universes/{W}/projects/{unknown id} | 4 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 13 | `projects-directory-failed` | /app/universes/{W}/projects | 500 on GET /api/projects | 9 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 14 | `projects-directory-loading` | /app/universes/{W}/projects | GET /api/projects held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 15 | `admin-user-missing` | /admin/users/{memberId} | real 404, address /admin/users/{unknown id} | 5 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 16 | `admin-user-failed` | /admin/users/{memberId} | 500 on GET /api/admin/users/{memberId} | identical | 8, 4 of 4 pairs pixel-identical |
+| 17 | `admin-user-loading` | /admin/users/{memberId} | GET /api/admin/users/{memberId} held open | identical | 8, 4 of 4 pairs pixel-identical |
+| 18 | `admin-users-failed` | /admin/users | 500 on GET /api/admin/users | identical | 8, 4 of 4 pairs pixel-identical |
+| 19 | `admin-users-loading` | /admin/users | GET /api/admin/users held open | identical | 8, 4 of 4 pairs pixel-identical |
+| 20 | `admin-main-failed` | /admin | 500 on GET /api/admin/overview | identical | 8, 4 of 4 pairs pixel-identical |
+| 21 | `admin-main-loading` | /admin | GET /api/admin/overview held open | identical | 8, 4 of 4 pairs pixel-identical |
+| 22 | `admin-feedback-failed` | /admin/feedback | 500 on GET /api/admin/feedback | identical | 8, 4 of 4 pairs pixel-identical |
+| 23 | `admin-feedback-loading` | /admin/feedback | GET /api/admin/feedback held open | identical | 8, 4 of 4 pairs pixel-identical |
+| 24 | `admin-backups-failed` | /admin | 500 on GET /api/admin/database-backups | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 25 | `admin-backups-loading` | /admin | GET /api/admin/database-backups held open | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 26 | `universes-failed` | /app | 500 on GET /api/universes | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 27 | `universes-loading` | /app | GET /api/universes held open | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 28 | `universe-workspace-failed` | R | 500 on GET U | identical | 8, 4 of 4 pairs pixel-identical |
+| 29 | `universe-workspace-loading` | R | GET U held open | identical | 8, 4 of 4 pairs pixel-identical |
+| 30 | `universe-publish-failed` | /app/universes/{W}/publish | 500 on GET /api/universes/{W}/publication | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 31 | `universe-publish-loading` | /app/universes/{W}/publish | GET /api/universes/{W}/publication held open | 4 lines differ | 8, 3 of 4 pairs pixel-identical |
+| 32 | `universe-types-failed` | /app/universes/{W}/types | 500 on GET /api/universes/{W}/entity-types | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 33 | `universe-types-loading` | /app/universes/{W}/types | GET /api/universes/{W}/entity-types held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 34 | `world-rules-failed` | /app/universes/{W}/world-rules | 500 on GET /api/universes/{W}/world-rules? | 4 lines differ | 8, 3 of 4 pairs pixel-identical |
+| 35 | `world-rules-loading` | /app/universes/{W}/world-rules | GET /api/universes/{W}/world-rules? held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 36 | `world-rule-failed` | /app/universes/{W}/world-rules/{rule} | 500 on GET /api/universes/{W}/world-rules/{rule} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 37 | `world-rule-loading` | /app/universes/{W}/world-rules/{rule} | GET /api/universes/{W}/world-rules/{rule} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 38 | `world-rule-missing` | /app/universes/{W}/world-rules/{rule} | real 404, address /app/universes/{W}/world-rules/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 39 | `system-editor-failed` | /app/universes/{W}/world-logic/systems/{sys} | 500 on GET /api/universes/{W}/systems/{sys} | 5 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 40 | `system-editor-loading` | /app/universes/{W}/world-logic/systems/{sys} | GET /api/universes/{W}/systems/{sys} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 41 | `system-editor-missing` | /app/universes/{W}/world-logic/systems/{sys} | real 404, address /app/universes/{W}/world-logic/systems/{unknown id} | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 42 | `world-logic-failed` | /app/universes/{W}/world-logic | 500 on GET /api/universes/{W}/world-logic/rules, /systems and /world-logic/findings | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 43 | `lore-failed` | /app/universes/{W}/lore?type={character} | 500 on GET /api/universes/{W}/entities? | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 44 | `lore-loading` | /app/universes/{W}/lore?type={character} | GET /api/universes/{W}/entities? held open | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 45 | `entity-failed` | /app/universes/{W}/lore/{mara} | 500 on GET /api/universes/{W}/entities/{mara} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 46 | `entity-loading` | /app/universes/{W}/lore/{mara} | GET /api/universes/{W}/entities/{mara} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 47 | `entity-missing` | /app/universes/{W}/lore/{mara} | real 404, address /app/universes/{W}/lore/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 48 | `ideas-failed` | /app/universes/{W}/ideas | 500 on GET /api/ideas | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 49 | `ideas-loading` | /app/universes/{W}/ideas | GET /api/ideas held open | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 50 | `idea-failed` | /app/universes/{W}/ideas/{idea} | 500 on GET /api/ideas/{idea} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 51 | `idea-loading` | /app/universes/{W}/ideas/{idea} | GET /api/ideas/{idea} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 52 | `idea-missing` | /app/universes/{W}/ideas/{idea} | real 404, address /app/universes/{W}/ideas/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 53 | `idea-boards-failed` | /app/universes/{W}/ideas/boards | 500 on GET /api/idea-boards | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 54 | `idea-boards-loading` | /app/universes/{W}/ideas/boards | GET /api/idea-boards held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 55 | `idea-board-failed` | /app/universes/{W}/ideas/boards/{board} | 500 on GET /api/idea-boards/{board} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 56 | `idea-board-loading` | /app/universes/{W}/ideas/boards/{board} | GET /api/idea-boards/{board} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 57 | `idea-board-missing` | /app/universes/{W}/ideas/boards/{board} | real 404, address /app/universes/{W}/ideas/boards/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 58 | `ideas-deleted-notice` | /app/universes/{W}/ideas | router state set as the delete action sets it, page reloaded | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 59 | `canon-failed` | /app/universes/{W}/canon | 500 on GET /api/universes/{W}/canon-conflicts? | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 60 | `canon-loading` | /app/universes/{W}/canon | GET /api/universes/{W}/canon-conflicts? held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 61 | `ai-changes-failed` | /app/universes/{W}/ai-changes | 500 on GET /api/ai-changes | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 62 | `ai-changes-loading` | /app/universes/{W}/ai-changes | GET /api/ai-changes held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 63 | `ai-change-failed` | /app/universes/{W}/ai-changes/{proposal} | 500 on GET /api/universes/{W}/ai-changes/{proposal} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 64 | `ai-change-loading` | /app/universes/{W}/ai-changes/{proposal} | GET /api/universes/{W}/ai-changes/{proposal} held open | 4 lines differ | 8, 3 of 4 pairs pixel-identical |
+| 65 | `ai-change-missing` | /app/universes/{W}/ai-changes/{proposal} | real 404, address /app/universes/{W}/ai-changes/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 66 | `explore-failed` | / | 500 on GET /api/public/universes | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 67 | `explore-loading` | / | GET /api/public/universes held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 68 | `maps-failed` | /app/universes/{W}/maps | 500 on GET /api/universes/{W}/maps | 4 lines differ | 8, 3 of 4 pairs pixel-identical |
+| 69 | `maps-loading` | /app/universes/{W}/maps | GET /api/universes/{W}/maps held open | 4 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 70 | `maps-deleted` | /app/universes/{W}/maps | router state set as the delete action sets it, page reloaded | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 71 | `map-failed` | /app/universes/{W}/maps/{map} | 500 on GET /api/universes/{W}/maps/{map} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 72 | `map-loading` | /app/universes/{W}/maps/{map} | GET /api/universes/{W}/maps/{map} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 73 | `map-missing` | /app/universes/{W}/maps/{map} | real 404, address /app/universes/{W}/maps/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 74 | `mass-create-failed` | /app/universes/{W}/lore/mass-create | 500 on GET /api/universes/{W}/entity-types | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 75 | `mass-create-loading` | /app/universes/{W}/lore/mass-create | GET /api/universes/{W}/entity-types held open | 6 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 76 | `stories-failed` | /app/universes/{W}/writing | 500 on GET /api/universes/{W}/stories | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 77 | `stories-loading` | /app/universes/{W}/writing | GET /api/universes/{W}/stories held open | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 78 | `story-failed` | /app/universes/{W}/projects/{story}/structure | 500 on GET /api/universes/{W}/stories/{story} | 9 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 79 | `story-loading` | /app/universes/{W}/projects/{story}/structure | GET /api/universes/{W}/stories/{story} held open | 6 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 80 | `story-missing` | /app/universes/{W}/projects/{story}/structure | real 404, address /app/universes/{W}/projects/{unknown id}/structure | 4 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 81 | `timeline-failed` | /app/universes/{W}/timeline | 500 on GET /api/universes/{W}/timeline/items? | 4 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 82 | `timeline-loading` | /app/universes/{W}/timeline | GET /api/universes/{W}/timeline/items? held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 83 | `family-tree-failed` | /app/universes/{W}/family-tree/{mara} | 500 on GET /api/universes/{W}/family-tree/{mara} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 84 | `family-tree-loading` | /app/universes/{W}/family-tree/{mara} | GET /api/universes/{W}/family-tree/{mara} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 85 | `connect-loading` | /connect/authorize?... (seeded client, Seed World resource) | GET /api/oauth/authorization-request held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 86 | `connect-no-access` | /connect/authorize?... (seeded client) | real API answer: resource of a universe the account cannot read | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 87 | `connect-invalid` | /connect/authorize?... (seeded client) | real API answer: unknown client id, unknown resource | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
+
+## Screenshots
+
+Named `<screen>-<desktop|phone>-<light|dark>-<before|after>.png`. Desktop is 1440x900; phone is 390x844 with touch and scale 1. The colour scheme is emulated with no saved theme, motion is reduced, and every shot is the viewport only. `admin-backups-*` is scrolled to the backups section first, since it sits below the fold.
+
+Plan states not in the list: the plan names no empty state for any screen, so none was captured. Three missing states were added beyond the plan (`idea-board-missing`, `ai-change-missing`, `map-missing`). `family-tree` uses the per-entry address, because failing the family list read on the bare page shows nothing.
