@@ -1,0 +1,940 @@
+## admin-backups
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Main</h1>
+-<p class="home__lede">What LorEvolve records about the service, counted when this page opened. Times are UTC.</p>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Main</h1>
++<div class="pageheader__lede">What LorEvolve records about the service, counted when this page opened. Times are UTC.</div>
+-<section aria-labelledby="admin-measured" class="adminsection">
+-<h2 class="settings__heading" id="admin-measured">Measured</h2>
+-<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 02:49 PM.</p>
++</header>
++<section aria-labelledby="admin-measured" class="section section--bare">
++<h2 class="sectiontitle" id="admin-measured">Measured</h2>
++<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 03:03 PM.</p>
+-<section aria-labelledby="admin-trend" class="adminsection">
+-<h2 class="settings__heading" id="admin-trend">Universes created per month</h2>
++<section aria-labelledby="admin-trend" class="section section--bare">
++<h2 class="sectiontitle" id="admin-trend">Universes created per month</h2>
+-<section aria-labelledby="admin-untracked" class="adminsection">
+-<h2 class="settings__heading" id="admin-untracked">Not tracked yet</h2>
++<section aria-labelledby="admin-untracked" class="section section--bare">
++<h2 class="sectiontitle" id="admin-untracked">Not tracked yet</h2>
+-<section aria-labelledby="admin-backups" class="adminsection" data-testid="admin-backups">
+-<h2 class="settings__heading" id="admin-backups">Database backups</h2>
++<section aria-labelledby="admin-backups" class="section section--bare" data-testid="admin-backups">
++<h2 class="sectiontitle" id="admin-backups">Database backups</h2>
+## admin-feedback
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Feedback</h1>
+-<p class="home__lede">Bug reports and feature requests, newest first, with the page each was sent from. Times are UTC.</p>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Feedback</h1>
++<div class="pageheader__lede">Bug reports and feature requests, newest first, with the page each was sent from. Times are UTC.</div>
++</header>
+## admin-main
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Main</h1>
+-<p class="home__lede">What LorEvolve records about the service, counted when this page opened. Times are UTC.</p>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Main</h1>
++<div class="pageheader__lede">What LorEvolve records about the service, counted when this page opened. Times are UTC.</div>
+-<section aria-labelledby="admin-measured" class="adminsection">
+-<h2 class="settings__heading" id="admin-measured">Measured</h2>
+-<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 02:49 PM.</p>
++</header>
++<section aria-labelledby="admin-measured" class="section section--bare">
++<h2 class="sectiontitle" id="admin-measured">Measured</h2>
++<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 03:02 PM.</p>
+-<section aria-labelledby="admin-trend" class="adminsection">
+-<h2 class="settings__heading" id="admin-trend">Universes created per month</h2>
++<section aria-labelledby="admin-trend" class="section section--bare">
++<h2 class="sectiontitle" id="admin-trend">Universes created per month</h2>
+-<section aria-labelledby="admin-untracked" class="adminsection">
+-<h2 class="settings__heading" id="admin-untracked">Not tracked yet</h2>
++<section aria-labelledby="admin-untracked" class="section section--bare">
++<h2 class="sectiontitle" id="admin-untracked">Not tracked yet</h2>
+-<section aria-labelledby="admin-backups" class="adminsection" data-testid="admin-backups">
+-<h2 class="settings__heading" id="admin-backups">Database backups</h2>
++<section aria-labelledby="admin-backups" class="section section--bare" data-testid="admin-backups">
++<h2 class="sectiontitle" id="admin-backups">Database backups</h2>
+## admin-tracing
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Tracing</h1>
+-<p class="home__lede">Request and error tracing for the service.</p>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Tracing</h1>
++<div class="pageheader__lede">Request and error tracing for the service.</div>
++</header>
+## admin-user
+-<div class="adminprofile">
++<header class="pageheader">
++<div class="pageheader__main">
+-<div>
+-<h1 class="home__title" data-testid="admin-user-title" dir="auto">seedownermwmu8wct</h1>
+-<p class="home__lede" dir="auto">Public name: Seed Owner</p>
++<div class="pageheader__text">
++<h1 class="pageheader__title" data-testid="admin-user-title">
++<span dir="auto">seedownermwmu8wct</span>
++</h1>
++<div class="pageheader__lede">
++<span dir="auto">Public name: Seed Owner</span>
+-<section aria-labelledby="admin-account" class="adminsection">
+-<h2 class="settings__heading" id="admin-account">Account</h2>
++</div>
++</header>
++<section aria-labelledby="admin-account" class="section section--bare">
++<h2 class="sectiontitle" id="admin-account">Account</h2>
+-<section aria-labelledby="admin-sign-in" class="adminsection">
+-<h2 class="settings__heading" id="admin-sign-in">Sign-in and access</h2>
++<section aria-labelledby="admin-sign-in" class="section section--bare">
++<h2 class="sectiontitle" id="admin-sign-in">Sign-in and access</h2>
+-<section aria-labelledby="admin-access" class="adminsection">
+-<h2 class="settings__heading" id="admin-access">Access</h2>
++<section aria-labelledby="admin-access" class="section section--bare">
++<h2 class="sectiontitle" id="admin-access">Access</h2>
+-<section aria-labelledby="admin-password" class="adminsection">
+-<h2 class="settings__heading" id="admin-password">Password</h2>
++<section aria-labelledby="admin-password" class="section section--bare">
++<h2 class="sectiontitle" id="admin-password">Password</h2>
+-<section aria-labelledby="admin-history" class="adminsection">
+-<h2 class="settings__heading" id="admin-history">Admin actions</h2>
++<section aria-labelledby="admin-history" class="section section--bare">
++<h2 class="sectiontitle" id="admin-history">Admin actions</h2>
+## admin-users
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Users</h1>
+-<p class="home__lede">Every LorEvolve account. Universe content is never shown here.</p>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Users</h1>
++<div class="pageheader__lede">Every LorEvolve account. Universe content is never shown here.</div>
+-<section aria-labelledby="admin-signup-link" class="adminsection">
+-<h2 class="settings__heading" id="admin-signup-link">Sign-up link</h2>
++</header>
++<section aria-labelledby="admin-signup-link" class="section section--bare">
++<h2 class="sectiontitle" id="admin-signup-link">Sign-up link</h2>
+## aichange
+-<a class="aichange__back" data-discover="true" data-testid="ai-change-back" href="/app/universes/<guid>/ai-changes">
++<nav aria-label="Breadcrumb" class="crumb crumb--back">
++<a data-discover="true" data-testid="ai-change-back" href="/app/universes/<guid>/ai-changes">
++</nav>
+-<h2 class="aichangeitem__title" dir="auto" id="_r_#_">New Character: Harbour master</h2>
++<h2 class="sectiontitle" dir="auto" id="_r_#_">New Character: Harbour master</h2>
+## board
+-<header class="idea__head">
+-<a class="idea__back" data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">Boards in “<bdi>Seed World</bdi>”</a>
+-<div class="doc__titlerow">
+-<h1 class="idea__heading" data-testid="board-heading" id="_r_#_">
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">Boards in “<bdi>Seed World</bdi>”</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="board-heading" id="_r_#_">
+-<p class="idea__lede quietnote">A place to lay possibilities out. Nothing on a board changes your world, and a line is not a relationship. Last saved &lt;time&gt;.</p>
++<p class="dochead__lede quietnote">A place to lay possibilities out. Nothing on a board changes your world, and a line is not a relationship. Last saved &lt;time&gt;.</p>
+## board-new
+-<header class="idea__head">
+-<a class="idea__back" data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">Boards in “<bdi>Seed World</bdi>”</a>
+-<div class="doc__titlerow">
+-<h1 class="idea__heading" data-testid="board-heading" id="_r_#_">New board</h1>
+-</div>
+-<p class="idea__lede quietnote">A place to lay possibilities out. Nothing on a board changes your world, and a line is not a relationship.</p>
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">Boards in “<bdi>Seed World</bdi>”</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="board-heading" id="_r_#_">New board</h1>
++</div>
++<p class="dochead__lede quietnote">A place to lay possibilities out. Nothing on a board changes your world, and a line is not a relationship.</p>
+## chronology
+-<section aria-labelledby="_r_#_" class="chronology" data-testid="chronology-settings">
+-<h2 class="settings__heading" id="_r_#_">Date periods</h2>
++<section aria-labelledby="_r_#_" class="chronology section section--bare" data-testid="chronology-settings">
++<h2 class="sectiontitle" id="_r_#_">Date periods</h2>
+-<section aria-labelledby="_r_#_" class="calendar chronology" data-testid="calendar-settings">
+-<h2 class="settings__heading" id="_r_#_">Calendar</h2>
++<section aria-labelledby="_r_#_" class="calendar chronology section section--bare" data-testid="calendar-settings">
++<h2 class="sectiontitle" id="_r_#_">Calendar</h2>
+## chronology-calendar
+-<section aria-labelledby="_r_#_" class="chronology" data-testid="chronology-settings">
+-<h2 class="settings__heading" id="_r_#_">Date periods</h2>
++<section aria-labelledby="_r_#_" class="chronology section section--bare" data-testid="chronology-settings">
++<h2 class="sectiontitle" id="_r_#_">Date periods</h2>
+-<section aria-labelledby="_r_#_" class="calendar chronology" data-testid="calendar-settings">
+-<h2 class="settings__heading" id="_r_#_">Calendar</h2>
++<section aria-labelledby="_r_#_" class="calendar chronology section section--bare" data-testid="calendar-settings">
++<h2 class="sectiontitle" id="_r_#_">Calendar</h2>
+## cinema-sagas
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">Films and series in no phase.</p>
++<div class="pageheader__lede">Films and series in no phase.</div>
++</div>
+## comic-arcs
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+## family-discovery
+-<h2 class="settings__heading" id="_r_#_" tabindex="-1">Families in this universe</h2>
++<h2 class="sectiontitle" id="_r_#_" tabindex="-1">Families in this universe</h2>
+-<h3 class="family__setupheading" id="_r_#_-types">Types enabled one by one</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="_r_#_-types">Types enabled one by one</h3>
+-<h3 class="family__setupheading" id="_r_#_-groups">Groups</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="_r_#_-groups">Groups</h3>
+## family-member
+-<h3 class="family__setupheading" id="_r_#_-types">Types enabled one by one</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="_r_#_-types">Types enabled one by one</h3>
+-<h3 class="family__setupheading" id="_r_#_-groups">Groups</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="_r_#_-groups">Groups</h3>
+## family-types
+-<h2 class="settings__heading" id="_r_#_" tabindex="-1">Families in this universe</h2>
++<h2 class="sectiontitle" id="_r_#_" tabindex="-1">Families in this universe</h2>
+-<h3 class="family__setupheading" id="_r_#_-types">Types enabled one by one</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="_r_#_-types">Types enabled one by one</h3>
+-<h3 class="family__setupheading" id="_r_#_-groups">Groups</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="_r_#_-groups">Groups</h3>
+## game-entities
+-<h1 class="pageheader__title" data-testid="project-entities-title">Entities</h1>
++<h2 class="pageheader__title" data-testid="project-entities-title">Entities</h2>
+## game-entities-notypes
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">The kinds of thing this project is made of.</p>
+-</div>
++<div class="pageheader__lede">The kinds of thing this project is made of.</div>
++</div>
++<div class="pageheader__actions">
++</div>
++</div>
+## game-types
+-<h1 class="pageheader__title" data-testid="project-types-title">Types</h1>
++<h2 class="pageheader__title" data-testid="project-types-title">Types</h2>
+## gdir
+-<span class="rail__section">Overview</span>
++<span class="rail__section">Projects</span>
+-<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
++<a class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
+-<a class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
++<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
+-<div aria-hidden="true" class="atmosphere" data-size="hero" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<div aria-hidden="true" class="atmosphere" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
+## gdir-nested
+-<span class="rail__section">Overview</span>
++<span class="rail__section">Projects</span>
+-<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
++<a class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
+-<a class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
++<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
+-<div aria-hidden="true" class="atmosphere" data-size="hero" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<div aria-hidden="true" class="atmosphere" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<nav aria-label="Breadcrumb" class="crumb">
++</nav>
+-<header class="projects__head">
+-<div class="pageheader__crumb projects__crumb">
+-<span class="lore__path">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__crumb">
++<nav aria-label="Breadcrumb" class="crumb">
+-<span aria-hidden="true" class="lore__pathsep">›</span>
++<span aria-hidden="true" class="crumb__sep">›</span>
+-</span>
+-</div>
+-<div class="projects__headtext">
++</nav>
++</div>
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+## gdir-type
+-<span class="rail__section">Overview</span>
++<span class="rail__section">Projects</span>
+-<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
++<a class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
+-<a class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
++<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
+-<div aria-hidden="true" class="atmosphere" data-size="hero" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<div aria-hidden="true" class="atmosphere" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<nav aria-label="Breadcrumb" class="crumb">
++</nav>
+-<header class="projects__head">
+-<div class="pageheader__crumb projects__crumb">
+-<span class="lore__path">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__crumb">
++<nav aria-label="Breadcrumb" class="crumb">
+-</span>
+-</div>
+-<div class="projects__headtext">
++</nav>
++</div>
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+## gentity
+-<span class="rail__section">Overview</span>
++<span class="rail__section">Projects</span>
+-<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
++<a class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
+-<a class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
++<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
+-<div aria-hidden="true" class="atmosphere" data-size="hero" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<div aria-hidden="true" class="atmosphere" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+## gentity-edit
+-<span class="rail__section">Overview</span>
++<span class="rail__section">Projects</span>
+-<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
++<a class="sidebar__link" data-discover="true" data-testid="workspace-overview" href="/app/universes/<guid>">
+-<a class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
++<a aria-current="page" class="sidebar__link" data-discover="true" data-testid="workspace-projects" href="/app/universes/<guid>/projects">
+-<div aria-hidden="true" class="atmosphere" data-size="hero" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
++<div aria-hidden="true" class="atmosphere" data-source="world" data-testid="workspace-atmosphere" style="--atmosphere-image: url(&quot;/api/universes/<guid>/artwork/<guid>/card/<guid>&quot;);">
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h4 class="sectionrule sectionrule--accent">Fields</h4>
++<h3 class="sectionrule sectionrule--accent">Fields</h3>
+## idea
+-<header class="idea__head">
+-<a class="idea__back" data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">Ideas in “<bdi>Seed World</bdi>”</a>
+-<div class="doc__titlerow">
+-<h1 class="idea__heading" data-testid="idea-heading" id="_r_#_">
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">Ideas in “<bdi>Seed World</bdi>”</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="idea-heading" id="_r_#_">
+-<p class="idea__lede quietnote">A possibility, not lore. Nothing saved here changes your world. Last saved &lt;time&gt;.</p>
++<p class="dochead__lede quietnote">A possibility, not lore. Nothing saved here changes your world. Last saved &lt;time&gt;.</p>
+## idea-new
+-<header class="idea__head">
+-<a class="idea__back" data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">Ideas in “<bdi>Seed World</bdi>”</a>
+-<div class="doc__titlerow">
+-<h1 class="idea__heading" data-testid="idea-heading" id="_r_#_">New idea</h1>
+-</div>
+-<p class="idea__lede quietnote">A possibility, not lore. Nothing saved here changes your world.</p>
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">Ideas in “<bdi>Seed World</bdi>”</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="idea-heading" id="_r_#_">New idea</h1>
++</div>
++<p class="dochead__lede quietnote">A possibility, not lore. Nothing saved here changes your world.</p>
+## legacy-structure
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">The parts this project is told in, in order. Add only the levels you need.</p>
+-</div>
++<div class="pageheader__lede">The parts this project is told in, in order. Add only the levels you need.</div>
++</div>
++<div class="pageheader__actions">
++</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">Made before this project had a format. It stays as it was.</p>
++<div class="pageheader__lede">Made before this project had a format. It stays as it was.</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">The volumes this comic is collected in, and the chapters in them.</p>
+-</div>
++<div class="pageheader__lede">The volumes this comic is collected in, and the chapters in them.</div>
++</div>
++<div class="pageheader__actions">
++</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+## legacy-structure-earlier
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">The parts this project is told in, in order. Add only the levels you need.</p>
+-</div>
++<div class="pageheader__lede">The parts this project is told in, in order. Add only the levels you need.</div>
++</div>
++<div class="pageheader__actions">
++</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">Made before this project had a format. It stays as it was.</p>
++<div class="pageheader__lede">Made before this project had a format. It stays as it was.</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">The volumes this comic is collected in, and the chapters in them.</p>
+-</div>
++<div class="pageheader__lede">The volumes this comic is collected in, and the chapters in them.</div>
++</div>
++<div class="pageheader__actions">
++</div>
++</div>
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<div class="pageheader__actions">
++</div>
++</div>
+## lore-appearances
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h2 class="sectiontitle" id="progression-heading">Progression</h2>
++<h2 class="progression__title" id="progression-heading">Progression</h2>
+-<h3 class="rail__heading" id="form-list-heading">Forms</h3>
++<h3 class="sectiontitle sectiontitle--label" id="form-list-heading">Forms</h3>
+-<h3 class="rail__heading" id="ability-list-heading">Abilities</h3>
++<h3 class="sectiontitle sectiontitle--label" id="ability-list-heading">Abilities</h3>
+-<h3 class="rail__heading" id="appearance-list-heading">Appearances</h3>
++<h3 class="sectiontitle sectiontitle--label" id="appearance-list-heading">Appearances</h3>
+## lore-edit
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+## lore-history
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+## lore-knowledge
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h3 class="relations__reading">
++<h3 class="sectiontitle sectiontitle--label">
+-<h4 class="relations__reading">
++<h4 class="sectiontitle sectiontitle--label">
+-<h3 class="knowledge__abouttitle relations__reading">Known about <bdi>Tamsin</bdi>
++<h3 class="knowledge__abouttitle sectiontitle sectiontitle--label">Known about <bdi>Tamsin</bdi>
+## lore-new
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+## lore-progression
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h2 class="sectiontitle" id="progression-heading">Progression</h2>
++<h2 class="progression__title" id="progression-heading">Progression</h2>
+-<h3 class="rail__heading" id="form-list-heading">Forms</h3>
++<h3 class="sectiontitle sectiontitle--label" id="form-list-heading">Forms</h3>
+-<h3 class="rail__heading" id="ability-list-heading">Abilities</h3>
++<h3 class="sectiontitle sectiontitle--label" id="ability-list-heading">Abilities</h3>
+-<h3 class="rail__heading" id="appearance-list-heading">Appearances</h3>
++<h3 class="sectiontitle sectiontitle--label" id="appearance-list-heading">Appearances</h3>
+## lore-rail
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h2 class="rail__heading">Tags</h2>
++<h2 class="sectiontitle sectiontitle--label">Tags</h2>
+-<h2 class="rail__heading">Maps</h2>
++<h2 class="sectiontitle sectiontitle--label">Maps</h2>
+## lore-read
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h2 class="rail__heading">Tags</h2>
++<h2 class="sectiontitle sectiontitle--label">Tags</h2>
+-<h2 class="rail__heading">Maps</h2>
++<h2 class="sectiontitle sectiontitle--label">Maps</h2>
+## lore-relations
+-<nav aria-label="Breadcrumb" class="entry__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h3 class="relations__reading">
++<h3 class="sectiontitle sectiontitle--label">
+-<h4 class="relations__reading">
++<h4 class="sectiontitle sectiontitle--label">
+-<h3 class="knowledge__abouttitle relations__reading">Known about <bdi>Tamsin</bdi>
++<h3 class="knowledge__abouttitle sectiontitle sectiontitle--label">Known about <bdi>Tamsin</bdi>
+## lore-typepath
+-<span class="lore__path" data-testid="lore-path">
++<nav aria-label="Breadcrumb" class="crumb" data-testid="lore-path">
+-<span aria-hidden="true" class="lore__pathsep">›</span>
++<span aria-hidden="true" class="crumb__sep">›</span>
+-</span>
++</nav>
+## map
++<nav aria-label="Breadcrumb" class="crumb">
++</nav>
+-<h2 class="mapscreen__pinsheading">Scale</h2>
++<h2 class="sectiontitle sectiontitle--label">Scale</h2>
+-<h2 class="mapscreen__pinsheading">Pins <span class="mapscreen__count">(2)</span>
++<h2 class="sectiontitle sectiontitle--label">Pins <span class="mapscreen__count">(2)</span>
+## map-calibration
++<nav aria-label="Breadcrumb" class="crumb">
++</nav>
+-<h2 class="mapscreen__pinsheading">Set the scale</h2>
++<h2 class="sectiontitle sectiontitle--label">Set the scale</h2>
+-<h2 class="mapscreen__pinsheading">Pins <span class="mapscreen__count">(2)</span>
++<h2 class="sectiontitle sectiontitle--label">Pins <span class="mapscreen__count">(2)</span>
+## map-pins
++<nav aria-label="Breadcrumb" class="crumb">
++</nav>
+-<h2 class="mapscreen__pinsheading">Scale</h2>
++<h2 class="sectiontitle sectiontitle--label">Scale</h2>
+-<h2 class="mapscreen__pinsheading">Pins <span class="mapscreen__count">(2)</span>
++<h2 class="sectiontitle sectiontitle--label">Pins <span class="mapscreen__count">(2)</span>
+## mass-create
++<nav aria-label="Breadcrumb" class="crumb">
++</nav>
+## new-project
+-<h1>New project</h1>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">New project</h1>
++</div>
++</div>
++</header>
+## profile-account
+-<h1 class="profile__title">Profile</h1>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Profile</h1>
++</div>
++</div>
++</header>
+-<section aria-labelledby="profile-public-heading" class="profile__public">
+-<h2 class="profile__subtitle" id="profile-public-heading">Publishing</h2>
++<section aria-labelledby="profile-public-heading" class="section section--ruled">
++<h2 class="sectiontitle" id="profile-public-heading">Publishing</h2>
+-<h3 class="profile__subtitle">Author page</h3>
++<h3 class="sectiontitle">Author page</h3>
+-<section aria-labelledby="profile-appearance-heading" class="profile__public">
+-<h2 class="profile__subtitle" id="profile-appearance-heading">Appearance</h2>
++<section aria-labelledby="profile-appearance-heading" class="section section--ruled">
++<h2 class="sectiontitle" id="profile-appearance-heading">Appearance</h2>
+-<section aria-labelledby="profile-usage-heading" class="profile__public usage" data-testid="profile-usage">
+-<h2 class="profile__subtitle" id="profile-usage-heading">Usage</h2>
++<section aria-labelledby="profile-usage-heading" class="section section--ruled usage" data-testid="profile-usage">
++<h2 class="sectiontitle" id="profile-usage-heading">Usage</h2>
+-<section aria-labelledby="profile-connected-heading" class="connectedapps profile__public" data-testid="connected-apps" id="connected-apps">
+-<h2 class="profile__subtitle" id="profile-connected-heading" tabindex="-1">Connected apps</h2>
++<section aria-labelledby="profile-connected-heading" class="connectedapps section section--ruled" data-testid="connected-apps" id="connected-apps">
++<h2 class="sectiontitle" id="profile-connected-heading" tabindex="-1">Connected apps</h2>
+## profile-apps
+-<h1 class="profile__title">Profile</h1>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Profile</h1>
++</div>
++</div>
++</header>
+-<section aria-labelledby="profile-public-heading" class="profile__public">
+-<h2 class="profile__subtitle" id="profile-public-heading">Publishing</h2>
++<section aria-labelledby="profile-public-heading" class="section section--ruled">
++<h2 class="sectiontitle" id="profile-public-heading">Publishing</h2>
+-<h3 class="profile__subtitle">Author page</h3>
++<h3 class="sectiontitle">Author page</h3>
+-<section aria-labelledby="profile-appearance-heading" class="profile__public">
+-<h2 class="profile__subtitle" id="profile-appearance-heading">Appearance</h2>
++<section aria-labelledby="profile-appearance-heading" class="section section--ruled">
++<h2 class="sectiontitle" id="profile-appearance-heading">Appearance</h2>
+-<section aria-labelledby="profile-usage-heading" class="profile__public usage" data-testid="profile-usage">
+-<h2 class="profile__subtitle" id="profile-usage-heading">Usage</h2>
++<section aria-labelledby="profile-usage-heading" class="section section--ruled usage" data-testid="profile-usage">
++<h2 class="sectiontitle" id="profile-usage-heading">Usage</h2>
+-<section aria-labelledby="profile-connected-heading" class="connectedapps profile__public" data-testid="connected-apps" id="connected-apps">
+-<h2 class="profile__subtitle" id="profile-connected-heading" tabindex="-1">Connected apps</h2>
++<section aria-labelledby="profile-connected-heading" class="connectedapps section section--ruled" data-testid="connected-apps" id="connected-apps">
++<h2 class="sectiontitle" id="profile-connected-heading" tabindex="-1">Connected apps</h2>
+## profile-usage
+-<h1 class="profile__title">Profile</h1>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Profile</h1>
++</div>
++</div>
++</header>
+-<section aria-labelledby="profile-public-heading" class="profile__public">
+-<h2 class="profile__subtitle" id="profile-public-heading">Publishing</h2>
++<section aria-labelledby="profile-public-heading" class="section section--ruled">
++<h2 class="sectiontitle" id="profile-public-heading">Publishing</h2>
+-<h3 class="profile__subtitle">Author page</h3>
++<h3 class="sectiontitle">Author page</h3>
+-<section aria-labelledby="profile-appearance-heading" class="profile__public">
+-<h2 class="profile__subtitle" id="profile-appearance-heading">Appearance</h2>
++<section aria-labelledby="profile-appearance-heading" class="section section--ruled">
++<h2 class="sectiontitle" id="profile-appearance-heading">Appearance</h2>
+-<section aria-labelledby="profile-usage-heading" class="profile__public usage" data-testid="profile-usage">
+-<h2 class="profile__subtitle" id="profile-usage-heading">Usage</h2>
++<section aria-labelledby="profile-usage-heading" class="section section--ruled usage" data-testid="profile-usage">
++<h2 class="sectiontitle" id="profile-usage-heading">Usage</h2>
+-<section aria-labelledby="profile-connected-heading" class="connectedapps profile__public" data-testid="connected-apps" id="connected-apps">
+-<h2 class="profile__subtitle" id="profile-connected-heading" tabindex="-1">Connected apps</h2>
++<section aria-labelledby="profile-connected-heading" class="connectedapps section section--ruled" data-testid="connected-apps" id="connected-apps">
++<h2 class="sectiontitle" id="profile-connected-heading" tabindex="-1">Connected apps</h2>
+## project-account
+-<h1 class="pageheader__title" data-testid="project-entities-title">Entities</h1>
++<h2 class="pageheader__title" data-testid="project-entities-title">Entities</h2>
+## publish
+-<section aria-labelledby="publish-status-heading" class="publish__section publish__status">
+-<h2 class="publish__heading" id="publish-status-heading">Status</h2>
++<section aria-labelledby="publish-status-heading" class="publish__status section section--ruled">
++<h2 class="sectiontitle" id="publish-status-heading">Status</h2>
+-<section aria-labelledby="publish-details-heading" class="publish__section" id="publish-details">
+-<h2 class="publish__heading" id="publish-details-heading">Public details</h2>
++<section aria-labelledby="publish-details-heading" class="section section--ruled" id="publish-details">
++<h2 class="sectiontitle" id="publish-details-heading">Public details</h2>
+-<section aria-labelledby="publish-artwork-heading" class="publish__section" id="publish-artwork">
+-<h2 class="publish__heading" id="publish-artwork-heading">Artwork</h2>
++<section aria-labelledby="publish-artwork-heading" class="section section--ruled" id="publish-artwork">
++<h2 class="sectiontitle" id="publish-artwork-heading">Artwork</h2>
+-<section aria-labelledby="publish-author-heading" class="publish__section" id="publish-author">
+-<h2 class="publish__heading" id="publish-author-heading">Author</h2>
++<section aria-labelledby="publish-author-heading" class="section section--ruled" id="publish-author">
++<h2 class="sectiontitle" id="publish-author-heading">Author</h2>
+-<section aria-labelledby="publish-content-heading" class="publish__section" id="publish-content">
+-<h2 class="publish__heading" id="publish-content-heading">Published content</h2>
++<section aria-labelledby="publish-content-heading" class="section section--ruled" id="publish-content">
++<h2 class="sectiontitle" id="publish-content-heading">Published content</h2>
+## rule-edit
+-<header class="rule__head">
+-<a class="rule__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
+-<div class="doc__titlerow">
+-<h1 class="rule__heading" data-testid="world-rule-heading" id="_r_#_">
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="world-rule-heading" id="_r_#_">
+-<p class="quietnote rule__lede">A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted. Last saved &lt;time&gt;.</p>
++<p class="dochead__lede quietnote">A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted. Last saved &lt;time&gt;.</p>
+## rule-new
+-<header class="rule__head">
+-<a class="rule__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
+-<div class="doc__titlerow">
+-<h1 class="rule__heading" data-testid="world-rule-heading" id="_r_#_">New rule</h1>
+-</div>
+-<p class="quietnote rule__lede">A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted.</p>
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="world-rule-heading" id="_r_#_">New rule</h1>
++</div>
++<p class="dochead__lede quietnote">A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted.</p>
+## rule-read
+-<header class="rule__head">
+-<a class="rule__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
+-<h1 class="rule__heading" data-testid="world-rule-heading">
++<header class="dochead">
++<a class="dochead__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
++<div class="dochead__row">
++<h1 class="dochead__title" data-testid="world-rule-heading">
++</div>
+## series-structure
+-<header class="projects__head">
+-<div class="projects__headtext">
++<header class="pageheader pageheader--panel">
++<div class="pageheader__main">
++<div class="pageheader__text">
+-<p class="projects__lede">The seasons this series is told in, and the episodes in them.</p>
+-</div>
++<div class="pageheader__lede">The seasons this series is told in, and the episodes in them.</div>
++</div>
++<div class="pageheader__actions">
++</div>
++</div>
+## settings-advanced
+-<section class="settings__section">
+-<h2 class="settings__heading">Details</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Details</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Colour</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Colour</h2>
+-<section aria-labelledby="collab-invite-heading" class="settings__section">
+-<h2 class="settings__heading" id="collab-invite-heading">Invite someone</h2>
++<section aria-labelledby="collab-invite-heading" class="section section--narrow section--ruled">
++<h2 class="sectiontitle" id="collab-invite-heading">Invite someone</h2>
+-<section aria-labelledby="collab-people-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-people-heading">People</h2>
++<section aria-labelledby="collab-people-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-people-heading">People</h2>
+-<section aria-labelledby="collab-pending-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-pending-heading">Pending invitations</h2>
++<section aria-labelledby="collab-pending-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-pending-heading">Pending invitations</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Backup</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Backup</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Restore</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Restore</h2>
+-<section class="settings__section" data-testid="archive-section">
+-<h2 class="settings__heading">Archive</h2>
++<section class="section section--narrow section--ruled" data-testid="archive-section">
++<h2 class="sectiontitle">Archive</h2>
+## settings-appearance
+-<section class="settings__section">
+-<h2 class="settings__heading">Details</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Details</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Colour</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Colour</h2>
+-<section aria-labelledby="collab-invite-heading" class="settings__section">
+-<h2 class="settings__heading" id="collab-invite-heading">Invite someone</h2>
++<section aria-labelledby="collab-invite-heading" class="section section--narrow section--ruled">
++<h2 class="sectiontitle" id="collab-invite-heading">Invite someone</h2>
+-<section aria-labelledby="collab-people-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-people-heading">People</h2>
++<section aria-labelledby="collab-people-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-people-heading">People</h2>
+-<section aria-labelledby="collab-pending-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-pending-heading">Pending invitations</h2>
++<section aria-labelledby="collab-pending-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-pending-heading">Pending invitations</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Backup</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Backup</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Restore</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Restore</h2>
+-<section class="settings__section" data-testid="archive-section">
+-<h2 class="settings__heading">Archive</h2>
++<section class="section section--narrow section--ruled" data-testid="archive-section">
++<h2 class="sectiontitle">Archive</h2>
+## settings-collaborators
+-<section class="settings__section">
+-<h2 class="settings__heading">Details</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Details</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Colour</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Colour</h2>
+-<section aria-labelledby="collab-invite-heading" class="settings__section">
+-<h2 class="settings__heading" id="collab-invite-heading">Invite someone</h2>
++<section aria-labelledby="collab-invite-heading" class="section section--narrow section--ruled">
++<h2 class="sectiontitle" id="collab-invite-heading">Invite someone</h2>
+-<section aria-labelledby="collab-people-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-people-heading">People</h2>
++<section aria-labelledby="collab-people-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-people-heading">People</h2>
+-<section aria-labelledby="collab-pending-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-pending-heading">Pending invitations</h2>
++<section aria-labelledby="collab-pending-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-pending-heading">Pending invitations</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Backup</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Backup</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Restore</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Restore</h2>
+-<section class="settings__section" data-testid="archive-section">
+-<h2 class="settings__heading">Archive</h2>
++<section class="section section--narrow section--ruled" data-testid="archive-section">
++<h2 class="sectiontitle">Archive</h2>
+## settings-data
+-<section class="settings__section">
+-<h2 class="settings__heading">Details</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Details</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Colour</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Colour</h2>
+-<section aria-labelledby="collab-invite-heading" class="settings__section">
+-<h2 class="settings__heading" id="collab-invite-heading">Invite someone</h2>
++<section aria-labelledby="collab-invite-heading" class="section section--narrow section--ruled">
++<h2 class="sectiontitle" id="collab-invite-heading">Invite someone</h2>
+-<section aria-labelledby="collab-people-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-people-heading">People</h2>
++<section aria-labelledby="collab-people-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-people-heading">People</h2>
+-<section aria-labelledby="collab-pending-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-pending-heading">Pending invitations</h2>
++<section aria-labelledby="collab-pending-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-pending-heading">Pending invitations</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Backup</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Backup</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Restore</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Restore</h2>
+-<section class="settings__section" data-testid="archive-section">
+-<h2 class="settings__heading">Archive</h2>
++<section class="section section--narrow section--ruled" data-testid="archive-section">
++<h2 class="sectiontitle">Archive</h2>
+## settings-general
+-<section class="settings__section">
+-<h2 class="settings__heading">Details</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Details</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Colour</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Colour</h2>
+-<section aria-labelledby="collab-invite-heading" class="settings__section">
+-<h2 class="settings__heading" id="collab-invite-heading">Invite someone</h2>
++<section aria-labelledby="collab-invite-heading" class="section section--narrow section--ruled">
++<h2 class="sectiontitle" id="collab-invite-heading">Invite someone</h2>
+-<section aria-labelledby="collab-people-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-people-heading">People</h2>
++<section aria-labelledby="collab-people-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-people-heading">People</h2>
+-<section aria-labelledby="collab-pending-heading" class="collab__section settings__section">
+-<h2 class="settings__heading" id="collab-pending-heading">Pending invitations</h2>
++<section aria-labelledby="collab-pending-heading" class="collab__section section section--ruled">
++<h2 class="sectiontitle" id="collab-pending-heading">Pending invitations</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Backup</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Backup</h2>
+-<section class="settings__section">
+-<h2 class="settings__heading">Restore</h2>
++<section class="section section--narrow section--ruled">
++<h2 class="sectiontitle">Restore</h2>
+-<section class="settings__section" data-testid="archive-section">
+-<h2 class="settings__heading">Archive</h2>
++<section class="section section--narrow section--ruled" data-testid="archive-section">
++<h2 class="sectiontitle">Archive</h2>
+## story
+-<nav aria-label="Breadcrumb" class="story__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h3 class="storygroup__title" id="unchaptered-heading">Unchaptered</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="unchaptered-heading">Unchaptered</h3>
+## story-account
+-<nav aria-label="Breadcrumb" class="story__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h3 class="storygroup__title" id="unchaptered-heading">Unchaptered</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="unchaptered-heading">Unchaptered</h3>
+## story-scenes
+-<nav aria-label="Breadcrumb" class="story__crumbs">
++<nav aria-label="Breadcrumb" class="crumb">
+-<h3 class="storygroup__title" id="unchaptered-heading">Unchaptered</h3>
++<h3 class="sectiontitle sectiontitle--label sectiontitle--xs" id="unchaptered-heading">Unchaptered</h3>
+## system
++<div class="pageheader__crumb">
++<nav aria-label="Breadcrumb" class="crumb">
++<a data-discover="true" data-testid="system-editor-back" href="/app/universes/<guid>/world-logic?tab=systems">Back to Systems</a>
++</nav>
++</div>
+-</div>
+-<div class="pageheader__actions">
+-<a class="button button--secondary" data-discover="true" data-testid="system-editor-back" href="/app/universes/<guid>/world-logic?tab=systems">Back to Systems</a>
+## types-events
+-<h2 class="settings__heading" id="reltypes-heading">Relation kinds</h2>
++<h2 class="sectiontitle" id="reltypes-heading">Relation kinds</h2>
+-<h2 class="settings__heading" id="_r_#_">Event kinds and methods</h2>
++<h2 class="sectiontitle" id="_r_#_">Event kinds and methods</h2>
+## types-gaming
+-<header class="projects__head">
+-<div class="projects__headtext">
+-<h2 class="sectionrule">Types</h2>
+-<p class="projects__lede">The kinds of thing this project is made of.</p>
+-</div>
++<div class="schema__actions">
+-</header>
++</div>
+-<h2 class="settings__heading" id="reltypes-heading">Relation kinds</h2>
++<h2 class="sectiontitle" id="reltypes-heading">Relation kinds</h2>
+-<h2 class="settings__heading" id="_r_#_">Event kinds and methods</h2>
++<h2 class="sectiontitle" id="_r_#_">Event kinds and methods</h2>
+## types-relations
+-<h2 class="settings__heading" id="reltypes-heading">Relation kinds</h2>
++<h2 class="sectiontitle" id="reltypes-heading">Relation kinds</h2>
+-<h2 class="settings__heading" id="_r_#_">Event kinds and methods</h2>
++<h2 class="sectiontitle" id="_r_#_">Event kinds and methods</h2>
+## universes
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Universes</h1>
+-<p class="home__lede">Your worlds, and any shared with you.</p>
+-</div>
+-<div class="home__actions">
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Universes</h1>
++<div class="pageheader__lede">Your worlds, and any shared with you.</div>
++</div>
++<div class="pageheader__actions">
++</header>
+## universes-first-run
+-<div class="home__heading">
+-<div>
+-<h1 class="home__title">Universes</h1>
+-<p class="home__lede">Your worlds, and any shared with you.</p>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">Universes</h1>
++<div class="pageheader__lede">Your worlds, and any shared with you.</div>
+-<div class="home__actions">
++<div class="pageheader__actions">
++</header>
