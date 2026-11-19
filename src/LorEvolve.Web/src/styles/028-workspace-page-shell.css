@@ -171,8 +171,8 @@
   margin-top: var(--space-7);
 }
 
-/* Chronology's blocks sit in the page's own flow: no room above them. */
-.section.chronology {
+/* Chronology's blocks sit in the page's own flow: no room above them. The Calendar keeps its own rule and room (030). */
+.section.chronology:not(.calendar) {
   margin-top: 0;
 }
 

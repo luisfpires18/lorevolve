@@ -65,12 +65,15 @@ export function NewProject() {
   // universe, it says so and points at the universes rather than offering a form whose save can only be refused.
   if (!universeId) {
     return (
-      <EmptyState
-        title={t('projects.new.needsUniverse')}
-        hint={t('projects.new.needsUniverseHint')}
-        action={<Link to="/app">{t('projects.new.chooseUniverse')}</Link>}
-        testId="project-new-needs-universe"
-      />
+      <section className="projects">
+        <PageHeader title={t('projects.new.title')} />
+        <EmptyState
+          title={t('projects.new.needsUniverse')}
+          hint={t('projects.new.needsUniverseHint')}
+          action={<Link to="/app">{t('projects.new.chooseUniverse')}</Link>}
+          testId="project-new-needs-universe"
+        />
+      </section>
     )
   }
 

@@ -77,6 +77,14 @@
   min-width: 0;
 }
 
+/* A head with no title is its actions alone: at the far end on a desktop, where they sit beside a title, and at the start
+   on a phone, where they drop under it. */
+@media (min-width: 641px) {
+  .pageheader__main > .pageheader__actions:only-child {
+    margin-left: auto;
+  }
+}
+
 .pageheader__title {
   margin: 0;
   font-family: var(--display);

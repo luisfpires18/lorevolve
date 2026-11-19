@@ -1,22 +1,15 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { t, useI18n } from '../i18n'
-import { documentTitle, useWholeTitle } from '../lib/useDocumentTitle'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { AccountMenu } from './AccountMenu'
 import { BrandMark } from './BrandMark'
 import { SiteFooter } from './SiteFooter'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
 
-/**
- * The account-level screen an address is, named as its tab and its title say it. A screen beneath the project list (a new
- * project, one project) names itself, so the shell stands aside: null.
- */
+/** The account-level screen an address is, named as its tab and its title say it. */
 function screenName(pathname: string) {
-  if (pathname.startsWith('/app/projects')) {
-    return pathname.replace(/\/+$/, '') === '/app/projects'
-      ? t('shell.workspace.screen.projects')
-      : null
-  }
+  if (pathname.startsWith('/app/projects')) return t('shell.workspace.screen.projects')
   if (pathname.startsWith('/app/profile')) return t('shell.workspace.screen.profile')
   if (pathname.startsWith('/app/ai-changes')) return t('shell.workspace.screen.aiChanges')
   return t('shell.workspace.screen.universes')
@@ -40,8 +33,7 @@ function screenName(pathname: string) {
 export function WorkspaceLayout() {
   const { pathname } = useLocation()
   useI18n()
-  const screen = screenName(pathname)
-  useWholeTitle(screen === null ? null : documentTitle(screen))
+  useDocumentTitle(screenName(pathname))
 
   return (
     <div className="home">

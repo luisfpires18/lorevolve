@@ -201,6 +201,8 @@ test.describe('Projects navigation', () => {
     // Opening the form directly says what it needs rather than offering a save that can only be refused.
     await page.goto('/app/projects/new')
     await expect(page.getByTestId('project-new-needs-universe')).toBeVisible()
+    // Still the screen it was opened as: one h1 says so (#412).
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('New project')
     await expect(page.getByTestId('project-new-save')).toHaveCount(0)
 
     await page.goto('/app/projects')

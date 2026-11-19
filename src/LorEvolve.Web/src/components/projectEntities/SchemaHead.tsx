@@ -58,7 +58,7 @@ export function SchemaHead({
     </>
   )
 
-  if (head === 'actions') return <div className="schema__actions">{actions}</div>
+  if (head === 'actions') return <PageHeader level={2} actions={actions} />
 
   if (head === 'page') {
     return (

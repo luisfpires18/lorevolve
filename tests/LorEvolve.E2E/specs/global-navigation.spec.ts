@@ -262,6 +262,9 @@ test.describe('A universe: up is All universes, inside its navigation', () => {
     })
     await page.goto(`/app/universes/${w.id}/game-entities/${game.id}`)
     await expect(page).toHaveTitle(`Ember Road | Projects | ${w.name} | LorEvolve`)
+    // The Game Entities list is part of Projects and still says which list it is.
+    await page.goto(`/app/universes/${w.id}/game-entities`)
+    await expect(page).toHaveTitle(`Game Entities | Projects | ${w.name} | LorEvolve`)
 
     await nav.getByRole('link', { name: 'All universes' }).click()
     await expect(page).toHaveURL('/app')

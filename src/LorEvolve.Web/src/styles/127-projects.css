@@ -33,14 +33,6 @@
   margin: 0;
 }
 
-/* Only the type buttons of a panel whose title sits above it (the Types page's Gaming tab): one row, as a head's actions. */
-.schema__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 /*
  * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
  * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than

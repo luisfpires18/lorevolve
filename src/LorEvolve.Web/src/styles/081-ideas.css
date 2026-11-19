@@ -257,6 +257,7 @@ a.idearow__title:focus-visible {
   margin-bottom: 1.25rem;
 }
 
+/* The way back is a `Crumb`, kept at the size the document heads always had. */
 .dochead__back {
   font-size: 0.875rem;
 }

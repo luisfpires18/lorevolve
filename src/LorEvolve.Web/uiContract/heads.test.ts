@@ -186,6 +186,7 @@ test('the tab title has one owner per screen', () => {
     new Map([
       ['src/pages/GameEntitiesPage.tsx', 'the game name, once read'],
       ['src/pages/GameEntityPage.tsx', 'the game name, once read'],
+      ['src/pages/ProjectsPage.tsx', "a section's own list (Game Entities) names that section"],
     ]),
     'only a screen that reads a name the shell cannot hands one up',
   )
@@ -206,4 +207,15 @@ test('a head inside a project says its level', () => {
     elements(read(file), 'PageHeader').some(({ tag }) => !/\blevel=/.test(tag)),
   )
   assert.deepEqual(missing, [], 'a PageHeader inside a project passes level (it is not the h1)')
+})
+
+test("a document's way back is a Crumb, and a head of actions alone is PageHeader without a title", () => {
+  const head = read('src/components/DocumentHead.tsx')
+  assert.ok(/<Crumb\s[^>]*\bback\b/.test(head), 'DocumentHead draws its way back with Crumb back')
+  assert.ok(!/<Link\s/.test(head), 'no hand-made back link in DocumentHead')
+  assert.deepEqual(
+    tsxFiles.filter((file) => /\bschema__actions\b/.test(read(file))),
+    [],
+    'a row of head actions is PageHeader with no title',
+  )
 })

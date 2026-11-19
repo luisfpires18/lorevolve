@@ -10,8 +10,8 @@ const BRAND = 'LorEvolve'
  * the server writes into the page's head (ADR 0038), so a page reached by a link inside the app reads as one reached
  * from outside. In the workspace it is the shell: the account-level layout names Universes, Ideas or Profile, and a
  * universe's shell names the section and the universe, with a name a screen hands up (`useTitleDetail`) first. Nothing
- * beneath a shell sets one, so two never race. The exceptions own their route outright and the shell stands aside
- * (`useWholeTitle(null)`): a new project and one project at the account level.
+ * beneath a shell sets one, so two never race. The exceptions are a new project and one project at the account level:
+ * the shell names Projects until they are drawn, then they name the tab outright (`useWholeTitle`).
  */
 export function useDocumentTitle(...parts: string[]) {
   useWholeTitle(documentTitle(...parts))

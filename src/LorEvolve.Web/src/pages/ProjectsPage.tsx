@@ -11,6 +11,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
+import { useTitleDetail } from '../lib/useTitleDetail'
 
 /**
  * What was read, and what it was read for. Keeping the request's own key beside the result is what lets the screen say
@@ -58,6 +59,8 @@ export default function ProjectsPage({
   const [attempt, setAttempt] = useState(0)
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
+  // A list that is a section's own page (Game Entities) leads the tab with that section, as its entries lead with the game.
+  useTitleDetail(section ? heading : null)
 
   useEffect(() => {
     const controller = new AbortController()

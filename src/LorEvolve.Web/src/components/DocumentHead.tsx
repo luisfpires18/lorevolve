@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Crumb } from './Crumb'
 import { QuietNote } from './QuietNote'
 
 /**
@@ -26,9 +26,7 @@ export function DocumentHead({
 }) {
   return (
     <header className="dochead">
-      <Link className="dochead__back" to={back.to} data-testid={back.testId}>
-        {back.label}
-      </Link>
+      <Crumb back items={[back]} className="dochead__back" />
       <div className="dochead__row">
         <h1 className="dochead__title" id={titleId} data-testid={titleTestId}>
           {title}

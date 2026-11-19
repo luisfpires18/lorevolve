@@ -7,7 +7,8 @@ import type { ReactNode } from 'react'
  * `level={1}` once per screen; a panel inside a screen is `level={2} size="panel"`. `lead` is a small picture before the
  * title. Structure and type only. It knows nothing about what a screen does: the actions are whatever
  * links and buttons the screen passes, and no slot is required. On a phone the actions drop under
- * the title instead of squeezing it.
+ * the title instead of squeezing it. With no `title` the head is its actions alone, at the far end on a desktop and
+ * at the start on a phone, as they sit beside a title: a toolbar where a title above already names the screen.
  */
 export function PageHeader({
   title,
@@ -22,7 +23,7 @@ export function PageHeader({
   size = 'page',
   children,
 }: {
-  title: ReactNode
+  title?: ReactNode
   /** For a section that names itself by its heading (`aria-labelledby`). */
   titleId?: string
   titleTestId?: string
@@ -48,16 +49,18 @@ export function PageHeader({
       {crumb ? <div className="pageheader__crumb">{crumb}</div> : null}
       <div className="pageheader__main">
         {lead}
-        <div className="pageheader__text">
-          <Heading
-            className={titleClassName ? `${base} ${titleClassName}` : base}
-            id={titleId}
-            data-testid={titleTestId}
-          >
-            {title}
-          </Heading>
-          {lede ? <div className="pageheader__lede">{lede}</div> : null}
-        </div>
+        {title === undefined ? null : (
+          <div className="pageheader__text">
+            <Heading
+              className={titleClassName ? `${base} ${titleClassName}` : base}
+              id={titleId}
+              data-testid={titleTestId}
+            >
+              {title}
+            </Heading>
+            {lede ? <div className="pageheader__lede">{lede}</div> : null}
+          </div>
+        )}
         {actions ? <div className="pageheader__actions">{actions}</div> : null}
       </div>
       {children ? <div className="pageheader__slot">{children}</div> : null}
