@@ -1,3 +1,4 @@
+import { CardGrid } from '../CardGrid'
 import { useCallback, useState } from 'react'
 import { listUsers, type AdminUserPage } from '../../admin/api'
 import { Avatar } from '../Avatar'
@@ -62,7 +63,7 @@ export function UsersScreen() {
           <p className="settings__note" role="status" data-testid="admin-user-count">
             {tn('admin.users.count', result.totalCount, { n: result.totalCount })}
           </p>
-          <ul className="adminusers" data-testid="admin-user-grid">
+          <CardGrid min={15} testId="admin-user-grid">
             {result.items.map((user) => (
               <li key={user.id}>
                 <article
@@ -101,7 +102,7 @@ export function UsersScreen() {
                 </article>
               </li>
             ))}
-          </ul>
+          </CardGrid>
         </>
       ) : null}
 

@@ -1,14 +1,5 @@
 /* ---------- Universe plates ---------- */
 
-.plates {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-5);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
-}
-
 /* A world's card: its artwork across the head - or its own colour as a dusk - fading into the card, the spine in its
    colour down the edge, then its name, its opening line and when it last changed. Under the pointer it rises, its
    edge warms and the picture leans in a little. */
@@ -23,25 +14,9 @@
     'spine art'
     'spine body';
   height: 100%;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--raised);
-  box-shadow: var(--shadow-1);
   color: inherit;
   text-decoration: none;
-  transition:
-    border-color var(--duration-1) var(--ease),
-    box-shadow var(--duration-2) var(--ease),
-    transform var(--duration-2) var(--ease);
-}
-
-@media (hover: hover) {
-  .plate:hover {
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
-    box-shadow: var(--shadow-2);
-    transform: translateY(-2px);
-  }
 }
 
 .plate:focus-visible {

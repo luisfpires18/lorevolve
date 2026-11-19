@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { deleteProjectEntity } from '../../projectEntities/api'
 import {
   FieldKind,
@@ -6,7 +5,8 @@ import {
   type ProjectField,
 } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
-import { EntityCardBody } from '../EntityCard'
+import { EntityCard } from '../EntityCard'
+import { CardGrid } from '../CardGrid'
 import { t, useI18n } from '../../i18n'
 import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntriesRead'
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
@@ -39,7 +39,7 @@ export function ProjectEntryList({
   useI18n()
 
   return (
-    <ul className="cardgrid lore__grid" data-testid="project-entry-list">
+    <CardGrid className="lore__grid" testId="project-entry-list">
       {(entries ?? []).map((entry) => (
         <li
           key={entry.id}
@@ -54,33 +54,17 @@ export function ProjectEntryList({
           }
         >
           {/* Lore's card; with an `entryHref` the body is the link and the More menu stays outside it. */}
-          <div className="entitycard entitycard--static">
-            {(() => {
-              // The entry's own picture when it has one (#286), else the type's icon, exactly as Lore's card.
-              const body = (
-                <EntityCardBody
-                  universeId={universeId}
-                  entity={entry}
-                  note={
-                    entry.canonEntityName
-                      ? t('projects.entries.canon', { name: entry.canonEntityName })
-                      : undefined
-                  }
-                />
-              )
-              return entryHref ? (
-                <Link
-                  className="entitycard__link"
-                  to={entryHref(entry)}
-                  data-testid={`project-entry-open-${entry.id}`}
-                >
-                  {body}
-                </Link>
-              ) : (
-                body
-              )
-            })()}
-            <div className="entitycard__actions">
+          <EntityCard
+            universeId={universeId}
+            entity={entry}
+            note={
+              entry.canonEntityName
+                ? t('projects.entries.canon', { name: entry.canonEntityName })
+                : undefined
+            }
+            href={entryHref ? entryHref(entry) : null}
+            linkTestId={`project-entry-open-${entry.id}`}
+            actions={
               <ActionMenu
                 label={t('projects.common.more', { name: entry.name })}
                 triggerTestId={`project-entry-actions-${entry.id}`}
@@ -101,8 +85,8 @@ export function ProjectEntryList({
                   {t('projects.entries.delete')}
                 </button>
               </ActionMenu>
-            </div>
-          </div>
+            }
+          />
           {imageFieldIds.size > 0 ? (
             <EntryPictures
               projectId={projectId}
@@ -114,6 +98,6 @@ export function ProjectEntryList({
           ) : null}
         </li>
       ))}
-    </ul>
+    </CardGrid>
   )
 }

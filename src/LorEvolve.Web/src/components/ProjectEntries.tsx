@@ -1,3 +1,4 @@
+import { CardSkeleton } from './CardSkeleton'
 import type { CrumbItem } from './Crumb'
 import { Field } from './Field'
 import { useLocation } from 'react-router-dom'
@@ -83,7 +84,9 @@ export function ProjectEntries({
     })
 
   if (types === null) {
-    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
+    return (
+      <CardSkeleton shape="tile" className="lore__grid" announce={t('projects.common.loading')} />
+    )
   }
 
   if (types.length === 0) {
@@ -207,7 +210,7 @@ export function ProjectEntries({
         type={type}
       />
       {typeId !== null && entries === null ? (
-        <p className="projectcard__meta">{t('projects.common.loading')}</p>
+        <CardSkeleton shape="tile" className="lore__grid" announce={t('projects.common.loading')} />
       ) : (entries ?? []).length === 0 && filtered ? (
         <EmptyState
           title={t('projects.entries.noMatch')}

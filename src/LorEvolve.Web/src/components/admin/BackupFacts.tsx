@@ -1,3 +1,4 @@
+import { CardGrid } from '../CardGrid'
 import type { DatabaseBackupStatus } from '../../admin/api'
 import { formatBytes } from '../../lib/bytes'
 import { formatDateTime } from '../../lib/dates'
@@ -31,7 +32,7 @@ export function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
 
   const last = status.lastAttempt
   return (
-    <ul className="adminstats" data-testid="admin-backup-facts">
+    <CardGrid min={13} testId="admin-backup-facts">
       <Stat
         label={t('admin.backups.lastVerified.label')}
         value={
@@ -78,6 +79,6 @@ export function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
         }
         testId="stat-backup-attempt"
       />
-    </ul>
+    </CardGrid>
   )
 }

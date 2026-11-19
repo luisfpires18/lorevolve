@@ -1,3 +1,4 @@
+import { CardGrid } from '../components/CardGrid'
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
@@ -138,7 +139,7 @@ function Contents({ name, sections }: { name: string; sections: readonly Section
       <h2 className="contents__heading sectionrule" id={`contents-${name}`}>
         {t(`workspace.rail.groups.${name}` as never)}
       </h2>
-      <ul className="contents__list">
+      <CardGrid min={14} className="contents__list">
         {sections.map((section) => (
           <li key={section.segment}>
             <Link
@@ -160,7 +161,7 @@ function Contents({ name, sections }: { name: string; sections: readonly Section
             </Link>
           </li>
         ))}
-      </ul>
+      </CardGrid>
     </section>
   )
 }

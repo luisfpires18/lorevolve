@@ -1,3 +1,4 @@
+import { CardGrid } from '../CardGrid'
 import type { AdminOverview } from '../../admin/api'
 import { formatBytes } from '../../lib/bytes'
 import { formatDateTime } from '../../lib/dates'
@@ -26,7 +27,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
         <p className="settings__note" data-testid="admin-generated">
           {t('admin.main.counted', { time: formatDateTime(overview.generatedAt) })}
         </p>
-        <ul className="adminstats" data-testid="admin-stats">
+        <CardGrid min={13} testId="admin-stats">
           <Stat
             label={t('admin.main.stats.accounts.label')}
             value={overview.accounts}
@@ -75,7 +76,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
             source={t('admin.main.stats.apps.source')}
             testId="stat-apps"
           />
-        </ul>
+        </CardGrid>
       </Section>
 
       <Section title={t('admin.main.trend.heading')} titleId="admin-trend" rule={false}>
@@ -97,7 +98,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
 
       <Section title={t('admin.untracked.heading')} titleId="admin-untracked" rule={false}>
         <p className="settings__note">{t('admin.untracked.note')}</p>
-        <ul className="adminstats" data-testid="admin-untracked">
+        <CardGrid min={13} testId="admin-untracked">
           <Stat
             label={t('admin.untracked.newAccounts.label')}
             value={NOT_TRACKED}
@@ -122,7 +123,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
             source={t('admin.untracked.ai.source')}
             testId="stat-ai"
           />
-        </ul>
+        </CardGrid>
       </Section>
     </>
   )

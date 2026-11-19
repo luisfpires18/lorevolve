@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Pager } from '../Pager'
 import { EmptyState } from '../EmptyState'
 import { EntityCard } from '../EntityCard'
+import { CardGrid } from '../CardGrid'
 import { useI18n } from '../../i18n'
 import type { EntityPage } from '../../lore/types'
 import { useUniverseAccess } from '../../universes/access'
@@ -45,7 +46,7 @@ export function LoreResults({
   return (
     <>
       {chosenName && result && result.items.length > 0 ? (
-        <ul className="cardgrid lore__grid" data-testid="entity-grid">
+        <CardGrid className="lore__grid" testId="entity-grid">
           {result.items.map((entity, index) => (
             <li key={entity.id}>
               <EntityCard
@@ -60,7 +61,7 @@ export function LoreResults({
               />
             </li>
           ))}
-        </ul>
+        </CardGrid>
       ) : null}
 
       {chosenName && result && result.items.length === 0 && isFiltered ? (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { useOutletContext } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
 import { ProjectKind, type ProjectKindValue } from '../projects/types'
@@ -16,6 +16,8 @@ import {
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
+import { CardGrid } from '../components/CardGrid'
+import { CatalogCard } from '../components/CatalogCard'
 
 /** The kinds each category lists: the same sets the routes in `App.tsx` give `ProjectsPage`, so a count equals its list. */
 const KINDS_BY_SECTION = new Map<string, readonly ProjectKindValue[]>([
@@ -86,43 +88,33 @@ export default function ProjectsDirectory() {
           testId="projects-failed"
         />
       ) : null}
-      <ul
-        className="lorecatalog__grid lorecatalog__grid--rows"
-        data-testid="projects-directory-cards"
-      >
+      <CardGrid rows gap={3} className="lorecatalog__grid" testId="projects-directory-cards">
         {CREATION.map((section) => {
           const Icon = section.icon
           const count =
             current?.kind === 'ready' ? (current.counts.get(section.segment) ?? 0) : null
           return (
             <li key={section.segment}>
-              <Link
-                className="typecard"
-                to={`../${section.segment}`}
-                data-testid="projects-directory-card"
+              <CatalogCard
+                href={`../${section.segment}`}
+                icon={<Icon aria-hidden="true" />}
+                name={sectionLabel(section)}
+                description={sectionPurpose(section)}
+                meta={
+                  count === null
+                    ? null
+                    : count === 0
+                      ? t('projects.directory.none')
+                      : tn('projects.directory.count', count, { n: count })
+                }
+                metaTestId="projects-directory-count"
+                testId="projects-directory-card"
                 data-section={section.segment}
-              >
-                <span className="typecard__icon">
-                  <Icon aria-hidden="true" />
-                </span>
-                <span className="typecard__body">
-                  <span className="typecard__name">{sectionLabel(section)}</span>
-                  <span className="typecard__details">
-                    <span className="typecard__description">{sectionPurpose(section)}</span>
-                    {count !== null ? (
-                      <span className="typecard__meta" data-testid="projects-directory-count">
-                        {count === 0
-                          ? t('projects.directory.none')
-                          : tn('projects.directory.count', count, { n: count })}
-                      </span>
-                    ) : null}
-                  </span>
-                </span>
-              </Link>
+              />
             </li>
           )
         })}
-      </ul>
+      </CardGrid>
     </section>
   )
 }

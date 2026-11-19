@@ -109,21 +109,7 @@
   display: none;
 }
 
-.lorecatalog__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /* A short, fixed set of destinations (the Projects hub's four kinds): one full-width row each. */
-.lorecatalog__grid--rows {
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-}
-
 .lorecatalog__grid > li {
   display: flex;
   flex-direction: column;

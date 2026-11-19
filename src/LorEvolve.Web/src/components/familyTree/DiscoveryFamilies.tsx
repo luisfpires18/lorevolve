@@ -1,3 +1,4 @@
+import { CardGrid } from '../CardGrid'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import type { FamilyDiscoveryPage } from '../../familyTree/types'
@@ -65,7 +66,13 @@ export function DiscoveryFamilies({
       ) : null}
 
       {result && result.items.length > 0 ? (
-        <ul className="discovery__list" aria-busy={!isCurrent} data-testid="family-list">
+        <CardGrid
+          min={17}
+          gap={3}
+          className="discovery__list"
+          aria-busy={!isCurrent}
+          testId="family-list"
+        >
           {result.items.map((family) => (
             <li key={family.focusEntityId}>
               <Link
@@ -96,7 +103,7 @@ export function DiscoveryFamilies({
               </Link>
             </li>
           ))}
-        </ul>
+        </CardGrid>
       ) : null}
 
       {result ? (
