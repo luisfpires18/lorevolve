@@ -84,7 +84,6 @@ const deleteButtonWithWrongTone = (source: string) =>
 
 // Files with a plain `Button` labelled "New ..." or "Add ...", with the reason it is no New button.
 const PLAIN_NEW_BUTTONS = new Map<string, string>([
-  ['src/components/admin/FeedbackScreen.tsx', 'Newer is a pager step'],
   ['src/components/lore/LoreContextMentioned.tsx', 'Add links an existing entry, nothing is made'],
   ['src/components/lore/MassCreatePaste.tsx', 'adds typed text to a list before anything is saved'],
   ['src/components/projects/SagasUnassigned.tsx', 'puts an existing production in a phase'],

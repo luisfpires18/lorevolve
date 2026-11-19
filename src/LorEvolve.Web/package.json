@@ -11,7 +11,7 @@
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test devVersion.test.ts mentions.test.ts familyLayout.test.ts groupOrder.test.ts fieldInheritance.test.ts i18n.test.ts uiContract.test.ts uiContract/actions.test.ts uiContract/wording.test.ts uiContract/states.test.ts settleRead.test.ts structureTree.test.ts fieldRows.test.ts systemMachine.test.ts guardBuilder.test.ts buttonClass.test.ts",
+    "test": "node --test devVersion.test.ts mentions.test.ts familyLayout.test.ts groupOrder.test.ts fieldInheritance.test.ts i18n.test.ts uiContract.test.ts uiContract/actions.test.ts uiContract/wording.test.ts uiContract/states.test.ts uiContract/lists.test.ts settleRead.test.ts structureTree.test.ts fieldRows.test.ts systemMachine.test.ts guardBuilder.test.ts buttonClass.test.ts",
     "lines": "node --test lineLimit.test.ts"
   },
   "dependencies": {
