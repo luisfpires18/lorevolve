@@ -46,8 +46,28 @@ const STATUS_NOTICES = new Map<string, string>([
   ],
 ])
 
-// Files that still declare their own read state with `kind: 'loading'`. useAsyncRead holds `Load<T>`.
-const OWN_READ_STATES = new Set(['src/lib/useAsyncRead.ts'])
+// Files that still declare their own read state. useAsyncRead holds `Load<T>`. The screens below key the state by the
+// id they read for (so a switch never shows the old thing) or hold more than one outcome; `Load<T>` does neither.
+const OWN_READ_STATES = new Map<string, string>([
+  ['src/lib/useAsyncRead.ts', 'the shared Load<T> itself'],
+  [
+    'src/components/ProjectEntityDetailView.tsx',
+    'keyed by entity id; a 403 is also not found, by design',
+  ],
+  [
+    'src/projects/useProjectRead.ts',
+    'keyed by project id; a story and a moved story are outcomes too',
+  ],
+  ['src/pages/PublicAuthorPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
+  ['src/pages/PublicLorePage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
+  ['src/pages/PublicStoryPage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
+  ['src/pages/PublicWorldPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
+])
+
+// Files that set `kind: 'missing'` with no 404 test near it, with the reason.
+const MISSING_WITHOUT_404 = new Map<string, string>([
+  ['src/projects/useProjectRead.ts', 'missing is a story absent from the projects list, not a 404'],
+])
 
 type Guard = (source: string) => boolean
 
@@ -61,8 +81,20 @@ const drawsStatusNotice: Guard = (source) =>
 const drawsHiddenStatus: Guard = (source) =>
   tags(source).some((tag) => /className="visually-hidden"/.test(tag) && /role="status"/.test(tag))
 const writesErrorText: Guard = (source) => /instanceof Error \?/.test(source)
+// A read-state union: `{ kind: 'loading' }` beside another member, or a member that carries more fields or keys by
+// id (`| { slug: string; kind: 'ready'; ... }`). Loading may be null in those, so a missing member counts too.
 const declaresReadState: Guard = (source) =>
-  /\{ kind: 'loading' \}\s*\||\|\s*\{ kind: 'loading' \}/.test(source)
+  /\{ kind: 'loading' \}\s*\||\|\s*\{[^}\n]*kind: '(loading|missing)'/.test(source)
+// `kind: 'missing'` is a real 404 only: set it from isNotFound, a 404 status or the `missing:` option, a few lines apart.
+const setsMissingWithout404: Guard = (source) => {
+  const lines = source.split('\n')
+  return lines.some(
+    (line, index) =>
+      /kind: 'missing'/.test(line) &&
+      !/^\s*\|/.test(line) &&
+      !/isNotFound|404|missing:/.test(lines.slice(Math.max(0, index - 4), index + 5).join('\n')),
+  )
+}
 const usesMuted: Guard = (source) => /className="muted"/.test(source)
 
 function check(guard: Guard, files: string[], allowed: Set<string> | Map<string, string>) {
@@ -86,6 +118,17 @@ test('each guard catches the hand-written form', () => {
   assert.ok(drawsHiddenStatus('<span className="visually-hidden" role="status">x</span>'))
   assert.ok(writesErrorText("e instanceof Error ? e.message : 'x'"))
   assert.ok(declaresReadState("type S = { kind: 'loading' } | { kind: 'ready' }"))
+  assert.ok(declaresReadState("type S = | { slug: string; kind: 'missing' } | { kind: 'error' }"))
+  assert.ok(
+    declaresReadState(
+      "type S =\n  | { kind: 'ready'; for: string }\n  | { kind: 'missing'; for: string }",
+    ),
+  )
+  assert.ok(!declaresReadState("const a = { kind: 'ready', value: 1 }"))
+  assert.ok(setsMissingWithout404("if (gone) {\n  setState({ kind: 'missing' })\n}"))
+  assert.ok(!setsMissingWithout404("if (isNotFound(e)) {\n  setState({ kind: 'missing' })\n}"))
+  assert.ok(!setsMissingWithout404("  | { kind: 'missing'; for: string }"))
+  assert.ok(!setsMissingWithout404("status === 404 ? 'x' : 1\nsetState({ kind: 'missing' })"))
   assert.ok(usesMuted('<p className="muted">x</p>'))
 })
 
@@ -107,6 +150,10 @@ test('a caught error message is errorText', () => {
 
 test('a read state is useAsyncRead; the list of own read states only shrinks', () => {
   check(declaresReadState, sourceFiles, OWN_READ_STATES)
+})
+
+test('kind: missing comes from a 404, never from a failed read', () => {
+  check(setsMissingWithout404, sourceFiles, MISSING_WITHOUT_404)
 })
 
 test('no className="muted": it has no rule; QuietNote is the quiet line', () => {
