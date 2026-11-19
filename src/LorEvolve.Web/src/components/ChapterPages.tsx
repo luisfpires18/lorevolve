@@ -6,6 +6,7 @@ import { PageRow } from './projectEntities/PageRow'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
+import { ProjectCard } from './ProjectCard'
 import { errorText } from '../lib/errorText'
 
 /**
@@ -88,10 +89,15 @@ export function ChapterPages({
   }
 
   return (
-    <section data-testid={`chapter-pages-${chapterId}`}>
-      <div className="projectcard__head">
-        <h4 className="sectionrule sectionrule--accent">{t('projects.pages.title')}</h4>
-        <div className="projectcard__actions">
+    <ProjectCard
+      as="section"
+      plain
+      level={4}
+      titleClassName="sectionrule sectionrule--accent"
+      testId={`chapter-pages-${chapterId}`}
+      title={t('projects.pages.title')}
+      actions={
+        <>
           <NewButton
             tone="secondary"
             size="sm"
@@ -109,9 +115,9 @@ export function ChapterPages({
           >
             {t('projects.pages.close')}
           </Button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       {failed ? (
         <p className="form__message" role="alert" data-testid={`chapter-pages-failed-${chapterId}`}>
           {failed}
@@ -189,6 +195,6 @@ export function ChapterPages({
           />
         ))}
       </ol>
-    </section>
+    </ProjectCard>
   )
 }
