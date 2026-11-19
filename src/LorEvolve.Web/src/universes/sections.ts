@@ -117,7 +117,13 @@ export const COMIC: Section = {
   icon: BookImage,
   needs: 'comic',
 }
-const PROJECTS: Section = { segment: 'projects', testId: 'workspace-projects', icon: FolderOpen }
+// A game's Entities directory lives under its own address but is still part of Projects, so the shell names it (and the tab) so.
+const PROJECTS: Section = {
+  segment: 'projects',
+  testId: 'workspace-projects',
+  icon: FolderOpen,
+  also: ['game-entities'],
+}
 const AI_CHANGES: Section = {
   segment: 'ai-changes',
   testId: 'workspace-ai-changes',
