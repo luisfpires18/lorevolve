@@ -54,7 +54,7 @@
 +</header>
 +<section aria-labelledby="admin-measured" class="section section--bare">
 +<h2 class="sectiontitle" id="admin-measured">Measured</h2>
-+<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 03:02 PM.</p>
++<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 03:47 PM.</p>
 -<section aria-labelledby="admin-trend" class="adminsection">
 -<h2 class="settings__heading" id="admin-trend">Universes created per month</h2>
 +<section aria-labelledby="admin-trend" class="section section--bare">
@@ -141,7 +141,15 @@
 -<div class="doc__titlerow">
 -<h1 class="idea__heading" data-testid="board-heading" id="_r_#_">
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">Boards in “<bdi>Seed World</bdi>”</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Boards in “<bdi>Seed World</bdi>”</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="board-heading" id="_r_#_">
 -<p class="idea__lede quietnote">A place to lay possibilities out. Nothing on a board changes your world, and a line is not a relationship. Last saved &lt;time&gt;.</p>
@@ -154,7 +162,15 @@
 -</div>
 -<p class="idea__lede quietnote">A place to lay possibilities out. Nothing on a board changes your world, and a line is not a relationship.</p>
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">Boards in “<bdi>Seed World</bdi>”</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="board-back" href="/app/universes/<guid>/ideas/boards">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Boards in “<bdi>Seed World</bdi>”</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="board-heading" id="_r_#_">New board</h1>
 +</div>
@@ -344,7 +360,15 @@
 -<div class="doc__titlerow">
 -<h1 class="idea__heading" data-testid="idea-heading" id="_r_#_">
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">Ideas in “<bdi>Seed World</bdi>”</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Ideas in “<bdi>Seed World</bdi>”</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="idea-heading" id="_r_#_">
 -<p class="idea__lede quietnote">A possibility, not lore. Nothing saved here changes your world. Last saved &lt;time&gt;.</p>
@@ -357,7 +381,15 @@
 -</div>
 -<p class="idea__lede quietnote">A possibility, not lore. Nothing saved here changes your world.</p>
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">Ideas in “<bdi>Seed World</bdi>”</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="idea-back" href="/app/universes/<guid>/ideas">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Ideas in “<bdi>Seed World</bdi>”</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="idea-heading" id="_r_#_">New idea</h1>
 +</div>
@@ -547,6 +579,16 @@
 +</div>
 +</div>
 +</header>
+## new-project-nouniverse
++<section class="projects">
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__text">
++<h1 class="pageheader__title">New project</h1>
++</div>
++</div>
++</header>
++</section>
 ## profile-account
 -<h1 class="profile__title">Profile</h1>
 +<header class="pageheader">
@@ -658,7 +700,15 @@
 -<div class="doc__titlerow">
 -<h1 class="rule__heading" data-testid="world-rule-heading" id="_r_#_">
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>World Rules</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="world-rule-heading" id="_r_#_">
 -<p class="quietnote rule__lede">A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted. Last saved &lt;time&gt;.</p>
@@ -671,7 +721,15 @@
 -</div>
 -<p class="quietnote rule__lede">A rule of how this world works, in your own words. LorEvolve never reads them, and saving changes nothing else in the universe; only a timeline check you set below is ever counted.</p>
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>World Rules</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="world-rule-heading" id="_r_#_">New rule</h1>
 +</div>
@@ -681,7 +739,15 @@
 -<a class="rule__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
 -<h1 class="rule__heading" data-testid="world-rule-heading">
 +<header class="dochead">
-+<a class="dochead__back" data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">World Rules</a>
++<nav aria-label="Breadcrumb" class="crumb crumb--back dochead__back">
++<a data-discover="true" data-testid="world-rule-back" href="/app/universes/<guid>/world-rules">
++<svg aria-hidden="true" class="lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>World Rules</a>
++</nav>
 +<div class="dochead__row">
 +<h1 class="dochead__title" data-testid="world-rule-heading">
 +</div>
@@ -898,8 +964,10 @@
 -<h2 class="sectionrule">Types</h2>
 -<p class="projects__lede">The kinds of thing this project is made of.</p>
 -</div>
-+<div class="schema__actions">
--</header>
++<header class="pageheader">
++<div class="pageheader__main">
++<div class="pageheader__actions">
++</div>
 +</div>
 -<h2 class="settings__heading" id="reltypes-heading">Relation kinds</h2>
 +<h2 class="sectiontitle" id="reltypes-heading">Relation kinds</h2>
