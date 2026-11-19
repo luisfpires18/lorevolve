@@ -185,6 +185,13 @@
 +<ul class="cardgrid cardgrid--min-14 contents__list">
 -<ul class="contents__list">
 +<ul class="cardgrid cardgrid--min-14 contents__list">
+## overview-management-hover
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
 ## projects-account
 -<li class="storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
 -<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">

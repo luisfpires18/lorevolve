@@ -1,6 +1,6 @@
 # Before and after evidence: shared cards, grids and rows (#413)
 
-Before = `origin/dev` `b672b9dc` in a detached worktree with its own `npm ci`, Vite on 5194. After = `feat/shared-cards` `dab5b67e` (PR #433), Vite on 5193. One API on 5185 behind both, one scratch database restored from the same snapshot before each side.
+Before = `origin/dev` `b672b9dc` in a detached worktree with its own `npm ci`, Vite on 5194. After = `feat/shared-cards` `dab5b67e` (PR #433), Vite on 5193; the five hover states recaptured on both sides after the review fixes `a788cfa4` and `aa93c7c1` (the worktree re-added at `b672b9dc` with a fresh `npm ci`). One API on 5185 behind both, one scratch database restored from the same snapshot before each side.
 
 ## Setup and seed
 
@@ -14,27 +14,27 @@ The #412 snapshot is the start (owner and member accounts, an account with no un
 | --- | --- |
 | Plain screens | address opened, networkidle, 300 ms, networkidle, 500 ms |
 | Loading states (Lore entries, Lore types, Game types, Game entries) | the read is held for 4 s with `page.route`, the same on both sides; the shot is taken 800 ms after the read is held (the tile skeleton has a 300 ms delay: hidden at 100 ms, visible at 450 ms, measured on the after side) |
-| Hover states | the pointer moved onto the first card (real pointer, 500 ms) |
+| Hover states | the pointer moved onto the first card, or the first Management doorway (real pointer, 500 ms) |
 | Opened controls (Select, Edit, Rename, Lore drawer, Preview, details) | the control pressed, networkidle, 500 ms |
 | First run | the account with no universe |
 | Phone | 390 by 844, touch emulation; desktop 1440 by 900; light and dark by `prefers-color-scheme` |
 
-All 220 shots per side reached their state (0 failures).
+All 224 shots per side reached their state (0 failures).
 
-Recaptures, all from the same snapshot and the same script on both sides: the four loading states (hold timing on a cold page) on both sides; 13 states a second time with raw PNGs kept (`comic-arcs`, `comic-structure`, `family-member`, `film-structure`, `game-entries-loading`, `ideas-deleted`, `boards-deleted`, `lore-entries-loading`, `series-structure`, `types-gaming`, `types-relations`, `types-terms`, `universes-hover`), because the first pass left one-pixel noise in some pairs; `boards-deleted` a third time for the same reason; `admin-main` on both sides inside one minute (its "Counted ..." line carries the capture time). The PNGs in this folder are those final captures.
+Recaptures, all from the same snapshot and the same script on both sides: the four loading states (hold timing on a cold page) on both sides; 13 states a second time with raw PNGs kept (`comic-arcs`, `comic-structure`, `family-member`, `film-structure`, `game-entries-loading`, `ideas-deleted`, `boards-deleted`, `lore-entries-loading`, `series-structure`, `types-gaming`, `types-relations`, `types-terms`, `universes-hover`), because the first pass left one-pixel noise in some pairs; `boards-deleted` a third time for the same reason; after the review fixes, the five hover states (`universes-hover`, `overview-hover`, the new `overview-management-hover`, `lore-entries-hover`, `lore-types-hover`) on both sides, raw kept, all 20 pairs identical raw; `admin-main` on both sides inside one minute (its "Counted ..." line carries the capture time). The PNGs in this folder are those final captures.
 
 ## Result in one place
 
-- States planned: 53 in the plan, plus 2 the implementation report adds (`types-relations-edit`: the `RelationshipTypeManager` edit row; `comic-structure`: the comic outline). Reached: 55 before, 55 after. Not reached: none.
-- PNGs: 440 (55 states x 8), 220 pairs.
-- DOM (desktop light): 34 of 55 states differ (class names and wrappers of the shared parts), 21 identical. Diff lines in `dom-diff-lines.txt` (cut at 60 lines per state).
-- Pixels: 186 pairs identical, 34 differing (186 + 34 = 220), in 9 states.
-- Differing pairs by eye: 32 intended, 2 regression (`universes-hover`, desktop light and dark, reduced motion only).
-- Phone `scrollWidth - clientWidth`: 0 px on all 110 phone shots, both sides.
-- h1 on the after side: exactly one on all 55 states, every variant. Tab titles: none change.
-- Hover: on the after side the lift is 2 px in all four hover states; against dev only `universes-hover` differs (reduced motion). Press (`:active`, forced through DevTools) in the table below.
+- States planned: 53 in the plan, plus 2 the implementation report adds (`types-relations-edit`: the `RelationshipTypeManager` edit row; `comic-structure`: the comic outline), plus 1 the review adds (`overview-management-hover`: the flat Management doorway under the pointer). Reached: 56 before, 56 after. Not reached: none.
+- PNGs: 448 (56 states x 8), 224 pairs.
+- DOM (desktop light): 35 of 56 states differ (class names and wrappers of the shared parts), 21 identical. Diff lines in `dom-diff-lines.txt` (cut at 60 lines per state).
+- Pixels: 192 pairs identical, 32 differing (192 + 32 = 224), in 8 states.
+- Differing pairs by eye: 32 intended, 0 regressions.
+- Phone `scrollWidth - clientWidth`: 0 px on all 112 phone shots, both sides.
+- h1 on the after side: exactly one on all 56 states, every variant. Tab titles: none change.
+- Hover: on the after side the lift is 2 px in all five hover states with motion allowed and 0 px with reduced motion, as on dev; all 20 hover pairs (captured with reduced motion) are identical to dev. Press (`:active`, forced through DevTools) in the table below.
 
-PNGs are 256-colour (median cut, no dither). Every count above is taken on the 256-colour files in this folder. A 256-colour palette is chosen per image, so one real difference can shift anti-aliased pixels across the whole page: on the 256-colour files a differing pair shows a diff box covering most of the page, and the judged differences below use the raw captures (kept out of the repo) for the box and the changed-pixel count. All 34 differing pairs were also compared raw, and all 34 differ raw too.
+PNGs are 256-colour (median cut, no dither). Every count above is taken on the 256-colour files in this folder. A 256-colour palette is chosen per image, so one real difference can shift anti-aliased pixels across the whole page: on the 256-colour files a differing pair shows a diff box covering most of the page, and the judged differences below use the raw captures (kept out of the repo) for the box and the changed-pixel count. All 32 differing pairs were also compared raw, and all 32 differ raw too.
 
 Repeatability: a full second pass of the after side (before any recapture) matched the first on 209 of 220 files. The 11 that did not: `admin-main` x 4 (the capture time in its first line), and seven one-off pairs of 1 to 55 changed pixels or skeleton shimmer (`boards-deleted`, `ideas-deleted` x 2, `ideas-list`, `lore-context-mentions`, `lore-entries-loading` x 2). The states that showed such noise against dev were recaptured as listed above; each then came out identical raw.
 
@@ -50,12 +50,16 @@ Computed style of the first card, hover and `:active` forced through DevTools (`
 | Overview doorway (`.doorway`) | before | lift -2 px, shadow 2 | no lift, shadow 1, 120 ms |
 | Overview doorway (`.doorway`) | after | lift -2 px, shadow 2 | no lift, shadow 1, 80 ms |
 
+| Flat Management doorway (`.contents--management .doorway`) | before and after | lift -2 px, shadow 2 (at rest no shadow) | no lift, shadow 1 |
+
 Both rows that change are the plan's: plates gain the press state, doorway press gains the 80 ms timing.
+
+With `prefers-reduced-motion: reduce` (`fixmeas.mjs`, real pointer and mouse down, both sides): the plate, the Lore doorway and the flat doorway show no lift on hover and keep shadow 2 on hover; the doorways take shadow 1 pressed, and so does the plate on the after side (its new press state). The entry and type cards stay still too (their hover pairs are identical). One reduced-motion guard in `022-shared-surfaces.css` now holds all four cards.
 
 ## Findings
 
-1. Regression, reduced motion (`universes-hover`, desktop light and dark; phone has no hover). With `prefers-reduced-motion: reduce` a universe plate now rises 2 px under the pointer (top 340.1 px, 338.1 px). On dev it did not: `019-universe-plates.css` ends with a reduced-motion block that sets `.plate:hover { transform: none }`, and the new shared rule `.plate:hover` in `022-shared-surfaces.css` (same specificity, later in the cascade) overrides it. The shadow and border warming are the same on both sides. The entry card, type card and doorway lift under reduced motion on both sides (their pairs are identical), so only the plate loses a guard it had. Not fixed here.
-2. Phone, relation kinds and event kinds and methods rows (`types-relations`, `types-terms`, phone). The rows now use `types__actions`, which on a phone puts the buttons on their own row under the name, as the Lore type rows do. Rows with Edit only grow 37 px; rows with Edit and Delete shrink 15 px. The plan names only the desktop gap (0.75 rem to 0.5 rem); the phone reflow follows from the same move and matches `types-lore`, but it is a larger visible change than the plan says.
+1. Fixed regression, reduced motion (`universes-hover`, desktop light and dark; phone has no hover). With `prefers-reduced-motion: reduce` a universe plate rose 2 px under the pointer (top 340.1 px, 338.1 px). On dev it did not: `019-universe-plates.css` ends with a reduced-motion block that sets `.plate:hover { transform: none }`, and the new shared rule `.plate:hover` in `022-shared-surfaces.css` (same specificity, later in the cascade) overrode it. The shadow and border warming are the same on both sides. The entry card, type card and doorway stayed still under reduced motion on both sides (their guards in 036, 038 and 061 come after 022; their pairs are identical), so only the plate lost a guard it had. Fixed in `a788cfa4`: one reduced-motion guard in `022-shared-surfaces.css` for the plate, entry card, type card and doorway (replacing the guards in 019, 036, 038 and 061); recaptured, all 4 `universes-hover` pairs identical. The same commit restores the flat Management doorways' hover shadow 2 and press shadow 1 (lost because the shared rule came earlier than `.contents--management .doorway` at equal specificity); `overview-management-hover` checks it, 4 of 4 pairs identical.
+2. Intended, phone, relation kind and event kind rows (`types-relations`, `types-terms`, phone). They now draw through the shared `TypeRow`, so on a phone Edit and Delete sit on their own row under the name, like the Lore type rows (`types-lore`). Rows with Edit only grow 37 px; rows with Edit and Delete shrink 15 px. The plan names only the desktop gap (0.75 rem to 0.5 rem); the phone reflow is the same "now matches the shared `TypeRow`" change, and it is on the owner checks.
 3. Checked, no difference: the `RelationshipTypeManager` edit row (`types-relations-edit`, 4 of 4 pairs identical), the Projects directory with `gap={3}` (`projects-universe`, 4 of 4), the project schema rows (`game-schema`, `types-gaming`, 8 of 8), the templates rows, the idea, board, rule and project link rows, seasons, phases, the Pages block, the Stories arcs, chapters and scenes (`story-*`), the Lore and Game entry grids, the family discovery grid, the admin grids, and the Lore and Game skeletons.
 4. Not a difference: `admin-main` differed in the first pass only because its "Counted ..." line carries the capture time. Recaptured on both sides in the same minute (07:20 PM) it is identical.
 
@@ -83,43 +87,44 @@ Every row has 8 PNGs.
 | 16 | 1 | `admin-users` | /admin/users | owner (admin) | opened | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 17 | 1 | `admin-backups` | /admin | owner (admin) | Database backups block scrolled into view | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 18 | 1 | `family-discovery` | {R}/family-tree | owner (admin) | opened | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 19 | 2 | `universes-hover` | /app | owner (admin) | pointer on the first universe plate | 2 lines differ | 8, 2 of 4 pairs pixel-identical |
+| 19 | 2 | `universes-hover` | /app | owner (admin) | pointer on the first universe plate | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 20 | 2 | `overview-hover` | {R} | owner (admin) | pointer on the Lore doorway | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 21 | 2 | `lore-entries-hover` | {R}/lore?type=04a1e99c-ca89-4f55-b338-633efab3593a | owner (admin) | pointer on the first entry card | identical | 8, 4 of 4 pairs pixel-identical |
-| 22 | 2 | `lore-types-hover` | {R}/lore | owner (admin) | pointer on the first type card | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 23 | 3 | `lore-relations` | {R}/lore/f4d38c85-eb8e-448a-af32-d2c9854e1698/relations | owner (admin) | opened | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 24 | 3 | `lore-context` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/manuscript/100beccc-5830-47e0-9c57-7dcb26f8fc7a | owner (admin) | Lore drawer opened, "ar" typed in the search | 18 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 25 | 3 | `lore-context-mentions` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/manuscript/100beccc-5830-47e0-9c57-7dcb26f8fc7a | owner (admin) | Lore drawer opened (linked and mentioned rows) | 12 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 26 | 3 | `lore-preview` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/manuscript/100beccc-5830-47e0-9c57-7dcb26f8fc7a | owner (admin) | Lore drawer opened, Preview Mara pressed | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 27 | 3 | `family-member` | {R}/family-tree/f4d38c85-eb8e-448a-af32-d2c9854e1698 | owner (admin) | details of Mara opened (popover; sheet on a phone) | 6 lines differ | 8, 0 of 4 pairs pixel-identical |
-| 28 | 4 | `ideas-list` | {R}/ideas | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 29 | 4 | `ideas-deleted` | {R}/ideas | owner (admin) | Recently deleted pressed | identical | 8, 4 of 4 pairs pixel-identical |
-| 30 | 4 | `boards-list` | {R}/ideas/boards | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 31 | 4 | `boards-deleted` | {R}/ideas/boards | owner (admin) | Recently deleted pressed | identical | 8, 4 of 4 pairs pixel-identical |
-| 32 | 4 | `rules-list` | {R}/world-rules | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 33 | 4 | `world-logic-rules` | {R}/world-logic | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 34 | 4 | `projects-gaming` | {R}/gaming | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 35 | 4 | `projects-account` | /app/projects | owner (admin) | opened | 52 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 36 | 5 | `types-lore` | {R}/types | owner (admin) | opened | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 37 | 5 | `types-gaming` | {R}/types?context=gaming&game=de137b49-0446-4535-8799-4b1393af58f6 | owner (admin) | opened | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 38 | 5 | `types-templates` | {R}/types?context=templates | owner (admin) | opened | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 39 | 5 | `types-relations` | {R}/types | owner (admin) | Relation Kinds tab | 8 lines differ | 8, 0 of 4 pairs pixel-identical |
-| 40 | 5 | `types-relations-edit` | {R}/types | owner (admin) | Relation Kinds tab, Edit pressed on a kind (RelationshipTypeManager edit row) | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 41 | 5 | `types-terms` | {R}/types | owner (admin) | Event Kinds and Methods tab | 8 lines differ | 8, 0 of 4 pairs pixel-identical |
-| 42 | 5 | `types-term-rename` | {R}/types | owner (admin) | Event Kinds and Methods tab, Rename pressed | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 43 | 5 | `game-schema` | {R}/projects/de137b49-0446-4535-8799-4b1393af58f6/types | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 44 | 5 | `type-fields-open` | {R}/types | owner (admin) | Fields of Character pressed | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 45 | 6 | `series-seasons` | {R}/projects/ca82e4fb-249e-4fc8-920b-5cfe213bed3c/structure | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 46 | 6 | `season-rename` | {R}/projects/ca82e4fb-249e-4fc8-920b-5cfe213bed3c/structure | owner (admin) | season menu opened, Rename pressed | identical | 8, 4 of 4 pairs pixel-identical |
-| 47 | 6 | `cinema-sagas` | {R}/cinema?view=sagas | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 48 | 6 | `comic-pages` | {R}/projects/57bb477a-b439-44ce-ab46-7ff8902c5d38/structure | owner (admin) | Open pages pressed, the pages block centred | identical | 8, 4 of 4 pairs pixel-identical |
-| 49 | 7 | `story-scenes` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/structure | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
-| 50 | 7 | `story-folded` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/structure | owner (admin) | Chapter 1 and Arc 1 collapsed | identical | 8, 4 of 4 pairs pixel-identical |
-| 51 | 7 | `story-arc-empty` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/structure | owner (admin) | Arc 2 (empty) expanded | identical | 8, 4 of 4 pairs pixel-identical |
-| 52 | 7 | `film-structure` | {R}/projects/89f45f71-0d29-47b5-9f47-3d4d9ec4b3fe/structure | owner (admin) | opened | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
-| 53 | 7 | `series-structure` | {R}/projects/f275565a-0d05-4c61-abce-7908c3bc24a1/structure | owner (admin) | opened | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
-| 54 | 7 | `comic-structure` | {R}/projects/b584a911-61c8-4941-86e6-7f8b5aba0a42/structure | owner (admin) | opened | 8 lines differ | 8, 0 of 4 pairs pixel-identical |
-| 55 | 7 | `comic-arcs` | {R}/comic?view=arcs | owner (admin) | opened | 2 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 21 | 2 | `overview-management-hover` | {R} | owner (admin) | pointer on the Projects doorway (the first flat Management doorway, `.contents--management`) | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 22 | 2 | `lore-entries-hover` | {R}/lore?type=04a1e99c-ca89-4f55-b338-633efab3593a | owner (admin) | pointer on the first entry card | identical | 8, 4 of 4 pairs pixel-identical |
+| 23 | 2 | `lore-types-hover` | {R}/lore | owner (admin) | pointer on the first type card | 2 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 24 | 3 | `lore-relations` | {R}/lore/f4d38c85-eb8e-448a-af32-d2c9854e1698/relations | owner (admin) | opened | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 25 | 3 | `lore-context` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/manuscript/100beccc-5830-47e0-9c57-7dcb26f8fc7a | owner (admin) | Lore drawer opened, "ar" typed in the search | 18 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 26 | 3 | `lore-context-mentions` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/manuscript/100beccc-5830-47e0-9c57-7dcb26f8fc7a | owner (admin) | Lore drawer opened (linked and mentioned rows) | 12 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 27 | 3 | `lore-preview` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/manuscript/100beccc-5830-47e0-9c57-7dcb26f8fc7a | owner (admin) | Lore drawer opened, Preview Mara pressed | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 28 | 3 | `family-member` | {R}/family-tree/f4d38c85-eb8e-448a-af32-d2c9854e1698 | owner (admin) | details of Mara opened (popover; sheet on a phone) | 6 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 29 | 4 | `ideas-list` | {R}/ideas | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 30 | 4 | `ideas-deleted` | {R}/ideas | owner (admin) | Recently deleted pressed | identical | 8, 4 of 4 pairs pixel-identical |
+| 31 | 4 | `boards-list` | {R}/ideas/boards | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 32 | 4 | `boards-deleted` | {R}/ideas/boards | owner (admin) | Recently deleted pressed | identical | 8, 4 of 4 pairs pixel-identical |
+| 33 | 4 | `rules-list` | {R}/world-rules | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 34 | 4 | `world-logic-rules` | {R}/world-logic | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 35 | 4 | `projects-gaming` | {R}/gaming | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 36 | 4 | `projects-account` | /app/projects | owner (admin) | opened | 52 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 37 | 5 | `types-lore` | {R}/types | owner (admin) | opened | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 38 | 5 | `types-gaming` | {R}/types?context=gaming&game=de137b49-0446-4535-8799-4b1393af58f6 | owner (admin) | opened | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 39 | 5 | `types-templates` | {R}/types?context=templates | owner (admin) | opened | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 40 | 5 | `types-relations` | {R}/types | owner (admin) | Relation Kinds tab | 8 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 41 | 5 | `types-relations-edit` | {R}/types | owner (admin) | Relation Kinds tab, Edit pressed on a kind (RelationshipTypeManager edit row) | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 42 | 5 | `types-terms` | {R}/types | owner (admin) | Event Kinds and Methods tab | 8 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 43 | 5 | `types-term-rename` | {R}/types | owner (admin) | Event Kinds and Methods tab, Rename pressed | 6 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 44 | 5 | `game-schema` | {R}/projects/de137b49-0446-4535-8799-4b1393af58f6/types | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 45 | 5 | `type-fields-open` | {R}/types | owner (admin) | Fields of Character pressed | 8 lines differ | 8, 4 of 4 pairs pixel-identical |
+| 46 | 6 | `series-seasons` | {R}/projects/ca82e4fb-249e-4fc8-920b-5cfe213bed3c/structure | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 47 | 6 | `season-rename` | {R}/projects/ca82e4fb-249e-4fc8-920b-5cfe213bed3c/structure | owner (admin) | season menu opened, Rename pressed | identical | 8, 4 of 4 pairs pixel-identical |
+| 48 | 6 | `cinema-sagas` | {R}/cinema?view=sagas | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 49 | 6 | `comic-pages` | {R}/projects/57bb477a-b439-44ce-ab46-7ff8902c5d38/structure | owner (admin) | Open pages pressed, the pages block centred | identical | 8, 4 of 4 pairs pixel-identical |
+| 50 | 7 | `story-scenes` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/structure | owner (admin) | opened | identical | 8, 4 of 4 pairs pixel-identical |
+| 51 | 7 | `story-folded` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/structure | owner (admin) | Chapter 1 and Arc 1 collapsed | identical | 8, 4 of 4 pairs pixel-identical |
+| 52 | 7 | `story-arc-empty` | {R}/projects/4a76641a-ed9b-43e9-a32a-eaf3c63114b7/structure | owner (admin) | Arc 2 (empty) expanded | identical | 8, 4 of 4 pairs pixel-identical |
+| 53 | 7 | `film-structure` | {R}/projects/89f45f71-0d29-47b5-9f47-3d4d9ec4b3fe/structure | owner (admin) | opened | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 54 | 7 | `series-structure` | {R}/projects/f275565a-0d05-4c61-abce-7908c3bc24a1/structure | owner (admin) | opened | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 55 | 7 | `comic-structure` | {R}/projects/b584a911-61c8-4941-86e6-7f8b5aba0a42/structure | owner (admin) | opened | 8 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 56 | 7 | `comic-arcs` | {R}/comic?view=arcs | owner (admin) | opened | 2 lines differ | 8, 0 of 4 pairs pixel-identical |
 
 Groups: 1 Cards and grids; 2 Lift (pointer on the first card); 3 Entity rows; 4 Link rows; 5 Type rows; 6 Project cards; 7 Outlines.
 
@@ -155,20 +160,17 @@ Every differing pair opened and looked at, before next to after. "Raw box" is th
 | `series-structure` | phone | light | 56,550 to 101,719 | 463 | The level label under each outline title (Season, Episode, Scene) turns muted; nothing else moves. Intended (same rule). |
 | `types-relations` | desktop | dark | 1178,639 to 1303,671 | 1050 | The Edit button of the unused kind sits 4 px further right (gap to Delete 12 px to 8 px); the other kinds, which have Edit only, do not move. Intended (plan: gap 0.75 rem to 0.5 rem). |
 | `types-relations` | desktop | light | 1178,639 to 1303,671 | 1053 | The Edit button of the unused kind sits 4 px further right (gap to Delete 12 px to 8 px); the other kinds, which have Edit only, do not move. Intended (plan: gap 0.75 rem to 0.5 rem). |
-| `types-relations` | phone | dark | 20,541 to 370,844 | 22370 | Edit (and Delete) leave the count line and sit on their own row under the name, as the Lore type rows do on a phone: rows with Edit only grow 37 px, the row with Edit and Delete shrinks 15 px. Intended consequence of `types__actions`; larger than the plan names (Finding 2). |
-| `types-relations` | phone | light | 20,541 to 370,844 | 21919 | Edit (and Delete) leave the count line and sit on their own row under the name, as the Lore type rows do on a phone: rows with Edit only grow 37 px, the row with Edit and Delete shrinks 15 px. Intended consequence of `types__actions`; larger than the plan names (Finding 2). |
+| `types-relations` | phone | dark | 20,541 to 370,844 | 22370 | Edit (and Delete) leave the count line and sit on their own row under the name, as the Lore type rows do on a phone: rows with Edit only grow 37 px, the row with Edit and Delete shrinks 15 px. Intended: the row now matches the shared `TypeRow` (Finding 2). |
+| `types-relations` | phone | light | 20,541 to 370,844 | 21919 | Edit (and Delete) leave the count line and sit on their own row under the name, as the Lore type rows do on a phone: rows with Edit only grow 37 px, the row with Edit and Delete shrinks 15 px. Intended: the row now matches the shared `TypeRow` (Finding 2). |
 | `types-terms` | desktop | dark | 1161,510 to 1303,542 | 1090 | Rename moves 4 px right (gap to Delete 12 px to 8 px). Intended (same rule). |
 | `types-terms` | desktop | light | 360,33 to 1303,542 | 1112 | Rename moves 4 px right (gap to Delete 12 px to 8 px). Intended (same rule). |
-| `types-terms` | phone | dark | 20,598 to 370,844 | 13744 | Rename and Delete sit side by side on their own row under the name instead of wrapping to two lines: the row shrinks 15 px (120 px to 105 px). Intended consequence of `types__actions` (Finding 2). |
-| `types-terms` | phone | light | 20,598 to 370,844 | 13692 | Rename and Delete sit side by side on their own row under the name instead of wrapping to two lines: the row shrinks 15 px (120 px to 105 px). Intended consequence of `types__actions` (Finding 2). |
-| `universes-hover` | desktop | dark | 176,330 to 553,650 | 24080 | REGRESSION (Finding 1): with prefers-reduced-motion the plate now rises 2 px under the pointer (top 340.1 px to 338.1 px); on dev it stays put. |
-| `universes-hover` | desktop | light | 182,334 to 541,644 | 37645 | REGRESSION (Finding 1): with prefers-reduced-motion the plate now rises 2 px under the pointer (top 340.1 px to 338.1 px); on dev it stays put. |
+| `types-terms` | phone | dark | 20,598 to 370,844 | 13744 | Rename and Delete sit side by side on their own row under the name instead of wrapping to two lines: the row shrinks 15 px (120 px to 105 px). Intended: the row now matches the shared `TypeRow` (Finding 2). |
+| `types-terms` | phone | light | 20,598 to 370,844 | 13692 | Rename and Delete sit side by side on their own row under the name instead of wrapping to two lines: the row shrinks 15 px (120 px to 105 px). Intended: the row now matches the shared `TypeRow` (Finding 2). |
 
-### Identical pairs (186)
+### Identical pairs (192)
 
-186 pairs are pixel-identical. All 4 variants of 46 states: `admin-backups`, `admin-main`, `admin-users`, `boards-deleted`, `boards-list`, `cinema-sagas`, `comic-pages`, `family-discovery`, `game-entries`, `game-schema`, `game-types`, `game-types-loading`, `game-types-notypes`, `ideas-deleted`, `ideas-list`, `lore-context`, `lore-context-mentions`, `lore-entries`, `lore-entries-hover`, `lore-entries-loading`, `lore-preview`, `lore-relations`, `lore-select`, `lore-types`, `lore-types-hover`, `lore-types-loading`, `overview`, `overview-hover`, `projects-account`, `projects-gaming`, `projects-universe`, `rules-list`, `season-rename`, `series-seasons`, `story-arc-empty`, `story-folded`, `story-scenes`, `type-fields-open`, `types-gaming`, `types-lore`, `types-relations-edit`, `types-templates`, `types-term-rename`, `universes`, `universes-first-run`, `world-logic-rules`.
+192 pairs are pixel-identical. All 4 variants of 48 states: `admin-backups`, `admin-main`, `admin-users`, `boards-deleted`, `boards-list`, `cinema-sagas`, `comic-pages`, `family-discovery`, `game-entries`, `game-schema`, `game-types`, `game-types-loading`, `game-types-notypes`, `ideas-deleted`, `ideas-list`, `lore-context`, `lore-context-mentions`, `lore-entries`, `lore-entries-hover`, `lore-entries-loading`, `lore-preview`, `lore-relations`, `lore-select`, `lore-types`, `lore-types-hover`, `lore-types-loading`, `overview`, `overview-hover`, `overview-management-hover`, `projects-account`, `projects-gaming`, `projects-universe`, `rules-list`, `season-rename`, `series-seasons`, `story-arc-empty`, `story-folded`, `story-scenes`, `type-fields-open`, `types-gaming`, `types-lore`, `types-relations-edit`, `types-templates`, `types-term-rename`, `universes`, `universes-first-run`, `universes-hover`, `world-logic-rules`.
 
-Partly identical: `universes-hover`: phone light, phone dark identical.
 
 ## Not reachable
 
