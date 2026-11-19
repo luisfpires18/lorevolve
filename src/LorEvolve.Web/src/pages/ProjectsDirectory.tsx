@@ -3,7 +3,6 @@ import { Link, useOutletContext } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
 import { ProjectKind, type ProjectKindValue } from '../projects/types'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, tn, useI18n } from '../i18n'
 import {
   CINEMA,
@@ -41,7 +40,6 @@ export default function ProjectsDirectory() {
   const [attempt, setAttempt] = useState(0)
 
   const heading = t('projects.list.title')
-  useDocumentTitle(heading)
 
   useEffect(() => {
     if (!universeId) return

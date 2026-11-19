@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { SiteFooter } from '../components/SiteFooter'
@@ -8,6 +9,7 @@ import { offered, SECTION_GROUPS, sectionLabel, type ProjectFamily } from '../un
 import { capabilitiesOf, UniverseAccessContext } from '../universes/access'
 import { UniverseRole } from '../universes/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { TitleDetailContext } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
 import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
@@ -82,10 +84,16 @@ function Workspace() {
   })
 
   // The tab names the section and then the universe - "Lore | Hollowmere | LorEvolve" - from the shell, which knows both;
-  // an entry or a story inside a section is still that section here, and nothing beneath sets a title of its own.
+  // an entry or a story inside a section is still that section here, and nothing beneath sets a title of its own. A screen
+  // that reads a name the shell cannot (a game's) hands it over with `useTitleDetail`, and it leads the title.
+  const [detail, setDetail] = useState<string | null>(null)
   useDocumentTitle(
     ...(state.kind === 'ready'
-      ? [sectionLabel(currentSection(pathname, id)), state.value.universe.name]
+      ? [
+          ...(detail ? [detail] : []),
+          sectionLabel(currentSection(pathname, id)),
+          state.value.universe.name,
+        ]
       : []),
   )
 
@@ -120,90 +128,92 @@ function Workspace() {
   const section = currentSection(pathname, id)
 
   return (
-    <div
-      className="workspace"
-      style={accent ? { ['--universe-accent' as string]: accent } : undefined}
-    >
-      <WorkspaceRail
-        universe={universe}
-        section={section}
-        pathname={pathname}
-        isNavOpen={isNavOpen}
-        setNavOpenAt={setNavOpenAt}
-        navId={navId}
-        toggleRef={toggleRef}
-      />
-
-      {/* One landmark for the universe: the way up out of it and its sections, read as one list of places. */}
-      <WorkspaceSidebar
-        universe={universe}
-        artwork={artwork}
-        shared={shared}
-        groups={groups}
-        section={section}
-        isNavOpen={isNavOpen}
-        setNavOpenAt={setNavOpenAt}
-        navId={navId}
-        navRef={navRef}
-      />
-
-      {isNavOpen ? (
-        <div
-          className="sidebar__scrim"
-          aria-hidden="true"
-          onClick={() => setNavOpenAt(null)}
-          data-testid="workspace-nav-scrim"
+    <TitleDetailContext.Provider value={setDetail}>
+      <div
+        className="workspace"
+        style={accent ? { ['--universe-accent' as string]: accent } : undefined}
+      >
+        <WorkspaceRail
+          universe={universe}
+          section={section}
+          pathname={pathname}
+          isNavOpen={isNavOpen}
+          setNavOpenAt={setNavOpenAt}
+          navId={navId}
+          toggleRef={toggleRef}
         />
-      ) : null}
 
-      <div className="workspace__column" inert={isNavOpen}>
-        {/* The atmosphere: the world's own artwork behind the head of every screen, fading into the working surface.
-            Decorative, out of the flow, never a target; the front page takes it taller. Nothing is drawn for a world
-            without a picture (ADR 0068). */}
-        {artwork ? (
+        {/* One landmark for the universe: the way up out of it and its sections, read as one list of places. */}
+        <WorkspaceSidebar
+          universe={universe}
+          artwork={artwork}
+          shared={shared}
+          groups={groups}
+          section={section}
+          isNavOpen={isNavOpen}
+          setNavOpenAt={setNavOpenAt}
+          navId={navId}
+          navRef={navRef}
+        />
+
+        {isNavOpen ? (
           <div
-            className="atmosphere"
+            className="sidebar__scrim"
             aria-hidden="true"
-            data-testid="workspace-atmosphere"
-            data-source="world"
-            data-size={section.segment === '' ? 'hero' : undefined}
-            style={{ ['--atmosphere-image' as string]: `url("${artwork}")` }}
+            onClick={() => setNavOpenAt(null)}
+            data-testid="workspace-nav-scrim"
           />
         ) : null}
 
-        {/* The universe's search, above every screen in it rather than on any one of them. Keyed by the universe, so a
+        <div className="workspace__column" inert={isNavOpen}>
+          {/* The atmosphere: the world's own artwork behind the head of every screen, fading into the working surface.
+            Decorative, out of the flow, never a target; the front page takes it taller. Nothing is drawn for a world
+            without a picture (ADR 0068). */}
+          {artwork ? (
+            <div
+              className="atmosphere"
+              aria-hidden="true"
+              data-testid="workspace-atmosphere"
+              data-source="world"
+              data-size={section.segment === '' ? 'hero' : undefined}
+              style={{ ['--atmosphere-image' as string]: `url("${artwork}")` }}
+            />
+          ) : null}
+
+          {/* The universe's search, above every screen in it rather than on any one of them. Keyed by the universe, so a
             search typed in one world is never left standing in the next. Search was the sidebar's last greyed section;
             it is not a section, it is how any section's content is reached. The web assistant stood beside it until M4
             (issue #157) retired it; AI reaches a universe over MCP now (ADR 0046). */}
-        <div className="workspace__top" key={universe.id}>
-          <UniverseSearch universeId={universe.id} />
-        </div>
+          <div className="workspace__top" key={universe.id}>
+            <UniverseSearch universeId={universe.id} />
+          </div>
 
-        <main className="canvas" id={MAIN_CONTENT_ID} tabIndex={-1}>
-          <UniverseAccessContext.Provider value={access}>
-            <Outlet
-              context={
-                {
-                  universe,
-                  refresh,
-                  chronology,
-                  setChronology,
-                  setArtwork,
-                  types,
-                  groups: typeGroups,
-                  setTypes: setTypeList,
-                  setGroups: setGroupList,
-                  refreshTypes,
-                  revalidateTypes,
-                  refreshProjects,
-                  families,
-                } satisfies WorkspaceContext
-              }
-            />
-          </UniverseAccessContext.Provider>
-        </main>
-        <SiteFooter />
+          <main className="canvas" id={MAIN_CONTENT_ID} tabIndex={-1}>
+            <UniverseAccessContext.Provider value={access}>
+              <Outlet
+                context={
+                  {
+                    universe,
+                    refresh,
+                    chronology,
+                    setChronology,
+                    setArtwork,
+                    types,
+                    groups: typeGroups,
+                    setTypes: setTypeList,
+                    setGroups: setGroupList,
+                    refreshTypes,
+                    revalidateTypes,
+                    refreshProjects,
+                    families,
+                  } satisfies WorkspaceContext
+                }
+              />
+            </UniverseAccessContext.Provider>
+          </main>
+          <SiteFooter />
+        </div>
       </div>
-    </div>
+    </TitleDetailContext.Provider>
   )
 }

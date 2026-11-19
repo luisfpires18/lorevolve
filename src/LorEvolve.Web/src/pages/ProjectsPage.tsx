@@ -5,7 +5,6 @@ import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
 import { formatLabel, kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
 import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -59,7 +58,6 @@ export default function ProjectsPage({
   const [attempt, setAttempt] = useState(0)
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
-  useDocumentTitle(heading)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -72,20 +70,51 @@ export default function ProjectsPage({
     return () => controller.abort()
   }, [universeId, requested, attempt])
 
+  // The head is drawn above every state: its title is static, so there is nothing to wait for.
+  const head = (
+    <PageHeader
+      title={heading}
+      lede={t('projects.list.lede')}
+      actions={
+        /*
+         * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put
+         * a new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click
+         * away from any row here.
+         */
+        universeId ? (
+          <NewButton
+            to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
+            data-testid="projects-page-new"
+          >
+            {t('projects.nav.new')}
+          </NewButton>
+        ) : null
+      }
+    />
+  )
+
   if (state === null || state.for !== requested) {
-    return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
+    return (
+      <>
+        {head}
+        <LoadingNote>{t('projects.list.loading')}</LoadingNote>
+      </>
+    )
   }
 
   if (state.kind === 'failed') {
     return (
-      <LoadError
-        message={t('projects.list.failed')}
-        onRetry={() => {
-          setState(null)
-          setAttempt((current) => current + 1)
-        }}
-        testId="projects-failed"
-      />
+      <>
+        {head}
+        <LoadError
+          message={t('projects.list.failed')}
+          onRetry={() => {
+            setState(null)
+            setAttempt((current) => current + 1)
+          }}
+          testId="projects-failed"
+        />
+      </>
     )
   }
 
@@ -101,25 +130,7 @@ export default function ProjectsPage({
   return (
     <section className="projects" data-testid="projects-page">
       {/* The head every other workspace screen uses, so Projects reads as one of them (#184). */}
-      <PageHeader
-        title={heading}
-        lede={t('projects.list.lede')}
-        actions={
-          /*
-           * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put
-           * a new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click
-           * away from any row here.
-           */
-          universeId ? (
-            <NewButton
-              to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
-              data-testid="projects-page-new"
-            >
-              {t('projects.nav.new')}
-            </NewButton>
-          ) : null
-        }
-      />
+      {head}
 
       {shown.length === 0 ? (
         <EmptyState

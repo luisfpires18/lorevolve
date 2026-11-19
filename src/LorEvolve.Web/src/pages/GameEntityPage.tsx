@@ -2,9 +2,8 @@ import { Link, useOutletContext, useParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
 import { useGameProject } from '../projects/useGameProject'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useTitleDetail } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
-import { GAME_ENTITIES, sectionLabel } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { LoadingNote } from '../components/LoadingNote'
 import { LoadError } from '../components/LoadError'
@@ -19,7 +18,7 @@ export default function GameEntityPage() {
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = workspace?.universe.id
   const { loading, failed, retry, game } = useGameProject(projectId, universeId)
-  useDocumentTitle(game?.name ?? sectionLabel(GAME_ENTITIES))
+  useTitleDetail(game?.name ?? null)
 
   if (loading) return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
 
