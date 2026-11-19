@@ -1,6 +1,6 @@
 # Before and after evidence: shared Pager, Show more and search (#411)
 
-Before = `origin/dev` `21d2226d` in a detached worktree with its own `npm ci`, Vite on 5194. After = `feat/shared-pager-search` `adb98ed9`, Vite on 5193. Both talk to one API on 5185 with a scratch SQLite database. Pipeline copied from #410 (`D:\tmp\work411\seed\`: `seed411.mjs`, `seed411b.mjs`, `cap411.mjs`, `quant.py`, `analyse.py`, `pairs411.py`).
+Before = `origin/dev` `21d2226d` in a detached worktree with its own `npm ci`, Vite on 5194. After = `feat/shared-pager-search` `adb98ed9`, Vite on 5193; the 12 public Show more states (48 PNGs) were captured again at `5d233da8`, after the alignment and count fix, the same way. Both talk to one API on 5185 with a scratch SQLite database. Pipeline copied from #410 (`D:\tmp\work411\seed\`: `seed411.mjs`, `seed411b.mjs`, `cap411.mjs`, `quant.py`, `analyse.py`, `pairs411.py`).
 
 ## Setup and seed
 
@@ -40,11 +40,11 @@ PNGs are 256-colour (median cut, no dither). Pixel counts were taken on the raw 
 - Feedback: Newer and Older become Previous, Page N of 3 and Next.
 - Lore: the pager already had arrows; its text moves by about 4 px on the last page.
 - Search icon in seven fields (Ideas, Idea boards, Timeline, Board picker, Reference picker, Moment pick, Lore context); Lore and Game entities swap the funnel icon for the Search icon. Universes, Admin users and Family discovery already had it: those 16 search pairs are pixel-identical.
-- Show more becomes a `Button` with a shown line above it (Explore, world lore and stories, author) and a secondary Button in place of the text link (AI changes, Suggestions, Game entities). Count line wording: "Showing 2 of 4". Error line: "More could not be loaded."
+- Show more becomes a `Button` with a shown line above it (Explore, world lore and stories, author) and a secondary Button in place of the text link (AI changes, Suggestions, Game entities). Count line wording: "Showing 2 of 4"; Explore keeps "Showing 2 of 4 worlds". Error line: "More could not be loaded."
 
 ## Findings
 
-1. Show more alignment (Explore, public world lore and stories, public author; all 12 of those states, desktop and phone). Before, the pill and the count line were centred. After, the count line stays centred but the Show more (or Try again) button is left-aligned under it. It reads as a layout slip rather than a choice; worth a look before merge. Not fixed here.
+1. Show more alignment and Explore's count (all 12 public Show more states, desktop and phone). The first after capture had the button left-aligned under a centred count line, and Explore's count had lost "worlds". Fixed in `5d233da8` (`ShowMore` `align`, centred by default, and `countLabel`); those 48 after PNGs were captured again and now show the button centred and "Showing 2 of 4 worlds".
 2. Pre-existing, not from this PR: typing fast into the Lore search right after the page loads can drop characters ("Kingdom" became "Kndom" or "igdom" at 30 ms a key, on both sides, about 3 runs in 4; never at 120 ms or slower). The first capture hit it on the after side, so every search and drawer state was captured again at 120 ms a key on both sides.
 
 ## The screens
@@ -309,30 +309,30 @@ No clipping, overlap, wrong dark colour, missing text or phone overflow was foun
 | `more-ai-changes-loading` | desktop light | Small text link "Show more" becomes a secondary Button; loading shows "Loading..." in the button. Intended. |
 | `more-ai-changes-loading` | phone dark | Small text link "Show more" becomes a secondary Button; loading shows "Loading..." in the button. Intended. |
 | `more-ai-changes-loading` | phone light | Small text link "Show more" becomes a secondary Button; loading shows "Loading..." in the button. Intended. |
-| `more-author-error` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-author-error` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-author-error` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-author-error` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-author-idle` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-author-idle` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-author-idle` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-author-idle` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-author-loading` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-author-loading` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-author-loading` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-author-loading` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-explore-error` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-explore-error` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-explore-error` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-explore-error` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-explore-idle` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4". Button alignment flagged under Findings. |
-| `more-explore-idle` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4". Button alignment flagged under Findings. |
-| `more-explore-idle` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4". Button alignment flagged under Findings. |
-| `more-explore-idle` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4". Button alignment flagged under Findings. |
-| `more-explore-loading` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-explore-loading` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-explore-loading` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-explore-loading` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Showing 2 of 4 worlds" reads "Showing 2 of 4"; "Loading..." in the button. Button alignment flagged under Findings. |
+| `more-author-error` | desktop dark | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-author-error` | desktop light | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-author-error` | phone dark | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-author-error` | phone light | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-author-idle` | desktop dark | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-author-idle` | desktop light | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-author-idle` | phone dark | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-author-idle` | phone light | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-author-loading` | desktop dark | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-author-loading` | desktop light | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-author-loading` | phone dark | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-author-loading` | phone light | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-explore-error` | desktop dark | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-explore-error` | desktop light | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-explore-error` | phone dark | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-explore-error` | phone light | Centred pill becomes a centred secondary Button labelled Show more; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-explore-idle` | desktop dark | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-explore-idle` | desktop light | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-explore-idle` | phone dark | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-explore-idle` | phone light | Centred pill becomes a centred secondary Button labelled Show more. Intended. |
+| `more-explore-loading` | desktop dark | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-explore-loading` | desktop light | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-explore-loading` | phone dark | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
+| `more-explore-loading` | phone light | Centred pill becomes a centred secondary Button labelled Show more; "Loading..." in the button. Intended. |
 | `more-game-entities-idle` | desktop dark | Small text link "Show more" becomes a secondary Button. The page scrolls a little differently to bring the taller button into view. Intended. |
 | `more-game-entities-idle` | desktop light | Small text link "Show more" becomes a secondary Button. The page scrolls a little differently to bring the taller button into view. Intended. |
 | `more-game-entities-idle` | phone dark | Small text link "Show more" becomes a secondary Button. The page scrolls a little differently to bring the taller button into view. Intended. |
@@ -349,30 +349,30 @@ No clipping, overlap, wrong dark colour, missing text or phone overflow was foun
 | `more-suggestions-loading` | desktop light | Small text link "Show more" becomes a secondary Button; loading shows "Loading..." in the button. The page scrolls a little differently to bring the taller button into view. Intended. |
 | `more-suggestions-loading` | phone dark | Small text link "Show more" becomes a secondary Button; loading shows "Loading..." in the button. The page scrolls a little differently to bring the taller button into view. Intended. |
 | `more-suggestions-loading` | phone light | Small text link "Show more" becomes a secondary Button; loading shows "Loading..." in the button. The page scrolls a little differently to bring the taller button into view. Intended. |
-| `more-world-lore-error` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-lore-error` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-lore-error` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-lore-error` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-lore-idle` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-lore-idle` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-lore-idle` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-lore-idle` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-lore-loading` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-lore-loading` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-lore-loading` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-lore-loading` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-stories-error` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-stories-error` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-stories-error` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-stories-error` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Button alignment flagged under Findings. |
-| `more-world-stories-idle` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-stories-idle` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-stories-idle` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-stories-idle` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred. Button alignment flagged under Findings. |
-| `more-world-stories-loading` | desktop dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-stories-loading` | desktop light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-stories-loading` | phone dark | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
-| `more-world-stories-loading` | phone light | Centred pill becomes a left-aligned secondary Button; the count line now sits above it and stays centred; "Loading..." in the button. Button alignment flagged under Findings. |
+| `more-world-lore-error` | desktop dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-lore-error` | desktop light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-lore-error` | phone dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-lore-error` | phone light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-lore-idle` | desktop dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-lore-idle` | desktop light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-lore-idle` | phone dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-lore-idle` | phone light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-lore-loading` | desktop dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-lore-loading` | desktop light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-lore-loading` | phone dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-lore-loading` | phone light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-stories-error` | desktop dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-stories-error` | desktop light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-stories-error` | phone dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-stories-error` | phone light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; the error line is generic ("More could not be loaded.") and the button reads Try again. Intended. |
+| `more-world-stories-idle` | desktop dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-stories-idle` | desktop light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-stories-idle` | phone dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-stories-idle` | phone light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred. Intended. |
+| `more-world-stories-loading` | desktop dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-stories-loading` | desktop light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-stories-loading` | phone dark | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
+| `more-world-stories-loading` | phone light | Centred pill becomes a centred secondary Button; the count line now sits above it, centred; "Loading..." in the button. Intended. |
 
 ### Identical pairs (72)
 

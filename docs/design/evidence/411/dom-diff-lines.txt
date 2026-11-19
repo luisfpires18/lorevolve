@@ -155,41 +155,41 @@
 ## more-author-error
 -<div class="pworld__more">
 -<button aria-busy="false" class="portal__pill" type="button">Show more worlds</button>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__error" role="alert">More could not be loaded.</p>
 +<button aria-busy="false" class="button button--secondary" type="button">Try again</button>
 ## more-author-idle
 -<div class="pworld__more">
 -<button aria-busy="false" class="portal__pill" type="button">Show more worlds</button>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<button aria-busy="false" class="button button--secondary" type="button">Show more</button>
 ## more-author-loading
 -<div class="pworld__more">
 -<button aria-busy="true" class="portal__pill" disabled="" type="button">Loading…</button>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<button aria-busy="true" class="button button--secondary" disabled="" type="button">Loading…</button>
 ## more-explore-error
 -<div class="explore__more">
 -<p aria-hidden="true" class="explore__shown">Showing 2 of 4 worlds</p>
 -<p class="explore__more-error" role="alert">More worlds could not be loaded.</p>
 -<button aria-busy="false" class="button button--secondary explore__more-button" data-testid="explore-more" type="button">Try again</button>
-+<div class="showmore">
-+<p aria-hidden="true" class="showmore__shown">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p aria-hidden="true" class="showmore__shown">Showing 2 of 4 worlds</p>
 +<p class="showmore__error" role="alert">More could not be loaded.</p>
 +<button aria-busy="false" class="button button--secondary" data-testid="explore-more" type="button">Try again</button>
 ## more-explore-idle
 -<div class="explore__more">
 -<p aria-hidden="true" class="explore__shown">Showing 2 of 4 worlds</p>
 -<button aria-busy="false" class="button button--secondary explore__more-button" data-testid="explore-more" type="button">Show more worlds</button>
-+<div class="showmore">
-+<p aria-hidden="true" class="showmore__shown">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p aria-hidden="true" class="showmore__shown">Showing 2 of 4 worlds</p>
 +<button aria-busy="false" class="button button--secondary" data-testid="explore-more" type="button">Show more</button>
 ## more-explore-loading
 -<div class="explore__more">
 -<p aria-hidden="true" class="explore__shown">Showing 2 of 4 worlds</p>
 -<button aria-busy="true" class="button button--secondary explore__more-button" data-testid="explore-more" disabled="" type="button">Loading worlds…</button>
-+<div class="showmore">
-+<p aria-hidden="true" class="showmore__shown">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p aria-hidden="true" class="showmore__shown">Showing 2 of 4 worlds</p>
 +<button aria-busy="true" class="button button--secondary" data-testid="explore-more" disabled="" type="button">Loading…</button>
 ## more-game-entities-idle
 -<div class="lore__search">
@@ -268,7 +268,7 @@
 -<p class="explore__more-error" role="alert">More lore could not be loaded.</p>
 -<button aria-busy="false" class="portal__pill" data-testid="public-lore-more" type="button">Try again</button>
 -<p class="pworld__shown" role="status">Showing 2 of 4</p>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__shown" role="status">Showing 2 of 4</p>
 +<p class="showmore__error" role="alert">More could not be loaded.</p>
 +<button aria-busy="false" class="button button--secondary" data-testid="public-lore-more" type="button">Try again</button>
@@ -276,14 +276,14 @@
 -<div class="pworld__more">
 -<button aria-busy="false" class="portal__pill" data-testid="public-lore-more" type="button">Show more lore</button>
 -<p class="pworld__shown" role="status">Showing 2 of 4</p>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__shown" role="status">Showing 2 of 4</p>
 +<button aria-busy="false" class="button button--secondary" data-testid="public-lore-more" type="button">Show more</button>
 ## more-world-lore-loading
 -<div class="pworld__more">
 -<button aria-busy="true" class="portal__pill" data-testid="public-lore-more" disabled="" type="button">Loading…</button>
 -<p class="pworld__shown" role="status">Showing 2 of 4</p>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__shown" role="status">Showing 2 of 4</p>
 +<button aria-busy="true" class="button button--secondary" data-testid="public-lore-more" disabled="" type="button">Loading…</button>
 ## more-world-stories-error
@@ -291,7 +291,7 @@
 -<p class="explore__more-error" role="alert">More stories could not be loaded.</p>
 -<button aria-busy="false" class="portal__pill" data-testid="public-story-more" type="button">Try again</button>
 -<p class="pworld__shown" role="status">Showing 2 of 4</p>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__shown" role="status">Showing 2 of 4</p>
 +<p class="showmore__error" role="alert">More could not be loaded.</p>
 +<button aria-busy="false" class="button button--secondary" data-testid="public-story-more" type="button">Try again</button>
@@ -299,14 +299,14 @@
 -<div class="pworld__more">
 -<button aria-busy="false" class="portal__pill" data-testid="public-story-more" type="button">Show more stories</button>
 -<p class="pworld__shown" role="status">Showing 2 of 4</p>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__shown" role="status">Showing 2 of 4</p>
 +<button aria-busy="false" class="button button--secondary" data-testid="public-story-more" type="button">Show more</button>
 ## more-world-stories-loading
 -<div class="pworld__more">
 -<button aria-busy="true" class="portal__pill" data-testid="public-story-more" disabled="" type="button">Loading…</button>
 -<p class="pworld__shown" role="status">Showing 2 of 4</p>
-+<div class="showmore">
++<div class="showmore showmore--center">
 +<p class="showmore__shown" role="status">Showing 2 of 4</p>
 +<button aria-busy="true" class="button button--secondary" data-testid="public-story-more" disabled="" type="button">Loading…</button>
 ## pager-admin-feedback-first
