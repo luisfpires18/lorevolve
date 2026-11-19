@@ -3,6 +3,8 @@ import type { Dictionary } from '../en'
 /** O invólucro da aplicação: rotas e ecrãs de erro, barra do espaço de trabalho, marca, diálogos e menus partilhados (#101). */
 const shell: Dictionary['shell'] = {
   app: {
+    loadFailed: 'Não foi possível carregar isto.',
+    tryAgain: 'Tentar novamente',
     screenPending: 'A carregar este ecrã',
     sectionPending: 'A abrir…',
     crashed: {

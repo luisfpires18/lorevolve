@@ -68,7 +68,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['mapscreen', '#248'],
   ['masscreate', '#248'],
   ['months--reading', '#248'],
-  ['muted', '#248'],
   ['namelist', '#248'],
   ['pauthor__worlds', '#248'],
   ['plore', '#248'],

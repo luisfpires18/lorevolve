@@ -1,6 +1,8 @@
 /** App shell: routes and error screens, workspace bar, skip link, brand, shared dialogs and menus, API fallback errors (#101). */
 const shell = {
   app: {
+    loadFailed: 'Could not load this.',
+    tryAgain: 'Try again',
     screenPending: 'Loading this screen',
     sectionPending: 'Opening…',
     crashed: {
