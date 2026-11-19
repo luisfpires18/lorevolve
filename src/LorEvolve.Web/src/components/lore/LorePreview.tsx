@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { EntityTile } from '../EntityTile'
+import { EntityRow } from '../EntityRow'
 import { StatusBadge } from '../StatusBadge'
 import type { Chronology } from '../../chronology/types'
 import { useI18n } from '../../i18n'
@@ -10,6 +10,7 @@ import { EMPTY_FACT, renderFact } from '../../lore/facts'
 import { CANON_LABELS } from '../../lore/types'
 import { listEntityRelationships } from '../../relationships/api'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 const MAX_RELATIONS = 8
 
@@ -93,26 +94,27 @@ export function LorePreview({
       {state.kind === 'ready' ? (
         <>
           <header className="lorepreview__head">
-            <EntityTile
-              className="lorepreview__tile"
+            <EntityRow
               universeId={universeId}
               entityId={state.value.entity.id}
               image={state.value.entity.image}
               typeIcon={state.value.entity.entityTypeIcon}
               typeAccent={state.value.entity.entityTypeAccentColor}
+              name={
+                <h3 className="lorepreview__name" id={nameId} data-testid="lore-preview-name">
+                  <bdi>{state.value.entity.name}</bdi>
+                </h3>
+              }
+              meta={
+                <>
+                  <bdi>{state.value.entity.entityTypeName}</bdi>
+                  <StatusBadge
+                    step={state.value.entity.canonStatus}
+                    label={CANON_LABELS[state.value.entity.canonStatus]}
+                  />
+                </>
+              }
             />
-            <div className="relation__body">
-              <h3 className="lorepreview__name" id={nameId} data-testid="lore-preview-name">
-                <bdi>{state.value.entity.name}</bdi>
-              </h3>
-              <p className="relation__meta">
-                <bdi>{state.value.entity.entityTypeName}</bdi>
-                <StatusBadge
-                  step={state.value.entity.canonStatus}
-                  label={CANON_LABELS[state.value.entity.canonStatus]}
-                />
-              </p>
-            </div>
           </header>
 
           {state.value.entity.summary ? (
@@ -149,9 +151,9 @@ export function LorePreview({
                 ))}
               </ul>
               {state.value.relations.length > MAX_RELATIONS ? (
-                <p className="relation__meta">
+                <QuietNote className="lorepreview__more">
                   {t('lore.preview.more', { n: state.value.relations.length - MAX_RELATIONS })}
-                </p>
+                </QuietNote>
               ) : null}
             </div>
           ) : null}

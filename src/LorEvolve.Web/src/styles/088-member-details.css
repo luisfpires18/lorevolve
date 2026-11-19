@@ -81,11 +81,6 @@
   border-radius: var(--radius-full);
 }
 
-.familydetails__title {
-  flex: 1;
-  min-width: 0;
-}
-
 .familydetails__name {
   margin: 0;
   font-family: var(--display);
@@ -102,16 +97,6 @@
 .familydetails__name:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-}
-
-.familydetails__kind {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.6rem;
-  margin: 0.25rem 0 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 .familydetails__close {

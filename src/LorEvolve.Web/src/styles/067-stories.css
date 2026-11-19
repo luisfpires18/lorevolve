@@ -26,29 +26,14 @@
 }
 
 /* A story is a work, so its title leads in the display face and the facts follow it quietly. The whole row opens
-   the story: the title is the one link, and its box is stretched over the row, so the link's name stays the title. */
+   the story through `.rowlink`: the title is the one link, stretched over the row, so the link's name stays the title. */
 .storyrow {
-  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.3rem 1.5rem;
   align-items: baseline;
   padding: var(--space-5) var(--space-3);
   border-bottom: 1px solid var(--rule);
-  transition: background-color var(--duration-1) var(--ease);
-}
-
-.storyrow:hover {
-  background: var(--hover-wash);
-}
-
-.storyrow:active {
-  background: var(--press-wash);
-}
-
-.storyrow:has(.storyrow__title:focus-visible) {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
 }
 
 .storyrow__title {
@@ -58,16 +43,6 @@
   color: var(--ink);
   text-decoration: none;
   overflow-wrap: anywhere;
-}
-
-.storyrow__title::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-.storyrow__title:focus-visible {
-  outline: none;
 }
 
 .storyrow__meta {

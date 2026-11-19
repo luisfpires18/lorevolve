@@ -54,10 +54,6 @@
    Six card shapes where the first page is about to be. They appear only if the read takes longer
    than a moment, so a fast load never flashes them. Static: nothing shimmers. */
 
-.lore__skeleton {
-  animation: skeleton-appear 0s linear 300ms both;
-}
-
 @keyframes skeleton-appear {
   from {
     visibility: hidden;
@@ -102,4 +98,25 @@
   .entitycard:hover {
     transform: none;
   }
+}
+
+/* The identity part of a row (EntityRow): tile, name, kind line. */
+.entityrow__tile {
+  border-radius: var(--radius-sm);
+}
+
+/* flex: 1 fills a flex header (family details); a grid row ignores it. */
+.entityrow__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.entityrow__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
 }

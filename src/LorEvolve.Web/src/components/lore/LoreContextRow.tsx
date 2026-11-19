@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react'
-import { EntityTile } from '../EntityTile'
+import { EntityRow } from '../EntityRow'
 import { useI18n } from '../../i18n'
 import type { EntityImageRef } from '../../lore/types'
 import type { useUniverseAccess } from '../../universes/access'
@@ -47,41 +47,42 @@ export function LoreContextRow({
       data-testid={`lore-context-${from}`}
       data-name={row.name}
     >
-      <EntityTile
-        className="relation__tile"
+      <EntityRow
         universeId={universeId}
         entityId={row.id}
         image={row.image}
         typeIcon={row.typeIcon}
         typeAccent={row.typeAccent}
+        name={
+          row.isTrashed ? (
+            <span className="relation__name lorecontext__name--trashed">
+              <bdi>{row.name}</bdi>{' '}
+              <span className="lorechip__note">{t('lore.context.inTrash')}</span>
+            </span>
+          ) : (
+            <button
+              className="relation__name lorecontext__name"
+              type="button"
+              onClick={() => openPreview(row.id, key)}
+              onKeyDown={from === 'result' ? moveThrough : undefined}
+              data-preview-from={key}
+              data-result-name={from === 'result' ? '' : undefined}
+              aria-label={t('lore.context.previewRow', { name: row.name })}
+              data-testid="lore-context-preview"
+            >
+              <bdi>{row.name}</bdi>
+            </button>
+          )
+        }
+        meta={
+          <>
+            <bdi>{row.typeName}</bdi>
+            {from === 'result' && isLinked && !access.editContent ? (
+              <span>{t('lore.context.inSceneRow')}</span>
+            ) : null}
+          </>
+        }
       />
-      <div className="relation__body">
-        {row.isTrashed ? (
-          <span className="relation__name lorecontext__name--trashed">
-            <bdi>{row.name}</bdi>{' '}
-            <span className="lorechip__note">{t('lore.context.inTrash')}</span>
-          </span>
-        ) : (
-          <button
-            className="relation__name lorecontext__name"
-            type="button"
-            onClick={() => openPreview(row.id, key)}
-            onKeyDown={from === 'result' ? moveThrough : undefined}
-            data-preview-from={key}
-            data-result-name={from === 'result' ? '' : undefined}
-            aria-label={t('lore.context.previewRow', { name: row.name })}
-            data-testid="lore-context-preview"
-          >
-            <bdi>{row.name}</bdi>
-          </button>
-        )}
-        <p className="relation__meta">
-          <bdi>{row.typeName}</bdi>
-          {from === 'result' && isLinked && !access.editContent ? (
-            <span>{t('lore.context.inSceneRow')}</span>
-          ) : null}
-        </p>
-      </div>
       {access.editContent ? (
         <Button
           tone="text"
