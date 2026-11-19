@@ -52,10 +52,14 @@ const GONE_GRIDS = [
   'lore__skeleton',
   'lorecatalog__grid--rows',
 ]
+// What a row passes to LinkRow keeps its old row name: the meta chips (with their modifiers) and the aside's Restore
+// button. They are parts inside the row, not rows.
+const ROW_PARTS = ['idearow__universe', 'idearow__seal', 'rulerow__check', 'idearow__restore']
 const ROW_LINK = (token: string) =>
-  token === 'rowlink' ||
-  token === 'rowlink__target' ||
-  family(['storyrow', 'idearow', 'rulerow'])(token)
+  !ROW_PARTS.some((part) => token === part || token.startsWith(`${part}--`)) &&
+  (token === 'rowlink' ||
+    token === 'rowlink__target' ||
+    family(['storyrow', 'idearow', 'rulerow'])(token))
 const TYPE_ROW = named(['types__row', 'types__head'])
 const TYPE_ROW_PARTS = named(['types__actions', 'types__move', 'types__fieldcount'])
 const PROJECT_CARD = named([
@@ -64,12 +68,17 @@ const PROJECT_CARD = named([
   'projectcard__title',
   'projectcard__actions',
 ])
+// OutlineItem builds the arc and chapter parts as `${block}__head`, so only a hand-written literal matches here.
 const OUTLINE = named([
   'scene__number',
   'scene__titlerow',
   'plotarc__head',
+  'plotarc__number',
+  'plotarc__dash',
   'chapter__head',
   'chapter__heading',
+  'chapter__number',
+  'chapter__dash',
 ])
 const LIFT = /translateY\(-2px\)/
 const AUTO_GRID = /repeat\(auto-(fill|fit)/
@@ -82,11 +91,19 @@ test('the card guards catch a hand-made card, grid, row or lift', () => {
   assert.ok(hasToken('<li className="storyrow rowlink">', ROW_LINK))
   assert.ok(hasToken('<p className="idearow__meta">', ROW_LINK))
   assert.ok(!hasToken('<p className="ideasection">', ROW_LINK))
+  assert.ok(hasToken('<li className="idearow">', ROW_LINK))
+  assert.ok(hasToken('<li className="rulerow">', ROW_LINK))
+  assert.ok(!hasToken('<span className="idearow__seal">', ROW_LINK))
+  assert.ok(!hasToken('<span className="rulerow__check">', ROW_LINK))
+  assert.ok(!hasToken('<span className="idearow__universe idearow__universe--none">', ROW_LINK))
   assert.ok(hasToken('<li className="types__row">', TYPE_ROW))
   assert.ok(hasToken('<span className="types__actions">', TYPE_ROW_PARTS))
   assert.ok(hasToken('<li className="projectcard">', PROJECT_CARD))
   assert.ok(!hasToken('<p className="projectcard__meta">', PROJECT_CARD))
   assert.ok(hasToken('<header className="plotarc__head">', OUTLINE))
+  assert.ok(hasToken('<span className="chapter__number">', OUTLINE))
+  assert.ok(hasToken('<span className="plotarc__dash">', OUTLINE))
+  assert.ok(!hasToken('<header className={`${block}__head`}>', OUTLINE))
   assert.ok(/<EntityTile/.test('<EntityTile universeId={u} />'))
   assert.ok(LIFT.test('.x:hover { transform: translateY(-2px); }'))
   assert.ok(AUTO_GRID.test('grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));'))
@@ -132,19 +149,6 @@ test('a row that opens as a whole is LinkRow', () => {
       ['src/components/worldLogic/SystemRow.tsx', 'a disclosure row with nested rule rows'],
       ['src/components/worldLogic/FindingDetail.tsx', 'label headings, not a row'],
       ['src/components/ideas/BoardCardInspector.tsx', 'the inspector title, not a row'],
-      [
-        'src/components/ideas/IdeaRow.tsx',
-        'the idearow__universe and idearow__seal chips it passes as meta',
-      ],
-      [
-        'src/components/ideas/BoardsListRows.tsx',
-        'the idearow__universe and idearow__seal chips it passes as meta',
-      ],
-      ['src/pages/WorldRulesPage.tsx', 'the rulerow__check chips it passes as meta'],
-      [
-        'src/components/worldLogic/WorldLogicRules.tsx',
-        'the rulerow__check chips it passes as meta',
-      ],
     ]),
     'use LinkRow',
   )
