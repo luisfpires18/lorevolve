@@ -74,7 +74,7 @@ before proposing against them, which is the only read of them MCP offers.
 | What an entry knows | `knowledge` | `get_lore_entry` | `read-only-by-design` |
 | Maps and their pins | `maps` | `list_maps`, `search_map_locations`, `get_map_location`, `measure_map_distance` | `read-only-by-design` |
 | A map's picture | `maps/image` | `media-bytes` | `media-bytes` |
-| An entry's image field pictures | `entities/field-images` | `media-bytes` | `media-bytes` |
+| An entry's image field pictures | `entities/field-images` | `list_lore_images`, `get_lore_image` | `media-bytes` |
 | Collaborators | `collaborators` | `person-only` | `person-only` |
 | Invitations | `invitations` | `person-only` | `person-only` |
 | Lore references | `lore-references` | `get_lore_entry` | `read-only-by-design` |
@@ -127,8 +127,8 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `search_universe` | Searches lore entries, stories, arcs, chapters, scenes and scene prose by keywords. | implemented | |
 | `get_lore_entry` | One lore entry: type, Canon status, summary, aliases, tags, custom fields, the start of its article and its progression. | implemented | |
 | `get_lore_relationships` | An entry's relationships, both directions. | implemented | |
-| `list_lore_images` | An entry's pictures and its appearances' pictures. | implemented | |
-| `get_lore_image` | One lore picture, as bytes the client can show. | implemented | |
+| `list_lore_images` | An entry's pictures, its appearances' pictures and its image fields' pictures. | implemented | A project's own entry is given by its id. |
+| `get_lore_image` | One lore picture, as bytes the client can show. | implemented | Also a project entry's picture and an image field's picture; the field's crop is its thumbnail. |
 | `browse_timeline` | The timeline, a page at a time. | implemented | |
 | `get_timeline_moment` | One timeline moment with its participants and stories. | implemented | |
 | `get_story` | One story's structure: premise, status, arcs, chapters and scenes. | implemented | |
