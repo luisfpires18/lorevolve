@@ -190,6 +190,10 @@ export default function ExplorePage() {
           onMore={pages.showMore}
           shown={pages.items.length}
           total={pages.totalCount}
+          countLabel={t('portal.explore.shown', {
+            shown: pages.items.length,
+            total: pages.totalCount,
+          })}
           announce={false}
           testId="explore-more"
         />

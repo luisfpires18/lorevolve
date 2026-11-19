@@ -149,6 +149,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             ))}
           </ul>
           <ShowMore
+            align="start"
             hasMore={load.value.hasMore}
             status={more ? 'loading' : 'idle'}
             onMore={() => void readMore()}

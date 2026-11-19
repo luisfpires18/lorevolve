@@ -236,6 +236,7 @@ export function ProjectEntries({
         />
       )}
       <ShowMore
+        align="start"
         hasMore={more}
         status={loadingMore ? 'loading' : 'idle'}
         disabled={busy}

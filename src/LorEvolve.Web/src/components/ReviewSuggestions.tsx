@@ -68,6 +68,7 @@ export function ReviewSuggestions<T>({
   function moreButton(state: SuggestionState) {
     return (
       <ShowMore
+        align="start"
         hasMore={Boolean(loaded?.more[state])}
         status={reading === state ? 'loading' : 'idle'}
         disabled={reading !== null}

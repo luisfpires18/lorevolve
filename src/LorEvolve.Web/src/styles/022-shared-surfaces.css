@@ -134,6 +134,15 @@
   margin-top: var(--space-8);
 }
 
+/* A button sits at the start by default (`.button`); a centred list centres it under the count. */
+.showmore--center > .button {
+  align-self: center;
+}
+
+.showmore--start {
+  align-items: flex-start;
+}
+
 .showmore__shown,
 .showmore__error {
   margin: 0;

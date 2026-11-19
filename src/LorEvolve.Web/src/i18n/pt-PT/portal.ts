@@ -91,6 +91,7 @@ const portal: Dictionary['portal'] = {
       hint: 'Tenta outra palavra, categoria ou género, ou vê todos os mundos.',
       clear: 'Limpar a pesquisa e os filtros',
     },
+    shown: 'A mostrar {shown} de {total} mundos',
     count: {
       partial: {
         one: 'A mostrar {shown} de {total} mundo',

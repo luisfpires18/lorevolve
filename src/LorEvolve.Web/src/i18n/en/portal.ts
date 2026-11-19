@@ -86,6 +86,7 @@ const portal = {
       hint: 'Try another word, category or genre, or see every world.',
       clear: 'Clear search and filters',
     },
+    shown: 'Showing {shown} of {total} worlds',
     count: {
       partial: {
         one: 'Showing {shown} of {total} world',
