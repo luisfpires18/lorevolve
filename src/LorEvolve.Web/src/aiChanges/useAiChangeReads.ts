@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { getProposal } from './api'
-import { ApiError } from '../lib/api'
+import { t } from '../i18n'
+import { errorText } from '../lib/errorText'
+import { isNotFound } from '../lib/useAsyncRead'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useAiChangeState } from './useAiChangeState'
 
@@ -19,13 +21,13 @@ export function useAiChangeReads({
   useEffect(() => {
     const controller = new AbortController()
     getProposal(universe.id, proposalId, controller.signal)
-      .then((proposal) => setLoad({ kind: 'ready', proposal }))
+      .then((proposal) => setLoad({ kind: 'ready', value: proposal }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setLoad(
-          error instanceof ApiError && error.status === 404
+          isNotFound(error)
             ? { kind: 'missing' }
-            : { kind: 'error' },
+            : { kind: 'error', message: errorText(error, t('review.aiChange.loadFailed')) },
         )
       })
     return () => controller.abort()

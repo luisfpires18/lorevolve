@@ -6,7 +6,7 @@ import type { ConsentToken } from '../mcp/api'
 import { useI18n } from '../i18n'
 import { ConsentDetails } from '../components/mcp/ConsentDetails'
 import { ConsentLayout } from '../components/mcp/ConsentLayout'
-import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
+import { useConnectionRequest, type ConnectionLoad } from '../mcp/useConnectionRequest'
 import { Button } from '../components/Button'
 import { LoadingNote } from '../components/LoadingNote'
 
@@ -26,7 +26,7 @@ export default function ConnectAuthorizePage() {
   const { search } = useLocation()
   const { user } = useAuth()
   const params = useMemo(() => new URLSearchParams(search), [search])
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
+  const [load, setLoad] = useState<ConnectionLoad>({ kind: 'loading' })
   const [deciding, setDeciding] = useState(false)
   const [token, setToken] = useState<ConsentToken | null>(null)
   const submitted = useRef(false)
@@ -101,7 +101,7 @@ export default function ConnectAuthorizePage() {
         <p>{t('universe.connect.noAccountNote')}</p>
       </div>
     ) : load.kind === 'ready' ? (
-      <ConsentDetails details={load.details} id={detailsId} />
+      <ConsentDetails details={load.value} id={detailsId} />
     ) : null
 
   return (
@@ -112,7 +112,7 @@ export default function ConnectAuthorizePage() {
         // and where the content goes. The full list and notes follow unchanged.
         <>
           {tx(
-            load.kind === 'ready' && load.details.proposalsRequested && load.details.canPropose
+            load.kind === 'ready' && load.value.proposalsRequested && load.value.canPropose
               ? 'universe.connect.introProposals'
               : 'universe.connect.intro',
             { readOnly: <strong>{t('universe.connect.introReadOnly')}</strong> },

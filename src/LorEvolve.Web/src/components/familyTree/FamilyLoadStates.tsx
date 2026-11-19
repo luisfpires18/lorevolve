@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom'
 import { EmptyState } from '../EmptyState'
 import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
-import type { LoadState } from '../../familyTree/useFamilyTreeState'
+import type { FamilyTree } from '../../familyTree/types'
+import type { Load } from '../../lib/useAsyncRead'
+import type { FamilyView } from '../../familyTree/useFamilyTreeState'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
@@ -14,8 +16,8 @@ export function FamilyLoadStates({
   setReads,
 }: {
   universe: WorkspaceContext['universe']
-  view: LoadState | { kind: 'idle' }
-  setState: Dispatch<SetStateAction<LoadState>>
+  view: FamilyView
+  setState: Dispatch<SetStateAction<Load<FamilyTree>>>
   setReads: Dispatch<SetStateAction<number>>
 }) {
   const { t, tx } = useI18n()

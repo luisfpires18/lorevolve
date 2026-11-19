@@ -24,7 +24,7 @@ export function useTrashReads({
             setPage(Math.max(1, result.totalPages))
             return
           }
-          setState({ kind: 'ready', page: result })
+          setState({ kind: 'ready', value: result })
         })
         .catch((error: unknown) => {
           if (signal?.aborted) return

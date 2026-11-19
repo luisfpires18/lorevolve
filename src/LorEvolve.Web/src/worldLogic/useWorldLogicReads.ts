@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { t } from '../i18n'
+import { errorText } from '../lib/errorText'
 import { listSystems, listWorldLogicFindings, listWorldLogicRules } from './api'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useWorldLogicState } from './useWorldLogicState'
@@ -18,9 +20,10 @@ export function useWorldLogicReads({
     const controller = new AbortController()
 
     listWorldLogicRules(universe.id, rulesPage, controller.signal)
-      .then((page) => setRules({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setRules({ kind: 'error' })
+      .then((page) => setRules({ kind: 'ready', value: page }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setRules({ kind: 'error', message: errorText(error, t('shell.app.loadFailed')) })
       })
 
     return () => {
@@ -32,9 +35,10 @@ export function useWorldLogicReads({
     const controller = new AbortController()
 
     listSystems(universe.id, systemsPage, controller.signal)
-      .then((page) => setSystems({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setSystems({ kind: 'error' })
+      .then((page) => setSystems({ kind: 'ready', value: page }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setSystems({ kind: 'error', message: errorText(error, t('shell.app.loadFailed')) })
       })
 
     return () => {
@@ -46,9 +50,10 @@ export function useWorldLogicReads({
     const controller = new AbortController()
 
     listWorldLogicFindings(universe.id, findingsPage, controller.signal)
-      .then((page) => setFindings({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setFindings({ kind: 'error' })
+      .then((page) => setFindings({ kind: 'ready', value: page }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setFindings({ kind: 'error', message: errorText(error, t('shell.app.loadFailed')) })
       })
 
     return () => {

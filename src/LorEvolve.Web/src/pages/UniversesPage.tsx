@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore, Search } from 'lucide-react'
 import { Field } from '../components/Field'
@@ -7,16 +7,12 @@ import { RestoreBackup } from '../components/RestoreBackup'
 import { UniverseCard } from '../components/UniverseCard'
 import { UniverseForm } from '../components/UniverseForm'
 import { createUniverse, listUniverses } from '../universes/api'
-import type { UniversePage } from '../universes/types'
 import { EmptyState } from '../components/EmptyState'
 import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
-import { errorText } from '../lib/errorText'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; page: UniversePage } | { kind: 'error'; message: string }
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 export default function UniversesPage() {
   const { t } = useI18n()
@@ -27,9 +23,7 @@ export default function UniversesPage() {
   const [searched, setSearched] = useState('')
   const [includeArchived, setIncludeArchived] = useState(false)
   const [page, setPage] = useState(1)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
   const [isCreating, setIsCreating] = useState(false)
-  const [reloadKey, setReloadKey] = useState(0)
   // No universe at all, archived ones included: the page opens on the form that names the first one.
   const [isFirstRun, setIsFirstRun] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
@@ -57,45 +51,30 @@ export default function UniversesPage() {
   }, [search, searched])
 
   // Everything else - the first load, a page, the archive filter, trying again, coming back - asks at once.
-  useEffect(() => {
-    const controller = new AbortController()
-    listUniverses({ search: searched, includeArchived, page }, controller.signal)
-      .then(async (result) => {
-        // An empty Active list may only mean everything is archived, so that case asks once more.
-        let nothing = false
-        if (result.items.length === 0 && !searched.trim() && page === 1) {
-          nothing =
-            includeArchived ||
-            (
-              await listUniverses(
-                { search: '', includeArchived: true, page: 1 },
-                controller.signal,
-                1,
-              )
-            ).totalCount === 0
-        }
-        setIsFirstRun(nothing)
-        setState({ kind: 'ready', page: result })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setState({
-          kind: 'error',
-          message: errorText(error, t('universe.list.loadFailed')),
-        })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [searched, includeArchived, page, reloadKey, t])
+  const read = useCallback(
+    async (signal: AbortSignal) => {
+      const result = await listUniverses({ search: searched, includeArchived, page }, signal)
+      // An empty Active list may only mean everything is archived, so that case asks once more.
+      let nothing = false
+      if (result.items.length === 0 && !searched.trim() && page === 1) {
+        nothing =
+          includeArchived ||
+          (await listUniverses({ search: '', includeArchived: true, page: 1 }, signal, 1))
+            .totalCount === 0
+      }
+      setIsFirstRun(nothing)
+      return result
+    },
+    [searched, includeArchived, page],
+  )
+  const { load: state, retry } = useAsyncRead(read, { failed: t('universe.list.loadFailed') })
 
   function changeFilter(next: boolean) {
     setIncludeArchived(next)
     setPage(1)
   }
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
   const isFiltered = search.trim().length > 0
   const isStarting = isFirstRun && !isDismissed && !isRestoring
 
@@ -208,11 +187,7 @@ export default function UniversesPage() {
       {state.kind === 'loading' ? <LoadingNote>{t('universe.list.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <LoadError
-          message={state.message}
-          onRetry={() => setReloadKey((current) => current + 1)}
-          retryLabel={t('universe.list.retry')}
-        />
+        <LoadError message={state.message} onRetry={retry} retryLabel={t('universe.list.retry')} />
       ) : null}
 
       {result && result.items.length > 0 ? (

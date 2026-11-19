@@ -35,11 +35,11 @@ export default function MapPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const headingId = useId()
-  const pageState = useMapPageState({ params })
+  const pageState = useMapPageState({ params, universeId: universe.id, mapId })
   const {
     state,
     setState,
-    setReads,
+    retry,
     placing,
     setPlacing,
     pinForm,
@@ -54,7 +54,7 @@ export default function MapPage() {
 
   const selectedPinId = params.get('pin')
 
-  useMapPageReads({ ...pageState, universe, mapId, selectedPinId, setParams })
+  useMapPageReads({ ...pageState, selectedPinId, setParams })
 
   const { select, replaceMap, pinSaved, movePin, removePin, removeMap } = mapPageActions({
     ...pageState,
@@ -88,14 +88,14 @@ export default function MapPage() {
     return (
       <LoadError
         message={t('places.mapPage.error')}
-        onRetry={() => setReads((current) => current + 1)}
+        onRetry={retry}
         retryLabel={t('places.mapPage.retry')}
         testId="map-load-error"
       />
     )
   }
 
-  const { map } = state
+  const map = state.value
   const selected = map.pins.find((pin) => pin.id === selectedPinId) ?? null
   const canEdit = access.editContent
 

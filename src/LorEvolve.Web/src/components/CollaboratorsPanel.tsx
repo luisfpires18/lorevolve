@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useI18n } from '../i18n'
 import {
   getCollaborators,
@@ -12,10 +12,7 @@ import { InviteForm } from './universes/InviteForm'
 import { LoadError } from './LoadError'
 import { Announce } from './Announce'
 import { LoadingNote } from './LoadingNote'
-import { errorText } from '../lib/errorText'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; data: Collaborators } | { kind: 'error'; message: string }
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * Settings → Collaborators (ADR 0041 amendment): invite someone by email, and manage who works here. The owner's alone -
@@ -27,35 +24,28 @@ type LoadState =
  */
 export function CollaboratorsPanel({ universeId }: { universeId: string }) {
   const { t, tx } = useI18n()
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reloadKey, setReloadKey] = useState(0)
   const [announcement, setAnnouncement] = useState('')
   const [created, setCreated] = useState<PendingInvitation | null>(null)
   const [highlight, setHighlight] = useState<string | null>(null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getCollaborators(universeId, controller.signal)
-      .then((data) => setState({ kind: 'ready', data }))
-      .catch((problem: unknown) => {
-        if (controller.signal.aborted) return
-        setState({
-          kind: 'error',
-          message: errorText(problem, t('universe.collab.loadFailed')),
-        })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, reloadKey, t])
+  const read = useCallback(
+    (signal: AbortSignal) => getCollaborators(universeId, signal),
+    [universeId],
+  )
+  const {
+    load: state,
+    setLoad: setState,
+    retry,
+    refresh,
+  } = useAsyncRead(read, { failed: t('universe.collab.loadFailed') })
 
   function update(change: (data: Collaborators) => Collaborators) {
     setState((current) =>
-      current.kind === 'ready' ? { kind: 'ready', data: change(current.data) } : current,
+      current.kind === 'ready' ? { kind: 'ready', value: change(current.value) } : current,
     )
   }
 
-  const data = state.kind === 'ready' ? state.data : null
+  const data = state.kind === 'ready' ? state.value : null
 
   return (
     <div className="collab" data-testid="collaborators-panel">
@@ -76,7 +66,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
           onPending={(invitationId) => {
             setCreated(null)
             setHighlight(invitationId)
-            setReloadKey((key) => key + 1)
+            refresh()
           }}
         />
         {created ? (
@@ -103,7 +93,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
       {state.kind === 'error' ? (
         <LoadError
           message={state.message}
-          onRetry={() => setReloadKey((key) => key + 1)}
+          onRetry={retry}
           retryLabel={t('universe.collab.retry')}
         />
       ) : null}

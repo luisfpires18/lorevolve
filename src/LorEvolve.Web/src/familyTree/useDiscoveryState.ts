@@ -1,14 +1,12 @@
 import { useId, useRef, useState } from 'react'
+import type { Load } from '../lib/useAsyncRead'
 import type { FamilyDiscoveryPage } from './types'
-
-export type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; key: string; result: FamilyDiscoveryPage }
-  | { kind: 'error'; key: string }
 
 export function useDiscoveryState({ q }: { q: string }) {
   const [text, setText] = useState(q)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [state, setState] = useState<Load<FamilyDiscoveryPage>>({ kind: 'loading' })
+  // The search and page the state above answers, so an answer for another one reads as still on its way.
+  const [answeredKey, setAnsweredKey] = useState('')
   const [reads, setReads] = useState(0)
   const [isFinding, setIsFinding] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
@@ -22,6 +20,8 @@ export function useDiscoveryState({ q }: { q: string }) {
     setText,
     state,
     setState,
+    answeredKey,
+    setAnsweredKey,
     reads,
     setReads,
     isFinding,

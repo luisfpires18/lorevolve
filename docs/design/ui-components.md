@@ -24,7 +24,7 @@ Paths are under `src/LorEvolve.Web/src/`. A class names the file and line of its
 | A quiet line in a panel: nothing yet, a hint | `components/QuietNote.tsx`. `<QuietNote>{t('...none')}</QuietNote>`; `size="ui"` or `"xs"`, `wrap`. The class you pass keeps only spacing. |
 | A message for screen readers only | `components/Announce.tsx`. `<Announce testId="story-announcer">{text}</Announce>` |
 | A confirmation after a create or delete | `components/OutcomeNotice.tsx`. `<OutcomeNotice testId="maps-deleted-notice">{t('...deleted')}</OutcomeNotice>` |
-| A read with loading, ready and error | `lib/useAsyncRead.ts`. `const { load, retry } = useAsyncRead(fetchThing)`; `read` must be stable. |
+| A read with loading, ready, missing and error | `lib/useAsyncRead.ts`. `const { load, retry } = useAsyncRead(fetchThing, { missing, initial, failed })`; `read` must be stable. `missing: true` makes a 404 `missing`; every other failure is `error` (`LoadError`). A state driven by hand still uses `Load<T>`. |
 | The message a caught error shows | `lib/errorText.ts`. `setMessage(errorText(error, t('...failed')))` |
 | A status word with its glyph | `components/StatusBadge.tsx` |
 | An entry's picture or type icon | `components/EntityTile.tsx` |

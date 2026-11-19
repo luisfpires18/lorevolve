@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import type { Load } from '../lib/useAsyncRead'
 import { payloadKey } from '../lib/drawerGuard'
 import { emptyValue, valuedFields } from './document'
 import { createEntity, listEntities } from './api'
@@ -10,8 +12,6 @@ import { branchIds, buildTypeTree } from './typeTree'
 import { CanonStatus, type EntitySummary, type FieldValueInput } from './types'
 import type { EntityType } from './typeDefinitions'
 import type { Props } from '../components/QuickCreateDialog'
-
-type Types = { kind: 'loading' } | { kind: 'ready'; eligible: EntityType[] } | { kind: 'error' }
 
 const SIMILAR_LIMIT = 5
 
@@ -34,7 +34,7 @@ export function useQuickCreate({
   const nameId = useId()
   const headingId = useId()
   const typeId = useId()
-  const [types, setTypes] = useState<Types>({ kind: 'loading' })
+  const [types, setTypes] = useState<Load<EntityType[]>>({ kind: 'loading' })
   const [name, setName] = useState(initialName.trim())
   const [chosenTypeId, setChosenTypeId] = useState<string>('')
   const [values, setValues] = useState<Record<string, FieldValueInput>>({})
@@ -50,8 +50,7 @@ export function useQuickCreate({
   const messageRef = useRef<HTMLParagraphElement>(null)
 
   // A type taken because it was the only one is not a change the author made.
-  const takenTypeId =
-    types.kind === 'ready' && types.eligible.length === 1 ? types.eligible[0].id : ''
+  const takenTypeId = types.kind === 'ready' && types.value.length === 1 ? types.value[0].id : ''
   const isDirty =
     payloadKey({ name: name.trim(), chosenTypeId, values }) !==
     payloadKey({ name: initialName.trim(), chosenTypeId: takenTypeId, values: {} })
@@ -96,13 +95,13 @@ export function useQuickCreate({
         // Each with the fields it inherits, so a required one above it is asked for too.
         setTypes({
           kind: 'ready',
-          eligible: eligible.map((type) => withInheritedFields(type, all)),
+          value: eligible.map((type) => withInheritedFields(type, all)),
         })
         // One type to choose from is no choice: it is taken, never asked again.
         if (eligible.length === 1) setChosenTypeId(eligible[0].id)
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setTypes({ kind: 'error' })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setTypes({ kind: 'error', message: errorText(error, '') })
       })
     return () => controller.abort()
   }, [universeId, entityTypeId, entityTypeGroupId])
@@ -144,7 +143,7 @@ export function useQuickCreate({
 
   // Cleared name, no advice: what was found for an earlier name is not shown for none.
   const shownSimilar = name.trim() ? similar : []
-  const eligible = types.kind === 'ready' ? types.eligible : []
+  const eligible = types.kind === 'ready' ? types.value : []
   const chosenType = eligible.find((type) => type.id === chosenTypeId) ?? null
   // Only what the type requires, from its active fields: an archived field is in no form.
   const required = chosenType?.fields.filter((definition) => definition.isRequired) ?? []

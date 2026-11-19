@@ -88,7 +88,7 @@ export function useTimelineReads({
       },
       controller.signal,
     )
-      .then((result) => setState({ kind: 'ready', page: result }))
+      .then((result) => setState({ kind: 'ready', value: result }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setState({

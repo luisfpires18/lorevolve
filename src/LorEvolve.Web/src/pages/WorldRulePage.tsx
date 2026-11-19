@@ -1,16 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { WorldRuleEditor } from '../components/WorldRuleEditor'
 import { t, useI18n } from '../i18n'
 import { formatDate } from '../lib/dates'
 import { useUniverseAccess } from '../universes/access'
 import { getWorldRule } from '../worldRules/api'
-import type { WorldRuleDetail } from '../worldRules/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import type { WorldRulesListNotice } from './WorldRulesPage'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
-import { errorText } from '../lib/errorText'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { EmptyState } from '../components/EmptyState'
 
 /** What the page that just created a rule says to the page that opens it. */
@@ -66,12 +65,6 @@ export default function WorldRulePage({ isNew = false }: { isNew?: boolean }) {
   )
 }
 
-type Reading =
-  | { kind: 'loading' }
-  | { kind: 'ready'; rule: WorldRuleDetail }
-  | { kind: 'missing' }
-  | { kind: 'error'; message: string }
-
 function WorldRuleReading({
   universeId,
   ruleId,
@@ -82,29 +75,14 @@ function WorldRuleReading({
   listPath: string
 }) {
   useI18n() // re-renders when the language changes
-  const [state, setState] = useState<Reading>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getWorldRule(universeId, ruleId, controller.signal)
-      .then((rule) => setState({ kind: 'ready', rule }))
-      .catch((problem: unknown) => {
-        if (controller.signal.aborted) return
-        const status = (problem as { status?: number }).status
-        setState(
-          status === 404
-            ? { kind: 'missing' }
-            : {
-                kind: 'error',
-                message: errorText(problem, t('canon.rule.readFailed')),
-              },
-        )
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, ruleId, reads])
+  const read = useCallback(
+    (signal: AbortSignal) => getWorldRule(universeId, ruleId, signal),
+    [universeId, ruleId],
+  )
+  const { load: state, retry } = useAsyncRead(read, {
+    missing: true,
+    failed: t('canon.rule.readFailed'),
+  })
 
   return (
     <article className="rule" data-testid="world-rule-reading">
@@ -113,7 +91,7 @@ function WorldRuleReading({
           {t('canon.rule.back')}
         </Link>
         <h1 className="rule__heading" data-testid="world-rule-heading">
-          {state.kind === 'ready' ? <bdi>{state.rule.title}</bdi> : t('canon.rule.heading')}
+          {state.kind === 'ready' ? <bdi>{state.value.title}</bdi> : t('canon.rule.heading')}
         </h1>
       </header>
       {state.kind === 'loading' ? <LoadingNote>{t('canon.rule.opening')}</LoadingNote> : null}
@@ -121,26 +99,19 @@ function WorldRuleReading({
         <EmptyState title={t('canon.rule.missing')} testId="world-rule-missing" />
       ) : null}
       {state.kind === 'error' ? (
-        <LoadError
-          message={state.message}
-          onRetry={() => {
-            setState({ kind: 'loading' })
-            setReads((count) => count + 1)
-          }}
-          retryLabel={t('canon.rule.retry')}
-        />
+        <LoadError message={state.message} onRetry={retry} retryLabel={t('canon.rule.retry')} />
       ) : null}
       {state.kind === 'ready' ? (
         <>
-          {state.rule.description ? (
+          {state.value.description ? (
             <p className="rule__reading prose" data-testid="world-rule-text">
-              {state.rule.description}
+              {state.value.description}
             </p>
           ) : (
             <p className="notice">{t('canon.rule.noDescription')}</p>
           )}
           <p className="rule__meta">
-            {t('canon.rule.lastChanged', { date: formatDate(state.rule.updatedAt) })}
+            {t('canon.rule.lastChanged', { date: formatDate(state.value.updatedAt) })}
           </p>
         </>
       ) : null}

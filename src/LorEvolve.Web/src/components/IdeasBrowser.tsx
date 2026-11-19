@@ -68,7 +68,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
   useIdeasRead({ ...base, universe, show, storyId, projectId, view, search, page, t })
   const { restore, captured } = useIdeasActions({ ...base, tx, basePath, page, update })
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
   const isFiltered = search.trim() !== '' || (!universe && show !== '')
   const deleted = view === 'deleted'
 

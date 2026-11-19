@@ -60,7 +60,7 @@ export function aiChangeActions({
   }
 
   function accept(next: Proposal, text: string) {
-    setLoad({ kind: 'ready', proposal: next })
+    setLoad({ kind: 'ready', value: next })
     setSelected(new Set())
     setFeedback({ text, isError: false })
   }

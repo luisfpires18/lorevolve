@@ -28,7 +28,7 @@ export function shelfActions({
   /** Moves one project past its neighbour of the same kind, on screen first; a refusal puts it back. */
   async function move(project: ProjectDetail, by: -1 | 1) {
     if (state.kind !== 'ready' || isMoving.current) return
-    const before = state.projects
+    const before = state.value
     const from = before.findIndex((candidate) => candidate.id === project.id)
     const to = from < 0 ? -1 : neighbour(before, from, by)
     if (to < 0) return
@@ -39,7 +39,7 @@ export function shelfActions({
     const ofKind = after.filter((candidate) => candidate.kind === project.kind)
     isMoving.current = true
     setMoveError(null)
-    setState({ kind: 'ready', projects: after })
+    setState({ kind: 'ready', value: after })
     requestAnimationFrame(() =>
       document
         .querySelector<HTMLElement>(
@@ -55,7 +55,7 @@ export function shelfActions({
       )
       setState({
         kind: 'ready',
-        projects: saved.filter((candidate) => kinds.includes(candidate.kind)),
+        value: saved.filter((candidate) => kinds.includes(candidate.kind)),
       })
       setAnnouncement(
         t('projects.shelf.moved', {
@@ -65,7 +65,7 @@ export function shelfActions({
         }),
       )
     } catch (error: unknown) {
-      setState({ kind: 'ready', projects: before })
+      setState({ kind: 'ready', value: before })
       setMoveError(error instanceof ApiError ? error.message : t('projects.shelf.moveFailed'))
     } finally {
       isMoving.current = false

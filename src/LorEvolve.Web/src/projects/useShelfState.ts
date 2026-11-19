@@ -1,11 +1,9 @@
 import { useRef, useState } from 'react'
+import type { Load } from '../lib/useAsyncRead'
 import type { ProjectDetail } from './types'
 
-export type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; projects: ProjectDetail[] } | { kind: 'failed' }
-
 export function useShelfState() {
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [state, setState] = useState<Load<ProjectDetail[]>>({ kind: 'loading' })
   const [announcement, setAnnouncement] = useState('')
   const [moveError, setMoveError] = useState<string | null>(null)
   const [covering, setCovering] = useState<ProjectDetail | null>(null)

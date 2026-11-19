@@ -84,7 +84,7 @@ export default function CategoryShelfPage({
         <LoadingNote>{t('projects.list.loading')}</LoadingNote>
       ) : null}
 
-      {!showView && state.kind === 'failed' ? (
+      {!showView && state.kind === 'error' ? (
         <LoadError
           message={t('projects.list.failed')}
           onRetry={shelf.retry}
@@ -99,7 +99,7 @@ export default function CategoryShelfPage({
         </p>
       ) : null}
 
-      {!showView && state.kind === 'ready' && state.projects.length > 0 ? (
+      {!showView && state.kind === 'ready' && state.value.length > 0 ? (
         <ShelfCards
           frame={frame}
           kinds={kinds}
@@ -111,7 +111,7 @@ export default function CategoryShelfPage({
         />
       ) : null}
 
-      {!showView && state.kind === 'ready' && state.projects.length === 0 ? (
+      {!showView && state.kind === 'ready' && state.value.length === 0 ? (
         <EmptyState
           title={t(empty)}
           hint={t('projects.list.emptyCategoryHint')}
@@ -132,7 +132,7 @@ export default function CategoryShelfPage({
               current.kind === 'ready'
                 ? {
                     kind: 'ready',
-                    projects: current.projects.map((one) =>
+                    value: current.value.map((one) =>
                       one.id === covering.id ? { ...one, cover } : one,
                     ),
                   }

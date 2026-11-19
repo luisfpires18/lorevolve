@@ -47,45 +47,7 @@ const STATUS_NOTICES = new Map<string, string>([
 ])
 
 // Files that still declare their own read state with `kind: 'loading'`. useAsyncRead holds `Load<T>`.
-const OWN_READ_STATES = new Set([
-  'src/lib/useAsyncRead.ts',
-  'src/aiChanges/useAiChangeState.ts',
-  'src/canon/useCanonConflicts.ts',
-  'src/components/CollaboratorsPanel.tsx',
-  'src/components/ConnectToAi.tsx',
-  'src/components/ConnectedApps.tsx',
-  'src/components/EditConflict.tsx',
-  'src/components/LoreOnMaps.tsx',
-  'src/components/lore/LorePreview.tsx',
-  'src/familyTree/useDiscoveryState.ts',
-  'src/familyTree/useFamilyTreeState.ts',
-  'src/ideas/boardDraft.ts',
-  'src/ideas/ideaDraft.ts',
-  'src/ideas/useBoardsState.ts',
-  'src/ideas/useIdeasState.ts',
-  'src/lore/loreAddress.ts',
-  'src/lore/useEntityArticle.ts',
-  'src/lore/useQuickCreate.ts',
-  'src/maps/useMapPageState.ts',
-  'src/mcp/useConnectionRequest.ts',
-  'src/pages/AiChangesPage.tsx',
-  'src/pages/InvitationPage.tsx',
-  'src/pages/MapsPage.tsx',
-  'src/pages/MassCreatePage.tsx',
-  'src/pages/StoriesPage.tsx',
-  'src/pages/UniversesPage.tsx',
-  'src/pages/WorldRulePage.tsx',
-  'src/pages/WorldRulesPage.tsx',
-  'src/projects/useShelfState.ts',
-  'src/stories/useManuscriptState.ts',
-  'src/stories/useStoryState.ts',
-  'src/timeline/useTimelineState.ts',
-  'src/trash/useTrashState.ts',
-  'src/universes/useWorkspaceState.ts',
-  'src/worldLogic/useSystemEditorState.ts',
-  'src/worldLogic/useWorldLogicState.ts',
-  'src/worldRules/ruleDraft.ts',
-])
+const OWN_READ_STATES = new Set(['src/lib/useAsyncRead.ts'])
 
 type Guard = (source: string) => boolean
 

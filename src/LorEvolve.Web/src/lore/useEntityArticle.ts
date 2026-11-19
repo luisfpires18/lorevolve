@@ -3,6 +3,8 @@ import type { Editor } from '@tiptap/react'
 import { useAuth } from '../auth/useAuth'
 import { useUniverseAccess } from '../universes/access'
 import { ApiError } from '../lib/api'
+import { errorText } from '../lib/errorText'
+import type { Load } from '../lib/useAsyncRead'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useLocalDraft } from '../lib/useLocalDraft'
@@ -16,8 +18,6 @@ import {
 import { isEmptyDocument } from './document'
 import { useI18n } from '../i18n'
 import type { EntityArticleSectionProps } from '../components/EntityArticle'
-
-type LoadState = { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error' }
 
 /** The article as the API last confirmed it: what the next save names, and what reading mode shows. */
 export interface Stored {
@@ -54,7 +54,7 @@ export function useEntityArticle({
     user ? { accountId: user.id, universeId, kind: 'article', contentId: entityId } : null,
   )
 
-  const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
+  const [load, setLoad] = useState<Load<null>>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null, version: 0 })
   const [isEditing, setIsEditing] = useState(false)
@@ -79,14 +79,14 @@ export function useEntityArticle({
     getEntityArticle(universeId, entityId, controller.signal)
       .then((article) => {
         setStored(storedOf(article))
-        setLoad({ kind: 'ready' })
+        setLoad({ kind: 'ready', value: null })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setLoad(
           error instanceof ApiError && error.status === 404
             ? { kind: 'missing' }
-            : { kind: 'error' },
+            : { kind: 'error', message: errorText(error, '') },
         )
       })
 

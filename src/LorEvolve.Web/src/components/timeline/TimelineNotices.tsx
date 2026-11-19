@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 import { t, useI18n } from '../../i18n'
 import type { CanonStatusValue } from '../../lore/types'
 import type { StorySummary } from '../../stories/types'
-import { TimelineSource } from '../../timeline/types'
+import { TimelineSource, type TimelineItemPage } from '../../timeline/types'
 import type { Dispatch, SetStateAction } from 'react'
-import type { LoadState } from '../../timeline/useTimelineState'
+import type { Load } from '../../lib/useAsyncRead'
 import type { SOURCES } from '../../timeline/timelineSources'
 import { Button } from '../Button'
 import { LoadError } from '../LoadError'
@@ -35,8 +35,8 @@ export function TimelineNotices({
   canonStatus: CanonStatusValue | null
   mixedEras: boolean
   message: string | null
-  state: LoadState
-  setState: Dispatch<SetStateAction<LoadState>>
+  state: Load<TimelineItemPage>
+  setState: Dispatch<SetStateAction<Load<TimelineItemPage>>>
   reload: () => void
 }) {
   const { tx } = useI18n()
@@ -67,9 +67,9 @@ export function TimelineNotices({
 
       {canonStatus !== null &&
       (sourceParam === null || sourceParam.source === TimelineSource.Scene) ? (
-        <p className="chron__aside" data-testid="chron-status-scenes">
+        <QuietNote className="chron__aside" testId="chron-status-scenes">
           {t('time.timeline.scenesNoStatus')}
-        </p>
+        </QuietNote>
       ) : null}
 
       {mixedEras ? (

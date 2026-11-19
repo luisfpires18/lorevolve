@@ -30,7 +30,9 @@ export function useIdeaState({
       : null,
   )
 
-  const [load, setLoad] = useState<LoadState>(isNew ? { kind: 'ready' } : { kind: 'loading' })
+  const [load, setLoad] = useState<LoadState>(
+    isNew ? { kind: 'ready', value: null } : { kind: 'loading' },
+  )
   const [reads, setReads] = useState(0)
   const [stored, setStored] = useState<Stored>(() => ({
     title: '',

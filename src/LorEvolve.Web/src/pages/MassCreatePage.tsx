@@ -16,8 +16,7 @@ import { MassCreateBar } from '../components/lore/MassCreateBar'
 import { LoadError } from '../components/LoadError'
 import { Announce } from '../components/Announce'
 import { LoadingNote } from '../components/LoadingNote'
-
-type Load = { kind: 'loading' } | { kind: 'ready'; types: EntityType[] } | { kind: 'error' }
+import type { Load } from '../lib/useAsyncRead'
 
 /** What Lore is told after a mass create, so it can say how many entries arrived. */
 export interface MassCreatedState {
@@ -43,13 +42,13 @@ export default function MassCreatePage() {
   const lorePath = `/app/universes/${universe.id}/lore`
 
   // The universe's types, read with it.
-  const load: Load =
+  const load: Load<EntityType[]> =
     typesRead === 'failed'
-      ? { kind: 'error' }
+      ? { kind: 'error', message: t('lore.massCreate.typesFailed') }
       : typesRead
-        ? { kind: 'ready', types: typesRead }
+        ? { kind: 'ready', value: typesRead }
         : { kind: 'loading' }
-  const types = load.kind === 'ready' ? load.types : NO_TYPES
+  const types = load.kind === 'ready' ? load.value : NO_TYPES
   const typesById = useMemo(() => new Map(types.map((type) => [type.id, type])), [types])
   // One exact type a row: every type in the hierarchy's order, named by its path.
   const choices = useMemo(() => typeChoices(types), [types])

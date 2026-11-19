@@ -2,7 +2,7 @@ import { EntityPicker, type EntityChoice } from '../EntityPicker'
 import { FamilyDiscovery } from '../FamilyDiscovery'
 import type { RelationshipType } from '../../relationships/types'
 import { useI18n } from '../../i18n'
-import type { LoadState } from '../../familyTree/useFamilyTreeState'
+import type { FamilyView } from '../../familyTree/useFamilyTreeState'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseAccess } from '../../universes/access'
 
@@ -18,7 +18,7 @@ export function FamilyStart({
 }: {
   universe: WorkspaceContext['universe']
   access: ReturnType<typeof useUniverseAccess>
-  view: LoadState | { kind: 'idle' }
+  view: FamilyView
   hasEligibleType: boolean | null
   kinds: RelationshipType[] | null
   familyKinds: RelationshipType[]

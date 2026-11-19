@@ -32,7 +32,7 @@ export function ShelfCards({
       className={frame === 'console' || frame === 'film' ? 'shelf shelf--wide' : 'shelf'}
       data-testid="projects-list"
     >
-      {state.projects.map((project, index) => (
+      {state.value.map((project, index) => (
         <ShelfCard
           key={project.id}
           frame={frame}
@@ -79,7 +79,7 @@ export function ShelfCards({
                     project.cover ? 'projects.common.changePicture' : 'projects.common.addPicture',
                   )}
                 </button>
-                {neighbour(state.projects, index, -1) >= 0 ? (
+                {neighbour(state.value, index, -1) >= 0 ? (
                   <button
                     className="actionmenu__item"
                     type="button"
@@ -90,7 +90,7 @@ export function ShelfCards({
                     {t('projects.common.moveUp')}
                   </button>
                 ) : null}
-                {neighbour(state.projects, index, 1) >= 0 ? (
+                {neighbour(state.value, index, 1) >= 0 ? (
                   <button
                     className="actionmenu__item"
                     type="button"

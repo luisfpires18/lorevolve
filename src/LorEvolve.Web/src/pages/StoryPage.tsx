@@ -87,7 +87,7 @@ function StoryView({ view }: { view: StoryViewName }) {
     return <StoryUnavailable state={state} universe={universe} retry={retry} />
   }
 
-  const { story } = state
+  const story = state.value
   const { arcs, chapters, scenes } = story
   const hasChapters = chapters.length > 0
   const hasStructure = hasChapters || arcs.length > 0

@@ -31,7 +31,7 @@ export default function AiChangePage() {
   const { load, setLoad, setReads, selected, editing, setEditing, listId } = state
   useAiChangeReads({ ...state, universe, proposalId })
 
-  const proposal = load.kind === 'ready' ? load.proposal : null
+  const proposal = load.kind === 'ready' ? load.value : null
   const byKey = useMemo(
     () => new Map((proposal?.operations ?? []).map((change) => [change.key, change])),
     [proposal],
@@ -136,7 +136,7 @@ export default function AiChangePage() {
               accept(next, t('review.aiChange.feedback.edited'))
             }}
             // An upload says so beside the picture, and the page stays where it is.
-            onUploaded={(next) => setLoad({ kind: 'ready', proposal: next })}
+            onUploaded={(next) => setLoad({ kind: 'ready', value: next })}
           />
         ))}
       </ol>

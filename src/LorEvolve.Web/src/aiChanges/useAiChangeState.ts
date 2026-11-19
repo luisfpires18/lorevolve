@@ -1,17 +1,12 @@
 import { useId, useRef, useState } from 'react'
+import type { Load } from '../lib/useAsyncRead'
 import type { Proposal } from './types'
-
-export type Load =
-  | { kind: 'loading' }
-  | { kind: 'ready'; proposal: Proposal }
-  | { kind: 'missing' }
-  | { kind: 'error' }
 
 export type Feedback = { text: string; isError: boolean }
 
 /** One proposal's review state: the read, what is chosen, busy or applied, the feedback, the change being edited, and the approval's id. */
 export function useAiChangeState() {
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
+  const [load, setLoad] = useState<Load<Proposal>>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null)

@@ -25,7 +25,9 @@ export function useWorkspaceReads({
     (signal?: AbortSignal) => {
       if (!id) return
       Promise.all([getUniverse(id, signal), getChronology(id, signal)])
-        .then(([universe, chronology]) => setState({ kind: 'ready', universe, chronology }))
+        .then(([universe, chronology]) =>
+          setState({ kind: 'ready', value: { universe, chronology } }),
+        )
         .catch((error: unknown) => {
           if (signal?.aborted) return
           // The API answers 404 both for a missing universe and for someone else's.

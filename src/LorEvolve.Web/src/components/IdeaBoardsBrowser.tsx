@@ -51,7 +51,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
   useBoardsRead({ ...base, universe, show, deleted, search, page, t })
   const { restore } = useBoardsActions({ ...base, tx, basePath })
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
   const isFiltered = search.trim() !== '' || (!universe && show !== '')
 
   return (

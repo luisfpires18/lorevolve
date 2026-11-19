@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Plug } from 'lucide-react'
 import { Drawer } from './Drawer'
@@ -9,11 +9,7 @@ import { useReturnFocus } from '../lib/returnFocus'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
-
-type Load =
-  | { kind: 'loading' }
-  | { kind: 'ready'; url: string | null; name: string | null }
-  | { kind: 'error' }
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * Connect to AI (ADR 0046): an action on the universe's front page, opening a drawer with this universe's MCP URL to copy into an
@@ -67,21 +63,17 @@ function ConnectDrawer({
 }) {
   const { t } = useI18n()
   const headingId = useId()
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      getMcpConnectInfo(universeId, signal).then((info) => ({
+        url: info.mcpUrl,
+        name: info.suggestedName ?? null,
+      })),
+    [universeId],
+  )
+  const { load } = useAsyncRead(read)
 
   useReturnFocus()
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getMcpConnectInfo(universeId, controller.signal)
-      .then((info) =>
-        setLoad({ kind: 'ready', url: info.mcpUrl, name: info.suggestedName ?? null }),
-      )
-      .catch(() => {
-        if (!controller.signal.aborted) setLoad({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [universeId])
 
   return (
     <Drawer
@@ -91,7 +83,11 @@ function ConnectDrawer({
       bodyClassName="connect__body"
       eyebrow={t('ai.connect.eyebrow')}
       title={<bdi>{universeName}</bdi>}
-      context={<p className="drawer__context">{t('ai.connect.context')}</p>}
+      context={
+        <QuietNote size="ui" wrap className="drawer__context">
+          {t('ai.connect.context')}
+        </QuietNote>
+      }
       onClose={onClose}
       actions={(close) => (
         <FormActions onCancel={close} dismiss="close" cancelTestId="connect-ai-close" />
@@ -101,16 +97,16 @@ function ConnectDrawer({
         <QuietNote className="history__quiet" size="ui" role="status">
           {t('ai.connect.loading')}
         </QuietNote>
-      ) : load.kind === 'error' ? (
+      ) : load.kind !== 'ready' ? (
         <p className="form__message" role="alert" data-testid="connect-ai-error">
           {t('ai.connect.loadFailed')}
         </p>
-      ) : load.url === null ? (
+      ) : load.value.url === null ? (
         <QuietNote className="history__quiet" size="ui" testId="connect-ai-unavailable">
           {t('ai.connect.unavailable')}
         </QuietNote>
       ) : (
-        <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
+        <ConnectSteps url={load.value.url} name={load.value.name} onFollow={onClose} />
       )}
     </Drawer>
   )

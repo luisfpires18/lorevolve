@@ -19,9 +19,10 @@ export function useManuscriptLoad({
 
     getSceneManuscript(universeId, storyId, sceneId, controller.signal)
       .then((manuscript) => {
-        setStored(storedOf(manuscript))
+        const stored = storedOf(manuscript)
+        setStored(stored)
         setDraft(manuscript.content)
-        setLoad({ kind: 'ready' })
+        setLoad({ kind: 'ready', value: stored })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return

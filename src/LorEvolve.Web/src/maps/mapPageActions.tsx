@@ -20,7 +20,7 @@ export function mapPageActions({
   setPlacing,
   setState,
   setFailure,
-  setReads,
+  refresh,
   t,
   tn,
   tx,
@@ -48,7 +48,7 @@ export function mapPageActions({
   }
 
   function replaceMap(map: MapDetail) {
-    setState({ kind: 'ready', map })
+    setState({ kind: 'ready', value: map })
   }
 
   function pinSaved(saved: MapPin) {
@@ -56,13 +56,13 @@ export function mapPageActions({
     setPlacing(false)
     setState((current) => {
       if (current.kind !== 'ready') return current
-      const pins = current.map.pins.some((pin) => pin.id === saved.id)
-        ? current.map.pins.map((pin) => (pin.id === saved.id ? saved : pin))
-        : [...current.map.pins, saved].sort((a, b) => a.title.localeCompare(b.title))
+      const pins = current.value.pins.some((pin) => pin.id === saved.id)
+        ? current.value.pins.map((pin) => (pin.id === saved.id ? saved : pin))
+        : [...current.value.pins, saved].sort((a, b) => a.title.localeCompare(b.title))
       return {
         kind: 'ready',
-        map: {
-          ...current.map,
+        value: {
+          ...current.value,
           pins,
           pinsAwaitingReview: pins.filter((pin) => !pin.placedOnCurrentImage).length,
         },
@@ -84,7 +84,7 @@ export function mapPageActions({
       pinSaved(saved)
     } catch (error: unknown) {
       setFailure(error instanceof ApiError ? error.message : t('places.mapPage.moveFailed'))
-      setReads((current) => current + 1)
+      refresh()
     }
   }
 
@@ -101,10 +101,10 @@ export function mapPageActions({
       current.kind === 'ready'
         ? {
             kind: 'ready',
-            map: {
-              ...current.map,
-              pins: current.map.pins.filter((each) => each.id !== pin.id),
-              pinsAwaitingReview: current.map.pins.filter(
+            value: {
+              ...current.value,
+              pins: current.value.pins.filter((each) => each.id !== pin.id),
+              pinsAwaitingReview: current.value.pins.filter(
                 (each) => each.id !== pin.id && !each.placedOnCurrentImage,
               ).length,
             },

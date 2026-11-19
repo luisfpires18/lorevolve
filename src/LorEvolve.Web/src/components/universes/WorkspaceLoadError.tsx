@@ -1,5 +1,6 @@
 import { t } from '../../i18n'
-import type { LoadState } from '../../universes/useWorkspaceState'
+import type { Load } from '../../lib/useAsyncRead'
+import type { Workspace } from '../../universes/useWorkspaceState'
 import { LoadError } from '../LoadError'
 
 /** The universe could not be read: what went wrong, and Try again for the universe and its types. */
@@ -8,7 +9,7 @@ export function WorkspaceLoadError({
   refresh,
   refreshTypes,
 }: {
-  state: Extract<LoadState, { kind: 'error' }>
+  state: Extract<Load<Workspace>, { kind: 'error' }>
   refresh: () => void
   refreshTypes: () => Promise<void>
 }) {

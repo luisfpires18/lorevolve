@@ -1,16 +1,10 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useId, useRef, useState } from 'react'
 import { t } from '../i18n'
-import { ApiError } from '../lib/api'
 import { useQueryTab } from '../lib/queryTab'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { getSystem } from './api'
 import type { BaseVersions } from './machine'
 import type { SystemDetail } from './types'
-
-export type Load =
-  | { kind: 'loading' }
-  | { kind: 'ready'; system: SystemDetail | null }
-  | { kind: 'missing' }
-  | { kind: 'error' }
 
 /** The System editor's state, its tabs and the effect that reads the System. */
 export function useSystemEditorState({
@@ -23,10 +17,6 @@ export function useSystemEditorState({
   const headingId = useId()
   const nameId = useId()
   const summaryId = useId()
-  const [load, setLoad] = useState<Load>(
-    systemId ? { kind: 'loading' } : { kind: 'ready', system: null },
-  )
-  const [reads, setReads] = useState(0)
   const [name, setName] = useState('')
   const [summary, setSummary] = useState('')
   const [saved, setSaved] = useState<SystemDetail | null>(null)
@@ -44,40 +34,31 @@ export function useSystemEditorState({
   ]
   const [tab, choose] = useQueryTab(tabs)
 
-  useEffect(() => {
-    if (!systemId) return
-    const controller = new AbortController()
-
-    getSystem(universeId, systemId, controller.signal)
-      .then((system) => {
-        setSaved(system)
-        setBases({ details: system.version, machine: system.version })
-        setName(system.name)
-        setSummary(system.summary)
-        setLoad({ kind: 'ready', system })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setLoad(
-          error instanceof ApiError && error.status === 404
-            ? { kind: 'missing' }
-            : { kind: 'error' },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, systemId, reads])
+  // A new System has nothing to read: it starts ready and empty.
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      systemId
+        ? getSystem(universeId, systemId, signal).then((system) => {
+            setSaved(system)
+            setBases({ details: system.version, machine: system.version })
+            setName(system.name)
+            setSummary(system.summary)
+            return system as SystemDetail | null
+          })
+        : undefined,
+    [universeId, systemId],
+  )
+  const { load, retry } = useAsyncRead<SystemDetail | null>(read, {
+    missing: true,
+    initial: systemId ? undefined : { kind: 'ready', value: null },
+  })
 
   return {
     headingId,
     nameId,
     summaryId,
     load,
-    setLoad,
-    reads,
-    setReads,
+    retry,
     name,
     setName,
     summary,

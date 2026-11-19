@@ -117,7 +117,7 @@ export default function LorePage() {
   // Nothing chosen is nothing read: whatever the last type's read left behind is not shown.
   const view: LoadState =
     entityTypeId === null && entityTypeGroupId === null ? { kind: 'idle' } : state
-  const result = view.kind === 'ready' ? view.page : null
+  const result = view.kind === 'ready' ? view.value : null
 
   const entrySelection = useLoreSelection({ location, pageSize, result, universe, setReads })
   const { isSelecting } = entrySelection

@@ -5,14 +5,11 @@ import {
   type IdeaBoardDetail,
   type IdeaBoardInput,
 } from './boards'
+import type { Load } from '../lib/useAsyncRead'
 import type { IdeaUniverse } from './types'
 
-export type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready' }
-  | { kind: 'missing' }
-  | { kind: 'elsewhere' }
-  | { kind: 'error'; message: string }
+/** The read of the thing, plus `elsewhere`: it exists, but not in the universe this editor is in. The fields live beside it. */
+export type LoadState = Load<null> | { kind: 'elsewhere' }
 
 /** What an author edits, and exactly what a recovery copy holds. */
 export interface Fields {

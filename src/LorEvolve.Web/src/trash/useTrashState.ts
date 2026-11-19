@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { CanonBlockingFinding } from '../canon/types'
+import type { Load } from '../lib/useAsyncRead'
 import type { TrashItem, TrashPage } from './types'
-
-export type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; page: TrashPage } | { kind: 'error'; message: string }
 
 /** What the last restore did, and the way to what it brought back. */
 export interface Outcome {
@@ -14,7 +12,7 @@ export interface Outcome {
 /** The Trash's states: the page and its read, restoring and its confirm, erasing, selecting and the bulk erase, with their refs and focus. */
 export function useTrashState() {
   const [page, setPage] = useState(1)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [state, setState] = useState<Load<TrashPage>>({ kind: 'loading' })
   const [restoring, setRestoring] = useState<string | null>(null)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)

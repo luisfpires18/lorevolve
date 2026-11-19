@@ -41,9 +41,9 @@ export function WorldLogicRules({
         />
       ) : null}
 
-      {rules.kind === 'ready' && rules.page.items.length > 0 ? (
+      {rules.kind === 'ready' && rules.value.items.length > 0 ? (
         <ul className="rulelist" data-testid="world-logic-rule-list">
-          {rules.page.items.map((rule) => (
+          {rules.value.items.map((rule) => (
             <li
               className={rule.source === 'worldRule' ? 'rulerow rowlink' : 'rulerow'}
               key={`${rule.source}-${rule.id}`}
@@ -97,7 +97,7 @@ export function WorldLogicRules({
         </ul>
       ) : null}
 
-      {rules.kind === 'ready' && rules.page.totalCount === 0 ? (
+      {rules.kind === 'ready' && rules.value.totalCount === 0 ? (
         <EmptyState
           testId="world-logic-rules-empty"
           title={t('canon.rules.empty.title')}
@@ -110,7 +110,7 @@ export function WorldLogicRules({
         />
       ) : null}
 
-      {rules.kind === 'ready' && rules.page.items.length === 0 && rules.page.totalCount > 0 ? (
+      {rules.kind === 'ready' && rules.value.items.length === 0 && rules.value.totalCount > 0 ? (
         <EmptyState
           testId="world-logic-rules-page-empty"
           title={t('canon.rules.pageEmpty.title')}
@@ -125,8 +125,8 @@ export function WorldLogicRules({
       {rules.kind === 'ready' ? (
         <Pager
           testId="world-logic-rules-pager"
-          page={rules.page.page}
-          totalPages={rules.page.totalPages}
+          page={rules.value.page}
+          totalPages={rules.value.totalPages}
           onGo={(next) => goTo('rulesPage', next)}
         />
       ) : null}

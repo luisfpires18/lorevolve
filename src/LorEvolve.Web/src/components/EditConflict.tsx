@@ -1,16 +1,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { ApiError } from '../lib/api'
 import type { Change } from '../lib/editConflict'
+import { errorText } from '../lib/errorText'
+import { isNotFound, type Load } from '../lib/useAsyncRead'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
-
-type ReviewState<T> =
-  | { kind: 'notice' }
-  | { kind: 'loading' }
-  | { kind: 'failed' }
-  | { kind: 'missing' }
-  | { kind: 'reviewing'; latest: T }
 
 interface EditConflictProps<T> {
   /** What changed, in a creator's words: "entry", "article", "story", "scene", "manuscript". */
@@ -48,23 +42,24 @@ export function EditConflict<T>({
   const { t } = useI18n()
   const reviewId = useId()
   const hintId = useId()
-  const [state, setState] = useState<ReviewState<T>>({ kind: 'notice' })
+  // Null until the author asks to review: the notice alone, before any read.
+  const [state, setState] = useState<Load<T> | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
 
   // Arriving at the latest version puts a keyboard and a screen reader on its heading.
   useEffect(() => {
-    if (state.kind === 'reviewing') heading.current?.focus()
-  }, [state.kind])
+    if (state?.kind === 'ready') heading.current?.focus()
+  }, [state?.kind])
 
   async function review() {
     setState({ kind: 'loading' })
     try {
-      setState({ kind: 'reviewing', latest: await read() })
+      setState({ kind: 'ready', value: await read() })
     } catch (error: unknown) {
       setState(
-        error instanceof ApiError && error.status === 404
+        isNotFound(error)
           ? { kind: 'missing' }
-          : { kind: 'failed' },
+          : { kind: 'error', message: errorText(error, t('entity.conflict.failed')) },
       )
     }
   }
@@ -85,7 +80,7 @@ export function EditConflict<T>({
   }
 
   return (
-    <div className="editconflict" data-testid={testId} data-state={state.kind}>
+    <div className="editconflict" data-testid={testId} data-state={state?.kind ?? 'notice'}>
       <div role="alert">
         {suggesting ? (
           <>
@@ -100,7 +95,7 @@ export function EditConflict<T>({
         )}
       </div>
 
-      {state.kind === 'notice' || state.kind === 'failed' ? (
+      {state === null || state.kind === 'error' ? (
         <div className="editconflict__actions">
           <Button tone="secondary" onClick={() => void review()} data-testid={`${testId}-review`}>
             {t('entity.conflict.review')}
@@ -108,25 +103,25 @@ export function EditConflict<T>({
         </div>
       ) : null}
 
-      {state.kind === 'failed' ? (
+      {state?.kind === 'error' ? (
         <p className="editconflict__text" role="status">
           {t('entity.conflict.failed')}
         </p>
       ) : null}
 
-      {state.kind === 'loading' ? (
+      {state?.kind === 'loading' ? (
         <p className="editconflict__text" role="status">
           {t('entity.conflict.loading')}
         </p>
       ) : null}
 
-      {state.kind === 'missing' ? (
+      {state?.kind === 'missing' ? (
         <p className="editconflict__text" role="alert" data-testid={`${testId}-missing`}>
           {t('entity.conflict.missing', { what })}
         </p>
       ) : null}
 
-      {state.kind === 'reviewing' ? (
+      {state?.kind === 'ready' ? (
         <section
           className="editconflict__review"
           aria-labelledby={reviewId}
@@ -135,10 +130,10 @@ export function EditConflict<T>({
           <h3 className="editconflict__heading" id={reviewId} ref={heading} tabIndex={-1}>
             {t('entity.conflict.latestHeading')}
           </h3>
-          {renderLatest(state.latest)}
+          {renderLatest(state.value)}
           <div className="editconflict__actions">
             <Button
-              onClick={() => onKeepMine(state.latest)}
+              onClick={() => onKeepMine(state.value)}
               aria-describedby={hintId}
               data-testid={`${testId}-keep`}
             >
@@ -146,7 +141,7 @@ export function EditConflict<T>({
             </Button>
             <Button
               tone="secondary"
-              onClick={() => chooseLatest(state.latest)}
+              onClick={() => chooseLatest(state.value)}
               data-testid={`${testId}-use-latest`}
             >
               {t('entity.conflict.useLatest')}

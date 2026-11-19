@@ -13,6 +13,7 @@ import {
 import { buildTypeTree } from './typeTree'
 import { useWorkspaceTypes } from '../pages/useWorkspaceTypes'
 import type { SetURLSearchParams } from 'react-router-dom'
+import { errorText } from '../lib/errorText'
 import type { LoadState } from './loreAddress'
 
 /** Groups that could not be read: none to offer, one stable list. */
@@ -174,9 +175,9 @@ export function useLoreEntries({
         },
         controller.signal,
       )
-        .then((result) => setState({ kind: 'ready', page: result }))
-        .catch(() => {
-          if (!controller.signal.aborted) setState({ kind: 'error' })
+        .then((result) => setState({ kind: 'ready', value: result }))
+        .catch((error: unknown) => {
+          if (!controller.signal.aborted) setState({ kind: 'error', message: errorText(error, '') })
         })
     }, delay)
 

@@ -34,7 +34,7 @@ export function useBoardRead({
         const next = storedFrom(board)
         setStored(next)
         setDraft(fieldsOf(next))
-        setLoad({ kind: 'ready' })
+        setLoad({ kind: 'ready', value: null })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return

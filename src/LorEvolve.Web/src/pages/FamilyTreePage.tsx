@@ -10,7 +10,7 @@ import { FamilySemantic, type RelationshipType } from '../relationships/types'
 import { PageHeader } from '../components/PageHeader'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { useI18n } from '../i18n'
-import type { LoadState, Setup } from '../familyTree/useFamilyTreeState'
+import type { FamilyView, Setup } from '../familyTree/useFamilyTreeState'
 import { useFamilyTreeReads } from '../familyTree/useFamilyTreeReads'
 import { useFamilyTreeState } from '../familyTree/useFamilyTreeState'
 import { FamilyAddLink } from '../components/familyTree/FamilyAddLink'
@@ -53,6 +53,7 @@ export default function FamilyTreePage() {
   const {
     state,
     setState,
+    answeredFor,
     kinds,
     setKinds,
     setupReads,
@@ -77,9 +78,9 @@ export default function FamilyTreePage() {
 
   // Worked out while rendering rather than stored: no entry in the address is the empty state, and an answer
   // about another entry is a tree still on its way.
-  const view: LoadState | { kind: 'idle' } = !entityId
+  const view: FamilyView = !entityId
     ? { kind: 'idle' }
-    : state.kind !== 'loading' && state.entityId === entityId
+    : state.kind !== 'loading' && answeredFor === entityId
       ? state
       : { kind: 'loading' }
 
@@ -107,7 +108,7 @@ export default function FamilyTreePage() {
       ? others.views.filter((view) => plainKinds.has(view.relationshipTypeId))
       : []
 
-  const tree = view.kind === 'ready' ? view.tree : null
+  const tree = view.kind === 'ready' ? view.value : null
   const focal = tree?.nodes.find((node) => node.entityId === tree.focalEntityId) ?? null
   const nodes = useMemo(
     () => new Map((tree?.nodes ?? []).map((node) => [node.entityId, node])),

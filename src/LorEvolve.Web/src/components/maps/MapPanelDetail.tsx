@@ -43,7 +43,7 @@ export function MapPanelDetail({
           onPointsChange={setCalibrating}
           onSaved={(calibration) => {
             setCalibrating(null)
-            setState({ kind: 'ready', map: { ...map, calibration } })
+            setState({ kind: 'ready', value: { ...map, calibration } })
           }}
           onCancel={() => setCalibrating(null)}
         />

@@ -1,9 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { IdeaPage } from './types'
+import type { Load } from '../lib/useAsyncRead'
 import type { UniverseSummary } from '../universes/types'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; page: IdeaPage } | { kind: 'error'; message: string }
 
 /** What the last restore did, and the way to the idea it brought back. */
 interface Outcome {
@@ -14,7 +12,7 @@ interface Outcome {
 /** Every state and ref of an ideas list: what is typed, read and restored, and what was said. */
 export function useIdeasState(search: string) {
   const [typed, setTyped] = useState(search)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [state, setState] = useState<Load<IdeaPage>>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
   const [restoring, setRestoring] = useState<string | null>(null)
