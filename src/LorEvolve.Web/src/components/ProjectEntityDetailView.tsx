@@ -12,6 +12,8 @@ import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
 import { TypeIcon } from './TypeIcon'
 import { Button } from './Button'
+import { Crumb } from './Crumb'
+import { EntryHead } from './EntryHead'
 import { errorText } from '../lib/errorText'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
@@ -134,14 +136,16 @@ export function ProjectEntityDetailView({
       }
       data-testid="game-entity-page"
     >
-      <header className="entry__head">
-        <div className="entry__kind">
-          <nav className="entry__crumbs" aria-label={t('entity.page.head.breadcrumb')}>
-            <Link to={gameHref} data-testid="game-entity-crumb-game">
-              <bdi>{gameName}</bdi>
-            </Link>
-          </nav>
-          {/* Back to this entry's own type, with its row marked as the list marks a named entry (#195). */}
+      <EntryHead
+        crumb={
+          <Crumb
+            items={[
+              { to: gameHref, label: <bdi>{gameName}</bdi>, testId: 'game-entity-crumb-game' },
+            ]}
+          />
+        }
+        // Back to this entry's own type, with its row marked as the list marks a named entry (#195).
+        type={
           <Link
             className="entry__type"
             to={typeHref}
@@ -155,10 +159,10 @@ export function ProjectEntityDetailView({
             <TypeIcon iconKey={entity.entityTypeIcon} className="entry__typeicon" />
             <bdi>{entity.entityTypeName}</bdi>
           </Link>
-        </div>
-        <h1 className="entry__name titlerule" data-testid="game-entity-title">
-          <bdi>{entity.name}</bdi>
-        </h1>
+        }
+        name={<bdi>{entity.name}</bdi>}
+        nameTestId="game-entity-title"
+      >
         {entity.summary ? (
           <p className="entry__summary prose" data-testid="game-entity-description">
             {entity.summary}
@@ -168,7 +172,7 @@ export function ProjectEntityDetailView({
             {t('projects.gameEntities.entity.noDescription')}
           </p>
         )}
-      </header>
+      </EntryHead>
 
       {access.editContent ? (
         <div className="entry__bar">

@@ -6,6 +6,7 @@ import { useProjectOutline } from '../projectEntities/useProjectOutline'
 import { OutlineAddButtons } from './projectEntities/OutlineAddButtons'
 import { OutlineBranch } from './projectEntities/OutlineBranch'
 import { NodeEditor } from './projectEntities/NodeEditor'
+import { PageHeader } from './PageHeader'
 
 /**
  * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
@@ -47,13 +48,13 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
   return (
     <>
       <section className="projects" data-testid="project-outline">
-        <header className="projects__head">
-          <div className="projects__headtext">
-            <h2 className="sectionrule">{t('projects.structure.title')}</h2>
-            <p className="projects__lede">{t('projects.structure.lede')}</p>
-          </div>
-          <OutlineAddButtons parent={null} tree={tree} busy={busy} add={add} />
-        </header>
+        <PageHeader
+          level={2}
+          size="panel"
+          title={t('projects.structure.title')}
+          lede={t('projects.structure.lede')}
+          actions={<OutlineAddButtons parent={null} tree={tree} busy={busy} add={add} />}
+        />
 
         {failed ? (
           <p role="alert" data-testid="project-outline-failed">
@@ -97,12 +98,12 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
 
       {hasLegacy ? (
         <section className="projects" data-testid="project-outline-earlier">
-          <header className="projects__head">
-            <div className="projects__headtext">
-              <h2 className="sectionrule">{t('projects.structure.earlier')}</h2>
-              <p className="projects__lede">{t('projects.structure.earlierHint')}</p>
-            </div>
-          </header>
+          <PageHeader
+            level={2}
+            size="panel"
+            title={t('projects.structure.earlier')}
+            lede={t('projects.structure.earlierHint')}
+          />
           {legacy}
         </section>
       ) : null}

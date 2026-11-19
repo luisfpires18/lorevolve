@@ -10,30 +10,11 @@
   --entry-accent: var(--accent);
 }
 
-.entry__crumbs {
-  font-size: var(--text-sm);
-  margin-bottom: 1.5rem;
-}
-
 /* On an entry the crumb is one word beside the type, inside the header, so it reads as the entry's
-   own metadata rather than as a line hovering above the page. The story page keeps the margin. */
-.entry__kind .entry__crumbs {
-  margin-bottom: 0;
-}
-
-.entry__kind .entry__crumbs::after {
+   own metadata rather than as a line hovering above the page. */
+.entry__kind .crumb::after {
   content: '\2009/\2009';
   color: var(--muted);
-}
-
-.entry__crumbs a {
-  color: var(--muted);
-  text-decoration: none;
-}
-
-.entry__crumbs a:hover {
-  color: var(--ink);
-  text-decoration: underline;
 }
 
 /* Where the entry says what it is: the crumb back to the lore, the type (itself a link to that type's

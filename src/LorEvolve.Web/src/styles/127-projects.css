@@ -17,14 +17,6 @@
   gap: var(--space-4);
 }
 
-.projects__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
 .projects__filters {
   display: flex;
   flex-wrap: wrap;
@@ -32,37 +24,21 @@
   gap: var(--space-3);
 }
 
-/* A crumb over a panel's name takes a row of its own, as in `PageHeader`, so the head's action lines up with the name. */
-.projects__crumb {
-  flex-basis: 100%;
-}
-
-.projects__head:has(> .projects__crumb) {
-  row-gap: var(--space-2);
-}
-
 .projects__lede {
   margin: 0;
   color: var(--muted);
 }
 
-/*
- * A panel's name and its lede, kept together so the panel's own primary action can sit opposite them on the same line
- * and drop under them on a phone (#184).
- */
-.projects__headtext {
-  display: grid;
-  flex: 1 1 20rem;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.projects__headtext > .sectionrule {
-  margin: 0;
-}
-
 .projects__filters {
   margin: 0;
+}
+
+/* Only the type buttons of a panel whose title sits above it (the Types page's Gaming tab): one row, as a head's actions. */
+.schema__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 /*

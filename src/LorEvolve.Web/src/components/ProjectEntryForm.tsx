@@ -124,7 +124,7 @@ export function ProjectEntryForm({
       </Field>
 
       {fields.length > 0 ? (
-        <h4 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h4>
+        <h3 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h3>
       ) : null}
 
       {fields.map((field) =>

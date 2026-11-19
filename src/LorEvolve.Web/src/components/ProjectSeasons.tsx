@@ -8,6 +8,7 @@ import { SeasonItem } from './projectEntities/SeasonItem'
 import { NewButton } from './NewButton'
 import { FormActions } from './FormActions'
 import { errorText } from '../lib/errorText'
+import { PageHeader } from './PageHeader'
 
 /**
  * The seasons of a project and the episodes in them (#145).
@@ -81,19 +82,21 @@ export function ProjectSeasons({
 
   return (
     <section className="projects" data-testid="project-seasons">
-      <header className="projects__head">
-        <div className="projects__headtext">
-          <h2 className="sectionrule">{say.title()}</h2>
-          <p className="projects__lede">{say.lede()}</p>
-        </div>
-        <NewButton
-          aria-expanded={adding}
-          data-testid="project-season-add"
-          onClick={() => setAdding((open) => !open)}
-        >
-          {say.add()}
-        </NewButton>
-      </header>
+      <PageHeader
+        level={2}
+        size="panel"
+        title={say.title()}
+        lede={say.lede()}
+        actions={
+          <NewButton
+            aria-expanded={adding}
+            data-testid="project-season-add"
+            onClick={() => setAdding((open) => !open)}
+          >
+            {say.add()}
+          </NewButton>
+        }
+      />
 
       {/* Asked for rather than standing open at the foot of the list. */}
       {adding ? (

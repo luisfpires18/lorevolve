@@ -8,6 +8,7 @@ import { ProjectKind, ProjectLifecycle, type ProjectKindValue } from '../../proj
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
+import { PageHeader } from '../PageHeader'
 import { errorText } from '../../lib/errorText'
 
 /** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
@@ -75,7 +76,7 @@ export function NewProject() {
 
   return (
     <section className="projects" data-testid="project-new">
-      <h1>{t('projects.new.title')}</h1>
+      <PageHeader title={t('projects.new.title')} />
 
       <form
         className="form"

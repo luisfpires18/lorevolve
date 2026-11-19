@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { CrumbItem } from './Crumb'
 import { Field } from './Field'
 import { useLocation } from 'react-router-dom'
 import { FieldKind, type ProjectEntitySummary, type ProjectField } from '../projectEntities/types'
@@ -46,7 +46,7 @@ export function ProjectEntries({
   /** Called after a write, so the Types panel's entry counts are re-read rather than left stale. */
   onChanged?: () => void
   /** The way back to the type cards, which the type's ancestors follow as they do above a Lore type's list. */
-  crumb?: ReactNode
+  crumb?: CrumbItem
   /** Where an entry's card opens (#286); unset, a card is static as it was (#196). */
   entryHref?: (entry: ProjectEntitySummary) => string
   /** Open the new entry form at once: the Entities screen's New entry chose this type (`&add=1`). */

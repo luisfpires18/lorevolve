@@ -1,6 +1,7 @@
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { SystemMachinePanel } from '../components/SystemMachinePanel'
+import { Crumb } from '../components/Crumb'
 import { PageHeader } from '../components/PageHeader'
 import { t, useI18n } from '../i18n'
 import { advanceVersions } from '../worldLogic/machine'
@@ -149,10 +150,16 @@ function SystemEditor({
         }
         titleId={headingId}
         lede={t('canon.worldLogic.systems.editor.lede')}
-        actions={
-          <Button tone="secondary" to={listPath} data-testid="system-editor-back">
-            {t('canon.worldLogic.systems.editor.back')}
-          </Button>
+        crumb={
+          <Crumb
+            items={[
+              {
+                to: listPath,
+                label: t('canon.worldLogic.systems.editor.back'),
+                testId: 'system-editor-back',
+              },
+            ]}
+          />
         }
       />
 

@@ -5,7 +5,7 @@ import { FeedbackKind, listFeedback } from '../../feedback/api'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { LoadError } from '../LoadError'
-import { Heading } from './Heading'
+import { PageHeader } from '../PageHeader'
 import { Pager } from '../Pager'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
@@ -19,7 +19,7 @@ export function FeedbackScreen() {
 
   return (
     <>
-      <Heading title={t('admin.feedback.title')} lede={t('admin.feedback.lede')} />
+      <PageHeader title={t('admin.feedback.title')} lede={t('admin.feedback.lede')} />
       {state.kind === 'loading' ? <LoadingNote>{t('admin.feedback.reading')}</LoadingNote> : null}
       {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' && state.value.items.length === 0 ? (

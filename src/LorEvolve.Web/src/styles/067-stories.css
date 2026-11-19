@@ -110,8 +110,8 @@
   margin-bottom: 0;
 }
 
-.story__crumbs a {
-  color: var(--muted);
+.story .crumb {
+  margin-bottom: 1.5rem;
 }
 
 /* The views as the project's chips (#377) and the story's one menu at the end of the same line. On a 360px phone the

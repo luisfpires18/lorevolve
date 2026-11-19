@@ -90,28 +90,6 @@
   max-width: 46rem;
 }
 
-.rule__head {
-  margin-bottom: 1.25rem;
-}
-
-.rule__back {
-  font-size: 0.875rem;
-}
-
-.rule__heading {
-  margin: 0.5rem 0 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.rule__lede {
-  margin: 0.4rem 0 0;
-  font-size: 0.875rem;
-}
-
 .rule__failure {
   margin-top: 1rem;
 }

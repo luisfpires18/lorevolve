@@ -1,6 +1,5 @@
-import { Fragment } from 'react'
-import { Link } from 'react-router-dom'
 import { ListFilter, ListPlus } from 'lucide-react'
+import { Crumb } from '../Crumb'
 import { PageHeader } from '../PageHeader'
 import { GroupSwitcher, TypeSwitcher } from '../TypeSwitcher'
 import { useI18n } from '../../i18n'
@@ -61,22 +60,18 @@ export function LoreHeader({
     <PageHeader
       crumb={
         selectedNode || selectedGroup ? (
-          <span className="lore__path" data-testid="lore-path">
-            {/* Lore itself: the catalog, which reads no entry - not every entry. A group's list has it too. */}
-            <Link to={hrefFor(null)} data-testid="lore-path-root">
-              {t('lore.page.pathRoot')}
-            </Link>
-            {(selectedNode?.path ?? []).slice(0, -1).map((ancestor) => (
-              <Fragment key={ancestor.id}>
-                <span className="lore__pathsep" aria-hidden="true">
-                  ›
-                </span>
-                <Link to={hrefFor(ancestor.id)} data-testid="lore-path-type">
-                  <bdi>{ancestor.name}</bdi>
-                </Link>
-              </Fragment>
-            ))}
-          </span>
+          <Crumb
+            testId="lore-path"
+            items={[
+              // Lore itself: the catalog, which reads no entry - not every entry. A group's list has it too.
+              { to: hrefFor(null), label: t('lore.page.pathRoot'), testId: 'lore-path-root' },
+              ...(selectedNode?.path ?? []).slice(0, -1).map((ancestor) => ({
+                to: hrefFor(ancestor.id),
+                label: <bdi>{ancestor.name}</bdi>,
+                testId: 'lore-path-type',
+              })),
+            ]}
+          />
         ) : null
       }
       title={chosenName ? <bdi>{chosenName}</bdi> : t('lore.page.title')}

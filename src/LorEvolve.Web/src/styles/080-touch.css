@@ -75,7 +75,7 @@
   /* Stacked one under another in a list, these are the easiest links in the product to
      mis-tap: the neighbour is one line away. Padding separates the hit boxes without
      changing a single type size. */
-  .entry__crumbs a,
+  .crumb a,
   .relation__name,
   .finding__subjects a {
     display: inline-block;

@@ -1,7 +1,7 @@
-import { Fragment, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import type { ReactNode } from 'react'
 import type { ProjectEntityType } from '../../projectEntities/types'
-import { useI18n } from '../../i18n'
+import { Crumb, type CrumbItem } from '../Crumb'
+import { PageHeader } from '../PageHeader'
 
 /** Lore's head for one type: the path back with the type's ancestors, the type's name, and its action. */
 export function ProjectEntriesHead({
@@ -14,37 +14,29 @@ export function ProjectEntriesHead({
   title: ReactNode
   ancestors?: readonly ProjectEntityType[]
   action?: ReactNode
-  crumb?: ReactNode
+  crumb?: CrumbItem
   pathname: string
 }) {
-  useI18n()
-
   return (
-    <header className="projects__head">
-      {crumb ? (
-        <div className="pageheader__crumb projects__crumb">
-          <span className="lore__path">
-            {crumb}
-            {ancestors.map((ancestor) => (
-              <Fragment key={ancestor.id}>
-                <span className="lore__pathsep" aria-hidden="true">
-                  ›
-                </span>
-                <Link
-                  to={`${pathname}?type=${ancestor.id}`}
-                  data-testid="project-entities-path-type"
-                >
-                  <bdi>{ancestor.name}</bdi>
-                </Link>
-              </Fragment>
-            ))}
-          </span>
-        </div>
-      ) : null}
-      <div className="projects__headtext">
-        <h2 className="sectionrule">{title}</h2>
-      </div>
-      {action}
-    </header>
+    <PageHeader
+      level={2}
+      size="panel"
+      crumb={
+        crumb ? (
+          <Crumb
+            items={[
+              crumb,
+              ...ancestors.map((ancestor) => ({
+                to: `${pathname}?type=${ancestor.id}`,
+                label: <bdi>{ancestor.name}</bdi>,
+                testId: 'project-entities-path-type',
+              })),
+            ]}
+          />
+        ) : undefined
+      }
+      title={title}
+      actions={action}
+    />
   )
 }

@@ -18,6 +18,7 @@ import { NewButton } from './NewButton'
 import { errorText } from '../lib/errorText'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
+import { PageHeader } from './PageHeader'
 
 const ARCS_AND_EVENTS: ComicCollectionKind[] = ['story-arc', 'event']
 
@@ -95,21 +96,23 @@ export function ComicCollections({
         const ofKind = data.collections.filter((collection) => collection.kind === kind)
         return (
           <section key={kind} className="projects" data-testid={`comic-collections-${kind}`}>
-            <header className="projects__head">
-              <div className="projects__headtext">
-                <h2 className="sectionrule">{t(WORDS[kind].title)}</h2>
-              </div>
-              {canEdit ? (
-                <NewButton
-                  tone="secondary"
-                  size="sm"
-                  data-testid={`comic-collection-add-${kind}`}
-                  onClick={() => setEditing({ kind, collection: null })}
-                >
-                  {t(WORDS[kind].add)}
-                </NewButton>
-              ) : null}
-            </header>
+            <PageHeader
+              level={2}
+              size="panel"
+              title={t(WORDS[kind].title)}
+              actions={
+                canEdit ? (
+                  <NewButton
+                    tone="secondary"
+                    size="sm"
+                    data-testid={`comic-collection-add-${kind}`}
+                    onClick={() => setEditing({ kind, collection: null })}
+                  >
+                    {t(WORDS[kind].add)}
+                  </NewButton>
+                ) : null
+              }
+            />
 
             {ofKind.length === 0 ? (
               <p className="projectcard__meta">{t(WORDS[kind].none)}</p>
