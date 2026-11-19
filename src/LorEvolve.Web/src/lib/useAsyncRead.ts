@@ -50,6 +50,8 @@ export function useAsyncRead<T>(
       if (initialRef.current) setLoad(initialRef.current)
       return () => controller.abort()
     }
+    // A new read (another id) never shows the last answer under the new one; a refresh keeps it.
+    if (!keepShown) setLoad((now) => (now.kind === 'loading' ? now : { kind: 'loading' }))
     settleRead(
       reading,
       controller.signal,
