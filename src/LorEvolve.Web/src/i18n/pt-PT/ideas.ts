@@ -114,10 +114,6 @@ const ideas: Dictionary['ideas'] = {
       noneTitle: 'Ainda não há quadros.',
       noneHint: 'Dispõe notas, ideias e lore lado a lado e traça linhas entre eles.',
     },
-    pagination: 'Paginação',
-    previous: 'Anterior',
-    position: 'Página {page} de {total}',
-    next: 'Seguinte',
   },
   browser: {
     loadFailed: 'Não foi possível ler as ideias.',
@@ -171,10 +167,6 @@ const ideas: Dictionary['ideas'] = {
       noneTitle: 'Ainda não há ideias.',
       noneHint: 'Guarda aqui as possibilidades, à parte do que é verdade no teu mundo.',
     },
-    pagination: 'Paginação',
-    previous: 'Anterior',
-    position: 'Página {page} de {total}',
-    next: 'Seguinte',
   },
   capture: {
     empty: 'Escreve primeiro algumas palavras.',

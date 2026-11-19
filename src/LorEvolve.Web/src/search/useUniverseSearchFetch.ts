@@ -1,9 +1,7 @@
 import { useEffect } from 'react'
 import { searchUniverse } from './api'
 import type { useUniverseSearchState } from './useUniverseSearchState'
-
-/** How long typing has to pause before a search is sent. Short enough to feel immediate, long enough not to send every key. */
-const DEBOUNCE_MS = 200
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** Sends the search once typing pauses, aborting the one it replaces. */
 export function useUniverseSearchFetch({
@@ -14,23 +12,21 @@ export function useUniverseSearchFetch({
 }: Pick<ReturnType<typeof useUniverseSearchState>, 'query' | 'attempt' | 'setSettled'> & {
   universeId: string
 }) {
+  const paused = useDebouncedValue(query)
   useEffect(() => {
-    if (query === '') return
+    if (paused === '') return
 
     const controller = new AbortController()
-    const timer = window.setTimeout(() => {
-      searchUniverse(universeId, query, controller.signal)
-        .then((response) => setSettled({ query, kind: 'ready', response }))
-        .catch(() => {
-          // Replaced by a newer search, or the bar went away: nothing failed.
-          if (controller.signal.aborted) return
-          setSettled({ query, kind: 'error' })
-        })
-    }, DEBOUNCE_MS)
+    searchUniverse(universeId, paused, controller.signal)
+      .then((response) => setSettled({ query: paused, kind: 'ready', response }))
+      .catch(() => {
+        // Replaced by a newer search, or the bar went away: nothing failed.
+        if (controller.signal.aborted) return
+        setSettled({ query: paused, kind: 'error' })
+      })
 
     return () => {
-      window.clearTimeout(timer)
       controller.abort()
     }
-  }, [universeId, query, attempt])
+  }, [universeId, paused, attempt])
 }

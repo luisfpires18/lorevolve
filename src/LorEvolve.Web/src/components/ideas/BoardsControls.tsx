@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Field } from '../Field'
+import { SearchField } from '../SearchField'
 import { UNASSIGNED } from '../../ideas/useBoardsRead'
 import { useI18n } from '../../i18n'
 import type { UniverseSummary } from '../../universes/types'
@@ -29,19 +30,15 @@ export function BoardsControls({
   const { t } = useI18n()
   return (
     <div className="controls ideas__controls">
-      <Field id={searchId} className="controls__search" label={t('ideas.boards.filter')}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            type="search"
-            placeholder={t('ideas.boards.searchPlaceholder')}
-            value={typed}
-            onChange={(event) => setTyped(event.target.value)}
-            data-testid="boards-search"
-          />
-        )}
-      </Field>
+      <SearchField
+        id={searchId}
+        className="controls__search"
+        label={t('ideas.boards.filter')}
+        placeholder={t('ideas.boards.searchPlaceholder')}
+        value={typed}
+        onChange={setTyped}
+        testId="boards-search"
+      />
 
       {universe ? null : (
         <Field id={showId} className="ideas__show" label={t('ideas.boards.show')}>

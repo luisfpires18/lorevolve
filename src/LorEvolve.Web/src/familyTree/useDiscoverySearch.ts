@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { useSearchParams } from 'react-router-dom'
 import type { useDiscoveryState } from './useDiscoveryState'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 export function useDiscoverySearch({
   q,
@@ -23,17 +24,15 @@ export function useDiscoverySearch({
 
   // Typing settles for a moment before the address - and so the list - follows, on the first page, replacing the entry
   // rather than leaving one per keystroke in the history.
+  const settled = useDebouncedValue(text)
   useEffect(() => {
-    if (text.trim() === q) return
-    const timer = setTimeout(() => {
-      const next = new URLSearchParams(searchParams)
-      if (text.trim()) next.set('q', text.trim())
-      else next.delete('q')
-      next.delete('page')
-      setSearchParams(next, { replace: true })
-    }, 150)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [text, q, searchParams, setSearchParams])
+    if (settled.trim() === q) return
+    const next = new URLSearchParams(searchParams)
+    if (settled.trim()) next.set('q', settled.trim())
+    else next.delete('q')
+    next.delete('page')
+    setSearchParams(next, { replace: true })
+    // Only a settled word writes the address; an address that moved by itself is not written back over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settled])
 }

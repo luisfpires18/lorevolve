@@ -29,10 +29,6 @@ const placesDiscovery: Dictionary['places']['discovery'] = {
     one: '{n} membro',
     other: '{n} membros',
   },
-  pages: 'Páginas de famílias',
-  previous: 'Anterior',
-  position: 'Página {page} de {total}',
-  next: 'Seguinte',
 }
 
 export default placesDiscovery

@@ -26,10 +26,6 @@ const placesDiscovery = {
     one: '{n} member',
     other: '{n} members',
   },
-  pages: 'Family pages',
-  previous: 'Previous',
-  position: 'Page {page} of {total}',
-  next: 'Next',
 }
 
 export default placesDiscovery

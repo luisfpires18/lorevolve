@@ -5,7 +5,7 @@ import { png } from './support/png'
  * Public portal 009: Explore Worlds. What the API promises about filtering, search, sort and privacy is settled by
  * `PublicExploreQueryTests`; what only a browser can show is here - the portal's own header signed in and out, the
  * bridge to the workspace and back, real cards that open their world, discovery kept in the address through Back,
- * Forward and a refresh, "Show more worlds", the empty, no-match and error states, a phone's width, the keyboard,
+ * Forward and a refresh, "Show more", the empty, no-match and error states, a phone's width, the keyboard,
  * and names that read right to left.
  *
  * The suite's database is shared by every spec running at once, so each test publishes worlds carrying a word of
@@ -286,9 +286,7 @@ test.describe('Explore worlds', () => {
     await expect(page.getByTestId('explore-list')).toHaveCount(0)
   })
 
-  test('Show more worlds adds the next page, keeps the filters and repeats nothing', async ({
-    page,
-  }) => {
+  test('Show more adds the next page, keeps the filters and repeats nothing', async ({ page }) => {
     const word = token()
     await author(page, 'Oren Vale')
     for (const name of ['Ash', 'Birch', 'Cedar']) {

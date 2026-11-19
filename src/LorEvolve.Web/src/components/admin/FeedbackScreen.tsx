@@ -6,7 +6,7 @@ import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { LoadError } from '../LoadError'
 import { Heading } from './Heading'
-import { Button } from '../Button'
+import { Pager } from '../Pager'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
 
@@ -53,20 +53,11 @@ export function FeedbackScreen() {
               </li>
             ))}
           </ul>
-          {state.value.totalCount > state.value.pageSize ? (
-            <nav className="pager" aria-label={t('admin.feedback.pager.label')}>
-              <Button tone="secondary" disabled={page === 1} onClick={() => setPage(page - 1)}>
-                {t('admin.feedback.pager.newer')}
-              </Button>
-              <Button
-                tone="secondary"
-                disabled={page * state.value.pageSize >= state.value.totalCount}
-                onClick={() => setPage(page + 1)}
-              >
-                {t('admin.feedback.pager.older')}
-              </Button>
-            </nav>
-          ) : null}
+          <Pager
+            page={page}
+            totalPages={Math.ceil(state.value.totalCount / state.value.pageSize)}
+            onPage={setPage}
+          />
         </>
       ) : null}
     </>

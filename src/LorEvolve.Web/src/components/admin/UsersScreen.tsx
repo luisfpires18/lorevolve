@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Search } from 'lucide-react'
+import { useCallback, useState } from 'react'
 import { listUsers, type AdminUserPage } from '../../admin/api'
 import { Avatar } from '../Avatar'
 import { EmptyState } from '../EmptyState'
-import { Field } from '../Field'
+import { SearchField } from '../SearchField'
+import { Pager } from '../Pager'
+import { useDebouncedValue } from '../../lib/useDebouncedValue'
 import { useI18n } from '../../i18n'
 import { ROLE_KEYS } from '../../admin/adminConstants'
 import { useAsyncRead } from '../../lib/useAsyncRead'
@@ -19,17 +20,14 @@ import { QuietNote } from '../QuietNote'
 export function UsersScreen() {
   const { t, tn } = useI18n()
   const [search, setSearch] = useState('')
-  const [searched, setSearched] = useState('')
+  const searched = useDebouncedValue(search)
+  const [pageFor, setPageFor] = useState(searched)
   const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    if (search === searched) return
-    const timer = setTimeout(() => {
-      setSearched(search)
-      setPage(1)
-    }, 150)
-    return () => clearTimeout(timer)
-  }, [search, searched])
+  // A new search starts at page 1 in the same render, so one request goes out.
+  if (pageFor !== searched) {
+    setPageFor(searched)
+    setPage(1)
+  }
 
   const load = useCallback(
     (signal: AbortSignal) => listUsers({ search: searched, page }, signal),
@@ -45,31 +43,15 @@ export function UsersScreen() {
       <SignUpLink />
 
       <div className="controls">
-        <Field
+        <SearchField
           className="controls__search"
           id="admin-user-search"
           label={t('admin.users.search.label')}
-        >
-          {(control) => (
-            <span className="controls__searchfield">
-              <Search
-                className="controls__searchicon"
-                aria-hidden="true"
-                focusable="false"
-                strokeWidth={1.75}
-              />
-              <input
-                {...control}
-                className="field__input"
-                type="search"
-                placeholder={t('admin.users.search.placeholder')}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                data-testid="admin-user-search"
-              />
-            </span>
-          )}
-        </Field>
+          placeholder={t('admin.users.search.placeholder')}
+          value={search}
+          onChange={setSearch}
+          testId="admin-user-search"
+        />
       </div>
 
       {state.kind === 'loading' ? <LoadingNote>{t('admin.users.gathering')}</LoadingNote> : null}
@@ -131,27 +113,7 @@ export function UsersScreen() {
         />
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('admin.users.pager.label')}>
-          <Button
-            tone="secondary"
-            disabled={result.page <= 1}
-            onClick={() => setPage((current) => current - 1)}
-          >
-            {t('admin.users.pager.previous')}
-          </Button>
-          <span className="pager__position">
-            {t('admin.users.pager.position', { page: result.page, total: result.totalPages })}
-          </span>
-          <Button
-            tone="secondary"
-            disabled={result.page >= result.totalPages}
-            onClick={() => setPage((current) => current + 1)}
-          >
-            {t('admin.users.pager.next')}
-          </Button>
-        </nav>
-      ) : null}
+      {result ? <Pager page={result.page} totalPages={result.totalPages} onPage={setPage} /> : null}
     </>
   )
 }

@@ -32,11 +32,6 @@
   gap: var(--space-3);
 }
 
-/* No Exact toggle here, so the input needs no room for it. */
-.projects__filters .lore__searchinput {
-  padding-right: 0.75rem;
-}
-
 /* A crumb over a panel's name takes a row of its own, as in `PageHeader`, so the head's action lines up with the name. */
 .projects__crumb {
   flex-basis: 100%;

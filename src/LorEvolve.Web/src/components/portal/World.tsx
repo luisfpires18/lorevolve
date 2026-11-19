@@ -16,7 +16,7 @@ import { categoryLabel, genreKey, genreLabel } from '../../publishing/types'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { useI18n } from '../../i18n'
 import { LoreCard } from './LoreCard'
-import { More } from './More'
+import { ShowMore } from '../ShowMore'
 import { StoryCard } from './StoryCard'
 
 export function World({ world }: { world: PublicUniverse }) {
@@ -124,7 +124,14 @@ export function World({ world }: { world: PublicUniverse }) {
                 <LoreCard key={entry.slug} world={world.slug} entry={entry} />
               ))}
             </ul>
-            <More pages={lore} kind="lore" testId="public-lore-more" />
+            <ShowMore
+              hasMore={lore.hasMore}
+              status={lore.more}
+              onMore={lore.showMore}
+              shown={lore.items.length}
+              total={lore.totalCount}
+              testId="public-lore-more"
+            />
           </section>
         ) : null}
 
@@ -139,7 +146,14 @@ export function World({ world }: { world: PublicUniverse }) {
                 <StoryCard key={story.slug} world={world.slug} story={story} />
               ))}
             </ul>
-            <More pages={stories} kind="stories" testId="public-story-more" />
+            <ShowMore
+              hasMore={stories.hasMore}
+              status={stories.more}
+              onMore={stories.showMore}
+              shown={stories.items.length}
+              total={stories.totalCount}
+              testId="public-story-more"
+            />
           </section>
         ) : null}
 

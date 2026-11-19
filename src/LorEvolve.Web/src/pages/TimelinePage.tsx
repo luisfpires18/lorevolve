@@ -1,7 +1,7 @@
 import { useUniverseAccess } from '../universes/access'
 import { useOutletContext } from 'react-router-dom'
 import { TimelineEntryForm } from '../components/TimelineEntryForm'
-import { t, useI18n } from '../i18n'
+import { useI18n } from '../i18n'
 import { groupTimeline } from '../timeline/format'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { useTimelineState } from '../timeline/useTimelineState'
@@ -13,7 +13,7 @@ import { TimelineControls } from '../components/timeline/TimelineControls'
 import { TimelineNotices } from '../components/timeline/TimelineNotices'
 import { TimelineStream } from '../components/timeline/TimelineStream'
 import { TimelineEmpty } from '../components/timeline/TimelineEmpty'
-import { Button } from '../components/Button'
+import { Pager } from '../components/Pager'
 
 /**
  * The universe's one timeline: the moments written here, every dated scene of every live story, and every live entry's birth
@@ -129,26 +129,12 @@ export default function TimelinePage() {
         />
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('time.timeline.pagination')}>
-          <Button
-            tone="secondary"
-            disabled={result.page <= 1}
-            onClick={() => update({ page: String(result.page - 1) })}
-          >
-            {t('time.timeline.previous')}
-          </Button>
-          <span className="pager__position">
-            {t('time.timeline.page', { page: result.page, total: result.totalPages })}
-          </span>
-          <Button
-            tone="secondary"
-            disabled={result.page >= result.totalPages}
-            onClick={() => update({ page: String(result.page + 1) })}
-          >
-            {t('time.timeline.next')}
-          </Button>
-        </nav>
+      {result ? (
+        <Pager
+          page={result.page}
+          totalPages={result.totalPages}
+          onPage={(next) => update({ page: String(next) })}
+        />
       ) : null}
 
       {form.mode !== 'closed' ? (

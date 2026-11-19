@@ -9,6 +9,7 @@ import type { useCanonConflicts } from '../../canon/useCanonConflicts'
 import type { canonActions } from '../../canon/canonActions'
 import { emptyLine, hint } from '../../canon/canonEmptyCopy'
 import { Button } from '../Button'
+import { Pager } from '../Pager'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 
@@ -111,27 +112,7 @@ export function CanonResults({
         />
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('canon.page.pagination')}>
-          <Button
-            tone="secondary"
-            disabled={result.page <= 1}
-            onClick={() => setPage((current) => current - 1)}
-          >
-            {t('canon.page.previous')}
-          </Button>
-          <span className="pager__position">
-            {t('canon.page.position', { page: result.page, totalPages: result.totalPages })}
-          </span>
-          <Button
-            tone="secondary"
-            disabled={result.page >= result.totalPages}
-            onClick={() => setPage((current) => current + 1)}
-          >
-            {t('canon.page.next')}
-          </Button>
-        </nav>
-      ) : null}
+      {result ? <Pager page={result.page} totalPages={result.totalPages} onPage={setPage} /> : null}
     </>
   )
 }

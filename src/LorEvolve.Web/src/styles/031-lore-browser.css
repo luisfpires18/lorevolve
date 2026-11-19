@@ -125,25 +125,8 @@
 }
 
 .lore__search {
-  position: relative;
   flex: 1 1 18rem;
   max-width: 28rem;
-}
-
-.lore__searchicon {
-  position: absolute;
-  top: 50%;
-  left: 0.75rem;
-  width: 1rem;
-  height: 1rem;
-  color: var(--muted);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.lore__searchinput {
-  padding-left: 2.25rem;
-  padding-right: 6.75rem;
 }
 
 /* Exact name: a small toggle at the search's own end, so it costs the row nothing. Quiet until pressed, then the accent's

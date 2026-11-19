@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PortalError, PortalMissing } from '../components/PortalMissing'
 import { WorldCard } from '../components/WorldCard'
+import { ShowMore } from '../components/ShowMore'
 import {
   getPublicAuthor,
   listPublicUniverses,
@@ -135,19 +136,7 @@ function Author({ author }: { author: PublicAuthor }) {
             ))}
           </ul>
         )}
-        {worlds.hasMore ? (
-          <div className="pworld__more">
-            <button
-              className="portal__pill"
-              type="button"
-              onClick={worlds.showMore}
-              disabled={worlds.more === 'loading'}
-              aria-busy={worlds.more === 'loading'}
-            >
-              {worlds.more === 'loading' ? t('portal.author.moreLoading') : t('portal.author.more')}
-            </button>
-          </div>
-        ) : null}
+        <ShowMore hasMore={worlds.hasMore} status={worlds.more} onMore={worlds.showMore} />
       </section>
     </div>
   )

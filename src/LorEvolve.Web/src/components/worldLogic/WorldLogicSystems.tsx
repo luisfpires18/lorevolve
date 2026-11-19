@@ -4,7 +4,7 @@ import { t } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
-import { Pager } from './Pager'
+import { Pager } from '../Pager'
 import { SystemRow } from './SystemRow'
 import { Button } from '../Button'
 import { LoadError } from '../LoadError'
@@ -72,7 +72,7 @@ export function WorldLogicSystems({
           testId="world-logic-systems-pager"
           page={systems.value.page}
           totalPages={systems.value.totalPages}
-          onGo={(next) => goTo('systemsPage', next)}
+          onPage={(next) => goTo('systemsPage', next)}
         />
       ) : null}
     </TabPanel>

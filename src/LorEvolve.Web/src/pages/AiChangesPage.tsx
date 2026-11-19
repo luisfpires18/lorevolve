@@ -8,7 +8,7 @@ import { PageHeader } from '../components/PageHeader'
 import { useI18n } from '../i18n'
 import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { Button } from '../components/Button'
+import { ShowMore } from '../components/ShowMore'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
 import { QuietNote } from '../components/QuietNote'
@@ -148,11 +148,11 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
               </li>
             ))}
           </ul>
-          {load.value.hasMore ? (
-            <Button tone="text" size="sm" disabled={more} onClick={() => void readMore()}>
-              {t('review.aiChanges.showMore')}
-            </Button>
-          ) : null}
+          <ShowMore
+            hasMore={load.value.hasMore}
+            status={more ? 'loading' : 'idle'}
+            onMore={() => void readMore()}
+          />
         </>
       )}
     </section>

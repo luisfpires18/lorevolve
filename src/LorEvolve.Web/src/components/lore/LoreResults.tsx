@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
+import { Pager } from '../Pager'
 import { EmptyState } from '../EmptyState'
 import { EntityCard } from '../EntityCard'
 import { useI18n } from '../../i18n'
@@ -30,14 +29,12 @@ export function LoreResults({
   toggle,
   universe,
   access,
-  page,
   result,
   isFiltered,
   createTo,
 }: {
   universe: ReturnType<typeof useWorkspaceTypes>['universe']
   access: ReturnType<typeof useUniverseAccess>
-  page: number
   result: EntityPage | null
   isFiltered: boolean
   createTo: string
@@ -121,28 +118,8 @@ export function LoreResults({
         />
       ) : null}
 
-      {chosenName && result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('lore.page.pagination')}>
-          <Button
-            tone="secondary"
-            icon={ArrowLeft}
-            disabled={page <= 1}
-            onClick={() => goToPage(page - 1)}
-          >
-            {t('lore.page.previous')}
-          </Button>
-          <span className="pager__position">
-            {t('lore.page.pageOf', { page: result.page, total: result.totalPages })}
-          </span>
-          <Button
-            tone="secondary"
-            disabled={page >= result.totalPages}
-            onClick={() => goToPage(page + 1)}
-          >
-            {t('lore.page.next')}
-            <ActionIcon icon={ArrowRight} />
-          </Button>
-        </nav>
+      {chosenName && result ? (
+        <Pager page={result.page} totalPages={result.totalPages} onPage={goToPage} />
       ) : null}
     </>
   )

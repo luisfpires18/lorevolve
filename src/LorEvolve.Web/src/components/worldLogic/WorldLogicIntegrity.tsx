@@ -6,7 +6,7 @@ import type { useUniverseAccess } from '../../universes/access'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
-import { Pager } from './Pager'
+import { Pager } from '../Pager'
 import { FindingRow } from './FindingRow'
 import { Button } from '../Button'
 import { LoadError } from '../LoadError'
@@ -147,7 +147,7 @@ export function WorldLogicIntegrity({
           testId="world-logic-findings-pager"
           page={findings.value.page}
           totalPages={findings.value.totalPages}
-          onGo={(next) => goTo('findingsPage', next)}
+          onPage={(next) => goTo('findingsPage', next)}
         />
       ) : null}
     </TabPanel>

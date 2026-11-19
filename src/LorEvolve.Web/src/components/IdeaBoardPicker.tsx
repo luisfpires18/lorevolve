@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Drawer } from './Drawer'
-import { Field } from './Field'
+import { SearchField } from './SearchField'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { Quoted } from './NameList'
 import { listIdeas, listReferenceTargets } from '../ideas/api'
 import { IdeaReferenceKind } from '../ideas/types'
@@ -52,6 +53,8 @@ export function IdeaBoardPicker({
   const searchId = useId()
   const resultsId = useId()
   const [query, setQuery] = useState('')
+  // Typing settles before the API is asked, so a fast typist makes one call, not ten.
+  const settled = useDebouncedValue(query)
   const [answer, setAnswer] = useState<Answer | null>(null)
   const universeId = universe?.id ?? null
 
@@ -63,7 +66,7 @@ export function IdeaBoardPicker({
 
   useEffect(() => {
     const controller = new AbortController()
-    const asked = query
+    const asked = settled
 
     async function read(): Promise<PickedTarget[]> {
       if (what === 'entry') {
@@ -101,20 +104,16 @@ export function IdeaBoardPicker({
         }))
     }
 
-    // Typing settles before the API is asked, so a fast typist makes one call, not ten.
-    const timer = setTimeout(() => {
-      read()
-        .then((targets) => setAnswer({ request: asked, targets }))
-        .catch(() => {
-          if (!controller.signal.aborted) setAnswer({ request: asked, targets: null })
-        })
-    }, 150)
+    read()
+      .then((targets) => setAnswer({ request: asked, targets }))
+      .catch(() => {
+        if (!controller.signal.aborted) setAnswer({ request: asked, targets: null })
+      })
 
     return () => {
-      clearTimeout(timer)
       controller.abort()
     }
-  }, [what, universeId, query])
+  }, [what, universeId, settled])
 
   const results = answer?.request === query ? answer.targets : undefined
 
@@ -134,31 +133,20 @@ export function IdeaBoardPicker({
         <FormActions onCancel={onClose} dismiss="close" cancelTestId="board-picker-close" />
       )}
     >
-      <Field id={searchId} label={t('ideas.boardPicker.findByName')}>
-        {(control) => (
-          <input
-            {...control}
-            ref={search}
-            className="field__input"
-            type="search"
-            value={query}
-            placeholder={
-              what === 'idea'
-                ? t('ideas.boardPicker.placeholderIdea')
-                : t('ideas.boardPicker.placeholderEntry')
-            }
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' && query) {
-                event.preventDefault()
-                setQuery('')
-              }
-            }}
-            aria-controls={resultsId}
-            data-testid="board-picker-search"
-          />
-        )}
-      </Field>
+      <SearchField
+        id={searchId}
+        label={t('ideas.boardPicker.findByName')}
+        inputRef={search}
+        value={query}
+        placeholder={
+          what === 'idea'
+            ? t('ideas.boardPicker.placeholderIdea')
+            : t('ideas.boardPicker.placeholderEntry')
+        }
+        onChange={setQuery}
+        aria-controls={resultsId}
+        testId="board-picker-search"
+      />
 
       <div id={resultsId} aria-live="polite">
         {results === undefined ? (

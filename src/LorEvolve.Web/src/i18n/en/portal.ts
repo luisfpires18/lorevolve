@@ -86,13 +86,6 @@ const portal = {
       hint: 'Try another word, category or genre, or see every world.',
       clear: 'Clear search and filters',
     },
-    shown: 'Showing {shown} of {total} worlds',
-    more: {
-      error: 'More worlds could not be loaded.',
-      loading: 'Loading worlds…',
-      retry: 'Try again',
-      show: 'Show more worlds',
-    },
     count: {
       partial: {
         one: 'Showing {shown} of {total} world',
@@ -123,19 +116,6 @@ const portal = {
     retry: 'Try again',
     empty: 'No lore or stories have been published here yet.',
     storyCta: 'Read about this story →',
-    shown: 'Showing {shown} of {total}',
-    loreMore: {
-      error: 'More lore could not be loaded.',
-      loading: 'Loading…',
-      retry: 'Try again',
-      show: 'Show more lore',
-    },
-    storiesMore: {
-      error: 'More stories could not be loaded.',
-      loading: 'Loading…',
-      retry: 'Try again',
-      show: 'Show more stories',
-    },
   },
   author: {
     missing: 'This author is not available.',
@@ -149,8 +129,6 @@ const portal = {
     loadFailed: 'These worlds could not be loaded.',
     retry: 'Try again',
     loading: 'Opening their worlds…',
-    moreLoading: 'Loading…',
-    more: 'Show more worlds',
   },
   lore: {
     missing: 'This page is not available.',

@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { listProjectEntities, listProjectTypes } from './api'
 import type { ProjectEntitySummary } from './types'
 import { t } from '../i18n'
 import type { useProjectEntriesState } from './useProjectEntriesState'
 import { errorText } from '../lib/errorText'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** How many entries one read shows; the next page is asked for, never loaded behind the author's back (#196). */
 export const ENTRY_PAGE_SIZE = 25
@@ -61,11 +62,13 @@ export function useProjectEntriesRead({
   }
 
   // Typing waits for a pause before it reaches the address, and so the read, as Lore's search does.
+  const settledText = useDebouncedValue(searchText)
+  const [loadingMore, setLoadingMore] = useState(false)
   useEffect(() => {
-    if (searchText === q) return
-    const timer = setTimeout(() => setFilter({ q: searchText.trim() || null }), 150)
-    return () => clearTimeout(timer)
-  }, [searchText, q])
+    if (settledText !== q) setFilter({ q: settledText.trim() || null })
+    // Only a settled word writes the address; an address that moved by itself is not written back over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settledText])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -148,6 +151,7 @@ export function useProjectEntriesRead({
   function loadMore() {
     if (typeId === null || entries === null) return
     setBusy(true)
+    setLoadingMore(true)
     // Tied to the main read's signal: a filter change aborts it, so a late page never lands on a newer list.
     const signal = readRef.current?.signal
     listProjectEntities(projectId, typeId, signal, {
@@ -157,11 +161,15 @@ export function useProjectEntriesRead({
     })
       .then((read) => {
         setBusy(false)
+        setLoadingMore(false)
         if (signal?.aborted) return
         setEntries((current) => [...(current ?? []), ...read.slice(0, ENTRY_PAGE_SIZE)])
         setMore(read.length > ENTRY_PAGE_SIZE)
       })
-      .catch((error: unknown) => failing(error, signal))
+      .catch((error: unknown) => {
+        setLoadingMore(false)
+        failing(error, signal)
+      })
   }
 
   function refresh(notice: string | null = null) {
@@ -187,5 +195,5 @@ export function useProjectEntriesRead({
     if (signal?.aborted) return
     setFailed(errorText(error, t('projects.entries.failed')))
   }
-  return { setFilter, clearFilters, loadMore, refresh, failing }
+  return { setFilter, clearFilters, loadMore, loadingMore, refresh, failing }
 }

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { useTimelineState } from './useTimelineState'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
-/** Writes filters into the address, and keeps the search box and the address in step with a 250 ms pause while typing. */
+/** Writes filters into the address, and keeps the search box and the address in step with a pause while typing. */
 export function useTimelineSearch({
   setParams,
   search,
@@ -36,17 +37,15 @@ export function useTimelineSearch({
     written.current = search
   }, [search])
 
+  const settled = useDebouncedValue(typed)
   useEffect(() => {
-    if (typed === search) return
-    const timer = setTimeout(() => {
-      const next = typed.trim() === '' ? '' : typed
-      written.current = next
-      update({ q: next })
-    }, 250)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [typed, search, update])
+    if (settled === search) return
+    const next = settled.trim() === '' ? '' : settled
+    written.current = next
+    update({ q: next })
+    // Only a settled word writes the address; an address that moved by itself is not written back over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settled])
 
   return { update }
 }

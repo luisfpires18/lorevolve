@@ -49,10 +49,6 @@ const lorePage = {
     'Nothing is filed under {name} or anything inside it. Write the first one, and the rest will have something to point at.',
   emptyType:
     'Nothing is filed under {name} yet. Write the first one, and the rest will have something to point at.',
-  pagination: 'Pagination',
-  previous: 'Previous',
-  pageOf: 'Page {page} of {total}',
-  next: 'Next',
   selectHint: 'Select entries on this page to move them to the Trash.',
   selected: '{n} selected',
   moving: 'Moving…',

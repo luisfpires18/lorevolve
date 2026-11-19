@@ -12,6 +12,7 @@ import { branchIds, buildTypeTree } from './typeTree'
 import { CanonStatus, type EntitySummary, type FieldValueInput } from './types'
 import type { EntityType } from './typeDefinitions'
 import type { Props } from '../components/QuickCreateDialog'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 const SIMILAR_LIMIT = 5
 
@@ -108,38 +109,36 @@ export function useQuickCreate({
 
   // Entries already here under a name like this one, among those the picker would offer. Advice only: a second entry of
   // the same name is allowed, and what this shows can change before Create is pressed.
+  const settledName = useDebouncedValue(name)
   useEffect(() => {
-    const search = name.trim()
+    const search = settledName.trim()
     if (!search) return
     const controller = new AbortController()
-    const timer = setTimeout(() => {
-      listEntities(
-        universeId,
-        {
-          search,
-          entityTypeId,
-          includeDescendants: true,
-          entityTypeGroupId,
-          canonStatus: null,
-          tag: null,
-          page: 1,
-        },
-        controller.signal,
+    listEntities(
+      universeId,
+      {
+        search,
+        entityTypeId,
+        includeDescendants: true,
+        entityTypeGroupId,
+        canonStatus: null,
+        tag: null,
+        page: 1,
+      },
+      controller.signal,
+    )
+      .then((page) =>
+        setSimilar(
+          page.items.filter((item) => looksLike(item.name, search)).slice(0, SIMILAR_LIMIT),
+        ),
       )
-        .then((page) =>
-          setSimilar(
-            page.items.filter((item) => looksLike(item.name, search)).slice(0, SIMILAR_LIMIT),
-          ),
-        )
-        .catch(() => {
-          /* Advice that could not be read is simply not given. */
-        })
-    }, 250)
+      .catch(() => {
+        /* Advice that could not be read is simply not given. */
+      })
     return () => {
-      clearTimeout(timer)
       controller.abort()
     }
-  }, [universeId, name, entityTypeId, entityTypeGroupId])
+  }, [universeId, settledName, entityTypeId, entityTypeGroupId])
 
   // Cleared name, no advice: what was found for an earlier name is not shown for none.
   const shownSimilar = name.trim() ? similar : []

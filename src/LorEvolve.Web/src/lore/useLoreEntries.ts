@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { listEntities, readLorePageSize } from './api'
 import type { CanonStatusValue, EntitySort } from './types'
 import type { EntityTypeGroup } from './typeDefinitions'
@@ -14,6 +14,7 @@ import { buildTypeTree } from './typeTree'
 import { useWorkspaceTypes } from '../pages/useWorkspaceTypes'
 import type { SetURLSearchParams } from 'react-router-dom'
 import { errorText } from '../lib/errorText'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 import type { LoadState } from './loreAddress'
 
 /** Groups that could not be read: none to offer, one stable list. */
@@ -148,47 +149,42 @@ export function useLoreEntries({
   const entityTypeId = selectedType?.id ?? null
   const entityTypeGroupId = selectedGroup?.id ?? null
 
-  // The search text the last read was asked for. Only a change of it waits for typing to pause; the first read and a
-  // type, page, sort or filter change go out at once.
-  const searchRead = useRef<string | null>(null)
+  // The search the list is asked for waits for typing to pause; the first read and a type, page, sort or filter change go
+  // out at once with it.
+  const settledSearch = useDebouncedValue(search)
 
   useEffect(() => {
     if (entityTypeId === null && entityTypeGroupId === null) return
-    const delay = searchRead.current !== null && searchRead.current !== search ? 150 : 0
-    searchRead.current = search
     const controller = new AbortController()
-    const timer = setTimeout(() => {
-      listEntities(
-        universe.id,
-        {
-          search,
-          entityTypeId,
-          entityTypeGroupId,
-          includeDescendants: true,
-          canonStatus,
-          tag: null,
-          page,
-          pageSize,
-          fieldFilters,
-          exact,
-          sort,
-        },
-        controller.signal,
-      )
-        .then((result) => setState({ kind: 'ready', value: result }))
-        .catch((error: unknown) => {
-          if (!controller.signal.aborted) setState({ kind: 'error', message: errorText(error, '') })
-        })
-    }, delay)
+    listEntities(
+      universe.id,
+      {
+        search: settledSearch,
+        entityTypeId,
+        entityTypeGroupId,
+        includeDescendants: true,
+        canonStatus,
+        tag: null,
+        page,
+        pageSize,
+        fieldFilters,
+        exact,
+        sort,
+      },
+      controller.signal,
+    )
+      .then((result) => setState({ kind: 'ready', value: result }))
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setState({ kind: 'error', message: errorText(error, '') })
+      })
 
     return () => {
-      clearTimeout(timer)
       controller.abort()
     }
     // fieldFilters is read through its key: a fresh array of the same filters is not a new list.
   }, [
     universe.id,
-    search,
+    settledSearch,
     exact,
     sort,
     entityTypeId,

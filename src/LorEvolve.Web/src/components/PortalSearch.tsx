@@ -7,11 +7,10 @@ import {
 } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useI18n } from '../i18n'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** The API's own limit on a search, so the field cannot ask for something it would refuse. */
 const SEARCH_MAX = 100
-/** Long enough to let a word be typed, short enough that results follow the typing. */
-const SEARCH_PAUSE_MS = 300
 
 /**
  * The portal's search, in its bar, on every portal page. On Explore it is Explore's `q`: what is typed is sent after
@@ -37,13 +36,13 @@ export function PortalSearch() {
     if (draft.trim() !== q) setDraft(q)
   }
 
+  const settled = useDebouncedValue(draft)
   useEffect(() => {
-    if (!onExplore || draft.trim() === q || draft.trim() === '') return
-    const timer = window.setTimeout(() => commitSearch(draft, q, setParams), SEARCH_PAUSE_MS)
-    return () => {
-      window.clearTimeout(timer)
-    }
-  }, [draft, q, onExplore, setParams])
+    if (!onExplore || settled.trim() === q || settled.trim() === '') return
+    commitSearch(settled, q, setParams)
+    // Only a settled word commits; an address that moved by itself is not written back over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settled])
 
   function submit(event: FormEvent) {
     event.preventDefault()

@@ -1,4 +1,5 @@
 import { Field } from '../Field'
+import { SearchField } from '../SearchField'
 import { EntityPicker, type EntityChoice } from '../EntityPicker'
 import { t, useI18n } from '../../i18n'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue } from '../../lore/types'
@@ -38,21 +39,15 @@ export function TimelineControls({
   useI18n()
   return (
     <div className="controls chron__controls">
-      <Field className="controls__search" id="chron-search" label={t('time.timeline.search')}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            type="search"
-            name="q"
-            autoComplete="off"
-            placeholder={t('time.timeline.searchPlaceholder')}
-            value={typed}
-            onChange={(event) => setTyped(event.target.value)}
-            data-testid="chron-search"
-          />
-        )}
-      </Field>
+      <SearchField
+        className="controls__search"
+        id="chron-search"
+        label={t('time.timeline.search')}
+        placeholder={t('time.timeline.searchPlaceholder')}
+        value={typed}
+        onChange={setTyped}
+        testId="chron-search"
+      />
 
       <div className="controls__filters">
         <Field id="chron-story" label={t('time.timeline.storyFilter')}>

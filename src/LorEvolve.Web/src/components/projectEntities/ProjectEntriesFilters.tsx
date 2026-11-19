@@ -1,10 +1,11 @@
-import { ListFilter, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import type { ProjectEntityType } from '../../projectEntities/types'
 import { buildTypeTree } from '../../lore/typeTree'
 import { t, useI18n } from '../../i18n'
 import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntriesRead'
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
 import { Button } from '../Button'
+import { SearchField } from '../SearchField'
 
 /** Search, sort, nested and Clear for one type's entries. */
 export function ProjectEntriesFilters({
@@ -32,26 +33,16 @@ export function ProjectEntriesFilters({
     <>
       {typeId !== null ? (
         <div className="projects__filters" role="group" aria-label={t('lore.page.filtersGroup')}>
-          <div className="lore__search">
-            <label className="visually-hidden" htmlFor="project-entries-search">
-              {t('lore.page.filterEntries')}
-            </label>
-            <ListFilter
-              className="lore__searchicon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            <input
-              id="project-entries-search"
-              className="field__input lore__searchinput"
-              type="search"
-              placeholder={t('projects.entries.searchPlaceholder')}
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              data-testid="project-entries-search"
-            />
-          </div>
+          <SearchField
+            hideLabel
+            className="lore__search"
+            id="project-entries-search"
+            label={t('lore.page.filterEntries')}
+            placeholder={t('projects.entries.searchPlaceholder')}
+            value={searchText}
+            onChange={setSearchText}
+            testId="project-entries-search"
+          />
           <div className="lore__pagesize">
             <label className="lore__pagesizelabel" htmlFor="project-entries-sort">
               {t('lore.page.sortBy')}

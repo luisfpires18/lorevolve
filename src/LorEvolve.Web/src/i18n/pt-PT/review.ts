@@ -63,7 +63,6 @@ const review: Dictionary['review'] = {
       one: '{n} já aplicada',
       other: '{n} já aplicadas',
     },
-    showMore: 'Mostrar mais',
   },
   aiChange: {
     opening: 'A abrir…',
@@ -241,7 +240,6 @@ const review: Dictionary['review'] = {
     cantAccept: 'Esta sugestão não pode ser aceite. {reason}',
     acceptFailed: 'O LorEvolve não conseguiu aceitar essa sugestão. Tenta novamente.',
     rejectFailed: 'O LorEvolve não conseguiu rejeitar essa sugestão. Tenta novamente.',
-    showMore: 'Mostrar mais',
     unknownAuthor: 'Autor desconhecido',
     unknownResolver: 'Autor desconhecido',
     changed: {

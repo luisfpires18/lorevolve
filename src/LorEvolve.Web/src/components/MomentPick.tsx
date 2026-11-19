@@ -1,6 +1,8 @@
 import { useEffect, useId, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
+import { SearchField } from './SearchField'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { listTimelineItems } from '../timeline/api'
 import { TimelineSource } from '../timeline/types'
 import type { MomentRef } from '../progression/types'
@@ -27,38 +29,36 @@ export function MomentPick({
   const { t } = useI18n()
   const id = useId()
   const [search, setSearch] = useState('')
+  const settled = useDebouncedValue(search)
   const [found, setFound] = useState<MomentRef[] | null>(null)
 
   useEffect(() => {
     if (value) return
     const controller = new AbortController()
-    const timer = window.setTimeout(() => {
-      listTimelineItems(
-        universeId,
-        {
-          source: TimelineSource.Event,
-          storyId: null,
-          canonStatus: null,
-          entityId: null,
-          search,
-          page: 1,
-        },
-        controller.signal,
+    listTimelineItems(
+      universeId,
+      {
+        source: TimelineSource.Event,
+        storyId: null,
+        canonStatus: null,
+        entityId: null,
+        search: settled,
+        page: 1,
+      },
+      controller.signal,
+    )
+      .then((page) =>
+        setFound(
+          page.items.map((item) => ({ id: item.sourceId, title: item.title, isTrashed: false })),
+        ),
       )
-        .then((page) =>
-          setFound(
-            page.items.map((item) => ({ id: item.sourceId, title: item.title, isTrashed: false })),
-          ),
-        )
-        .catch(() => {
-          if (!controller.signal.aborted) setFound([])
-        })
-    }, 200)
+      .catch(() => {
+        if (!controller.signal.aborted) setFound([])
+      })
     return () => {
-      window.clearTimeout(timer)
       controller.abort()
     }
-  }, [universeId, search, value])
+  }, [universeId, settled, value])
 
   return (
     <Field label={label} id={id} error={error} data-testid={testId}>
@@ -80,14 +80,12 @@ export function MomentPick({
           </p>
         ) : (
           <>
-            <input
+            <SearchField
               {...control}
-              className="field__input"
-              type="search"
               placeholder={t('time.momentPick.search')}
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              data-testid={`${testId}-search`}
+              onChange={setSearch}
+              testId={`${testId}-search`}
             />
             {found && found.length > 0 ? (
               <ul className="momentpick__list" aria-label={t('time.momentPick.found', { label })}>

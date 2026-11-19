@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import type { FamilyDiscoveryPage } from '../../familyTree/types'
 import { useI18n } from '../../i18n'
-import { DiscoveryPager } from './DiscoveryPager'
+import { Pager } from '../Pager'
 import type { useDiscoveryState } from '../../familyTree/useDiscoveryState'
 import type { FamiliesReturn } from '../FamilyDiscovery'
 import { LoadError } from '../LoadError'
@@ -98,8 +98,13 @@ export function DiscoveryFamilies({
         </ul>
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <DiscoveryPager result={result} goToPage={goToPage} />
+      {result ? (
+        <Pager
+          page={result.page}
+          totalPages={result.totalPages}
+          onPage={goToPage}
+          testId="family-pager"
+        />
       ) : null}
     </section>
   )

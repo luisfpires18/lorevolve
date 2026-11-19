@@ -10,6 +10,7 @@ import { LoreContextMentioned } from './LoreContextMentioned'
 import { LorePreview } from './LorePreview'
 import { FormActions } from '../FormActions'
 import { Announce } from '../Announce'
+import { SearchField } from '../SearchField'
 
 /**
  * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
@@ -184,22 +185,17 @@ export function LoreContextDrawer({
             <h3 className="sectionrule sectionrule--accent" id={`${headingId}-find`}>
               {t('lore.context.find')}
             </h3>
-            <label className="visually-hidden" htmlFor={searchId}>
-              {t('lore.context.searchLabel')}
-            </label>
-            <input
+            <SearchField
+              hideLabel
               id={searchId}
-              ref={search}
-              className="field__input"
-              type="search"
-              dir="auto"
+              label={t('lore.context.searchLabel')}
+              inputRef={search}
               placeholder={t('lore.context.searchPlaceholder')}
-              autoComplete="off"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={setQuery}
               onKeyDown={moveThrough}
               aria-controls={resultsId}
-              data-testid="lore-context-search"
+              testId="lore-context-search"
             />
             <div id={resultsId}>
               <Announce>

@@ -7,7 +7,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { BulkEraseConfirm } from '../components/trash/BulkEraseConfirm'
 import { TrashHeader } from '../components/trash/TrashHeader'
 import { TrashNotices } from '../components/trash/TrashNotices'
-import { TrashPager } from '../components/trash/TrashPager'
+import { Pager } from '../components/Pager'
 import { TrashRow } from '../components/trash/TrashRow'
 import { TrashSelectBar } from '../components/trash/TrashSelectBar'
 import { trashActions } from '../trash/trashActions'
@@ -120,8 +120,13 @@ export default function UniverseTrash() {
         />
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <TrashPager result={result} selectionLocked={selectionLocked} setPage={setPage} />
+      {result ? (
+        <Pager
+          page={result.page}
+          totalPages={result.totalPages}
+          onPage={setPage}
+          disabled={selectionLocked}
+        />
       ) : null}
 
       {isSelecting && bulkConfirming ? (

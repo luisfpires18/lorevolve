@@ -154,12 +154,6 @@ const data = {
       title: 'The Trash is empty.',
       hint: 'Anything you remove from your lore, your stories or your world rules waits here.',
     },
-    pager: {
-      label: 'Pagination',
-      previous: 'Previous',
-      position: 'Page {page} of {total}',
-      next: 'Next',
-    },
     bar: {
       hint: 'Select rows on this page to delete them permanently.',
       selected: '{n} selected',
