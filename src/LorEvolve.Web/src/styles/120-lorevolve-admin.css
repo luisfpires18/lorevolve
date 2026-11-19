@@ -157,13 +157,6 @@
 
 .adminback {
   margin: var(--space-4) 0 0;
-  font-size: var(--text-ui);
-}
-
-.adminback a {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
 }
 
 .admindetail {
