@@ -29,7 +29,9 @@ export function useEntitySearch(
   const excludeKey = excludeIds.join(',')
 
   useEffect(() => {
-    if (!isOpen) return
+    // Mid-typing asks nothing and drops a search still in flight, so a late answer for older words never resets the
+    // highlighted option.
+    if (!isOpen || settled !== query) return
 
     const excluded = new Set(excludeKey ? excludeKey.split(',') : [])
     const controller = new AbortController()
@@ -69,7 +71,16 @@ export function useEntitySearch(
     return () => {
       controller.abort()
     }
-  }, [universeId, settled, excludeKey, isOpen, familyTreeOnly, entityTypeId, entityTypeGroupId])
+  }, [
+    universeId,
+    settled,
+    query,
+    excludeKey,
+    isOpen,
+    familyTreeOnly,
+    entityTypeId,
+    entityTypeGroupId,
+  ])
 
   return { results, isSearching, active, setActive }
 }

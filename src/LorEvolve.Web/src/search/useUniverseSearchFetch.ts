@@ -14,7 +14,8 @@ export function useUniverseSearchFetch({
 }) {
   const paused = useDebouncedValue(query)
   useEffect(() => {
-    if (paused === '') return
+    // Waits for typing to pause; a cleared box typed back to the same words searches again, as a fresh search should.
+    if (paused === '' || paused !== query) return
 
     const controller = new AbortController()
     searchUniverse(universeId, paused, controller.signal)
@@ -28,5 +29,5 @@ export function useUniverseSearchFetch({
     return () => {
       controller.abort()
     }
-  }, [universeId, paused, attempt])
+  }, [universeId, paused, query, attempt])
 }

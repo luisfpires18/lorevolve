@@ -406,7 +406,7 @@ Repository index. Paths and one-line responsibilities only.
 | `src/lib/errorText.ts` | #410: the message a caught error shows, or the caller's fallback. |
 | `src/components/Pager.tsx` | #411: Previous, the position and Next under a numbered list (`page`, `totalPages`, `onPage`, `disabled`, `testId`); draws nothing for one page. Replaces twelve hand-written navs. |
 | `src/components/ShowMore.tsx` | #411: Show more under a list that grows (`hasMore`, `status`, `onMore`, `shown`, `total`, `announce`, `disabled`, `testId`): count line, error line, button. Replaces eight buttons in six files. |
-| `src/components/SearchField.tsx` | #411: a search box over a list or in a drawer: label (or `hideLabel`), Search icon, input, Escape clears, `trailing` slot. `PortalSearch` and `UniverseSearch` stay their own. |
+| `src/components/SearchField.tsx` | #411: a search box over a list or in a drawer: label (or `hideLabel`), Search icon, input, `clearOnEscape` (idea pickers only), `trailing` slot. `PortalSearch` and `UniverseSearch` stay their own. |
 | `src/lib/useDebouncedValue.ts` | #411: `useDebouncedValue(value)` and `DEBOUNCE_MS` (200): the one wait for typing before a read or an address change. |
 | `src/components/NewButton.tsx` | #409: the "New X" and "Add X" button, a `Button` with the Plus glyph fixed and `primary`, `secondary` or `text` tone only. The only button file that imports `Plus`. |
 | `src/components/IconButton.tsx` | #408: the one `.iconbutton`: one glyph, a required accessible name, a title that defaults to it. |

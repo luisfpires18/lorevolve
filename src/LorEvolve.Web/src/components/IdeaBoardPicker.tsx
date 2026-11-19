@@ -144,6 +144,7 @@ export function IdeaBoardPicker({
             : t('ideas.boardPicker.placeholderEntry')
         }
         onChange={setQuery}
+        clearOnEscape
         aria-controls={resultsId}
         testId="board-picker-search"
       />

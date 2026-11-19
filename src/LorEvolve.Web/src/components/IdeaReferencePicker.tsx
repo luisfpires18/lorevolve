@@ -143,6 +143,7 @@ export function IdeaReferencePicker({
         value={query}
         placeholder={t(PLACEHOLDERS[kind])}
         onChange={setQuery}
+        clearOnEscape
         aria-controls={resultsId}
         testId="idea-picker-search"
       />

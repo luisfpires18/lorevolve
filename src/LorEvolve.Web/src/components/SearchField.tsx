@@ -8,8 +8,8 @@ type NativeInput = Omit<
 >
 
 /**
- * A search box over a list or inside a drawer: the Search icon and a search input under a label. Escape with text in it
- * clears the text and goes no further, so a drawer's first Escape clears and its second closes.
+ * A search box over a list or inside a drawer: the Search icon and a search input under a label. Escape leaves the text
+ * alone and closes a surrounding drawer, unless `clearOnEscape` makes Escape with text in it clear the text instead.
  * With no `label` it draws only the icon and the input, for use inside another `Field`'s slot.
  * The two header bars (`PortalSearch`, `UniverseSearch`) are their own.
  */
@@ -23,6 +23,7 @@ export function SearchField({
   inputRef,
   trailing,
   testId,
+  clearOnEscape = false,
   onKeyDown,
   ...input
 }: NativeInput & {
@@ -37,12 +38,13 @@ export function SearchField({
   /** A control at the field's end, with room kept for it (Lore's Exact toggle). */
   trailing?: ReactNode
   testId?: string
+  /** Escape with text clears it and keeps a surrounding drawer open (the idea pickers). */
+  clearOnEscape?: boolean
 }) {
   function keyDown(event: KeyboardEvent<HTMLInputElement>) {
     onKeyDown?.(event)
-    if (event.key === 'Escape' && value) {
+    if (clearOnEscape && event.key === 'Escape' && value) {
       event.preventDefault()
-      event.stopPropagation()
       onChange('')
     }
   }
