@@ -9,6 +9,7 @@ import { Button } from './Button'
 import { CardGrid } from './CardGrid'
 import { CardSkeleton } from './CardSkeleton'
 import { QuietNote } from './QuietNote'
+import { ViewChips } from './ViewChips'
 
 /** How many card shapes stand in for the catalog while the types are read. */
 const SKELETON_CARDS = 6
@@ -83,48 +84,29 @@ export function LoreCatalog({
           <span className="lorecatalog__browselabel" aria-hidden="true">
             {t('lore.catalog.browseLabel')}
           </span>
-          <div
-            className="lorecatalog__groups"
-            role="group"
-            aria-label={t('lore.catalog.browseGroups')}
-            data-testid="lore-browse-groups"
-          >
-            <button
-              className="lorecatalog__group"
-              type="button"
-              aria-pressed={browsing === null}
-              onClick={() => onBrowse(null)}
-              data-testid="lore-browse-all"
-            >
-              {t('lore.catalog.allTypes')}
-              <span className="lorecatalog__groupcount" aria-hidden="true">
-                {tree.ordered.length}
-              </span>
-            </button>
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                className="lorecatalog__group"
-                type="button"
-                aria-pressed={browsing?.id === group.id}
-                onClick={() => onBrowse(group.id)}
-                data-testid="lore-browse-group"
-                data-group-name={group.name}
-              >
-                <Layers
-                  className="lorecatalog__groupicon"
-                  aria-hidden="true"
-                  focusable="false"
-                  strokeWidth={1.75}
-                />
-                <bdi>{group.name}</bdi>
-                <span className="visually-hidden"> {t('lore.catalog.groupSuffix')}</span>
-                <span className="lorecatalog__groupcount" aria-hidden="true">
-                  {group.typeIds.length}
-                </span>
-              </button>
-            ))}
-          </div>
+          <ViewChips
+            label={t('lore.catalog.browseGroups')}
+            testId="lore-browse-groups"
+            items={[
+              {
+                pressed: browsing === null,
+                onSelect: () => onBrowse(null),
+                label: t('lore.catalog.allTypes'),
+                count: tree.ordered.length,
+                testId: 'lore-browse-all',
+              },
+              ...groups.map((group) => ({
+                pressed: browsing?.id === group.id,
+                onSelect: () => onBrowse(group.id),
+                label: <bdi>{group.name}</bdi>,
+                icon: Layers,
+                hiddenSuffix: t('lore.catalog.groupSuffix'),
+                count: group.typeIds.length,
+                testId: 'lore-browse-group',
+                data: { 'data-group-name': group.name },
+              })),
+            ]}
+          />
         </div>
       ) : null}
 
