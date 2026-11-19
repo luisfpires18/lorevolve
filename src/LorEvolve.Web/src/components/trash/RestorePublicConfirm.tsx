@@ -2,6 +2,7 @@ import { t, tx, useI18n } from '../../i18n'
 import { Quoted } from '../NameList'
 import { TrashKind, TrashPublication, type TrashItem } from '../../trash/types'
 import { Button } from '../Button'
+import { InlineConfirm } from '../InlineConfirm'
 
 /**
  * The question before a restore that touches the public portal. Trash keeps an entry's or story's public selection, so
@@ -26,26 +27,19 @@ export function RestorePublicConfirm({
   const titleId = `trash-confirm-${item.id}`
 
   return (
-    <div
-      className="trash__confirm"
-      role="group"
-      aria-labelledby={titleId}
-      tabIndex={-1}
-      ref={panelRef}
-      data-testid="trash-publication-confirm"
-      data-publication={visible ? 'visible' : 'hidden'}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.stopPropagation()
-          onCancel()
-        }
-      }}
-    >
-      <p className="trash__confirmtitle" id={titleId}>
-        {visible
+    <InlineConfirm
+      look="trash"
+      title={
+        visible
           ? tx('data.trash.publish.titleVisible', { name: <Quoted text={item.name} /> })
-          : tx('data.trash.publish.titleHidden', { name: <Quoted text={item.name} /> })}
-      </p>
+          : tx('data.trash.publish.titleHidden', { name: <Quoted text={item.name} /> })
+      }
+      titleId={titleId}
+      panelRef={panelRef}
+      onKeep={onCancel}
+      testId="trash-publication-confirm"
+      data={{ 'data-publication': visible ? 'visible' : 'hidden' }}
+    >
       <p className="trash__confirmtext" data-testid="trash-publication-text">
         {visible
           ? item.kind === TrashKind.Entry
@@ -66,6 +60,6 @@ export function RestorePublicConfirm({
           {t('shell.actions.cancel')}
         </Button>
       </div>
-    </div>
+    </InlineConfirm>
   )
 }

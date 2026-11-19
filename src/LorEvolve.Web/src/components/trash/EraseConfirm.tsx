@@ -4,6 +4,7 @@ import { Quoted } from '../NameList'
 import { TRASH_KIND_LABELS, type TrashItem } from '../../trash/types'
 import { eraseText } from '../../trash/trashText'
 import { Button } from '../Button'
+import { InlineConfirm } from '../InlineConfirm'
 
 /**
  * The one question before something is erased for good: what it is, what goes with it, and that it cannot be undone. One
@@ -25,58 +26,47 @@ export function EraseConfirm({
   onCancel: () => void
 }) {
   useI18n()
-  const titleId = `trash-erase-title-${item.id}`
   const textId = `trash-erase-text-${item.id}`
 
   return (
-    <div
-      className="trash__confirm"
-      role="group"
-      aria-labelledby={titleId}
-      aria-describedby={textId}
-      tabIndex={-1}
-      ref={panelRef}
-      data-testid="trash-erase-confirm"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.stopPropagation()
-          onCancel()
-        }
-      }}
+    <InlineConfirm
+      look="trash"
+      title={tx('data.trash.erase.title', {
+        kind: TRASH_KIND_LABELS[item.kind].toLowerCase(),
+        name: <Quoted text={item.name} />,
+      })}
+      describedBy={textId}
+      panelRef={panelRef}
+      onKeep={onCancel}
+      busy={busy}
+      error={error}
+      errorTestId="trash-erase-error"
+      actions={
+        <div className="form__actions">
+          <Button
+            tone="danger"
+            aria-disabled={busy || undefined}
+            onClick={onErase}
+            data-testid="trash-erase-delete"
+          >
+            {busy ? t('data.trash.erase.deleting') : t('data.trash.erase.delete')}
+          </Button>
+          <Button
+            tone="secondary"
+            aria-disabled={busy || undefined}
+            onClick={onCancel}
+            data-testid="trash-erase-cancel"
+          >
+            {t('shell.actions.cancel')}
+          </Button>
+        </div>
+      }
+      testId="trash-erase-confirm"
     >
-      <p className="trash__confirmtitle" id={titleId}>
-        {tx('data.trash.erase.title', {
-          kind: TRASH_KIND_LABELS[item.kind].toLowerCase(),
-          name: <Quoted text={item.name} />,
-        })}
-      </p>
       <p className="trash__confirmtext" id={textId} data-testid="trash-erase-text">
         {eraseText(item.kind)}{' '}
         <strong className="trash__final">{t('data.trash.erase.cannotUndo')}</strong>
       </p>
-      {error ? (
-        <p className="trash__confirmerror" role="alert" data-testid="trash-erase-error">
-          {error}
-        </p>
-      ) : null}
-      <div className="form__actions">
-        <Button
-          tone="danger"
-          aria-disabled={busy || undefined}
-          onClick={onErase}
-          data-testid="trash-erase-delete"
-        >
-          {busy ? t('data.trash.erase.deleting') : t('data.trash.erase.delete')}
-        </Button>
-        <Button
-          tone="secondary"
-          aria-disabled={busy || undefined}
-          onClick={onCancel}
-          data-testid="trash-erase-cancel"
-        >
-          {t('shell.actions.cancel')}
-        </Button>
-      </div>
-    </div>
+    </InlineConfirm>
   )
 }

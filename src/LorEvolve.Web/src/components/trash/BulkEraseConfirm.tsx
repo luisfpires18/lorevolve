@@ -2,6 +2,7 @@ import { t, useI18n } from '../../i18n'
 import { TRASH_KIND_KEYS, TRASH_KIND_LABELS, type TrashItem } from '../../trash/types'
 import { eraseText, keyOf } from '../../trash/trashText'
 import { Button } from '../Button'
+import { InlineConfirm } from '../InlineConfirm'
 
 /**
  * The one question before a selection is erased for good: how many, which ones by kind and name, what goes with each kind
@@ -29,24 +30,39 @@ export function BulkEraseConfirm({
   const count = items.length
 
   return (
-    <div
-      className="trash__confirm trash__bulkconfirm"
-      role="group"
-      aria-labelledby="trash-bulk-title"
-      aria-describedby="trash-bulk-final"
-      tabIndex={-1}
-      ref={panelRef}
-      data-testid="trash-bulk-confirm"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.stopPropagation()
-          onCancel()
-        }
-      }}
+    <InlineConfirm
+      look="trash"
+      className="trash__bulkconfirm"
+      titleAs="h2"
+      title={tn('data.trash.bulk.title', count, { n: count })}
+      describedBy="trash-bulk-final"
+      panelRef={panelRef}
+      onKeep={onCancel}
+      busy={busy}
+      error={error}
+      errorTestId="trash-bulk-error"
+      actions={
+        <div className="form__actions">
+          <Button
+            tone="danger"
+            aria-disabled={busy || undefined}
+            onClick={onErase}
+            data-testid="trash-bulk-delete-confirm"
+          >
+            {busy ? t('data.trash.bulk.deleting') : t('data.trash.bulk.delete')}
+          </Button>
+          <Button
+            tone="secondary"
+            aria-disabled={busy || undefined}
+            onClick={onCancel}
+            data-testid="trash-bulk-cancel"
+          >
+            {t('shell.actions.cancel')}
+          </Button>
+        </div>
+      }
+      testId="trash-bulk-confirm"
     >
-      <h2 className="trash__confirmtitle" id="trash-bulk-title">
-        {tn('data.trash.bulk.title', count, { n: count })}
-      </h2>
       <ul
         className="trash__bulklist"
         aria-label={t('data.trash.bulk.listLabel')}
@@ -72,29 +88,6 @@ export function BulkEraseConfirm({
       <p className="trash__confirmtext" id="trash-bulk-final">
         <strong className="trash__final">{t('data.trash.bulk.cannotUndo')}</strong>
       </p>
-      {error ? (
-        <p className="trash__confirmerror" role="alert" data-testid="trash-bulk-error">
-          {error}
-        </p>
-      ) : null}
-      <div className="form__actions">
-        <Button
-          tone="danger"
-          aria-disabled={busy || undefined}
-          onClick={onErase}
-          data-testid="trash-bulk-delete-confirm"
-        >
-          {busy ? t('data.trash.bulk.deleting') : t('data.trash.bulk.delete')}
-        </Button>
-        <Button
-          tone="secondary"
-          aria-disabled={busy || undefined}
-          onClick={onCancel}
-          data-testid="trash-bulk-cancel"
-        >
-          {t('shell.actions.cancel')}
-        </Button>
-      </div>
-    </div>
+    </InlineConfirm>
   )
 }

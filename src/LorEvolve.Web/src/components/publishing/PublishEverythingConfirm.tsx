@@ -2,6 +2,7 @@ import type { RefObject } from 'react'
 import { useI18n } from '../../i18n'
 import type { PublishEverythingPreview } from '../../publishing/types'
 import { FormActions } from '../FormActions'
+import { InlineConfirm } from '../InlineConfirm'
 
 /** The confirm before Publish everything: each entry and story it would publish, and the stories it would skip. */
 export function PublishEverythingConfirm({
@@ -22,19 +23,19 @@ export function PublishEverythingConfirm({
   const { t, tn } = useI18n()
 
   return (
-    <div
-      className="publication__confirm"
-      role="group"
-      aria-labelledby="publish-everything-title"
-      tabIndex={-1}
-      ref={panel}
-      data-testid="publish-everything-confirm"
-    >
-      <h3 className="publication__confirmtitle" id="publish-everything-title">
-        {nothing
+    <InlineConfirm
+      look="publication"
+      titleAs="h3"
+      title={
+        nothing
           ? t('universe.publish.everything.nothingTitle')
-          : t('universe.publish.everything.title')}
-      </h3>
+          : t('universe.publish.everything.title')
+      }
+      panelRef={panel}
+      onKeep={() => setPreview(null)}
+      busy={busy}
+      testId="publish-everything-confirm"
+    >
       {nothing ? (
         <p className="settings__note">{t('universe.publish.everything.allPublic')}</p>
       ) : (
@@ -127,6 +128,6 @@ export function PublishEverythingConfirm({
         inline
       />
       {nothing ? null : <p className="settings__note">{t('universe.publish.everything.again')}</p>}
-    </div>
+    </InlineConfirm>
   )
 }

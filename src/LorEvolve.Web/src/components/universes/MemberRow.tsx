@@ -11,6 +11,7 @@ import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { InlineConfirm } from '../InlineConfirm'
 import { errorText } from '../../lib/errorText'
 import { QuietNote } from '../QuietNote'
 
@@ -114,17 +115,15 @@ export function MemberRow({
         </Button>
       </div>
       {confirming ? (
-        <div
-          className="settings__confirm collab__confirm"
-          role="group"
-          aria-labelledby={`${id}-confirm`}
-          tabIndex={-1}
-          ref={confirm}
-          data-testid="remove-collaborator-confirm"
+        <InlineConfirm
+          look="settings"
+          className="collab__confirm"
+          title={tx('universe.collab.removeConfirm', { name: <bdi>{member.username}</bdi> })}
+          panelRef={confirm}
+          onKeep={() => setConfirming(false)}
+          busy={busy}
+          testId="remove-collaborator-confirm"
         >
-          <p className="settings__confirmtitle" id={`${id}-confirm`}>
-            {tx('universe.collab.removeConfirm', { name: <bdi>{member.username}</bdi> })}
-          </p>
           <p className="settings__note">{t('universe.collab.removeNote')}</p>
           <FormActions
             submitLabel={t('universe.collab.removeConfirmButton')}
@@ -138,7 +137,7 @@ export function MemberRow({
             lockCancel
             inline
           />
-        </div>
+        </InlineConfirm>
       ) : null}
       {error ? (
         <p className="form__message collab__error" role="alert">

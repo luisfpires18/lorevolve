@@ -3,6 +3,7 @@ import { categoryLabel, genreLabel } from '../../publishing/types'
 import type { Confirming, usePublishState } from '../../publishing/usePublishState'
 import { SelectedLoreReview } from './SelectedLoreReview'
 import { FormActions } from '../FormActions'
+import { InlineConfirm } from '../InlineConfirm'
 
 /** The confirm before publishing: exactly what becomes public, read fresh, and the lore that goes with it. */
 export function PublishConfirm({
@@ -18,17 +19,15 @@ export function PublishConfirm({
   const { t, tx } = useI18n()
 
   return (
-    <div
-      className="publication__confirm"
-      role="group"
-      aria-labelledby="publish-confirm-title"
-      tabIndex={-1}
-      ref={panel}
-      data-testid="publish-confirm"
+    <InlineConfirm
+      look="publication"
+      titleAs="h3"
+      title={tx('universe.publish.confirm.title', { name: <bdi>{confirming.state.name}</bdi> })}
+      panelRef={panel}
+      onKeep={() => setConfirming(null)}
+      busy={busy}
+      testId="publish-confirm"
     >
-      <h3 className="publication__confirmtitle" id="publish-confirm-title">
-        {tx('universe.publish.confirm.title', { name: <bdi>{confirming.state.name}</bdi> })}
-      </h3>
       <p className="settings__note">{t('universe.publish.confirm.anyone')}</p>
       <dl className="publication__facts">
         <div>
@@ -100,6 +99,6 @@ export function PublishConfirm({
         lockCancel
         inline
       />
-    </div>
+    </InlineConfirm>
   )
 }
