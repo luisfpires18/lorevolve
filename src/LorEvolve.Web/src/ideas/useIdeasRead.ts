@@ -57,7 +57,7 @@ export function useIdeasRead({
       },
       controller.signal,
     )
-      .then((result) => setState({ kind: 'ready', page: result }))
+      .then((result) => setState({ kind: 'ready', value: result }))
       .catch(() => {
         if (controller.signal.aborted) return
         setState({ kind: 'error', message: t('ideas.browser.loadFailed') })

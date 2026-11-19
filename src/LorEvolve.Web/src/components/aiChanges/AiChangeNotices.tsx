@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import { formatDateTime } from '../../lib/dates'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useAiChangeState } from '../../aiChanges/useAiChangeState'
+import { QuietNote } from '../QuietNote'
 
 /** What stands above the decision: the note while open, pictures still to hand over, a block, read-only, and the feedback. */
 export function AiChangeNotices({
@@ -57,9 +58,9 @@ export function AiChangeNotices({
       ) : null}
 
       {!proposal.canReview && open ? (
-        <p className="history__quiet" data-testid="ai-change-read-only">
+        <QuietNote className="history__quiet" size="ui" testId="ai-change-read-only">
           {t('review.aiChange.readOnly')}
-        </p>
+        </QuietNote>
       ) : null}
 
       {feedback ? (

@@ -5,8 +5,6 @@ import adminRestore from './admin/restore'
 
 /** LorEvolve Admin: accounts, invitations, backups and the deploy log (#105). */
 const admin: Dictionary['admin'] = {
-  loadFailed: 'Não foi possível carregar isto.',
-  tryAgain: 'Tentar novamente',
   documentTitle: {
     admin: 'Administração',
     main: 'Principal',

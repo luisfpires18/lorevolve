@@ -19,9 +19,9 @@
   max-width: 44rem;
 }
 
-.restore__lead {
+/* Doubled with `.quietnote` because this sheet loads before 021, so the size wins. */
+.quietnote.restore__lead {
   margin: -0.75rem 0 1.5rem;
-  color: var(--muted);
   font-size: 0.925rem;
 }
 
@@ -55,8 +55,6 @@
 .restore__note,
 .restore__more {
   margin: 0;
-  font-size: 0.875rem;
-  color: var(--muted);
 }
 
 .restore__heading {

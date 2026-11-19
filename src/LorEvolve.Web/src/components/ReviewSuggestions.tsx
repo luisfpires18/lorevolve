@@ -9,6 +9,7 @@ import { useSuggestionReads } from '../suggestions/useSuggestionReads'
 import { reviewSuggestionsActions } from '../suggestions/reviewSuggestionsActions'
 import { SuggestionItem } from './suggestions/SuggestionItem'
 import { Button } from './Button'
+import { QuietNote } from './QuietNote'
 
 interface ReviewSuggestionsProps<T> {
   universeId: string
@@ -107,23 +108,23 @@ export function ReviewSuggestions<T>({
           </Button>
         </div>
       ) : (
-        <p className="history__quiet" data-testid="suggestions-read-only">
+        <QuietNote className="history__quiet" size="ui" testId="suggestions-read-only">
           {t('review.suggestions.readOnly')}
-        </p>
+        </QuietNote>
       )}
 
       {failed ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('review.suggestions.readFailed')}
-        </p>
+        </QuietNote>
       ) : loaded === null ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('review.suggestions.opening')}
-        </p>
+        </QuietNote>
       ) : items.length === 0 && !loaded.more.open && !loaded.more.decided ? (
-        <p className="history__quiet" data-testid="suggestions-empty">
+        <QuietNote className="history__quiet" size="ui" testId="suggestions-empty">
           {t('review.suggestions.empty')}
-        </p>
+        </QuietNote>
       ) : (
         <>
           {open.length > 0 || loaded.more.open ? (

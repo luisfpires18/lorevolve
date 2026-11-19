@@ -1,6 +1,7 @@
 import { QuickCreateDialog } from '../QuickCreateDialog'
 import { useI18n } from '../../i18n'
 import type { EntityChoice, QuickCreateOptions } from '../EntityPicker'
+import { QuietNote } from '../QuietNote'
 
 /** What Quick Create adds under a picker: the note on the entry it just made, and its form while it is open. */
 export function EntityPickerCreate({
@@ -27,7 +28,14 @@ export function EntityPickerCreate({
     <>
       {quickCreate ? (
         // Announced as it appears: the entry exists now, the choice does not until the form it sits in is saved.
-        <p className="picker__created" id={noteId} role="status" data-testid="picker-created">
+        <QuietNote
+          className="picker__created"
+          size="ui"
+          wrap
+          testId="picker-created"
+          id={noteId}
+          role="status"
+        >
           {note ? (
             <>
               {tx('entity.picker.created', {
@@ -46,7 +54,7 @@ export function EntityPickerCreate({
               })}
             </>
           ) : null}
-        </p>
+        </QuietNote>
       ) : null}
 
       {creating !== null && quickCreate ? (

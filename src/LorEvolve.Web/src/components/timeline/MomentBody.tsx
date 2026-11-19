@@ -7,6 +7,7 @@ import { TypeIcon } from '../TypeIcon'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { FormState } from '../../timeline/useTimelineState'
+import { QuietNote } from '../QuietNote'
 
 /** A moment's title, which opens its drawer, with its account, cast, stories and validation details. */
 export function MomentBody({
@@ -104,7 +105,7 @@ export function MomentBody({
       ) : null}
 
       {entry.validation ? (
-        <p className="moment__validation" data-testid={`moment-validation-${entry.title}`}>
+        <QuietNote className="moment__validation" wrap testId={`moment-validation-${entry.title}`}>
           <span className="moment__validationlabel">{t('time.timeline.validation')}</span>
           <span>
             {entry.validation.eventKind ? <bdi>{entry.validation.eventKind.name}</bdi> : null}
@@ -126,7 +127,7 @@ export function MomentBody({
               </>
             ) : null}
           </span>
-        </p>
+        </QuietNote>
       ) : null}
     </>
   )

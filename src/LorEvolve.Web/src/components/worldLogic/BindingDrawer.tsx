@@ -7,6 +7,7 @@ import { m } from '../../worldLogic/machinePanelTypes'
 import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
 import { FormActions } from '../FormActions'
+import { QuietNote } from '../QuietNote'
 
 export function BindingDrawer({
   binding,
@@ -29,7 +30,11 @@ export function BindingDrawer({
       testId="machine-binding-drawer"
       titleId={titleId}
       title={t(`${m}.binding`)}
-      context={<p className="drawer__context">{t(`${m}.fields.bindingHint`)}</p>}
+      context={
+        <QuietNote size="ui" wrap className="drawer__context">
+          {t(`${m}.fields.bindingHint`)}
+        </QuietNote>
+      }
       dialogRef={dialog}
       isDirty={JSON.stringify(form) !== JSON.stringify(binding)}
       leaveMessage={t(`${m}.leaveGuard`)}

@@ -17,6 +17,9 @@ import { useShelfState } from '../projects/useShelfState'
 import { ShelfCards } from '../components/projects/ShelfCards'
 import { ShelfViewNav } from '../components/projects/ShelfViewNav'
 import { NewButton } from '../components/NewButton'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
+import { LoadError } from '../components/LoadError'
 
 /**
  * One Creation category's projects, each drawn as the thing it will be (owner, 2026-11-17): Gaming on a handheld,
@@ -78,25 +81,25 @@ export default function CategoryShelfPage({
       {views && showView ? <views.Body universeId={universe.id} /> : null}
 
       {!showView && state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('projects.list.loading')}
-        </p>
+        <LoadingNote>{t('projects.list.loading')}</LoadingNote>
       ) : null}
 
-      {!showView && state.kind === 'failed' ? (
-        <EmptyState title={t('projects.list.failed')} testId="projects-failed" />
+      {!showView && state.kind === 'error' ? (
+        <LoadError
+          message={t('projects.list.failed')}
+          onRetry={shelf.retry}
+          testId="projects-failed"
+        />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="shelf-announcement">
-        {announcement}
-      </p>
+      <Announce testId="shelf-announcement">{announcement}</Announce>
       {moveError ? (
         <p className="form__message" role="alert" data-testid="shelf-move-error">
           {moveError}
         </p>
       ) : null}
 
-      {!showView && state.kind === 'ready' && state.projects.length > 0 ? (
+      {!showView && state.kind === 'ready' && state.value.length > 0 ? (
         <ShelfCards
           frame={frame}
           kinds={kinds}
@@ -108,7 +111,7 @@ export default function CategoryShelfPage({
         />
       ) : null}
 
-      {!showView && state.kind === 'ready' && state.projects.length === 0 ? (
+      {!showView && state.kind === 'ready' && state.value.length === 0 ? (
         <EmptyState
           title={t(empty)}
           hint={t('projects.list.emptyCategoryHint')}
@@ -129,7 +132,7 @@ export default function CategoryShelfPage({
               current.kind === 'ready'
                 ? {
                     kind: 'ready',
-                    projects: current.projects.map((one) =>
+                    value: current.value.map((one) =>
                       one.id === covering.id ? { ...one, cover } : one,
                     ),
                   }

@@ -110,7 +110,6 @@
 .rule__lede {
   margin: 0.4rem 0 0;
   font-size: 0.875rem;
-  color: var(--muted);
 }
 
 .rule__failure {

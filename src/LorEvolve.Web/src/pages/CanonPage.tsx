@@ -37,7 +37,7 @@ export default function CanonPage() {
     reload,
   } = canon
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
 
   const { evaluate, transition } = canonActions({ ...canon, universe, result })
 

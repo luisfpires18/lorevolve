@@ -1,3 +1,4 @@
+import { QuietNote } from '../QuietNote'
 export function ScriptPartHead({
   where,
   titleId,
@@ -9,9 +10,9 @@ export function ScriptPartHead({
 }) {
   return (
     <header className="manuscript__head">
-      <p className="manuscript__where" data-testid="project-script-where">
+      <QuietNote className="manuscript__where" size="xs" wrap testId="project-script-where">
         <span className="manuscript__position">{where}</span>
-      </p>
+      </QuietNote>
       <div className="manuscript__titlerow">
         <h3 className="manuscript__title" id={titleId} data-testid="project-script-title">
           <bdi>{name}</bdi>

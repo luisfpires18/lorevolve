@@ -7,6 +7,7 @@ import { IdeaReferenceKind } from '../ideas/types'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
+import { LoadingNote } from './LoadingNote'
 
 /** What a picked idea or entry puts on a card: its id and what the card shows of it. */
 export interface PickedTarget {
@@ -161,9 +162,7 @@ export function IdeaBoardPicker({
 
       <div id={resultsId} aria-live="polite">
         {results === undefined ? (
-          <p className="notice ideapicker__notice" role="status">
-            {t('ideas.boardPicker.looking')}
-          </p>
+          <LoadingNote className="ideapicker__notice">{t('ideas.boardPicker.looking')}</LoadingNote>
         ) : results === null ? (
           <p className="form__message" role="alert">
             {t('ideas.boardPicker.loadFailed')}

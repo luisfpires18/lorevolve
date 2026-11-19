@@ -20,6 +20,7 @@ import { confirmAction } from '../../lib/confirm'
 import { t, useI18n } from '../../i18n'
 import type { Stored } from '../../lore/useEntityArticle'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 interface ArticleHistoryProps {
   universeId: string
@@ -171,15 +172,17 @@ export function ArticleHistory({
           ) : null}
 
           {failed ? (
-            <p className="history__quiet" role="status">
+            <QuietNote className="history__quiet" size="ui" role="status">
               {t('entity.articleHistory.readFailed')}
-            </p>
+            </QuietNote>
           ) : revisions === null ? (
-            <p className="history__quiet" role="status">
+            <QuietNote className="history__quiet" size="ui" role="status">
               {t('entity.articleHistory.opening')}
-            </p>
+            </QuietNote>
           ) : revisions.length === 0 ? (
-            <p className="history__quiet">{t('entity.articleHistory.none')}</p>
+            <QuietNote className="history__quiet" size="ui">
+              {t('entity.articleHistory.none')}
+            </QuietNote>
           ) : (
             <ol className="history__list" data-testid="article-history-list">
               {revisions.map((revision, index) => (
@@ -233,9 +236,9 @@ export function ArticleHistory({
                   {viewing?.id === revision.id ? (
                     <div className="version__snapshot" data-testid="article-version-snapshot">
                       {viewing.detail === null ? (
-                        <p className="history__quiet" role="status">
+                        <QuietNote className="history__quiet" size="ui" role="status">
                           {t('entity.articleHistory.snapshotOpening')}
-                        </p>
+                        </QuietNote>
                       ) : isEmptyDocument(viewing.detail.content) ? (
                         <p className="entry__blank">{t('entity.articleHistory.snapshotBlank')}</p>
                       ) : (

@@ -14,6 +14,7 @@ import { useIdeaSave } from '../ideas/useIdeaSave'
 import { useIdeaState } from '../ideas/useIdeaState'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useI18n } from '../i18n'
+import { Announce } from './Announce'
 
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
@@ -216,9 +217,7 @@ export function IdeaEditor({
         />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="idea-announcer">
-        {announcement}
-      </p>
+      <Announce testId="idea-announcer">{announcement}</Announce>
     </article>
   )
 }

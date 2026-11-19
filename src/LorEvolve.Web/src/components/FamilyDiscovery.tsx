@@ -10,6 +10,7 @@ import { useDiscoverySearch } from '../familyTree/useDiscoverySearch'
 import { useDiscoveryState } from '../familyTree/useDiscoveryState'
 import { DiscoveryFamilies } from './familyTree/DiscoveryFamilies'
 import { Button } from './Button'
+import { QuietNote } from './QuietNote'
 
 /** What a family summary carries in history, so "Browse families" on its tree can come back to this search and page. */
 export interface FamiliesReturn {
@@ -151,7 +152,9 @@ export function FamilyDiscovery({
             placeholder={t('places.discovery.pickerPlaceholder')}
           />
           {isEmpty ? null : (
-            <p className="discovery__pickerhint">{t('places.discovery.pickerHint')}</p>
+            <QuietNote className="discovery__pickerhint">
+              {t('places.discovery.pickerHint')}
+            </QuietNote>
           )}
         </div>
       ) : null}

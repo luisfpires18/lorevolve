@@ -1,6 +1,7 @@
 import type { Change } from '../../aiChanges/types'
 import { compareProse } from '../../aiChanges/diff'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /** A manuscript change, as prose: what is added, or the paragraphs it would take out and put in. */
 export function ProseChange({ change }: { change: Change }) {
@@ -9,9 +10,9 @@ export function ProseChange({ change }: { change: Change }) {
   if (prose.append || prose.current === null) {
     return (
       <div className="aichangeprose">
-        <p className="aichangeprose__label">
+        <QuietNote className="aichangeprose__label">
           {prose.append ? t('review.aiChange.prose.appended') : t('review.aiChange.prose.added')}
-        </p>
+        </QuietNote>
         <div className="aichangeprose__text aichangeprose__text--added" dir="auto">
           {prose.proposed}
         </div>
@@ -22,7 +23,7 @@ export function ProseChange({ change }: { change: Change }) {
   const parts = compareProse(prose.current, prose.proposed)
   return (
     <div className="aichangeprose" data-testid="ai-change-prose">
-      <p className="aichangeprose__label">{t('review.aiChange.prose.changes')}</p>
+      <QuietNote className="aichangeprose__label">{t('review.aiChange.prose.changes')}</QuietNote>
       {parts.map((part, index) =>
         part.kind === 'same' ? (
           <p className="aichangeprose__same" key={index}>

@@ -155,9 +155,6 @@
 
 .adminuser__public {
   margin: var(--space-1) 0 0;
-  font-size: var(--text-ui);
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 .adminuser__tags {
@@ -249,7 +246,4 @@
 
 .adminhistory__reason {
   margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: var(--text-ui);
-  overflow-wrap: anywhere;
 }

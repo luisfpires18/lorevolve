@@ -1,3 +1,4 @@
+import { QuietNote } from '../QuietNote'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { SaveAction } from '../SaveAction'
 import { ApiError } from '../../lib/api'
@@ -17,8 +18,9 @@ import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { PrivateNotesProps } from '../PrivateNotes'
 import { PrivateNoteConflict } from './PrivateNoteConflict'
-import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 const count = (value: number) => numberFormat({}, 'en').format(value)
 
@@ -139,9 +141,9 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       eyebrow={t('entity.privateNote.eyebrow')}
       title={<bdi>{entryName}</bdi>}
       context={
-        <p className="drawer__context" id={hintId}>
+        <QuietNote size="ui" wrap className="drawer__context" id={hintId}>
           {t('entity.privateNote.privacy')}
-        </p>
+        </QuietNote>
       }
       isDirty={isDirty}
       leaveMessage={t('entity.privateNote.discardGuard')}
@@ -151,18 +153,16 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       )}
     >
       {load === 'loading' ? (
-        <p className="notice" role="status" data-testid="private-note-loading">
-          {t('entity.privateNote.opening')}
-        </p>
+        <LoadingNote testId="private-note-loading">{t('entity.privateNote.opening')}</LoadingNote>
       ) : null}
 
       {load === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="private-note-load-error">
-          <p>{t('entity.privateNote.openFailed')}</p>
-          <Button tone="secondary" onClick={reread}>
-            {t('entity.privateNote.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('entity.privateNote.openFailed')}
+          onRetry={reread}
+          retryLabel={t('entity.privateNote.retry')}
+          testId="private-note-load-error"
+        />
       ) : null}
 
       {isReady ? (

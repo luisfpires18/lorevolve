@@ -8,6 +8,7 @@ import type { Draft } from '../../lore/entryDraft'
 import { entryChanges } from '../../lore/entryChanges'
 import type { EntityType } from '../../lore/typeDefinitions'
 import type { Chronology } from '../../chronology/types'
+import { Announce } from '../Announce'
 
 /** What the entry has to say under its bar: a Canon block, a message, a sent suggestion, a conflict, and the announcer. */
 export function EntryNotices({
@@ -80,9 +81,7 @@ export function EntryNotices({
         />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="entry-announcer">
-        {announcement}
-      </p>
+      <Announce testId="entry-announcer">{announcement}</Announce>
     </>
   )
 }

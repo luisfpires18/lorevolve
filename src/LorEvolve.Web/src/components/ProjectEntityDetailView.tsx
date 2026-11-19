@@ -12,6 +12,9 @@ import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
 import { TypeIcon } from './TypeIcon'
 import { Button } from './Button'
+import { errorText } from '../lib/errorText'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
 
 type LoadState =
   | { kind: 'ready'; for: string; entity: ProjectEntityDetail }
@@ -59,8 +62,7 @@ export function ProjectEntityDetailView({
           setState({
             kind: 'failed',
             for: entityId,
-            message:
-              error instanceof Error ? error.message : t('projects.gameEntities.entity.failed'),
+            message: errorText(error, t('projects.gameEntities.entity.failed')),
           })
         }
       })
@@ -69,9 +71,9 @@ export function ProjectEntityDetailView({
 
   if (read === null) {
     return (
-      <p className="projects__lede" data-testid="game-entity-loading">
+      <LoadingNote testId="game-entity-loading">
         {t('projects.gameEntities.entity.loading')}
-      </p>
+      </LoadingNote>
     )
   }
 
@@ -88,9 +90,11 @@ export function ProjectEntityDetailView({
 
   if (read.kind === 'failed') {
     return (
-      <p role="alert" data-testid="game-entity-failed">
-        {read.message}
-      </p>
+      <LoadError
+        message={read.message}
+        onRetry={() => setReloadKey((key) => key + 1)}
+        testId="game-entity-failed"
+      />
     )
   }
 

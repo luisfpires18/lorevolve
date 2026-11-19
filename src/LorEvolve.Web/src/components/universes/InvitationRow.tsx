@@ -11,6 +11,8 @@ import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
 import { CopyLink } from './CopyLink'
 import { Button } from '../Button'
+import { errorText } from '../../lib/errorText'
+import { QuietNote } from '../QuietNote'
 
 // ---------- Pending invitations ----------
 
@@ -43,9 +45,7 @@ export function InvitationRow({
     try {
       onChanged(await changeInvitationRole(universeId, invitation.id, role))
     } catch (problem: unknown) {
-      setError(
-        problem instanceof Error ? problem.message : t('universe.collab.invitationRoleFailed'),
-      )
+      setError(errorText(problem, t('universe.collab.invitationRoleFailed')))
     } finally {
       setBusy(false)
     }
@@ -62,7 +62,7 @@ export function InvitationRow({
         onRevoked()
         return
       }
-      setError(problem instanceof Error ? problem.message : t('universe.collab.revokeFailed'))
+      setError(errorText(problem, t('universe.collab.revokeFailed')))
       setBusy(false)
     }
   }
@@ -78,9 +78,9 @@ export function InvitationRow({
         <p className="collab__name collab__email">
           <bdi>{invitation.email}</bdi>
         </p>
-        <p className="collab__meta">
+        <QuietNote className="collab__meta">
           {t('universe.collab.expires', { date: formatDate(invitation.expiresAt) })}
-        </p>
+        </QuietNote>
       </div>
       <div className="collab__controls">
         <label className="visually-hidden" htmlFor={`${id}-role`}>

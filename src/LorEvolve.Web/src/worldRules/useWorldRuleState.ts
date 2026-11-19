@@ -9,7 +9,9 @@ export function useWorldRuleState({
   isNew: boolean
   announceOnOpen: string | null
 }) {
-  const [load, setLoad] = useState<LoadState>(isNew ? { kind: 'ready' } : { kind: 'loading' })
+  const [load, setLoad] = useState<LoadState>(
+    isNew ? { kind: 'ready', value: null } : { kind: 'loading' },
+  )
   const [reads, setReads] = useState(0)
   const [stored, setStored] = useState<Stored>(EMPTY_STORED)
   const [draft, setDraft] = useState<Fields>(fieldsOf(EMPTY_STORED))

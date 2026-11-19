@@ -12,6 +12,7 @@ import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useAuth } from '../auth/useAuth'
 import { backText } from './trashText'
 import type { useTrashState } from './useTrashState'
+import { errorText } from '../lib/errorText'
 
 /** One row's handlers: asking to erase and cancelling, cancelling a restore's question, restoring and erasing. */
 export function trashActions({
@@ -119,10 +120,10 @@ export function trashActions({
         setBlocked(findings)
       } else {
         setOutcome({
-          text:
-            error instanceof Error
-              ? error.message
-              : tx('data.trash.outcome.restoreFailed', { name: <Quoted text={item.name} /> }),
+          text: errorText(
+            error,
+            tx('data.trash.outcome.restoreFailed', { name: <Quoted text={item.name} /> }),
+          ),
           link: null,
         })
       }

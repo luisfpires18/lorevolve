@@ -3,27 +3,25 @@ import { EmptyState } from '../EmptyState'
 import { formatDateTime } from '../../lib/dates'
 import { FeedbackKind, listFeedback } from '../../feedback/api'
 import { useI18n } from '../../i18n'
-import { useLoad } from '../../admin/useLoad'
-import { Failure } from './Failure'
+import { useAsyncRead } from '../../lib/useAsyncRead'
+import { LoadError } from '../LoadError'
 import { Heading } from './Heading'
 import { Button } from '../Button'
+import { LoadingNote } from '../LoadingNote'
+import { QuietNote } from '../QuietNote'
 
 /** Bug reports and feature requests from the button on every signed-in page, newest first. Read only. */
 export function FeedbackScreen() {
   const { t } = useI18n()
   const [page, setPage] = useState(1)
   const load = useCallback((signal: AbortSignal) => listFeedback(page, signal), [page])
-  const { state, retry } = useLoad(load)
+  const { load: state, retry } = useAsyncRead(load)
 
   return (
     <>
       <Heading title={t('admin.feedback.title')} lede={t('admin.feedback.lede')} />
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('admin.feedback.reading')}
-        </p>
-      ) : null}
-      {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('admin.feedback.reading')}</LoadingNote> : null}
+      {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
       {state.kind === 'ready' && state.value.items.length === 0 ? (
         <EmptyState testId="admin-feedback-empty" title={t('admin.feedback.empty')} />
       ) : null}
@@ -32,7 +30,7 @@ export function FeedbackScreen() {
           <ul className="feedbackreports" data-testid="admin-feedback">
             {state.value.items.map((report) => (
               <li className="feedbackreport" key={report.id} data-testid="admin-feedback-report">
-                <p className="feedbackreport__meta">
+                <QuietNote className="feedbackreport__meta">
                   <strong>
                     {report.kind === FeedbackKind.Bug
                       ? t('admin.feedback.bug')
@@ -48,7 +46,7 @@ export function FeedbackScreen() {
                       <code>{report.page}</code>
                     </>
                   ) : null}
-                </p>
+                </QuietNote>
                 <p className="feedbackreport__text" dir="auto">
                   {report.text}
                 </p>

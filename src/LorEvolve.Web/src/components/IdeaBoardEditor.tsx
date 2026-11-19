@@ -16,6 +16,7 @@ import { useBoardSave } from '../ideas/useBoardSave'
 import { useBoardState } from '../ideas/useBoardState'
 import { useLeaveGuard } from '../lib/leaveGuard'
 import { useI18n } from '../i18n'
+import { Announce } from './Announce'
 
 interface IdeaBoardEditorProps {
   /** The board being edited, or null for a new one. */
@@ -147,9 +148,7 @@ export function IdeaBoardEditor({
         />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="board-announcer">
-        {announcement}
-      </p>
+      <Announce testId="board-announcer">{announcement}</Announce>
     </article>
   )
 }

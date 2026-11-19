@@ -8,6 +8,7 @@ import { ProjectKind, ProjectLifecycle, type ProjectKindValue } from '../../proj
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 /** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
 function kindFromParam(raw: string | null): ProjectKindValue {
@@ -96,7 +97,7 @@ export function NewProject() {
             .then((project) => navigate(projectPath(project.id, '', project.universe.id)))
             .catch((error: unknown) => {
               // `ApiError`'s message is already the refusal in the reader's language (#108).
-              setFailed(error instanceof Error ? error.message : t('projects.new.failed'))
+              setFailed(errorText(error, t('projects.new.failed')))
               setSaving(false)
             })
         }}

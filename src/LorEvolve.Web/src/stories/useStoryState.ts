@@ -1,12 +1,7 @@
 import { useRef, useState } from 'react'
+import type { Load } from '../lib/useAsyncRead'
 import type { ContentPublicationState } from '../publishing/types'
 import type { Chapter, PlotArc, Scene, StoryDetail } from './types'
-
-export type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; story: StoryDetail }
-  | { kind: 'missing' }
-  | { kind: 'error' }
 
 export type SceneFormState =
   | { mode: 'closed' }
@@ -26,7 +21,7 @@ export type StoryViewName = 'scenes' | 'manuscript'
 
 /** Every state and ref of a story's page: what is read, the open forms, what was sent and said, and what is moving. */
 export function useStoryState() {
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const [state, setState] = useState<Load<StoryDetail>>({ kind: 'loading' })
   const [stale, setStale] = useState(false)
   const [sceneForm, setSceneForm] = useState<SceneFormState>({ mode: 'closed' })
   const [chapterForm, setChapterForm] = useState<ChapterFormState>({ mode: 'closed' })

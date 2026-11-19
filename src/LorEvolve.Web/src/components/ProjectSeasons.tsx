@@ -7,6 +7,7 @@ import { WORDS, type ProjectStructureWords } from '../projectEntities/seasonWord
 import { SeasonItem } from './projectEntities/SeasonItem'
 import { NewButton } from './NewButton'
 import { FormActions } from './FormActions'
+import { errorText } from '../lib/errorText'
 
 /**
  * The seasons of a project and the episodes in them (#145).
@@ -49,7 +50,7 @@ export function ProjectSeasons({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setSeasons([])
-        setFailed(error instanceof Error ? error.message : t('projects.seasons.failed'))
+        setFailed(errorText(error, t('projects.seasons.failed')))
       })
     return () => controller.abort()
   }, [projectId])
@@ -66,7 +67,7 @@ export function ProjectSeasons({
 
   function failing(error: unknown) {
     setBusy(false)
-    setFailed(error instanceof Error ? error.message : t('projects.seasons.failed'))
+    setFailed(errorText(error, t('projects.seasons.failed')))
   }
 
   function run(work: Promise<unknown>) {

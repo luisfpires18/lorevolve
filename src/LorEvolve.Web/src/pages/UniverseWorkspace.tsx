@@ -21,6 +21,7 @@ import { useWorkspaceReads } from '../universes/useWorkspaceReads'
 import { useWorkspaceSetters } from '../universes/useWorkspaceSetters'
 import { useWorkspaceState } from '../universes/useWorkspaceState'
 import { currentSection } from '../universes/workspaceSections'
+import { LoadingNote } from '../components/LoadingNote'
 
 export interface WorkspaceContext {
   universe: UniverseDetail
@@ -84,16 +85,12 @@ function Workspace() {
   // an entry or a story inside a section is still that section here, and nothing beneath sets a title of its own.
   useDocumentTitle(
     ...(state.kind === 'ready'
-      ? [sectionLabel(currentSection(pathname, id)), state.universe.name]
+      ? [sectionLabel(currentSection(pathname, id)), state.value.universe.name]
       : []),
   )
 
   if (state.kind === 'loading') {
-    return (
-      <p className="notice" role="status">
-        {t('workspace.rail.opening')}
-      </p>
-    )
+    return <LoadingNote>{t('workspace.rail.opening')}</LoadingNote>
   }
 
   if (state.kind === 'missing') {
@@ -104,7 +101,7 @@ function Workspace() {
     return <WorkspaceLoadError state={state} refresh={refresh} refreshTypes={refreshTypes} />
   }
 
-  const { universe, chronology } = state
+  const { universe, chronology } = state.value
   const accent = universe.accentColor ?? undefined
 
   // The world's own artwork as the atmosphere at the head of every screen, from the universe itself, so the first

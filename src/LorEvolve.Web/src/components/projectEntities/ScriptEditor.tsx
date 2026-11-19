@@ -3,6 +3,7 @@ import { Field } from '../Field'
 import { getEpisode, saveEpisode, type ProjectEpisodeSummary } from '../../projectEntities/seasons'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 /**
  * One episode's script. Read on open rather than carried by the list, and saved over the version it was read at, so a
@@ -38,7 +39,7 @@ export function ScriptEditor({
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
-        setFailed(error instanceof Error ? error.message : t('projects.seasons.failed'))
+        setFailed(errorText(error, t('projects.seasons.failed')))
       })
     return () => controller.abort()
   }, [projectId, seasonId, episode.id])
@@ -67,9 +68,7 @@ export function ScriptEditor({
             setFailed(
               code === 'project_episode_changed'
                 ? t('projects.seasons.scriptStale')
-                : error instanceof Error
-                  ? error.message
-                  : t('projects.seasons.failed'),
+                : errorText(error, t('projects.seasons.failed')),
             )
           })
       }}

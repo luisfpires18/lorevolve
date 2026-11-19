@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom'
 import { EmptyState } from '../EmptyState'
 import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
-import type { LoadState } from '../../familyTree/useFamilyTreeState'
+import type { FamilyTree } from '../../familyTree/types'
+import type { Load } from '../../lib/useAsyncRead'
+import type { FamilyView } from '../../familyTree/useFamilyTreeState'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 export function FamilyLoadStates({
   universe,
@@ -13,19 +16,15 @@ export function FamilyLoadStates({
   setReads,
 }: {
   universe: WorkspaceContext['universe']
-  view: LoadState | { kind: 'idle' }
-  setState: Dispatch<SetStateAction<LoadState>>
+  view: FamilyView
+  setState: Dispatch<SetStateAction<Load<FamilyTree>>>
   setReads: Dispatch<SetStateAction<number>>
 }) {
   const { t, tx } = useI18n()
 
   return (
     <>
-      {view.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('places.familyPage.loading')}
-        </p>
-      ) : null}
+      {view.kind === 'loading' ? <LoadingNote>{t('places.familyPage.loading')}</LoadingNote> : null}
 
       {view.kind === 'missing' ? (
         <EmptyState
@@ -42,18 +41,15 @@ export function FamilyLoadStates({
       ) : null}
 
       {view.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="family-error">
-          <p>{t('places.familyPage.error')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('places.familyPage.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('places.familyPage.error')}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((current) => current + 1)
+          }}
+          retryLabel={t('places.familyPage.retry')}
+          testId="family-error"
+        />
       ) : null}
     </>
   )

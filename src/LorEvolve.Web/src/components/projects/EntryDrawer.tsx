@@ -5,6 +5,7 @@ import { t } from '../../i18n'
 import { levelWord, nameOf } from '../../projectEntities/levelWords'
 import type { ComicCollection, ComicNode } from '../../projects/comicCollections'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 const nodeLabel = (node: ComicNode) =>
   `${node.projectName} - ${levelWord(node.level)} ${nameOf(node)}`
@@ -30,7 +31,7 @@ export function EntryDrawer({
     setError(null)
     onAdd(chosen).catch((failure: unknown) => {
       setSaving(false)
-      setError(failure instanceof Error ? failure.message : t('projects.comics.failed'))
+      setError(errorText(failure, t('projects.comics.failed')))
     })
   }
 

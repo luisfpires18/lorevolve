@@ -7,7 +7,8 @@ import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
 import type { LoadState } from '../../lore/loreAddress'
 import type { ReactNode } from 'react'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { Announce } from '../Announce'
 type Entries = ReturnType<typeof useLoreEntries>
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -55,17 +56,14 @@ export function LoreStatus({
       {children}
 
       {typesFailed ? (
-        <div className="notice notice--error" role="alert" data-testid="lore-types-error">
-          <p>{t('lore.page.typesFailed')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              refreshTypes().catch(() => undefined)
-            }}
-          >
-            {t('lore.page.retryTypes')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('lore.page.typesFailed')}
+          onRetry={() => {
+            refreshTypes().catch(() => undefined)
+          }}
+          retryLabel={t('lore.page.retryTypes')}
+          testId="lore-types-error"
+        />
       ) : null}
 
       {/* No types at all leaves nothing to choose: one line to where types are made, not a panel. */}
@@ -81,9 +79,7 @@ export function LoreStatus({
 
       {view.kind === 'loading' ? (
         <div className="lore__loading">
-          <p className="visually-hidden" role="status">
-            {t('lore.page.reading')}
-          </p>
+          <Announce>{t('lore.page.reading')}</Announce>
           <ul className="cardgrid lore__skeleton" aria-hidden="true">
             {Array.from({ length: SKELETON_CARDS }, (_, index) => (
               <li className="skeletoncard" key={index}>
@@ -99,18 +95,15 @@ export function LoreStatus({
       ) : null}
 
       {view.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="lore-load-error">
-          <p>{t('lore.page.loadFailed')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('lore.page.retryLore')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('lore.page.loadFailed')}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((count) => count + 1)
+          }}
+          retryLabel={t('lore.page.retryLore')}
+          testId="lore-load-error"
+        />
       ) : null}
     </>
   )

@@ -3,6 +3,7 @@ import type { Ability, Appearance, Form } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
 import { ItemRow } from './ItemRow'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /** An entry's forms or abilities on the main profile: each as the author said it, nothing filled in. */
 export function ItemList({
@@ -70,7 +71,7 @@ export function ItemList({
         ) : null}
       </div>
       {items.length === 0 ? (
-        <p className="muted">{words.empty}</p>
+        <QuietNote>{words.empty}</QuietNote>
       ) : (
         <ul className="progitems__list">
           {items.map((item, index) => (

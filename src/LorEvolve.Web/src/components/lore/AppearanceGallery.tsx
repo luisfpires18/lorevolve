@@ -143,11 +143,7 @@ export function AppearanceGallery({
             <ActionIcon icon={ImagePlus} />
             {t('progression.appearanceList.addPictures')}
           </label>
-          {working ? (
-            <span className="muted" role="status">
-              {working}
-            </span>
-          ) : null}
+          {working ? <span role="status">{working}</span> : null}
         </div>
       ) : null}
     </>

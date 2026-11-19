@@ -9,6 +9,7 @@ import { FoldToggle } from './FoldToggle'
 import { arcLabel, arcNumber, chapterCountLabel } from '../stories/format'
 import type { PlotArc } from '../stories/types'
 import { NewButton } from './NewButton'
+import { QuietNote } from './QuietNote'
 
 interface ArcSectionProps {
   arc: PlotArc
@@ -87,9 +88,9 @@ export function ArcSection({
             </span>
           </h3>
           {chapterCount > 0 ? (
-            <p className="plotarc__meta" data-testid="arc-chapter-count">
+            <QuietNote className="plotarc__meta" testId="arc-chapter-count">
               {chapterCountLabel(chapterCount)}
-            </p>
+            </QuietNote>
           ) : null}
         </div>
 

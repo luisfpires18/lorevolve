@@ -3,6 +3,7 @@ import { Check } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
+import { Announce } from './Announce'
 
 /** How long "Saved" stays on the button after a save, before it goes quiet again. */
 const SAVED_FOR_MS = 2000
@@ -68,13 +69,7 @@ export function SaveAction({
 
   return (
     <>
-      <span
-        className="visually-hidden"
-        id={statusId}
-        role="status"
-        data-state={state}
-        data-testid={statusTestId}
-      >
+      <Announce inline id={statusId} state={state} testId={statusTestId}>
         {isSaving
           ? t('entity.save.status.saving')
           : isDirty
@@ -82,7 +77,7 @@ export function SaveAction({
             : justSaved
               ? t('entity.save.status.saved')
               : restingStatus}
-      </span>
+      </Announce>
       <Button
         className="saveaction"
         type={type}

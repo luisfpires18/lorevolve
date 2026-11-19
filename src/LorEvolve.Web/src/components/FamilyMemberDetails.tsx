@@ -10,6 +10,7 @@ import { CANON_LABELS, CanonStatus } from '../lore/types'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
 import { IconButton } from './IconButton'
+import { QuietNote } from './QuietNote'
 
 /** Where the tree stops drawing lines and the details become a sheet: the tree's own phone width. */
 const SHEET_QUERY = '(max-width: 640px)'
@@ -211,7 +212,9 @@ export function FamilyMemberDetails({
               {t('places.memberDetails.other')}
             </h3>
             {authored.length === 0 ? (
-              <p className="familydetails__note">{t('places.memberDetails.noneRecorded')}</p>
+              <QuietNote className="familydetails__note">
+                {t('places.memberDetails.noneRecorded')}
+              </QuietNote>
             ) : (
               <>
                 <ul className="familydetails__list" data-testid="family-details-other">
@@ -237,7 +240,9 @@ export function FamilyMemberDetails({
                     )
                   })}
                 </ul>
-                <p className="familydetails__note">{t('places.memberDetails.otherNote')}</p>
+                <QuietNote className="familydetails__note">
+                  {t('places.memberDetails.otherNote')}
+                </QuietNote>
               </>
             )}
           </section>

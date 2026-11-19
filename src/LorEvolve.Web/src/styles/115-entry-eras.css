@@ -99,8 +99,6 @@
 .erapanel__span,
 .erapanel__eyebrow {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 .eralist__description {
@@ -226,9 +224,6 @@
 
 .erafield__inherited {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 .erapoint {

@@ -9,6 +9,7 @@ import { CropperProgress } from './CropperProgress'
 import { CropperStage } from './CropperStage'
 import { cropDialogActions } from './cropDialogActions'
 import { fractionsOf } from './cropMath'
+import { QuietNote } from './QuietNote'
 
 /**
  * How far a save has got, as the caller reports it.
@@ -166,9 +167,9 @@ export function ImageCropDialog({
           <h2 className="cropper__title" id={headingId}>
             {title}
           </h2>
-          <p className="cropper__hint" id={hintId}>
+          <QuietNote className="cropper__hint" id={hintId}>
             {shownHint}
-          </p>
+          </QuietNote>
         </header>
 
         <CropperStage

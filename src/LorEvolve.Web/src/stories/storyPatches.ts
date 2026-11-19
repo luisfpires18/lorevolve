@@ -6,16 +6,16 @@ import type { useStoryState } from './useStoryState'
 /** How the story on screen is changed in place: the functions below make the same changes the API just made. */
 export function storyPatches({ setState }: Pick<ReturnType<typeof useStoryState>, 'setState'>) {
   function showStory(next: StoryDetail) {
-    setState((current) => (current.kind === 'ready' ? { ...current, story: next } : current))
+    setState((current) => (current.kind === 'ready' ? { ...current, value: next } : current))
   }
   function patchScene(id: string, patch: Partial<Scene>) {
     setState((current) =>
       current.kind === 'ready'
         ? {
             ...current,
-            story: {
-              ...current.story,
-              scenes: current.story.scenes.map((scene) =>
+            value: {
+              ...current.value,
+              scenes: current.value.scenes.map((scene) =>
                 scene.id === id ? { ...scene, ...patch } : scene,
               ),
             },
@@ -29,9 +29,9 @@ export function storyPatches({ setState }: Pick<ReturnType<typeof useStoryState>
       current.kind === 'ready'
         ? {
             ...current,
-            story: {
-              ...current.story,
-              arcs: current.story.arcs.map((arc) => (arc.id === id ? { ...arc, visibility } : arc)),
+            value: {
+              ...current.value,
+              arcs: current.value.arcs.map((arc) => (arc.id === id ? { ...arc, visibility } : arc)),
             },
           }
         : current,
@@ -43,10 +43,10 @@ export function storyPatches({ setState }: Pick<ReturnType<typeof useStoryState>
       current.kind === 'ready'
         ? {
             ...current,
-            story: {
-              ...current.story,
+            value: {
+              ...current.value,
               arcs: next,
-              scenes: readingOrder(next, current.story.chapters, current.story.scenes),
+              scenes: readingOrder(next, current.value.chapters, current.value.scenes),
             },
           }
         : current,
@@ -59,10 +59,10 @@ export function storyPatches({ setState }: Pick<ReturnType<typeof useStoryState>
       current.kind === 'ready'
         ? {
             ...current,
-            story: {
-              ...current.story,
-              scenes: readingOrder(current.story.arcs, current.story.chapters, [
-                ...current.story.scenes.filter((scene) => scene.chapterId !== chapterId),
+            value: {
+              ...current.value,
+              scenes: readingOrder(current.value.arcs, current.value.chapters, [
+                ...current.value.scenes.filter((scene) => scene.chapterId !== chapterId),
                 ...replacement,
               ]),
             },
@@ -76,10 +76,10 @@ export function storyPatches({ setState }: Pick<ReturnType<typeof useStoryState>
       current.kind === 'ready'
         ? {
             ...current,
-            story: {
-              ...current.story,
+            value: {
+              ...current.value,
               chapters: nextChapters,
-              scenes: readingOrder(current.story.arcs, nextChapters, current.story.scenes),
+              scenes: readingOrder(current.value.arcs, nextChapters, current.value.scenes),
             },
           }
         : current,

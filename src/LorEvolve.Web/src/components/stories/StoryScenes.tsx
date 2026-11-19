@@ -12,6 +12,7 @@ import type { useStoryState } from '../../stories/useStoryState'
 import { StorySceneCards } from './StorySceneCards'
 import { StoryChapterSections, type StoryChapterSectionsProps } from './StoryChapterSections'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /** The Scenes view: the toolbar, the story's scenes or chapters, and each arc with its chapters. */
 export function StoryScenes(
@@ -91,9 +92,9 @@ export function StoryScenes(
 
       {isEmpty ? null : (
         <div className="story__toolbar">
-          <p className="chron__aside story__aside">
+          <QuietNote className="chron__aside story__aside">
             {hasStructure ? t('stories.page.asideStructured') : t('stories.page.aside')}
-          </p>
+          </QuietNote>
           {access.editContent ? (
             <div className="story__toolbaractions">
               {newArc}
@@ -143,11 +144,11 @@ export function StoryScenes(
             <h3 className="storygroup__title" id="unchaptered-heading">
               {unchapteredLabel()}
             </h3>
-            <p className="storygroup__hint">
+            <QuietNote className="storygroup__hint">
               {t('stories.page.unchapteredHint', {
                 scenes: sceneCountLabel(unchaptered.length),
               })}
-            </p>
+            </QuietNote>
           </header>
           <ol className="scenes" data-testid="unchaptered-scenes">
             <StorySceneCards {...props} container={unchaptered} titleLevel={4} />

@@ -54,8 +54,6 @@
 
 .drawer__eyebrow {
   margin: 0 0 var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--muted);
 }
 
 .drawer__title {
@@ -70,9 +68,6 @@
 /* A line under the title saying where the thing being made will go: "Inside Runes". */
 .drawer__context {
   margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: var(--text-ui);
-  overflow-wrap: anywhere;
 }
 
 .drawer__body {

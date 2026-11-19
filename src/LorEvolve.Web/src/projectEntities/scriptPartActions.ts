@@ -2,6 +2,7 @@ import { t } from '../i18n'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { NODE_CHANGED, saveNode, scriptOf } from './structure'
 import type { useScriptPartState } from './useScriptPartState'
+import { errorText } from '../lib/errorText'
 
 export function scriptPartActions({
   projectId,
@@ -54,7 +55,7 @@ export function scriptPartActions({
       onSaved()
     } catch (error: unknown) {
       if (isChangedElsewhere(error, NODE_CHANGED)) setChanged(true)
-      else setFailure(error instanceof Error ? error.message : t('projects.structure.failed'))
+      else setFailure(errorText(error, t('projects.structure.failed')))
     } finally {
       setIsSaving(false)
     }

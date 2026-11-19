@@ -1,6 +1,6 @@
 import { useRouteError } from 'react-router-dom'
 import { useI18n } from '../i18n'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
 
 /** A screen's code that no longer exists on the server: the tab predates a deploy and asked for an old chunk. */
 function isStaleChunk(error: unknown) {
@@ -23,12 +23,11 @@ export function AppCrashed() {
   const stale = isStaleChunk(error)
   return (
     <main className="session-pending session-pending--unreachable">
-      <div className="notice notice--error" role="alert">
-        <p>{stale ? t('shell.app.crashed.stale') : t('shell.app.crashed.generic')}</p>
-        <Button tone="secondary" onClick={() => window.location.reload()}>
-          {t('shell.app.crashed.reload')}
-        </Button>
-      </div>
+      <LoadError
+        message={stale ? t('shell.app.crashed.stale') : t('shell.app.crashed.generic')}
+        onRetry={() => window.location.reload()}
+        retryLabel={t('shell.app.crashed.reload')}
+      />
     </main>
   )
 }

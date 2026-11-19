@@ -1,6 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { EntityType } from '../../lore/typeDefinitions'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
 
 /** Above the Lore types: a failure with Retry when the list could not be read, and the status line. */
 export function TypesNotices({
@@ -20,20 +20,19 @@ export function TypesNotices({
   return (
     <>
       {message ? (
-        <div className="notice notice--error" role="alert" data-testid="types-error">
-          <p>{message}</p>
-          {!types ? (
-            <Button
-              tone="secondary"
-              onClick={() => {
-                setMessage(null)
-                refresh().catch(() => undefined)
-              }}
-            >
-              {t('entityTypes.page.retry')}
-            </Button>
-          ) : null}
-        </div>
+        <LoadError
+          message={message}
+          onRetry={
+            types
+              ? undefined
+              : () => {
+                  setMessage(null)
+                  refresh().catch(() => undefined)
+                }
+          }
+          retryLabel={t('entityTypes.page.retry')}
+          testId="types-error"
+        />
       ) : null}
 
       <p className="types__notice" role="status" data-testid="types-notice">

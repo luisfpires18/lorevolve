@@ -5,6 +5,7 @@ import { findNames, linkNames, type NameSource } from '../lore/mentions'
 import type { SceneLoreReference } from '../stories/types'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 /**
  * "Link names from this scene's Lore" (ADR 0058 amendment): finds where the prose names an entry of the scene's Lore in
@@ -86,7 +87,7 @@ export function NameLinker({
         </p>
       ) : (
         <>
-          <p className="recovery__hint">{t('lore.nameLinker.hint')}</p>
+          <QuietNote className="recovery__hint">{t('lore.nameLinker.hint')}</QuietNote>
           <ul className="namelinker__list">
             {rows.map((row) => (
               <li key={key(row)}>

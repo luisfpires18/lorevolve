@@ -3,7 +3,8 @@ import { EmptyState } from '../EmptyState'
 import { Quoted } from '../NameList'
 import type { LoadState } from '../../ideas/boardDraft'
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** What a board's editor shows instead of the board: loading, missing, in another universe, or failed to open. */
 export function BoardUnavailable({
@@ -19,11 +20,7 @@ export function BoardUnavailable({
 }) {
   const { t, tx } = useI18n()
   if (load.kind === 'loading') {
-    return (
-      <p className="notice" role="status" data-testid="board-loading">
-        {t('ideas.board.loading')}
-      </p>
-    )
+    return <LoadingNote testId="board-loading">{t('ideas.board.loading')}</LoadingNote>
   }
 
   if (load.kind === 'missing') {
@@ -54,12 +51,12 @@ export function BoardUnavailable({
 
   if (load.kind === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="board-load-error">
-        <p>{load.message}</p>
-        <Button tone="secondary" onClick={reread}>
-          {t('ideas.board.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={load.message}
+        onRetry={reread}
+        retryLabel={t('ideas.board.retry')}
+        testId="board-load-error"
+      />
     )
   }
 }

@@ -11,6 +11,7 @@ import { TypeDialogIdentity } from './TypeDialogIdentity'
 import { TypeDialogPlace } from './TypeDialogPlace'
 import { TypeDialogBehaviour } from './TypeDialogBehaviour'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 /** What the drawer reads of the type it edits: a lore type, or a project's own type (#144). */
 export type DialogType = TreeType & { icon: string | null; familyTreeEligible?: boolean }
@@ -155,9 +156,9 @@ export function TypeDialog({
       // Where a new type is going, in a line, while it is going inside one. The Parent type select is what decides.
       context={
         !type && chosenParent ? (
-          <p className="drawer__context" data-testid="type-dialog-context">
+          <QuietNote size="ui" wrap className="drawer__context" testId="type-dialog-context">
             {tx('entityTypes.page.dialog.inside', { name: <bdi>{chosenParent.name}</bdi> })}
-          </p>
+          </QuietNote>
         ) : null
       }
       isDirty={isDirty}

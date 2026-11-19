@@ -14,6 +14,7 @@ import {
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
+import { LoadingNote } from './LoadingNote'
 
 /** What to type, per kind, in the words the rest of LorEvolve uses for it. Message keys, read in render. */
 const PLACEHOLDERS = {
@@ -159,9 +160,7 @@ export function IdeaReferencePicker({
 
       <div id={resultsId} aria-live="polite">
         {results.kind === 'searching' ? (
-          <p className="notice ideapicker__notice" role="status">
-            {t('ideas.picker.looking')}
-          </p>
+          <LoadingNote className="ideapicker__notice">{t('ideas.picker.looking')}</LoadingNote>
         ) : null}
         {results.kind === 'error' ? (
           <p className="form__message" role="alert">

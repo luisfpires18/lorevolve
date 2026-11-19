@@ -4,6 +4,7 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { CinemaPhase, CinemaSaga } from '../../projects/sagas'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 /** What the edit drawer is for: a new or existing saga, or a new or existing phase of one saga. */
 export type Editing = { saga: CinemaSaga | null; phase: CinemaPhase | null; forPhase: boolean }
@@ -32,7 +33,7 @@ export function GroupDrawer({
     setError(null)
     onSave({ name: name.trim(), summary: summary.trim() || null }).catch((failure: unknown) => {
       setSaving(false)
-      setError(failure instanceof Error ? failure.message : t('projects.sagas.failed'))
+      setError(errorText(failure, t('projects.sagas.failed')))
     })
   }
 

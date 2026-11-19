@@ -10,6 +10,7 @@ import {
 import { ApiError } from '../../lib/api'
 import { useI18n } from '../../i18n'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /**
  * What a capture creates from where it was typed: no universe from all ideas, the universe from a universe's, and the
@@ -136,9 +137,9 @@ export function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptu
         )}
       </Field>
       {/* Always in the page, so what is said into it is announced. */}
-      <p className="ideacapture__status" role="status" data-testid="idea-capture-status">
+      <QuietNote className="ideacapture__status" testId="idea-capture-status" role="status">
         {said}
-      </p>
+      </QuietNote>
     </form>
   )
 }

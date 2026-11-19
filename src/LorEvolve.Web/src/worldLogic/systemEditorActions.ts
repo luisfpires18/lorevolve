@@ -16,8 +16,7 @@ export function systemEditorActions({
   setConflict,
   setFailure,
   setFieldErrors,
-  setLoad,
-  setReads,
+  retry,
   saving,
   setSaving,
   name,
@@ -46,8 +45,7 @@ export function systemEditorActions({
     setConflict(false)
     setFailure(null)
     setFieldErrors({})
-    setLoad({ kind: 'loading' })
-    setReads((count) => count + 1)
+    retry()
   }
 
   async function save() {

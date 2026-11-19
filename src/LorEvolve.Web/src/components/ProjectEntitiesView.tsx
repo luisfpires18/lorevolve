@@ -14,6 +14,7 @@ import { ProjectSchema } from './ProjectSchema'
 import { t, tx, useI18n } from '../i18n'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
+import { errorText } from '../lib/errorText'
 
 /**
  * A project's Entities view (#196): its types as cards, one type's entries a page at a time, and the type editor as an
@@ -146,7 +147,7 @@ function TypeCards({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setTypes([])
-        setFailed(error instanceof Error ? error.message : t('projects.schema.failed'))
+        setFailed(errorText(error, t('projects.schema.failed')))
       })
     return () => controller.abort()
   }, [projectId, reloadKey])

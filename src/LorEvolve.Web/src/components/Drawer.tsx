@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { KeyboardEvent, MouseEvent, ReactNode, RefObject, SyntheticEvent } from 'react'
 import { useDrawerGuard } from '../lib/drawerGuard'
+import { QuietNote } from './QuietNote'
 
 type DrawerProps = {
   /** data-testid on the dialog. */
@@ -10,7 +11,7 @@ type DrawerProps = {
   title: ReactNode
   /** Drawn only when truthy. */
   eyebrow?: ReactNode
-  /** After the title inside the header; the caller writes its own `p.drawer__context`. */
+  /** After the title inside the header; the caller passes a `QuietNote` with `className="drawer__context"`. */
   context?: ReactNode
   /** Extra dialog classes, after `drawer`. */
   className?: string
@@ -90,7 +91,11 @@ export function Drawer({
 
   const header = (
     <header className="drawer__head">
-      {eyebrow ? <p className="drawer__eyebrow">{eyebrow}</p> : null}
+      {eyebrow ? (
+        <QuietNote className="drawer__eyebrow" size="xs">
+          {eyebrow}
+        </QuietNote>
+      ) : null}
       <h2 className="drawer__title" id={titleId}>
         {title}
       </h2>

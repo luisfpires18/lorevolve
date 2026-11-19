@@ -8,6 +8,7 @@ import { t, useI18n } from '../i18n'
 import { lacksSummary, shownOf, wordsOf, type Shown } from '../publishing/contentPublicationWords'
 import { contentPublicationChange } from '../publishing/contentPublicationChange'
 import { ContentPublicationPanel } from './ContentPublicationPanel'
+import { Announce } from './Announce'
 
 /**
  * One lore entry's or story's publication (ADR 0036, Tasks 010-011): its state as a pill, which opens what that state
@@ -205,13 +206,13 @@ export function ContentPublication({
           }}
         />
       ) : null}
-      <span className="visually-hidden" role="status" data-testid={`${kind}-publication-announcer`}>
+      <Announce testId={`${kind}-publication-announcer`} inline>
         {announcement ? (
           <>
             <bdi>{name}</bdi>: {announcement}
           </>
         ) : null}
-      </span>
+      </Announce>
     </div>
   )
 }

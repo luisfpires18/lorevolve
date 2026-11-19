@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import { t } from '../i18n'
 import { ApiError } from '../lib/api'
+import { errorText } from '../lib/errorText'
 import { getContentPublication } from '../publishing/api'
 import { getStory } from './api'
 import type { useUniverseAccess } from '../universes/access'
@@ -40,7 +42,7 @@ export function useStoryLoad({
 
     getStory(universe.id, storyId, controller.signal)
       .then((story) => {
-        setState({ kind: 'ready', story })
+        setState({ kind: 'ready', value: story })
         setStale(false)
       })
       .catch((error: unknown) => {
@@ -52,7 +54,8 @@ export function useStoryLoad({
 
         // A story already on screen stays there, marked as possibly out of date, rather than being taken away - and
         // with it any prose being written beside it. Only a first read that fails has nothing to show.
-        setState((current) => (current.kind === 'ready' ? current : { kind: 'error' }))
+        const message = errorText(error, t('stories.page.loadError'))
+        setState((current) => (current.kind === 'ready' ? current : { kind: 'error', message }))
         setStale(true)
       })
 

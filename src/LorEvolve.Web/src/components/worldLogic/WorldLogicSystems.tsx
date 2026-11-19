@@ -7,6 +7,8 @@ import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { SystemRow } from './SystemRow'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Systems tab: one row per System, with its empty states and its pager. */
 export function WorldLogicSystems({
@@ -23,29 +25,27 @@ export function WorldLogicSystems({
   return (
     <TabPanel idPrefix="world-logic" id="systems" tab={tab}>
       {systems.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.worldLogic.systems.loading')}
-        </p>
+        <LoadingNote>{t('canon.worldLogic.systems.loading')}</LoadingNote>
       ) : null}
 
       {systems.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-logic-systems-error">
-          <p>{t('canon.worldLogic.systems.readFailed')}</p>
-          <Button tone="secondary" onClick={retry}>
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.worldLogic.systems.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-logic-systems-error"
+        />
       ) : null}
 
-      {systems.kind === 'ready' && systems.page.items.length > 0 ? (
+      {systems.kind === 'ready' && systems.value.items.length > 0 ? (
         <ul className="rulelist" data-testid="world-logic-system-list">
-          {systems.page.items.map((system) => (
+          {systems.value.items.map((system) => (
             <SystemRow key={system.id} universeId={universe.id} system={system} />
           ))}
         </ul>
       ) : null}
 
-      {systems.kind === 'ready' && systems.page.totalCount === 0 ? (
+      {systems.kind === 'ready' && systems.value.totalCount === 0 ? (
         <EmptyState
           testId="world-logic-systems-empty"
           title={t('canon.worldLogic.systems.empty.title')}
@@ -54,8 +54,8 @@ export function WorldLogicSystems({
       ) : null}
 
       {systems.kind === 'ready' &&
-      systems.page.items.length === 0 &&
-      systems.page.totalCount > 0 ? (
+      systems.value.items.length === 0 &&
+      systems.value.totalCount > 0 ? (
         <EmptyState
           testId="world-logic-systems-page-empty"
           title={t('canon.rules.pageEmpty.title')}
@@ -70,8 +70,8 @@ export function WorldLogicSystems({
       {systems.kind === 'ready' ? (
         <Pager
           testId="world-logic-systems-pager"
-          page={systems.page.page}
-          totalPages={systems.page.totalPages}
+          page={systems.value.page}
+          totalPages={systems.value.totalPages}
           onGo={(next) => goTo('systemsPage', next)}
         />
       ) : null}

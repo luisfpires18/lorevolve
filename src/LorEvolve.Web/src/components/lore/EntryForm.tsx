@@ -12,6 +12,7 @@ import type { SectionGroup } from '../../lore/fieldSections'
 import type { QuickCreateOptions } from '../EntityPicker'
 import { CopyPanel } from './EntryCopyPanel'
 import { EntryFieldInput } from './EntryFieldInput'
+import { QuietNote } from '../QuietNote'
 
 export type EntryFormProps = {
   universe: { id: string }
@@ -162,11 +163,11 @@ export function EntryForm(props: EntryFormProps) {
       ) : null}
 
       {isNew ? (
-        <p className="entryform__note">
+        <QuietNote className="entryform__note" size="ui">
           {copyArticle && source?.article
             ? t('entity.page.form.noteCopied')
             : t('entity.page.form.noteArticle')}
-        </p>
+        </QuietNote>
       ) : null}
     </div>
   )

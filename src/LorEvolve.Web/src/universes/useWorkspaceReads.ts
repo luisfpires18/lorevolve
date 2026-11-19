@@ -7,6 +7,7 @@ import { getUniverse } from './api'
 import { t } from '../i18n'
 import { preloadSections } from '../screens'
 import type { useWorkspaceState } from './useWorkspaceState'
+import { errorText } from '../lib/errorText'
 
 /** The universe, its types and its projects read and read again, and the sections' code fetched once it is open. */
 export function useWorkspaceReads({
@@ -24,7 +25,9 @@ export function useWorkspaceReads({
     (signal?: AbortSignal) => {
       if (!id) return
       Promise.all([getUniverse(id, signal), getChronology(id, signal)])
-        .then(([universe, chronology]) => setState({ kind: 'ready', universe, chronology }))
+        .then(([universe, chronology]) =>
+          setState({ kind: 'ready', value: { universe, chronology } }),
+        )
         .catch((error: unknown) => {
           if (signal?.aborted) return
           // The API answers 404 both for a missing universe and for someone else's.
@@ -34,7 +37,7 @@ export function useWorkspaceReads({
               ? { kind: 'missing' }
               : {
                   kind: 'error',
-                  message: error instanceof Error ? error.message : t('workspace.missing.failed'),
+                  message: errorText(error, t('workspace.missing.failed')),
                 },
           )
         })

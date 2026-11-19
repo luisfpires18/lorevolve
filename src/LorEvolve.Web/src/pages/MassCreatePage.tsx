@@ -13,9 +13,10 @@ import { MassCreateDefaults } from '../components/lore/MassCreateDefaults'
 import { MassCreatePaste } from '../components/lore/MassCreatePaste'
 import { MassCreateReview } from '../components/lore/MassCreateReview'
 import { MassCreateBar } from '../components/lore/MassCreateBar'
-import { Button } from '../components/Button'
-
-type Load = { kind: 'loading' } | { kind: 'ready'; types: EntityType[] } | { kind: 'error' }
+import { LoadError } from '../components/LoadError'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
+import type { Load } from '../lib/useAsyncRead'
 
 /** What Lore is told after a mass create, so it can say how many entries arrived. */
 export interface MassCreatedState {
@@ -41,13 +42,13 @@ export default function MassCreatePage() {
   const lorePath = `/app/universes/${universe.id}/lore`
 
   // The universe's types, read with it.
-  const load: Load =
+  const load: Load<EntityType[]> =
     typesRead === 'failed'
-      ? { kind: 'error' }
+      ? { kind: 'error', message: t('lore.massCreate.typesFailed') }
       : typesRead
-        ? { kind: 'ready', types: typesRead }
+        ? { kind: 'ready', value: typesRead }
         : { kind: 'loading' }
-  const types = load.kind === 'ready' ? load.types : NO_TYPES
+  const types = load.kind === 'ready' ? load.value : NO_TYPES
   const typesById = useMemo(() => new Map(types.map((type) => [type.id, type])), [types])
   // One exact type a row: every type in the hierarchy's order, named by its path.
   const choices = useMemo(() => typeChoices(types), [types])
@@ -86,23 +87,17 @@ export default function MassCreatePage() {
       />
 
       {load.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('lore.massCreate.readingTypes')}
-        </p>
+        <LoadingNote>{t('lore.massCreate.readingTypes')}</LoadingNote>
       ) : null}
 
       {load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{t('lore.massCreate.typesFailed')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              refreshTypes().catch(() => undefined)
-            }}
-          >
-            {t('lore.massCreate.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('lore.massCreate.typesFailed')}
+          onRetry={() => {
+            refreshTypes().catch(() => undefined)
+          }}
+          retryLabel={t('lore.massCreate.retry')}
+        />
       ) : null}
 
       {load.kind === 'ready' && eligible.length === 0 ? (
@@ -141,9 +136,7 @@ export default function MassCreatePage() {
         </>
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="mass-announcement">
-        {announcement}
-      </p>
+      <Announce testId="mass-announcement">{announcement}</Announce>
     </article>
   )
 }

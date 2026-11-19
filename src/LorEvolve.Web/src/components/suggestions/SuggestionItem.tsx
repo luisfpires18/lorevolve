@@ -6,6 +6,7 @@ import { SuggestionStatus, type Suggestion } from '../../suggestions/api'
 import type { useUniverseAccess } from '../../universes/access'
 import { CHANGED_SINCE } from '../../suggestions/suggestionList'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** One suggestion: who and when, its changed fields, how it was decided, and Accept and Reject while it is open. */
 export function SuggestionItem<T>({
@@ -70,7 +71,7 @@ export function SuggestionItem<T>({
       />
 
       {isOpen ? null : (
-        <p className="reviewthread__resolved" data-testid="suggestion-resolution">
+        <QuietNote className="reviewthread__resolved" testId="suggestion-resolution">
           {tx(
             state === 'accepted'
               ? 'review.suggestions.acceptedBy'
@@ -85,7 +86,7 @@ export function SuggestionItem<T>({
             },
           )}
           {suggestion.resolvedAt ? <> · {formatDateTime(suggestion.resolvedAt)}</> : null}
-        </p>
+        </QuietNote>
       )}
 
       {isOpen && access.resolveSuggestions ? (

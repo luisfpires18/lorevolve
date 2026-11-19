@@ -1,6 +1,7 @@
 import { MapPin as MapPinIcon } from 'lucide-react'
 import type { MapDetail } from '../../maps/types'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 export function MapPinList({
   map,
@@ -22,9 +23,9 @@ export function MapPinList({
         {map.pins.length > 0 ? <span className="mapscreen__count">({map.pins.length})</span> : null}
       </h2>
       {map.pins.length === 0 ? (
-        <p className="mapscreen__empty" data-testid="map-pins-empty">
+        <QuietNote className="mapscreen__empty" testId="map-pins-empty">
           {canEdit ? t('places.mapPage.noPinsEditor') : t('places.mapPage.noPins')}
-        </p>
+        </QuietNote>
       ) : (
         <ul className="pinlist" data-testid="map-pin-list">
           {map.pins.map((pin) => (

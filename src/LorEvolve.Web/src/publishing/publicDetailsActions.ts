@@ -5,6 +5,7 @@ import { savePublication } from './api'
 import type { GenreValue, PublicationDetails, PublicationState } from './types'
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { attributionOf, detailsOf, type Attribution } from './publicDetailsDraft'
+import { errorText } from '../lib/errorText'
 
 /** The public details form's handlers: ticking a genre, changing the attribution, and saving. */
 export function publicDetailsActions({
@@ -86,7 +87,7 @@ export function publicDetailsActions({
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
         setFieldErrors(error.fieldErrors)
       } else {
-        setMessage(error instanceof Error ? error.message : t('universe.publicDetails.saveFailed'))
+        setMessage(errorText(error, t('universe.publicDetails.saveFailed')))
       }
     } finally {
       setIsSaving(false)

@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
-import type { UsageLoad } from '../lib/useUsageLoad'
-import { Button } from './Button'
+import type { Load } from '../lib/useAsyncRead'
+import { LoadError } from './LoadError'
 
 /**
  * One allowance in the Usage section: its name, then its numbers once read, or the loading and failed states in its own
@@ -16,7 +16,7 @@ export function UsageItem<T>({
 }: {
   name: string
   testId: string
-  load: UsageLoad<T>
+  load: Load<T>
   onRetry: () => void
   children: (value: T, labelId: string) => ReactNode
 }) {
@@ -36,16 +36,13 @@ export function UsageItem<T>({
       ) : null}
 
       {load.kind === 'error' ? (
-        <div
-          className="notice notice--error usage__error"
-          role="alert"
-          data-testid={`${testId}-error`}
-        >
-          <p>{t('account.usage.failed')}</p>
-          <Button tone="secondary" onClick={onRetry}>
-            {t('account.usage.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('account.usage.failed')}
+          onRetry={onRetry}
+          retryLabel={t('account.usage.retry')}
+          testId={`${testId}-error`}
+          className="usage__error"
+        />
       ) : null}
 
       {load.kind === 'ready' ? children(load.value, labelId) : null}

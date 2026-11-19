@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useI18n } from '../i18n'
 import {
   getCollaborators,
@@ -9,10 +9,10 @@ import { CollaboratorInvitations } from './universes/CollaboratorInvitations'
 import { CollaboratorMembers } from './universes/CollaboratorMembers'
 import { CopyLink } from './universes/CopyLink'
 import { InviteForm } from './universes/InviteForm'
-import { Button } from './Button'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; data: Collaborators } | { kind: 'error'; message: string }
+import { LoadError } from './LoadError'
+import { Announce } from './Announce'
+import { LoadingNote } from './LoadingNote'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * Settings → Collaborators (ADR 0041 amendment): invite someone by email, and manage who works here. The owner's alone -
@@ -24,41 +24,32 @@ type LoadState =
  */
 export function CollaboratorsPanel({ universeId }: { universeId: string }) {
   const { t, tx } = useI18n()
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reloadKey, setReloadKey] = useState(0)
   const [announcement, setAnnouncement] = useState('')
   const [created, setCreated] = useState<PendingInvitation | null>(null)
   const [highlight, setHighlight] = useState<string | null>(null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getCollaborators(universeId, controller.signal)
-      .then((data) => setState({ kind: 'ready', data }))
-      .catch((problem: unknown) => {
-        if (controller.signal.aborted) return
-        setState({
-          kind: 'error',
-          message: problem instanceof Error ? problem.message : t('universe.collab.loadFailed'),
-        })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, reloadKey, t])
+  const read = useCallback(
+    (signal: AbortSignal) => getCollaborators(universeId, signal),
+    [universeId],
+  )
+  const {
+    load: state,
+    setLoad: setState,
+    retry,
+    refresh,
+  } = useAsyncRead(read, { failed: t('universe.collab.loadFailed') })
 
   function update(change: (data: Collaborators) => Collaborators) {
     setState((current) =>
-      current.kind === 'ready' ? { kind: 'ready', data: change(current.data) } : current,
+      current.kind === 'ready' ? { kind: 'ready', value: change(current.value) } : current,
     )
   }
 
-  const data = state.kind === 'ready' ? state.data : null
+  const data = state.kind === 'ready' ? state.value : null
 
   return (
     <div className="collab" data-testid="collaborators-panel">
-      <p className="visually-hidden" role="status" data-testid="collaborators-announcer">
-        {announcement}
-      </p>
+      <Announce testId="collaborators-announcer">{announcement}</Announce>
 
       <section className="settings__section" aria-labelledby="collab-invite-heading">
         <h2 className="settings__heading" id="collab-invite-heading">
@@ -75,7 +66,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
           onPending={(invitationId) => {
             setCreated(null)
             setHighlight(invitationId)
-            setReloadKey((key) => key + 1)
+            refresh()
           }}
         />
         {created ? (
@@ -97,19 +88,14 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
         ) : null}
       </section>
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('universe.collab.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('universe.collab.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <Button tone="secondary" onClick={() => setReloadKey((key) => key + 1)}>
-            {t('universe.collab.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={retry}
+          retryLabel={t('universe.collab.retry')}
+        />
       ) : null}
 
       {data ? (

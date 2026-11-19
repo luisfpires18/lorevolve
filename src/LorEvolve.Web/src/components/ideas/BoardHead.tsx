@@ -6,6 +6,7 @@ import { ActionMenu } from '../ActionMenu'
 import { formatDateTime } from '../../lib/dates'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /** A board editor's head: the way back, the heading with its actions menu, and the lede. */
 export function BoardHead({
@@ -50,7 +51,7 @@ export function BoardHead({
           </ActionMenu>
         ) : null}
       </div>
-      <p className="idea__lede">
+      <QuietNote className="idea__lede">
         {t('ideas.board.lede')}
         {!isNew && stored.updatedAt ? (
           <>
@@ -60,7 +61,7 @@ export function BoardHead({
             })}
           </>
         ) : null}
-      </p>
+      </QuietNote>
     </header>
   )
 }

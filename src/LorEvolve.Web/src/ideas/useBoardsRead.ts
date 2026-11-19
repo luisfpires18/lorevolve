@@ -48,7 +48,7 @@ export function useBoardsRead({
       },
       controller.signal,
     )
-      .then((result) => setState({ kind: 'ready', page: result }))
+      .then((result) => setState({ kind: 'ready', value: result }))
       .catch(() => {
         if (!controller.signal.aborted)
           setState({ kind: 'error', message: t('ideas.boards.loadFailed') })

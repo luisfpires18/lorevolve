@@ -1,11 +1,9 @@
 import type { Editor } from '@tiptap/react'
 import { useId, useRef, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
+import type { Load } from '../lib/useAsyncRead'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import type { Scene, SceneManuscript } from './types'
-
-export type LoadState =
-  { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
 
 /** The manuscript as the API last confirmed it: what "unsaved" is measured against, and what the next save names. */
 export interface Stored {
@@ -37,7 +35,7 @@ export function useManuscriptState({ universeId, scene }: { universeId: string; 
     user ? { accountId: user.id, universeId, kind: 'manuscript', contentId: sceneId } : null,
   )
 
-  const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
+  const [load, setLoad] = useState<Load<Stored>>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null, version: 0 })
   const [draft, setDraft] = useState('')

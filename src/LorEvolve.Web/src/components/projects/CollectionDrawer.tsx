@@ -5,6 +5,7 @@ import { t } from '../../i18n'
 import type { ComicCollection, ComicCollectionKind } from '../../projects/comicCollections'
 import { WORDS } from '../../projects/comicCollectionWords'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 /** What the edit drawer is for: a new collection of one kind, or an existing one. */
 export type Editing = { kind: ComicCollectionKind; collection: ComicCollection | null }
@@ -30,7 +31,7 @@ export function CollectionDrawer({
     setError(null)
     onSave({ name: name.trim(), summary: summary.trim() || null }).catch((failure: unknown) => {
       setSaving(false)
-      setError(failure instanceof Error ? failure.message : t('projects.comics.failed'))
+      setError(errorText(failure, t('projects.comics.failed')))
     })
   }
 

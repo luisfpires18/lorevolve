@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * Held while a whole screen's code is fetched. The same plate the session probe holds behind
@@ -13,11 +14,7 @@ function ScreenPending() {
 /** The same hold inside a frame that stays put around it: a universe's rail, sidebar and search, or the workspace bar. */
 function SectionPending() {
   const { t } = useI18n()
-  return (
-    <p className="notice" role="status">
-      {t('shell.app.sectionPending')}
-    </p>
-  )
+  return <LoadingNote>{t('shell.app.sectionPending')}</LoadingNote>
 }
 
 /**

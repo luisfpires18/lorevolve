@@ -10,6 +10,8 @@ import { t, useI18n } from '../i18n'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * What was read, and what it was read for. Keeping the request's own key beside the result is what lets the screen say
@@ -54,6 +56,7 @@ export default function ProjectsPage({
   const universeId = inUniverse ? workspace?.universe.id : undefined
   const requested = universeId ?? 'all'
   const [state, setState] = useState<LoadState | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
   useDocumentTitle(heading)
@@ -67,14 +70,23 @@ export default function ProjectsPage({
         if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })
       })
     return () => controller.abort()
-  }, [universeId, requested])
+  }, [universeId, requested, attempt])
 
   if (state === null || state.for !== requested) {
-    return <p className="projects__lede">{t('projects.list.loading')}</p>
+    return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
   }
 
   if (state.kind === 'failed') {
-    return <EmptyState title={t('projects.list.failed')} testId="projects-failed" />
+    return (
+      <LoadError
+        message={t('projects.list.failed')}
+        onRetry={() => {
+          setState(null)
+          setAttempt((current) => current + 1)
+        }}
+        testId="projects-failed"
+      />
+    )
   }
 
   const shown = kinds

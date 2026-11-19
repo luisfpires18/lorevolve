@@ -9,6 +9,8 @@ import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { Button } from '../Button'
 import { NewButton } from '../NewButton'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -28,24 +30,20 @@ export function WorldLogicRules({
 
   return (
     <TabPanel idPrefix="world-logic" id="rules" tab={tab}>
-      {rules.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rules.loading')}
-        </p>
-      ) : null}
+      {rules.kind === 'loading' ? <LoadingNote>{t('canon.rules.loading')}</LoadingNote> : null}
 
       {rules.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-logic-rules-error">
-          <p>{t('canon.rules.readFailed')}</p>
-          <Button tone="secondary" onClick={retry}>
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.rules.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-logic-rules-error"
+        />
       ) : null}
 
-      {rules.kind === 'ready' && rules.page.items.length > 0 ? (
+      {rules.kind === 'ready' && rules.value.items.length > 0 ? (
         <ul className="rulelist" data-testid="world-logic-rule-list">
-          {rules.page.items.map((rule) => (
+          {rules.value.items.map((rule) => (
             <li
               className={rule.source === 'worldRule' ? 'rulerow rowlink' : 'rulerow'}
               key={`${rule.source}-${rule.id}`}
@@ -99,7 +97,7 @@ export function WorldLogicRules({
         </ul>
       ) : null}
 
-      {rules.kind === 'ready' && rules.page.totalCount === 0 ? (
+      {rules.kind === 'ready' && rules.value.totalCount === 0 ? (
         <EmptyState
           testId="world-logic-rules-empty"
           title={t('canon.rules.empty.title')}
@@ -112,7 +110,7 @@ export function WorldLogicRules({
         />
       ) : null}
 
-      {rules.kind === 'ready' && rules.page.items.length === 0 && rules.page.totalCount > 0 ? (
+      {rules.kind === 'ready' && rules.value.items.length === 0 && rules.value.totalCount > 0 ? (
         <EmptyState
           testId="world-logic-rules-page-empty"
           title={t('canon.rules.pageEmpty.title')}
@@ -127,8 +125,8 @@ export function WorldLogicRules({
       {rules.kind === 'ready' ? (
         <Pager
           testId="world-logic-rules-pager"
-          page={rules.page.page}
-          totalPages={rules.page.totalPages}
+          page={rules.value.page}
+          totalPages={rules.value.totalPages}
           onGo={(next) => goTo('rulesPage', next)}
         />
       ) : null}

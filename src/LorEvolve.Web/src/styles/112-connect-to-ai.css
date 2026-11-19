@@ -25,9 +25,6 @@
 .connect__status,
 .connect__manage {
   margin: var(--space-2) 0 0;
-  color: var(--muted);
-  font-size: var(--text-ui);
-  overflow-wrap: anywhere;
 }
 
 .connect__status:empty {
@@ -99,15 +96,10 @@
 
 .consent-card__intro {
   margin: var(--space-1) 0 var(--space-5);
-  color: var(--muted);
-  font-size: var(--text-ui);
 }
 
 .consent-card__footer {
   margin: var(--space-4) 0 0;
-  color: var(--muted);
-  font-size: var(--text-ui);
-  overflow-wrap: anywhere;
 }
 
 .consent {
@@ -212,8 +204,6 @@
 
 .connectedapps__empty {
   margin: var(--space-3) 0 0;
-  color: var(--muted);
-  font-size: var(--text-ui);
 }
 
 .connectedapps__row {

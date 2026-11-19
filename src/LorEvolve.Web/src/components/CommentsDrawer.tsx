@@ -12,6 +12,7 @@ import { commentsDrawerActions } from '../comments/commentsDrawerActions'
 import { CommentThreadItem } from './CommentThreadItem'
 import { CommentNewForm } from './CommentNewForm'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 const SUBJECT_WORDS = {
   entry: 'review.comments.subject.entry',
@@ -103,7 +104,11 @@ export function CommentsDrawer<T>({
       titleId={headingId}
       eyebrow={t('review.comments.drawer.eyebrow')}
       title={<bdi>{subjectName}</bdi>}
-      context={<p className="drawer__context">{t(SUBJECT_WORDS[kind])}</p>}
+      context={
+        <QuietNote size="ui" wrap className="drawer__context">
+          {t(SUBJECT_WORDS[kind])}
+        </QuietNote>
+      }
       isDirty={isDirty}
       leaveMessage={t('review.comments.leave.title')}
       onClose={onClose}
@@ -139,23 +144,23 @@ export function CommentsDrawer<T>({
             post={post}
           />
         ) : (
-          <p className="history__quiet" data-testid="comments-read-only">
+          <QuietNote className="history__quiet" size="ui" testId="comments-read-only">
             {t('review.comments.readOnly')}
-          </p>
+          </QuietNote>
         )}
 
         {failed ? (
-          <p className="history__quiet" role="status">
+          <QuietNote className="history__quiet" size="ui" role="status">
             {t('review.comments.readFailed')}
-          </p>
+          </QuietNote>
         ) : threads === null ? (
-          <p className="history__quiet" role="status">
+          <QuietNote className="history__quiet" size="ui" role="status">
             {t('review.comments.opening')}
-          </p>
+          </QuietNote>
         ) : threads.length === 0 ? (
-          <p className="history__quiet" data-testid="comments-empty">
+          <QuietNote className="history__quiet" size="ui" testId="comments-empty">
             {t('review.comments.empty')}
-          </p>
+          </QuietNote>
         ) : (
           <>
             {open.length > 0 ? (

@@ -2,9 +2,10 @@ import { NO_CHECK, checkDraftFrom, sameCheck, type CheckDraft } from '../ruleVal
 import type { WorldRuleCheck, WorldRuleValidation } from '../ruleValidation/types'
 import type { WorldRuleDetail } from './types'
 import { numberFormat } from '../i18n/format'
+import type { Load } from '../lib/useAsyncRead'
 
-export type LoadState =
-  { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
+/** The editor's read of its rule; what it reads goes into the stored rule and the draft, so the ready value is empty. */
+export type LoadState = Load<null>
 
 /** What an author edits. */
 export interface Fields {

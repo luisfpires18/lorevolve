@@ -9,6 +9,8 @@ import type { useCanonConflicts } from '../../canon/useCanonConflicts'
 import type { canonActions } from '../../canon/canonActions'
 import { emptyLine, hint } from '../../canon/canonEmptyCopy'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Canon page's results: the last run, the error, loading and failed lines, the ledger, the empty state and the pager. */
 export function CanonResults({
@@ -62,19 +64,10 @@ export function CanonResults({
         </p>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.page.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('canon.page.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <Button tone="secondary" onClick={reload}>
-            {t('canon.page.retry')}
-          </Button>
-        </div>
+        <LoadError message={state.message} onRetry={reload} retryLabel={t('canon.page.retry')} />
       ) : null}
 
       {result && result.items.length > 0 ? (

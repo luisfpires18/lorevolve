@@ -48,7 +48,6 @@
 .chapter__meta {
   margin: 0.2rem 0 0;
   font-size: 0.8rem;
-  color: var(--muted);
 }
 
 .chapter__summary {
@@ -95,7 +94,6 @@
 .storygroup__hint {
   margin: 0;
   font-size: 0.8rem;
-  color: var(--muted);
 }
 
 .scenechron {

@@ -13,7 +13,9 @@ import { useIdeasFilters } from '../ideas/useIdeasFilters'
 import { useIdeasRead } from '../ideas/useIdeasRead'
 import { useIdeasState } from '../ideas/useIdeasState'
 import { useI18n } from '../i18n'
-import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
+import { OutcomeNotice } from './OutcomeNotice'
 
 /** What an idea's editor says it did before handing back to the list. */
 export interface IdeasListNotice {
@@ -66,7 +68,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
   useIdeasRead({ ...base, universe, show, storyId, projectId, view, search, page, t })
   const { restore, captured } = useIdeasActions({ ...base, tx, basePath, page, update })
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
   const isFiltered = search.trim() !== '' || (!universe && show !== '')
   const deleted = view === 'deleted'
 
@@ -87,19 +89,15 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       {deleted ? null : <QuickCapture scope={scope} onCaptured={captured} />}
 
       {created && !deleted ? (
-        <div className="notice ideas__notice" data-testid="ideas-created-notice">
-          <p role="status">
-            {tx('ideas.browser.created', { title: <Quoted text={created.title} /> })}
-          </p>
-        </div>
+        <OutcomeNotice className="ideas__notice" testId="ideas-created-notice">
+          {tx('ideas.browser.created', { title: <Quoted text={created.title} /> })}
+        </OutcomeNotice>
       ) : null}
 
       {notice && !deleted ? (
-        <div className="notice ideas__notice" data-testid="ideas-deleted-notice">
-          <p role="status">
-            {tx('ideas.browser.deletedNotice', { title: <Quoted text={notice.title} /> })}
-          </p>
-        </div>
+        <OutcomeNotice className="ideas__notice" testId="ideas-deleted-notice">
+          {tx('ideas.browser.deletedNotice', { title: <Quoted text={notice.title} /> })}
+        </OutcomeNotice>
       ) : null}
 
       <IdeasControls
@@ -127,25 +125,18 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
         </div>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('ideas.browser.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('ideas.browser.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="ideas-load-error">
-          <p>{state.message}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('ideas.browser.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((current) => current + 1)
+          }}
+          retryLabel={t('ideas.browser.retry')}
+          testId="ideas-load-error"
+        />
       ) : null}
 
       {result && result.items.length > 0 ? (

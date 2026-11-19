@@ -68,7 +68,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['mapscreen', '#248'],
   ['masscreate', '#248'],
   ['months--reading', '#248'],
-  ['muted', '#248'],
   ['namelist', '#248'],
   ['pauthor__worlds', '#248'],
   ['plore', '#248'],
@@ -120,7 +119,7 @@ const DIALOG_FILES = [
 
 // Font sizes written as a literal in src/styles/ instead of a --text-* token. Only goes down:
 // lower it when a screen's sizes move to tokens.
-const MAX_LITERAL_FONT_SIZES = 200
+const MAX_LITERAL_FONT_SIZES = 199
 
 const stylesheet = readdirSync(join(webRoot, 'src/styles'))
   .filter((file) => file.endsWith('.css'))

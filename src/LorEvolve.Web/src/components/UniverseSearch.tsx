@@ -5,6 +5,7 @@ import { useUniverseSearchState } from '../search/useUniverseSearchState'
 import { useUniverseSearchFetch } from '../search/useUniverseSearchFetch'
 import { universeSearchActions } from '../search/universeSearchActions'
 import { UniverseSearchList } from './search/UniverseSearchList'
+import { Announce } from './Announce'
 
 /**
  * The persistent search bar of a universe (ADR 0031): a combobox whose popup lists what the universe's recorded content
@@ -133,9 +134,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
       <p className="visually-hidden" id={hintId}>
         {t('lore.search.hint')}
       </p>
-      <p className="visually-hidden" role="status" data-testid="universe-search-announcer">
-        {announcement}
-      </p>
+      <Announce testId="universe-search-announcer">{announcement}</Announce>
 
       <UniverseSearchList
         isOpen={isOpen}

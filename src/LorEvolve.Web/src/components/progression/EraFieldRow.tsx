@@ -6,6 +6,7 @@ import { renderFact } from '../../lore/facts'
 import type { FieldValue } from '../../lore/types'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
 import type { FieldDraft, Mode } from '../../progression/eraDraft'
+import { QuietNote } from '../QuietNote'
 
 /** Looked up when drawn, never frozen at import, so a change of language shows. */
 function modeLabel(mode: Mode) {
@@ -63,9 +64,9 @@ export function EraFieldRow({
       </div>
 
       {field.mode === 'inherit' ? (
-        <p className="erafield__inherited">
+        <QuietNote className="erafield__inherited" wrap>
           {inherited ? renderFact(inherited, chronology) : t('time.eraForm.notSetOnMain')}
-        </p>
+        </QuietNote>
       ) : field.mode === 'set' ? (
         <FieldInput
           definition={definition}
@@ -77,7 +78,9 @@ export function EraFieldRow({
           onChange={(value) => onChange({ value })}
         />
       ) : (
-        <p className="erafield__inherited">{t('time.eraForm.leftEmpty')}</p>
+        <QuietNote className="erafield__inherited" wrap>
+          {t('time.eraForm.leftEmpty')}
+        </QuietNote>
       )}
 
       {error ? (

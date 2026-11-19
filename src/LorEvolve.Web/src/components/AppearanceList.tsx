@@ -4,6 +4,7 @@ import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
 import { AppearanceItem } from './lore/AppearanceItem'
 import { NewButton } from './NewButton'
+import { QuietNote } from './QuietNote'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -60,7 +61,7 @@ export function AppearanceList({
         ) : null}
       </div>
       {appearances.length === 0 ? (
-        <p className="muted">{t('progression.appearanceList.empty')}</p>
+        <QuietNote>{t('progression.appearanceList.empty')}</QuietNote>
       ) : (
         <ul className="progitems__list">
           {appearances.map((appearance, index) => (

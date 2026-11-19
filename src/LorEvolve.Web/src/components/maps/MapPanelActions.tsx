@@ -35,7 +35,7 @@ export function MapPanelActions({
             : [],
         )
       }}
-      onRemoved={() => setState({ kind: 'ready', map: { ...map, calibration: null } })}
+      onRemoved={() => setState({ kind: 'ready', value: { ...map, calibration: null } })}
     />
   )
 }

@@ -6,6 +6,7 @@ import { useTermManagerState } from '../ruleValidation/useTermManagerState'
 import { termManagerActions } from '../ruleValidation/termManagerActions'
 import { TermGroup } from './ruleValidation/TermGroup'
 import { NewTermForm } from './ruleValidation/NewTermForm'
+import { LoadingNote } from './LoadingNote'
 
 /**
  * The universe's event kinds and methods on the Types screen (ADR 0034): renamed here, deleted here once nothing names them, and
@@ -52,11 +53,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
         </p>
       ) : null}
 
-      {terms === null && !message ? (
-        <p className="notice" role="status">
-          {t('canon.terms.reading')}
-        </p>
-      ) : null}
+      {terms === null && !message ? <LoadingNote>{t('canon.terms.reading')}</LoadingNote> : null}
 
       {terms
         ? TERM_KIND_ORDER.map((kind) => (

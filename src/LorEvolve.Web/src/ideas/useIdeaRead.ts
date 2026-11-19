@@ -37,7 +37,7 @@ export function useIdeaRead({
         const next = storedFrom(idea)
         setStored(next)
         setDraft(fieldsOf(next))
-        setLoad({ kind: 'ready' })
+        setLoad({ kind: 'ready', value: null })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return

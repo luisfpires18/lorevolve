@@ -9,6 +9,8 @@ import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { FindingRow } from './FindingRow'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Integrity tab: the check and what it last said, one row per finding, the empty states and the pager. */
 export function WorldLogicIntegrity({
@@ -79,23 +81,21 @@ export function WorldLogicIntegrity({
       ) : null}
 
       {findings.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.worldLogic.integrity.loading')}
-        </p>
+        <LoadingNote>{t('canon.worldLogic.integrity.loading')}</LoadingNote>
       ) : null}
 
       {findings.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-logic-findings-error">
-          <p>{t('canon.worldLogic.integrity.readFailed')}</p>
-          <Button tone="secondary" onClick={retry}>
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.worldLogic.integrity.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-logic-findings-error"
+        />
       ) : null}
 
-      {findings.kind === 'ready' && findings.page.items.length > 0 ? (
+      {findings.kind === 'ready' && findings.value.items.length > 0 ? (
         <ul className="rulelist" data-testid="world-logic-finding-list">
-          {findings.page.items.map((finding) => (
+          {findings.value.items.map((finding) => (
             <FindingRow
               key={finding.id}
               universeId={universe.id}
@@ -107,7 +107,7 @@ export function WorldLogicIntegrity({
         </ul>
       ) : null}
 
-      {findings.kind === 'ready' && findings.page.totalCount === 0 ? (
+      {findings.kind === 'ready' && findings.value.totalCount === 0 ? (
         <EmptyState
           testId={sweep ? 'world-logic-integrity-passed' : 'world-logic-integrity-empty'}
           title={
@@ -129,8 +129,8 @@ export function WorldLogicIntegrity({
       ) : null}
 
       {findings.kind === 'ready' &&
-      findings.page.items.length === 0 &&
-      findings.page.totalCount > 0 ? (
+      findings.value.items.length === 0 &&
+      findings.value.totalCount > 0 ? (
         <EmptyState
           testId="world-logic-findings-page-empty"
           title={t('canon.rules.pageEmpty.title')}
@@ -145,8 +145,8 @@ export function WorldLogicIntegrity({
       {findings.kind === 'ready' ? (
         <Pager
           testId="world-logic-findings-pager"
-          page={findings.page.page}
-          totalPages={findings.page.totalPages}
+          page={findings.value.page}
+          totalPages={findings.value.totalPages}
           onGo={(next) => goTo('findingsPage', next)}
         />
       ) : null}

@@ -8,6 +8,7 @@ import { FieldInput } from './FieldInputs'
 import { useQuickCreate } from '../lore/useQuickCreate'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 export interface Props {
   universeId: string
@@ -181,9 +182,9 @@ export function QuickCreateDialog({
             {t('lore.quickCreate.noTypes')}
           </p>
         ) : eligible.length === 1 ? (
-          <p className="quickcreate__type" data-testid="quick-create-type">
+          <QuietNote className="quickcreate__type" size="ui" wrap testId="quick-create-type">
             {t('lore.quickCreate.typeFixed')} <bdi>{eligible[0].name}</bdi>
-          </p>
+          </QuietNote>
         ) : (
           <Field
             label={t('lore.quickCreate.typeLabel')}

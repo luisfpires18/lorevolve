@@ -6,8 +6,8 @@ import { deleteKnowledgeRecord, listKnowledge, type KnowledgeRecord } from '../k
 import type { Side } from '../knowledge/recordDraft'
 import { RecordList } from './knowledge/RecordList'
 import { RecordForm } from './knowledge/RecordForm'
-import { Button } from './Button'
 import { NewButton } from './NewButton'
+import { LoadError } from './LoadError'
 
 interface KnowledgeViewProps {
   universeId: string
@@ -110,12 +110,12 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
       ) : null}
 
       {failed ? (
-        <div className="notice notice--error" role="alert" data-testid="knowledge-load-error">
-          <p>{t('ai.knowledge.loadFailed')}</p>
-          <Button tone="secondary" onClick={reload}>
-            {t('ai.knowledge.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('ai.knowledge.loadFailed')}
+          onRetry={reload}
+          retryLabel={t('ai.knowledge.retry')}
+          testId="knowledge-load-error"
+        />
       ) : isLoading ? (
         <p className="relations__quiet" role="status">
           {t('ai.knowledge.reading')}

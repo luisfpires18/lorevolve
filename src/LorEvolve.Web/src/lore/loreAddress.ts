@@ -1,7 +1,8 @@
+import type { Load } from '../lib/useAsyncRead'
 import type { CanonStatusValue, EntityPage, EntitySort } from './types'
 
-export type LoadState =
-  { kind: 'idle' } | { kind: 'loading' } | { kind: 'ready'; page: EntityPage } | { kind: 'error' }
+/** The list's read, or `idle` when no type or group is chosen yet. */
+export type LoadState = Load<EntityPage> | { kind: 'idle' }
 
 export function readStatus(value: string | null): CanonStatusValue | null {
   return value === '0' || value === '1' || value === '2'

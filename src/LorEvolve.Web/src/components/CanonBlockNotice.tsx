@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { CanonSubjectKind, SUBJECT_KIND_LABELS } from '../canon/types'
 import type { CanonBlockingFinding, CanonBlockingSubject } from '../canon/types'
 import { useI18n } from '../i18n'
+import { QuietNote } from './QuietNote'
 
 interface Props {
   universeId: string
@@ -35,7 +36,7 @@ export function CanonBlockNotice({ universeId, findings, linkSubjects }: Props) 
       <h3 className="refusal__title">
         {tn('canon.blockNotice.title', findings.length, { n: findings.length })}
       </h3>
-      <p className="refusal__lede">{t('canon.blockNotice.lede')}</p>
+      <QuietNote className="refusal__lede">{t('canon.blockNotice.lede')}</QuietNote>
 
       <ol className="refusal__findings">
         {findings.map((finding) => (

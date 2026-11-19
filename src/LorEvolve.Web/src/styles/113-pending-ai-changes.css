@@ -40,9 +40,6 @@
 
 .aichanges__meta {
   margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  overflow-wrap: anywhere;
 }
 
 .aichanges__status {
@@ -221,9 +218,6 @@
 
 .aichangeitem__deps {
   margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  overflow-wrap: anywhere;
 }
 
 /* A picture change's hand-over (ADR 0062): the quarantined preview, and the file input that supplies it. */
@@ -256,8 +250,6 @@
 
 .aichangeprose__label {
   margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
 }
 
 .aichangeprose__same {

@@ -12,6 +12,7 @@ import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { LoadingNote } from '../LoadingNote'
 
 /**
  * The guard builder, opened from a transition (Issue #359): a rule definition's title and its condition, built from
@@ -121,11 +122,7 @@ export function GuardBuilderDrawer({
         </p>
       ) : null}
 
-      {load === 'loading' ? (
-        <p className="notice" role="status">
-          {t(`${gb}.loading`)}
-        </p>
-      ) : null}
+      {load === 'loading' ? <LoadingNote>{t(`${gb}.loading`)}</LoadingNote> : null}
       {load === 'error' ? (
         <p className="form__message" role="alert" data-testid="guard-builder-unavailable">
           {t(`${gb}.loadFailed`)}

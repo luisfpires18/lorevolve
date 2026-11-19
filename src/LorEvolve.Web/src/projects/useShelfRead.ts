@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { t } from '../i18n'
+import { errorText } from '../lib/errorText'
 import { listAllProjects } from './api'
 import type { ProjectKindValue } from './types'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
@@ -8,6 +10,7 @@ export function useShelfRead({
   universe,
   kinds,
   setState,
+  attempt,
 }: ReturnType<typeof useShelfState> & {
   universe: WorkspaceContext['universe']
   kinds: readonly ProjectKindValue[]
@@ -18,12 +21,13 @@ export function useShelfRead({
       .then((projects) =>
         setState({
           kind: 'ready',
-          projects: projects.filter((project) => kinds.includes(project.kind)),
+          value: projects.filter((project) => kinds.includes(project.kind)),
         }),
       )
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'failed' })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted)
+          setState({ kind: 'error', message: errorText(error, t('projects.list.failed')) })
       })
     return () => controller.abort()
-  }, [universe.id, kinds])
+  }, [universe.id, kinds, attempt])
 }

@@ -10,6 +10,24 @@
   color: var(--danger);
 }
 
+/* `QuietNote`: a quiet line in a panel. Colour and size here; each screen's class keeps only its spacing. */
+.quietnote {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.quietnote--ui {
+  font-size: var(--text-ui);
+}
+
+.quietnote--xs {
+  font-size: var(--text-xs);
+}
+
+.quietnote--wrap {
+  overflow-wrap: anywhere;
+}
+
 /* Every message box shares one shape - a tinted panel, no side stripe - and differs only in its tone: danger by
    default, warning for a caution or a conflict, the accent for information. */
 .notice--error,

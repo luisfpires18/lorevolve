@@ -8,6 +8,7 @@ import {
   type ManuscriptRevisionSummary,
 } from '../../stories/types'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** What a version was, in a few words. */
 function describeVersion(
@@ -113,9 +114,9 @@ export function ManuscriptRevision({
           data-testid="manuscript-version-snapshot"
         >
           {viewing.detail === null ? (
-            <p className="history__quiet" role="status">
+            <QuietNote className="history__quiet" size="ui" role="status">
               {t('manuscript.history.opening')}
-            </p>
+            </QuietNote>
           ) : viewing.detail.content === '' ? (
             <p className="entry__blank">{t('manuscript.history.noText')}</p>
           ) : (

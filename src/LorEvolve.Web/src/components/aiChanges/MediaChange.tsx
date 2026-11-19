@@ -4,6 +4,7 @@ import { mediaPreviewPath, uploadChangeMedia } from '../../aiChanges/media'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
+import { QuietNote } from '../QuietNote'
 
 /**
  * A picture change's hand-over (ADR 0062): the AI sends no file, so the person uploads it here. It waits in quarantine - seen
@@ -69,7 +70,9 @@ export function MediaChange({
           </figcaption>
         </figure>
       ) : (
-        <p className="aichangeitem__deps">{t('review.aiChange.media.none')}</p>
+        <QuietNote className="aichangeitem__deps" wrap>
+          {t('review.aiChange.media.none')}
+        </QuietNote>
       )}
       {waiting ? (
         <Field
@@ -92,9 +95,14 @@ export function MediaChange({
         </Field>
       ) : null}
       {uploaded ? (
-        <p className="aichangeitem__deps" role="status" data-testid="ai-change-media-uploaded">
+        <QuietNote
+          className="aichangeitem__deps"
+          wrap
+          testId="ai-change-media-uploaded"
+          role="status"
+        >
           {t('review.aiChange.media.uploaded')}
-        </p>
+        </QuietNote>
       ) : null}
       {error ? (
         <p className="form__message" role="alert">

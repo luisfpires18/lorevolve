@@ -11,6 +11,8 @@ import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
+import { QuietNote } from '../QuietNote'
 
 // ---------- People ----------
 
@@ -50,7 +52,7 @@ export function MemberRow({
     try {
       onChanged(await changeCollaboratorRole(universeId, member.userId, role))
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : t('universe.collab.memberRoleFailed'))
+      setError(errorText(problem, t('universe.collab.memberRoleFailed')))
     } finally {
       setBusy(false)
     }
@@ -68,7 +70,7 @@ export function MemberRow({
         onRemoved()
         return
       }
-      setError(problem instanceof Error ? problem.message : t('universe.collab.removeFailed'))
+      setError(errorText(problem, t('universe.collab.removeFailed')))
       setBusy(false)
     }
   }
@@ -85,9 +87,9 @@ export function MemberRow({
         <p className="collab__name">
           <bdi>{member.username}</bdi>
         </p>
-        <p className="collab__meta">
+        <QuietNote className="collab__meta">
           {t('universe.collab.joined', { date: formatDate(member.joinedAt) })}
-        </p>
+        </QuietNote>
       </div>
       <div className="collab__controls">
         <label className="visually-hidden" htmlFor={`${id}-role`}>

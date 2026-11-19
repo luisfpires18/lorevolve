@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import type { Load } from '../lib/useAsyncRead'
 import type {
   SystemSummary,
   WorldLogicFindingRow,
@@ -7,8 +8,6 @@ import type {
   WorldLogicRuleRow,
   WorldLogicSweepResult,
 } from './types'
-
-export type Load<T> = { kind: 'loading' } | { kind: 'ready'; page: Page<T> } | { kind: 'error' }
 
 /** A page number from the address: at least 1, and 1 for anything that is not a number. */
 function asPage(written: string | null) {
@@ -24,9 +23,9 @@ export function useWorldLogicState() {
   const systemsPage = asPage(params.get('systemsPage'))
   const findingsPage = asPage(params.get('findingsPage'))
 
-  const [rules, setRules] = useState<Load<WorldLogicRuleRow>>({ kind: 'loading' })
-  const [systems, setSystems] = useState<Load<SystemSummary>>({ kind: 'loading' })
-  const [findings, setFindings] = useState<Load<WorldLogicFindingRow>>({ kind: 'loading' })
+  const [rules, setRules] = useState<Load<Page<WorldLogicRuleRow>>>({ kind: 'loading' })
+  const [systems, setSystems] = useState<Load<Page<SystemSummary>>>({ kind: 'loading' })
+  const [findings, setFindings] = useState<Load<Page<WorldLogicFindingRow>>>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
 
   // The last check run from this page, which is the only thing that can tell "nothing found" from "nothing ran":

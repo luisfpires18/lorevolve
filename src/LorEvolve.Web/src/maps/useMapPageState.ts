@@ -1,17 +1,29 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Fraction } from '../components/MapCalibration'
+import { useAsyncRead, type Load } from '../lib/useAsyncRead'
+import { getMap } from './api'
 import type { MapDetail, MapPin } from './types'
 
-export type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; map: MapDetail } | { kind: 'missing' } | { kind: 'error' }
+export type LoadState = Load<MapDetail>
 
 export type PinForm = { kind: 'new'; at: { x: number; y: number } } | { kind: 'edit'; pin: MapPin }
 
 export type MapDialog = 'details' | 'replace' | null
 
-export function useMapPageState({ params }: { params: URLSearchParams }) {
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
+export function useMapPageState({
+  params,
+  universeId,
+  mapId,
+}: {
+  params: URLSearchParams
+  universeId: string
+  mapId: string | undefined
+}) {
+  const read = useCallback(
+    (signal: AbortSignal) => (mapId ? getMap(universeId, mapId, signal) : undefined),
+    [universeId, mapId],
+  )
+  const { load: state, setLoad: setState, refresh, retry } = useAsyncRead(read, { missing: true })
   const [placing, setPlacing] = useState(false)
   const [pinForm, setPinForm] = useState<PinForm | null>(null)
   const [dialog, setDialog] = useState<MapDialog>(null)
@@ -22,8 +34,8 @@ export function useMapPageState({ params }: { params: URLSearchParams }) {
   return {
     state,
     setState,
-    reads,
-    setReads,
+    refresh,
+    retry,
     placing,
     setPlacing,
     pinForm,

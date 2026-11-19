@@ -7,6 +7,8 @@ import { CATEGORIES, categoryLabel, GENRES, genreLabel } from '../publishing/typ
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, tn, useI18n } from '../i18n'
 import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { Announce } from '../components/Announce'
 
 /** The API's own limit on a search; the portal bar's field holds the same. */
 const SEARCH_MAX = 100
@@ -178,13 +180,13 @@ export default function ExplorePage() {
 
       <div className="explore__body">
         {/* Announced, not shown: the grid says how many at a glance, and Show more says how many are left. */}
-        <p className="visually-hidden" role="status" data-testid="explore-count">
+        <Announce testId="explore-count">
           {current === null
             ? t('portal.explore.finding')
             : ready
               ? countLine(ready.items.length, ready.totalCount, isFiltered)
               : ''}
-        </p>
+        </Announce>
 
         <h2 className="visually-hidden">{t('portal.explore.worldsHeading')}</h2>
 
@@ -204,16 +206,13 @@ export default function ExplorePage() {
         ) : null}
 
         {current?.kind === 'error' ? (
-          <div
-            className="notice notice--error explore__error"
-            role="alert"
-            data-testid="explore-error"
-          >
-            <p>{t('portal.explore.error.message')}</p>
-            <Button tone="secondary" onClick={() => setAttempt((count) => count + 1)}>
-              {t('portal.explore.error.retry')}
-            </Button>
-          </div>
+          <LoadError
+            message={t('portal.explore.error.message')}
+            onRetry={() => setAttempt((count) => count + 1)}
+            retryLabel={t('portal.explore.error.retry')}
+            testId="explore-error"
+            className="explore__error"
+          />
         ) : null}
 
         {ready && ready.items.length === 0 && !isFiltered ? (

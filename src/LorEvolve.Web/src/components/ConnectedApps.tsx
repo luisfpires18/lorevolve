@@ -12,8 +12,9 @@ import {
 } from '../mcp/api'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
-
-type Load = { kind: 'loading' } | { kind: 'ready'; apps: ConnectedApp[] } | { kind: 'error' }
+import { Announce } from './Announce'
+import { QuietNote } from './QuietNote'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
   get [ConnectedAppStatus.Active]() {
@@ -34,23 +35,9 @@ const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
  */
 export function ConnectedApps() {
   const { t } = useI18n()
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
+  const { load, setLoad, retry } = useAsyncRead(listConnectedApps)
   const [announcement, setAnnouncement] = useState('')
   const headingRef = useRef<HTMLHeadingElement>(null)
-
-  function read(signal?: AbortSignal) {
-    listConnectedApps(signal)
-      .then((apps) => setLoad({ kind: 'ready', apps }))
-      .catch(() => {
-        if (!signal?.aborted) setLoad({ kind: 'error' })
-      })
-  }
-
-  useEffect(() => {
-    const controller = new AbortController()
-    read(controller.signal)
-    return () => controller.abort()
-  }, [])
 
   // Arriving from Connect to AI's link lands on this section.
   useEffect(() => {
@@ -62,7 +49,7 @@ export function ConnectedApps() {
   function removed(app: ConnectedApp) {
     setLoad((current) =>
       current.kind === 'ready'
-        ? { kind: 'ready', apps: current.apps.filter((one) => one.id !== app.id) }
+        ? { kind: 'ready', value: current.value.filter((one) => one.id !== app.id) }
         : current,
     )
     setAnnouncement(
@@ -95,28 +82,26 @@ export function ConnectedApps() {
         <p className="usage__status" role="status">
           {t('data.connectedApps.loading')}
         </p>
-      ) : load.kind === 'error' ? (
+      ) : load.kind !== 'ready' ? (
         <div className="form__message" role="alert" data-testid="connected-apps-error">
           <p>{t('data.connectedApps.loadFailed')}</p>
-          <Button tone="secondary" size="sm" onClick={() => read()}>
+          <Button tone="secondary" size="sm" onClick={retry}>
             {t('data.connectedApps.retry')}
           </Button>
         </div>
-      ) : load.apps.length === 0 ? (
-        <p className="connectedapps__empty" data-testid="connected-apps-empty">
+      ) : load.value.length === 0 ? (
+        <QuietNote className="connectedapps__empty" size="ui" testId="connected-apps-empty">
           {t('data.connectedApps.empty')}
-        </p>
+        </QuietNote>
       ) : (
         <ul className="connectedapps__list">
-          {load.apps.map((app) => (
+          {load.value.map((app) => (
             <ConnectedAppRow key={app.id} app={app} onRemoved={() => removed(app)} />
           ))}
         </ul>
       )}
 
-      <p className="visually-hidden" role="status" data-testid="connected-apps-announcer">
-        {announcement}
-      </p>
+      <Announce testId="connected-apps-announcer">{announcement}</Announce>
     </section>
   )
 }

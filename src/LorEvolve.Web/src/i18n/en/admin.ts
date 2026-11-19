@@ -4,8 +4,6 @@ import adminRestore from './admin/restore'
 
 /** LorEvolve Admin: accounts, invitations, backups and the deploy log (#105). */
 const admin = {
-  loadFailed: 'Could not load this.',
-  tryAgain: 'Try again',
   documentTitle: {
     admin: 'Admin',
     main: 'Main',

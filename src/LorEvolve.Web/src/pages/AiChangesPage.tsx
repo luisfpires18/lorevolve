@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useLocation, useOutletContext } from 'react-router-dom'
 import { listProposals, reviewPath } from '../aiChanges/api'
-import { ProposalStatus, type ProposalPage, type ProposalState } from '../aiChanges/types'
+import { ProposalStatus, type ProposalState } from '../aiChanges/types'
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
@@ -9,8 +9,11 @@ import { useI18n } from '../i18n'
 import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
-
-type Load = { kind: 'loading' } | { kind: 'ready'; page: ProposalPage } | { kind: 'error' }
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { QuietNote } from '../components/QuietNote'
+import { errorText } from '../lib/errorText'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * Pending AI Changes (ADR 0047): the proposals an AI staged and a person decides on, from an app over MCP and from the
@@ -22,31 +25,24 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
   const context = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? (context?.universe.id ?? null) : null
   const [state, setState] = useState<ProposalState>('open')
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
   const [more, setMore] = useState(false)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listProposals(state, universeId, null, controller.signal)
-      .then((page) => setLoad({ kind: 'ready', page }))
-      .catch(() => {
-        if (!controller.signal.aborted) setLoad({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [state, universeId, reads])
+  const read = useCallback(
+    (signal: AbortSignal) => listProposals(state, universeId, null, signal),
+    [state, universeId],
+  )
+  const { load, setLoad, retry } = useAsyncRead(read)
 
   async function readMore() {
     if (load.kind !== 'ready') return
     setMore(true)
     try {
-      const next = await listProposals(state, universeId, load.page.items.at(-1)?.id ?? null)
+      const next = await listProposals(state, universeId, load.value.items.at(-1)?.id ?? null)
       setLoad({
         kind: 'ready',
-        page: { items: [...load.page.items, ...next.items], hasMore: next.hasMore },
+        value: { items: [...load.value.items, ...next.items], hasMore: next.hasMore },
       })
-    } catch {
-      setLoad({ kind: 'error' })
+    } catch (error) {
+      setLoad({ kind: 'error', message: errorText(error, t('review.aiChanges.loadFailed')) })
     } finally {
       setMore(false)
     }
@@ -87,17 +83,14 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
       </PageHeader>
 
       {load.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('review.aiChanges.loading')}
-        </p>
-      ) : load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{t('review.aiChanges.loadFailed')}</p>
-          <Button tone="secondary" onClick={() => setReads((count) => count + 1)}>
-            {t('review.aiChanges.retry')}
-          </Button>
-        </div>
-      ) : load.page.items.length === 0 ? (
+        <LoadingNote>{t('review.aiChanges.loading')}</LoadingNote>
+      ) : load.kind !== 'ready' ? (
+        <LoadError
+          message={t('review.aiChanges.loadFailed')}
+          onRetry={retry}
+          retryLabel={t('review.aiChanges.retry')}
+        />
+      ) : load.value.items.length === 0 ? (
         <EmptyState
           testId="ai-changes-empty"
           title={
@@ -108,7 +101,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
       ) : (
         <>
           <ul className="aichanges__list">
-            {load.page.items.map((proposal) => (
+            {load.value.items.map((proposal) => (
               <li className="aichanges__item" key={proposal.id} data-testid="ai-change-proposal">
                 <Link
                   className="aichanges__link"
@@ -123,7 +116,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                       })}
                   </span>
                 </Link>
-                <p className="aichanges__meta">
+                <QuietNote className="aichanges__meta" wrap>
                   {inUniverse ? null : (
                     <>
                       <bdi>{proposal.universeName}</bdi>
@@ -141,8 +134,8 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                       })}
                   {' · '}
                   <time dateTime={proposal.createdAt}>{formatDateTime(proposal.createdAt)}</time>
-                </p>
-                <p className="aichanges__meta">
+                </QuietNote>
+                <QuietNote className="aichanges__meta" wrap>
                   <span className="aichanges__status" data-status={proposal.status}>
                     {STATUS_WORDS[proposal.status]}
                   </span>
@@ -151,11 +144,11 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                   {proposal.status === ProposalStatus.Open && proposal.committedCount > 0
                     ? ` · ${tn('review.aiChanges.alreadyApplied', proposal.committedCount, { n: proposal.committedCount })}`
                     : null}
-                </p>
+                </QuietNote>
               </li>
             ))}
           </ul>
-          {load.page.hasMore ? (
+          {load.value.hasMore ? (
             <Button tone="text" size="sm" disabled={more} onClick={() => void readMore()}>
               {t('review.aiChanges.showMore')}
             </Button>

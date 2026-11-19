@@ -5,6 +5,7 @@ import { listStories } from '../stories/api'
 import { getTimelineEntry, listTimelineItems } from './api'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useTimelineState } from './useTimelineState'
+import { errorText } from '../lib/errorText'
 
 /** The Timeline screen's reads: the story list, a moment named by `?moment=`, and the page of items. */
 export function useTimelineReads({
@@ -87,12 +88,12 @@ export function useTimelineReads({
       },
       controller.signal,
     )
-      .then((result) => setState({ kind: 'ready', page: result }))
+      .then((result) => setState({ kind: 'ready', value: result }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : t('time.timeline.readFailed'),
+          message: errorText(error, t('time.timeline.readFailed')),
         })
       })
 

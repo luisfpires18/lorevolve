@@ -21,7 +21,8 @@ import { StoryBar } from '../components/stories/StoryBar'
 import { StoryManuscript } from '../components/stories/StoryManuscript'
 import { StoryScenes } from '../components/stories/StoryScenes'
 import { StoryForms } from '../components/stories/StoryForms'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { Announce } from '../components/Announce'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
@@ -86,7 +87,7 @@ function StoryView({ view }: { view: StoryViewName }) {
     return <StoryUnavailable state={state} universe={universe} retry={retry} />
   }
 
-  const { story } = state
+  const story = state.value
   const { arcs, chapters, scenes } = story
   const hasChapters = chapters.length > 0
   const hasStructure = hasChapters || arcs.length > 0
@@ -220,12 +221,13 @@ function StoryView({ view }: { view: StoryViewName }) {
       ) : null}
 
       {stale ? (
-        <div className="notice notice--error story__stale" role="alert" data-testid="story-stale">
-          <p>{t('stories.page.stale')}</p>
-          <Button tone="secondary" onClick={reload}>
-            {t('stories.page.staleRetry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('stories.page.stale')}
+          onRetry={reload}
+          retryLabel={t('stories.page.staleRetry')}
+          testId="story-stale"
+          className="story__stale"
+        />
       ) : null}
 
       {view === 'manuscript' ? (
@@ -234,9 +236,7 @@ function StoryView({ view }: { view: StoryViewName }) {
         <StoryScenes {...shared} />
       )}
 
-      <p className="visually-hidden" role="status" aria-live="polite" data-testid="story-announcer">
-        {announcement}
-      </p>
+      <Announce testId="story-announcer">{announcement}</Announce>
 
       <StoryForms {...shared} />
     </article>

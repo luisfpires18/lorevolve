@@ -15,6 +15,7 @@ import { TypeDialog } from './TypeDialog'
 import { t, useI18n } from '../i18n'
 import { TemplateRow } from './typeTemplates/TemplateRow'
 import { NewButton } from './NewButton'
+import { LoadError } from './LoadError'
 
 const NO_TYPES = buildTypeTree<TreeType>([])
 
@@ -125,9 +126,7 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
       ) : null}
 
       {failed ? (
-        <p className="notice notice--error" role="alert" data-testid="type-templates-failed">
-          {failed}
-        </p>
+        <LoadError message={failed} onRetry={refresh} testId="type-templates-failed" />
       ) : null}
 
       {templates.length === 0 && !failed ? (

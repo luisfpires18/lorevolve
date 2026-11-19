@@ -1,19 +1,19 @@
-import { useEffect, useId, useState } from 'react'
+import { useCallback, useId } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
 import { Quoted } from '../components/NameList'
 import { t, useI18n } from '../i18n'
 import { formatDate } from '../lib/dates'
 import { listWorldRules } from '../worldRules/api'
-import type { WorldRulePage } from '../worldRules/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; page: WorldRulePage } | { kind: 'error'; message: string }
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { OutcomeNotice } from '../components/OutcomeNotice'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /** What a rule's editor says it did before handing back to the list. */
 export interface WorldRulesListNotice {
@@ -40,26 +40,14 @@ export default function WorldRulesPage() {
   const basePath = `/app/universes/${universe.id}/world-rules`
   const trashPath = `/app/universes/${universe.id}/trash`
 
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
+  const read = useCallback(
+    (signal: AbortSignal) => listWorldRules(universe.id, page, signal),
+    [universe.id, page],
+  )
+  const { load: state, retry } = useAsyncRead(read)
 
   // A deletion reported by the editor that sent the author here.
   const notice = (location.state as WorldRulesListNotice | null)?.deleted ?? null
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listWorldRules(universe.id, page, controller.signal)
-      .then((result) => setState({ kind: 'ready', page: result }))
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setState({ kind: 'error', message: t('canon.rules.readFailed') })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, page, reads])
 
   function goToPage(next: number) {
     setParams((current) => {
@@ -70,7 +58,7 @@ export default function WorldRulesPage() {
     })
   }
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
 
   return (
     <section className="rules" aria-labelledby={headingId} data-testid="world-rules">
@@ -88,35 +76,23 @@ export default function WorldRulesPage() {
       />
 
       {notice ? (
-        <div className="notice rules__notice" data-testid="world-rules-deleted-notice">
-          <p role="status">
-            {tx('canon.rules.deleted', {
-              title: <Quoted text={notice.title} />,
-              restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
-            })}
-          </p>
-        </div>
+        <OutcomeNotice className="rules__notice" testId="world-rules-deleted-notice">
+          {tx('canon.rules.deleted', {
+            title: <Quoted text={notice.title} />,
+            restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
+          })}
+        </OutcomeNotice>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rules.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('canon.rules.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-rules-load-error">
-          <p>{state.message}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.rules.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-rules-load-error"
+        />
       ) : null}
 
       {result && result.items.length > 0 ? (

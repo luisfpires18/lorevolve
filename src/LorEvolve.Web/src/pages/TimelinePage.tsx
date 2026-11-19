@@ -50,7 +50,7 @@ export default function TimelinePage() {
   const { update } = useTimelineSearch(timeline)
   const { forgetMoment, reload } = useTimelineReads({ ...timeline, universe })
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
   const isFiltered =
     sourceParam !== null ||
     canonStatus !== null ||

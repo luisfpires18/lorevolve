@@ -6,6 +6,8 @@ import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import type { TypeTree } from '../lore/typeTree'
 import { listedEntries, TypeCard, type CatalogType } from './lore/LoreTypeCard'
 import { Button } from './Button'
+import { Announce } from './Announce'
+import { QuietNote } from './QuietNote'
 
 /** How many card shapes stand in for the catalog while the types are read. */
 const SKELETON_CARDS = 6
@@ -125,7 +127,12 @@ export function LoreCatalog({
         </div>
       ) : null}
 
-      <p className="lorecatalog__status" role="status" data-testid="lore-catalog-status">
+      <QuietNote
+        className="lorecatalog__status"
+        size="ui"
+        testId="lore-catalog-status"
+        role="status"
+      >
         {browsing ? (
           <>
             {shown.length === 0 ? (
@@ -154,7 +161,7 @@ export function LoreCatalog({
             {tn('lore.catalog.types', shown.length, { n: shown.length })}
           </span>
         )}
-      </p>
+      </QuietNote>
 
       {shown.length > 0 ? (
         <ul className="lorecatalog__grid" data-testid="lore-type-cards">
@@ -210,9 +217,7 @@ export function LoreCatalogSkeleton() {
   const { t } = useI18n()
   return (
     <div className="lorecatalog" data-testid="lore-catalog-loading">
-      <p className="visually-hidden" role="status">
-        {t('lore.catalog.reading')}
-      </p>
+      <Announce>{t('lore.catalog.reading')}</Announce>
       <ul className="lorecatalog__grid" aria-hidden="true">
         {Array.from({ length: SKELETON_CARDS }, (_, index) => (
           <li className="typecard typecard--skeleton" key={index}>

@@ -54,7 +54,7 @@ export default function UniverseTrash() {
   const { load } = useTrashReads({ ...trash, universe })
   const rowActions = trashActions({ ...trash, access, universe, refreshProjects, user, load })
 
-  const result = state.kind === 'ready' ? state.page : null
+  const result = state.kind === 'ready' ? state.value : null
   const pageItems = result?.items ?? []
 
   // What is selected belongs to the page on screen, as in Lore: another page is another list, so nothing is ever selected

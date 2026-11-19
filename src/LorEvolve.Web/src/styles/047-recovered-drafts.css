@@ -26,7 +26,6 @@
 .recovery__hint {
   margin: 0.35rem 0 0;
   font-size: 0.85rem;
-  color: var(--muted);
 }
 
 .recovery__actions {
@@ -76,5 +75,4 @@
 .snapshot__articlenote {
   margin: 0 0 0.75rem;
   font-size: 0.8rem;
-  color: var(--muted);
 }

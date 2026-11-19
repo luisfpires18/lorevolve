@@ -16,7 +16,9 @@ import { ManuscriptHead } from './stories/ManuscriptHead'
 import { ManuscriptNotices } from './stories/ManuscriptNotices'
 import { ManuscriptBody } from './stories/ManuscriptBody'
 import { ManuscriptSaveBar } from './stories/ManuscriptSaveBar'
-import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { Announce } from './Announce'
+import { LoadingNote } from './LoadingNote'
 
 interface ManuscriptEditorProps {
   universeId: string
@@ -191,9 +193,7 @@ export function ManuscriptEditor({
       ) : null}
 
       {load.kind === 'loading' ? (
-        <p className="notice" role="status" data-testid="manuscript-loading">
-          {t('manuscript.editor.opening')}
-        </p>
+        <LoadingNote testId="manuscript-loading">{t('manuscript.editor.opening')}</LoadingNote>
       ) : null}
 
       {load.kind === 'missing' ? (
@@ -205,12 +205,13 @@ export function ManuscriptEditor({
       ) : null}
 
       {load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="manuscript-load-error">
-          <p>{load.message}</p>
-          <Button tone="secondary" onClick={reread} data-testid="manuscript-retry">
-            {t('manuscript.editor.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={load.message}
+          onRetry={reread}
+          retryLabel={t('manuscript.editor.retry')}
+          retryTestId="manuscript-retry"
+          testId="manuscript-load-error"
+        />
       ) : null}
 
       {isReady ? (
@@ -221,9 +222,7 @@ export function ManuscriptEditor({
         </>
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="manuscript-announcer">
-        {announcement}
-      </p>
+      <Announce testId="manuscript-announcer">{announcement}</Announce>
     </section>
   )
 }

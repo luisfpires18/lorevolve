@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { EmptyState } from '../EmptyState'
 import type { useStoryState } from '../../stories/useStoryState'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** What the page shows while its story is read, missing, or could not be read. */
 export function StoryUnavailable({
@@ -17,11 +18,7 @@ export function StoryUnavailable({
   const { t, tx } = useI18n()
 
   if (state.kind === 'loading') {
-    return (
-      <p className="notice" role="status">
-        {t('stories.page.opening')}
-      </p>
-    )
+    return <LoadingNote>{t('stories.page.opening')}</LoadingNote>
   }
 
   if (state.kind === 'missing') {
@@ -42,12 +39,12 @@ export function StoryUnavailable({
 
   if (state.kind === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="story-load-error">
-        <p>{t('stories.page.loadError')}</p>
-        <Button tone="secondary" onClick={retry}>
-          {t('stories.page.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={t('stories.page.loadError')}
+        onRetry={retry}
+        retryLabel={t('stories.page.retry')}
+        testId="story-load-error"
+      />
     )
   }
 

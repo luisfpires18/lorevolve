@@ -76,9 +76,6 @@
 
 .trash__meta {
   margin: var(--space-1) 0 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 .trash__waiting {

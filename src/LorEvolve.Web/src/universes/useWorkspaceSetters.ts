@@ -18,7 +18,11 @@ export function useWorkspaceSetters({
   const refresh = useCallback(
     (next?: UniverseDetail) => {
       if (next) {
-        setState((current) => (current.kind === 'ready' ? { ...current, universe: next } : current))
+        setState((current) =>
+          current.kind === 'ready'
+            ? { ...current, value: { ...current.value, universe: next } }
+            : current,
+        )
       } else {
         load()
       }
@@ -27,7 +31,9 @@ export function useWorkspaceSetters({
   )
 
   const setChronology = useCallback((chronology: Chronology) => {
-    setState((current) => (current.kind === 'ready' ? { ...current, chronology } : current))
+    setState((current) =>
+      current.kind === 'ready' ? { ...current, value: { ...current.value, chronology } } : current,
+    )
   }, [])
 
   // Publish hands up a changed artwork; only its two ids are the universe's to hold, and they replace the ones the
@@ -37,9 +43,12 @@ export function useWorkspaceSetters({
       current.kind === 'ready'
         ? {
             ...current,
-            universe: {
-              ...current.universe,
-              artwork: next ? { assetId: next.assetId, cardId: next.cardId } : null,
+            value: {
+              ...current.value,
+              universe: {
+                ...current.value.universe,
+                artwork: next ? { assetId: next.assetId, cardId: next.cardId } : null,
+              },
             },
           }
         : current,

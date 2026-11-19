@@ -1,20 +1,21 @@
-import { useEffect, useId, useState } from 'react'
+import { useCallback, useId, useState } from 'react'
 import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { MapForm } from '../components/MapForm'
 import { Quoted } from '../components/NameList'
 import { PageHeader } from '../components/PageHeader'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { useQueryTab, type QueryTab } from '../lib/queryTab'
 import { listMaps, mapImageUrl, mapPath } from '../maps/api'
-import type { MapSummary } from '../maps/types'
 import { useUniverseAccess } from '../universes/access'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
-
-type LoadState = { kind: 'loading' } | { kind: 'ready'; maps: MapSummary[] } | { kind: 'error' }
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { OutcomeNotice } from '../components/OutcomeNotice'
+import { QuietNote } from '../components/QuietNote'
 
 type MapsTab = 'maps' | 'interactive'
 
@@ -35,8 +36,8 @@ export default function MapsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const headingId = useId()
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
+  const read = useCallback((signal: AbortSignal) => listMaps(universe.id, signal), [universe.id])
+  const { load: state, retry } = useAsyncRead(read)
   const [creating, setCreating] = useState(false)
   const TABS: readonly QueryTab<MapsTab>[] = [
     { id: 'maps', label: t('places.maps.tabMaps') },
@@ -45,17 +46,6 @@ export default function MapsPage() {
   const [tab, choose] = useQueryTab(TABS)
 
   const notice = (location.state as MapsListNotice | null)?.deleted ?? null
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listMaps(universe.id, controller.signal)
-      .then((maps) => setState({ kind: 'ready', maps }))
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setState({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [universe.id, reads])
 
   const newMap = access.editContent ? (
     <NewButton onClick={() => setCreating(true)} data-testid="new-map">
@@ -82,37 +72,25 @@ export default function MapsPage() {
 
       <TabPanel idPrefix="maps" id="maps" tab={tab}>
         {notice ? (
-          <div className="notice maps__notice" data-testid="maps-deleted-notice">
-            <p role="status">
-              {tx('places.maps.deleted', { name: <Quoted text={notice.name} /> })}
-            </p>
-          </div>
+          <OutcomeNotice className="maps__notice" testId="maps-deleted-notice">
+            {tx('places.maps.deleted', { name: <Quoted text={notice.name} /> })}
+          </OutcomeNotice>
         ) : null}
 
-        {state.kind === 'loading' ? (
-          <p className="notice" role="status">
-            {t('places.maps.loading')}
-          </p>
-        ) : null}
+        {state.kind === 'loading' ? <LoadingNote>{t('places.maps.loading')}</LoadingNote> : null}
 
         {state.kind === 'error' ? (
-          <div className="notice notice--error" role="alert" data-testid="maps-load-error">
-            <p>{t('places.maps.error')}</p>
-            <Button
-              tone="secondary"
-              onClick={() => {
-                setState({ kind: 'loading' })
-                setReads((current) => current + 1)
-              }}
-            >
-              {t('places.maps.retry')}
-            </Button>
-          </div>
+          <LoadError
+            message={t('places.maps.error')}
+            onRetry={retry}
+            retryLabel={t('places.maps.retry')}
+            testId="maps-load-error"
+          />
         ) : null}
 
-        {state.kind === 'ready' && state.maps.length > 0 ? (
+        {state.kind === 'ready' && state.value.length > 0 ? (
           <ul className="maplist" data-testid="map-list">
-            {state.maps.map((map) => (
+            {state.value.map((map) => (
               <li className="mapcard" key={map.id} data-testid="map-card" data-map-name={map.name}>
                 <Link
                   className="mapcard__link"
@@ -138,7 +116,7 @@ export default function MapsPage() {
                     {map.description}
                   </p>
                 ) : null}
-                <p className="mapcard__meta" data-testid="map-pin-count">
+                <QuietNote className="mapcard__meta" testId="map-pin-count">
                   {t('places.maps.meta', {
                     pins:
                       map.pinCount === 0
@@ -147,13 +125,13 @@ export default function MapsPage() {
                     width: map.image.width,
                     height: map.image.height,
                   })}
-                </p>
+                </QuietNote>
               </li>
             ))}
           </ul>
         ) : null}
 
-        {state.kind === 'ready' && state.maps.length === 0 ? (
+        {state.kind === 'ready' && state.value.length === 0 ? (
           <EmptyState
             testId="maps-empty"
             title={t('places.maps.emptyTitle')}

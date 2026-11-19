@@ -11,6 +11,7 @@ import { UniverseRole, type UniverseRoleValue } from '../../universes/types'
 import { Field } from '../Field'
 import { RoleSelect } from './RoleSelect'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 // ---------- Inviting ----------
 
@@ -54,7 +55,7 @@ export function InviteForm({
         setErrors({ email: problem.fieldErrors.email, role: problem.fieldErrors.role })
       } else {
         setErrors({
-          form: problem instanceof Error ? problem.message : t('universe.collab.createFailed'),
+          form: errorText(problem, t('universe.collab.createFailed')),
         })
       }
       emailInput.current?.focus()

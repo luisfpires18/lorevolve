@@ -12,6 +12,7 @@ import { recordFormSave } from '../../knowledge/recordFormSave'
 import { RecordOtherField } from './RecordOtherField'
 import { RecordSceneFields } from './RecordSceneFields'
 import { FormActions } from '../FormActions'
+import { QuietNote } from '../QuietNote'
 
 // ---------- The form ----------
 
@@ -100,7 +101,11 @@ export function RecordForm({
             ? tx('ai.knowledge.form.titleKnows', { name: <bdi>{entityName}</bdi> })
             : tx('ai.knowledge.form.titleAbout', { name: <bdi>{entityName}</bdi> })
       }
-      context={<p className="drawer__context">{t('ai.knowledge.form.context')}</p>}
+      context={
+        <QuietNote size="ui" wrap className="drawer__context">
+          {t('ai.knowledge.form.context')}
+        </QuietNote>
+      }
       isDirty={isDirty}
       leaveMessage={t('ai.knowledge.form.discard')}
       onClose={onClose}

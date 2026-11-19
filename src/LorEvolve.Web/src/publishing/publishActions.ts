@@ -3,6 +3,7 @@ import { getPublication, getSelectedLore, publishUniverse, unpublishUniverse } f
 import { REQUIREMENTS } from './types'
 import type { useI18n } from '../i18n'
 import type { usePublishState } from './usePublishState'
+import { errorText } from '../lib/errorText'
 
 /** Publish's handlers: asking to publish with a fresh check, publishing, and making the universe private. */
 export function publishActions({
@@ -47,7 +48,7 @@ export function publishActions({
 
       setConfirming({ kind: 'publish', state: fresh, selected })
     } catch (error: unknown) {
-      setProblem([error instanceof Error ? error.message : t('universe.publish.checkFailed')])
+      setProblem([errorText(error, t('universe.publish.checkFailed'))])
     } finally {
       setBusy(false)
     }
@@ -66,7 +67,7 @@ export function publishActions({
       setProblem(
         error instanceof ApiError && Object.keys(error.fieldErrors).length > 0
           ? Object.values(error.fieldErrors)
-          : [error instanceof Error ? error.message : t('universe.publish.publishFailed')],
+          : [errorText(error, t('universe.publish.publishFailed'))],
       )
       void load()
     } finally {
@@ -82,7 +83,7 @@ export function publishActions({
       setConfirming(null)
       setAnnouncement(t('universe.publish.madePrivate'))
     } catch (error: unknown) {
-      setProblem([error instanceof Error ? error.message : t('universe.publish.privateFailed')])
+      setProblem([errorText(error, t('universe.publish.privateFailed'))])
     } finally {
       setBusy(false)
     }

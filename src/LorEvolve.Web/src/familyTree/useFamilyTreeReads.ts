@@ -1,4 +1,6 @@
 import { useEffect } from 'react'
+import { errorText } from '../lib/errorText'
+import { isNotFound } from '../lib/useAsyncRead'
 import { getFamilyTree } from './api'
 import { listEntityRelationships, listRelationshipTypes } from '../relationships/api'
 import type { useFamilyTreeState } from './useFamilyTreeState'
@@ -10,6 +12,7 @@ export function useFamilyTreeReads({
   reads,
   setKinds,
   setState,
+  setAnsweredFor,
   setOthers,
 }: ReturnType<typeof useFamilyTreeState> & {
   universe: ReturnType<typeof useWorkspaceTypes>['universe']
@@ -35,15 +38,19 @@ export function useFamilyTreeReads({
     const controller = new AbortController()
 
     getFamilyTree(universe.id, entityId, controller.signal)
-      .then((tree) => setState({ kind: 'ready', entityId, tree }))
+      .then((value) => {
+        setState({ kind: 'ready', value })
+        setAnsweredFor(entityId)
+      })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         // The API answers 404 for an entry that is not here, belongs to another universe, or is in the Trash.
         setState(
-          (error as { status?: number }).status === 404
-            ? { kind: 'missing', entityId }
-            : { kind: 'error', entityId },
+          isNotFound(error)
+            ? { kind: 'missing' }
+            : { kind: 'error', message: errorText(error, '') },
         )
+        setAnsweredFor(entityId)
       })
 
     return () => {

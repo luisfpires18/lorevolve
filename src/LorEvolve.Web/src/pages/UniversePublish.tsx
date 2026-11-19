@@ -13,7 +13,8 @@ import { PublishStatus } from '../components/publishing/PublishStatus'
 import { publishActions } from '../publishing/publishActions'
 import { usePublishReads } from '../publishing/usePublishReads'
 import { usePublishState } from '../publishing/usePublishState'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * Publish (UI refinement 014): a universe's public presentation, in the workspace, on a page of its own rather than a
@@ -52,12 +53,11 @@ export default function UniversePublish() {
     return (
       <article className="publish" data-testid="public-portal">
         {header}
-        <div className="notice notice--error" role="alert">
-          <p>{loadError}</p>
-          <Button tone="secondary" onClick={() => void load()}>
-            {t('universe.publish.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={loadError}
+          onRetry={() => void load()}
+          retryLabel={t('universe.publish.retry')}
+        />
       </article>
     )
   }
@@ -66,9 +66,7 @@ export default function UniversePublish() {
     return (
       <article className="publish" data-testid="public-portal">
         {header}
-        <p className="notice" role="status">
-          {t('universe.publish.loading')}
-        </p>
+        <LoadingNote>{t('universe.publish.loading')}</LoadingNote>
       </article>
     )
   }

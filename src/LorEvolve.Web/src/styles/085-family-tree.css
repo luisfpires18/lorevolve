@@ -66,8 +66,6 @@
 
 .discovery__pickerhint {
   margin: var(--space-2) 0 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
 }
 
 .discovery__families {
@@ -91,9 +89,6 @@
 
 .discovery__count {
   margin: 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  overflow-wrap: anywhere;
 }
 
 .discovery__list {
@@ -186,7 +181,6 @@
 
 .family__note {
   margin: 1rem 0 1.25rem;
-  color: var(--muted);
   font-size: 0.85rem;
   max-width: 62ch;
 }

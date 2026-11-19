@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { FoldToggle } from './FoldToggle'
 import { useFold } from './fold'
+import { QuietNote } from './QuietNote'
 
 type TitleLevel = 3 | 4 | 5 | 6
 
@@ -54,7 +55,7 @@ export function OutlineItem({
               <bdi>{name}</bdi>
             </Title>
           </div>
-          {meta ? <p className="chapter__meta">{meta}</p> : null}
+          {meta ? <QuietNote className="chapter__meta">{meta}</QuietNote> : null}
           {summary ? <p className="scene__summary prose">{summary}</p> : null}
           {children}
         </div>

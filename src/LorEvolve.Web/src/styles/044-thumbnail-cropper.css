@@ -51,8 +51,6 @@
 
 .cropper__hint {
   margin: var(--space-1) 0 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 /* The cropper positions itself absolutely inside this box. Square where there is room, and

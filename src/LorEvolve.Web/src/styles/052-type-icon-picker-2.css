@@ -94,8 +94,6 @@
 
 .fieldarchive__lede {
   margin: var(--space-2) 0 var(--space-3);
-  color: var(--muted);
-  font-size: var(--text-sm);
 }
 
 @media (max-width: 640px) {

@@ -19,6 +19,7 @@ import type {
   ProgressionRevisionDetail,
   ProgressionRevisionSummary,
 } from '../../progression/types'
+import { LoadingNote } from '../LoadingNote'
 
 /** The progression's own history: each saved version with when and by whom, readable in place and put back on request. */
 export function ProgressionHistory({
@@ -109,7 +110,7 @@ export function ProgressionHistory({
       ) : null}
       {revisions === null ? (
         open ? (
-          <p className="muted">{t('progression.history.reading')}</p>
+          <LoadingNote>{t('progression.history.reading')}</LoadingNote>
         ) : null
       ) : (
         <ol className="history__list">

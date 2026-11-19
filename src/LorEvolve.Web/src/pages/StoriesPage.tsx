@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
@@ -18,13 +18,11 @@ import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { StoryShelf } from '../components/stories/StoryShelf'
 import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
-import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
-
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; stories: StorySummary[]; others: ProjectDetail[] }
-  | { kind: 'error' }
+import { LoadError } from '../components/LoadError'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * The stories told in this universe. A story is narrative an author writes with the lore - it draws
@@ -44,8 +42,22 @@ export default function StoriesPage() {
   const navigate = useNavigate()
   const heading = sectionLabel(WRITING_PROJECTS)
   useDocumentTitle(heading)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
+  const read = useCallback(
+    (signal: AbortSignal) => {
+      // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.
+      const others = listAllProjects({ universeId: universe.id }, signal)
+        .then((projects) =>
+          projects.filter((project) => project.kind === ProjectKind.Writing && !project.storyId),
+        )
+        .catch((): ProjectDetail[] => [])
+      return Promise.all([listStories(universe.id, signal), others]).then(([stories, rest]) => ({
+        stories,
+        others: rest,
+      }))
+    },
+    [universe.id],
+  )
+  const { load: state, setLoad: setState, retry } = useAsyncRead(read)
   const [isCreating, setIsCreating] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [moveError, setMoveError] = useState<string | null>(null)
@@ -55,7 +67,7 @@ export default function StoriesPage() {
   /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
   async function move(story: StorySummary, by: -1 | 1) {
     if (state.kind !== 'ready' || isMoving.current) return
-    const before = state.stories
+    const before = state.value.stories
     const from = before.findIndex((candidate) => candidate.id === story.id)
     const to = from + by
     if (from < 0 || to < 0 || to >= before.length) return
@@ -64,7 +76,7 @@ export default function StoriesPage() {
     after.splice(to, 0, ...after.splice(from, 1))
     isMoving.current = true
     setMoveError(null)
-    setState({ kind: 'ready', stories: after, others: state.others })
+    setState({ kind: 'ready', value: { stories: after, others: state.value.others } })
     requestAnimationFrame(() =>
       document
         .querySelector<HTMLElement>(`[data-story-id="${story.id}"] [data-testid="story-actions"]`)
@@ -75,39 +87,17 @@ export default function StoriesPage() {
         universe.id,
         after.map((candidate) => candidate.id),
       )
-      setState({ kind: 'ready', stories: saved, others: state.others })
+      setState({ kind: 'ready', value: { stories: saved, others: state.value.others } })
       setAnnouncement(
         t('stories.browse.moved', { title: story.title, n: to + 1, total: after.length }),
       )
     } catch (error: unknown) {
-      setState({ kind: 'ready', stories: before, others: state.others })
+      setState({ kind: 'ready', value: { stories: before, others: state.value.others } })
       setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
     } finally {
       isMoving.current = false
     }
   }
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.
-    const others = listAllProjects({ universeId: universe.id }, controller.signal)
-      .then((projects) =>
-        projects.filter((project) => project.kind === ProjectKind.Writing && !project.storyId),
-      )
-      .catch((): ProjectDetail[] => [])
-
-    Promise.all([listStories(universe.id, controller.signal), others])
-      .then(([stories, rest]) => setState({ kind: 'ready', stories, others: rest }))
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setState({ kind: 'error' })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, reads])
 
   return (
     <article className="stories">
@@ -123,39 +113,27 @@ export default function StoriesPage() {
         }
       />
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('stories.browse.reading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('stories.browse.reading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="stories-load-error">
-          <p>{t('stories.browse.loadError')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('stories.browse.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('stories.browse.loadError')}
+          onRetry={retry}
+          retryLabel={t('stories.browse.retry')}
+          testId="stories-load-error"
+        />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="stories-announcement">
-        {announcement}
-      </p>
+      <Announce testId="stories-announcement">{announcement}</Announce>
       {moveError ? (
         <p className="form__message" role="alert" data-testid="stories-move-error">
           {moveError}
         </p>
       ) : null}
 
-      {state.kind === 'ready' && state.stories.length > 0 ? (
+      {state.kind === 'ready' && state.value.stories.length > 0 ? (
         <StoryShelf
-          stories={state.stories}
+          stories={state.value.stories}
           access={access}
           universe={universe}
           move={move}
@@ -174,10 +152,13 @@ export default function StoriesPage() {
             setState((current) =>
               current.kind === 'ready'
                 ? {
-                    ...current,
-                    stories: current.stories.map((one) =>
-                      one.id === covering.id ? { ...one, cover } : one,
-                    ),
+                    kind: 'ready',
+                    value: {
+                      ...current.value,
+                      stories: current.value.stories.map((one) =>
+                        one.id === covering.id ? { ...one, cover } : one,
+                      ),
+                    },
                   }
                 : current,
             )
@@ -186,11 +167,13 @@ export default function StoriesPage() {
         />
       ) : null}
 
-      {state.kind === 'ready' && state.others.length > 0 ? (
-        <WritingProjectShelf projects={state.others} />
+      {state.kind === 'ready' && state.value.others.length > 0 ? (
+        <WritingProjectShelf projects={state.value.others} />
       ) : null}
 
-      {state.kind === 'ready' && state.stories.length === 0 && state.others.length === 0 ? (
+      {state.kind === 'ready' &&
+      state.value.stories.length === 0 &&
+      state.value.others.length === 0 ? (
         <EmptyState
           testId="stories-empty"
           title={t('stories.browse.empty.title')}

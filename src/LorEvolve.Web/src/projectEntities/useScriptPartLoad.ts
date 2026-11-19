@@ -2,6 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { t } from '../i18n'
 import { getNode, scriptOf } from './structure'
 import type { useScriptPartState } from './useScriptPartState'
+import { errorText } from '../lib/errorText'
 
 export function useScriptPartLoad({
   projectId,
@@ -23,8 +24,7 @@ export function useScriptPartLoad({
           setFailure(null)
         })
         .catch((error: unknown) => {
-          if (!signal?.aborted)
-            setFailure(error instanceof Error ? error.message : t('projects.structure.failed'))
+          if (!signal?.aborted) setFailure(errorText(error, t('projects.structure.failed')))
         }),
     [projectId, nodeId],
   )

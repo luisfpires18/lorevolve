@@ -4,6 +4,8 @@ import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { UniverseCapabilities } from '../../universes/access'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The screens an entry shows instead of itself: missing, no types to make one of, a failed read, and opening. */
 export function EntryUnavailable({
@@ -58,23 +60,15 @@ export function EntryUnavailable({
   }
   if (reason === 'error') {
     return (
-      <div className="notice notice--error" role="alert">
-        <p>{t('entity.page.openFailed')}</p>
-        <Button
-          tone="secondary"
-          onClick={() => {
-            setStatus('loading')
-            setReads((count) => count + 1)
-          }}
-        >
-          {t('entity.page.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={t('entity.page.openFailed')}
+        onRetry={() => {
+          setStatus('loading')
+          setReads((count) => count + 1)
+        }}
+        retryLabel={t('entity.page.retry')}
+      />
     )
   }
-  return (
-    <p className="notice" role="status">
-      {t('entity.page.opening')}
-    </p>
-  )
+  return <LoadingNote>{t('entity.page.opening')}</LoadingNote>
 }

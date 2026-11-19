@@ -9,6 +9,10 @@ import { useSystemEditorState } from '../worldLogic/useSystemEditorState'
 import { systemEditorActions } from '../worldLogic/systemEditorActions'
 import { SystemDetails } from '../components/worldLogic/SystemDetails'
 import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { EmptyState } from '../components/EmptyState'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * Creates a System, or edits and deletes a saved one, at `world-logic/systems/new` or `world-logic/systems/:systemId`.
@@ -81,30 +85,36 @@ function SystemEditor({
   })
 
   if (load.kind === 'loading') {
+    return <LoadingNote>{t('canon.worldLogic.systems.loading')}</LoadingNote>
+  }
+
+  if (load.kind === 'missing') {
     return (
-      <p className="notice" role="status">
-        {t('canon.worldLogic.systems.loading')}
-      </p>
+      <EmptyState
+        title={t('canon.worldLogic.systems.editor.gone')}
+        action={
+          <Button tone="secondary" to={listPath}>
+            {t('canon.worldLogic.systems.editor.back')}
+          </Button>
+        }
+        testId="system-editor-unavailable"
+      />
     )
   }
 
-  if (load.kind === 'missing' || load.kind === 'error') {
+  if (load.kind === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="system-editor-unavailable">
-        <p>
-          {load.kind === 'missing'
-            ? t('canon.worldLogic.systems.editor.gone')
-            : t('canon.worldLogic.systems.readFailed')}
-        </p>
-        {load.kind === 'error' ? (
-          <Button tone="secondary" onClick={() => void reread()}>
-            {t('canon.rules.retry')}
+      <LoadError
+        message={t('canon.worldLogic.systems.readFailed')}
+        onRetry={() => void reread()}
+        retryLabel={t('canon.rules.retry')}
+        action={
+          <Button tone="secondary" to={listPath}>
+            {t('canon.worldLogic.systems.editor.back')}
           </Button>
-        ) : null}
-        <Button tone="secondary" to={listPath}>
-          {t('canon.worldLogic.systems.editor.back')}
-        </Button>
-      </div>
+        }
+        testId="system-editor-unavailable"
+      />
     )
   }
 
@@ -179,9 +189,7 @@ function SystemEditor({
         </>
       )}
 
-      <p className="visually-hidden" role="status" data-testid="system-editor-announcer">
-        {announcement}
-      </p>
+      <Announce testId="system-editor-announcer">{announcement}</Announce>
     </section>
   )
 }
