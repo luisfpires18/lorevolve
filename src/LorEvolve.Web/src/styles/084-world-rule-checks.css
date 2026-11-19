@@ -125,7 +125,6 @@
 .rulecheck__note {
   margin: 0.45rem 0 0;
   font-size: 0.82rem;
-  color: var(--muted);
 }
 
 /* A moment's validation details: folded at the foot of the drawer, because most moments need none. */
@@ -163,8 +162,6 @@
 .moment__validation {
   margin: 0.4rem 0 0;
   font-size: 0.8rem;
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 .moment__validationlabel {

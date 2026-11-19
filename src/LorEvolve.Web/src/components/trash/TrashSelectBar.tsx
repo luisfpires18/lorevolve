@@ -2,6 +2,7 @@ import { t } from '../../i18n'
 import type { TrashItem } from '../../trash/types'
 import type { useTrashState } from '../../trash/useTrashState'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** The bar while selecting: how many are selected, Delete permanently, Select page, Clear and Done. */
 export function TrashSelectBar({
@@ -24,11 +25,11 @@ export function TrashSelectBar({
 }) {
   return (
     <footer className="actionbar trash__selectbar" data-testid="trash-selectbar">
-      <p className="actionbar__status" role="status" data-testid="trash-selected-count">
+      <QuietNote className="actionbar__status" testId="trash-selected-count" role="status">
         {selected.length === 0
           ? t('data.trash.bar.hint')
           : t('data.trash.bar.selected', { n: selected.length })}
-      </p>
+      </QuietNote>
       <div className="actionbar__actions">
         {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
         <Button

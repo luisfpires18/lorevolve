@@ -13,6 +13,7 @@ import type { EntityRevisionDetail, RevisionFieldValue } from '../../lore/revisi
 import { CANON_LABELS } from '../../lore/types'
 import { FieldKind } from '../../lore/fieldKinds'
 import { t, useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /** One version read whole, in the same shapes the dossier uses for the live entry. */
 export function Snapshot({
@@ -28,14 +29,14 @@ export function Snapshot({
       <h3 className="snapshot__name">
         <bdi>{revision.name}</bdi>
       </h3>
-      <p className="snapshot__kind">
+      <QuietNote className="snapshot__kind">
         <bdi>{revision.entityTypeName}</bdi> &middot; {CANON_LABELS[revision.canonStatus]}
-      </p>
+      </QuietNote>
 
       {revision.aliases.length > 0 ? (
-        <p className="entry__aliases">
+        <QuietNote className="entry__aliases" size="ui">
           {tx('entity.history.alsoKnownAs', { names: <NameList names={revision.aliases} /> })}
-        </p>
+        </QuietNote>
       ) : null}
 
       {revision.summary ? <p className="entry__summary prose">{revision.summary}</p> : null}
@@ -44,7 +45,7 @@ export function Snapshot({
           applies that copy - so it is shown as what it is, and a version without one says nothing about the article. */}
       {!isEmptyDocument(revision.content) ? (
         <div className="snapshot__article" data-testid="version-article">
-          <p className="snapshot__articlenote">{t('entity.history.articleThen')}</p>
+          <QuietNote className="snapshot__articlenote">{t('entity.history.articleThen')}</QuietNote>
           <LoreArticle content={revision.content} />
         </div>
       ) : null}

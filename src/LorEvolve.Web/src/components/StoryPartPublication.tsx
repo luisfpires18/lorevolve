@@ -4,6 +4,7 @@ import { ActionMenu } from './ActionMenu'
 import { setStoryPartPublication } from '../publishing/api'
 import { Visibility, type StoryPartKind, type VisibilityValue } from '../publishing/types'
 import { t, useI18n } from '../i18n'
+import { Announce } from './Announce'
 
 /** What each part puts on the story's public page and what it keeps - said before publishing, never discovered after. */
 function wordsOf(kind: StoryPartKind) {
@@ -190,13 +191,13 @@ export function StoryPartPublication({
           {failed}
         </span>
       ) : null}
-      <span className="visually-hidden" role="status">
+      <Announce inline>
         {announcement ? (
           <>
             <bdi>{name}</bdi>: {announcement}
           </>
         ) : null}
-      </span>
+      </Announce>
     </div>
   )
 }

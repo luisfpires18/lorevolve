@@ -10,6 +10,11 @@ export function useShelfState() {
   const [moveError, setMoveError] = useState<string | null>(null)
   const [covering, setCovering] = useState<ProjectDetail | null>(null)
   const isMoving = useRef(false)
+  const [attempt, setAttempt] = useState(0)
+  const retry = () => {
+    setState({ kind: 'loading' })
+    setAttempt((current) => current + 1)
+  }
   return {
     state,
     setState,
@@ -20,5 +25,7 @@ export function useShelfState() {
     covering,
     setCovering,
     isMoving,
+    attempt,
+    retry,
   }
 }

@@ -15,6 +15,7 @@ import {
   type WorldRuleValidation,
 } from '../ruleValidation/types'
 import { Button } from './Button'
+import { QuietNote } from './QuietNote'
 
 interface WorldRuleCheckSectionProps {
   universeId: string
@@ -257,12 +258,14 @@ function CheckState({
       ) : null}
 
       {found.notCanonMoments > 0 ? (
-        <p className="rulecheck__note">
+        <QuietNote className="rulecheck__note">
           {tn('canon.check.notCanon', found.notCanonMoments, { n: found.notCanonMoments })}
-        </p>
+        </QuietNote>
       ) : null}
 
-      {isDirty ? <p className="rulecheck__note">{t('canon.check.lastSaved')}</p> : null}
+      {isDirty ? (
+        <QuietNote className="rulecheck__note">{t('canon.check.lastSaved')}</QuietNote>
+      ) : null}
     </div>
   )
 }

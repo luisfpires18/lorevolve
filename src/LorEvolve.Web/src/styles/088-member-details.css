@@ -157,8 +157,6 @@
 
 .familydetails__note {
   margin: 0.35rem 0 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 .familydetails__actions {

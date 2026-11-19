@@ -9,6 +9,10 @@ import { useArticleEditing } from '../lore/useArticleEditing'
 import { ArticleEditing } from './lore/ArticleEditing'
 import { ArticleHistory } from './lore/ArticleHistory'
 import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { Announce } from './Announce'
+import { LoadingNote } from './LoadingNote'
+import { QuietNote } from './QuietNote'
 
 export interface EntityArticleSectionProps {
   universeId: string
@@ -133,15 +137,13 @@ export function EntityArticleSection({
 
       {/* Beside the control it explains, not after the whole article. */}
       {isReady && !isEditing && note && access.editContent ? (
-        <p className="article__note" id={noteId} data-testid="article-note">
+        <QuietNote className="article__note" testId="article-note" id={noteId}>
           {note}
-        </p>
+        </QuietNote>
       ) : null}
 
       {load.kind === 'loading' ? (
-        <p className="notice" role="status" data-testid="article-loading">
-          {t('entity.article.opening')}
-        </p>
+        <LoadingNote testId="article-loading">{t('entity.article.opening')}</LoadingNote>
       ) : null}
 
       {load.kind === 'missing' ? (
@@ -151,12 +153,13 @@ export function EntityArticleSection({
       ) : null}
 
       {load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="article-load-error">
-          <p>{t('entity.article.openFailed')}</p>
-          <Button tone="secondary" onClick={reread} data-testid="article-retry">
-            {t('entity.article.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('entity.article.openFailed')}
+          onRetry={reread}
+          retryLabel={t('entity.article.retry')}
+          retryTestId="article-retry"
+          testId="article-load-error"
+        />
       ) : null}
 
       {offer && access.editContent ? (
@@ -234,9 +237,7 @@ export function EntityArticleSection({
         />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="article-announcer">
-        {announcement}
-      </p>
+      <Announce testId="article-announcer">{announcement}</Announce>
     </section>
   )
 }

@@ -12,8 +12,6 @@
 .chron__scope {
   margin: 0 0 var(--space-4);
   max-width: 62ch;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 .moment__source {

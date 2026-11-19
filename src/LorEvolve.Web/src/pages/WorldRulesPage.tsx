@@ -11,6 +11,9 @@ import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { OutcomeNotice } from '../components/OutcomeNotice'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: WorldRulePage } | { kind: 'error'; message: string }
@@ -88,35 +91,26 @@ export default function WorldRulesPage() {
       />
 
       {notice ? (
-        <div className="notice rules__notice" data-testid="world-rules-deleted-notice">
-          <p role="status">
-            {tx('canon.rules.deleted', {
-              title: <Quoted text={notice.title} />,
-              restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
-            })}
-          </p>
-        </div>
+        <OutcomeNotice className="rules__notice" testId="world-rules-deleted-notice">
+          {tx('canon.rules.deleted', {
+            title: <Quoted text={notice.title} />,
+            restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
+          })}
+        </OutcomeNotice>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rules.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('canon.rules.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-rules-load-error">
-          <p>{state.message}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((current) => current + 1)
+          }}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-rules-load-error"
+        />
       ) : null}
 
       {result && result.items.length > 0 ? (

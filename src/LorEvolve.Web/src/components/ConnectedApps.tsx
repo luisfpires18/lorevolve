@@ -12,6 +12,8 @@ import {
 } from '../mcp/api'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { Announce } from './Announce'
+import { QuietNote } from './QuietNote'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; apps: ConnectedApp[] } | { kind: 'error' }
 
@@ -103,9 +105,9 @@ export function ConnectedApps() {
           </Button>
         </div>
       ) : load.apps.length === 0 ? (
-        <p className="connectedapps__empty" data-testid="connected-apps-empty">
+        <QuietNote className="connectedapps__empty" size="ui" testId="connected-apps-empty">
           {t('data.connectedApps.empty')}
-        </p>
+        </QuietNote>
       ) : (
         <ul className="connectedapps__list">
           {load.apps.map((app) => (
@@ -114,9 +116,7 @@ export function ConnectedApps() {
         </ul>
       )}
 
-      <p className="visually-hidden" role="status" data-testid="connected-apps-announcer">
-        {announcement}
-      </p>
+      <Announce testId="connected-apps-announcer">{announcement}</Announce>
     </section>
   )
 }

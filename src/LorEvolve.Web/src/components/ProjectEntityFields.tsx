@@ -14,6 +14,7 @@ import { t, useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { EntityImageField } from './EntityImageField'
 import { ProjectEntryForm } from './ProjectEntryForm'
+import { errorText } from '../lib/errorText'
 
 /**
  * An entry's field values (#287), in its own type's order and read from its own game's types, so a same-named type of
@@ -134,9 +135,7 @@ export function ProjectEntityFields({
               setFailed(notice)
               onSaved()
             }}
-            onFailed={(error) =>
-              setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
-            }
+            onFailed={(error) => setFailed(errorText(error, t('projects.entries.failed')))}
             onCancel={() => setEditing(false)}
           />
         </Drawer>

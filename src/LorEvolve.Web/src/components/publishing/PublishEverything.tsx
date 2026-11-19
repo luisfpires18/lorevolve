@@ -5,6 +5,7 @@ import { getPublishEverything, publishEverything } from '../../publishing/api'
 import type { PublishEverythingPreview, PublishEverythingResult } from '../../publishing/types'
 import { PublishEverythingConfirm } from './PublishEverythingConfirm'
 import { Button } from '../Button'
+import { errorText } from '../../lib/errorText'
 
 /**
  * Publish everything: every Canon lore entry and every Complete story, with its scenes and their text, in one action. The
@@ -46,9 +47,7 @@ export function PublishEverything({
     try {
       setPreview(await getPublishEverything(universeId))
     } catch (failure: unknown) {
-      setError(
-        failure instanceof Error ? failure.message : t('universe.publish.everything.checkFailed'),
-      )
+      setError(errorText(failure, t('universe.publish.everything.checkFailed')))
     } finally {
       setBusy(false)
     }
@@ -63,9 +62,7 @@ export function PublishEverything({
       setDone(publishedSentence(result))
       onPublished()
     } catch (failure: unknown) {
-      setError(
-        failure instanceof Error ? failure.message : t('universe.publish.everything.publishFailed'),
-      )
+      setError(errorText(failure, t('universe.publish.everything.publishFailed')))
     } finally {
       setBusy(false)
     }

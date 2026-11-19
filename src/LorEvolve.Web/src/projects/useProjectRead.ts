@@ -25,6 +25,7 @@ export function useProjectRead({
 }) {
   const [state, setState] = useState<LoadState | null>(null)
   const [schemaVersion, setSchemaVersion] = useState(0)
+  const [attempt, setAttempt] = useState(0)
   const read = state !== null && state.for === projectId ? state : null
 
   useEffect(() => {
@@ -71,6 +72,10 @@ export function useProjectRead({
           })
       })
     return () => controller.abort()
-  }, [projectId, inUniverse, universeId])
-  return { schemaVersion, setSchemaVersion, read }
+  }, [projectId, inUniverse, universeId, attempt])
+  const retry = () => {
+    setState(null)
+    setAttempt((current) => current + 1)
+  }
+  return { schemaVersion, setSchemaVersion, read, retry }
 }

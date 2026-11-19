@@ -8,7 +8,10 @@ import { getWorldRule } from '../worldRules/api'
 import type { WorldRuleDetail } from '../worldRules/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import type { WorldRulesListNotice } from './WorldRulesPage'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { errorText } from '../lib/errorText'
+import { EmptyState } from '../components/EmptyState'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -94,7 +97,7 @@ function WorldRuleReading({
             ? { kind: 'missing' }
             : {
                 kind: 'error',
-                message: problem instanceof Error ? problem.message : t('canon.rule.readFailed'),
+                message: errorText(problem, t('canon.rule.readFailed')),
               },
         )
       })
@@ -113,29 +116,19 @@ function WorldRuleReading({
           {state.kind === 'ready' ? <bdi>{state.rule.title}</bdi> : t('canon.rule.heading')}
         </h1>
       </header>
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rule.opening')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('canon.rule.opening')}</LoadingNote> : null}
       {state.kind === 'missing' ? (
-        <p className="notice" data-testid="world-rule-missing">
-          {t('canon.rule.missing')}
-        </p>
+        <EmptyState title={t('canon.rule.missing')} testId="world-rule-missing" />
       ) : null}
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('canon.rule.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((count) => count + 1)
+          }}
+          retryLabel={t('canon.rule.retry')}
+        />
       ) : null}
       {state.kind === 'ready' ? (
         <>

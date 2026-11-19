@@ -9,7 +9,10 @@ import { CollaboratorInvitations } from './universes/CollaboratorInvitations'
 import { CollaboratorMembers } from './universes/CollaboratorMembers'
 import { CopyLink } from './universes/CopyLink'
 import { InviteForm } from './universes/InviteForm'
-import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { Announce } from './Announce'
+import { LoadingNote } from './LoadingNote'
+import { errorText } from '../lib/errorText'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; data: Collaborators } | { kind: 'error'; message: string }
@@ -38,7 +41,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: problem instanceof Error ? problem.message : t('universe.collab.loadFailed'),
+          message: errorText(problem, t('universe.collab.loadFailed')),
         })
       })
     return () => {
@@ -56,9 +59,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
 
   return (
     <div className="collab" data-testid="collaborators-panel">
-      <p className="visually-hidden" role="status" data-testid="collaborators-announcer">
-        {announcement}
-      </p>
+      <Announce testId="collaborators-announcer">{announcement}</Announce>
 
       <section className="settings__section" aria-labelledby="collab-invite-heading">
         <h2 className="settings__heading" id="collab-invite-heading">
@@ -97,19 +98,14 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
         ) : null}
       </section>
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('universe.collab.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('universe.collab.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <Button tone="secondary" onClick={() => setReloadKey((key) => key + 1)}>
-            {t('universe.collab.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => setReloadKey((key) => key + 1)}
+          retryLabel={t('universe.collab.retry')}
+        />
       ) : null}
 
       {data ? (

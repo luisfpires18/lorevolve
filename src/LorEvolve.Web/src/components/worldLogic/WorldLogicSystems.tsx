@@ -7,6 +7,8 @@ import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { SystemRow } from './SystemRow'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Systems tab: one row per System, with its empty states and its pager. */
 export function WorldLogicSystems({
@@ -23,18 +25,16 @@ export function WorldLogicSystems({
   return (
     <TabPanel idPrefix="world-logic" id="systems" tab={tab}>
       {systems.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.worldLogic.systems.loading')}
-        </p>
+        <LoadingNote>{t('canon.worldLogic.systems.loading')}</LoadingNote>
       ) : null}
 
       {systems.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-logic-systems-error">
-          <p>{t('canon.worldLogic.systems.readFailed')}</p>
-          <Button tone="secondary" onClick={retry}>
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.worldLogic.systems.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-logic-systems-error"
+        />
       ) : null}
 
       {systems.kind === 'ready' && systems.page.items.length > 0 ? (

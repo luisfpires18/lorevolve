@@ -2,6 +2,7 @@ import { NameList } from '../NameList'
 import { articleLinks } from '../../lore/document'
 import { useI18n } from '../../i18n'
 import { copyableReferences, type CopySource, type Draft } from '../../lore/entryDraft'
+import { QuietNote } from '../QuietNote'
 
 /**
  * What a copy takes from the entry it is made from (Issue #27), said above the new entry's form before anything is created.
@@ -170,9 +171,9 @@ export function CopyPanel({
         )
       ) : null}
 
-      <p className="entryform__note" data-testid="entry-copy-skipped">
+      <QuietNote className="entryform__note" size="ui" testId="entry-copy-skipped">
         {t('entity.copy.skipped')}
-      </p>
+      </QuietNote>
     </section>
   )
 }

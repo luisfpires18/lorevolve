@@ -13,7 +13,9 @@ import { sameFields } from '../worldRules/ruleDraft'
 import { WorldRuleHead } from './worldRules/WorldRuleHead'
 import { WorldRuleConflict } from './worldRules/WorldRuleConflict'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
-import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { Announce } from './Announce'
+import { LoadingNote } from './LoadingNote'
 
 interface WorldRuleEditorProps {
   universeId: string
@@ -101,11 +103,7 @@ export function WorldRuleEditor({
   useWorldRuleShortcut({ shortcut, save, stored })
 
   if (load.kind === 'loading') {
-    return (
-      <p className="notice" role="status" data-testid="world-rule-loading">
-        {t('canon.editor.opening')}
-      </p>
-    )
+    return <LoadingNote testId="world-rule-loading">{t('canon.editor.opening')}</LoadingNote>
   }
 
   if (load.kind === 'missing') {
@@ -123,12 +121,12 @@ export function WorldRuleEditor({
 
   if (load.kind === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="world-rule-load-error">
-        <p>{load.message}</p>
-        <Button tone="secondary" onClick={reread}>
-          {t('canon.editor.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={load.message}
+        onRetry={reread}
+        retryLabel={t('canon.editor.retry')}
+        testId="world-rule-load-error"
+      />
     )
   }
 
@@ -181,9 +179,7 @@ export function WorldRuleEditor({
         save={save}
       />
 
-      <p className="visually-hidden" role="status" data-testid="world-rule-announcer">
-        {announcement}
-      </p>
+      <Announce testId="world-rule-announcer">{announcement}</Announce>
     </article>
   )
 }

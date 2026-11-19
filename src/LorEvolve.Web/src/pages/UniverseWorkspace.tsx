@@ -21,6 +21,7 @@ import { useWorkspaceReads } from '../universes/useWorkspaceReads'
 import { useWorkspaceSetters } from '../universes/useWorkspaceSetters'
 import { useWorkspaceState } from '../universes/useWorkspaceState'
 import { currentSection } from '../universes/workspaceSections'
+import { LoadingNote } from '../components/LoadingNote'
 
 export interface WorkspaceContext {
   universe: UniverseDetail
@@ -89,11 +90,7 @@ function Workspace() {
   )
 
   if (state.kind === 'loading') {
-    return (
-      <p className="notice" role="status">
-        {t('workspace.rail.opening')}
-      </p>
-    )
+    return <LoadingNote>{t('workspace.rail.opening')}</LoadingNote>
   }
 
   if (state.kind === 'missing') {

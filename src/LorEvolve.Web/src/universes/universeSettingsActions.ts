@@ -8,6 +8,7 @@ import type { NavigateFunction } from 'react-router-dom'
 import type { useAuth } from '../auth/useAuth'
 import type { useI18n } from '../i18n'
 import type { useUniverseSettingsState } from './useUniverseSettingsState'
+import { errorText } from '../lib/errorText'
 
 /** Settings' handlers: the two downloads, archiving or restoring from the archive, and deleting. */
 export function universeSettingsActions({
@@ -39,9 +40,7 @@ export function universeSettingsActions({
         await (kind === 'backup' ? downloadUniverseBackup : downloadReadableExport)(universe.id),
       )
     } catch (problem: unknown) {
-      setExportError(
-        problem instanceof Error ? problem.message : t('universe.settings.exportFailed'),
-      )
+      setExportError(errorText(problem, t('universe.settings.exportFailed')))
     } finally {
       setExporting(null)
     }
@@ -54,7 +53,7 @@ export function universeSettingsActions({
       refresh(await setUniverseArchived(universe.id, !universe.isArchived))
       setConfirmingArchive(false)
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : t('universe.settings.changeFailed'))
+      setError(errorText(problem, t('universe.settings.changeFailed')))
     } finally {
       setBusy(false)
     }
@@ -96,7 +95,7 @@ export function universeSettingsActions({
       if (user) void discardUniverseDrafts(user.id, universe.id).catch(() => undefined)
       await navigate('/app', { replace: true })
     } catch (problem: unknown) {
-      setError(problem instanceof Error ? problem.message : t('universe.settings.deleteFailed'))
+      setError(errorText(problem, t('universe.settings.deleteFailed')))
       setBusy(false)
     }
   }

@@ -191,8 +191,6 @@
 
 .artwork__empty {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 .artwork__actions {

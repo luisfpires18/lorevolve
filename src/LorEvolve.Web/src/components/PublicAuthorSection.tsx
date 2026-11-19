@@ -5,6 +5,7 @@ import { useProfileImage } from '../profile/useProfileImage'
 import { getPublicAuthorSettings, setPublicAuthorPhoto } from '../publishing/api'
 import type { PublicAuthorSettings } from '../publishing/types'
 import { useI18n } from '../i18n'
+import { Announce } from './Announce'
 
 /**
  * The Profile's view of the account's public author page (ADR 0037): where it is, whether anyone can see it, and the
@@ -105,9 +106,7 @@ export function PublicAuthorSection() {
           {message}
         </p>
       ) : null}
-      <p className="visually-hidden" role="status">
-        {announcement}
-      </p>
+      <Announce>{announcement}</Announce>
     </div>
   )
 }

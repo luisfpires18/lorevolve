@@ -9,6 +9,8 @@ import { useI18n } from '../i18n'
 import { useEntityRevisions } from '../lore/useEntityRevisions'
 import { Snapshot } from './lore/RevisionSnapshot'
 import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { QuietNote } from './QuietNote'
 
 export interface EntityHistoryProps {
   universeId: string
@@ -73,14 +75,14 @@ export function EntityHistory({
         </h2>
       </div>
 
-      <p className="history__quiet" data-testid="history-article-note">
+      <QuietNote className="history__quiet" size="ui" testId="history-article-note">
         {t('entity.history.articleNote')}
-      </p>
+      </QuietNote>
 
       {carriesImages ? (
-        <p className="history__quiet" data-testid="history-image-note">
+        <QuietNote className="history__quiet" size="ui" testId="history-image-note">
           {imagesNotRestored()}
-        </p>
+        </QuietNote>
       ) : null}
 
       {blocked ? (
@@ -94,18 +96,14 @@ export function EntityHistory({
       ) : null}
 
       {status === 'loading' ? null : status === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{t('entity.history.readFailed')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setStatus('loading')
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('entity.history.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('entity.history.readFailed')}
+          onRetry={() => {
+            setStatus('loading')
+            setReads((count) => count + 1)
+          }}
+          retryLabel={t('entity.history.retry')}
+        />
       ) : revisions.length === 0 ? (
         <EmptyState testId="history-empty" title={t('entity.history.empty')} />
       ) : (
@@ -171,9 +169,9 @@ export function EntityHistory({
               {openId === revision.id ? (
                 <div className="version__snapshot" data-testid="version-snapshot">
                   {opened === null || opened.id !== openId ? (
-                    <p className="history__quiet" role="status">
+                    <QuietNote className="history__quiet" size="ui" role="status">
                       {t('entity.history.opening')}
-                    </p>
+                    </QuietNote>
                   ) : (
                     <Snapshot revision={opened} chronology={chronology} />
                   )}

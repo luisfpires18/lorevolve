@@ -8,6 +8,7 @@ import { NOT_RECORDED, NOT_TRACKED, ROLE_KEYS } from '../../admin/adminConstants
 import { BlockSection } from './BlockSection'
 import { Fact } from './Fact'
 import { PasswordSection } from './PasswordSection'
+import { QuietNote } from '../QuietNote'
 
 const HISTORY_KEYS = {
   Block: 'admin.history.blocked',
@@ -170,9 +171,9 @@ export function UserDetail({
                   })}
                 </p>
                 {entry.reason ? (
-                  <p className="adminhistory__reason" dir="auto">
+                  <QuietNote className="adminhistory__reason" size="ui" wrap dir="auto">
                     {entry.reason}
-                  </p>
+                  </QuietNote>
                 ) : null}
               </li>
             ))}

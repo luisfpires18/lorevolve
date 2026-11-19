@@ -77,7 +77,6 @@
   margin: -0.25rem 0 1rem;
   max-width: 52ch;
   font-size: 0.85rem;
-  color: var(--muted);
 }
 
 /* Save stays in reach however far down a long article the author is: the bar holds to the bottom of the screen, over

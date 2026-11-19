@@ -16,6 +16,7 @@ import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { FieldFilterEditor, type EntryName } from './lore/FieldFilterEditor'
 import { buttonClass } from '../lib/buttonClass'
+import { QuietNote } from './QuietNote'
 
 /**
  * Filtering a type's entries by its own fields (034), inside Lore's filters. It starts from what the author knows - a
@@ -90,9 +91,9 @@ export function LoreFieldFilters({
     <>
       <div className="lore__addfilter" ref={addRef}>
         {full ? (
-          <p className="lore__filterlimit" data-testid="lore-field-filter-limit">
+          <QuietNote className="lore__filterlimit" testId="lore-field-filter-limit">
             {t('lore.filters.limit', { max: MAX_FIELD_FILTERS })}
-          </p>
+          </QuietNote>
         ) : (
           <ActionMenu
             label={t('lore.filters.add')}

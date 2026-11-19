@@ -8,6 +8,8 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 import { GAME_ENTITIES, sectionLabel } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { LoadingNote } from '../components/LoadingNote'
+import { LoadError } from '../components/LoadError'
 
 /**
  * One game's directory inside Game Entities (#284): its own categories, counts and entries, read by the game's id, so
@@ -21,7 +23,7 @@ export default function GameEntitiesPage() {
   const { pathname } = useLocation()
   const [schemaVersion, setSchemaVersion] = useState(0)
   // Only a game of this universe counts: a foreign project's name must not reach the tab title either.
-  const { loading, game: project } = useGameProject(projectId, universeId)
+  const { loading, failed, retry, game: project } = useGameProject(projectId, universeId)
   useDocumentTitle(project?.name ?? sectionLabel(GAME_ENTITIES))
 
   const back = (
@@ -30,7 +32,12 @@ export default function GameEntitiesPage() {
     </Link>
   )
 
-  if (loading) return <p className="projects__lede">{t('projects.list.loading')}</p>
+  if (loading) return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
+
+  if (failed)
+    return (
+      <LoadError message={t('projects.one.failed')} onRetry={retry} testId="game-project-failed" />
+    )
 
   // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
   if (project === null) {

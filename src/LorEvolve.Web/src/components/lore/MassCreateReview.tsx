@@ -7,6 +7,7 @@ type Rows = ReturnType<typeof useMassRows>
 
 import { MassCreateRow } from './MassCreateRow'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /** The rows to create, under their column names, and Add row. */
 export function MassCreateReview({
@@ -46,7 +47,9 @@ export function MassCreateReview({
       </div>
 
       {rows.length === 0 ? (
-        <p className="masscreate__empty">{t('lore.massCreate.empty')}</p>
+        <QuietNote className="masscreate__empty" size="ui">
+          {t('lore.massCreate.empty')}
+        </QuietNote>
       ) : (
         <>
           <div className="masscreate__columns" aria-hidden="true">

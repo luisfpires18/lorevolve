@@ -12,6 +12,7 @@ import {
   statusLabel,
 } from '../../worldLogic/findingLabels'
 import { FindingDetail } from './FindingDetail'
+import { LoadingNote } from '../LoadingNote'
 
 /**
  * One finding: which rule produced it, what checking concluded, and, once the author opens it, the records the
@@ -153,9 +154,7 @@ export function FindingRow({
         ) : null}
 
         {open && !detail && !failed ? (
-          <p className="notice" role="status">
-            {t('canon.worldLogic.integrity.loadingOne')}
-          </p>
+          <LoadingNote>{t('canon.worldLogic.integrity.loadingOne')}</LoadingNote>
         ) : null}
 
         {detail ? (

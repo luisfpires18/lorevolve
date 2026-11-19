@@ -8,6 +8,7 @@ export function useShelfRead({
   universe,
   kinds,
   setState,
+  attempt,
 }: ReturnType<typeof useShelfState> & {
   universe: WorkspaceContext['universe']
   kinds: readonly ProjectKindValue[]
@@ -25,5 +26,5 @@ export function useShelfRead({
         if (!controller.signal.aborted) setState({ kind: 'failed' })
       })
     return () => controller.abort()
-  }, [universe.id, kinds])
+  }, [universe.id, kinds, attempt])
 }

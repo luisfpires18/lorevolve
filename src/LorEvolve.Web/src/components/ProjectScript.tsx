@@ -9,6 +9,7 @@ import { childrenOf, getStructure, type ProjectStructureTree } from '../projectE
 import { projectPath } from '../projects/sections'
 import { scriptParts } from '../projectEntities/scriptParts'
 import { ScriptPart } from './projectEntities/ScriptPart'
+import { errorText } from '../lib/errorText'
 
 /**
  * A Series', Film's or Comic's Script view (#377): every node of its structure listed beside the text it holds, in the
@@ -37,7 +38,7 @@ export function ProjectScript({
         .catch((error: unknown) => {
           if (signal?.aborted) return
           if (error instanceof ApiError && error.status === 404) setTree('none')
-          else setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+          else setFailed(errorText(error, t('projects.structure.failed')))
         }),
     [projectId],
   )

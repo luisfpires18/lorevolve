@@ -163,7 +163,7 @@ export function AppearanceItem({
                           {scene.title}
                         </Link>
                       )}
-                      <span className="muted"> · {scene.storyTitle}</span>
+                      <span> · {scene.storyTitle}</span>
                     </li>
                   ))}
                 </ul>

@@ -18,8 +18,10 @@ import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { StoryShelf } from '../components/stories/StoryShelf'
 import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
-import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
+import { LoadError } from '../components/LoadError'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
 
 type LoadState =
   | { kind: 'loading' }
@@ -123,30 +125,21 @@ export default function StoriesPage() {
         }
       />
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('stories.browse.reading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('stories.browse.reading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="stories-load-error">
-          <p>{t('stories.browse.loadError')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('stories.browse.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('stories.browse.loadError')}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((count) => count + 1)
+          }}
+          retryLabel={t('stories.browse.retry')}
+          testId="stories-load-error"
+        />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="stories-announcement">
-        {announcement}
-      </p>
+      <Announce testId="stories-announcement">{announcement}</Announce>
       {moveError ? (
         <p className="form__message" role="alert" data-testid="stories-move-error">
           {moveError}

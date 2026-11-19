@@ -8,6 +8,7 @@ import { useTypeManagerState } from '../relationships/useTypeManagerState'
 import { KindForm } from './relationships/KindForm'
 import { KindRow } from './relationships/KindRow'
 import { NewButton } from './NewButton'
+import { LoadingNote } from './LoadingNote'
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
   useI18n() // Re-render when the language changes; the module's `t` reads the new one.
@@ -61,11 +62,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
   )
 
   if (!types) {
-    return (
-      <p className="notice" role="status">
-        {t('relationships.types.reading')}
-      </p>
-    )
+    return <LoadingNote>{t('relationships.types.reading')}</LoadingNote>
   }
 
   return (

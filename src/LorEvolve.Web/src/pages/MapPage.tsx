@@ -15,7 +15,8 @@ import { MapPanelActions } from '../components/maps/MapPanelActions'
 import { MapPanelDetail } from '../components/maps/MapPanelDetail'
 import { MapPinList } from '../components/maps/MapPinList'
 import { MapStage } from '../components/maps/MapStage'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * One map (issue #52, ADR 0060): the picture panned and zoomed, its pins on it and beside it, and - for an Editor or the
@@ -68,11 +69,7 @@ export default function MapPage() {
   })
 
   if (state.kind === 'loading') {
-    return (
-      <p className="notice" role="status">
-        {t('places.mapPage.loading')}
-      </p>
-    )
+    return <LoadingNote>{t('places.mapPage.loading')}</LoadingNote>
   }
 
   if (state.kind === 'missing') {
@@ -89,12 +86,12 @@ export default function MapPage() {
 
   if (state.kind === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="map-load-error">
-        <p>{t('places.mapPage.error')}</p>
-        <Button tone="secondary" onClick={() => setReads((current) => current + 1)}>
-          {t('places.mapPage.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={t('places.mapPage.error')}
+        onRetry={() => setReads((current) => current + 1)}
+        retryLabel={t('places.mapPage.retry')}
+        testId="map-load-error"
+      />
     )
   }
 

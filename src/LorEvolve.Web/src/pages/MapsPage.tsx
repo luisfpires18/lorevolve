@@ -11,8 +11,11 @@ import type { MapSummary } from '../maps/types'
 import { useUniverseAccess } from '../universes/access'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { OutcomeNotice } from '../components/OutcomeNotice'
+import { QuietNote } from '../components/QuietNote'
 
 type LoadState = { kind: 'loading' } | { kind: 'ready'; maps: MapSummary[] } | { kind: 'error' }
 
@@ -82,32 +85,23 @@ export default function MapsPage() {
 
       <TabPanel idPrefix="maps" id="maps" tab={tab}>
         {notice ? (
-          <div className="notice maps__notice" data-testid="maps-deleted-notice">
-            <p role="status">
-              {tx('places.maps.deleted', { name: <Quoted text={notice.name} /> })}
-            </p>
-          </div>
+          <OutcomeNotice className="maps__notice" testId="maps-deleted-notice">
+            {tx('places.maps.deleted', { name: <Quoted text={notice.name} /> })}
+          </OutcomeNotice>
         ) : null}
 
-        {state.kind === 'loading' ? (
-          <p className="notice" role="status">
-            {t('places.maps.loading')}
-          </p>
-        ) : null}
+        {state.kind === 'loading' ? <LoadingNote>{t('places.maps.loading')}</LoadingNote> : null}
 
         {state.kind === 'error' ? (
-          <div className="notice notice--error" role="alert" data-testid="maps-load-error">
-            <p>{t('places.maps.error')}</p>
-            <Button
-              tone="secondary"
-              onClick={() => {
-                setState({ kind: 'loading' })
-                setReads((current) => current + 1)
-              }}
-            >
-              {t('places.maps.retry')}
-            </Button>
-          </div>
+          <LoadError
+            message={t('places.maps.error')}
+            onRetry={() => {
+              setState({ kind: 'loading' })
+              setReads((current) => current + 1)
+            }}
+            retryLabel={t('places.maps.retry')}
+            testId="maps-load-error"
+          />
         ) : null}
 
         {state.kind === 'ready' && state.maps.length > 0 ? (
@@ -138,7 +132,7 @@ export default function MapsPage() {
                     {map.description}
                   </p>
                 ) : null}
-                <p className="mapcard__meta" data-testid="map-pin-count">
+                <QuietNote className="mapcard__meta" testId="map-pin-count">
                   {t('places.maps.meta', {
                     pins:
                       map.pinCount === 0
@@ -147,7 +141,7 @@ export default function MapsPage() {
                     width: map.image.width,
                     height: map.image.height,
                   })}
-                </p>
+                </QuietNote>
               </li>
             ))}
           </ul>

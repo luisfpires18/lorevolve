@@ -4,6 +4,7 @@ import { getPublication } from './api'
 import { Visibility } from './types'
 import type { useI18n } from '../i18n'
 import type { usePublishState } from './usePublishState'
+import { errorText } from '../lib/errorText'
 
 /** Reads the publication and, while public, what readers can see; moves the focus to a confirm or a refusal. */
 export function usePublishReads({
@@ -32,7 +33,7 @@ export function usePublishReads({
         })
         .catch((error: unknown) => {
           if (signal?.aborted) return
-          setLoadError(error instanceof Error ? error.message : t('universe.publish.loadFailed'))
+          setLoadError(errorText(error, t('universe.publish.loadFailed')))
         }),
     [universeId, t],
   )

@@ -15,6 +15,8 @@ import {
   type ReceivedInvitation,
 } from '../universes/collaborators'
 import { Button } from '../components/Button'
+import { Announce } from '../components/Announce'
+import { errorText } from '../lib/errorText'
 
 type State =
   | { kind: 'loading' }
@@ -95,7 +97,7 @@ export default function InvitationPage() {
     if (problem instanceof ApiError && [403, 404, 410].includes(problem.status)) {
       setState(stateFor(problem))
     } else {
-      setActionError(problem instanceof Error ? problem.message : t('auth.invitation.actionFailed'))
+      setActionError(errorText(problem, t('auth.invitation.actionFailed')))
     }
   }
 
@@ -145,9 +147,7 @@ export default function InvitationPage() {
           intro={t('auth.invitation.loading.intro')}
           footer={back}
         >
-          <p className="visually-hidden" role="status">
-            {t('auth.invitation.loading.status')}
-          </p>
+          <Announce>{t('auth.invitation.loading.status')}</Announce>
         </AuthLayout>
       )
     case 'ready': {
@@ -272,6 +272,6 @@ function stateFor(problem: unknown): State {
   }
   return {
     kind: 'error',
-    message: problem instanceof Error ? problem.message : t('auth.invitation.retryLater'),
+    message: errorText(problem, t('auth.invitation.retryLater')),
   }
 }

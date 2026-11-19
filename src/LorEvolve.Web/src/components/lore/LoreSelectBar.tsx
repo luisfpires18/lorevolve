@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -31,11 +32,11 @@ export function LoreSelectBar({
     <>
       {isSelecting ? (
         <footer className="actionbar lore__selectbar" data-testid="lore-selectbar">
-          <p className="actionbar__status" role="status" data-testid="lore-selected-count">
+          <QuietNote className="actionbar__status" testId="lore-selected-count" role="status">
             {selected.length === 0
               ? t('lore.page.selectHint')
               : t('lore.page.selected', { n: selected.length })}
-          </p>
+          </QuietNote>
           <div className="actionbar__actions">
             <Button
               icon={Trash2}

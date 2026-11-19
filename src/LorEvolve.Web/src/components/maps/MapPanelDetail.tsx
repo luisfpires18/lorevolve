@@ -8,6 +8,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { LoadState, PinForm } from '../../maps/useMapPageState'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 export function MapPanelDetail({
   universe,
@@ -90,12 +91,12 @@ export function MapPanelDetail({
           ) : (
             <p className="pincard__lore pincard__lore--none">{t('places.mapPage.annotation')}</p>
           )}
-          <p className="pincard__position">
+          <QuietNote className="pincard__position">
             {t('places.mapPage.position', {
               x: (selected.x * 100).toFixed(1),
               y: (selected.y * 100).toFixed(1),
             })}
-          </p>
+          </QuietNote>
           {canEdit ? (
             <div className="pincard__actions">
               <Button

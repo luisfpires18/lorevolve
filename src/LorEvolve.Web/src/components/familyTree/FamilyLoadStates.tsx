@@ -4,7 +4,8 @@ import { useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { LoadState } from '../../familyTree/useFamilyTreeState'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 export function FamilyLoadStates({
   universe,
@@ -21,11 +22,7 @@ export function FamilyLoadStates({
 
   return (
     <>
-      {view.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('places.familyPage.loading')}
-        </p>
-      ) : null}
+      {view.kind === 'loading' ? <LoadingNote>{t('places.familyPage.loading')}</LoadingNote> : null}
 
       {view.kind === 'missing' ? (
         <EmptyState
@@ -42,18 +39,15 @@ export function FamilyLoadStates({
       ) : null}
 
       {view.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="family-error">
-          <p>{t('places.familyPage.error')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('places.familyPage.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('places.familyPage.error')}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((current) => current + 1)
+          }}
+          retryLabel={t('places.familyPage.retry')}
+          testId="family-error"
+        />
       ) : null}
     </>
   )

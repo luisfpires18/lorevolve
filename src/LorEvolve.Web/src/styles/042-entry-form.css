@@ -44,8 +44,6 @@
 
 .entryform__note {
   margin: 0;
-  font-size: var(--text-ui);
-  color: var(--muted);
 }
 
 /* What a copy takes from the entry it is made from (Issue #27), above the new entry's form. */
@@ -93,8 +91,6 @@
 
 .actionbar__status {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 .actionbar__actions {

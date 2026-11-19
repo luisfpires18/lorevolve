@@ -5,7 +5,9 @@ import { useI18n } from '../../i18n'
 import { DiscoveryPager } from './DiscoveryPager'
 import type { useDiscoveryState } from '../../familyTree/useDiscoveryState'
 import type { FamiliesReturn } from '../FamilyDiscovery'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
+import { QuietNote } from '../QuietNote'
 
 export function DiscoveryFamilies({
   universeId,
@@ -35,7 +37,7 @@ export function DiscoveryFamilies({
           {t('places.discovery.heading')}
         </h2>
         {result ? (
-          <p className="discovery__count" role="status" data-testid="family-count">
+          <QuietNote className="discovery__count" wrap testId="family-count" role="status">
             {result.totalCount === 0
               ? t('places.discovery.noMatch')
               : q
@@ -44,23 +46,21 @@ export function DiscoveryFamilies({
                     q,
                   })
                 : tn('places.discovery.count', result.totalCount, { n: result.totalCount })}
-          </p>
+          </QuietNote>
         ) : null}
       </div>
 
       {state.kind === 'loading' && !result ? (
-        <p className="notice" role="status">
-          {t('places.discovery.finding')}
-        </p>
+        <LoadingNote>{t('places.discovery.finding')}</LoadingNote>
       ) : null}
 
       {state.kind === 'error' && isCurrent ? (
-        <div className="notice notice--error" role="alert" data-testid="family-discovery-error">
-          <p>{t('places.discovery.error')}</p>
-          <Button tone="secondary" onClick={() => setReads((current) => current + 1)}>
-            {t('places.discovery.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('places.discovery.error')}
+          onRetry={() => setReads((current) => current + 1)}
+          retryLabel={t('places.discovery.retry')}
+          testId="family-discovery-error"
+        />
       ) : null}
 
       {result && result.items.length > 0 ? (

@@ -6,6 +6,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { getSystem } from '../../worldLogic/api'
 import type { SystemDetail, SystemSummary } from '../../worldLogic/types'
 import { Button } from '../Button'
+import { LoadingNote } from '../LoadingNote'
 
 /**
  * One System, and the rule definitions it references once the author opens it.
@@ -86,9 +87,7 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
         ) : null}
 
         {open && !detail && !failed ? (
-          <p className="notice" role="status">
-            {t('canon.worldLogic.systems.loading')}
-          </p>
+          <LoadingNote>{t('canon.worldLogic.systems.loading')}</LoadingNote>
         ) : null}
 
         {detail && detail.rules.length > 0 ? (

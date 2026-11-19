@@ -19,6 +19,7 @@ import {
 import { t } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { Button } from './Button'
+import { errorText } from '../lib/errorText'
 
 const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
   dialogue: 4,
@@ -179,8 +180,7 @@ function PanelCard({
         setScript(scriptOf(read))
       })
       .catch((error: unknown) => {
-        if (!controller.signal.aborted)
-          setStatus(error instanceof Error ? error.message : t('projects.structure.failed'))
+        if (!controller.signal.aborted) setStatus(errorText(error, t('projects.structure.failed')))
       })
     return () => controller.abort()
   }, [projectId, panelId])
@@ -209,9 +209,7 @@ function PanelCard({
         setStatus(
           error instanceof ApiError && error.code === NODE_CHANGED
             ? t('projects.structure.changed')
-            : error instanceof Error
-              ? error.message
-              : t('projects.structure.failed'),
+            : errorText(error, t('projects.structure.failed')),
         ),
       )
       .finally(() => setSaving(false))

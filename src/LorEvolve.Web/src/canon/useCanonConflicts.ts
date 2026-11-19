@@ -9,6 +9,7 @@ import type {
 } from './types'
 import { t } from '../i18n'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
+import { errorText } from '../lib/errorText'
 
 export type LoadState =
   | { kind: 'loading' }
@@ -36,7 +37,7 @@ export function useCanonConflicts({ universe }: { universe: WorkspaceContext['un
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : t('canon.page.readFailed'),
+          message: errorText(error, t('canon.page.readFailed')),
         })
       })
 

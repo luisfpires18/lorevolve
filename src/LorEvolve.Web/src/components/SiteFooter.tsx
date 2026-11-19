@@ -3,6 +3,7 @@ import { useAuth } from '../auth/useAuth'
 import { Wordmark } from './Wordmark'
 import { VERSION_LABEL } from '../lib/buildInfo'
 import { useI18n } from '../i18n'
+import { QuietNote } from './QuietNote'
 
 /**
  * The foot of LorEvolve's main screens (ADR 0069): where else there is to go, and nothing invented. The wordmark and its
@@ -30,9 +31,9 @@ export function SiteFooter() {
           <p>{t('portal.footer.tagline')}</p>
         </div>
         <nav className="sitefooter__nav" aria-labelledby="sitefooter-product">
-          <p className="sitefooter__heading" id="sitefooter-product">
+          <QuietNote className="sitefooter__heading" id="sitefooter-product">
             {t('portal.footer.product')}
-          </p>
+          </QuietNote>
           <ul data-testid="portal-footer-links">
             <li>
               <Link to="/">{t('portal.footer.explore')}</Link>

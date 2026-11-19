@@ -5,6 +5,7 @@ import { ActionMenu } from '../ActionMenu'
 import { formatDateTime } from '../../lib/dates'
 import { t, useI18n } from '../../i18n'
 import type { Stored } from '../../worldRules/ruleDraft'
+import { QuietNote } from '../QuietNote'
 
 /** The world rule editor's head: Back, the title with the actions menu, and the lede with the saved moment. */
 export function WorldRuleHead({
@@ -51,7 +52,7 @@ export function WorldRuleHead({
           </ActionMenu>
         ) : null}
       </div>
-      <p className="rule__lede">
+      <QuietNote className="rule__lede">
         {t('canon.editor.lede')}
         {!isNew && stored.updatedAt ? (
           <>
@@ -61,7 +62,7 @@ export function WorldRuleHead({
             })}
           </>
         ) : null}
-      </p>
+      </QuietNote>
     </header>
   )
 }

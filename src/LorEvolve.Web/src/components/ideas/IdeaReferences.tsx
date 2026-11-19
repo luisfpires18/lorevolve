@@ -11,6 +11,7 @@ import {
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /** An idea editor's references: the list, each with Remove, and the way to add one. */
 export function IdeaReferences({
@@ -43,11 +44,11 @@ export function IdeaReferences({
       <p className="field__hint">{t('ideas.editor.references.hint')}</p>
 
       {draft.universeId === null ? (
-        <p className="idea__noreferences" data-testid="idea-references-need-universe">
+        <QuietNote className="idea__noreferences" testId="idea-references-need-universe">
           {t('ideas.editor.references.needUniverse')}
-        </p>
+        </QuietNote>
       ) : draft.references.length === 0 ? (
-        <p className="idea__noreferences">{t('ideas.editor.references.none')}</p>
+        <QuietNote className="idea__noreferences">{t('ideas.editor.references.none')}</QuietNote>
       ) : (
         <ul className="idearefs" data-testid="idea-reference-list">
           {draft.references.map((reference) => {

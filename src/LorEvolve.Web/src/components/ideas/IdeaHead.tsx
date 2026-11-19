@@ -7,6 +7,7 @@ import { Quoted } from '../NameList'
 import type { Stored } from '../../ideas/ideaDraft'
 import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /** An idea editor's head: the way back, the heading with its actions menu, the lede, and where the idea belongs. */
 export function IdeaHead({
@@ -61,7 +62,7 @@ export function IdeaHead({
           </ActionMenu>
         ) : null}
       </div>
-      <p className="idea__lede">
+      <QuietNote className="idea__lede">
         {t('ideas.editor.lede')}
         {!isNew && stored.updatedAt ? (
           <>
@@ -71,7 +72,7 @@ export function IdeaHead({
             })}
           </>
         ) : null}
-      </p>
+      </QuietNote>
       {belongsElsewhere ? (
         <p className="idea__elsewhere" data-testid="idea-elsewhere">
           {stored.universe

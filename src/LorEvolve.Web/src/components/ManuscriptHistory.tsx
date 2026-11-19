@@ -14,6 +14,7 @@ import type {
 } from '../stories/types'
 import { confirmAction } from '../lib/confirm'
 import { ManuscriptRevision } from './stories/ManuscriptRevision'
+import { QuietNote } from './QuietNote'
 
 interface ManuscriptHistoryProps {
   /** The panel's id, which the toggle that opens it controls. */
@@ -183,15 +184,17 @@ export function ManuscriptHistory({
       ) : null}
 
       {failed ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('manuscript.history.readFailed')}
-        </p>
+        </QuietNote>
       ) : revisions === null ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('manuscript.history.opening')}
-        </p>
+        </QuietNote>
       ) : revisions.length === 0 ? (
-        <p className="history__quiet">{t('manuscript.history.none')}</p>
+        <QuietNote className="history__quiet" size="ui">
+          {t('manuscript.history.none')}
+        </QuietNote>
       ) : (
         <ol className="history__list" data-testid="manuscript-history-list">
           {revisions.map((revision, index) => (

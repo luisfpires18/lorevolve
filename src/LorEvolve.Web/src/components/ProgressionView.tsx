@@ -18,7 +18,8 @@ import { EraPanel } from './progression/EraPanel'
 import { EraList } from './progression/EraList'
 import { ProgressionItems } from './progression/ProgressionItems'
 import { ProgressionHistory } from './progression/ProgressionHistory'
-import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
 
 interface ProgressionViewProps {
   universeId: string
@@ -72,17 +73,16 @@ export function ProgressionView({
 
   if (failed) {
     return (
-      <div className="notice notice--error" role="alert">
-        <p>{t('progression.view.readFailed')}</p>
-        <Button tone="secondary" onClick={() => void load()}>
-          {t('progression.view.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={t('progression.view.readFailed')}
+        onRetry={() => void load()}
+        retryLabel={t('progression.view.retry')}
+      />
     )
   }
 
   if (!progression) {
-    return <p className="muted">{t('progression.view.reading')}</p>
+    return <LoadingNote>{t('progression.view.reading')}</LoadingNote>
   }
 
   const selectedId = params.get('era')

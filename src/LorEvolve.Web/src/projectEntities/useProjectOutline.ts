@@ -13,6 +13,7 @@ import {
 } from './structure'
 import { nameOf } from './levelWords'
 import { t, tn } from '../i18n'
+import { errorText } from '../lib/errorText'
 
 /** The outline's tree and its state, the read, the linked node, and the changes the buttons make. */
 export function useProjectOutline({ projectId }: { projectId: string }) {
@@ -41,7 +42,7 @@ export function useProjectOutline({ projectId }: { projectId: string }) {
           setTree('none')
           return
         }
-        setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+        setFailed(errorText(error, t('projects.structure.failed')))
       })
     return () => controller.abort()
   }, [projectId])
@@ -85,7 +86,7 @@ export function useProjectOutline({ projectId }: { projectId: string }) {
 
   function failing(error: unknown) {
     setBusy(false)
-    setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+    setFailed(errorText(error, t('projects.structure.failed')))
   }
 
   function run(work: Promise<unknown>) {

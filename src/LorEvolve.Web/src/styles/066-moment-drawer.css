@@ -54,8 +54,6 @@
 
 .drawer__eyebrow {
   margin: 0 0 var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--muted);
 }
 
 .drawer__title {

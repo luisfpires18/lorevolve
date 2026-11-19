@@ -201,8 +201,6 @@
 
 .lore__filterlimit {
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
 }
 
 /* Clear filters sits with search and status, on their row; the filters in force and the notes about them come after

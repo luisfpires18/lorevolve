@@ -14,6 +14,7 @@ import { ChronologyUnplaced } from './chronology/ChronologyUnplaced'
 import { ChronologyEraRow } from './chronology/ChronologyEraRow'
 import { Button } from './Button'
 import { NewButton } from './NewButton'
+import { Announce } from './Announce'
 
 interface ChronologyEditorProps {
   universeId: string
@@ -167,9 +168,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
           </ol>
         ) : null}
 
-        <p className="visually-hidden" role="status" data-testid="era-moved">
-          {moved}
-        </p>
+        <Announce testId="era-moved">{moved}</Announce>
 
         {fieldErrors.eras ? <p className="field__error">{fieldErrors.eras}</p> : null}
 

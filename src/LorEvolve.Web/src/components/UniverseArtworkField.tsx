@@ -16,6 +16,7 @@ import { ActionIcon } from './ActionIcon'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
+import { QuietNote } from './QuietNote'
 
 type Framing =
   { kind: 'file'; file: File } | { kind: 'stored'; artwork: UniverseArtworkRef; source: string }
@@ -127,9 +128,9 @@ export function UniverseArtworkField({
             data-testid={`${testId}-card`}
           />
         ) : (
-          <p className="artwork__empty" data-testid={`${testId}-empty`}>
+          <QuietNote className="artwork__empty" testId={`${testId}-empty`}>
             {t(`${w}.empty`)}
-          </p>
+          </QuietNote>
         )}
       </div>
 

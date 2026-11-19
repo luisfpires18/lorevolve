@@ -4,6 +4,7 @@ import { BrandMark } from '../BrandMark'
 import { MAIN_CONTENT_ID } from '../SkipLink'
 import { Wordmark } from '../Wordmark'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /**
  * The consent screen's own frame (issue 38): one card, centred, with the brand kept small. It is a decision, not a
@@ -38,11 +39,15 @@ export function ConsentLayout({
         <h1 className="auth__heading consent-card__heading" data-testid="auth-heading">
           {heading}
         </h1>
-        <p className="consent-card__intro" data-testid="consent-summary">
+        <QuietNote className="consent-card__intro" size="ui" testId="consent-summary">
           {intro}
-        </p>
+        </QuietNote>
         {children}
-        {footer ? <p className="consent-card__footer">{footer}</p> : null}
+        {footer ? (
+          <QuietNote className="consent-card__footer" size="ui" wrap>
+            {footer}
+          </QuietNote>
+        ) : null}
       </main>
     </div>
   )

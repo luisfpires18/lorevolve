@@ -1,5 +1,5 @@
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
 
 export function RelationsNotice({
   message,
@@ -13,13 +13,11 @@ export function RelationsNotice({
   const { t } = useI18n()
 
   return (
-    <div className="notice notice--error" role="alert" data-testid="relationship-error">
-      <p>{message ?? readError}</p>
-      {readError && !message ? (
-        <Button tone="secondary" onClick={() => void load()}>
-          {t('relationships.section.retry')}
-        </Button>
-      ) : null}
-    </div>
+    <LoadError
+      message={message ?? readError}
+      onRetry={readError && !message ? () => void load() : undefined}
+      retryLabel={t('relationships.section.retry')}
+      testId="relationship-error"
+    />
   )
 }

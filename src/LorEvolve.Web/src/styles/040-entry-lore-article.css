@@ -175,8 +175,6 @@
 
 .entry__aliases {
   margin: var(--space-2) 0 0;
-  font-size: var(--text-ui);
-  color: var(--muted);
 }
 
 .entry__summary {

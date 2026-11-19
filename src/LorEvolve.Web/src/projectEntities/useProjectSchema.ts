@@ -5,6 +5,7 @@ import type { ProjectEntityType, ProjectTemplate } from './types'
 import { listTypeTemplates } from '../typeTemplates/api'
 import type { TypeTemplate } from '../typeTemplates/types'
 import { t } from '../i18n'
+import { errorText } from '../lib/errorText'
 
 /** A project's types: the read, the open drawers, the type tree, and what happens after a write. */
 export function useProjectSchema({
@@ -44,7 +45,7 @@ export function useProjectSchema({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setTypes([])
-        setFailed(error instanceof Error ? error.message : t('projects.schema.failed'))
+        setFailed(errorText(error, t('projects.schema.failed')))
       })
     return () => controller.abort()
   }, [projectId, reloadKey])
@@ -71,13 +72,13 @@ export function useProjectSchema({
       .then(after)
       .catch((error: unknown) => {
         setBusy(false)
-        setFailed(error instanceof Error ? error.message : t('projects.schema.failed'))
+        setFailed(errorText(error, t('projects.schema.failed')))
       })
   }
 
   function failing(error: unknown) {
     setBusy(false)
-    setFailed(error instanceof Error ? error.message : t('projects.schema.failed'))
+    setFailed(errorText(error, t('projects.schema.failed')))
   }
 
   return {

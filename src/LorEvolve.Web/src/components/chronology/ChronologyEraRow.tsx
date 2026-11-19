@@ -4,6 +4,7 @@ import { usageOf, type EraDraft } from '../../chronology/eraDrafts'
 import { t, useI18n } from '../../i18n'
 import { ChronologyEraStyle } from './ChronologyEraStyle'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** One date period: its name and label, direction and position, and the foot with Earlier, Later and Remove. */
 export function ChronologyEraRow({
@@ -83,9 +84,9 @@ export function ChronologyEraRow({
         </div>
 
         <div className="era__foot">
-          <p className="era__use" id={`${base}-use`}>
+          <QuietNote className="era__use" id={`${base}-use`}>
             {usage ?? (era.id ? t('time.periods.nothingDated') : t('time.periods.notSaved'))}
-          </p>
+          </QuietNote>
           <div className="era__tools">
             <Button
               tone="secondary"

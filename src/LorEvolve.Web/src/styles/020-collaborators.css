@@ -111,8 +111,6 @@
 
 .collab__meta {
   margin: var(--space-1) 0 0;
-  color: var(--muted);
-  font-size: var(--text-sm);
 }
 
 .collab__controls {

@@ -6,6 +6,7 @@ import type { useUniverseAccess } from '../universes/access'
 import { confirmAction } from '../lib/confirm'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 /** One comment thread: its comments, how it was resolved, the reply form or Reply, and Resolve or Reopen. */
 export function CommentThreadItem({
@@ -69,7 +70,7 @@ export function CommentThreadItem({
       </ol>
 
       {thread.isResolved ? (
-        <p className="reviewthread__resolved" data-testid="comment-resolved">
+        <QuietNote className="reviewthread__resolved" testId="comment-resolved">
           {tx('review.comments.resolvedBy', {
             name:
               thread.resolvedByName === null ? (
@@ -79,7 +80,7 @@ export function CommentThreadItem({
               ),
           })}
           {thread.resolvedAt ? <> · {formatDateTime(thread.resolvedAt)}</> : null}
-        </p>
+        </QuietNote>
       ) : null}
 
       {isReplying ? (

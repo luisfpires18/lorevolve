@@ -5,6 +5,7 @@ import { sameSave } from '../lib/useLocalDraft'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
+import { QuietNote } from './QuietNote'
 
 interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
@@ -90,7 +91,7 @@ export function RecoveredDraft({
             )}
           </p>
         ) : null}
-        <p className="recovery__hint">{t('entity.recovered.hint')}</p>
+        <QuietNote className="recovery__hint">{t('entity.recovered.hint')}</QuietNote>
       </div>
 
       <div className="recovery__actions">

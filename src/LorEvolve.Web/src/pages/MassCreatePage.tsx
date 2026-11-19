@@ -13,7 +13,9 @@ import { MassCreateDefaults } from '../components/lore/MassCreateDefaults'
 import { MassCreatePaste } from '../components/lore/MassCreatePaste'
 import { MassCreateReview } from '../components/lore/MassCreateReview'
 import { MassCreateBar } from '../components/lore/MassCreateBar'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; types: EntityType[] } | { kind: 'error' }
 
@@ -86,23 +88,17 @@ export default function MassCreatePage() {
       />
 
       {load.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('lore.massCreate.readingTypes')}
-        </p>
+        <LoadingNote>{t('lore.massCreate.readingTypes')}</LoadingNote>
       ) : null}
 
       {load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{t('lore.massCreate.typesFailed')}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              refreshTypes().catch(() => undefined)
-            }}
-          >
-            {t('lore.massCreate.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('lore.massCreate.typesFailed')}
+          onRetry={() => {
+            refreshTypes().catch(() => undefined)
+          }}
+          retryLabel={t('lore.massCreate.retry')}
+        />
       ) : null}
 
       {load.kind === 'ready' && eligible.length === 0 ? (
@@ -141,9 +137,7 @@ export default function MassCreatePage() {
         </>
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="mass-announcement">
-        {announcement}
-      </p>
+      <Announce testId="mass-announcement">{announcement}</Announce>
     </article>
   )
 }

@@ -17,6 +17,9 @@ import { useShelfState } from '../projects/useShelfState'
 import { ShelfCards } from '../components/projects/ShelfCards'
 import { ShelfViewNav } from '../components/projects/ShelfViewNav'
 import { NewButton } from '../components/NewButton'
+import { Announce } from '../components/Announce'
+import { LoadingNote } from '../components/LoadingNote'
+import { LoadError } from '../components/LoadError'
 
 /**
  * One Creation category's projects, each drawn as the thing it will be (owner, 2026-11-17): Gaming on a handheld,
@@ -78,18 +81,18 @@ export default function CategoryShelfPage({
       {views && showView ? <views.Body universeId={universe.id} /> : null}
 
       {!showView && state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('projects.list.loading')}
-        </p>
+        <LoadingNote>{t('projects.list.loading')}</LoadingNote>
       ) : null}
 
       {!showView && state.kind === 'failed' ? (
-        <EmptyState title={t('projects.list.failed')} testId="projects-failed" />
+        <LoadError
+          message={t('projects.list.failed')}
+          onRetry={shelf.retry}
+          testId="projects-failed"
+        />
       ) : null}
 
-      <p className="visually-hidden" role="status" data-testid="shelf-announcement">
-        {announcement}
-      </p>
+      <Announce testId="shelf-announcement">{announcement}</Announce>
       {moveError ? (
         <p className="form__message" role="alert" data-testid="shelf-move-error">
           {moveError}

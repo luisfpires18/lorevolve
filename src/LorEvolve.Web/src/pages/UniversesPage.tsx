@@ -11,6 +11,9 @@ import type { UniversePage } from '../universes/types'
 import { EmptyState } from '../components/EmptyState'
 import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { errorText } from '../lib/errorText'
 
 type LoadState =
   { kind: 'loading' } | { kind: 'ready'; page: UniversePage } | { kind: 'error'; message: string }
@@ -78,7 +81,7 @@ export default function UniversesPage() {
         if (controller.signal.aborted) return
         setState({
           kind: 'error',
-          message: error instanceof Error ? error.message : t('universe.list.loadFailed'),
+          message: errorText(error, t('universe.list.loadFailed')),
         })
       })
 
@@ -202,19 +205,14 @@ export default function UniversesPage() {
         </div>
       </div>
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('universe.list.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('universe.list.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <Button tone="secondary" onClick={() => setReloadKey((current) => current + 1)}>
-            {t('universe.list.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => setReloadKey((current) => current + 1)}
+          retryLabel={t('universe.list.retry')}
+        />
       ) : null}
 
       {result && result.items.length > 0 ? (

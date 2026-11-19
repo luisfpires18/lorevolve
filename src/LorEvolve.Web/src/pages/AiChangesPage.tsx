@@ -9,6 +9,9 @@ import { useI18n } from '../i18n'
 import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
+import { QuietNote } from '../components/QuietNote'
 
 type Load = { kind: 'loading' } | { kind: 'ready'; page: ProposalPage } | { kind: 'error' }
 
@@ -87,16 +90,13 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
       </PageHeader>
 
       {load.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('review.aiChanges.loading')}
-        </p>
+        <LoadingNote>{t('review.aiChanges.loading')}</LoadingNote>
       ) : load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{t('review.aiChanges.loadFailed')}</p>
-          <Button tone="secondary" onClick={() => setReads((count) => count + 1)}>
-            {t('review.aiChanges.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('review.aiChanges.loadFailed')}
+          onRetry={() => setReads((count) => count + 1)}
+          retryLabel={t('review.aiChanges.retry')}
+        />
       ) : load.page.items.length === 0 ? (
         <EmptyState
           testId="ai-changes-empty"
@@ -123,7 +123,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                       })}
                   </span>
                 </Link>
-                <p className="aichanges__meta">
+                <QuietNote className="aichanges__meta" wrap>
                   {inUniverse ? null : (
                     <>
                       <bdi>{proposal.universeName}</bdi>
@@ -141,8 +141,8 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                       })}
                   {' · '}
                   <time dateTime={proposal.createdAt}>{formatDateTime(proposal.createdAt)}</time>
-                </p>
-                <p className="aichanges__meta">
+                </QuietNote>
+                <QuietNote className="aichanges__meta" wrap>
                   <span className="aichanges__status" data-status={proposal.status}>
                     {STATUS_WORDS[proposal.status]}
                   </span>
@@ -151,7 +151,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                   {proposal.status === ProposalStatus.Open && proposal.committedCount > 0
                     ? ` · ${tn('review.aiChanges.alreadyApplied', proposal.committedCount, { n: proposal.committedCount })}`
                     : null}
-                </p>
+                </QuietNote>
               </li>
             ))}
           </ul>

@@ -9,6 +9,7 @@ import {
 import type { Fields } from '../../ideas/boardDraft'
 import type { BoardSelection } from '../../ideas/boardSelection'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /** The board as a plain list: every card in reading order, each with the lines that join it. */
 export function BoardListView({
@@ -32,7 +33,7 @@ export function BoardListView({
   return (
     <div className="boardlist" data-testid="board-list">
       {draft.cards.length === 0 ? (
-        <p className="idea__noreferences">{t('ideas.board.noCards')}</p>
+        <QuietNote className="idea__noreferences">{t('ideas.board.noCards')}</QuietNote>
       ) : (
         <ol className="boardlist__cards">
           {readingOrder(draft.cards).map((card) => {

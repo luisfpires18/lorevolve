@@ -20,6 +20,7 @@ import { FamilyOtherRelations } from '../components/familyTree/FamilyOtherRelati
 import { FamilySetupNotices } from '../components/familyTree/FamilySetupNotices'
 import { FamilyStart } from '../components/familyTree/FamilyStart'
 import { FamilyTreeNotes } from '../components/familyTree/FamilyTreeNotes'
+import { QuietNote } from '../components/QuietNote'
 
 /**
  * The Family Tree: one entry's family, worked out from the parent connections recorded on entries (ADR 0035).
@@ -184,7 +185,7 @@ export default function FamilyTreePage() {
             onFocus={(next) => show({ id: next, name: '' })}
           />
 
-          <p className="family__note">{t('places.familyPage.note')}</p>
+          <QuietNote className="family__note">{t('places.familyPage.note')}</QuietNote>
 
           {otherRelations.length > 0 ? (
             <FamilyOtherRelations

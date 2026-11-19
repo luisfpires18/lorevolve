@@ -25,8 +25,6 @@
 
 .history__quiet {
   margin: 0.75rem 0 0;
-  color: var(--muted);
-  font-size: var(--text-ui);
   max-width: 58ch;
 }
 
@@ -125,5 +123,4 @@
 .snapshot__kind {
   margin: 0.2rem 0 0.9rem;
   font-size: 0.75rem;
-  color: var(--muted);
 }

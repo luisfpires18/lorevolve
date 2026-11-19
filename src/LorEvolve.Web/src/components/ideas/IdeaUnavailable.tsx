@@ -4,7 +4,8 @@ import { EmptyState } from '../EmptyState'
 import { Quoted } from '../NameList'
 import type { LoadState } from '../../ideas/ideaDraft'
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** What an idea's editor shows instead of the idea: loading, missing, in another universe, or failed to open. */
 export function IdeaUnavailable({
@@ -22,11 +23,7 @@ export function IdeaUnavailable({
 }) {
   const { t, tx } = useI18n()
   if (load.kind === 'loading') {
-    return (
-      <p className="notice" role="status" data-testid="idea-loading">
-        {t('ideas.editor.loading')}
-      </p>
-    )
+    return <LoadingNote testId="idea-loading">{t('ideas.editor.loading')}</LoadingNote>
   }
 
   if (load.kind === 'missing') {
@@ -58,12 +55,12 @@ export function IdeaUnavailable({
 
   if (load.kind === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="idea-load-error">
-        <p>{load.message}</p>
-        <Button tone="secondary" onClick={reread}>
-          {t('ideas.editor.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={load.message}
+        onRetry={reread}
+        retryLabel={t('ideas.editor.retry')}
+        testId="idea-load-error"
+      />
     )
   }
 }

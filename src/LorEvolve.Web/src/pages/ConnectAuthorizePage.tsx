@@ -8,6 +8,7 @@ import { ConsentDetails } from '../components/mcp/ConsentDetails'
 import { ConsentLayout } from '../components/mcp/ConsentLayout'
 import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
 import { Button } from '../components/Button'
+import { LoadingNote } from '../components/LoadingNote'
 
 /** The field the decision travels in, beside the request's own parameters. Read by `OAuthEndpoints` on the server. */
 const DECISION_FIELD = 'lorevolve_decision'
@@ -134,9 +135,7 @@ export default function ConnectAuthorizePage() {
       }
     >
       {load.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('universe.connect.checking')}
-        </p>
+        <LoadingNote>{t('universe.connect.checking')}</LoadingNote>
       ) : load.kind === 'invalid' ? (
         // An app or a return address LorEvolve does not recognise: there is nowhere trusted to send the browser back to.
         <div className="notice notice--error" role="alert" data-testid="consent-invalid">

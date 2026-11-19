@@ -9,6 +9,8 @@ import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { Button } from '../Button'
 import { NewButton } from '../NewButton'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -28,19 +30,15 @@ export function WorldLogicRules({
 
   return (
     <TabPanel idPrefix="world-logic" id="rules" tab={tab}>
-      {rules.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rules.loading')}
-        </p>
-      ) : null}
+      {rules.kind === 'loading' ? <LoadingNote>{t('canon.rules.loading')}</LoadingNote> : null}
 
       {rules.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-logic-rules-error">
-          <p>{t('canon.rules.readFailed')}</p>
-          <Button tone="secondary" onClick={retry}>
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.rules.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-logic-rules-error"
+        />
       ) : null}
 
       {rules.kind === 'ready' && rules.page.items.length > 0 ? (

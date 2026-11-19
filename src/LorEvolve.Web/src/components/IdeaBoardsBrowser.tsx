@@ -12,8 +12,10 @@ import { useBoardsFilters } from '../ideas/useBoardsFilters'
 import { useBoardsRead } from '../ideas/useBoardsRead'
 import { useBoardsState } from '../ideas/useBoardsState'
 import { useI18n } from '../i18n'
-import { Button } from './Button'
 import { NewButton } from './NewButton'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
+import { OutcomeNotice } from './OutcomeNotice'
 
 /** What a board's editor says it did before handing back to the list. */
 export interface BoardsListNotice {
@@ -74,18 +76,14 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       <IdeasTabs basePath={ideasPath} current="boards" />
 
       {notice?.created && !deleted ? (
-        <div className="notice ideas__notice" data-testid="boards-created-notice">
-          <p role="status">
-            {tx('ideas.boards.created', { title: <Quoted text={notice.created.title} /> })}
-          </p>
-        </div>
+        <OutcomeNotice className="ideas__notice" testId="boards-created-notice">
+          {tx('ideas.boards.created', { title: <Quoted text={notice.created.title} /> })}
+        </OutcomeNotice>
       ) : null}
       {notice?.deleted && !deleted ? (
-        <div className="notice ideas__notice" data-testid="boards-deleted-notice">
-          <p role="status">
-            {tx('ideas.boards.deletedNotice', { title: <Quoted text={notice.deleted.title} /> })}
-          </p>
-        </div>
+        <OutcomeNotice className="ideas__notice" testId="boards-deleted-notice">
+          {tx('ideas.boards.deletedNotice', { title: <Quoted text={notice.deleted.title} /> })}
+        </OutcomeNotice>
       ) : null}
 
       <BoardsControls
@@ -109,25 +107,18 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
         </div>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('ideas.boards.loading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('ideas.boards.loading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="boards-load-error">
-          <p>{state.message}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('ideas.boards.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            setReads((current) => current + 1)
+          }}
+          retryLabel={t('ideas.boards.retry')}
+          testId="boards-load-error"
+        />
       ) : null}
 
       {result && result.items.length > 0 ? (

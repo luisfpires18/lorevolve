@@ -113,9 +113,6 @@
 
 .manuscript__where {
   margin: 0;
-  font-size: var(--text-xs);
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 /* "Scene 1 of 3" never breaks across lines; a long chapter title before it wraps instead. */

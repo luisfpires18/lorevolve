@@ -4,6 +4,7 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { CinemaPhase, CinemaProduction, CinemaSaga } from '../../projects/sagas'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 export function AddDrawer({
   production,
@@ -27,7 +28,7 @@ export function AddDrawer({
     setError(null)
     onAdd(choice.saga.id, choice.phase.id).catch((failure: unknown) => {
       setSaving(false)
-      setError(failure instanceof Error ? failure.message : t('projects.sagas.failed'))
+      setError(errorText(failure, t('projects.sagas.failed')))
     })
   }
 

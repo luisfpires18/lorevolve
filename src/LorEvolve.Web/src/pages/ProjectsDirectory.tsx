@@ -16,6 +16,7 @@ import {
 } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
+import { LoadError } from '../components/LoadError'
 
 /** The kinds each category lists: the same sets the routes in `App.tsx` give `ProjectsPage`, so a count equals its list. */
 const KINDS_BY_SECTION = new Map<string, readonly ProjectKindValue[]>([
@@ -37,6 +38,7 @@ export default function ProjectsDirectory() {
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = workspace?.universe.id
   const [state, setState] = useState<LoadState | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   const heading = t('projects.list.title')
   useDocumentTitle(heading)
@@ -56,7 +58,7 @@ export default function ProjectsDirectory() {
         if (!controller.signal.aborted) setState({ kind: 'failed', for: universeId })
       })
     return () => controller.abort()
-  }, [universeId])
+  }, [universeId, attempt])
 
   const current = state !== null && state.for === universeId ? state : null
 
@@ -77,9 +79,14 @@ export default function ProjectsDirectory() {
         }
       />
       {current?.kind === 'failed' ? (
-        <p className="form__message" role="alert" data-testid="projects-failed">
-          {t('projects.directory.loadFailed')}
-        </p>
+        <LoadError
+          message={t('projects.directory.loadFailed')}
+          onRetry={() => {
+            setState(null)
+            setAttempt((current) => current + 1)
+          }}
+          testId="projects-failed"
+        />
       ) : null}
       <ul
         className="lorecatalog__grid lorecatalog__grid--rows"

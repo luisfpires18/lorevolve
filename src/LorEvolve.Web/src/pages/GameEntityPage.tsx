@@ -6,6 +6,8 @@ import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
 import { GAME_ENTITIES, sectionLabel } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { LoadingNote } from '../components/LoadingNote'
+import { LoadError } from '../components/LoadError'
 
 /**
  * One entry of a game, on its own screen (#286). The game is checked first, exactly as the game's directory checks it
@@ -16,10 +18,15 @@ export default function GameEntityPage() {
   const { projectId, entityId } = useParams<{ projectId: string; entityId: string }>()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = workspace?.universe.id
-  const { loading, game } = useGameProject(projectId, universeId)
+  const { loading, failed, retry, game } = useGameProject(projectId, universeId)
   useDocumentTitle(game?.name ?? sectionLabel(GAME_ENTITIES))
 
-  if (loading) return <p className="projects__lede">{t('projects.list.loading')}</p>
+  if (loading) return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
+
+  if (failed)
+    return (
+      <LoadError message={t('projects.one.failed')} onRetry={retry} testId="game-project-failed" />
+    )
 
   if (game === null || !universeId || !entityId) {
     return (

@@ -7,6 +7,9 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { LoadState } from '../../timeline/useTimelineState'
 import type { SOURCES } from '../../timeline/timelineSources'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
+import { QuietNote } from '../QuietNote'
 
 /** Above the spine: the story scope with its clear button, the status, era and error lines, and the reading state. */
 export function TimelineNotices({
@@ -40,7 +43,7 @@ export function TimelineNotices({
   return (
     <>
       {storyId ? (
-        <p className="chron__scope" data-testid="chron-story-scope">
+        <QuietNote className="chron__scope" testId="chron-story-scope">
           {story
             ? tx('time.timeline.showing', {
                 story: (
@@ -59,7 +62,7 @@ export function TimelineNotices({
           >
             {t('time.timeline.showEvery')}
           </Button>
-        </p>
+        </QuietNote>
       ) : null}
 
       {canonStatus !== null &&
@@ -81,25 +84,17 @@ export function TimelineNotices({
         </p>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('time.timeline.reading')}
-        </p>
-      ) : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('time.timeline.reading')}</LoadingNote> : null}
 
       {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <Button
-            tone="secondary"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              reload()
-            }}
-          >
-            {t('time.timeline.tryAgain')}
-          </Button>
-        </div>
+        <LoadError
+          message={state.message}
+          onRetry={() => {
+            setState({ kind: 'loading' })
+            reload()
+          }}
+          retryLabel={t('time.timeline.tryAgain')}
+        />
       ) : null}
     </>
   )

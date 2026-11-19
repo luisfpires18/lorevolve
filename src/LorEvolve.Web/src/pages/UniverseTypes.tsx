@@ -17,6 +17,7 @@ import { TypesHeader } from '../components/lore/TypesHeader'
 import { TypeEditorDialog } from '../components/lore/TypeEditorDialog'
 import { TypesNotices } from '../components/lore/TypesNotices'
 import { TypeListDnd } from '../components/lore/TypeListDnd'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * The universe's vocabularies (Product refinement 016): Lore Types, Relation Kinds, and Event Kinds & Methods, each a tab
@@ -144,11 +145,7 @@ export default function UniverseTypes() {
         setEditing={setEditing}
       />
 
-      {waitingForGames ? (
-        <p className="notice" role="status">
-          {t('entityTypes.page.game.loading')}
-        </p>
-      ) : null}
+      {waitingForGames ? <LoadingNote>{t('entityTypes.page.game.loading')}</LoadingNote> : null}
       {gaming ? (
         <ProjectSchema
           key={game.id}
@@ -185,9 +182,7 @@ export default function UniverseTypes() {
 
         {!types ? (
           message ? null : (
-            <p className="notice" role="status">
-              {t('entityTypes.page.reading')}
-            </p>
+            <LoadingNote>{t('entityTypes.page.reading')}</LoadingNote>
           )
         ) : (
           <TypeListDnd

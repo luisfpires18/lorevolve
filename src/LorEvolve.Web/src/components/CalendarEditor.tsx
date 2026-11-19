@@ -9,6 +9,7 @@ import { calendarActions } from '../chronology/calendarActions'
 import { CalendarMonthRow } from './chronology/CalendarMonthRow'
 import { Button } from './Button'
 import { NewButton } from './NewButton'
+import { Announce } from './Announce'
 
 interface CalendarEditorProps {
   universeId: string
@@ -123,9 +124,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
         </>
       )}
 
-      <p className="visually-hidden" role="status" data-testid="month-moved">
-        {moved}
-      </p>
+      <Announce testId="month-moved">{moved}</Announce>
 
       {message ? (
         <p className="form__message" role="alert" data-testid="calendar-error">
@@ -155,9 +154,9 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
           ) : null}
         </div>
       ) : (
-        <p className="visually-hidden" id={statusId} role="status" data-testid="calendar-status">
+        <Announce testId="calendar-status" id={statusId}>
           {saves > 0 ? t('time.calendar.savedStatus') : ''}
-        </p>
+        </Announce>
       )}
     </section>
   )

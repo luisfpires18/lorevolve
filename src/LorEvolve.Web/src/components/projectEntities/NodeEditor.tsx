@@ -18,6 +18,7 @@ import { capital, levelWord, nameOf } from '../../projectEntities/levelWords'
 import { t } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { FormActions } from '../FormActions'
+import { errorText } from '../../lib/errorText'
 
 /**
  * One node's title, summary and text, saved over the version it was opened at (ADR 0043). A panel adds its script, a
@@ -61,8 +62,7 @@ export function NodeEditor({
         setScript(scriptOf(read))
       })
       .catch((error: unknown) => {
-        if (!controller.signal.aborted)
-          setFailed(error instanceof Error ? error.message : t('projects.structure.failed'))
+        if (!controller.signal.aborted) setFailed(errorText(error, t('projects.structure.failed')))
       })
     return () => controller.abort()
   }, [projectId, nodeId])
@@ -93,9 +93,7 @@ export function NodeEditor({
         setFailed(
           error instanceof ApiError && error.code === NODE_CHANGED
             ? t('projects.structure.changed')
-            : error instanceof Error
-              ? error.message
-              : t('projects.structure.failed'),
+            : errorText(error, t('projects.structure.failed')),
         )
       })
   }

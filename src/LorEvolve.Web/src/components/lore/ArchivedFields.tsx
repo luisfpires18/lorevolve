@@ -6,6 +6,7 @@ import { entries } from '../../lore/fieldInUse'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** A type's archived fields, folded apart: each with Restore, Delete when it is empty, and the way back as optional. */
 export function ArchivedFields({
@@ -41,9 +42,9 @@ export function ArchivedFields({
       data-testid={`archived-fields-${type.name}`}
     >
       <summary>{t('entityTypes.fields.archivedSummary', { n: archived.length })}</summary>
-      <p className="fieldarchive__lede">
+      <QuietNote className="fieldarchive__lede">
         {t('entityTypes.fields.archivedLede', { name: type.name })}
-      </p>
+      </QuietNote>
       <ul
         className="fieldlist"
         aria-label={t('entityTypes.fields.archivedLabel', { name: type.name })}

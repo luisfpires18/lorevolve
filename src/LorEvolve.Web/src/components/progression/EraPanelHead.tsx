@@ -7,6 +7,7 @@ import type { Era } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
 import type { RefObject } from 'react'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** The era's eyebrow, title and span, with Edit and the menu holding Earlier, Later and Remove. */
 export function EraPanelHead({
@@ -38,7 +39,9 @@ export function EraPanelHead({
   return (
     <header className="erapanel__head">
       <div>
-        <p className="erapanel__eyebrow">{t('progression.era.eyebrow', { name: entry.name })}</p>
+        <QuietNote className="erapanel__eyebrow">
+          {t('progression.era.eyebrow', { name: entry.name })}
+        </QuietNote>
         <h3
           className="erapanel__title"
           id="era-title"

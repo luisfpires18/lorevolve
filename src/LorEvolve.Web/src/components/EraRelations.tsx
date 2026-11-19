@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { listEntityRelationships } from '../relationships/api'
 import { Validity, type RelationshipView } from '../relationships/types'
+import { LoadingNote } from './LoadingNote'
 
 /**
  * The relations of one entry that hold in one of its eras (Issues #18, #44), as the relationships list reads them for that era:
@@ -37,11 +38,7 @@ export function EraRelations({
   const views = read?.eraId === eraId ? read.views : null
 
   if (views === null) {
-    return (
-      <p className="muted" role="status">
-        {t('time.eraRelations.reading')}
-      </p>
-    )
+    return <LoadingNote>{t('time.eraRelations.reading')}</LoadingNote>
   }
 
   if (views === 'failed') {
@@ -91,7 +88,7 @@ function RelationRows({
     <ul className="eracovers" data-testid={testId}>
       {views.map((view) => (
         <li key={view.id} data-testid={`era-relation-${view.relatedEntityName}`}>
-          <span className="muted">
+          <span>
             <bdi>{view.label}</bdi>{' '}
           </span>
           <Link to={`/app/universes/${universeId}/lore/${view.relatedEntityId}`}>

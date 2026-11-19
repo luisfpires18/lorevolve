@@ -12,7 +12,8 @@ import { AiChangeDecision } from '../components/aiChanges/AiChangeDecision'
 import { AiChangeHeader } from '../components/aiChanges/AiChangeHeader'
 import { AiChangeNotices } from '../components/aiChanges/AiChangeNotices'
 import { ChangeItem } from '../components/aiChanges/ChangeItem'
-import { Button } from '../components/Button'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * One proposal's review (ADR 0047). Every change an AI proposed, described by LorEvolve - what it creates, what it changes
@@ -37,11 +38,7 @@ export default function AiChangePage() {
   )
 
   if (load.kind === 'loading') {
-    return (
-      <p className="notice" role="status">
-        {t('review.aiChange.opening')}
-      </p>
-    )
+    return <LoadingNote>{t('review.aiChange.opening')}</LoadingNote>
   }
 
   if (load.kind === 'missing') {
@@ -61,12 +58,11 @@ export default function AiChangePage() {
 
   if (load.kind === 'error' || !proposal) {
     return (
-      <div className="notice notice--error" role="alert">
-        <p>{t('review.aiChange.loadFailed')}</p>
-        <Button tone="secondary" onClick={() => setReads((count) => count + 1)}>
-          {t('review.aiChange.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={t('review.aiChange.loadFailed')}
+        onRetry={() => setReads((count) => count + 1)}
+        retryLabel={t('review.aiChange.retry')}
+      />
     )
   }
 

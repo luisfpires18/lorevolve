@@ -8,6 +8,7 @@ import { getMcpConnectInfo, readable } from '../mcp/api'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 type Load =
   | { kind: 'loading' }
@@ -97,17 +98,17 @@ function ConnectDrawer({
       )}
     >
       {load.kind === 'loading' ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('ai.connect.loading')}
-        </p>
+        </QuietNote>
       ) : load.kind === 'error' ? (
         <p className="form__message" role="alert" data-testid="connect-ai-error">
           {t('ai.connect.loadFailed')}
         </p>
       ) : load.url === null ? (
-        <p className="history__quiet" data-testid="connect-ai-unavailable">
+        <QuietNote className="history__quiet" size="ui" testId="connect-ai-unavailable">
           {t('ai.connect.unavailable')}
-        </p>
+        </QuietNote>
       ) : (
         <ConnectSteps url={load.url} name={load.name} onFollow={onClose} />
       )}
@@ -212,7 +213,7 @@ function ConnectSteps({
         <p className="settings__note">{t('ai.connect.privacyNote')}</p>
       </section>
 
-      <p className="connect__manage">
+      <QuietNote className="connect__manage" size="ui" wrap>
         {tx('ai.connect.manage', {
           link: (
             <Link
@@ -224,7 +225,7 @@ function ConnectSteps({
             </Link>
           ),
         })}
-      </p>
+      </QuietNote>
     </>
   )
 }

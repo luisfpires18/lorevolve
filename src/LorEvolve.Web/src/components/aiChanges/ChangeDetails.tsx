@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import { isProse } from '../../aiChanges/changeTraits'
 import { MediaChange } from './MediaChange'
 import { ProseChange } from './ProseChange'
+import { QuietNote } from '../QuietNote'
 
 /** What a change does: its lines, its prose or picture, what it touches, what it needs or is needed by, and what stops it. */
 export function ChangeDetails({
@@ -81,14 +82,14 @@ export function ChangeDetails({
       ) : null}
 
       {pending && needs.length > 0 ? (
-        <p className="aichangeitem__deps" data-testid="ai-change-needs">
+        <QuietNote className="aichangeitem__deps" wrap testId="ai-change-needs">
           {t('review.aiChange.item.needs', { list: named(needs).join('; ') })}
-        </p>
+        </QuietNote>
       ) : null}
       {pending && neededBy.length > 0 ? (
-        <p className="aichangeitem__deps">
+        <QuietNote className="aichangeitem__deps" wrap>
           {t('review.aiChange.item.neededBy', { list: named(neededBy).join('; ') })}
-        </p>
+        </QuietNote>
       ) : null}
 
       {pending && change.issues.length > 0 ? (

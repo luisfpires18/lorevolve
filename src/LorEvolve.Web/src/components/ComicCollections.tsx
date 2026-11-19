@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import {
@@ -16,6 +15,9 @@ import { ComicCollectionItem } from './projects/ComicCollectionItem'
 import { CollectionDrawer, type Editing } from './projects/CollectionDrawer'
 import { EntryDrawer } from './projects/EntryDrawer'
 import { NewButton } from './NewButton'
+import { errorText } from '../lib/errorText'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
 
 const ARCS_AND_EVENTS: ComicCollectionKind[] = ['story-arc', 'event']
 
@@ -65,15 +67,19 @@ export function ComicCollections({
       .then(refresh)
       .catch((error: unknown) => {
         setBusy(false)
-        setFailed(error instanceof Error ? error.message : t('projects.comics.failed'))
+        setFailed(errorText(error, t('projects.comics.failed')))
       })
   }
 
   if (data === null) {
     return failed ? (
-      <EmptyState title={failed} testId="comic-collections-failed" />
+      <LoadError
+        message={failed}
+        onRetry={() => void refresh().catch(() => setFailed(t('projects.comics.failed')))}
+        testId="comic-collections-failed"
+      />
     ) : (
-      <p className="projects__lede">{t('projects.comics.loading')}</p>
+      <LoadingNote>{t('projects.comics.loading')}</LoadingNote>
     )
   }
 

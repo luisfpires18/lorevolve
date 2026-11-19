@@ -17,6 +17,9 @@ import { SagasUnassigned } from './projects/SagasUnassigned'
 import { AddDrawer } from './projects/AddDrawer'
 import { GroupDrawer, type Editing } from './projects/GroupDrawer'
 import { NewButton } from './NewButton'
+import { errorText } from '../lib/errorText'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
 
 /**
  * Cinema Sagas and Phases (#289): a universe's release order across its independent films and series. Every action
@@ -42,7 +45,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
 
   function failing(error: unknown) {
     setBusy(false)
-    setFailed(error instanceof Error ? error.message : t('projects.sagas.failed'))
+    setFailed(errorText(error, t('projects.sagas.failed')))
   }
 
   function refresh() {
@@ -70,9 +73,13 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
 
   if (data === null) {
     return failed ? (
-      <EmptyState title={failed} testId="sagas-failed" />
+      <LoadError
+        message={failed}
+        onRetry={() => void refresh().catch(failing)}
+        testId="sagas-failed"
+      />
     ) : (
-      <p className="projects__lede">{t('projects.sagas.loading')}</p>
+      <LoadingNote>{t('projects.sagas.loading')}</LoadingNote>
     )
   }
 

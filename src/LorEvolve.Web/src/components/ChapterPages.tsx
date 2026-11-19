@@ -6,6 +6,7 @@ import { PageRow } from './projectEntities/PageRow'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
+import { errorText } from '../lib/errorText'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -48,7 +49,7 @@ export function ChapterPages({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setPages([])
-        setFailed(error instanceof Error ? error.message : t('projects.pages.failed'))
+        setFailed(errorText(error, t('projects.pages.failed')))
       })
     return () => controller.abort()
   }, [open, projectId, volumeId, chapterId])
@@ -65,7 +66,7 @@ export function ChapterPages({
 
   function failing(error: unknown) {
     setBusy(false)
-    setFailed(error instanceof Error ? error.message : t('projects.pages.failed'))
+    setFailed(errorText(error, t('projects.pages.failed')))
   }
 
   function run(work: Promise<unknown>) {

@@ -3,6 +3,7 @@ import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import type { RefObject } from 'react'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** The form's bar: what state the form is in, Save or Send, and Cancel. */
 export function EntryFormBar({
@@ -25,7 +26,7 @@ export function EntryFormBar({
   const { t } = useI18n()
   return (
     <footer className="entry__actions actionbar">
-      <p className="actionbar__status" role="status" data-testid="entry-form-status">
+      <QuietNote className="actionbar__status" testId="entry-form-status" role="status">
         {isDirty
           ? suggesting
             ? t('entity.page.bar.notSent')
@@ -33,7 +34,7 @@ export function EntryFormBar({
           : isNew
             ? t('entity.page.bar.newEntry')
             : t('entity.page.bar.noChanges')}
-      </p>
+      </QuietNote>
       <div className="actionbar__actions">
         <Button
           icon={suggesting ? FilePenLine : Check}

@@ -6,11 +6,13 @@ import { EmptyState } from '../EmptyState'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { ROLE_KEYS } from '../../admin/adminConstants'
-import { useLoad } from '../../admin/useLoad'
-import { Failure } from './Failure'
+import { useAsyncRead } from '../../lib/useAsyncRead'
+import { LoadError } from '../LoadError'
 import { Heading } from './Heading'
 import { SignUpLink } from './SignUpLink'
 import { Button } from '../Button'
+import { LoadingNote } from '../LoadingNote'
+import { QuietNote } from '../QuietNote'
 
 // ---------- Users ----------
 
@@ -33,7 +35,7 @@ export function UsersScreen() {
     (signal: AbortSignal) => listUsers({ search: searched, page }, signal),
     [searched, page],
   )
-  const { state, retry } = useLoad(load)
+  const { load: state, retry } = useAsyncRead(load)
   const result: AdminUserPage | null = state.kind === 'ready' ? state.value : null
 
   return (
@@ -70,12 +72,8 @@ export function UsersScreen() {
         </Field>
       </div>
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('admin.users.gathering')}
-        </p>
-      ) : null}
-      {state.kind === 'error' ? <Failure message={state.message} onRetry={retry} /> : null}
+      {state.kind === 'loading' ? <LoadingNote>{t('admin.users.gathering')}</LoadingNote> : null}
+      {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
 
       {result && result.items.length > 0 ? (
         <>
@@ -96,9 +94,9 @@ export function UsersScreen() {
                       {user.username}
                     </h2>
                     {user.publicDisplayName ? (
-                      <p className="adminuser__public" dir="auto">
+                      <QuietNote className="adminuser__public" size="ui" wrap dir="auto">
                         {user.publicDisplayName}
-                      </p>
+                      </QuietNote>
                     ) : null}
                     <p className="adminuser__tags">
                       <span className="admintag">{t(ROLE_KEYS[user.role])}</span>

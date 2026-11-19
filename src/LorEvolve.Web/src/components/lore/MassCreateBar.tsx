@@ -3,6 +3,7 @@ import { CanonBlockNotice } from '../CanonBlockNotice'
 import { useI18n } from '../../i18n'
 import type { useMassRows } from '../../lore/useMassRows'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 type Rows = ReturnType<typeof useMassRows>
 
@@ -39,9 +40,9 @@ export function MassCreateBar({
       ) : null}
 
       <footer className="actionbar masscreate__bar">
-        <p className="actionbar__status" role="status" data-testid="mass-create-status">
+        <QuietNote className="actionbar__status" testId="mass-create-status" role="status">
           {status}
-        </p>
+        </QuietNote>
         <div className="actionbar__actions">
           <Button
             icon={Check}

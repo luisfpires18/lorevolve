@@ -18,6 +18,8 @@ import { t, useI18n } from '../i18n'
 import { useProjectRead } from '../projects/useProjectRead'
 import { NewProject } from '../components/projects/NewProject'
 import { ProjectBody } from '../components/projects/ProjectBody'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
 
 /** One project: its own page, or the form that makes one. */
 export default function ProjectPage({
@@ -55,7 +57,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   // The universe's workspace, when the route is inside one. The account-level route has none.
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const access = useUniverseAccess()
-  const { schemaVersion, setSchemaVersion, read } = useProjectRead({
+  const { schemaVersion, setSchemaVersion, read, retry } = useProjectRead({
     projectId,
     inUniverse,
     universeId,
@@ -69,7 +71,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   )
 
   if (read === null) {
-    return <p className="projects__lede">{t('projects.one.loading')}</p>
+    return <LoadingNote>{t('projects.one.loading')}</LoadingNote>
   }
 
   if (read.kind === 'missing') {
@@ -84,7 +86,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   }
 
   if (read.kind === 'failed') {
-    return <EmptyState title={t('projects.one.failed')} testId="project-failed" />
+    return <LoadError message={t('projects.one.failed')} onRetry={retry} testId="project-failed" />
   }
 
   if (read.kind === 'elsewhere') {
@@ -95,7 +97,10 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
 
   if (read.kind === 'story') {
     // A story is only read inside a universe's workspace (the read above needs one), so this never shows.
-    if (!workspace) return <EmptyState title={t('projects.one.failed')} testId="project-failed" />
+    if (!workspace)
+      return (
+        <LoadError message={t('projects.one.failed')} onRetry={retry} testId="project-failed" />
+      )
     const storySections = projectSections(ProjectKind.Writing, read.for)
     const storyView = storySections.find((candidate) => candidate.segment === segment)
     // Reached through `*` (the bare address, or a view a story does not have) or by a segment the story routes do not

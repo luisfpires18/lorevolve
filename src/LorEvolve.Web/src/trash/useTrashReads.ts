@@ -3,6 +3,7 @@ import { t } from '../i18n'
 import { listTrash } from './api'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useTrashState } from './useTrashState'
+import { errorText } from '../lib/errorText'
 
 /** Reads the Trash's page, again when asked, and moves the focus to what a restore did. */
 export function useTrashReads({
@@ -29,7 +30,7 @@ export function useTrashReads({
           if (signal?.aborted) return
           setState({
             kind: 'error',
-            message: error instanceof Error ? error.message : t('data.trash.loadFailed'),
+            message: errorText(error, t('data.trash.loadFailed')),
           })
         })
     },

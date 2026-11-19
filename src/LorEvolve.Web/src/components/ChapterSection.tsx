@@ -9,6 +9,7 @@ import { FoldToggle } from './FoldToggle'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
 import type { Chapter } from '../stories/types'
 import { NewButton } from './NewButton'
+import { QuietNote } from './QuietNote'
 
 /** An arc a chapter may move into, or no arc at all when `id` is null, named as the menu reads it. */
 export interface ArcTarget {
@@ -100,9 +101,9 @@ export function ChapterSection({
             </span>
           </Title>
           {sceneCount > 0 ? (
-            <p className="chapter__meta" data-testid="chapter-scene-count">
+            <QuietNote className="chapter__meta" testId="chapter-scene-count">
               {sceneCountLabel(sceneCount)}
-            </p>
+            </QuietNote>
           ) : null}
         </div>
 

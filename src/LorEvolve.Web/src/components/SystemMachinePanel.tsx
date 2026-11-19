@@ -6,7 +6,8 @@ import { m } from '../worldLogic/machinePanelTypes'
 import { useMachinePanelState } from '../worldLogic/useMachinePanelState'
 import { machinePanelActions } from '../worldLogic/machinePanelActions'
 import { MachinePanelBody } from './worldLogic/MachinePanelBody'
-import { Button } from './Button'
+import { LoadError } from './LoadError'
+import { LoadingNote } from './LoadingNote'
 
 /**
  * A System's machine on the System editor's Machine tab (ADR 0073): the canvas, the same states and transitions as
@@ -51,27 +52,20 @@ export function SystemMachinePanel({
   const actions = machinePanelActions({ ...state, universeId, systemId, onSaved })
 
   if (load === 'loading') {
-    return (
-      <p className="notice" role="status">
-        {t(`${m}.loading`)}
-      </p>
-    )
+    return <LoadingNote>{t(`${m}.loading`)}</LoadingNote>
   }
 
   if (load === 'error') {
     return (
-      <div className="notice notice--error" role="alert" data-testid="machine-unavailable">
-        <p>{t(`${m}.readFailed`)}</p>
-        <Button
-          tone="secondary"
-          onClick={() => {
-            setLoad('loading')
-            setReads((count) => count + 1)
-          }}
-        >
-          {t('canon.rules.retry')}
-        </Button>
-      </div>
+      <LoadError
+        message={t(`${m}.readFailed`)}
+        onRetry={() => {
+          setLoad('loading')
+          setReads((count) => count + 1)
+        }}
+        retryLabel={t('canon.rules.retry')}
+        testId="machine-unavailable"
+      />
     )
   }
 

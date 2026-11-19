@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { SceneBeatList, SceneLore, SceneStamp } from '../SceneContext'
 import { ManuscriptTools, type ManuscriptToolsProps } from './ManuscriptTools'
+import { QuietNote } from '../QuietNote'
 
 /** Where the scene is told, its title and its tools, and the scene's planning folded behind Details on a phone. */
 export function ManuscriptHead(
@@ -11,10 +12,10 @@ export function ManuscriptHead(
 
   return (
     <header className="manuscript__head">
-      <p className="manuscript__where" data-testid="manuscript-where">
+      <QuietNote className="manuscript__where" size="xs" wrap testId="manuscript-where">
         {where.container ? <>{where.container} · </> : null}
         <span className="manuscript__position">{where.position}</span>
-      </p>
+      </QuietNote>
 
       <div className="manuscript__titlerow">
         <h3 className="manuscript__title" id={titleId} data-testid="manuscript-scene-title">

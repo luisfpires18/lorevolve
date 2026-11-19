@@ -3,6 +3,7 @@ import { listProjectEntities, listProjectTypes } from './api'
 import type { ProjectEntitySummary } from './types'
 import { t } from '../i18n'
 import type { useProjectEntriesState } from './useProjectEntriesState'
+import { errorText } from '../lib/errorText'
 
 /** How many entries one read shows; the next page is asked for, never loaded behind the author's back (#196). */
 export const ENTRY_PAGE_SIZE = 25
@@ -82,7 +83,7 @@ export function useProjectEntriesRead({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setTypes([])
-        setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
+        setFailed(errorText(error, t('projects.entries.failed')))
       })
     return () => controller.abort()
   }, [projectId, reloadKey])
@@ -133,7 +134,7 @@ export function useProjectEntriesRead({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setEntries([])
-        setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
+        setFailed(errorText(error, t('projects.entries.failed')))
       })
     return () => controller.abort()
   }, [projectId, typeId, reloadKey, openEntryId, q, sort, nested])
@@ -184,7 +185,7 @@ export function useProjectEntriesRead({
   function failing(error: unknown, signal?: AbortSignal) {
     setBusy(false)
     if (signal?.aborted) return
-    setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
+    setFailed(errorText(error, t('projects.entries.failed')))
   }
   return { setFilter, clearFilters, loadMore, refresh, failing }
 }

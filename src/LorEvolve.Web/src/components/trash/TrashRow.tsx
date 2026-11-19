@@ -11,6 +11,7 @@ import { EraseConfirm } from './EraseConfirm'
 import { KindTile } from './KindTile'
 import { RestorePublicConfirm } from './RestorePublicConfirm'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** One row of the Trash: what it was and where, and Restore and Delete permanently with their questions; or its checkbox while selecting. */
 export function TrashRow({
@@ -90,7 +91,7 @@ export function TrashRow({
         <p className="trash__name">
           <bdi>{item.name}</bdi>
         </p>
-        <p className="trash__meta">
+        <QuietNote className="trash__meta" wrap>
           <span className="trash__kind" data-testid="trash-kind">
             {kind}
           </span>{' '}
@@ -98,7 +99,7 @@ export function TrashRow({
             where: whereItWas(item),
             date: formatDateTime(item.trashedAt),
           })}
-        </p>
+        </QuietNote>
         {waiting ? (
           <p className="trash__waiting" id={waitingId} data-testid="trash-waiting">
             {waiting}

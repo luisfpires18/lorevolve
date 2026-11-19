@@ -16,6 +16,7 @@ import type { Draft } from '../../lore/entryDraft'
 import type { Dispatch, SetStateAction } from 'react'
 import type { UniverseCapabilities } from '../../universes/access'
 import type { EntityType } from '../../lore/typeDefinitions'
+import { QuietNote } from '../QuietNote'
 
 /** The entry's identity: the crumb, its type, its Canon status, its name, aliases and summary, read or edited. */
 export function EntryHeader({
@@ -152,9 +153,9 @@ export function EntryHeader({
       {fieldErrors.name ? <p className="field__error">{fieldErrors.name}</p> : null}
 
       {!isEditing && (detail?.aliases.length ?? 0) > 0 ? (
-        <p className="entry__aliases" data-testid="entry-aliases">
+        <QuietNote className="entry__aliases" size="ui" testId="entry-aliases">
           {tx('entity.page.head.alsoKnownAs', { names: <NameList names={detail!.aliases} /> })}
-        </p>
+        </QuietNote>
       ) : null}
 
       {isEditing ? (

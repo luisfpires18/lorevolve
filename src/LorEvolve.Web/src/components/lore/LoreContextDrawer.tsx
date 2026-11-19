@@ -9,6 +9,7 @@ import { LoreContextRow } from './LoreContextRow'
 import { LoreContextMentioned } from './LoreContextMentioned'
 import { LorePreview } from './LorePreview'
 import { FormActions } from '../FormActions'
+import { Announce } from '../Announce'
 
 /**
  * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
@@ -108,11 +109,7 @@ export function LoreContextDrawer({
       eyebrow={t('lore.context.drawerEyebrow')}
       title={<bdi>{scene.title}</bdi>}
       // In the head, which never scrolls: an absolutely placed span in the body could stretch the dialog.
-      context={
-        <p className="visually-hidden" role="status" data-testid="lore-context-announcer">
-          {announcement}
-        </p>
-      }
+      context={<Announce testId="lore-context-announcer">{announcement}</Announce>}
       // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
       onClose={onClose}
       actions={(close) => (
@@ -205,7 +202,7 @@ export function LoreContextDrawer({
               data-testid="lore-context-search"
             />
             <div id={resultsId}>
-              <p className="visually-hidden" role="status">
+              <Announce>
                 {isSearching
                   ? t('lore.context.searching')
                   : results
@@ -213,7 +210,7 @@ export function LoreContextDrawer({
                       ? t('lore.context.noMatches')
                       : tn('lore.context.matches', results.length, { n: results.length })
                     : ''}
-              </p>
+              </Announce>
               {searchFailed ? (
                 <p className="form__message" data-testid="lore-context-search-error">
                   {t('lore.context.searchFailed')}

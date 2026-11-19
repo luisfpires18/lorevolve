@@ -9,6 +9,8 @@ import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from './Pager'
 import { FindingRow } from './FindingRow'
 import { Button } from '../Button'
+import { LoadError } from '../LoadError'
+import { LoadingNote } from '../LoadingNote'
 
 /** The Integrity tab: the check and what it last said, one row per finding, the empty states and the pager. */
 export function WorldLogicIntegrity({
@@ -79,18 +81,16 @@ export function WorldLogicIntegrity({
       ) : null}
 
       {findings.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.worldLogic.integrity.loading')}
-        </p>
+        <LoadingNote>{t('canon.worldLogic.integrity.loading')}</LoadingNote>
       ) : null}
 
       {findings.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-logic-findings-error">
-          <p>{t('canon.worldLogic.integrity.readFailed')}</p>
-          <Button tone="secondary" onClick={retry}>
-            {t('canon.rules.retry')}
-          </Button>
-        </div>
+        <LoadError
+          message={t('canon.worldLogic.integrity.readFailed')}
+          onRetry={retry}
+          retryLabel={t('canon.rules.retry')}
+          testId="world-logic-findings-error"
+        />
       ) : null}
 
       {findings.kind === 'ready' && findings.page.items.length > 0 ? (
