@@ -108,6 +108,11 @@ function SystemEditor({
         message={t('canon.worldLogic.systems.readFailed')}
         onRetry={() => void reread()}
         retryLabel={t('canon.rules.retry')}
+        action={
+          <Button tone="secondary" to={listPath}>
+            {t('canon.worldLogic.systems.editor.back')}
+          </Button>
+        }
         testId="system-editor-unavailable"
       />
     )
