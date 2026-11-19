@@ -46,15 +46,6 @@
   container-type: inline-size;
 }
 
-.contents__list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /* The world's parts as a small spread once there is room: three across, Lore - where most of a world lives - leading
    at double width, so five doorways fill two rows instead of leaving one alone on a third. */
 @container (min-width: 46rem) {
@@ -92,21 +83,15 @@
   height: 100%;
   min-height: 10rem;
   padding: var(--space-5);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
   background:
     linear-gradient(to bottom, color-mix(in srgb, var(--ink) 3%, transparent), transparent 60%),
     color-mix(in srgb, var(--raised) 92%, transparent);
-  box-shadow: var(--shadow-1);
   color: var(--ink);
   text-decoration: none;
-  transition:
-    border-color var(--duration-1) var(--ease),
-    box-shadow var(--duration-2) var(--ease),
-    transform var(--duration-2) var(--ease);
 }
 
-.contents--management .doorway {
+/* :where keeps this at one class, so the shared hover and press shadows still win over it. */
+.contents--management :where(.doorway) {
   background: transparent;
   box-shadow: none;
 }
@@ -115,14 +100,7 @@
   .doorway:hover {
     border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-strong));
     background-color: var(--raised);
-    box-shadow: var(--shadow-2);
-    transform: translateY(-2px);
   }
-}
-
-.doorway:active {
-  box-shadow: var(--shadow-1);
-  transform: none;
 }
 
 .doorway__medallion {

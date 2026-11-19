@@ -10,24 +10,6 @@
   padding: var(--space-4) var(--space-5);
   color: var(--ink);
   text-decoration: none;
-  transition:
-    border-color var(--duration-1) var(--ease),
-    box-shadow var(--duration-2) var(--ease),
-    transform var(--duration-2) var(--ease);
-}
-
-@media (hover: hover) {
-  .typecard:hover {
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
-    box-shadow: var(--shadow-2);
-    transform: translateY(-2px);
-  }
-}
-
-.typecard:active {
-  box-shadow: var(--shadow-1);
-  transform: none;
-  transition-duration: 80ms;
 }
 
 .typecard:focus-visible {
@@ -113,12 +95,6 @@
 @media (pointer: coarse) {
   .lorecatalog__group {
     min-height: var(--control-touch);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .typecard:hover {
-    transform: none;
   }
 }
 

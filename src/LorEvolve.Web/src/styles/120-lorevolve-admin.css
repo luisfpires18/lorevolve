@@ -3,24 +3,11 @@
    The service's own workspace, in My workspace's frame. Plain ruled cards on raised paper: figures, accounts and an
    account's facts. A figure LorEvolve does not record is set in the muted ink and says so in words. */
 
-.adminstats {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
-}
-
 .adminstat {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-4);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  background: var(--raised);
-  box-shadow: var(--shadow-1);
 }
 
 .adminstat__label {
@@ -91,15 +78,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.adminusers {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-}
-
 .adminuser {
   display: grid;
   grid-template-columns: 3rem minmax(0, 1fr);
@@ -107,10 +85,6 @@
   gap: var(--space-3);
   height: 100%;
   padding: var(--space-4);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  background: var(--raised);
-  box-shadow: var(--shadow-1);
 }
 
 .adminuser__avatar {

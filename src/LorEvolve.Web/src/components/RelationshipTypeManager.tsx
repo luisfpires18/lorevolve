@@ -7,6 +7,7 @@ import { typeManagerActions } from '../relationships/typeManagerActions'
 import { useTypeManagerState } from '../relationships/useTypeManagerState'
 import { KindForm } from './relationships/KindForm'
 import { KindRow } from './relationships/KindRow'
+import { TypeRow } from './TypeRow'
 import { NewButton } from './NewButton'
 import { LoadingNote } from './LoadingNote'
 import { SectionTitle } from './Section'
@@ -105,11 +106,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
         <ul className="types__list" data-testid="relationship-type-list">
           {types.map((type) => {
             if (editingId === type.id) {
-              return (
-                <li className="types__row" key={type.id}>
-                  {form}
-                </li>
-              )
+              return <TypeRow key={type.id} name={type.name} head={form} />
             }
 
             return (

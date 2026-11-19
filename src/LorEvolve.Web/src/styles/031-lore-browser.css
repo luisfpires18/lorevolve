@@ -119,11 +119,6 @@
    at 1536, five at 1920 - so a wide monitor gets more cards per row rather than stretched ones, and a card never drops
    below about 264px, where its square and two lines of summary still read. The skeleton is cut the same way, so nothing
    jumps when the entries arrive. The page size is the author's choice (Items per page); the columns are the width's. */
-.lore__grid,
-.lore__skeleton {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
-}
-
 .lore__search {
   flex: 1 1 18rem;
   max-width: 28rem;

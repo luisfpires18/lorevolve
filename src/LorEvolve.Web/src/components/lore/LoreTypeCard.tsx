@@ -1,8 +1,8 @@
-import { useId } from 'react'
-import { Link, type To } from 'react-router-dom'
+import type { To } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { branchIds, type TreeType, type TypeNode } from '../../lore/typeTree'
 import { TypeIcon } from '../TypeIcon'
+import { CatalogCard } from '../CatalogCard'
 
 /**
  * What a card reads of a type. A lore type has it as it is; a project's own type (#144) is the same card, its entry count
@@ -39,54 +39,39 @@ export function TypeCard({
   href: To
 }) {
   const { t, tn, tx } = useI18n()
-  const nameId = useId()
-  const detailsId = useId()
   const { type } = node
   const entries =
     count === 0 ? t('lore.catalog.noEntries') : tn('lore.catalog.entries', count, { n: count })
   const above = node.path.slice(0, -1)
   const nested = node.children.length
   return (
-    <Link
-      className="typecard"
-      to={href}
-      aria-labelledby={nameId}
-      aria-describedby={detailsId}
-      style={type.accentColor ? { ['--type-accent' as string]: type.accentColor } : undefined}
-      data-testid="lore-type-card"
+    <CatalogCard
+      href={href}
+      nameOnly
+      icon={<TypeIcon iconKey={type.icon} />}
+      // A long name is cut after two lines on the card; the whole of it is the link's name and its tooltip.
+      name={<bdi>{type.name}</bdi>}
+      nameTitle={type.name}
+      path={
+        above.length > 0
+          ? tx('lore.catalog.inPath', {
+              path: <bdi>{above.map((ancestor) => ancestor.name).join(' › ')}</bdi>,
+            })
+          : null
+      }
+      description={type.description ? <bdi>{type.description}</bdi> : null}
+      meta={
+        nested > 0
+          ? t('lore.catalog.entriesWithNested', {
+              entries: entries,
+              nested: tn('lore.catalog.nestedTypes', nested, { n: nested }),
+            })
+          : entries
+      }
+      metaTestId="lore-type-card-count"
+      accent={type.accentColor}
+      testId="lore-type-card"
       data-type-name={type.name}
-    >
-      <span className="typecard__icon">
-        <TypeIcon iconKey={type.icon} />
-      </span>
-      <span className="typecard__body">
-        {/* A long name is cut after two lines on the card; the whole of it is the link's name and its tooltip. */}
-        <span className="typecard__name" id={nameId} title={type.name}>
-          <bdi>{type.name}</bdi>
-        </span>
-        <span className="typecard__details" id={detailsId}>
-          {above.length > 0 ? (
-            <span className="typecard__path">
-              {tx('lore.catalog.inPath', {
-                path: <bdi>{above.map((ancestor) => ancestor.name).join(' › ')}</bdi>,
-              })}
-            </span>
-          ) : null}
-          {type.description ? (
-            <span className="typecard__description">
-              <bdi>{type.description}</bdi>
-            </span>
-          ) : null}
-          <span className="typecard__meta" data-testid="lore-type-card-count">
-            {nested > 0
-              ? t('lore.catalog.entriesWithNested', {
-                  entries: entries,
-                  nested: tn('lore.catalog.nestedTypes', nested, { n: nested }),
-                })
-              : entries}
-          </span>
-        </span>
-      </span>
-    </Link>
+    />
   )
 }

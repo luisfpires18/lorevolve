@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
 import type { IdeaSummary } from '../../ideas/types'
 import { formatDate, formatDateTime } from '../../lib/dates'
 import { tn, useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { LinkRow } from '../LinkRow'
 
 function referenceCountLabel(total: number) {
   return tn('ideas.browser.references', total, { n: total })
@@ -26,33 +26,25 @@ export function IdeaRow({
 }) {
   const { t, tx } = useI18n()
   return (
-    <li
-      className={deleted ? 'idearow' : 'idearow rowlink'}
-      data-testid="idea-row"
-      data-title={idea.title}
-      data-universe={idea.universe?.name ?? ''}
-    >
-      <div className="idearow__main">
-        {deleted ? (
-          <p className="idearow__title">
-            <bdi>{idea.title}</bdi>
-          </p>
-        ) : (
-          <Link
-            className="idearow__title rowlink__target"
-            to={`${basePath}/${idea.id}`}
-            data-testid="idea-open"
-          >
-            <bdi>{idea.title}</bdi>
-          </Link>
-        )}
-        {idea.excerpt ? (
-          <p className="idearow__excerpt prose" data-testid="idea-excerpt">
+    <LinkRow
+      look="idea"
+      to={deleted ? undefined : `${basePath}/${idea.id}`}
+      title={idea.title}
+      titleTestId="idea-open"
+      excerpt={
+        idea.excerpt ? (
+          <>
             {idea.excerpt}
             {idea.isExcerptShortened ? '…' : null}
-          </p>
-        ) : null}
-        <p className="idearow__meta">
+          </>
+        ) : null
+      }
+      excerptTestId="idea-excerpt"
+      testId="idea-row"
+      data-title={idea.title}
+      data-universe={idea.universe?.name ?? ''}
+      meta={
+        <>
           {universe ? null : idea.universe ? (
             <span className="idearow__universe" data-testid="idea-universe-label">
               <span
@@ -86,20 +78,22 @@ export function IdeaRow({
             </span>
           )}
           {idea.referenceCount > 0 ? <span>{referenceCountLabel(idea.referenceCount)}</span> : null}
-        </p>
-      </div>
-      {deleted ? (
-        <Button
-          tone="secondary"
-          className="idearow__restore"
-          disabled={restoring !== null}
-          onClick={() => void restore(idea)}
-          aria-label={t('ideas.browser.restoreAria', { title: idea.title })}
-          data-testid="idea-restore"
-        >
-          {restoring === idea.id ? t('ideas.browser.restoring') : t('ideas.browser.restore')}
-        </Button>
-      ) : null}
-    </li>
+        </>
+      }
+      aside={
+        deleted ? (
+          <Button
+            tone="secondary"
+            className="idearow__restore"
+            disabled={restoring !== null}
+            onClick={() => void restore(idea)}
+            aria-label={t('ideas.browser.restoreAria', { title: idea.title })}
+            data-testid="idea-restore"
+          >
+            {restoring === idea.id ? t('ideas.browser.restoring') : t('ideas.browser.restore')}
+          </Button>
+        ) : null
+      }
+    />
   )
 }

@@ -91,15 +91,6 @@
   margin: 0;
 }
 
-.discovery__list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .discovery__list[aria-busy='true'] {
   opacity: 0.6;
 }

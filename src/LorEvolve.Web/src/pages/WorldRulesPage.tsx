@@ -13,6 +13,7 @@ import { Pager } from '../components/Pager'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
+import { LinkRow } from '../components/LinkRow'
 import { OutcomeNotice } from '../components/OutcomeNotice'
 import { useAsyncRead } from '../lib/useAsyncRead'
 
@@ -99,36 +100,36 @@ export default function WorldRulesPage() {
       {result && result.items.length > 0 ? (
         <ul className="rulelist" data-testid="world-rule-list">
           {result.items.map((rule) => (
-            <li
-              className="rulerow rowlink"
+            <LinkRow
+              look="rule"
               key={rule.id}
-              data-testid="world-rule-row"
+              to={`${basePath}/${rule.id}`}
+              title={rule.title}
+              titleTestId="world-rule-open"
+              excerpt={
+                rule.excerpt ? (
+                  <>
+                    {rule.excerpt}
+                    {rule.isExcerptShortened ? '…' : null}
+                  </>
+                ) : null
+              }
+              excerptTestId="world-rule-excerpt"
+              testId="world-rule-row"
               data-title={rule.title}
-            >
-              <Link
-                className="rulerow__title rowlink__target"
-                to={`${basePath}/${rule.id}`}
-                data-testid="world-rule-open"
-              >
-                <bdi>{rule.title}</bdi>
-              </Link>
-              {rule.excerpt ? (
-                <p className="rulerow__excerpt" dir="auto" data-testid="world-rule-excerpt">
-                  {rule.excerpt}
-                  {rule.isExcerptShortened ? '…' : null}
-                </p>
-              ) : null}
-              <p className="rulerow__meta">
-                {rule.hasCheck ? (
-                  <span className="rulerow__check" data-testid="world-rule-has-check">
-                    {t('canon.rules.checked')}
-                  </span>
-                ) : null}
-                {tx('canon.rules.updated', {
-                  time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
-                })}
-              </p>
-            </li>
+              meta={
+                <>
+                  {rule.hasCheck ? (
+                    <span className="rulerow__check" data-testid="world-rule-has-check">
+                      {t('canon.rules.checked')}
+                    </span>
+                  ) : null}
+                  {tx('canon.rules.updated', {
+                    time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
+                  })}
+                </>
+              }
+            />
           ))}
         </ul>
       ) : null}

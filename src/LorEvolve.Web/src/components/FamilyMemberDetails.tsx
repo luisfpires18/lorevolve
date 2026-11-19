@@ -1,7 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
-import { EntityTile } from './EntityTile'
+import { EntityRow } from './EntityRow'
 import { StatusBadge } from './StatusBadge'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { linkSentence, type FamilyReading } from '../familyTree/reading'
@@ -139,23 +139,25 @@ export function FamilyMemberDetails({
     >
       <div className="familydetails__panel">
         <header className="familydetails__head">
-          <EntityTile
+          <EntityRow
             universeId={universeId}
             entityId={node.entityId}
             image={node.image}
             typeIcon={node.entityTypeIcon}
             typeAccent={node.entityTypeAccentColor}
-            className="familydetails__tile"
+            tileClassName="familydetails__tile"
+            name={
+              <h2 className="familydetails__name" id={headingId} ref={heading} tabIndex={-1}>
+                <bdi>{node.name}</bdi>
+              </h2>
+            }
+            meta={
+              <>
+                <bdi>{node.entityTypeName}</bdi>
+                <StatusBadge step={node.canonStatus} label={CANON_LABELS[node.canonStatus]} />
+              </>
+            }
           />
-          <div className="familydetails__title">
-            <h2 className="familydetails__name" id={headingId} ref={heading} tabIndex={-1}>
-              <bdi>{node.name}</bdi>
-            </h2>
-            <p className="familydetails__kind">
-              <bdi>{node.entityTypeName}</bdi>
-              <StatusBadge step={node.canonStatus} label={CANON_LABELS[node.canonStatus]} />
-            </p>
-          </div>
           <IconButton
             icon={X}
             label={t('places.memberDetails.close')}

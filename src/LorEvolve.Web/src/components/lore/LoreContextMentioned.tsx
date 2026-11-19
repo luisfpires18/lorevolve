@@ -1,4 +1,4 @@
-import { EntityTile } from '../EntityTile'
+import { EntityRow } from '../EntityRow'
 import { useI18n } from '../../i18n'
 import type { SceneLoreReference } from '../../stories/types'
 import type { Mention } from '../../lore/mentions'
@@ -60,33 +60,33 @@ export function LoreContextMentioned({
                     data-testid="lore-context-mention"
                     data-name={name}
                   >
-                    <EntityTile
-                      className="relation__tile"
+                    <EntityRow
                       universeId={universeId}
                       entityId={mention.entityId}
                       image={live ? reference.image : null}
                       typeIcon={reference?.entityTypeIcon ?? null}
                       typeAccent={reference?.entityTypeAccentColor ?? null}
-                    />
-                    <div className="relation__body">
-                      {live ? (
-                        <button
-                          className="relation__name lorecontext__name"
-                          type="button"
-                          onClick={() => openPreview(mention.entityId, key)}
-                          data-preview-from={key}
-                          aria-label={t('lore.context.previewPick', { name })}
-                          data-testid="lore-context-mention-preview"
-                        >
-                          <bdi>{name}</bdi>
-                        </button>
-                      ) : (
-                        <span className="relation__name lorecontext__name--trashed">
-                          <bdi>{name}</bdi>
-                        </span>
-                      )}
-                      <p className="relation__meta" data-testid="lore-context-mention-state">
-                        {!known ? (
+                      name={
+                        live ? (
+                          <button
+                            className="relation__name lorecontext__name"
+                            type="button"
+                            onClick={() => openPreview(mention.entityId, key)}
+                            data-preview-from={key}
+                            aria-label={t('lore.context.previewPick', { name })}
+                            data-testid="lore-context-mention-preview"
+                          >
+                            <bdi>{name}</bdi>
+                          </button>
+                        ) : (
+                          <span className="relation__name lorecontext__name--trashed">
+                            <bdi>{name}</bdi>
+                          </span>
+                        )
+                      }
+                      metaTestId="lore-context-mention-state"
+                      meta={
+                        !known ? (
                           t('lore.context.reading')
                         ) : reference === undefined ? (
                           t('lore.context.notInLore')
@@ -104,9 +104,9 @@ export function LoreContextMentioned({
                             ) : null}
                             {isLinked ? <span>{t('lore.context.inSceneLore')}</span> : null}
                           </>
-                        )}
-                      </p>
-                    </div>
+                        )
+                      }
+                    />
                     {access.editContent && live && !isLinked ? (
                       <Button
                         tone="text"

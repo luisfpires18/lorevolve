@@ -3,17 +3,69 @@
    Patterns, not components: a class a screen puts on its own markup. Each task from 003 adopts the
    ones its screens need; until then a screen's own rules still apply. */
 
-/* A raised card's surface, said once: a border, the medium radius, a faint top-down wash over the raised ground and
-   the first shadow step. Layout, hover and press stay with each card. */
+/* A raised card's surface, said once: a border, the medium radius, the raised ground and the first shadow step. A new
+   card joins this list; layout stays with each card. */
+.entitycard,
+.typecard,
+.projectcard,
+.plate,
+.doorway,
+.adminuser,
+.adminstat {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+}
+
+/* The cards that read as paper take a faint top-down wash over the raised ground. */
 .entitycard,
 .typecard,
 .projectcard {
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
   background:
     linear-gradient(to bottom, color-mix(in srgb, var(--ink) 2.5%, transparent), transparent 55%),
     var(--raised);
+}
+
+/* A card that is one link: under the pointer it rises a little and its edge warms; pressed, it settles. */
+.entitycard,
+.typecard,
+.plate,
+.doorway {
+  transition:
+    border-color var(--duration-1) var(--ease),
+    box-shadow var(--duration-2) var(--ease),
+    transform var(--duration-2) var(--ease);
+}
+
+@media (hover: hover) {
+  .entitycard:hover,
+  .typecard:hover,
+  .plate:hover,
+  .doorway:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
+}
+
+.entitycard:active,
+.typecard:active,
+.plate:active,
+.doorway:active {
   box-shadow: var(--shadow-1);
+  transform: none;
+  transition-duration: 80ms;
+}
+
+/* Asked for less motion, the cards stay put under the pointer; the edge and shadow still answer. */
+@media (prefers-reduced-motion: reduce) {
+  .entitycard:hover,
+  .typecard:hover,
+  .plate:hover,
+  .doorway:hover {
+    transform: none;
+  }
 }
 
 /* A row that opens as a whole: its title is the one link, stretched over the row, so the link's name stays the
@@ -77,14 +129,54 @@
   background: var(--paper);
 }
 
-/* Things you open, in a grid that adds columns as the width allows. */
+/* Things you open, in a grid that adds columns as the width allows (`CardGrid`): each card at least `--card-min` wide,
+   16.5rem unless a modifier says otherwise, or one card per line. */
 .cardgrid {
+  --card-min: 16.5rem;
+
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
   gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.cardgrid--min-13 {
+  --card-min: 13rem;
+}
+
+.cardgrid--min-14 {
+  --card-min: 14rem;
+}
+
+.cardgrid--min-15 {
+  --card-min: 15rem;
+}
+
+.cardgrid--min-16 {
+  --card-min: 16rem;
+}
+
+.cardgrid--min-17 {
+  --card-min: 17rem;
+}
+
+.cardgrid--rows {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cardgrid--gap-3 {
+  gap: var(--space-3);
+}
+
+.cardgrid--gap-5 {
+  gap: var(--space-5);
+}
+
+/* Placeholder cards (`CardSkeleton`) wait 300 ms before they show, so a quick read never flashes them. */
+.cardskeleton {
+  animation: skeleton-appear 0s linear 300ms both;
 }
 
 /* Three slots across the list's own width: Previous at the start, the position truly centred, Next at the end. Both

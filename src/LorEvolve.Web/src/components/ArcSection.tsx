@@ -5,11 +5,10 @@ import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { useFold } from './fold'
-import { FoldToggle } from './FoldToggle'
+import { OutlineItem } from './OutlineItem'
 import { arcLabel, arcNumber, chapterCountLabel } from '../stories/format'
 import type { PlotArc } from '../stories/types'
 import { NewButton } from './NewButton'
-import { QuietNote } from './QuietNote'
 
 interface ArcSectionProps {
   arc: PlotArc
@@ -53,55 +52,36 @@ export function ArcSection({
   const { t } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
-  const {
-    open: foldOpen,
-    setOpen: setFoldOpen,
-    ref: foldRef,
-    bodyId: foldBodyId,
-  } = useFold<HTMLElement>(startsOpen)
+  const fold = useFold<HTMLElement>(startsOpen)
 
   return (
-    <section
-      ref={foldRef}
-      className="plotarc"
-      id={`arc-${arc.id}`}
-      tabIndex={-1}
-      aria-labelledby={headingId}
-      data-testid="arc"
-      data-title={arc.title}
-      data-open={foldOpen ? 'true' : undefined}
-    >
-      <header className="plotarc__head">
-        <div className="chapter__heading">
-          <FoldToggle
-            open={foldOpen}
-            onToggle={setFoldOpen}
-            controls={foldBodyId}
-            label={arcLabel(index, arc.title)}
-            testId="arc-toggle"
-          />
-          <h3 className="plotarc__title" id={headingId} data-testid="arc-heading">
-            <span className="plotarc__number">{arcNumber(index)}</span>
-            <span className="plotarc__dash">: </span>
-            <span className="plotarc__name">
-              <bdi>{arc.title}</bdi>
-            </span>
-          </h3>
-          {chapterCount > 0 ? (
-            <QuietNote className="plotarc__meta" testId="arc-chapter-count">
-              {chapterCountLabel(chapterCount)}
-            </QuietNote>
-          ) : null}
-        </div>
-
-        <div className="plotarc__tools rowtools">
+    <OutlineItem
+      variant="group"
+      top
+      item={false}
+      fold={fold}
+      anchorId={`arc-${arc.id}`}
+      dataTitle={arc.title}
+      titleId={headingId}
+      testId="arc"
+      titleTestId="arc-heading"
+      metaTestId="arc-chapter-count"
+      summaryTestId="arc-description"
+      number={arcNumber(index)}
+      name={arc.title}
+      meta={chapterCount > 0 ? chapterCountLabel(chapterCount) : null}
+      summary={arc.description}
+      foldLabel={arcLabel(index, arc.title)}
+      empty={chapterCount > 0 ? undefined : t('stories.arc.empty')}
+      tools={
+        <>
           {publication}
           {access.editContent ? (
             <>
               <NewButton
                 tone="secondary"
                 onClick={() => {
-                  setFoldOpen(true)
+                  fold.setOpen(true)
                   onAddChapter(arc)
                 }}
                 aria-describedby={headingId}
@@ -157,29 +137,10 @@ export function ArcSection({
               </ActionMenu>
             </>
           ) : null}
-        </div>
-
-        {arc.description ? (
-          <p
-            className="plotarc__description prose"
-            hidden={!foldOpen}
-            data-fold={foldBodyId}
-            data-testid="arc-description"
-          >
-            {arc.description}
-          </p>
-        ) : null}
-      </header>
-
-      <div id={foldBodyId} hidden={!foldOpen} data-fold={foldBodyId}>
-        {chapterCount > 0 ? (
-          children
-        ) : (
-          <p className="plotarc__empty" data-testid="arc-empty">
-            {t('stories.arc.empty')}
-          </p>
-        )}
-      </div>
-    </section>
+        </>
+      }
+    >
+      {children}
+    </OutlineItem>
   )
 }

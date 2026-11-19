@@ -20,9 +20,13 @@ export function EntityCard({
   entity,
   selection,
   eager = false,
+  href,
+  linkTestId,
+  note,
+  actions,
 }: {
   universeId: string
-  entity: EntitySummary
+  entity: CardEntity
   /** A card in the first rows: its picture is fetched at once and first; the rest wait to be scrolled near. */
   eager?: boolean
   /**
@@ -30,9 +34,18 @@ export function EntityCard({
    * or Space on the box - selects it, and the box says whether it is.
    */
   selection?: { checked: boolean; onToggle: () => void }
+  /** Where the card opens; left out it is the Lore entry, `null` draws the card with no link. */
+  href?: string | null
+  /** A test id on the card's link when it holds `actions`. */
+  linkTestId?: string
+  /** A quiet line under the name, where a Lore entry lists its other names. */
+  note?: ReactNode
+  /** A menu beside the link: the card is then a box holding the link, because a menu cannot sit inside a link. */
+  actions?: ReactNode
 }) {
   const { t } = useI18n()
-  const body = <EntityCardBody universeId={universeId} entity={entity} eager={eager} />
+  const body = <EntityCardBody universeId={universeId} entity={entity} eager={eager} note={note} />
+  const to = href === undefined ? `/app/universes/${universeId}/lore/${entity.id}` : href
 
   if (selection) {
     return (
@@ -55,13 +68,23 @@ export function EntityCard({
     )
   }
 
+  if (actions || to === null) {
+    return (
+      <div className="entitycard entitycard--static">
+        {to === null ? (
+          body
+        ) : (
+          <Link className="entitycard__link" to={to} data-testid={linkTestId}>
+            {body}
+          </Link>
+        )}
+        {actions ? <div className="entitycard__actions">{actions}</div> : null}
+      </div>
+    )
+  }
+
   return (
-    <Link
-      className="entitycard"
-      to={`/app/universes/${universeId}/lore/${entity.id}`}
-      data-testid="entity-card"
-      data-entity-name={entity.name}
-    >
+    <Link className="entitycard" to={to} data-testid="entity-card" data-entity-name={entity.name}>
       {body}
     </Link>
   )
@@ -77,8 +100,8 @@ export type CardEntity = Pick<
 > &
   Partial<Pick<EntitySummary, 'aliases' | 'image' | 'canonStatus' | 'articleExcerpt'>>
 
-/** The inside of a Lore card, shared with a project's entry cards so the two cannot drift apart. */
-export function EntityCardBody({
+/** The inside of a card; only `EntityCard` draws it. */
+function EntityCardBody({
   universeId,
   entity,
   eager = false,

@@ -8,7 +8,7 @@ import type { useLoreSelection } from '../../lore/useLoreSelection'
 import type { LoadState } from '../../lore/loreAddress'
 import type { ReactNode } from 'react'
 import { LoadError } from '../LoadError'
-import { Announce } from '../Announce'
+import { CardSkeleton } from '../CardSkeleton'
 type Entries = ReturnType<typeof useLoreEntries>
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -79,18 +79,12 @@ export function LoreStatus({
 
       {view.kind === 'loading' ? (
         <div className="lore__loading">
-          <Announce>{t('lore.page.reading')}</Announce>
-          <ul className="cardgrid lore__skeleton" aria-hidden="true">
-            {Array.from({ length: SKELETON_CARDS }, (_, index) => (
-              <li className="skeletoncard" key={index}>
-                <span className="skeleton skeletoncard__tile" />
-                <span className="skeletoncard__lines">
-                  <span className="skeleton skeletoncard__line" />
-                  <span className="skeleton skeletoncard__line skeletoncard__line--short" />
-                </span>
-              </li>
-            ))}
-          </ul>
+          <CardSkeleton
+            shape="tile"
+            className="lore__grid"
+            count={SKELETON_CARDS}
+            announce={t('lore.page.reading')}
+          />
         </div>
       ) : null}
 

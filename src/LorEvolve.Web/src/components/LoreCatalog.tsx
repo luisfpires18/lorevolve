@@ -6,7 +6,8 @@ import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import type { TypeTree } from '../lore/typeTree'
 import { listedEntries, TypeCard, type CatalogType } from './lore/LoreTypeCard'
 import { Button } from './Button'
-import { Announce } from './Announce'
+import { CardGrid } from './CardGrid'
+import { CardSkeleton } from './CardSkeleton'
 import { QuietNote } from './QuietNote'
 
 /** How many card shapes stand in for the catalog while the types are read. */
@@ -164,7 +165,7 @@ export function LoreCatalog({
       </QuietNote>
 
       {shown.length > 0 ? (
-        <ul className="lorecatalog__grid" data-testid="lore-type-cards">
+        <CardGrid min={16} className="lorecatalog__grid" testId="lore-type-cards">
           {shown.map((node) => {
             const isOpen = expanded.has(node.type.id)
             const Chevron = isOpen ? ChevronDown : ChevronRight
@@ -206,7 +207,7 @@ export function LoreCatalog({
               </li>
             )
           })}
-        </ul>
+        </CardGrid>
       ) : null}
     </section>
   )
@@ -217,18 +218,13 @@ export function LoreCatalogSkeleton() {
   const { t } = useI18n()
   return (
     <div className="lorecatalog" data-testid="lore-catalog-loading">
-      <Announce>{t('lore.catalog.reading')}</Announce>
-      <ul className="lorecatalog__grid" aria-hidden="true">
-        {Array.from({ length: SKELETON_CARDS }, (_, index) => (
-          <li className="typecard typecard--skeleton" key={index}>
-            <span className="skeleton typecard__icon" />
-            <span className="typecard__body">
-              <span className="skeleton skeletoncard__line" />
-              <span className="skeleton skeletoncard__line skeletoncard__line--short" />
-            </span>
-          </li>
-        ))}
-      </ul>
+      <CardSkeleton
+        shape="icon"
+        min={16}
+        className="lorecatalog__grid"
+        count={SKELETON_CARDS}
+        announce={t('lore.catalog.reading')}
+      />
     </div>
   )
 }

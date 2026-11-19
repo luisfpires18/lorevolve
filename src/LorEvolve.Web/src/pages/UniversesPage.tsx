@@ -1,3 +1,4 @@
+import { CardGrid } from '../components/CardGrid'
 import { useCallback, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore } from 'lucide-react'
@@ -177,13 +178,13 @@ export default function UniversesPage() {
       ) : null}
 
       {result && result.items.length > 0 ? (
-        <ul className="plates" data-testid="universe-grid">
+        <CardGrid gap={5} testId="universe-grid">
           {result.items.map((universe) => (
             <li key={universe.id}>
               <UniverseCard universe={universe} />
             </li>
           ))}
-        </ul>
+        </CardGrid>
       ) : null}
 
       {result && result.items.length === 0 && !isStarting ? (

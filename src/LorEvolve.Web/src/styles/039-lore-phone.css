@@ -129,8 +129,7 @@
     padding: var(--space-3);
   }
 
-  .lore__grid,
-  .lore__skeleton {
+  .lore__grid {
     gap: var(--space-3);
   }
 }

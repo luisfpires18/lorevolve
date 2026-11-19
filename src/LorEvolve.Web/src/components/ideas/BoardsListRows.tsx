@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom'
 import type { IdeaBoardPage, IdeaBoardSummary } from '../../ideas/boards'
 import { formatDate, formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { LinkRow } from '../LinkRow'
 
 /** The rows of the boards list: each board opens, or in Recently deleted, restores. */
 export function BoardsListRows({
@@ -24,27 +24,16 @@ export function BoardsListRows({
   return (
     <ul className="idealist" data-testid="board-rows">
       {result.items.map((board) => (
-        <li
-          className={deleted ? 'idearow' : 'idearow rowlink'}
+        <LinkRow
+          look="idea"
           key={board.id}
-          data-testid="board-row"
+          to={deleted ? undefined : `${basePath}/${board.id}`}
+          title={board.title}
+          titleTestId="board-open"
+          testId="board-row"
           data-title={board.title}
-        >
-          <div className="idearow__main">
-            {deleted ? (
-              <p className="idearow__title">
-                <bdi>{board.title}</bdi>
-              </p>
-            ) : (
-              <Link
-                className="idearow__title rowlink__target"
-                to={`${basePath}/${board.id}`}
-                data-testid="board-open"
-              >
-                <bdi>{board.title}</bdi>
-              </Link>
-            )}
-            <p className="idearow__meta">
+          meta={
+            <>
               {universe ? null : (
                 <span
                   className={
@@ -70,21 +59,23 @@ export function BoardsListRows({
                   })}
                 </span>
               )}
-            </p>
-          </div>
-          {deleted ? (
-            <Button
-              tone="secondary"
-              className="idearow__restore"
-              disabled={restoring !== null}
-              onClick={() => void restore(board)}
-              aria-label={t('ideas.boards.restoreAria', { title: board.title })}
-              data-testid="board-restore"
-            >
-              {restoring === board.id ? t('ideas.boards.restoring') : t('ideas.boards.restore')}
-            </Button>
-          ) : null}
-        </li>
+            </>
+          }
+          aside={
+            deleted ? (
+              <Button
+                tone="secondary"
+                className="idearow__restore"
+                disabled={restoring !== null}
+                onClick={() => void restore(board)}
+                aria-label={t('ideas.boards.restoreAria', { title: board.title })}
+                data-testid="board-restore"
+              >
+                {restoring === board.id ? t('ideas.boards.restoring') : t('ideas.boards.restore')}
+              </Button>
+            ) : null
+          }
+        />
       ))}
     </ul>
   )

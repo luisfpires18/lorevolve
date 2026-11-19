@@ -16,6 +16,7 @@ import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
 import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
+import { ProjectCard } from '../ProjectCard'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
 export function SeasonItem({
@@ -64,111 +65,109 @@ export function SeasonItem({
   useI18n()
 
   return (
-    <li className="projectcard" data-testid={`project-season-${season.id}`}>
-      {renaming === season.id ? (
-        <form
-          className="form projectform--inline"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (busy) return
-            setBusy(true)
-            saveSeason(projectId, season.id, { name: renameTo, summary: season.summary })
-              .then(() => {
-                setRenaming(null)
-                return refresh()
-              })
-              .catch(failing)
-          }}
+    <ProjectCard
+      testId={`project-season-${season.id}`}
+      title={season.name}
+      meta={
+        season.episodes.length === 0 ? say.noEpisodes() : say.episodeCount(season.episodes.length)
+      }
+      head={
+        renaming === season.id ? (
+          <form
+            className="form projectform--inline"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (busy) return
+              setBusy(true)
+              saveSeason(projectId, season.id, { name: renameTo, summary: season.summary })
+                .then(() => {
+                  setRenaming(null)
+                  return refresh()
+                })
+                .catch(failing)
+            }}
+          >
+            <Field label={t('projects.seasons.name')}>
+              {(control) => (
+                <input
+                  {...control}
+                  className="field__input"
+                  value={renameTo}
+                  onChange={(event) => setRenameTo(event.target.value)}
+                  data-testid="project-season-rename-name"
+                  required
+                />
+              )}
+            </Field>
+            {/* Without this the only way out of a rename the author thought better of was to save it. */}
+            <FormActions
+              submitLabel={t('projects.seasons.renameSave')}
+              busy={busy}
+              submitTestId="project-season-rename-save"
+              onCancel={() => setRenaming(null)}
+              cancelTestId="project-season-rename-cancel"
+              lockCancel
+              size="sm"
+            />
+          </form>
+        ) : undefined
+      }
+      // Order, rename and delete are this row's secondary verbs: one menu, as the lore types screen does,
+      // rather than four pills on every card.
+      actions={
+        <ActionMenu
+          label={t('projects.common.more', { name: season.name })}
+          triggerTestId={`project-season-actions-${season.id}`}
         >
-          <Field label={t('projects.seasons.name')}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={renameTo}
-                onChange={(event) => setRenameTo(event.target.value)}
-                data-testid="project-season-rename-name"
-                required
-              />
-            )}
-          </Field>
-          {/* Without this the only way out of a rename the author thought better of was to save it. */}
-          <FormActions
-            submitLabel={t('projects.seasons.renameSave')}
-            busy={busy}
-            submitTestId="project-season-rename-save"
-            onCancel={() => setRenaming(null)}
-            cancelTestId="project-season-rename-cancel"
-            lockCancel
-            size="sm"
-          />
-        </form>
-      ) : (
-        <div className="projectcard__head">
-          <h3 className="projectcard__title">{season.name}</h3>
-          <p className="projectcard__meta">
-            {season.episodes.length === 0
-              ? say.noEpisodes()
-              : say.episodeCount(season.episodes.length)}
-          </p>
-          {/* Order, rename and delete are this row's secondary verbs: one menu, as the lore types screen does,
-                    rather than four pills on every card. */}
-          <div className="projectcard__actions">
-            <ActionMenu
-              label={t('projects.common.more', { name: season.name })}
-              triggerTestId={`project-season-actions-${season.id}`}
+          {index === 0 ? null : (
+            <button
+              className="actionmenu__item"
+              type="button"
+              disabled={busy}
+              data-testid={`project-season-up-${season.id}`}
+              onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
             >
-              {index === 0 ? null : (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  disabled={busy}
-                  data-testid={`project-season-up-${season.id}`}
-                  onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
-                >
-                  <ActionIcon icon={ArrowUp} />
-                  {t('projects.common.moveUp')}
-                </button>
-              )}
-              {index === seasons.length - 1 ? null : (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  disabled={busy}
-                  data-testid={`project-season-down-${season.id}`}
-                  onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
-                >
-                  <ActionIcon icon={ArrowDown} />
-                  {t('projects.common.moveDown')}
-                </button>
-              )}
-              <button
-                className="actionmenu__item"
-                type="button"
-                data-testid={`project-season-rename-${season.id}`}
-                onClick={() => {
-                  setRenaming(season.id)
-                  setRenameTo(season.name)
-                }}
-              >
-                <ActionIcon icon={Pencil} />
-                {t('projects.seasons.rename')}
-              </button>
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
-                disabled={busy}
-                data-testid={`project-season-delete-${season.id}`}
-                onClick={() => run(deleteSeason(projectId, season.id))}
-              >
-                <ActionIcon icon={Trash} />
-                {say.delete()}
-              </button>
-            </ActionMenu>
-          </div>
-        </div>
-      )}
-
+              <ActionIcon icon={ArrowUp} />
+              {t('projects.common.moveUp')}
+            </button>
+          )}
+          {index === seasons.length - 1 ? null : (
+            <button
+              className="actionmenu__item"
+              type="button"
+              disabled={busy}
+              data-testid={`project-season-down-${season.id}`}
+              onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
+            >
+              <ActionIcon icon={ArrowDown} />
+              {t('projects.common.moveDown')}
+            </button>
+          )}
+          <button
+            className="actionmenu__item"
+            type="button"
+            data-testid={`project-season-rename-${season.id}`}
+            onClick={() => {
+              setRenaming(season.id)
+              setRenameTo(season.name)
+            }}
+          >
+            <ActionIcon icon={Pencil} />
+            {t('projects.seasons.rename')}
+          </button>
+          <button
+            className="actionmenu__item actionmenu__item--danger"
+            type="button"
+            disabled={busy}
+            data-testid={`project-season-delete-${season.id}`}
+            onClick={() => run(deleteSeason(projectId, season.id))}
+          >
+            <ActionIcon icon={Trash} />
+            {say.delete()}
+          </button>
+        </ActionMenu>
+      }
+    >
       {season.summary ? <p className="prose">{season.summary}</p> : null}
 
       <SeasonEpisodes
@@ -215,6 +214,6 @@ export function SeasonItem({
           {say.addEpisode()}
         </NewButton>
       )}
-    </li>
+    </ProjectCard>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
@@ -11,6 +11,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
+import { LinkRow } from '../components/LinkRow'
 import { useTitleDetail } from '../lib/useTitleDetail'
 
 /**
@@ -144,32 +145,27 @@ export default function ProjectsPage({
       ) : (
         <ul className="storylist" data-testid="projects-list">
           {shown.map((project) => (
-            <li
-              className="storyrow"
+            <LinkRow
+              look="story"
               key={project.id}
-              data-testid="projects-item"
+              to={rowPath(project)}
+              title={project.name}
+              titleTestId={`projects-row-${project.id}`}
+              excerpt={project.summary}
+              testId="projects-item"
               data-project-id={project.id}
               data-kind={project.kind}
-            >
-              <Link
-                className="storyrow__title"
-                to={rowPath(project)}
-                data-testid={`projects-row-${project.id}`}
-              >
-                <bdi>{project.name}</bdi>
-              </Link>
-              <p className="storyrow__meta">
-                <span>{kindLabel(project.kind)}</span>
-                {project.format ? (
-                  <span data-testid="project-row-format">{formatLabel(project.format)}</span>
-                ) : null}
-                <span>{lifecycleLabel(project.lifecycle)}</span>
-                {inUniverse ? null : <span>{project.universe.name}</span>}
-              </p>
-              {project.summary ? (
-                <p className="storyrow__premise prose">{project.summary}</p>
-              ) : null}
-            </li>
+              meta={
+                <>
+                  <span>{kindLabel(project.kind)}</span>
+                  {project.format ? (
+                    <span data-testid="project-row-format">{formatLabel(project.format)}</span>
+                  ) : null}
+                  <span>{lifecycleLabel(project.lifecycle)}</span>
+                  {inUniverse ? null : <span>{project.universe.name}</span>}
+                </>
+              }
+            />
           ))}
         </ul>
       )}

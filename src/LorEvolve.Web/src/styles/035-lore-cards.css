@@ -3,14 +3,8 @@
    What the entry looks like, its name, its kind and how settled it is, then two lines of summary.
    Raised paper you can open; the whole card is one link. No type stripe and no tag chips. */
 
-.lore__grid,
-.lore__skeleton {
-  gap: var(--space-4);
-}
-
 @media (min-width: 1440px) {
-  .lore__grid,
-  .lore__skeleton {
+  .lore__grid {
     gap: var(--space-5);
   }
 }
@@ -24,24 +18,6 @@
   padding: var(--space-4);
   color: var(--ink);
   text-decoration: none;
-  transition:
-    border-color var(--duration-1) var(--ease),
-    box-shadow var(--duration-2) var(--ease),
-    transform var(--duration-2) var(--ease);
-}
-
-@media (hover: hover) {
-  .entitycard:hover {
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
-    box-shadow: var(--shadow-2);
-    transform: translateY(-2px);
-  }
-}
-
-.entitycard:active {
-  box-shadow: var(--shadow-1);
-  transform: none;
-  transition-duration: 80ms;
 }
 
 .entitycard:focus-visible {

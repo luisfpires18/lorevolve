@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { EmptyState } from '../EmptyState'
 import { TabPanel } from '../QueryTabs'
 import { t, useI18n } from '../../i18n'
@@ -11,6 +10,7 @@ import { Button } from '../Button'
 import { NewButton } from '../NewButton'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
+import { LinkRow } from '../LinkRow'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -44,55 +44,46 @@ export function WorldLogicRules({
       {rules.kind === 'ready' && rules.value.items.length > 0 ? (
         <ul className="rulelist" data-testid="world-logic-rule-list">
           {rules.value.items.map((rule) => (
-            <li
-              className={rule.source === 'worldRule' ? 'rulerow rowlink' : 'rulerow'}
+            <LinkRow
+              look="rule"
               key={`${rule.source}-${rule.id}`}
-              data-testid="world-logic-rule-row"
+              to={rule.source === 'worldRule' ? `${base}/world-rules/${rule.id}` : undefined}
+              title={rule.title}
+              titleTestId="world-logic-rule-open"
+              excerpt={
+                rule.excerpt ? (
+                  <>
+                    {rule.excerpt}
+                    {rule.isExcerptShortened ? '…' : null}
+                  </>
+                ) : null
+              }
+              testId="world-logic-rule-row"
               data-source={rule.source}
               data-title={rule.title}
-            >
-              {rule.source === 'worldRule' ? (
-                <Link
-                  className="rulerow__title rowlink__target"
-                  to={`${base}/world-rules/${rule.id}`}
-                  data-testid="world-logic-rule-open"
-                >
-                  <bdi>{rule.title}</bdi>
-                </Link>
-              ) : (
-                <p className="rulerow__title">
-                  <bdi>{rule.title}</bdi>
-                </p>
-              )}
-
-              {rule.excerpt ? (
-                <p className="rulerow__excerpt" dir="auto">
-                  {rule.excerpt}
-                  {rule.isExcerptShortened ? '…' : null}
-                </p>
-              ) : null}
-
-              <p className="rulerow__meta">
-                <span className="rulerow__check" data-testid="world-logic-rule-kind">
-                  {rule.source === 'worldRule'
-                    ? t('canon.worldLogic.kinds.worldRule')
-                    : t('canon.worldLogic.kinds.definition')}
-                </span>
-                {rule.hasCheck ? (
-                  <span className="rulerow__check" data-testid="world-logic-rule-has-check">
-                    {t('canon.rules.checked')}
+              meta={
+                <>
+                  <span className="rulerow__check" data-testid="world-logic-rule-kind">
+                    {rule.source === 'worldRule'
+                      ? t('canon.worldLogic.kinds.worldRule')
+                      : t('canon.worldLogic.kinds.definition')}
                   </span>
-                ) : null}
-                {rule.hasCondition ? (
-                  <span className="rulerow__check" data-testid="world-logic-rule-has-condition">
-                    {t('canon.worldLogic.hasCondition')}
-                  </span>
-                ) : null}
-                {tx('canon.rules.updated', {
-                  time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
-                })}
-              </p>
-            </li>
+                  {rule.hasCheck ? (
+                    <span className="rulerow__check" data-testid="world-logic-rule-has-check">
+                      {t('canon.rules.checked')}
+                    </span>
+                  ) : null}
+                  {rule.hasCondition ? (
+                    <span className="rulerow__check" data-testid="world-logic-rule-has-condition">
+                      {t('canon.worldLogic.hasCondition')}
+                    </span>
+                  ) : null}
+                  {tx('canon.rules.updated', {
+                    time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
+                  })}
+                </>
+              }
+            />
           ))}
         </ul>
       ) : null}

@@ -59,8 +59,8 @@
   align-items: center;
 }
 
-.lorepreview__tile {
-  border-radius: var(--radius-sm);
+.lorepreview__more {
+  margin: var(--space-1) 0 0;
 }
 
 .lorepreview__name {

@@ -5,11 +5,10 @@ import { ArrowDown, ArrowRightLeft, ArrowUp, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { useFold } from './fold'
-import { FoldToggle } from './FoldToggle'
+import { OutlineItem } from './OutlineItem'
 import { chapterLabel, chapterNumber, sceneCountLabel } from '../stories/format'
 import type { Chapter } from '../stories/types'
 import { NewButton } from './NewButton'
-import { QuietNote } from './QuietNote'
 
 /** An arc a chapter may move into, or no arc at all when `id` is null, named as the menu reads it. */
 export interface ArcTarget {
@@ -65,54 +64,34 @@ export function ChapterSection({
   const { t } = useI18n()
   const access = useUniverseAccess()
   const headingId = useId()
-  const Title = titleLevel === 4 ? 'h4' : 'h3'
-  const {
-    open: foldOpen,
-    setOpen: setFoldOpen,
-    ref: foldRef,
-    bodyId: foldBodyId,
-  } = useFold<HTMLElement>(startsOpen)
+  const fold = useFold<HTMLElement>(startsOpen)
 
   return (
-    <section
-      ref={foldRef}
-      className="chapter"
-      id={`chapter-${chapter.id}`}
-      tabIndex={-1}
-      aria-labelledby={headingId}
-      data-testid="chapter"
-      data-title={chapter.title}
-      data-open={foldOpen ? 'true' : undefined}
-    >
-      <header className="chapter__head">
-        <div className="chapter__heading">
-          <FoldToggle
-            open={foldOpen}
-            onToggle={setFoldOpen}
-            controls={foldBodyId}
-            label={chapterLabel(index, chapter.title)}
-            testId="chapter-toggle"
-          />
-          <Title className="chapter__title" id={headingId} data-testid="chapter-heading">
-            <span className="chapter__number">{chapterNumber(index)}</span>
-            <span className="chapter__dash">: </span>
-            <span className="chapter__name">
-              <bdi>{chapter.title}</bdi>
-            </span>
-          </Title>
-          {sceneCount > 0 ? (
-            <QuietNote className="chapter__meta" testId="chapter-scene-count">
-              {sceneCountLabel(sceneCount)}
-            </QuietNote>
-          ) : null}
-        </div>
-
-        {access.editContent ? (
-          <div className="chapter__tools rowtools">
+    <OutlineItem
+      variant="group"
+      item={false}
+      fold={fold}
+      anchorId={`chapter-${chapter.id}`}
+      dataTitle={chapter.title}
+      titleId={headingId}
+      titleLevel={titleLevel}
+      testId="chapter"
+      titleTestId="chapter-heading"
+      metaTestId="chapter-scene-count"
+      summaryTestId="chapter-summary"
+      number={chapterNumber(index)}
+      name={chapter.title}
+      meta={sceneCount > 0 ? sceneCountLabel(sceneCount) : null}
+      summary={chapter.summary}
+      foldLabel={chapterLabel(index, chapter.title)}
+      empty={sceneCount > 0 ? undefined : t('stories.chapter.empty')}
+      tools={
+        access.editContent ? (
+          <>
             <NewButton
               tone="secondary"
               onClick={() => {
-                setFoldOpen(true)
+                fold.setOpen(true)
                 onAddScene(chapter)
               }}
               aria-describedby={headingId}
@@ -184,30 +163,11 @@ export function ChapterSection({
                 {t('stories.chapter.delete')}
               </button>
             </ActionMenu>
-          </div>
-        ) : null}
-
-        {chapter.summary ? (
-          <p
-            className="chapter__summary prose"
-            hidden={!foldOpen}
-            data-fold={foldBodyId}
-            data-testid="chapter-summary"
-          >
-            {chapter.summary}
-          </p>
-        ) : null}
-      </header>
-
-      <div id={foldBodyId} hidden={!foldOpen} data-fold={foldBodyId}>
-        {sceneCount > 0 ? (
-          children
-        ) : (
-          <p className="chapter__empty" data-testid="chapter-empty">
-            {t('stories.chapter.empty')}
-          </p>
-        )}
-      </div>
-    </section>
+          </>
+        ) : null
+      }
+    >
+      {children}
+    </OutlineItem>
   )
 }
