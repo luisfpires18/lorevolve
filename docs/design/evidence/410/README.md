@@ -98,7 +98,7 @@ The screenshots are 256-colour PNGs (palette quantised) to keep the folder small
 | 36 | `world-rule-failed` | /app/universes/{W}/world-rules/{rule} | 500 on GET /api/universes/{W}/world-rules/{rule} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 37 | `world-rule-loading` | /app/universes/{W}/world-rules/{rule} | GET /api/universes/{W}/world-rules/{rule} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 38 | `world-rule-missing` | /app/universes/{W}/world-rules/{rule} | real 404, address /app/universes/{W}/world-rules/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 39 | `system-editor-failed` | /app/universes/{W}/world-logic/systems/{sys} | 500 on GET /api/universes/{W}/systems/{sys} | 4 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 39 | `system-editor-failed` | /app/universes/{W}/world-logic/systems/{sys} | 500 on GET /api/universes/{W}/systems/{sys} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 40 | `system-editor-loading` | /app/universes/{W}/world-logic/systems/{sys} | GET /api/universes/{W}/systems/{sys} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 41 | `system-editor-missing` | /app/universes/{W}/world-logic/systems/{sys} | real 404, address /app/universes/{W}/world-logic/systems/{unknown id} | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
 | 42 | `world-logic-failed` | /app/universes/{W}/world-logic | 500 on GET /api/universes/{W}/world-logic/rules, /systems and /world-logic/findings | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
@@ -160,11 +160,11 @@ Codex round 3 asked for a look at the images, not only a hash. Method: every one
 
 Reading note: the PNGs are 256-colour quantised, so a changed page can move palette entries across the whole image. A large difference box with a picture that looks the same is quantisation noise, not a change. Those pairs are marked "no visible change".
 
-No defects. No clipping, overlap, wrong dark colour, phone overflow or missing text was found in the 78 pairs.
+No defects. No clipping, overlap, wrong dark colour, phone overflow or missing text was found in the 78 pairs looked at.
 
 Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "This project could not be read." on a game page; `projects-directory-failed` says "could not be counted", while the row above says "read"; `project-failed` and `story-failed` before shots showed a plain heading, not the not-found screen, so only the game rows prove "failed was drawn as not found".
 
-### Differing pairs (78)
+### Differing pairs (74 at the final head)
 
 | State | Variant | Verdict |
 | --- | --- | --- |
@@ -234,10 +234,6 @@ Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "Thi
 | `story-loading` | phone light | "Reading this project." same text, about 16 px lower; nothing clipped |
 | `story-missing` | phone dark | No visible change: "This project is not here." on both sides; palette noise only. Correct |
 | `story-missing` | phone light | No visible change: "This project is not here." on both sides; palette noise only. Correct |
-| `system-editor-failed` | desktop dark | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
-| `system-editor-failed` | desktop light | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
-| `system-editor-failed` | phone dark | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
-| `system-editor-failed` | phone light | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
 | `system-editor-missing` | desktop dark | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
 | `system-editor-missing` | desktop light | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
 | `system-editor-missing` | phone dark | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
@@ -247,6 +243,6 @@ Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "Thi
 | `universe-publish-loading` | phone light | No visible change: "Loading the public details..." on both sides; palette noise only |
 | `world-rules-failed` | desktop dark | No visible change: "The rules could not be read." box on both sides; palette noise only |
 
-Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); system-editor-failed (4 pairs, Back to Systems restored); no visible change (18 pairs).
+Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); no visible change (18 pairs). Total 74.
 
-Identical pairs: 274 of 348 at the final head, by the method above. The four `system-editor-failed` pairs joined them when `cb2b15b0` restored Back to Systems and `1a16a49e` recaptured the after side; their rows in the table above record that. Differing pairs at the final head: 74.
+Identical pairs: 274 of 348 at the final head, by the method above. The four `system-editor-failed` pairs joined them when `cb2b15b0` restored Back to Systems and `1a16a49e` recaptured the after side; their rows in the table above record that. Differing pairs at the final head: 74, the rows of the table above. The four `system-editor-failed` pairs were looked at by eye after the recapture: both sides hold "Try again" and "Back to Systems" side by side, layout and colours right, and they are now pixel-identical.
