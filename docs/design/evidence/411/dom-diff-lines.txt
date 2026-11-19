@@ -1,0 +1,1116 @@
+## drawer-board-picker-empty
+-<input aria-controls="_r_#_" class="field__input" data-testid="board-picker-search" id="_r_#_" placeholder="Words in an idea" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="board-picker-search" dir="auto" id="_r_#_" placeholder="Words in an idea" spellcheck="false" style="" type="search" value="">
++</span>
+## drawer-board-picker-nomatch
+-<input aria-controls="_r_#_" class="field__input" data-testid="board-picker-search" id="_r_#_" placeholder="Words in an idea" style="" type="search" value="zzzz">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="board-picker-search" dir="auto" id="_r_#_" placeholder="Words in an idea" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## drawer-board-picker-results
+-<input aria-controls="_r_#_" class="field__input" data-testid="board-picker-search" id="_r_#_" placeholder="Words in an idea" style="" type="search" value="Tide">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="board-picker-search" dir="auto" id="_r_#_" placeholder="Words in an idea" spellcheck="false" style="" type="search" value="Tide">
++</span>
+## drawer-lore-context-empty
+-<label class="visually-hidden" for="_r_#_">Search this universe’s lore</label>
+-<input aria-controls="_r_#_" autocomplete="off" class="field__input" data-testid="lore-context-search" dir="auto" id="_r_#_" placeholder="Search by name, alias or summary" style="" type="search" value="">
++<div class="field">
++<label class="field__label visually-hidden" for="_r_#_">Search this universe’s lore</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="lore-context-search" dir="auto" id="_r_#_" placeholder="Search by name, alias or summary" spellcheck="false" style="" type="search" value="">
++</span>
++</div>
+## drawer-lore-context-nomatch
+-<label class="visually-hidden" for="_r_#_">Search this universe’s lore</label>
+-<input aria-controls="_r_#_" autocomplete="off" class="field__input" data-testid="lore-context-search" dir="auto" id="_r_#_" placeholder="Search by name, alias or summary" style="" type="search" value="zzzz">
++<div class="field">
++<label class="field__label visually-hidden" for="_r_#_">Search this universe’s lore</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="lore-context-search" dir="auto" id="_r_#_" placeholder="Search by name, alias or summary" spellcheck="false" style="" type="search" value="zzzz">
++</span>
++</div>
+## drawer-lore-context-results
+-<label class="visually-hidden" for="_r_#_">Search this universe’s lore</label>
+-<input aria-controls="_r_#_" autocomplete="off" class="field__input" data-testid="lore-context-search" dir="auto" id="_r_#_" placeholder="Search by name, alias or summary" style="" type="search" value="Mara">
++<div class="field">
++<label class="field__label visually-hidden" for="_r_#_">Search this universe’s lore</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="lore-context-search" dir="auto" id="_r_#_" placeholder="Search by name, alias or summary" spellcheck="false" style="" type="search" value="Mara">
++</span>
++</div>
+## drawer-moment-pick-empty
+-<input class="field__input" data-testid="form-unlock-moment-search" id="_r_#_" placeholder="Search the timeline's moments" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="form-unlock-moment-search" dir="auto" id="_r_#_" placeholder="Search the timeline's moments" spellcheck="false" style="" type="search" value="">
++</span>
+## drawer-moment-pick-nomatch
+-<input class="field__input" data-testid="form-unlock-moment-search" id="_r_#_" placeholder="Search the timeline's moments" style="" type="search" value="zzzz">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="form-unlock-moment-search" dir="auto" id="_r_#_" placeholder="Search the timeline's moments" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## drawer-moment-pick-results
+-<input class="field__input" data-testid="form-unlock-moment-search" id="_r_#_" placeholder="Search the timeline's moments" style="" type="search" value="Tide">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="form-unlock-moment-search" dir="auto" id="_r_#_" placeholder="Search the timeline's moments" spellcheck="false" style="" type="search" value="Tide">
++</span>
+## drawer-reference-picker-empty
+-<input aria-controls="_r_#_" class="field__input" data-testid="idea-picker-search" id="_r_#_" placeholder="Name of a lore entry" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="idea-picker-search" dir="auto" id="_r_#_" placeholder="Name of a lore entry" spellcheck="false" style="" type="search" value="">
++</span>
+## drawer-reference-picker-nomatch
+-<input aria-controls="_r_#_" class="field__input" data-testid="idea-picker-search" id="_r_#_" placeholder="Name of a lore entry" style="" type="search" value="zzzz">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="idea-picker-search" dir="auto" id="_r_#_" placeholder="Name of a lore entry" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## drawer-reference-picker-results
+-<input aria-controls="_r_#_" class="field__input" data-testid="idea-picker-search" id="_r_#_" placeholder="Name of a lore entry" style="" type="search" value="Mara">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input aria-controls="_r_#_" autocomplete="off" class="field__input searchfield__input" data-testid="idea-picker-search" dir="auto" id="_r_#_" placeholder="Name of a lore entry" spellcheck="false" style="" type="search" value="Mara">
++</span>
+## more-ai-changes-idle
+-<button class="button button--sm button--text" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="false" class="button button--secondary" type="button">Show more</button>
++</div>
+## more-ai-changes-loading
+-<button class="button button--sm button--text" disabled="" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="true" class="button button--secondary" disabled="" type="button">Loading…</button>
++</div>
+## more-author-error
+-<div class="pworld__more">
+-<button aria-busy="false" class="portal__pill" type="button">Show more worlds</button>
++<div class="showmore showmore--center">
++<p class="showmore__error" role="alert">More could not be loaded.</p>
++<button aria-busy="false" class="button button--secondary" type="button">Try again</button>
+## more-author-idle
+-<div class="pworld__more">
+-<button aria-busy="false" class="portal__pill" type="button">Show more worlds</button>
++<div class="showmore showmore--center">
++<button aria-busy="false" class="button button--secondary" type="button">Show more</button>
+## more-author-loading
+-<div class="pworld__more">
+-<button aria-busy="true" class="portal__pill" disabled="" type="button">Loading…</button>
++<div class="showmore showmore--center">
++<button aria-busy="true" class="button button--secondary" disabled="" type="button">Loading…</button>
+## more-explore-error
+-<div class="explore__more">
+-<p aria-hidden="true" class="explore__shown">Showing 2 of 4 worlds</p>
+-<p class="explore__more-error" role="alert">More worlds could not be loaded.</p>
+-<button aria-busy="false" class="button button--secondary explore__more-button" data-testid="explore-more" type="button">Try again</button>
++<div class="showmore showmore--center">
++<p aria-hidden="true" class="showmore__shown">Showing 2 of 4 worlds</p>
++<p class="showmore__error" role="alert">More could not be loaded.</p>
++<button aria-busy="false" class="button button--secondary" data-testid="explore-more" type="button">Try again</button>
+## more-explore-idle
+-<div class="explore__more">
+-<p aria-hidden="true" class="explore__shown">Showing 2 of 4 worlds</p>
+-<button aria-busy="false" class="button button--secondary explore__more-button" data-testid="explore-more" type="button">Show more worlds</button>
++<div class="showmore showmore--center">
++<p aria-hidden="true" class="showmore__shown">Showing 2 of 4 worlds</p>
++<button aria-busy="false" class="button button--secondary" data-testid="explore-more" type="button">Show more</button>
+## more-explore-loading
+-<div class="explore__more">
+-<p aria-hidden="true" class="explore__shown">Showing 2 of 4 worlds</p>
+-<button aria-busy="true" class="button button--secondary explore__more-button" data-testid="explore-more" disabled="" type="button">Loading worlds…</button>
++<div class="showmore showmore--center">
++<p aria-hidden="true" class="showmore__shown">Showing 2 of 4 worlds</p>
++<button aria-busy="true" class="button button--secondary" data-testid="explore-more" disabled="" type="button">Loading…</button>
+## more-game-entities-idle
+-<div class="lore__search">
+-<label class="visually-hidden" for="project-entries-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" data-testid="project-entries-search" id="project-entries-search" placeholder="Search by name" style="" type="search" value="">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="project-entries-search">Filter entries</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="project-entries-search" dir="auto" id="project-entries-search" placeholder="Search by name" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" data-testid="project-entries-more" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="false" class="button button--secondary" data-testid="project-entries-more" type="button">Show more</button>
++</div>
+## more-game-entities-loading
+-<div class="lore__search">
+-<label class="visually-hidden" for="project-entries-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" data-testid="project-entries-search" id="project-entries-search" placeholder="Search by name" style="" type="search" value="">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="project-entries-search">Filter entries</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="project-entries-search" dir="auto" id="project-entries-search" placeholder="Search by name" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" data-testid="project-entries-more" disabled="" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="true" class="button button--secondary" data-testid="project-entries-more" disabled="" type="button">Loading…</button>
++</div>
+## more-suggestions-idle
+-<div>
+-<button aria-busy="false" class="button button--sm button--text" data-testid="suggestions-more-open" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="false" class="button button--secondary" data-testid="suggestions-more-open" type="button">Show more</button>
+-<div>
+-<button aria-busy="false" class="button button--sm button--text" data-testid="suggestions-more-decided" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="false" class="button button--secondary" data-testid="suggestions-more-decided" type="button">Show more</button>
+## more-suggestions-loading
+-<div>
+-<button aria-busy="true" class="button button--sm button--text" data-testid="suggestions-more-open" disabled="" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="true" class="button button--secondary" data-testid="suggestions-more-open" disabled="" type="button">Loading…</button>
+-<div>
+-<button aria-busy="false" class="button button--sm button--text" data-testid="suggestions-more-decided" disabled="" type="button">Show more</button>
++<div class="showmore">
++<button aria-busy="false" class="button button--secondary" data-testid="suggestions-more-decided" disabled="" type="button">Show more</button>
+## more-world-lore-error
+-<div class="pworld__more">
+-<p class="explore__more-error" role="alert">More lore could not be loaded.</p>
+-<button aria-busy="false" class="portal__pill" data-testid="public-lore-more" type="button">Try again</button>
+-<p class="pworld__shown" role="status">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p class="showmore__shown" role="status">Showing 2 of 4</p>
++<p class="showmore__error" role="alert">More could not be loaded.</p>
++<button aria-busy="false" class="button button--secondary" data-testid="public-lore-more" type="button">Try again</button>
+## more-world-lore-idle
+-<div class="pworld__more">
+-<button aria-busy="false" class="portal__pill" data-testid="public-lore-more" type="button">Show more lore</button>
+-<p class="pworld__shown" role="status">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p class="showmore__shown" role="status">Showing 2 of 4</p>
++<button aria-busy="false" class="button button--secondary" data-testid="public-lore-more" type="button">Show more</button>
+## more-world-lore-loading
+-<div class="pworld__more">
+-<button aria-busy="true" class="portal__pill" data-testid="public-lore-more" disabled="" type="button">Loading…</button>
+-<p class="pworld__shown" role="status">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p class="showmore__shown" role="status">Showing 2 of 4</p>
++<button aria-busy="true" class="button button--secondary" data-testid="public-lore-more" disabled="" type="button">Loading…</button>
+## more-world-stories-error
+-<div class="pworld__more">
+-<p class="explore__more-error" role="alert">More stories could not be loaded.</p>
+-<button aria-busy="false" class="portal__pill" data-testid="public-story-more" type="button">Try again</button>
+-<p class="pworld__shown" role="status">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p class="showmore__shown" role="status">Showing 2 of 4</p>
++<p class="showmore__error" role="alert">More could not be loaded.</p>
++<button aria-busy="false" class="button button--secondary" data-testid="public-story-more" type="button">Try again</button>
+## more-world-stories-idle
+-<div class="pworld__more">
+-<button aria-busy="false" class="portal__pill" data-testid="public-story-more" type="button">Show more stories</button>
+-<p class="pworld__shown" role="status">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p class="showmore__shown" role="status">Showing 2 of 4</p>
++<button aria-busy="false" class="button button--secondary" data-testid="public-story-more" type="button">Show more</button>
+## more-world-stories-loading
+-<div class="pworld__more">
+-<button aria-busy="true" class="portal__pill" data-testid="public-story-more" disabled="" type="button">Loading…</button>
+-<p class="pworld__shown" role="status">Showing 2 of 4</p>
++<div class="showmore showmore--center">
++<p class="showmore__shown" role="status">Showing 2 of 4</p>
++<button aria-busy="true" class="button button--secondary" data-testid="public-story-more" disabled="" type="button">Loading…</button>
+## pager-admin-feedback-first
+-<button class="button button--secondary" disabled="" type="button">Newer</button>
+-<button class="button button--secondary" type="button">Older</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
++<span class="pager__position">Page 1 of 3</span>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-admin-feedback-last
+-<button class="button button--secondary" type="button">Newer</button>
+-<button class="button button--secondary" disabled="" type="button">Older</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
++<span class="pager__position">Page 3 of 3</span>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-admin-users-first
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" data-testid="admin-user-search" id="admin-user-search" placeholder="Username or public name" style="" type="search" value="">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="admin-user-search" dir="auto" id="admin-user-search" placeholder="Username or public name" spellcheck="false" style="" type="search" value="">
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-admin-users-last
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" data-testid="admin-user-search" id="admin-user-search" placeholder="Username or public name" style="" type="search" value="">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="admin-user-search" dir="auto" id="admin-user-search" placeholder="Username or public name" spellcheck="false" style="" type="search" value="">
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-canon-first
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-canon-last
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-family-first
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input autocomplete="off" class="field__input" data-testid="family-search" id="_r_#_" name="q" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="family-search" dir="auto" id="_r_#_" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="">
+-<nav aria-label="Family pages" class="pager">
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<nav aria-label="Pagination" class="pager" data-testid="family-pager">
++<button class="button button--secondary" data-testid="family-pager-previous" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" data-testid="family-next-page" type="button">Next</button>
++<button class="button button--secondary" data-testid="family-pager-next" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-family-last
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input autocomplete="off" class="field__input" data-testid="family-search" id="_r_#_" name="q" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="family-search" dir="auto" id="_r_#_" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="">
+-<nav aria-label="Family pages" class="pager">
+-<button class="button button--secondary" type="button">Previous</button>
++<nav aria-label="Pagination" class="pager" data-testid="family-pager">
++<button class="button button--secondary" data-testid="family-pager-previous" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" data-testid="family-next-page" disabled="" type="button">Next</button>
++<button class="button button--secondary" data-testid="family-pager-next" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-idea-boards-first
+-<input class="field__input" data-testid="boards-search" id="_r_#_" placeholder="Words in a title" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="boards-search" dir="auto" id="_r_#_" placeholder="Words in a title" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-idea-boards-last
+-<input class="field__input" data-testid="boards-search" id="_r_#_" placeholder="Words in a title" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="boards-search" dir="auto" id="_r_#_" placeholder="Words in a title" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-ideas-first
+-<input class="field__input" data-testid="ideas-search" id="_r_#_" placeholder="Words in a title or body" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="ideas-search" dir="auto" id="_r_#_" placeholder="Words in a title or body" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-ideas-last
+-<input class="field__input" data-testid="ideas-search" id="_r_#_" placeholder="Words in a title or body" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="ideas-search" dir="auto" id="_r_#_" placeholder="Words in a title or body" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-lore-first
+-<div class="lore__search">
+-<label class="visually-hidden" for="lore-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" id="lore-search" placeholder="Search Character" style="" title="Searches names, aliases, summaries and articles" type="search" value="">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="lore-search">Filter entries</label>
++<span class="searchfield searchfield--trailing">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="lore-search" dir="auto" id="lore-search" placeholder="Search Character" spellcheck="false" style="" title="Searches names, aliases, summaries and articles" type="search" value="">
++</span>
+## pager-lore-last
+-<div class="lore__search">
+-<label class="visually-hidden" for="lore-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" id="lore-search" placeholder="Search Character" style="" title="Searches names, aliases, summaries and articles" type="search" value="">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="lore-search">Filter entries</label>
++<span class="searchfield searchfield--trailing">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="lore-search" dir="auto" id="lore-search" placeholder="Search Character" spellcheck="false" style="" title="Searches names, aliases, summaries and articles" type="search" value="">
++</span>
+## pager-timeline-first
+-<input autocomplete="off" class="field__input" data-testid="chron-search" id="chron-search" name="q" placeholder="Search titles, scenes and names" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="chron-search" dir="auto" id="chron-search" placeholder="Search titles, scenes and names" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-timeline-last
+-<input autocomplete="off" class="field__input" data-testid="chron-search" id="chron-search" name="q" placeholder="Search titles, scenes and names" style="" type="search" value="">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="chron-search" dir="auto" id="chron-search" placeholder="Search titles, scenes and names" spellcheck="false" style="" type="search" value="">
++</span>
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-trash-first
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-trash-last
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-trash-locked
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-universes-first
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" id="universe-search" placeholder="Name of a world" style="" type="search" value="">
++<input autocomplete="off" class="field__input searchfield__input" dir="auto" id="universe-search" placeholder="Name of a world" spellcheck="false" style="" type="search" value="">
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-universes-last
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" id="universe-search" placeholder="Name of a world" style="" type="search" value="">
++<input autocomplete="off" class="field__input searchfield__input" dir="auto" id="universe-search" placeholder="Name of a world" spellcheck="false" style="" type="search" value="">
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-logic-integrity-first
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" data-testid="world-logic-findings-pager-previous" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" data-testid="world-logic-findings-pager-next" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-logic-integrity-last
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" data-testid="world-logic-findings-pager-previous" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" data-testid="world-logic-findings-pager-next" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-logic-rules-first
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" data-testid="world-logic-rules-pager-previous" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" data-testid="world-logic-rules-pager-next" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-logic-rules-last
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" data-testid="world-logic-rules-pager-previous" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" data-testid="world-logic-rules-pager-next" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-logic-systems-first
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" data-testid="world-logic-systems-pager-previous" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" data-testid="world-logic-systems-pager-next" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-logic-systems-last
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" data-testid="world-logic-systems-pager-previous" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" data-testid="world-logic-systems-pager-next" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-rules-first
+-<button class="button button--secondary" disabled="" type="button">Previous</button>
++<button class="button button--secondary" disabled="" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" type="button">Next</button>
++<button class="button button--secondary" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## pager-world-rules-last
+-<button class="button button--secondary" type="button">Previous</button>
++<button class="button button--secondary" type="button">
++<svg aria-hidden="true" class="button__icon lucide lucide-arrow-left" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m12 19-7-7 7-7">
++</path>
++<path d="M19 12H5">
++</path>
++</svg>Previous</button>
+-<button class="button button--secondary" disabled="" type="button">Next</button>
++<button class="button button--secondary" disabled="" type="button">Next<svg aria-hidden="true" class="button__icon lucide lucide-arrow-right" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="M5 12h14">
++</path>
++<path d="m12 5 7 7-7 7">
++</path>
++</svg>
++</button>
+## search-admin-users-nomatch
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" data-testid="admin-user-search" id="admin-user-search" placeholder="Username or public name" style="" type="search" value="zzzz">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="admin-user-search" dir="auto" id="admin-user-search" placeholder="Username or public name" spellcheck="false" style="" type="search" value="zzzz">
+## search-admin-users-typed
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" data-testid="admin-user-search" id="admin-user-search" placeholder="Username or public name" style="" type="search" value="seedmember">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="admin-user-search" dir="auto" id="admin-user-search" placeholder="Username or public name" spellcheck="false" style="" type="search" value="seedmember">
+## search-family-nomatch
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input autocomplete="off" class="field__input" data-testid="family-search" id="_r_#_" name="q" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="zzzz">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="family-search" dir="auto" id="_r_#_" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="zzzz">
+## search-family-typed
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input autocomplete="off" class="field__input" data-testid="family-search" id="_r_#_" name="q" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="Parent 03">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="family-search" dir="auto" id="_r_#_" placeholder="Any name in the family" spellcheck="false" style="" type="search" value="Parent 03">
+## search-game-entities-nomatch
+-<div class="lore__search">
+-<label class="visually-hidden" for="project-entries-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="project-entries-search">Filter entries</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
+-<input class="field__input lore__searchinput" data-testid="project-entries-search" id="project-entries-search" placeholder="Search by name" style="" type="search" value="zzzz">
++<input autocomplete="off" class="field__input searchfield__input" data-testid="project-entries-search" dir="auto" id="project-entries-search" placeholder="Search by name" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## search-game-entities-typed
+-<div class="lore__search">
+-<label class="visually-hidden" for="project-entries-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" data-testid="project-entries-search" id="project-entries-search" placeholder="Search by name" style="" type="search" value="Golem 1">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="project-entries-search">Filter entries</label>
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="project-entries-search" dir="auto" id="project-entries-search" placeholder="Search by name" spellcheck="false" style="" type="search" value="Golem 1">
++</span>
+## search-idea-boards-nomatch
+-<input class="field__input" data-testid="boards-search" id="_r_#_" placeholder="Words in a title" style="" type="search" value="zzzz">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="boards-search" dir="auto" id="_r_#_" placeholder="Words in a title" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## search-idea-boards-typed
+-<input class="field__input" data-testid="boards-search" id="_r_#_" placeholder="Words in a title" style="" type="search" value="Harbour">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="boards-search" dir="auto" id="_r_#_" placeholder="Words in a title" spellcheck="false" style="" type="search" value="Harbour">
++</span>
+## search-ideas-nomatch
+-<input class="field__input" data-testid="ideas-search" id="_r_#_" placeholder="Words in a title or body" style="" type="search" value="zzzz">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="ideas-search" dir="auto" id="_r_#_" placeholder="Words in a title or body" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## search-ideas-typed
+-<input class="field__input" data-testid="ideas-search" id="_r_#_" placeholder="Words in a title or body" style="" type="search" value="Tide">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="ideas-search" dir="auto" id="_r_#_" placeholder="Words in a title or body" spellcheck="false" style="" type="search" value="Tide">
++</span>
+## search-lore-nomatch
+-<div class="lore__search">
+-<label class="visually-hidden" for="lore-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" id="lore-search" placeholder="Search Character" style="" title="Searches names, aliases, summaries and articles" type="search" value="zzzz">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="lore-search">Filter entries</label>
++<span class="searchfield searchfield--trailing">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="lore-search" dir="auto" id="lore-search" placeholder="Search Character" spellcheck="false" style="" title="Searches names, aliases, summaries and articles" type="search" value="zzzz">
++</span>
+## search-lore-typed
+-<div class="lore__search">
+-<label class="visually-hidden" for="lore-search">Filter entries</label>
+-<svg aria-hidden="true" class="lore__searchicon lucide lucide-list-filter" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<path d="M2 5h20">
+-</path>
+-<path d="M6 12h12">
+-</path>
+-<path d="M9 19h6">
+-</path>
+-</svg>
+-<input class="field__input lore__searchinput" id="lore-search" placeholder="Search Character" style="" title="Searches names, aliases, summaries and articles" type="search" value="Kin">
++<div class="field lore__search">
++<label class="field__label visually-hidden" for="lore-search">Filter entries</label>
++<span class="searchfield searchfield--trailing">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="lore-search" dir="auto" id="lore-search" placeholder="Search Character" spellcheck="false" style="" title="Searches names, aliases, summaries and articles" type="search" value="Kin">
++</span>
+## search-timeline-nomatch
+-<input autocomplete="off" class="field__input" data-testid="chron-search" id="chron-search" name="q" placeholder="Search titles, scenes and names" style="" type="search" value="zzzz">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="chron-search" dir="auto" id="chron-search" placeholder="Search titles, scenes and names" spellcheck="false" style="" type="search" value="zzzz">
++</span>
+## search-timeline-typed
+-<input autocomplete="off" class="field__input" data-testid="chron-search" id="chron-search" name="q" placeholder="Search titles, scenes and names" style="" type="search" value="Tide">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<path d="m21 21-4.34-4.34">
++</path>
++<circle cx="11" cy="11" r="8">
++</circle>
++</svg>
++<input autocomplete="off" class="field__input searchfield__input" data-testid="chron-search" dir="auto" id="chron-search" placeholder="Search titles, scenes and names" spellcheck="false" style="" type="search" value="Tide">
++</span>
+## search-universes-nomatch
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" id="universe-search" placeholder="Name of a world" style="" type="search" value="zzzz">
++<input autocomplete="off" class="field__input searchfield__input" dir="auto" id="universe-search" placeholder="Name of a world" spellcheck="false" style="" type="search" value="zzzz">
+## search-universes-typed
+-<span class="controls__searchfield">
+-<svg aria-hidden="true" class="controls__searchicon lucide lucide-search" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
++<span class="searchfield">
++<svg aria-hidden="true" class="lucide lucide-search searchfield__icon" fill="none" focusable="false" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+-<input class="field__input" id="universe-search" placeholder="Name of a world" style="" type="search" value="Seed">
++<input autocomplete="off" class="field__input searchfield__input" dir="auto" id="universe-search" placeholder="Name of a world" spellcheck="false" style="" type="search" value="Seed">

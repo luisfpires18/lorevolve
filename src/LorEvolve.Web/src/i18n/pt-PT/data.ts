@@ -158,12 +158,6 @@ const data: Dictionary['data'] = {
       title: 'A reciclagem está vazia.',
       hint: 'Tudo o que removeres do teu lore, das tuas histórias ou das tuas regras do mundo fica aqui à espera.',
     },
-    pager: {
-      label: 'Paginação',
-      previous: 'Anterior',
-      position: 'Página {page} de {total}',
-      next: 'Seguinte',
-    },
     bar: {
       hint: 'Seleciona linhas nesta página para as eliminar para sempre.',
       selected: '{n} selecionados',

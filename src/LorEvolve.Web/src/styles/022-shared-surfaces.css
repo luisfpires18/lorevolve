@@ -124,3 +124,35 @@
   text-align: center;
   white-space: nowrap;
 }
+
+/* `ShowMore`: the count, a line when the last read failed, and the button, in a centred column under a list that grows. */
+.showmore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+/* A button sits at the start by default (`.button`); a centred list centres it under the count. */
+.showmore--center > .button {
+  align-self: center;
+}
+
+.showmore--start {
+  align-items: flex-start;
+}
+
+.showmore__shown,
+.showmore__error {
+  margin: 0;
+  font-size: var(--text-ui);
+}
+
+.showmore__shown {
+  color: var(--portal-muted, var(--muted));
+}
+
+.showmore__error {
+  color: var(--danger);
+}

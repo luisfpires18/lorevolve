@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
-import { ListFilter, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { LoreFieldFilters } from '../LoreFieldFilters'
 import { useI18n } from '../../i18n'
 import { CANON_LABELS, CANON_ORDER, type CanonStatusValue, type EntityPage } from '../../lore/types'
@@ -9,6 +9,7 @@ import type { EntityType } from '../../lore/typeDefinitions'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import { Button } from '../Button'
+import { SearchField } from '../SearchField'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -57,39 +58,32 @@ export function LoreControls({
       data-open={filtersOpen ? 'true' : 'false'}
       data-testid="lore-filters"
     >
-      <div className="lore__search">
-        <label className="visually-hidden" htmlFor="lore-search">
-          {t('lore.page.filterEntries')}
-        </label>
-        <ListFilter
-          className="lore__searchicon"
-          aria-hidden="true"
-          focusable="false"
-          strokeWidth={1.75}
-        />
-        <input
-          id="lore-search"
-          ref={searchRef}
-          className="field__input lore__searchinput"
-          type="search"
-          placeholder={
-            chosenName ? t('lore.page.searchNamed', { name: chosenName }) : t('lore.page.search')
-          }
-          title={t('lore.page.searchHelp')}
-          value={search}
-          onChange={(event) => update({ q: event.target.value }, true)}
-        />
-        <button
-          className="lore__exact"
-          type="button"
-          aria-pressed={exact}
-          title={t('lore.page.exactHelp')}
-          onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
-          data-testid="lore-exact"
-        >
-          {t('lore.page.exact')}
-        </button>
-      </div>
+      <SearchField
+        hideLabel
+        className="lore__search"
+        id="lore-search"
+        label={t('lore.page.filterEntries')}
+        inputRef={searchRef}
+        placeholder={
+          chosenName ? t('lore.page.searchNamed', { name: chosenName }) : t('lore.page.search')
+        }
+        title={t('lore.page.searchHelp')}
+        value={search}
+        onChange={(value) => update({ q: value }, true)}
+        trailing={
+          <button
+            className="lore__exact"
+            type="button"
+            aria-pressed={exact}
+            title={t('lore.page.exactHelp')}
+            onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
+            data-testid="lore-exact"
+          >
+            {t('lore.page.exact')}
+          </button>
+        }
+        testId="lore-search"
+      />
 
       <div className="segmented" role="group" aria-label={t('lore.page.status')}>
         <button

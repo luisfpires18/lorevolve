@@ -79,10 +79,6 @@ const timeTimeline: Dictionary['time']['timeline'] = {
     'Datado antes de este universo ter períodos de datas. Continua guardado; o LorEvolve não adivinha. Edita cada um para escolher o período em que o ano é contado; até lá, não fica colocado entre eles.',
   unplaced: 'Por situar',
   unplacedHint: 'Na história, mas ainda não no tempo. Ficam à parte em vez de fingirem ter um ano.',
-  pagination: 'Paginação',
-  previous: 'Anterior',
-  page: 'Página {page} de {total}',
-  next: 'Seguinte',
 }
 
 export default timeTimeline

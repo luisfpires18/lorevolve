@@ -61,7 +61,6 @@ const review = {
       one: '{n} already applied',
       other: '{n} already applied',
     },
-    showMore: 'Show more',
   },
   aiChange: {
     opening: 'Opening…',
@@ -239,7 +238,6 @@ const review = {
     cantAccept: 'This suggestion can’t be accepted. {reason}',
     acceptFailed: 'LorEvolve couldn’t accept that suggestion. Try again.',
     rejectFailed: 'LorEvolve couldn’t reject that suggestion. Try again.',
-    showMore: 'Show more',
     unknownAuthor: 'Unknown author',
     unknownResolver: 'Unknown author',
     changed: {

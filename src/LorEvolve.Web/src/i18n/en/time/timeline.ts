@@ -76,10 +76,6 @@ const timeTimeline = {
     'Dated before this universe had date periods. Still saved; LorEvolve doesn’t guess. Edit each one to choose the period its year is counted in; until then it is not placed among them.',
   unplaced: 'Unplaced',
   unplacedHint: 'In the story, not yet in time. These sit apart rather than pretending to a year.',
-  pagination: 'Pagination',
-  previous: 'Previous',
-  page: 'Page {page} of {total}',
-  next: 'Next',
 }
 
 export default timeTimeline

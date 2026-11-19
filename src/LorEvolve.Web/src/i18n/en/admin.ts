@@ -99,12 +99,6 @@ const admin = {
       none: 'No accounts yet.',
       hint: 'Try another name, or clear the search.',
     },
-    pager: {
-      label: 'Pagination',
-      previous: 'Previous',
-      next: 'Next',
-      position: 'Page {page} of {total}',
-    },
   },
   user: adminUser,
   history: {
@@ -185,11 +179,6 @@ const admin = {
     bug: 'Bug',
     featureRequest: 'Feature request',
     removedAccount: 'A removed account',
-    pager: {
-      label: 'Pagination',
-      newer: 'Newer',
-      older: 'Older',
-    },
   },
   restore: adminRestore,
 }

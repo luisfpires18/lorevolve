@@ -111,10 +111,6 @@ const ideas = {
       noneTitle: 'No boards yet.',
       noneHint: 'Lay notes, ideas and lore out side by side, and draw lines between them.',
     },
-    pagination: 'Pagination',
-    previous: 'Previous',
-    position: 'Page {page} of {total}',
-    next: 'Next',
   },
   browser: {
     loadFailed: 'The ideas could not be read.',
@@ -167,10 +163,6 @@ const ideas = {
       noneTitle: 'No ideas yet.',
       noneHint: 'Keep possibilities here, apart from what is true in your world.',
     },
-    pagination: 'Pagination',
-    previous: 'Previous',
-    position: 'Page {page} of {total}',
-    next: 'Next',
   },
   capture: {
     empty: 'Write a few words first.',

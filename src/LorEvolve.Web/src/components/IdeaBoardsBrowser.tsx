@@ -6,7 +6,7 @@ import { PageHeader } from './PageHeader'
 import { BoardsControls } from './ideas/BoardsControls'
 import { BoardsEmpty } from './ideas/BoardsEmpty'
 import { BoardsListRows } from './ideas/BoardsListRows'
-import { BoardsPager } from './ideas/BoardsPager'
+import { Pager } from './Pager'
 import { useBoardsActions } from '../ideas/useBoardsActions'
 import { useBoardsFilters } from '../ideas/useBoardsFilters'
 import { useBoardsRead } from '../ideas/useBoardsRead'
@@ -136,7 +136,13 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
         <BoardsEmpty deleted={deleted} isFiltered={isFiltered} basePath={basePath} />
       ) : null}
 
-      {result && result.totalPages > 1 ? <BoardsPager result={result} update={update} /> : null}
+      {result ? (
+        <Pager
+          page={result.page}
+          totalPages={result.totalPages}
+          onPage={(next) => update({ page: String(next) })}
+        />
+      ) : null}
     </section>
   )
 }

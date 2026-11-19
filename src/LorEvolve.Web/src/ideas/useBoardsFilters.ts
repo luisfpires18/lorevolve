@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { SetURLSearchParams } from 'react-router-dom'
 import type { useBoardsState } from './useBoardsState'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** The boards list's filter in the address: `update` changes it, and typing settles into it. */
 export function useBoardsFilters({
@@ -24,12 +25,12 @@ export function useBoardsFilters({
   }
 
   // Typing settles before the address - and so the request - changes.
+  const settled = useDebouncedValue(typed)
   useEffect(() => {
-    if (typed === search) return
-    const timer = setTimeout(() => update({ q: typed.trim() === '' ? '' : typed }), 200)
-    return () => clearTimeout(timer)
+    if (settled !== search) update({ q: settled.trim() === '' ? '' : settled })
+    // Only a settled word writes the address; an address that moved by itself is not written back over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typed, search])
+  }, [settled])
 
   return { update }
 }

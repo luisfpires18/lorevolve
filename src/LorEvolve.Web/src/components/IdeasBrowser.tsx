@@ -5,7 +5,7 @@ import { IdeaRow } from './ideas/IdeaRow'
 import { IdeasControls } from './ideas/IdeasControls'
 import { IdeasEmpty } from './ideas/IdeasEmpty'
 import { IdeasHeader } from './ideas/IdeasHeader'
-import { IdeasPager } from './ideas/IdeasPager'
+import { Pager } from './Pager'
 import { QuickCapture } from './ideas/QuickCapture'
 import type { IdeasScope } from '../ideas/types'
 import { useIdeasActions } from '../ideas/useIdeasActions'
@@ -159,7 +159,13 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
         <IdeasEmpty deleted={deleted} isFiltered={isFiltered} scope={scope} basePath={basePath} />
       ) : null}
 
-      {result && result.totalPages > 1 ? <IdeasPager result={result} update={update} /> : null}
+      {result ? (
+        <Pager
+          page={result.page}
+          totalPages={result.totalPages}
+          onPage={(next) => update({ page: String(next) })}
+        />
+      ) : null}
     </section>
   )
 }

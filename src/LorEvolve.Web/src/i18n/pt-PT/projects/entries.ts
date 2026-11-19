@@ -5,7 +5,6 @@ const projectsEntries: Dictionary['projects']['entries'] = {
   noMatch: 'Nenhuma entrada corresponde.',
   noMatchHint: 'Altere ou limpe a pesquisa para ver mais.',
   nested: 'Incluir tipos aninhados',
-  more: 'Mostrar mais',
   title: 'Registos',
   failed: 'Não foi possível ler os registos deste projeto.',
   empty: 'Ainda não há nada deste tipo.',

@@ -6,7 +6,7 @@ import { formatDate } from '../../lib/dates'
 import type { useUniverseAccess } from '../../universes/access'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
-import { Pager } from './Pager'
+import { Pager } from '../Pager'
 import { Button } from '../Button'
 import { NewButton } from '../NewButton'
 import { LoadError } from '../LoadError'
@@ -127,7 +127,7 @@ export function WorldLogicRules({
           testId="world-logic-rules-pager"
           page={rules.value.page}
           totalPages={rules.value.totalPages}
-          onGo={(next) => goTo('rulesPage', next)}
+          onPage={(next) => goTo('rulesPage', next)}
         />
       ) : null}
     </TabPanel>

@@ -11,6 +11,18 @@ const shell = {
       reload: 'Reload',
     },
   },
+  pager: {
+    label: 'Pagination',
+    previous: 'Previous',
+    next: 'Next',
+    position: 'Page {page} of {total}',
+  },
+  showMore: {
+    label: 'Show more',
+    loading: 'Loading…',
+    error: 'More could not be loaded.',
+    shown: 'Showing {shown} of {total}',
+  },
   workspace: {
     screen: {
       ideas: 'Ideas',

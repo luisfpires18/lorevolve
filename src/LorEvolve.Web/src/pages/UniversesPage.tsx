@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArchiveRestore, Search } from 'lucide-react'
-import { Field } from '../components/Field'
+import { ArchiveRestore } from 'lucide-react'
+import { SearchField } from '../components/SearchField'
+import { Pager } from '../components/Pager'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { useI18n } from '../i18n'
 import { RestoreBackup } from '../components/RestoreBackup'
 import { UniverseCard } from '../components/UniverseCard'
@@ -20,7 +22,8 @@ export default function UniversesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [search, setSearch] = useState('')
-  const [searched, setSearched] = useState('')
+  const searched = useDebouncedValue(search)
+  const [pageFor, setPageFor] = useState(searched)
   const [includeArchived, setIncludeArchived] = useState(false)
   const [page, setPage] = useState(1)
   const [isCreating, setIsCreating] = useState(false)
@@ -37,18 +40,12 @@ export default function UniversesPage() {
     if (open) setIsCreating(false)
   }
 
-  // Only typing waits, so a search does not fire a request per keystroke. The search the list is asked for moves a
-  // moment after the box settles, and goes back to the first page with it - one request, as before.
-  useEffect(() => {
-    if (search === searched) return
-    const timer = setTimeout(() => {
-      setSearched(search)
-      setPage(1)
-    }, 150)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [search, searched])
+  // Only typing waits, so a search does not fire a request per keystroke. A search that has settled goes back to the
+  // first page in the same render - one request.
+  if (pageFor !== searched) {
+    setPageFor(searched)
+    setPage(1)
+  }
 
   // Everything else - the first load, a page, the archive filter, trying again, coming back - asks at once.
   const read = useCallback(
@@ -142,26 +139,14 @@ export default function UniversesPage() {
       ) : null}
 
       <div className="controls">
-        <Field className="controls__search" id="universe-search" label={t('universe.list.filter')}>
-          {(control) => (
-            <span className="controls__searchfield">
-              <Search
-                className="controls__searchicon"
-                aria-hidden="true"
-                focusable="false"
-                strokeWidth={1.75}
-              />
-              <input
-                {...control}
-                className="field__input"
-                type="search"
-                placeholder={t('universe.list.filterPlaceholder')}
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </span>
-          )}
-        </Field>
+        <SearchField
+          className="controls__search"
+          id="universe-search"
+          label={t('universe.list.filter')}
+          placeholder={t('universe.list.filterPlaceholder')}
+          value={search}
+          onChange={setSearch}
+        />
 
         <div className="segmented" role="group" aria-label={t('universe.list.archiveFilter')}>
           <button
@@ -226,27 +211,7 @@ export default function UniversesPage() {
         />
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('universe.list.pagination')}>
-          <Button
-            tone="secondary"
-            disabled={result.page <= 1}
-            onClick={() => setPage((current) => current - 1)}
-          >
-            {t('universe.list.previous')}
-          </Button>
-          <span className="pager__position">
-            {t('universe.list.page', { page: result.page, total: result.totalPages })}
-          </span>
-          <Button
-            tone="secondary"
-            disabled={result.page >= result.totalPages}
-            onClick={() => setPage((current) => current + 1)}
-          >
-            {t('universe.list.next')}
-          </Button>
-        </nav>
-      ) : null}
+      {result ? <Pager page={result.page} totalPages={result.totalPages} onPage={setPage} /> : null}
     </>
   )
 }

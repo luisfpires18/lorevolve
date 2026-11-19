@@ -102,12 +102,6 @@ const admin: Dictionary['admin'] = {
       none: 'Ainda não há contas.',
       hint: 'Experimenta outro nome ou limpa a pesquisa.',
     },
-    pager: {
-      label: 'Paginação',
-      previous: 'Anterior',
-      next: 'Seguinte',
-      position: 'Página {page} de {total}',
-    },
   },
   user: adminUser,
   history: {
@@ -188,11 +182,6 @@ const admin: Dictionary['admin'] = {
     bug: 'Erro',
     featureRequest: 'Pedido de funcionalidade',
     removedAccount: 'Uma conta removida',
-    pager: {
-      label: 'Paginação',
-      newer: 'Mais recentes',
-      older: 'Mais antigos',
-    },
   },
   restore: adminRestore,
 }

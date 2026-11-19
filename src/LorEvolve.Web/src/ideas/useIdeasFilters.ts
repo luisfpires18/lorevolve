@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { SetURLSearchParams } from 'react-router-dom'
 import type { useIdeasState } from './useIdeasState'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 
 /** An ideas list's filter in the address: `update` writes it, and the search box and the address follow each other. */
 export function useIdeasFilters({
@@ -38,17 +39,15 @@ export function useIdeasFilters({
   }, [search])
 
   // Typing settles before the address - and so the request - changes.
+  const settled = useDebouncedValue(typed)
   useEffect(() => {
-    if (typed === search) return
-    const timer = setTimeout(() => {
-      const next = typed.trim() === '' ? '' : typed
-      written.current = next
-      update({ q: next })
-    }, 200)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [typed, search, update])
+    if (settled === search) return
+    const next = settled.trim() === '' ? '' : settled
+    written.current = next
+    update({ q: next })
+    // Only a settled word writes the address; an address that moved by itself is not written back over.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settled])
 
   return { update }
 }

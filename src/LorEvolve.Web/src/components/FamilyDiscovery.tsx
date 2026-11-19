@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, UserSearch } from 'lucide-react'
+import { UserSearch } from 'lucide-react'
 import { EmptyState } from './EmptyState'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { useI18n } from '../i18n'
-import { Field } from './Field'
+import { SearchField } from './SearchField'
 import { useDiscoveryReads } from '../familyTree/useDiscoveryReads'
 import { useDiscoverySearch } from '../familyTree/useDiscoverySearch'
 import { useDiscoveryState } from '../familyTree/useDiscoveryState'
@@ -87,34 +87,15 @@ export function FamilyDiscovery({
     <div className="discovery" data-testid="family-discovery">
       {isEmpty ? null : (
         <div className="discovery__bar">
-          <Field
+          <SearchField
             label={t('places.discovery.searchLabel')}
             id={searchId}
             className="discovery__search"
-          >
-            {(control) => (
-              <span className="controls__searchfield">
-                <Search
-                  className="controls__searchicon"
-                  aria-hidden="true"
-                  focusable="false"
-                  strokeWidth={1.75}
-                />
-                <input
-                  {...control}
-                  className="field__input"
-                  type="search"
-                  name="q"
-                  placeholder={t('places.discovery.searchPlaceholder')}
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={text}
-                  onChange={(event) => setText(event.target.value)}
-                  data-testid="family-search"
-                />
-              </span>
-            )}
-          </Field>
+            placeholder={t('places.discovery.searchPlaceholder')}
+            value={text}
+            onChange={setText}
+            testId="family-search"
+          />
           <Button
             tone="secondary"
             icon={UserSearch}

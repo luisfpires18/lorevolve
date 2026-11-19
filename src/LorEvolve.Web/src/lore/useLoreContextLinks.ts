@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
 import { isChangedElsewhere } from '../lib/editConflict'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { listEntities } from './api'
 import { listLoreReferences, SCENE_CHANGED, updateScene } from '../stories/api'
 import type { SceneLoreReference } from '../stories/types'
@@ -65,53 +66,53 @@ export function useLoreContextLinks({
   }, [universeId, mentionIds])
 
   const term = query.trim()
+  const settled = useDebouncedValue(term)
   useEffect(() => {
-    if (term === '') return
+    if (settled === '') return
 
     const controller = new AbortController()
     // The scene form's picker search: the same route and the same index (ADR 0016), settled before it asks.
-    const timer = setTimeout(() => {
-      setSearching(true)
-      listEntities(
-        universeId,
-        {
-          search: term,
-          entityTypeId: null,
-          canonStatus: null,
-          tag: null,
-          page: 1,
-          pageSize: MAX_RESULTS,
-        },
-        controller.signal,
+    queueMicrotask(() => {
+      if (!controller.signal.aborted) setSearching(true)
+    })
+    listEntities(
+      universeId,
+      {
+        search: settled,
+        entityTypeId: null,
+        canonStatus: null,
+        tag: null,
+        page: 1,
+        pageSize: MAX_RESULTS,
+      },
+      controller.signal,
+    )
+      .then((page) =>
+        setAnswer({
+          term: settled,
+          failed: false,
+          rows: page.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            typeName: item.entityTypeName,
+            typeIcon: item.entityTypeIcon,
+            typeAccent: item.entityTypeAccentColor,
+            image: item.image,
+            isTrashed: false,
+          })),
+        }),
       )
-        .then((page) =>
-          setAnswer({
-            term,
-            failed: false,
-            rows: page.items.map((item) => ({
-              id: item.id,
-              name: item.name,
-              typeName: item.entityTypeName,
-              typeIcon: item.entityTypeIcon,
-              typeAccent: item.entityTypeAccentColor,
-              image: item.image,
-              isTrashed: false,
-            })),
-          }),
-        )
-        .catch(() => {
-          if (!controller.signal.aborted) setAnswer({ term, rows: null, failed: true })
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setSearching(false)
-        })
-    }, 200)
+      .catch(() => {
+        if (!controller.signal.aborted) setAnswer({ term: settled, rows: null, failed: true })
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSearching(false)
+      })
 
     return () => {
-      clearTimeout(timer)
       controller.abort()
     }
-  }, [universeId, term])
+  }, [universeId, settled])
 
   const current = term !== '' && answer?.term === term ? answer : null
   const results = current?.rows ?? null

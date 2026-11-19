@@ -3,7 +3,6 @@ const projectsEntries = {
   noMatch: 'No entries match.',
   noMatchHint: 'Change or clear the search to see more.',
   nested: 'Include nested types',
-  more: 'Show more',
   title: 'Entries',
   failed: "This project's entries could not be read.",
   empty: 'Nothing of this type yet.',

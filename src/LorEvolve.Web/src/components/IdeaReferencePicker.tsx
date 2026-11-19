@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Field } from './Field'
+import { SearchField } from './SearchField'
+import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { Drawer } from './Drawer'
 import { Quoted } from './NameList'
 import { listReferenceTargets, referenceContext } from '../ideas/api'
@@ -64,6 +66,8 @@ export function IdeaReferencePicker({
 
   const [kind, setKind] = useState<IdeaReferenceKindValue>(IdeaReferenceKind.Entity)
   const [query, setQuery] = useState('')
+  // Typing settles before the API is asked, so a fast typist makes one call, not ten.
+  const settled = useDebouncedValue(query)
   const [answer, setAnswer] = useState<Answer | null>(null)
 
   const request = `${kind}:${query}`
@@ -82,22 +86,18 @@ export function IdeaReferencePicker({
 
   useEffect(() => {
     const controller = new AbortController()
-    const asked = `${kind}:${query}`
+    const asked = `${kind}:${settled}`
 
-    // Typing settles before the API is asked, so a fast typist makes one call, not ten.
-    const timer = setTimeout(() => {
-      listReferenceTargets(universeId, kind, query, controller.signal)
-        .then((targets) => setAnswer({ request: asked, targets }))
-        .catch(() => {
-          if (!controller.signal.aborted) setAnswer({ request: asked, targets: null })
-        })
-    }, 150)
+    listReferenceTargets(universeId, kind, settled, controller.signal)
+      .then((targets) => setAnswer({ request: asked, targets }))
+      .catch(() => {
+        if (!controller.signal.aborted) setAnswer({ request: asked, targets: null })
+      })
 
     return () => {
-      clearTimeout(timer)
       controller.abort()
     }
-  }, [universeId, kind, query])
+  }, [universeId, kind, settled])
 
   const chosenKeys = new Set(chosen.map((reference) => `${reference.kind}:${reference.id}`))
 
@@ -136,27 +136,17 @@ export function IdeaReferencePicker({
         )}
       </Field>
 
-      <Field label={t('ideas.picker.findByName')} id={searchId}>
-        {(control) => (
-          <input
-            {...control}
-            ref={search}
-            className="field__input"
-            type="search"
-            value={query}
-            placeholder={t(PLACEHOLDERS[kind])}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' && query) {
-                event.preventDefault()
-                setQuery('')
-              }
-            }}
-            aria-controls={resultsId}
-            data-testid="idea-picker-search"
-          />
-        )}
-      </Field>
+      <SearchField
+        id={searchId}
+        label={t('ideas.picker.findByName')}
+        inputRef={search}
+        value={query}
+        placeholder={t(PLACEHOLDERS[kind])}
+        onChange={setQuery}
+        clearOnEscape
+        aria-controls={resultsId}
+        testId="idea-picker-search"
+      />
 
       <div id={resultsId} aria-live="polite">
         {results.kind === 'searching' ? (

@@ -237,7 +237,6 @@ export default function LorePage() {
         {...entrySelection}
         universe={universe}
         access={access}
-        page={page}
         result={result}
         isFiltered={isFiltered}
         createTo={createTo}

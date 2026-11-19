@@ -11,7 +11,7 @@ import { ProjectEntriesHead } from './projectEntities/ProjectEntriesHead'
 import { ProjectEntriesFilters } from './projectEntities/ProjectEntriesFilters'
 import { ProjectEntryList } from './projectEntities/ProjectEntryList'
 import { ProjectEntryForm } from './ProjectEntryForm'
-import { Button } from './Button'
+import { ShowMore } from './ShowMore'
 import { NewButton } from './NewButton'
 
 /**
@@ -72,14 +72,15 @@ export function ProjectEntries({
     adding,
     setAdding,
   } = state
-  const { setFilter, clearFilters, loadMore, refresh, failing } = useProjectEntriesRead({
-    ...state,
-    projectId,
-    fixedTypeId,
-    openEntryId,
-    reloadKey,
-    onChanged,
-  })
+  const { setFilter, clearFilters, loadMore, loadingMore, refresh, failing } =
+    useProjectEntriesRead({
+      ...state,
+      projectId,
+      fixedTypeId,
+      openEntryId,
+      reloadKey,
+      onChanged,
+    })
 
   if (types === null) {
     return <p className="projectcard__meta">{t('projects.common.loading')}</p>
@@ -234,16 +235,14 @@ export function ProjectEntries({
           imageFieldIds={imageFieldIds}
         />
       )}
-      {more ? (
-        <Button
-          tone="secondary"
-          disabled={busy}
-          data-testid="project-entries-more"
-          onClick={loadMore}
-        >
-          {t('projects.entries.more')}
-        </Button>
-      ) : null}
+      <ShowMore
+        align="start"
+        hasMore={more}
+        status={loadingMore ? 'loading' : 'idle'}
+        disabled={busy}
+        onMore={loadMore}
+        testId="project-entries-more"
+      />
     </section>
   )
 }

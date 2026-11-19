@@ -9,6 +9,7 @@ import { useSuggestionReads } from '../suggestions/useSuggestionReads'
 import { reviewSuggestionsActions } from '../suggestions/reviewSuggestionsActions'
 import { SuggestionItem } from './suggestions/SuggestionItem'
 import { Button } from './Button'
+import { ShowMore } from './ShowMore'
 import { QuietNote } from './QuietNote'
 
 interface ReviewSuggestionsProps<T> {
@@ -65,20 +66,16 @@ export function ReviewSuggestions<T>({
     `${count}${loaded?.more[state] ? '+' : ''}`
 
   function moreButton(state: SuggestionState) {
-    return loaded?.more[state] ? (
-      <div>
-        <Button
-          tone="text"
-          size="sm"
-          disabled={reading !== null}
-          aria-busy={reading === state}
-          onClick={() => void readMore(state)}
-          data-testid={`suggestions-more-${state}`}
-        >
-          {t('review.suggestions.showMore')}
-        </Button>
-      </div>
-    ) : null
+    return (
+      <ShowMore
+        align="start"
+        hasMore={Boolean(loaded?.more[state])}
+        status={reading === state ? 'loading' : 'idle'}
+        disabled={reading !== null}
+        onMore={() => void readMore(state)}
+        testId={`suggestions-more-${state}`}
+      />
+    )
   }
 
   return (

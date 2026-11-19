@@ -9,6 +9,7 @@ import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
+import { Pager } from '../components/Pager'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
@@ -159,26 +160,8 @@ export default function WorldRulesPage() {
         />
       ) : null}
 
-      {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('canon.rules.pagination')}>
-          <Button
-            tone="secondary"
-            disabled={result.page <= 1}
-            onClick={() => goToPage(result.page - 1)}
-          >
-            {t('canon.rules.previous')}
-          </Button>
-          <span className="pager__position">
-            {t('canon.rules.position', { page: result.page, totalPages: result.totalPages })}
-          </span>
-          <Button
-            tone="secondary"
-            disabled={result.page >= result.totalPages}
-            onClick={() => goToPage(result.page + 1)}
-          >
-            {t('canon.rules.next')}
-          </Button>
-        </nav>
+      {result ? (
+        <Pager page={result.page} totalPages={result.totalPages} onPage={goToPage} />
       ) : null}
     </section>
   )

@@ -52,10 +52,6 @@ const lorePage: Dictionary['lore']['page'] = {
     'Não há nada arquivado em {name} nem em nada que esteja dentro. Escreve a primeira, e as restantes terão algo a que apontar.',
   emptyType:
     'Ainda não há nada arquivado em {name}. Escreve a primeira, e as restantes terão algo a que apontar.',
-  pagination: 'Paginação',
-  previous: 'Anterior',
-  pageOf: 'Página {page} de {total}',
-  next: 'Seguinte',
   selectHint: 'Seleciona entradas desta página para as mover para a reciclagem.',
   selected: '{n} selecionadas',
   moving: 'A mover…',
