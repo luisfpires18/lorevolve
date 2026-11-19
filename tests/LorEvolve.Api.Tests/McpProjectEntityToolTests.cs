@@ -108,7 +108,7 @@ public sealed class McpProjectEntityToolTests(McpProjectEntityFixture fixture) :
     }
 
     [Fact]
-    public async Task An_entry_with_an_image_field_reads_with_the_field_named_and_sized_and_no_bytes()
+    public async Task An_entry_lists_every_picture_by_an_id_get_lore_image_fetches_and_sends_no_bytes()
     {
         // A project and a Lore type of their own, so the fixture's counts stay as the other tests read them.
         var project = await McpProjectEntityFixture.NewProjectAsync(W.Owner, "Pictured units", kind: 1, universeId: W.U);
@@ -120,6 +120,7 @@ public sealed class McpProjectEntityToolTests(McpProjectEntityFixture fixture) :
             .Fields.Single(field => field.Name == "Art").Id;
         var entry = await McpProjectEntityFixture.PostJson<EntityDetail>(W.Owner, $"/api/projects/{project}/entities", new ProjectEntityRequest(hero.Id, "Tidecaller", null));
         await PutPicture(W.Owner, W.U, entry.Id, art, PublishingTestClient.Png(300, 300));
+        var portrait = await UploadImage(W.Owner, W.U, entry.Id);
 
         var relic = await McpProjectEntityFixture.PostJson<EntityTypeResponse>(W.Owner, $"/api/universes/{W.U}/entity-types", new EntityTypeRequest("Relic", null, null, null, null));
         var sketch = (await McpProjectEntityFixture.PostJson<EntityTypeResponse>(
@@ -137,15 +138,60 @@ public sealed class McpProjectEntityToolTests(McpProjectEntityFixture fixture) :
             client,
             LorEvolveMcpProjectEntityTools.GetTool,
             new() { ["projectId"] = project.ToString(), ["entryId"] = entry.Id.ToString() });
-        var image = Assert.Single(read.GetProperty("images").EnumerateArray());
-        Assert.Equal("Art", image.GetProperty("field").GetString());
-        Assert.Equal("image", image.GetProperty("kind").GetString());
-        Assert.Equal(300, image.GetProperty("width").GetInt32());
+        var images = read.GetProperty("images").EnumerateArray().ToList();
+        Assert.Equal(2, images.Count);
+
+        // The entry's own picture first, then its image field's: each named by the id that fetches it.
+        Assert.Equal(LorEvolveMcpImageTools.ProfileKind, images[0].GetProperty("kind").GetString());
+        Assert.Equal(portrait.AssetId, images[0].GetProperty("imageId").GetGuid());
+        Assert.Equal(640, images[0].GetProperty("width").GetInt32());
+        Assert.Equal(LorEvolveMcpImageTools.FieldKind, images[1].GetProperty("kind").GetString());
+        Assert.Equal("Art", images[1].GetProperty("field").GetString());
+        Assert.Equal(300, images[1].GetProperty("width").GetInt32());
         Assert.DoesNotContain("field-images", read.GetRawText(), StringComparison.Ordinal);
+
+        // A project's entry is reachable by the picture tools by its id: listed, and each picture fetched.
+        var listed = await Call(client, LorEvolveMcpImageTools.ListTool, new() { ["lore"] = entry.Id.ToString() });
+        Assert.Equal(portrait.AssetId, listed.GetProperty("profileImage").GetProperty("imageId").GetGuid());
+        Assert.Equal(project, listed.GetProperty("lore").GetProperty("projectId").GetGuid());
+        Assert.Equal("Art", Assert.Single(listed.GetProperty("fieldImages").EnumerateArray()).GetProperty("field").GetString());
+
+        foreach (var image in images)
+        {
+            var fetched = await Fetch(client, entry.Id, image.GetProperty("imageId").GetGuid());
+            Assert.Equal(image.GetProperty("kind").GetString(), fetched.GetProperty("kind").GetString());
+            Assert.Equal(project, fetched.GetProperty("projectId").GetGuid());
+            Assert.Contains($"/projects/{project:D}", fetched.GetProperty("url").GetString(), StringComparison.Ordinal);
+        }
+
+        // Another universe's id, or an entry's picture asked for under another entry, is still not found.
+        Assert.Equal("not_found", (await Failing(client, LorEvolveMcpImageTools.GetTool, new()
+        {
+            ["loreId"] = lore.Id.ToString(),
+            ["imageId"] = portrait.AssetId.ToString(),
+        })).GetProperty("error").GetString());
 
         var loreRead = await Call(client, "get_lore_entry", new() { ["loreId"] = lore.Id.ToString() });
         var field = Assert.Single(loreRead.GetProperty("fields").EnumerateArray(), each => each.GetProperty("name").GetString() == "Sketch");
         Assert.Equal("image, 400 x 200 pixels", field.GetProperty("value").GetString());
+
+        // A lore entry's image field picture is listed and fetched the same way.
+        var loreListed = await Call(client, LorEvolveMcpImageTools.ListTool, new() { ["lore"] = lore.Id.ToString() });
+        var sketchImage = Assert.Single(loreListed.GetProperty("fieldImages").EnumerateArray()).GetProperty("image");
+        var sketchFetched = await Fetch(client, lore.Id, sketchImage.GetProperty("imageId").GetGuid());
+        Assert.Equal("Sketch", sketchFetched.GetProperty("field").GetProperty("name").GetString());
+    }
+
+    /// <summary>get_lore_image's answer: the picture as an image block, and its metadata read back.</summary>
+    private static async Task<JsonElement> Fetch(McpClient client, Guid entry, Guid image)
+    {
+        var result = await client.CallToolAsync(
+            LorEvolveMcpImageTools.GetTool,
+            new Dictionary<string, object?> { ["loreId"] = entry.ToString(), ["imageId"] = image.ToString() });
+        Assert.False(result.IsError ?? false, Text(result));
+        Assert.Contains(result.Content, block => block is ImageContentBlock);
+        using var json = JsonDocument.Parse(result.Content.OfType<TextContentBlock>().Last().Text);
+        return json.RootElement.Clone();
     }
 
     private static async Task PutPicture(HttpClient client, Guid u, Guid entry, Guid field, byte[] png)

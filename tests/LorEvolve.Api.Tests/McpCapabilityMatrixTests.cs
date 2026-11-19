@@ -83,7 +83,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("An entry's article", ["entities/article"], ["get_lore_entry"], ["Article"]),
         Mapped("An entry's progression", ["entities/progression"], ["get_lore_entry"], ["Progression"]),
         Mapped("An entry's pictures", ["entities/image", "entities/appearances"], ["list_lore_images", "get_lore_image"], ["Media"]),
-        Excepted("An entry's image field pictures", ["entities/field-images"], Why.MediaBytes),
+        new("An entry's image field pictures", ["entities/field-images"], ["list_lore_images", "get_lore_image"], "", [], Why.MediaBytes),
         Excepted("An entry's history", ["entities/revisions"], Why.LiveOnly),
         new("An entry's private note", ["entities/private-note"], [], Why.PersonOnly, ["add_private_note"], ""),
         ReadOnly("An entry's map pins", ["entities/map-pins"], ["get_map_location"]),
