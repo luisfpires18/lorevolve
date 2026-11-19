@@ -204,7 +204,10 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
 
     [McpServerTool(Name = GetTool, Title = "Read a project's entry", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("One entry of a project, with every field value the author filled in, the type it is of, and the universe's "
-        + "lore entry it stands for when the author named one. A field with no value is left out rather than sent empty.")]
+        + "lore entry it stands for when the author named one. A field with no value is left out rather than sent empty. "
+        + "images lists every picture the entry has - its own picture (profile), its image fields' pictures (field) and its "
+        + "appearances' pictures (appearance) - each with the imageId get_lore_image fetches it by, with this entry's id as "
+        + "loreId. No bytes are sent here.")]
     public async Task<CallToolResult> GetProjectEntryAsync(
         [Description("The project's id, from list_projects.")] string projectId,
         [Description("The entry's id, from list_project_entries.")] string entryId,
@@ -255,24 +258,70 @@ public sealed class LorEvolveMcpProjectEntityTools(LorEvolveDbContext db, McpCal
                         linkedEntry = value.ReferencedEntity != null ? value.ReferencedEntity.Name : null,
                     })
                     .ToList(),
-
-                // An image field (Issue #238) is named with its picture's size, never its bytes.
-                images = db.EntityFieldImages
-                    .Where(image => image.EntityId == candidate.Id && image.FieldDefinition!.ArchivedAt == null)
-                    .OrderBy(image => image.FieldDefinition!.DisplayOrder)
-                    .Select(image => new
-                    {
-                        fieldId = image.FieldDefinitionId,
-                        field = image.FieldDefinition!.Name,
-                        kind = "image",
-                        width = image.Width,
-                        height = image.Height,
-                    })
-                    .ToList(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return entry is null ? NotFound(NoSuchId) : Result(entry);
+        if (entry is null)
+        {
+            return NotFound(NoSuchId);
+        }
+
+        return Result(new
+        {
+            entry.Id,
+            entry.Name,
+            entry.Summary,
+            entry.typeId,
+            entry.type,
+            entry.canonEntryId,
+            entry.canonEntry,
+            entry.CreatedAt,
+            entry.UpdatedAt,
+            entry.Values,
+            images = await PicturesAsync(id, cancellationToken),
+        });
+    }
+
+    /// <summary>One picture of an entry, named by the id get_lore_image fetches it by, never by its bytes.</summary>
+    private sealed record EntryPicture(
+        Guid ImageId,
+        string Kind,
+        string ContentType,
+        int Width,
+        int Height,
+        Guid? FieldId = null,
+        string? Field = null,
+        Guid? AppearanceId = null,
+        string? Appearance = null);
+
+    /// <summary>
+    /// Every picture the entry has, in the order its page shows them: its own picture, its image fields' (Issue #238) in the
+    /// type's field order, then its appearances' galleries, bounded as list_lore_images bounds them.
+    /// </summary>
+    private async Task<List<EntryPicture>> PicturesAsync(Guid entryId, CancellationToken cancellationToken)
+    {
+        var own = await db.EntityImages.AsNoTracking()
+            .Where(image => image.EntityId == entryId)
+            .Select(image => new EntryPicture(image.AssetId, LorEvolveMcpImageTools.ProfileKind, image.ContentType, image.Width, image.Height, null, null, null, null))
+            .ToListAsync(cancellationToken);
+
+        var fields = await db.EntityFieldImages.AsNoTracking()
+            .Where(image => image.EntityId == entryId && image.FieldDefinition!.ArchivedAt == null)
+            .OrderBy(image => image.FieldDefinition!.DisplayOrder)
+            .Select(image => new EntryPicture(
+                image.AssetId, LorEvolveMcpImageTools.FieldKind, image.ContentType, image.Width, image.Height, image.FieldDefinitionId, image.FieldDefinition!.Name, null, null))
+            .ToListAsync(cancellationToken);
+
+        var looks = await db.EntityAppearanceImages.AsNoTracking()
+            .Where(image => image.Appearance!.EntityId == entryId)
+            .OrderBy(image => image.Appearance!.SortOrder)
+            .ThenBy(image => image.SortOrder)
+            .Take(McpLimits.ImageListLimit)
+            .Select(image => new EntryPicture(
+                image.Id, LorEvolveMcpImageTools.AppearanceKind, image.ContentType, image.Width, image.Height, null, null, image.EntityAppearanceId, image.Appearance!.Label))
+            .ToListAsync(cancellationToken);
+
+        return [.. own, .. fields, .. looks];
     }
 
     [McpServerTool(Name = StructureTool, Title = "Read a project's structure", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]

@@ -53,13 +53,17 @@ public sealed partial class LorEvolveMcpImageTools(
     /// <summary>A picture in an appearance's gallery (ADR 0053).</summary>
     public const string AppearanceKind = "appearance";
 
+    /// <summary>The picture of one of the entry's image fields (Issue #238).</summary>
+    public const string FieldKind = "field";
+
     /// <summary>An appearance's notes, cut for a listing.</summary>
     private const int NotesLength = 300;
 
     /// <summary>Longer than any entry name or alias LorEvolve stores: anything past it names nothing.</summary>
     private const int NameLength = 200;
 
-    private sealed record Head(Guid Id, string Name, string TypeName);
+    /// <summary>A live entry: a lore entry, or one of a project's own entries when <paramref name="ProjectId"/> is set.</summary>
+    private sealed record Head(Guid Id, string Name, string TypeName, Guid? ProjectId = null);
 
     private sealed record Named(Guid Id, string Name);
 
@@ -76,7 +80,8 @@ public sealed partial class LorEvolveMcpImageTools(
         string ThumbnailKey,
         Named? Appearance,
         IReadOnlyList<string> Forms,
-        IReadOnlyList<string> Eras);
+        IReadOnlyList<string> Eras,
+        Named? Field = null);
 
     [McpServerTool(Name = ListTool, Title = "List a lore entry's pictures", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("List the pictures a lore entry has: its profile picture (the entry's own portrait, on its cards and page) and "
@@ -84,9 +89,10 @@ public sealed partial class LorEvolveMcpImageTools(
         + "Give the entry by id, or by its exact name or alias; an ambiguous name is refused with the candidates. Optionally "
         + "narrow to one form, era or appearance (by id or exact name): then only pictures explicitly linked to it are listed, "
         + "and the profile picture is still reported apart as the base portrait, never as that form's. Nothing is inferred: a "
-        + "form with no linked picture lists none, and the answer says so. Fetch a picture with get_lore_image.")]
+        + "form with no linked picture lists none, and the answer says so. The pictures of the entry's image fields are listed "
+        + "too. A project's own entry (from list_project_entries) is given by its id. Fetch a picture with get_lore_image.")]
     public async Task<CallToolResult> ListLoreImagesAsync(
-        [Description("The lore entry: its id, or its exact name or alias.")] string lore,
+        [Description("The lore entry: its id, or its exact name or alias. A project's entry: its id.")] string lore,
         [Description("Optional form: its id or exact name. Only pictures of appearances linked to this form.")] string? form = null,
         [Description("Optional era: its id or exact name. Only pictures of appearances linked to this era.")] string? era = null,
         [Description("Optional appearance: its id or exact label. Only that appearance's pictures.")] string? appearance = null,
@@ -107,6 +113,8 @@ public sealed partial class LorEvolveMcpImageTools(
             .Where(image => image.EntityId == entry.Id)
             .Select(image => new Picture(image.AssetId, image.ContentType, image.Width, image.Height, image.ByteSize, image.FileName, image.UploadedAt))
             .FirstOrDefaultAsync(cancellationToken);
+
+        var fieldPictures = await FieldPicturesAsync(entry.Id, cancellationToken);
 
         var forms = await db.EntityForms.AsNoTracking()
             .Where(candidate => candidate.EntityId == entry.Id)
@@ -180,7 +188,7 @@ public sealed partial class LorEvolveMcpImageTools(
                 notes = ReadingText.Cut(look.Notes, NotesLength),
                 forms = Names(look.Forms, forms),
                 eras = Names(look.Eras, eras),
-                url = ProgressionUrl(entry.Id),
+                url = ProgressionUrl(entry),
                 images = look.Images.Take(take).Select((picture, position) => Describe(picture, AppearanceKind, position)),
             });
         }
@@ -198,11 +206,11 @@ public sealed partial class LorEvolveMcpImageTools(
                         ? "The entry has no profile picture either."
                         : $"The profile picture is the entry's base portrait, not a picture of {what}; do not show it as one.")
                 : null
-            : profile is null && pictures == 0 ? "This entry has no pictures." : null;
+            : profile is null && pictures == 0 && fieldPictures.Count == 0 ? "This entry has no pictures." : null;
 
         return Result(new
         {
-            lore = new { id = entry.Id, name = entry.Name, type = entry.TypeName, url = EntryUrl(entry.Id) },
+            lore = new { id = entry.Id, name = entry.Name, type = entry.TypeName, projectId = entry.ProjectId, url = EntryUrl(entry) },
             selection = narrowed
                 ? new
                 {
@@ -214,6 +222,12 @@ public sealed partial class LorEvolveMcpImageTools(
             profileImage = profile is null ? null : Describe(profile, ProfileKind, null),
             appearances = listed,
             appearancePictures = pictures,
+            fieldImages = fieldPictures.Select(field => new
+            {
+                fieldId = field.Field.Id,
+                field = field.Field.Name,
+                image = Describe(field.Picture, FieldKind, null),
+            }),
             more = more ? true : (bool?)null,
             forms = forms.Select(candidate => new
             {
@@ -235,7 +249,8 @@ public sealed partial class LorEvolveMcpImageTools(
 
     [McpServerTool(Name = GetTool, Title = "Fetch a lore picture", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Fetch one of a lore entry's pictures as viewable image content, by the entry's id and the imageId "
-        + "list_lore_images gave. variant: \"preview\" (default) is the whole picture fitted within 1024 pixels, as WebP - "
+        + "list_lore_images or get_project_entry gave - a profile, appearance or image field picture, of a lore entry or of a "
+        + "project's own entry. variant: \"preview\" (default) is the whole picture fitted within 1024 pixels, as WebP - "
         + "enough to look at; \"thumbnail\" is the small square the author framed for cards (WebP, 320 pixels); \"original\" is "
         + "the file exactly as uploaded, only when asked for and only up to 4 MB - a larger original is refused and the preview "
         + "stands in. format: \"webp\" (default) or \"png\" re-encodes the preview as PNG, for a client that shows a blank "
@@ -243,8 +258,8 @@ public sealed partial class LorEvolveMcpImageTools(
         + "universe access, and a text block with metadata. Client rendering varies: if the person cannot see the inline image, "
         + "show them the LorEvolve link; do not claim that the image was displayed unless it is visibly present in the client.")]
     public async Task<CallToolResult> GetLoreImageAsync(
-        [Description("The lore entry's id, exactly as a result gave it.")] string loreId,
-        [Description("The picture's imageId, exactly as list_lore_images gave it.")] string imageId,
+        [Description("The entry's id, exactly as a result gave it: a lore entry's or a project entry's.")] string loreId,
+        [Description("The picture's imageId, exactly as list_lore_images or get_project_entry gave it.")] string imageId,
         [Description("preview (default), thumbnail or original.")] string? variant = null,
         [Description("The preview's encoding: webp (default) or png.")] string? format = null,
         CancellationToken cancellationToken = default)
@@ -350,8 +365,8 @@ public sealed partial class LorEvolveMcpImageTools(
                 break;
         }
 
-        var viewUrl = found.Kind == ProfileKind ? EntryUrl(entryId) : ProgressionUrl(entryId);
-        var pageLabel = found.Kind == ProfileKind ? "Lore page" : "progression page";
+        var viewUrl = found.Kind == AppearanceKind ? ProgressionUrl(found.Entry) : EntryUrl(found.Entry);
+        var pageLabel = found.Entry.ProjectId is not null ? "project page" : found.Kind == AppearanceKind ? "progression page" : "Lore page";
         var about = new
         {
             loreId = entryId,
@@ -359,9 +374,13 @@ public sealed partial class LorEvolveMcpImageTools(
             loreType = found.Entry.TypeName,
             imageId = pictureId,
             kind = found.Kind,
-            role = found.Kind == ProfileKind
-                ? "The entry's own portrait: its base picture, not a form's or an era's."
-                : "A picture of one appearance of the entry, linked to exactly the forms and eras listed.",
+            projectId = found.Entry.ProjectId,
+            role = found.Kind switch
+            {
+                ProfileKind => "The entry's own portrait: its base picture, not a form's or an era's.",
+                FieldKind => "The picture of one of the entry's image fields.",
+                _ => "A picture of one appearance of the entry, linked to exactly the forms and eras listed.",
+            },
             variant = which,
             contentType,
             width,
@@ -375,6 +394,7 @@ public sealed partial class LorEvolveMcpImageTools(
             appearance = found.Appearance is null
                 ? null
                 : new { id = found.Appearance.Id, label = found.Appearance.Name, forms = found.Forms, eras = found.Eras },
+            field = found.Field is null ? null : new { id = found.Field.Id, name = found.Field.Name },
             url = viewUrl,
         };
         var viewText = $"If the inline picture is not visible in this client, [open the LorEvolve {pageLabel}]({viewUrl}). Sign-in and current access to this universe are required. LorEvolve cannot tell whether this client rendered the inline picture.";
@@ -406,9 +426,10 @@ public sealed partial class LorEvolveMcpImageTools(
 
         if (Guid.TryParse(wanted, out var id))
         {
-            var head = await db.Entities.AsNoTracking()
+            // Past the filter that keeps a project's entries out of the lore: the universe and the Trash are checked here.
+            var head = await db.Entities.AsNoTracking().IgnoreQueryFilters()
                 .Where(entity => entity.Id == id && entity.UniverseId == caller.UniverseId && entity.DeletedAt == null)
-                .Select(entity => new Head(entity.Id, entity.Name, entity.EntityType!.Name))
+                .Select(entity => new Head(entity.Id, entity.Name, entity.EntityType!.Name, entity.ProjectId))
                 .FirstOrDefaultAsync(cancellationToken);
             return (head, head is null ? NotFound() : null);
         }
@@ -466,10 +487,14 @@ public sealed partial class LorEvolveMcpImageTools(
                 new { options = options.Select(option => new { id = option.Id, name = option.Name }) }));
     }
 
-    /// <summary>The picture, if this live entry of this universe holds it: its own, else one of an appearance's.</summary>
+    /// <summary>
+    /// The picture, if this live entry of this universe holds it: its own, one of an appearance's, or an image field's. A
+    /// project's own entry counts: the filter that keeps those out of the lore is ignored, and the universe and the Trash are
+    /// checked explicitly instead.
+    /// </summary>
     private async Task<Found?> FindAsync(Guid entryId, Guid pictureId, CancellationToken cancellationToken)
     {
-        var own = await db.EntityImages.AsNoTracking()
+        var own = await db.EntityImages.AsNoTracking().IgnoreQueryFilters()
             .Where(image => image.EntityId == entryId
                 && image.AssetId == pictureId
                 && image.Entity!.UniverseId == caller.UniverseId
@@ -478,6 +503,7 @@ public sealed partial class LorEvolveMcpImageTools(
             {
                 image.Entity!.Name,
                 Type = image.Entity.EntityType!.Name,
+                image.Entity.ProjectId,
                 image.OriginalKey,
                 image.ThumbnailKey,
                 Picture = new Picture(image.AssetId, image.ContentType, image.Width, image.Height, image.ByteSize, image.FileName, image.UploadedAt),
@@ -485,10 +511,10 @@ public sealed partial class LorEvolveMcpImageTools(
             .FirstOrDefaultAsync(cancellationToken);
         if (own is not null)
         {
-            return new Found(new Head(entryId, own.Name, own.Type), ProfileKind, own.Picture, own.OriginalKey, own.ThumbnailKey, null, [], []);
+            return new Found(new Head(entryId, own.Name, own.Type, own.ProjectId), ProfileKind, own.Picture, own.OriginalKey, own.ThumbnailKey, null, [], []);
         }
 
-        var look = await db.EntityAppearanceImages.AsNoTracking()
+        var look = await db.EntityAppearanceImages.AsNoTracking().IgnoreQueryFilters()
             .Where(image => image.Id == pictureId
                 && image.Appearance!.EntityId == entryId
                 && image.Appearance.Entity!.UniverseId == caller.UniverseId
@@ -497,6 +523,7 @@ public sealed partial class LorEvolveMcpImageTools(
             {
                 image.Appearance!.Entity!.Name,
                 Type = image.Appearance.Entity.EntityType!.Name,
+                image.Appearance.Entity.ProjectId,
                 image.OriginalKey,
                 image.ThumbnailKey,
                 Picture = new Picture(image.Id, image.ContentType, image.Width, image.Height, image.ByteSize, image.FileName, image.UploadedAt),
@@ -508,10 +535,10 @@ public sealed partial class LorEvolveMcpImageTools(
             .AsSplitQuery()
             .FirstOrDefaultAsync(cancellationToken);
 
-        return look is null
-            ? null
-            : new Found(
-                new Head(entryId, look.Name, look.Type),
+        if (look is not null)
+        {
+            return new Found(
+                new Head(entryId, look.Name, look.Type, look.ProjectId),
                 AppearanceKind,
                 look.Picture,
                 look.OriginalKey,
@@ -519,6 +546,56 @@ public sealed partial class LorEvolveMcpImageTools(
                 new Named(look.AppearanceId, look.Label),
                 look.Forms,
                 look.Eras);
+        }
+
+        // An image field's picture: its original, and the crop the field frames it to as the thumbnail (always WebP).
+        var field = await db.EntityFieldImages.AsNoTracking().IgnoreQueryFilters()
+            .Where(image => image.EntityId == entryId
+                && image.AssetId == pictureId
+                && image.FieldDefinition!.ArchivedAt == null
+                && image.Entity!.UniverseId == caller.UniverseId
+                && image.Entity.DeletedAt == null)
+            .Select(image => new
+            {
+                image.Entity!.Name,
+                Type = image.Entity.EntityType!.Name,
+                image.Entity.ProjectId,
+                image.OriginalKey,
+                image.CropKey,
+                FieldId = image.FieldDefinitionId,
+                FieldName = image.FieldDefinition!.Name,
+                Picture = new Picture(image.AssetId, image.ContentType, image.Width, image.Height, image.ByteSize, image.FileName, image.UploadedAt),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return field is null
+            ? null
+            : new Found(
+                new Head(entryId, field.Name, field.Type, field.ProjectId),
+                FieldKind,
+                field.Picture,
+                field.OriginalKey,
+                field.CropKey,
+                null,
+                [],
+                [],
+                new Named(field.FieldId, field.FieldName));
+    }
+
+    /// <summary>The pictures of the entry's image fields that are still on its type, in the type's field order.</summary>
+    private async Task<List<(Named Field, Picture Picture)>> FieldPicturesAsync(Guid entryId, CancellationToken cancellationToken)
+    {
+        var rows = await db.EntityFieldImages.AsNoTracking().IgnoreQueryFilters()
+            .Where(image => image.EntityId == entryId && image.FieldDefinition!.ArchivedAt == null)
+            .OrderBy(image => image.FieldDefinition!.DisplayOrder)
+            .Select(image => new
+            {
+                image.FieldDefinitionId,
+                image.FieldDefinition!.Name,
+                Picture = new Picture(image.AssetId, image.ContentType, image.Width, image.Height, image.ByteSize, image.FileName, image.UploadedAt),
+            })
+            .ToListAsync(cancellationToken);
+        return [.. rows.Select(row => (new Named(row.FieldDefinitionId, row.Name), row.Picture))];
     }
 
     /// <summary>The whole stream, or null once it has run past <paramref name="limit"/> bytes.</summary>
@@ -560,9 +637,11 @@ public sealed partial class LorEvolveMcpImageTools(
             .OfType<Named>()
             .Select(option => new { id = option.Id, name = option.Name });
 
-    private string EntryUrl(Guid entryId) => $"{site.Base}/app/universes/{caller.UniverseId:D}/lore/{entryId:D}";
+    private string EntryUrl(Head entry) => entry.ProjectId is { } projectId
+        ? $"{site.Base}/app/universes/{caller.UniverseId:D}/projects/{projectId:D}"
+        : $"{site.Base}/app/universes/{caller.UniverseId:D}/lore/{entry.Id:D}";
 
-    private string ProgressionUrl(Guid entryId) => $"{EntryUrl(entryId)}/progression";
+    private string ProgressionUrl(Head entry) => entry.ProjectId is null ? $"{EntryUrl(entry)}/progression" : EntryUrl(entry);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Image storage failed reading a picture of entry {EntityId} for an MCP client.")]
     private static partial void LogStorageFailure(ILogger logger, Guid entityId, Exception exception);
