@@ -1,3 +1,4 @@
+import { QuietNote } from '../QuietNote'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { SaveAction } from '../SaveAction'
 import { ApiError } from '../../lib/api'
@@ -140,9 +141,9 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       eyebrow={t('entity.privateNote.eyebrow')}
       title={<bdi>{entryName}</bdi>}
       context={
-        <p className="drawer__context" id={hintId}>
+        <QuietNote size="ui" wrap className="drawer__context" id={hintId}>
           {t('entity.privateNote.privacy')}
-        </p>
+        </QuietNote>
       }
       isDirty={isDirty}
       leaveMessage={t('entity.privateNote.discardGuard')}

@@ -92,9 +92,9 @@ export function StoryScenes(
 
       {isEmpty ? null : (
         <div className="story__toolbar">
-          <p className="chron__aside story__aside">
+          <QuietNote className="chron__aside story__aside">
             {hasStructure ? t('stories.page.asideStructured') : t('stories.page.aside')}
-          </p>
+          </QuietNote>
           {access.editContent ? (
             <div className="story__toolbaractions">
               {newArc}

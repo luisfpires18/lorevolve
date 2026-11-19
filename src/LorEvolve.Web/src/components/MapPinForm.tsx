@@ -1,3 +1,4 @@
+import { QuietNote } from './QuietNote'
 import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
@@ -139,9 +140,9 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
       title={pin ? <bdi>{pin.title}</bdi> : t('places.pinForm.title')}
       context={
         pin && !pin.placedOnCurrentImage ? (
-          <p className="drawer__context" data-testid="map-pin-review-note">
+          <QuietNote size="ui" wrap className="drawer__context" testId="map-pin-review-note">
             {t('places.pinForm.reviewNote')}
-          </p>
+          </QuietNote>
         ) : null
       }
       isDirty={isDirty}

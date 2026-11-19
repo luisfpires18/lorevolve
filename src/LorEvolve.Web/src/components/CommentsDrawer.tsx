@@ -104,7 +104,11 @@ export function CommentsDrawer<T>({
       titleId={headingId}
       eyebrow={t('review.comments.drawer.eyebrow')}
       title={<bdi>{subjectName}</bdi>}
-      context={<p className="drawer__context">{t(SUBJECT_WORDS[kind])}</p>}
+      context={
+        <QuietNote size="ui" wrap className="drawer__context">
+          {t(SUBJECT_WORDS[kind])}
+        </QuietNote>
+      }
       isDirty={isDirty}
       leaveMessage={t('review.comments.leave.title')}
       onClose={onClose}

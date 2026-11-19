@@ -6,6 +6,7 @@ import { RestoreChooseForm } from './backups/RestoreChooseForm'
 import { RestoreReadyForm } from './backups/RestoreReadyForm'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 interface RestoreBackupProps {
   onCancel: () => void
@@ -41,7 +42,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
       data-testid="restore-panel"
     >
       <h2 className="composer__title">{t('admin.restore.title')}</h2>
-      <p className="restore__lead">{t('admin.restore.lead')}</p>
+      <QuietNote className="restore__lead">{t('admin.restore.lead')}</QuietNote>
 
       {stage.kind === 'choose' || stage.kind === 'checking' ? (
         <RestoreChooseForm {...state} busy={busy} check={check} onCancel={onCancel} />
@@ -63,11 +64,11 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
             </ul>
           ) : null}
           {stage.refusal.moreIssues > 0 ? (
-            <p className="restore__more">
+            <QuietNote size="ui" className="restore__more">
               {tn('admin.restore.refused.more', stage.refusal.moreIssues, {
                 n: stage.refusal.moreIssues,
               })}
-            </p>
+            </QuietNote>
           ) : null}
           <p className="restore__note">{t('admin.restore.refused.note')}</p>
           <FormActions onCancel={onCancel} dismiss="close" inline>

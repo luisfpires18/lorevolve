@@ -7,6 +7,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { FormState } from '../../timeline/useTimelineState'
 import { TimelineRow } from './TimelineRow'
+import { QuietNote } from '../QuietNote'
 
 /** The spine: each year group in the order things happen, then the items with no period and the items with no date. */
 export function TimelineStream({
@@ -87,7 +88,7 @@ export function TimelineStream({
             <span className="chron__era">{t('time.timeline.noPeriod')}</span>
           </h2>
           <div>
-            <p className="chron__aside">{t('time.timeline.noPeriodHint')}</p>
+            <QuietNote className="chron__aside">{t('time.timeline.noPeriodHint')}</QuietNote>
             <ul className="chron__moments chron__moments--unplaced">
               {unreckoned.map((item) => (
                 <TimelineRow
@@ -113,7 +114,7 @@ export function TimelineStream({
             <span className="chron__era">{t('time.timeline.unplaced')}</span>
           </h2>
           <div>
-            <p className="chron__aside">{t('time.timeline.unplacedHint')}</p>
+            <QuietNote className="chron__aside">{t('time.timeline.unplacedHint')}</QuietNote>
             <ul className="chron__moments chron__moments--unplaced">
               {unplaced.map((item) => (
                 <TimelineRow

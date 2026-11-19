@@ -11,7 +11,7 @@ type DrawerProps = {
   title: ReactNode
   /** Drawn only when truthy. */
   eyebrow?: ReactNode
-  /** After the title inside the header; the caller writes its own `p.drawer__context`. */
+  /** After the title inside the header; the caller passes a `QuietNote` with `className="drawer__context"`. */
   context?: ReactNode
   /** Extra dialog classes, after `drawer`. */
   className?: string

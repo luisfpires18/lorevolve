@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import { BrandMark } from './BrandMark'
 import { MAIN_CONTENT_ID } from './SkipLink'
 import { Wordmark } from './Wordmark'
+import { QuietNote } from './QuietNote'
 
 interface AuthLayoutProps {
   heading: string
@@ -55,7 +56,7 @@ export function AuthLayout({ heading, intro, children, footer, headingRef }: Aut
           </h1>
           <p className="auth__intro">{intro}</p>
           {children}
-          <p className="auth__footer">{footer}</p>
+          <QuietNote className="auth__footer">{footer}</QuietNote>
         </div>
       </main>
     </div>
