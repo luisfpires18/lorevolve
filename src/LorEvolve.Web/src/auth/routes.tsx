@@ -4,7 +4,7 @@ import { useI18n } from '../i18n'
 import { networkFailure } from '../lib/api'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
-import { LoadError } from '../components/LoadError'
+import { Button } from '../components/Button'
 
 /** Held while the session probe is in flight, so no screen paints before it settles. */
 function SessionPending() {
@@ -19,7 +19,12 @@ function SessionUnreachable({ onRetry }: { onRetry: () => void }) {
   const { t } = useI18n()
   return (
     <div className="session-pending session-pending--unreachable">
-      <LoadError message={networkFailure()} onRetry={onRetry} retryLabel={t('auth.routes.retry')} />
+      <div className="notice notice--error" role="alert">
+        <p>{networkFailure()}</p>
+        <Button tone="secondary" onClick={onRetry}>
+          {t('auth.routes.retry')}
+        </Button>
+      </div>
     </div>
   )
 }

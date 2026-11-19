@@ -29,7 +29,7 @@ A state counts as reached only when its interception matched at least once; the 
 | Planned screens | 38 of 38 reached (every page file in the plan's list) |
 | Planned states | 87 states, all reached on both sides; 0 interceptions that never matched in the final files (one after shot, `stories-failed` desktop dark, missed on the first pass and was captured again) |
 | DOM dump (desktop 1440x900, light, attributes and class tokens sorted, React ids and guids normalised, `<time>` ignored) | 87 per side: 77 differ, 10 identical |
-| Screenshots | 696 PNG (87 states x 4 variants x 2 sides), 348 pairs, 270 pixel-identical, 78 differ. Folder about 15 MB |
+| Screenshots | 696 PNG (87 states x 4 variants x 2 sides), 348 pairs, 274 pixel-identical, 74 differ (after the `system-editor-failed` recapture at `cb2b15b0`). Folder about 15 MB |
 | Phone width scroll | `scrollWidth - clientWidth` on every phone shot: 0 px everywhere, both sides |
 | Failed read is never not found | `game-entities`, `game-entity`, `project`, `story`: before, a failed read drew the not-found screen; after, it draws the failed-load box with its retry button. The not-found screens now show only for a real 404 (`*-notfound`, `*-missing`) |
 
@@ -156,7 +156,7 @@ Plan states not in the list: the plan names no empty state for any screen, so no
 
 ## Visual inspection
 
-Codex round 3 asked for a look at the images, not only a hash. Method: every one of the 348 before and after pairs was decoded with Pillow (`Image.open(...).convert("RGB")`) and compared pixel by pixel with `ImageChops.difference(...).getbbox()`; a pair is identical when the difference box is empty. Result: **270 pairs are pixel-identical** (matches the table above) and need no eye check, because identical pixels show the same picture. **78 pairs differ.** All 156 images of those 78 pairs were opened and looked at one by one, before and after, at desktop and phone width, light and dark. Nothing was sampled. The script is outside the repository.
+Codex round 3 asked for a look at the images, not only a hash. Method: every one of the 348 before and after pairs was decoded with Pillow (`Image.open(...).convert("RGB")`) and compared pixel by pixel with `ImageChops.difference(...).getbbox()`; a pair is identical when the difference box is empty. Result at the first capture: 270 pairs pixel-identical and 78 differing. All 156 images of those 78 pairs were opened and looked at one by one, before and after, at desktop and phone width, light and dark. Nothing was sampled. The script is outside the repository.
 
 Reading note: the PNGs are 256-colour quantised, so a changed page can move palette entries across the whole image. A large difference box with a picture that looks the same is quantisation noise, not a change. Those pairs are marked "no visible change".
 
@@ -249,4 +249,4 @@ Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "Thi
 
 Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); system-editor-failed (4 pairs, Back to Systems restored); no visible change (18 pairs).
 
-Identical pairs: 270 of 348, recorded as pixel-identical by the method above.
+Identical pairs: 274 of 348 at the final head, by the method above. The four `system-editor-failed` pairs joined them when `cb2b15b0` restored Back to Systems and `1a16a49e` recaptured the after side; their rows in the table above record that. Differing pairs at the final head: 74.

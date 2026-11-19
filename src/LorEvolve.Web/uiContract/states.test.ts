@@ -27,6 +27,7 @@ const ERROR_BLOCKS = new Map<string, string>([
     'src/components/worldLogic/WorldLogicIntegrity.tsx',
     'action error: a check that failed, and its cap',
   ],
+  ['src/auth/routes.tsx', 'auth pages are out of #410 scope (Issue #410, leave list)'],
   [
     'src/pages/ConnectAuthorizePage.tsx',
     'consent errors: no access, invalid link; no re-read exists',
