@@ -371,7 +371,6 @@
 ## system-editor-failed
 -<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
 +<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
--<a class="button button--secondary" data-discover="true" href="/app/universes/<guid>/world-logic?tab=systems">Back to Systems</a>
 -<p class="sitefooter__heading" id="sitefooter-product">Product</p>
 +<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
 ## system-editor-loading

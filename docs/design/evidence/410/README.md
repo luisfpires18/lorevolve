@@ -1,6 +1,6 @@
 # Evidence for #410: shared loading, failed, empty and announcement states
 
-Everything here was produced for PR #428 (branch `feat/shared-states`, code head `63be5d15`) against a local stack, the way #409 did it: API on port 5185 with a scratch database, one registered capture account and one seeded universe, and two Vite servers on the same API. The "before" side is a detached worktree of `origin/dev` at `a442101b` with its own `npm ci`, served on port 5194. The "after" side is the main checkout at the branch head, served on port 5193. Both sides use the same database and the same account, so a difference between them comes from the code and nothing else.
+Everything here was produced for PR #428 (branch `feat/shared-states`, code head `cb2b15b0`) against a local stack, the way #409 did it: API on port 5185 with a scratch database, one registered capture account and one seeded universe, and two Vite servers on the same API. The "before" side is a detached worktree of `origin/dev` at `a442101b` with its own `npm ci`, served on port 5194. The "after" side is the main checkout at the branch head, served on port 5193. Both sides use the same database and the same account, so a difference between them comes from the code and nothing else.
 
 ## Setup and seed
 
@@ -49,7 +49,7 @@ The screenshots are 256-colour PNGs (palette quantised) to keep the folder small
 
 ## Looks worth a glance
 
-1. `system-editor-failed`: before, the failed box held "Try again" and "Back to Systems"; after, only "Try again". The page header's own back control is still there. The PR text says failed is `LoadError` with retry, so this looks intended, but the second button is gone.
+1. `system-editor-failed`: before and after both hold "Try again" and "Back to Systems" in the failed box. Commit `cb2b15b0` restored the button the first after capture had lost; this state was recaptured at that head.
 2. `universe-workspace-loading` is a blank page on both sides (no loading line); unchanged by this PR.
 3. `projects-directory-loading` shows the tiles at once on both sides (deviation 10 in the PR).
 4. `world-logic-failed` shows the Rules tab's failed box; the Systems and Integrity tabs are behind their tabs and fail the same way.
@@ -98,7 +98,7 @@ The screenshots are 256-colour PNGs (palette quantised) to keep the folder small
 | 36 | `world-rule-failed` | /app/universes/{W}/world-rules/{rule} | 500 on GET /api/universes/{W}/world-rules/{rule} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 37 | `world-rule-loading` | /app/universes/{W}/world-rules/{rule} | GET /api/universes/{W}/world-rules/{rule} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 38 | `world-rule-missing` | /app/universes/{W}/world-rules/{rule} | real 404, address /app/universes/{W}/world-rules/{unknown id} | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
-| 39 | `system-editor-failed` | /app/universes/{W}/world-logic/systems/{sys} | 500 on GET /api/universes/{W}/systems/{sys} | 5 lines differ | 8, 0 of 4 pairs pixel-identical |
+| 39 | `system-editor-failed` | /app/universes/{W}/world-logic/systems/{sys} | 500 on GET /api/universes/{W}/systems/{sys} | 4 lines differ | 8, 0 of 4 pairs pixel-identical |
 | 40 | `system-editor-loading` | /app/universes/{W}/world-logic/systems/{sys} | GET /api/universes/{W}/systems/{sys} held open | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
 | 41 | `system-editor-missing` | /app/universes/{W}/world-logic/systems/{sys} | real 404, address /app/universes/{W}/world-logic/systems/{unknown id} | 10 lines differ | 8, 0 of 4 pairs pixel-identical |
 | 42 | `world-logic-failed` | /app/universes/{W}/world-logic | 500 on GET /api/universes/{W}/world-logic/rules, /systems and /world-logic/findings | 4 lines differ | 8, 4 of 4 pairs pixel-identical |
@@ -160,11 +160,7 @@ Codex round 3 asked for a look at the images, not only a hash. Method: every one
 
 Reading note: the PNGs are 256-colour quantised, so a changed page can move palette entries across the whole image. A large difference box with a picture that looks the same is quantisation noise, not a change. Those pairs are marked "no visible change".
 
-One real defect, listed first below. No other clipping, overlap, wrong dark colour, phone overflow or missing text was found in the 78 pairs.
-
-### Defects
-
-1. `system-editor-failed`, all four variants: the failed box lost its "Back to Systems" button. The README above says the page header's own back control is still there, but no header back control appears in any of the four after shots (only the box, the search bar and the sidebar). On this screen the only route back is the World Logic sidebar item. Not fixed here (no code changes in this task). Either keep the button or show the header back control in the failed state.
+No defects. No clipping, overlap, wrong dark colour, phone overflow or missing text was found in the 78 pairs.
 
 Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "This project could not be read." on a game page; `projects-directory-failed` says "could not be counted", while the row above says "read"; `project-failed` and `story-failed` before shots showed a plain heading, not the not-found screen, so only the game rows prove "failed was drawn as not found".
 
@@ -238,10 +234,10 @@ Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "Thi
 | `story-loading` | phone light | "Reading this project." same text, about 16 px lower; nothing clipped |
 | `story-missing` | phone dark | No visible change: "This project is not here." on both sides; palette noise only. Correct |
 | `story-missing` | phone light | No visible change: "This project is not here." on both sides; palette noise only. Correct |
-| `system-editor-failed` | desktop dark | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
-| `system-editor-failed` | desktop light | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
-| `system-editor-failed` | phone dark | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
-| `system-editor-failed` | phone light | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
+| `system-editor-failed` | desktop dark | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
+| `system-editor-failed` | desktop light | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
+| `system-editor-failed` | phone dark | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
+| `system-editor-failed` | phone light | Error box "The Systems could not be read." keeps both buttons, "Try again" and "Back to Systems", side by side; Back to Systems restored beside Try again. Layout and colours right
 | `system-editor-missing` | desktop dark | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
 | `system-editor-missing` | desktop light | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
 | `system-editor-missing` | phone dark | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
@@ -251,6 +247,6 @@ Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "Thi
 | `universe-publish-loading` | phone light | No visible change: "Loading the public details..." on both sides; palette noise only |
 | `world-rules-failed` | desktop dark | No visible change: "The rules could not be read." box on both sides; palette noise only |
 
-Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); system-editor-failed (4 pairs, defect above); no visible change (18 pairs).
+Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); system-editor-failed (4 pairs, Back to Systems restored); no visible change (18 pairs).
 
 Identical pairs: 270 of 348, recorded as pixel-identical by the method above.
