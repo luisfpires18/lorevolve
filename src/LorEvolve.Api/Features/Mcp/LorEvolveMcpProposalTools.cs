@@ -33,7 +33,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
     /// to the server and quietly left ungated.
     /// </summary>
     private static readonly HashSet<string> Names =
-        [OptionsTool, ProposeTool, ReadTool, .. LorEvolveMcpWorldLogicTools.ProposeGated];
+        [OptionsTool, ProposeTool, ReadTool, .. LorEvolveMcpWorldLogicTools.ProposeGated, .. LorEvolveMcpPrivateNoteTools.ProposeGated];
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

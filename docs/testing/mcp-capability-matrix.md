@@ -39,7 +39,7 @@ before proposing against them, which is the only read of them MCP offers.
 | An entry's progression | `entities/progression` | `get_lore_entry` | `Progression` |
 | An entry's pictures | `entities/image`, `entities/appearances` | `list_lore_images`, `get_lore_image` | `Media` |
 | An entry's history | `entities/revisions` | `live-only` | `live-only` |
-| An entry's private note | `entities/private-note` | `person-only` | `person-only` |
+| An entry's private note | `entities/private-note` | `person-only` | `add_private_note` |
 | An entry's map pins | `entities/map-pins` | `get_map_location` | `read-only-by-design` |
 | Tags | `tags` | `get_lore_entry` | `read-only-by-design` |
 | Lore types and their fields | `entity-types` | `get_change_options` | `LoreType`, `LoreField` |
@@ -156,6 +156,7 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `list_world_logic_findings` | The findings the author's sweeps recorded. | implemented | |
 | `get_world_logic_finding` | One recorded finding with its evidence. | implemented | |
 | `submit_semantic_finding` | Stages the client's own unverified, cited claim for the author to decide. | implemented | |
+| `add_private_note` | Adds text to the owner's private note on one entry; never reads, replaces or removes it. | implemented | Owner only, on a connection allowed to write. |
 | `get_change_options` | What the person's role may propose, and the universe's real ids to propose against. | implemented | |
 | `propose_changes` | Stages changes for a person to review in LorEvolve; never applies them. | implemented | |
 | `get_change_proposal` | Reads back a proposal this connection staged and what became of each change. | implemented | |

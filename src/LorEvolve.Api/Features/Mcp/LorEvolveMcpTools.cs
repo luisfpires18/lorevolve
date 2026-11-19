@@ -28,7 +28,7 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
 {
     public const string Instructions =
         "LorEvolve gives read-only access to one universe: its lore entries, their relationships, stories with their chapters, "
-        + "scenes and plot, scene manuscripts and the timeline. Nothing here can change LorEvolve. Start with get_universe_overview "
+        + "scenes and plot, scene manuscripts and the timeline. Nothing here changes the lore directly. Start with get_universe_overview "
         + "or search_universe, then read what you found by its id - ids are stable, pass them back exactly. Manuscript prose is "
         + "never included by default, because a long manuscript uses a lot of your context: get_scene gives a scene's details and "
         + "the manuscript's size, search_scene_manuscript finds passages, and read_scene_manuscript reads the text in ordered "
@@ -42,7 +42,8 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         + "returns - never estimate either from a name, a description or the picture. "
         + LorEvolveMcpProjectTools.Instructions
         + LorEvolveMcpProjectEntityTools.Instructions
-        + LorEvolveMcpWorldLogicTools.Instructions;
+        + LorEvolveMcpWorldLogicTools.Instructions
+        + LorEvolveMcpPrivateNoteTools.Instructions;
 
     /// <summary>A chunk of prose by default: about 2,000 tokens of English.</summary>
     public const int ManuscriptChunkDefault = 8_000;
