@@ -1,4 +1,5 @@
 import { Field } from '../Field'
+import { SegmentedControl } from '../SegmentedControl'
 import { ChronologyPointFields, type ChronologyPointPart } from '../ChronologyPointFields'
 import type { Chronology } from '../../chronology/types'
 import { t, useI18n } from '../../i18n'
@@ -88,20 +89,16 @@ export function MomentDating({
         error={fieldErrors.datekind}
       >
         {(control) => (
-          <div className="segmented" {...control}>
-            {DATE_KIND_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="segmented__option"
-                aria-pressed={draft.dateKind === option}
-                onClick={() => chooseKind(option)}
-                data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
-              >
-                {DATE_KIND_LABELS[option]}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            {...control}
+            options={DATE_KIND_ORDER.map((option) => ({
+              value: option,
+              label: DATE_KIND_LABELS[option],
+              testId: `moment-kind-${DATE_KIND_KEYS[option]}`,
+            }))}
+            value={draft.dateKind}
+            onChange={chooseKind}
+          />
         )}
       </Field>
 

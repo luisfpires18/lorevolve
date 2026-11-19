@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n'
 import { EntityPicker } from '../EntityPicker'
 import type { Chronology } from '../../chronology/types'
 import { labelChoices } from '../../relationships/types'
-import { CANON_LABELS, CANON_ORDER, CANON_KEYS } from '../../lore/types'
+import { CanonStatusPicker } from '../CanonStatusPicker'
 import type { useUniverseAccess } from '../../universes/access'
 import type { RelationDraft } from '../../relationships/relationDraft'
 
@@ -75,20 +75,12 @@ export function RelationFormFields({
 
       <Field label={t('relationships.section.status')} group>
         {(control) => (
-          <div className="canon" {...control}>
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="canon__step"
-                aria-pressed={draft.canonStatus === option}
-                onClick={() => edit({ canonStatus: option })}
-                data-testid={`relation-canon-${CANON_KEYS[option]}`}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
+          <CanonStatusPicker
+            {...control}
+            optionTestId="relation-canon-"
+            value={draft.canonStatus}
+            onChange={(canonStatus) => edit({ canonStatus })}
+          />
         )}
       </Field>
     </div>

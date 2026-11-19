@@ -4,13 +4,8 @@ import { EntryHead } from '../EntryHead'
 import type { PendingFieldImage } from '../FieldImageInput'
 import { NameList } from '../NameList'
 import { TypeIcon } from '../TypeIcon'
-import {
-  CANON_LABELS,
-  CANON_ORDER,
-  type CanonStatusValue,
-  type EntityDetail,
-  CANON_KEYS,
-} from '../../lore/types'
+import { CANON_LABELS, type CanonStatusValue, type EntityDetail } from '../../lore/types'
+import { CanonStatusPicker } from '../CanonStatusPicker'
 import { typeChoices } from '../../lore/typeTree'
 import { StatusBadge } from '../StatusBadge'
 import { useI18n } from '../../i18n'
@@ -105,22 +100,13 @@ export function EntryHeader({
       // glyph and word, never a filled block louder than the name.
       status={
         access.editContent || isNew || suggesting ? (
-          <div className="canon" role="group" aria-label={t('entity.page.head.canonGroup')}>
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="canon__step"
-                aria-pressed={draft.canonStatus === option}
-                data-canon={option}
-                disabled={isSaving}
-                onClick={() => changeCanon(option)}
-                data-testid={`canon-${CANON_KEYS[option]}`}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
+          <CanonStatusPicker
+            label={t('entity.page.head.canonGroup')}
+            disabled={isSaving}
+            optionTestId="canon-"
+            value={draft.canonStatus}
+            onChange={changeCanon}
+          />
         ) : (
           // Read only: the status, stated, with nothing to press.
           <StatusBadge

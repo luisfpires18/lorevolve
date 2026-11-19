@@ -1,4 +1,5 @@
 import { Field } from '../Field'
+import { SegmentedControl } from '../SegmentedControl'
 import { EraDirection, EraLabelPosition } from '../../chronology/types'
 import { DIRECTIONS, type EraDraft } from '../../chronology/eraDrafts'
 import { t, useI18n } from '../../i18n'
@@ -48,43 +49,36 @@ export function ChronologyEraStyle({
         }
       >
         {(control) => (
-          <div className="segmented" {...control} data-testid="era-direction">
-            {DIRECTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className="segmented__option"
-                aria-pressed={era.direction === option.value}
-                onClick={() => update(index, { direction: option.value })}
-                data-testid={option.testId}
-              >
-                {option.label()}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            {...control}
+            testId="era-direction"
+            options={DIRECTIONS.map((option) => ({
+              value: option.value,
+              label: option.label(),
+              testId: option.testId,
+            }))}
+            value={era.direction}
+            onChange={(direction) => update(index, { direction })}
+          />
         )}
       </Field>
 
       <Field label={t('time.periods.writeAs')} id={`${base}-position`} group>
         {(control) => (
-          <div className="segmented" {...control} data-testid="era-position">
-            {[EraLabelPosition.BeforeYear, EraLabelPosition.AfterYear].map((position) => (
-              <button
-                key={position}
-                type="button"
-                className="segmented__option"
-                aria-pressed={era.labelPosition === position}
-                onClick={() => update(index, { labelPosition: position })}
-                data-testid={
-                  position === EraLabelPosition.AfterYear
-                    ? 'era-position-after'
-                    : 'era-position-before'
-                }
-              >
-                <ExampleYear label={label} position={position} />
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            {...control}
+            testId="era-position"
+            options={[EraLabelPosition.BeforeYear, EraLabelPosition.AfterYear].map((position) => ({
+              value: position,
+              label: <ExampleYear label={label} position={position} />,
+              testId:
+                position === EraLabelPosition.AfterYear
+                  ? 'era-position-after'
+                  : 'era-position-before',
+            }))}
+            value={era.labelPosition}
+            onChange={(position) => update(index, { labelPosition: position })}
+          />
         )}
       </Field>
     </>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { Field } from './Field'
+import { SegmentedControl } from './SegmentedControl'
 import { ChangeList, EditConflict } from './EditConflict'
 import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
@@ -252,20 +253,16 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         error={fieldErrors.status}
       >
         {(control) => (
-          <div className="segmented" {...control}>
-            {STORY_STATUS_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="segmented__option"
-                aria-pressed={draft.status === option}
-                onClick={() => edit({ status: option })}
-                data-testid={`story-status-${STORY_STATUS_KEYS[option]}`}
-              >
-                {STORY_STATUS_LABELS[option]}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            {...control}
+            options={STORY_STATUS_ORDER.map((option) => ({
+              value: option,
+              label: STORY_STATUS_LABELS[option],
+              testId: `story-status-${STORY_STATUS_KEYS[option]}`,
+            }))}
+            value={draft.status}
+            onChange={(status) => edit({ status })}
+          />
         )}
       </Field>
     </Drawer>

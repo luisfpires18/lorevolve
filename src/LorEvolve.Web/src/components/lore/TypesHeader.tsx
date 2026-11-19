@@ -1,6 +1,7 @@
 import { Field } from '../Field'
 import { PageHeader } from '../PageHeader'
 import { QueryTabList } from '../QueryTabs'
+import { SegmentedControl } from '../SegmentedControl'
 import { useI18n } from '../../i18n'
 import type { QueryTab } from '../../lib/queryTab'
 import type { useTypesGames } from '../../lore/useTypesGames'
@@ -70,27 +71,19 @@ export function TypesHeader({
       }
     >
       <div className="types__context">
-        <div
-          className="segmented"
-          role="group"
-          aria-label={t('entityTypes.page.context.label')}
-          data-testid="types-context"
-        >
-          {(['lore', ...(games.length > 0 ? (['gaming'] as const) : []), 'templates'] as const).map(
-            (each) => (
-              <button
-                key={each}
-                className="segmented__option"
-                type="button"
-                aria-pressed={current === each}
-                onClick={() => chooseContext(each)}
-                data-testid={`types-context-${each}`}
-              >
-                {t(`entityTypes.page.context.${each}`)}
-              </button>
-            ),
-          )}
-        </div>
+        <SegmentedControl
+          label={t('entityTypes.page.context.label')}
+          testId="types-context"
+          options={(
+            ['lore', ...(games.length > 0 ? (['gaming'] as const) : []), 'templates'] as const
+          ).map((each) => ({
+            value: each,
+            label: t(`entityTypes.page.context.${each}`),
+            testId: `types-context-${each}`,
+          }))}
+          value={current as Parameters<typeof chooseContext>[0]}
+          onChange={chooseContext}
+        />
         {gaming ? (
           <Field label={t('entityTypes.page.game.label')}>
             {(control) => (

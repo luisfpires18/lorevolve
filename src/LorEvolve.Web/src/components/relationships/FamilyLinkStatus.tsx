@@ -1,5 +1,6 @@
 import { Field } from '../Field'
-import { CANON_LABELS, CANON_ORDER, type CanonStatusValue, CANON_KEYS } from '../../lore/types'
+import { CanonStatusPicker } from '../CanonStatusPicker'
+import type { CanonStatusValue } from '../../lore/types'
 import { useI18n } from '../../i18n'
 
 export function FamilyLinkStatus({
@@ -14,20 +15,12 @@ export function FamilyLinkStatus({
   return (
     <Field label={t('places.linkForm.status')} group>
       {(control) => (
-        <div className="canon" {...control}>
-          {CANON_ORDER.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="canon__step"
-              aria-pressed={canonStatus === option}
-              onClick={() => setCanonStatus(option)}
-              data-testid={`family-link-canon-${CANON_KEYS[option]}`}
-            >
-              {CANON_LABELS[option]}
-            </button>
-          ))}
-        </div>
+        <CanonStatusPicker
+          {...control}
+          optionTestId="family-link-canon-"
+          value={canonStatus}
+          onChange={setCanonStatus}
+        />
       )}
     </Field>
   )

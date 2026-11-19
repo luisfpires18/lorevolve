@@ -25,7 +25,6 @@
   }
 
   .editor__tool,
-  .canon__step,
   .segmented__option {
     min-height: 2.75rem;
     display: inline-flex;

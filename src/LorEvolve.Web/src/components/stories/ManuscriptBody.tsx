@@ -3,6 +3,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { MentionProse } from '../MentionProse'
 import { ManuscriptWriter } from '../ManuscriptWriter'
 import { NameLinker } from '../NameLinker'
+import { SegmentedControl } from '../SegmentedControl'
 import type { Scene } from '../../stories/types'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
 
@@ -37,30 +38,24 @@ export function ManuscriptBody({
   return (
     <>
       {access.editContent ? (
-        <div
-          className="segmented manuscript__mode"
-          role="group"
-          aria-label={t('manuscript.editor.mode')}
-        >
-          <button
-            className="segmented__option"
-            type="button"
-            aria-pressed={!isReading}
-            onClick={() => setIsReading(false)}
-            data-testid="manuscript-mode-write"
-          >
-            {t('manuscript.editor.modeWrite')}
-          </button>
-          <button
-            className="segmented__option"
-            type="button"
-            aria-pressed={isReading}
-            onClick={() => setIsReading(true)}
-            data-testid="manuscript-mode-read"
-          >
-            {t('manuscript.editor.modeRead')}
-          </button>
-        </div>
+        <SegmentedControl
+          className="manuscript__mode"
+          label={t('manuscript.editor.mode')}
+          options={[
+            {
+              value: 'write',
+              label: t('manuscript.editor.modeWrite'),
+              testId: 'manuscript-mode-write',
+            },
+            {
+              value: 'read',
+              label: t('manuscript.editor.modeRead'),
+              testId: 'manuscript-mode-read',
+            },
+          ]}
+          value={isReading ? 'read' : 'write'}
+          onChange={(mode) => setIsReading(mode === 'read')}
+        />
       ) : null}
 
       {isLinking && access.editContent && !isReading && !isHeld ? (

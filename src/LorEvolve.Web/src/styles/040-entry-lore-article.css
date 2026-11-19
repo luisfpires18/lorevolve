@@ -26,9 +26,10 @@
   flex-wrap: wrap;
 }
 
-/* Scoped: `.canon` is also the relation and family-connection forms' status control, where it is an
+/* Scoped: the canon look is also the relation and family-connection forms' status control, where it is an
    ordinary field and must not be pushed anywhere. */
-.entry__kind .canon {
+.entry__kind .segmented--canon {
+  align-self: center;
   margin-left: auto;
 }
 
@@ -56,70 +57,6 @@
 .entry__typepick {
   width: auto;
   max-width: 14rem;
-}
-
-/* How settled something is, as a choice on the page: a sunken track, the chosen step raised with its
-   glyph and word. Never the ink fill, which would make the status louder than the name. */
-.canon {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--radius-sm);
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--rule);
-}
-
-.canon__step {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35em;
-  min-height: 1.75rem;
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: calc(var(--radius-sm) - 2px);
-  background: transparent;
-  font: inherit;
-  font-size: var(--text-sm);
-  color: var(--muted);
-  cursor: pointer;
-  transition:
-    background-color var(--duration-1) var(--ease),
-    color var(--duration-1) var(--ease);
-}
-
-.canon__step::before {
-  content: '';
-  flex: none;
-  width: 0.55rem;
-  height: 0.55rem;
-  border: 1.5px solid currentcolor;
-  border-radius: var(--radius-full);
-}
-
-.canon__step[data-canon='1']::before {
-  background: linear-gradient(90deg, currentcolor 50%, transparent 50%);
-}
-
-.canon__step[data-canon='2']::before {
-  background: currentcolor;
-}
-
-.canon__step:hover:not(:disabled) {
-  color: var(--ink);
-}
-
-.canon__step[aria-pressed='true'] {
-  background: var(--raised);
-  color: var(--ink);
-  font-weight: 500;
-  box-shadow:
-    var(--shadow-1),
-    0 0 0 1px var(--rule);
-}
-
-.canon__step:disabled {
-  cursor: default;
-  opacity: 0.6;
 }
 
 .entry__name {

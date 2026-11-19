@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Field } from '../Field'
 import { SearchField } from '../SearchField'
+import { SegmentedControl } from '../SegmentedControl'
 import { UNASSIGNED } from '../../ideas/useIdeasRead'
 import { useI18n } from '../../i18n'
 import type { UniverseSummary } from '../../universes/types'
@@ -67,26 +68,19 @@ export function IdeasControls({
         </Field>
       )}
 
-      <div className="segmented" role="group" aria-label={t('ideas.browser.which')}>
-        <button
-          type="button"
-          className="segmented__option"
-          aria-pressed={!deleted}
-          onClick={() => update({ view: null })}
-          data-testid="ideas-view-live"
-        >
-          {t('ideas.browser.viewLive')}
-        </button>
-        <button
-          type="button"
-          className="segmented__option"
-          aria-pressed={deleted}
-          onClick={() => update({ view: 'deleted' })}
-          data-testid="ideas-view-deleted"
-        >
-          {t('ideas.browser.viewDeleted')}
-        </button>
-      </div>
+      <SegmentedControl
+        label={t('ideas.browser.which')}
+        options={[
+          { value: 'live', label: t('ideas.browser.viewLive'), testId: 'ideas-view-live' },
+          {
+            value: 'deleted',
+            label: t('ideas.browser.viewDeleted'),
+            testId: 'ideas-view-deleted',
+          },
+        ]}
+        value={deleted ? 'deleted' : 'live'}
+        onChange={(view) => update({ view: view === 'deleted' ? 'deleted' : null })}
+      />
     </div>
   )
 }

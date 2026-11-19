@@ -10,6 +10,7 @@ import { useI18n } from '../i18n'
 import { newPeriod, type PeriodDraft } from '../relationships/periods'
 import { IconButton } from './IconButton'
 import { NewButton } from './NewButton'
+import { SegmentedControl } from './SegmentedControl'
 
 /** An era either end of the link has, offered as a period: "Frieza Saga (Goku)". */
 export interface EraChoice {
@@ -88,32 +89,25 @@ export function RelationshipPeriodsField({
           <div className="relperiod" key={period.key} data-testid={`relation-period-${index}`}>
             <div className="relperiod__head">
               <p className="relperiod__label">{label}</p>
-              <div
-                className="segmented"
-                role="group"
-                aria-label={t('relationships.periods.datesOrEra', { n: index + 1 })}
-              >
-                <button
-                  type="button"
-                  className="segmented__option"
-                  aria-pressed={period.kind === 'dates'}
-                  onClick={() => patch(index, { kind: 'dates' })}
-                  data-testid={`relation-period-${index}-dates`}
-                >
-                  {t('relationships.periods.dates')}
-                </button>
-                <button
-                  type="button"
-                  className="segmented__option"
-                  aria-pressed={period.kind === 'era'}
-                  disabled={noEras && period.kind !== 'era'}
-                  title={noEras ? t('relationships.periods.noStages') : undefined}
-                  onClick={() => patch(index, { kind: 'era' })}
-                  data-testid={`relation-period-${index}-era`}
-                >
-                  {t('relationships.periods.stage')}
-                </button>
-              </div>
+              <SegmentedControl
+                label={t('relationships.periods.datesOrEra', { n: index + 1 })}
+                options={[
+                  {
+                    value: 'dates',
+                    label: t('relationships.periods.dates'),
+                    testId: `relation-period-${index}-dates`,
+                  },
+                  {
+                    value: 'era',
+                    label: t('relationships.periods.stage'),
+                    disabled: noEras && period.kind !== 'era',
+                    title: noEras ? t('relationships.periods.noStages') : undefined,
+                    testId: `relation-period-${index}-era`,
+                  },
+                ]}
+                value={period.kind}
+                onChange={(kind) => patch(index, { kind })}
+              />
               <IconButton
                 icon={X}
                 label={t('relationships.periods.remove', { n: index + 1 })}

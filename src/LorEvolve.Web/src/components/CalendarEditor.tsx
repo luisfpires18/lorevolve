@@ -1,4 +1,5 @@
 import { Field } from './Field'
+import { SegmentedControl } from './SegmentedControl'
 import { SaveAction } from './SaveAction'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
@@ -67,26 +68,24 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     >
       <Field label={t('time.calendar.datesUse')} group className="calendar__mode">
         {(control) => (
-          <div className="segmented" {...control} data-testid="calendar-mode">
-            <button
-              type="button"
-              className="segmented__option"
-              aria-pressed={mode === 'simple'}
-              onClick={() => choose('simple')}
-              data-testid="calendar-mode-simple"
-            >
-              {t('time.calendar.simple')}
-            </button>
-            <button
-              type="button"
-              className="segmented__option"
-              aria-pressed={mode === 'custom'}
-              onClick={() => choose('custom')}
-              data-testid="calendar-mode-custom"
-            >
-              {t('time.calendar.custom')}
-            </button>
-          </div>
+          <SegmentedControl
+            {...control}
+            testId="calendar-mode"
+            options={[
+              {
+                value: 'simple',
+                label: t('time.calendar.simple'),
+                testId: 'calendar-mode-simple',
+              },
+              {
+                value: 'custom',
+                label: t('time.calendar.custom'),
+                testId: 'calendar-mode-custom',
+              },
+            ]}
+            value={mode}
+            onChange={choose}
+          />
         )}
       </Field>
 

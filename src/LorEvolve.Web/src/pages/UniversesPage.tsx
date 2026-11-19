@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArchiveRestore } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { SearchField } from '../components/SearchField'
+import { SegmentedControl } from '../components/SegmentedControl'
 import { Pager } from '../components/Pager'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { useI18n } from '../i18n'
@@ -150,25 +151,15 @@ export default function UniversesPage() {
           onChange={setSearch}
         />
 
-        <div className="segmented" role="group" aria-label={t('universe.list.archiveFilter')}>
-          <button
-            type="button"
-            className="segmented__option"
-            aria-pressed={!includeArchived}
-            onClick={() => changeFilter(false)}
-          >
-            {t('universe.list.active')}
-          </button>
-          <button
-            type="button"
-            className="segmented__option"
-            aria-pressed={includeArchived}
-            onClick={() => changeFilter(true)}
-            data-testid="filter-all"
-          >
-            {t('universe.list.all')}
-          </button>
-        </div>
+        <SegmentedControl
+          label={t('universe.list.archiveFilter')}
+          options={[
+            { value: 'active', label: t('universe.list.active') },
+            { value: 'all', label: t('universe.list.all'), testId: 'filter-all' },
+          ]}
+          value={includeArchived ? 'all' : 'active'}
+          onChange={(filter) => changeFilter(filter === 'all')}
+        />
       </div>
 
       {state.kind === 'loading' ? <LoadingNote>{t('universe.list.loading')}</LoadingNote> : null}

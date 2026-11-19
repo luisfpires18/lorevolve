@@ -8,6 +8,7 @@ import {
 import type { CanonConflictStatusValue, CanonSeverityValue } from '../../canon/types'
 import { t } from '../../i18n'
 import { Field } from '../Field'
+import { SegmentedControl } from '../SegmentedControl'
 import type { useCanonConflicts } from '../../canon/useCanonConflicts'
 
 /**
@@ -35,23 +36,19 @@ export function CanonControls({
   return (
     <div className="controls">
       <div className="controls__filters">
-        <div className="segmented" role="group" aria-label={t('canon.page.statusGroup')}>
-          {STATUS_TABS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className="segmented__option"
-              aria-pressed={status === option}
-              onClick={() => {
-                setStatus(option)
-                setPage(1)
-              }}
-              data-testid={`canon-status-${option}`}
-            >
-              {CONFLICT_STATUS_LABELS[option]}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label={t('canon.page.statusGroup')}
+          options={STATUS_TABS.map((option) => ({
+            value: option,
+            label: CONFLICT_STATUS_LABELS[option],
+            testId: `canon-status-${option}`,
+          }))}
+          value={status}
+          onChange={(option) => {
+            setStatus(option)
+            setPage(1)
+          }}
+        />
 
         <Field label={t('canon.page.severity')} id="canon-severity">
           {(control) => (
