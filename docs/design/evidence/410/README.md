@@ -153,3 +153,104 @@ The screenshots are 256-colour PNGs (palette quantised) to keep the folder small
 Named `<screen>-<desktop|phone>-<light|dark>-<before|after>.png`. Desktop is 1440x900; phone is 390x844 with touch and scale 1. The colour scheme is emulated with no saved theme, motion is reduced, and every shot is the viewport only. `admin-backups-*` is scrolled to the backups section first, since it sits below the fold.
 
 Plan states not in the list: the plan names no empty state for any screen, so none was captured. Three missing states were added beyond the plan (`idea-board-missing`, `ai-change-missing`, `map-missing`). `family-tree` uses the per-entry address, because failing the family list read on the bare page shows nothing.
+
+## Visual inspection
+
+Codex round 3 asked for a look at the images, not only a hash. Method: every one of the 348 before and after pairs was decoded with Pillow (`Image.open(...).convert("RGB")`) and compared pixel by pixel with `ImageChops.difference(...).getbbox()`; a pair is identical when the difference box is empty. Result: **270 pairs are pixel-identical** (matches the table above) and need no eye check, because identical pixels show the same picture. **78 pairs differ.** All 156 images of those 78 pairs were opened and looked at one by one, before and after, at desktop and phone width, light and dark. Nothing was sampled. The script is outside the repository.
+
+Reading note: the PNGs are 256-colour quantised, so a changed page can move palette entries across the whole image. A large difference box with a picture that looks the same is quantisation noise, not a change. Those pairs are marked "no visible change".
+
+One real defect, listed first below. No other clipping, overlap, wrong dark colour, phone overflow or missing text was found in the 78 pairs.
+
+### Defects
+
+1. `system-editor-failed`, all four variants: the failed box lost its "Back to Systems" button. The README above says the page header's own back control is still there, but no header back control appears in any of the four after shots (only the box, the search bar and the sidebar). On this screen the only route back is the World Logic sidebar item. Not fixed here (no code changes in this task). Either keep the button or show the header back control in the failed state.
+
+Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "This project could not be read." on a game page; `projects-directory-failed` says "could not be counted", while the row above says "read"; `project-failed` and `story-failed` before shots showed a plain heading, not the not-found screen, so only the game rows prove "failed was drawn as not found".
+
+### Differing pairs (78)
+
+| State | Variant | Verdict |
+| --- | --- | --- |
+| `admin-user-missing` | desktop dark | Red box with Try again becomes a plain serif line "There is no account with this id."; All users link kept; dark colours right; matches the EmptyState claim; no overflow |
+| `admin-user-missing` | desktop light | Red box with Try again becomes a plain serif line "There is no account with this id."; All users link kept; dark colours right; matches the EmptyState claim; no overflow |
+| `admin-user-missing` | phone dark | Red box with Try again becomes a plain serif line "There is no account with this id."; All users link kept; dark colours right; matches the EmptyState claim; no overflow |
+| `admin-user-missing` | phone light | Red box with Try again becomes a plain serif line "There is no account with this id."; All users link kept; dark colours right; matches the EmptyState claim; no overflow |
+| `ai-change-loading` | desktop dark | 1 pixel differs (palette noise); screen unchanged, as claimed |
+| `category-shelf-failed` | desktop dark | Plain heading "Your projects could not be read." becomes the error box with Try again under the Gaming header; matches claim; box fits at both widths, dark colours right |
+| `category-shelf-failed` | desktop light | Plain heading "Your projects could not be read." becomes the error box with Try again under the Gaming header; matches claim; box fits at both widths, dark colours right |
+| `category-shelf-failed` | phone dark | Plain heading "Your projects could not be read." becomes the error box with Try again under the Gaming header; matches claim; box fits at both widths, dark colours right |
+| `category-shelf-failed` | phone light | Plain heading "Your projects could not be read." becomes the error box with Try again under the Gaming header; matches claim; box fits at both widths, dark colours right |
+| `game-entities-failed` | desktop dark | Not-found screen ("This game is not in this universe") becomes the error box "This project could not be read." with Try again; matches claim. Wording says project on a game page (minor copy note); sidebar and footer intact |
+| `game-entities-failed` | desktop light | Not-found screen ("This game is not in this universe") becomes the error box "This project could not be read." with Try again; matches claim. Wording says project on a game page (minor copy note); sidebar and footer intact |
+| `game-entities-failed` | phone dark | Not-found screen ("This game is not in this universe") becomes the error box "This project could not be read." with Try again; matches claim. Wording says project on a game page (minor copy note); sidebar and footer intact |
+| `game-entities-failed` | phone light | Not-found screen ("This game is not in this universe") becomes the error box "This project could not be read." with Try again; matches claim. Wording says project on a game page (minor copy note); sidebar and footer intact |
+| `game-entities-loading` | desktop dark | "Reading your projects." keeps text and colour, sits about 16 px lower (spacing change as listed); nothing clipped |
+| `game-entities-loading` | desktop light | "Reading your projects." keeps text and colour, sits about 16 px lower (spacing change as listed); nothing clipped |
+| `game-entities-loading` | phone dark | "Reading your projects." keeps text and colour, sits about 16 px lower (spacing change as listed); nothing clipped |
+| `game-entities-loading` | phone light | "Reading your projects." keeps text and colour, sits about 16 px lower (spacing change as listed); nothing clipped |
+| `game-entities-notfound` | phone dark | No visible change: "This game is not in this universe" with Game Entities link on both sides; palette noise only. Correct, a real 404 still shows not-found |
+| `game-entities-notfound` | phone light | No visible change: "This game is not in this universe" with Game Entities link on both sides; palette noise only. Correct, a real 404 still shows not-found |
+| `game-entity-failed` | desktop dark | Not-found screen becomes the error box "This project could not be read." with Try again; matches claim. Same wording note as game-entities-failed |
+| `game-entity-failed` | desktop light | Not-found screen becomes the error box "This project could not be read." with Try again; matches claim. Same wording note as game-entities-failed |
+| `game-entity-failed` | phone dark | Not-found screen becomes the error box "This project could not be read." with Try again; matches claim. Same wording note as game-entities-failed |
+| `game-entity-failed` | phone light | Not-found screen becomes the error box "This project could not be read." with Try again; matches claim. Same wording note as game-entities-failed |
+| `game-entity-loading` | desktop dark | "Reading your projects." keeps text and colour, sits about 16 px lower; nothing clipped |
+| `game-entity-loading` | desktop light | "Reading your projects." keeps text and colour, sits about 16 px lower; nothing clipped |
+| `game-entity-loading` | phone dark | "Reading your projects." keeps text and colour, sits about 16 px lower; nothing clipped |
+| `game-entity-loading` | phone light | "Reading your projects." keeps text and colour, sits about 16 px lower; nothing clipped |
+| `game-entity-notfound` | phone dark | No visible change: not-found screen on both sides; palette noise only. Correct, a real 404 still shows not-found |
+| `game-entity-notfound` | phone light | No visible change: not-found screen on both sides; palette noise only. Correct, a real 404 still shows not-found |
+| `maps-failed` | phone dark | Pixel noise only (about 2 px); same error box on both sides |
+| `maps-loading` | phone dark | No visible change: "Unrolling the maps..." on both sides; palette noise only |
+| `maps-loading` | phone light | No visible change: "Unrolling the maps..." on both sides; palette noise only |
+| `mass-create-loading` | desktop dark | No visible change: "Reading this world's types..." in the same place on both sides; palette noise only (README mentions small spacing changes, none visible here) |
+| `mass-create-loading` | phone dark | No visible change: "Reading this world's types..." in the same place on both sides; palette noise only (README mentions small spacing changes, none visible here) |
+| `project-failed` | desktop dark | Plain heading "This project could not be read." (before did not show not-found here) becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `project-failed` | desktop light | Plain heading "This project could not be read." (before did not show not-found here) becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `project-failed` | phone dark | Plain heading "This project could not be read." (before did not show not-found here) becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `project-failed` | phone light | Plain heading "This project could not be read." (before did not show not-found here) becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `project-loading` | desktop dark | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `project-loading` | desktop light | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `project-loading` | phone dark | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `project-loading` | phone light | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `project-notfound` | phone dark | No visible change: "This project is not here." with All projects link on both sides; palette noise only. Correct, a real 404 still shows not-found |
+| `project-notfound` | phone light | No visible change: "This project is not here." with All projects link on both sides; palette noise only. Correct, a real 404 still shows not-found |
+| `projects-directory-failed` | desktop dark | Count line "Your projects could not be counted." gains Try again inside the error box above the four tiles (README row says "read", the screen says "counted"); no overlap, tiles pushed down; dark colours right |
+| `projects-directory-failed` | desktop light | Count line "Your projects could not be counted." gains Try again inside the error box above the four tiles (README row says "read", the screen says "counted"); no overlap, tiles pushed down; dark colours right |
+| `projects-directory-failed` | phone dark | Count line "Your projects could not be counted." gains Try again inside the error box above the four tiles (README row says "read", the screen says "counted"); no overlap, tiles pushed down; dark colours right |
+| `projects-directory-failed` | phone light | Count line "Your projects could not be counted." gains Try again inside the error box above the four tiles (README row says "read", the screen says "counted"); no overlap, tiles pushed down; dark colours right |
+| `projects-failed` | desktop dark | Plain heading "Your projects could not be read." becomes the error box with Try again; matches claim; footer feedback button overlaps the footer version text on phone, same on both sides (not from this PR) |
+| `projects-failed` | desktop light | Plain heading "Your projects could not be read." becomes the error box with Try again; matches claim; footer feedback button overlaps the footer version text on phone, same on both sides (not from this PR) |
+| `projects-failed` | phone dark | Plain heading "Your projects could not be read." becomes the error box with Try again; matches claim; footer feedback button overlaps the footer version text on phone, same on both sides (not from this PR) |
+| `projects-failed` | phone light | Plain heading "Your projects could not be read." becomes the error box with Try again; matches claim; footer feedback button overlaps the footer version text on phone, same on both sides (not from this PR) |
+| `projects-loading` | desktop dark | "Reading your projects." same text, about 16 px lower; feedback button overlap on phone footer is on both sides |
+| `projects-loading` | desktop light | "Reading your projects." same text, about 16 px lower; feedback button overlap on phone footer is on both sides |
+| `projects-loading` | phone dark | "Reading your projects." same text, about 16 px lower; feedback button overlap on phone footer is on both sides |
+| `projects-loading` | phone light | "Reading your projects." same text, about 16 px lower; feedback button overlap on phone footer is on both sides |
+| `story-failed` | desktop dark | Plain heading "This project could not be read." becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `story-failed` | desktop light | Plain heading "This project could not be read." becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `story-failed` | phone dark | Plain heading "This project could not be read." becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `story-failed` | phone light | Plain heading "This project could not be read." becomes the error box with Try again; matches claim; fits at phone width, dark colours right |
+| `story-loading` | desktop dark | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `story-loading` | desktop light | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `story-loading` | phone dark | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `story-loading` | phone light | "Reading this project." same text, about 16 px lower; nothing clipped |
+| `story-missing` | phone dark | No visible change: "This project is not here." on both sides; palette noise only. Correct |
+| `story-missing` | phone light | No visible change: "This project is not here." on both sides; palette noise only. Correct |
+| `system-editor-failed` | desktop dark | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
+| `system-editor-failed` | desktop light | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
+| `system-editor-failed` | phone dark | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
+| `system-editor-failed` | phone light | Error box "The Systems could not be read." loses its second button "Back to Systems"; Try again stays. DEFECT: no header back control is visible in the shot, so the only way back is the sidebar (see Defects) |
+| `system-editor-missing` | desktop dark | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
+| `system-editor-missing` | desktop light | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
+| `system-editor-missing` | phone dark | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
+| `system-editor-missing` | phone light | Red box with Back to Systems becomes a plain serif line "This System no longer exists." with the Back to Systems button below; matches the EmptyState claim; buttons and dark colours right |
+| `timeline-failed` | phone dark | No visible change: "Server error" box with Try again on both sides; palette noise only |
+| `timeline-failed` | phone light | No visible change: "Server error" box with Try again on both sides; palette noise only |
+| `universe-publish-loading` | phone light | No visible change: "Loading the public details..." on both sides; palette noise only |
+| `world-rules-failed` | desktop dark | No visible change: "The rules could not be read." box on both sides; palette noise only |
+
+Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); system-editor-failed (4 pairs, defect above); no visible change (18 pairs).
+
+Identical pairs: 270 of 348, recorded as pixel-identical by the method above.
