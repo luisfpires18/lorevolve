@@ -246,3 +246,7 @@ Minor, not defects: `game-entities-failed` and `game-entity-failed` now say "Thi
 Pairs by group: failed now an error box with Try again (category-shelf, game-entities, game-entity, project, story, projects, projects-directory: 28 pairs); missing now a quiet line (admin-user, system-editor: 8 pairs); loading line moved down (game-entities, game-entity, project, story, projects: 20 pairs); no visible change (18 pairs). Total 74.
 
 Identical pairs: 274 of 348 at the final head, by the method above. The four `system-editor-failed` pairs joined them when `cb2b15b0` restored Back to Systems and `1a16a49e` recaptured the after side; their rows in the table above record that. Differing pairs at the final head: 74, the rows of the table above. The four `system-editor-failed` pairs were looked at by eye after the recapture: both sides hold "Try again" and "Back to Systems" side by side, layout and colours right, and they are now pixel-identical.
+
+## Auth pages left out
+
+Issue #410 leaves the auth pages out, so the consent page and its hook went back to their `dev` content after this capture. The `connect-loading`, `connect-no-access` and `connect-invalid` rows above record the earlier after side; at the final head those screens are the `dev` screen on both sides. Their pairs were pixel-identical either way, so no picture changes.

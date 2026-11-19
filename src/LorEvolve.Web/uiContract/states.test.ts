@@ -36,6 +36,7 @@ const ERROR_BLOCKS = new Map<string, string>([
 
 // Files that draw a `notice` with role="status" by hand. LoadingNote and OutcomeNotice are the parts.
 const STATUS_NOTICES = new Map<string, string>([
+  ['src/pages/ConnectAuthorizePage.tsx', 'auth and consent pages are out of #410 scope'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
   [
     'src/components/worldLogic/MachineNotices.tsx',
@@ -51,6 +52,7 @@ const STATUS_NOTICES = new Map<string, string>([
 // id they read for (so a switch never shows the old thing) or hold more than one outcome; `Load<T>` does neither.
 const OWN_READ_STATES = new Map<string, string>([
   ['src/lib/useAsyncRead.ts', 'the shared Load<T> itself'],
+  ['src/mcp/useConnectionRequest.ts', 'the consent flow is an auth page, out of #410 scope'],
   [
     'src/components/ProjectEntityDetailView.tsx',
     'keyed by entity id; a 403 is also not found, by design',

@@ -60,9 +60,9 @@
   color: var(--muted);
 }
 
-/* `QuietNote` sets the colour; doubled with it because this sheet loads before 021, so the size wins. */
-.quietnote.auth__footer {
+.auth__footer {
   margin: 2rem 0 0;
+  color: var(--muted);
   font-size: 0.925rem;
 }
 

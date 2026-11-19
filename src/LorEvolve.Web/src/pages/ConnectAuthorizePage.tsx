@@ -6,9 +6,8 @@ import type { ConsentToken } from '../mcp/api'
 import { useI18n } from '../i18n'
 import { ConsentDetails } from '../components/mcp/ConsentDetails'
 import { ConsentLayout } from '../components/mcp/ConsentLayout'
-import { useConnectionRequest, type ConnectionLoad } from '../mcp/useConnectionRequest'
+import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
 import { Button } from '../components/Button'
-import { LoadingNote } from '../components/LoadingNote'
 
 /** The field the decision travels in, beside the request's own parameters. Read by `OAuthEndpoints` on the server. */
 const DECISION_FIELD = 'lorevolve_decision'
@@ -26,7 +25,7 @@ export default function ConnectAuthorizePage() {
   const { search } = useLocation()
   const { user } = useAuth()
   const params = useMemo(() => new URLSearchParams(search), [search])
-  const [load, setLoad] = useState<ConnectionLoad>({ kind: 'loading' })
+  const [load, setLoad] = useState<Load>({ kind: 'loading' })
   const [deciding, setDeciding] = useState(false)
   const [token, setToken] = useState<ConsentToken | null>(null)
   const submitted = useRef(false)
@@ -101,7 +100,7 @@ export default function ConnectAuthorizePage() {
         <p>{t('universe.connect.noAccountNote')}</p>
       </div>
     ) : load.kind === 'ready' ? (
-      <ConsentDetails details={load.value} id={detailsId} />
+      <ConsentDetails details={load.details} id={detailsId} />
     ) : null
 
   return (
@@ -112,7 +111,7 @@ export default function ConnectAuthorizePage() {
         // and where the content goes. The full list and notes follow unchanged.
         <>
           {tx(
-            load.kind === 'ready' && load.value.proposalsRequested && load.value.canPropose
+            load.kind === 'ready' && load.details.proposalsRequested && load.details.canPropose
               ? 'universe.connect.introProposals'
               : 'universe.connect.intro',
             { readOnly: <strong>{t('universe.connect.introReadOnly')}</strong> },
@@ -135,7 +134,9 @@ export default function ConnectAuthorizePage() {
       }
     >
       {load.kind === 'loading' ? (
-        <LoadingNote>{t('universe.connect.checking')}</LoadingNote>
+        <p className="notice" role="status">
+          {t('universe.connect.checking')}
+        </p>
       ) : load.kind === 'invalid' ? (
         // An app or a return address LorEvolve does not recognise: there is nowhere trusted to send the browser back to.
         <div className="notice notice--error" role="alert" data-testid="consent-invalid">
