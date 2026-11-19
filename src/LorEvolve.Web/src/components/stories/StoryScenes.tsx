@@ -13,6 +13,7 @@ import { StorySceneCards } from './StorySceneCards'
 import { StoryChapterSections, type StoryChapterSectionsProps } from './StoryChapterSections'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
+import { SectionTitle } from '../Section'
 
 /** The Scenes view: the toolbar, the story's scenes or chapters, and each arc with its chapters. */
 export function StoryScenes(
@@ -141,9 +142,9 @@ export function StoryScenes(
           data-testid="unchaptered"
         >
           <header className="storygroup__head">
-            <h3 className="storygroup__title" id="unchaptered-heading">
+            <SectionTitle level={3} tone="label" size="xs" id="unchaptered-heading">
               {unchapteredLabel()}
-            </h3>
+            </SectionTitle>
             <QuietNote className="storygroup__hint">
               {t('stories.page.unchapteredHint', {
                 scenes: sceneCountLabel(unchaptered.length),

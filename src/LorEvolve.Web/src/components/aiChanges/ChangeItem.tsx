@@ -6,6 +6,7 @@ import { actionWords, isProse } from '../../aiChanges/changeTraits'
 import { ChangeDetails } from './ChangeDetails'
 import { EditChange } from './EditChange'
 import { Button } from '../Button'
+import { SectionTitle } from '../Section'
 
 export function ChangeItem({
   universeId,
@@ -69,9 +70,9 @@ export function ChangeItem({
           <span className="aichangeitem__action" data-action={change.action}>
             {isProse(change) ? t('review.aiChange.item.prose') : actionWords(change)}
           </span>
-          <h2 className="aichangeitem__title" id={titleId} dir="auto">
+          <SectionTitle id={titleId} dir="auto">
             {change.title}
-          </h2>
+          </SectionTitle>
         </div>
         {!pending ? (
           <span className="aichangeitem__outcome" data-testid="ai-change-outcome">

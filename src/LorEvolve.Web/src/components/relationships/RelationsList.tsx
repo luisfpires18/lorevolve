@@ -8,6 +8,7 @@ import type { useUniverseAccess } from '../../universes/access'
 import type { useRelationsState } from '../../relationships/useRelationsState'
 import { byReading } from '../../relationships/relationDraft'
 import { RelationRow } from './RelationRow'
+import { SectionTitle } from '../Section'
 
 export function RelationsList({
   views,
@@ -65,9 +66,9 @@ export function RelationsList({
     <ul className="relations__list" data-testid="relationship-list">
       {byReading(views).map(([label, group]) => (
         <li className="relations__group" key={label}>
-          <h3 className="relations__reading">
+          <SectionTitle level={3} tone="label">
             <bdi>{label}</bdi>
-          </h3>
+          </SectionTitle>
           <ul className="relations__rows">
             {group.map((view) =>
               editingId === view.id ? (

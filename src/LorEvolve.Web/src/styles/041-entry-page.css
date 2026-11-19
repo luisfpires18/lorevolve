@@ -173,13 +173,6 @@
   gap: var(--space-2);
 }
 
-.rail__heading {
-  margin: 0;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--muted);
-}
-
 .rail__meta {
   margin: 0;
   padding-top: var(--space-3);

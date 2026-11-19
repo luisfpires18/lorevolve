@@ -4,6 +4,7 @@ import { ApiError } from '../../lib/api'
 import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { Section } from '../Section'
 
 /**
  * Forgot password on the account's behalf (#69): LorEvolve emails the account its own reset link. The Admin sees
@@ -42,10 +43,7 @@ export function PasswordSection({
   }
 
   return (
-    <section className="adminsection" aria-labelledby="admin-password">
-      <h2 className="settings__heading" id="admin-password">
-        {t('admin.password.heading')}
-      </h2>
+    <Section title={t('admin.password.heading')} titleId="admin-password" rule={false}>
       <p className="settings__note">
         {user.isBlocked ? t('admin.password.noteBlocked') : t('admin.password.note')}
       </p>
@@ -64,6 +62,6 @@ export function PasswordSection({
           {t('admin.password.sent')}
         </p>
       ) : null}
-    </section>
+    </Section>
   )
 }

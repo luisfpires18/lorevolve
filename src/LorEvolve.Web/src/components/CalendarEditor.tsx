@@ -10,6 +10,7 @@ import { CalendarMonthRow } from './chronology/CalendarMonthRow'
 import { Button } from './Button'
 import { NewButton } from './NewButton'
 import { Announce } from './Announce'
+import { Section } from './Section'
 
 interface CalendarEditorProps {
   universeId: string
@@ -57,15 +58,13 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
         : t('time.calendar.useCustom')
 
   return (
-    <section
+    <Section
+      title={t('time.calendar.heading')}
       className="chronology calendar"
-      aria-labelledby={headingId}
-      data-testid="calendar-settings"
+      titleId={headingId}
+      testId="calendar-settings"
+      rule={false}
     >
-      <h2 className="settings__heading" id={headingId}>
-        {t('time.calendar.heading')}
-      </h2>
-
       <Field label={t('time.calendar.datesUse')} group className="calendar__mode">
         {(control) => (
           <div className="segmented" {...control} data-testid="calendar-mode">
@@ -158,6 +157,6 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
           {saves > 0 ? t('time.calendar.savedStatus') : ''}
         </Announce>
       )}
-    </section>
+    </Section>
   )
 }

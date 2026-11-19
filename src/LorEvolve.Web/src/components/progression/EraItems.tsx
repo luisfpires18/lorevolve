@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { Ability, Era, Form } from '../../progression/types'
+import { SectionTitle } from '../Section'
 
 /** What is available in one era - only what the author ticked for it - with where it was first unlocked, if here. */
 export function EraItems({
@@ -17,7 +18,9 @@ export function EraItems({
   if (items.length === 0) return null
   return (
     <div className="rail__block">
-      <h4 className="rail__heading">{heading}</h4>
+      <SectionTitle level={4} tone="label">
+        {heading}
+      </SectionTitle>
       <ul className="eracovers" data-testid={testId}>
         {items.map((item) => (
           <li key={item.id} data-testid={`${testId}-${item.name}`}>

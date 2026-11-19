@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import { roleLabel } from '../../universes/access'
 import type { Collaborators, PendingInvitation } from '../../universes/collaborators'
 import { InvitationRow } from './InvitationRow'
+import { Section } from '../Section'
 
 /** The invitations nobody has claimed yet, each with a role to change, its link and Revoke. */
 export function CollaboratorInvitations({
@@ -24,10 +25,11 @@ export function CollaboratorInvitations({
   const { t } = useI18n()
 
   return (
-    <section className="settings__section collab__section" aria-labelledby="collab-pending-heading">
-      <h2 className="settings__heading" id="collab-pending-heading">
-        {t('universe.collab.pending')}
-      </h2>
+    <Section
+      title={t('universe.collab.pending')}
+      className="collab__section"
+      titleId="collab-pending-heading"
+    >
       {data.invitations.length === 0 ? (
         <p className="settings__note" data-testid="invitations-empty">
           {t('universe.collab.pendingEmpty')}
@@ -66,6 +68,6 @@ export function CollaboratorInvitations({
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   )
 }

@@ -13,6 +13,7 @@ import { EraItems } from './EraItems'
 import { EraPanelHead } from './EraPanelHead'
 import { EraLooks } from './EraLooks'
 import { EraSteps } from './EraSteps'
+import { SectionTitle } from '../Section'
 
 /** Getters, so each label is looked up in the current language when read. */
 const SOURCE_LABELS: Record<FieldSource, string> = {
@@ -104,7 +105,9 @@ export function EraPanel({
 
       {era.stories.length > 0 || era.scenes.length > 0 ? (
         <div className="rail__block">
-          <h4 className="rail__heading">{t('progression.era.covers')}</h4>
+          <SectionTitle level={4} tone="label">
+            {t('progression.era.covers')}
+          </SectionTitle>
           <ul className="eracovers" data-testid="era-covers">
             {era.stories.map((story) => (
               <li key={story.id}>

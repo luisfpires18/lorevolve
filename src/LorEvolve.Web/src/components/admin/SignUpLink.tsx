@@ -5,6 +5,7 @@ import { ApiError } from '../../lib/api'
 import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { Section } from '../Section'
 
 /**
  * A sign-up link for someone with no universe to be invited into. While registration is invitation-only it lets that one
@@ -58,10 +59,7 @@ export function SignUpLink() {
   }
 
   return (
-    <section className="adminsection" aria-labelledby="admin-signup-link">
-      <h2 className="settings__heading" id="admin-signup-link">
-        {t('admin.signUp.heading')}
-      </h2>
+    <Section title={t('admin.signUp.heading')} titleId="admin-signup-link" rule={false}>
       <p className="settings__note">{t('admin.signUp.note')}</p>
       <form className="form" onSubmit={submit} noValidate>
         <Field
@@ -113,6 +111,6 @@ export function SignUpLink() {
           })}
         </p>
       ) : null}
-    </section>
+    </Section>
   )
 }

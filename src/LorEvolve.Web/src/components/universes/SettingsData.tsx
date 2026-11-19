@@ -1,6 +1,7 @@
 import { useI18n } from '../../i18n'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
+import { Section } from '../Section'
 
 /** Settings → Data: the backup and readable downloads, and the way to restore a backup. */
 export function SettingsData({
@@ -15,8 +16,7 @@ export function SettingsData({
 
   return (
     <>
-      <section className="settings__section">
-        <h2 className="settings__heading">{t('universe.settings.backup')}</h2>
+      <Section title={t('universe.settings.backup')} narrow>
         <p className="settings__note">{t('universe.settings.backupNote')}</p>
         <Button
           tone="secondary"
@@ -49,15 +49,14 @@ export function SettingsData({
             {exportError}
           </p>
         ) : null}
-      </section>
+      </Section>
 
-      <section className="settings__section">
-        <h2 className="settings__heading">{t('universe.settings.restore')}</h2>
+      <Section title={t('universe.settings.restore')} narrow>
         <p className="settings__note">{t('universe.settings.restoreNote')}</p>
         <Button tone="secondary" to="/app?restore" data-testid="settings-restore-link">
           {t('universe.settings.restoreLink')}
         </Button>
-      </section>
+      </Section>
     </>
   )
 }

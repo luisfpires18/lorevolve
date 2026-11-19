@@ -247,12 +247,3 @@
 .connectedapps__error {
   flex: 1 1 100%;
 }
-
-.profile__subtitle:focus {
-  outline: none;
-}
-
-.profile__subtitle:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}

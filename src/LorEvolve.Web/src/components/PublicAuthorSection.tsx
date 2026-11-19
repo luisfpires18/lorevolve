@@ -6,6 +6,7 @@ import { getPublicAuthorSettings, setPublicAuthorPhoto } from '../publishing/api
 import type { PublicAuthorSettings } from '../publishing/types'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
+import { SectionTitle } from './Section'
 
 /**
  * The Profile's view of the account's public author page (ADR 0037): where it is, whether anyone can see it, and the
@@ -65,7 +66,7 @@ export function PublicAuthorSection() {
 
   return (
     <div className="profile__author" data-testid="public-author-settings">
-      <h3 className="profile__subtitle">{t('portal.authorSection.title')}</h3>
+      <SectionTitle level={3}>{t('portal.authorSection.title')}</SectionTitle>
       {settings.authorSlug && settings.hasPublicWorld ? (
         <p className="settings__note">
           {tx('portal.authorSection.readersFind', {

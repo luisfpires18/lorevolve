@@ -1,5 +1,5 @@
 /* The tab row is the rule above a tab's first section, and above the account's facts. */
-.profile .tabs__panel > .profile__public:first-child {
+.profile .tabs__panel > .section:first-child {
   margin-top: var(--space-5);
   padding-top: 0;
   border-top: 0;
@@ -12,10 +12,4 @@
 
 .profile__author {
   margin-top: var(--space-7);
-}
-
-.profile__subtitle {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-body);
-  font-weight: 600;
 }

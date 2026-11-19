@@ -15,6 +15,7 @@ import { ChronologyEraRow } from './chronology/ChronologyEraRow'
 import { Button } from './Button'
 import { NewButton } from './NewButton'
 import { Announce } from './Announce'
+import { Section } from './Section'
 
 interface ChronologyEditorProps {
   universeId: string
@@ -94,11 +95,13 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
           </NewButton>
         }
       />
-      <section className="chronology" aria-labelledby={headingId} data-testid="chronology-settings">
-        <h2 className="settings__heading" id={headingId}>
-          {t('time.periods.heading')}
-        </h2>
-
+      <Section
+        title={t('time.periods.heading')}
+        className="chronology"
+        titleId={headingId}
+        testId="chronology-settings"
+        rule={false}
+      >
         {drafts.length === 0 ? (
           <EmptyState
             testId="chronology-empty"
@@ -204,7 +207,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             ) : null}
           </div>
         ) : null}
-      </section>
+      </Section>
     </>
   )
 }

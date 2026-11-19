@@ -14,6 +14,7 @@ import { SettingsData } from '../components/universes/SettingsData'
 import { SettingsDelete } from '../components/universes/SettingsDelete'
 import { universeSettingsActions } from '../universes/universeSettingsActions'
 import { useUniverseSettingsState } from '../universes/useUniverseSettingsState'
+import { Section } from '../components/Section'
 
 const TAB_IDS = ['general', 'appearance', 'collaborators', 'data', 'advanced'] as const
 
@@ -68,8 +69,7 @@ export default function UniverseSettings() {
       {/* One outer shell for every workspace page; only the forms keep a readable column. */}
       <div className="settings__body">
         <Panel id="general" tab={tab}>
-          <section className="settings__section">
-            <h2 className="settings__heading">{t('universe.settings.details')}</h2>
+          <Section title={t('universe.settings.details')} narrow>
             {savedDetails ? (
               <p className="settings__saved" role="status" data-testid="settings-saved">
                 {t('universe.settings.detailsSaved')}
@@ -96,12 +96,11 @@ export default function UniverseSettings() {
                 setSavedDetails(true)
               }}
             />
-          </section>
+          </Section>
         </Panel>
 
         <Panel id="appearance" tab={tab}>
-          <section className="settings__section">
-            <h2 className="settings__heading">{t('universe.settings.colour')}</h2>
+          <Section title={t('universe.settings.colour')} narrow>
             <p className="settings__note">{t('universe.settings.colourNote')}</p>
             {savedColour ? (
               <p className="settings__saved" role="status" data-testid="settings-colour-saved">
@@ -128,7 +127,7 @@ export default function UniverseSettings() {
                 setSavedColour(true)
               }}
             />
-          </section>
+          </Section>
         </Panel>
 
         <Panel id="collaborators" tab={tab}>

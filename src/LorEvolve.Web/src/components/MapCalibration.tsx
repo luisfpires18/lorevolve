@@ -9,6 +9,7 @@ import { useCalibrationFormState } from '../maps/useCalibrationFormState'
 import { CalibrationFields } from './maps/CalibrationFields'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { SectionTitle } from './Section'
 
 /** A point of the picture, as fractions. */
 export interface Fraction {
@@ -49,7 +50,9 @@ export function MapScaleSummary({
 
   return (
     <div className="mapscale" data-testid="map-scale">
-      <h2 className="mapscreen__pinsheading">{t('places.calibration.scale')}</h2>
+      <SectionTitle level={2} tone="label">
+        {t('places.calibration.scale')}
+      </SectionTitle>
       {scale ? (
         <p className="mapscale__text" data-testid="map-scale-text">
           {tx('places.calibration.summary', {
@@ -160,7 +163,9 @@ export function MapCalibrationForm({
         void save()
       }}
     >
-      <h2 className="mapscreen__pinsheading">{t('places.calibration.formTitle')}</h2>
+      <SectionTitle level={2} tone="label">
+        {t('places.calibration.formTitle')}
+      </SectionTitle>
       <p className="mapscale__text">{t('places.calibration.formIntro')}</p>
       {message ? (
         <p className="form__message" role="alert" data-testid="map-calibration-error">

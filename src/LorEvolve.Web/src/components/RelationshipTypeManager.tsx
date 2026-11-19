@@ -9,6 +9,7 @@ import { KindForm } from './relationships/KindForm'
 import { KindRow } from './relationships/KindRow'
 import { NewButton } from './NewButton'
 import { LoadingNote } from './LoadingNote'
+import { SectionTitle } from './Section'
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
   useI18n() // Re-render when the language changes; the module's `t` reads the new one.
@@ -68,9 +69,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
   return (
     <section className="reltypes" aria-labelledby="reltypes-heading">
       <div className="relations__head">
-        <h2 className="settings__heading" id="reltypes-heading">
-          {t('relationships.types.heading')}
-        </h2>
+        <SectionTitle id="reltypes-heading">{t('relationships.types.heading')}</SectionTitle>
         {access.editContent && !isAdding && !editingId ? (
           <NewButton
             tone="secondary"

@@ -4,6 +4,7 @@ import { REQUIREMENTS, requirementLabel, type PublicationState } from '../../pub
 import type { usePublishState } from '../../publishing/usePublishState'
 import { PublishConfirm } from './PublishConfirm'
 import { UnpublishConfirm } from './UnpublishConfirm'
+import { Section } from '../Section'
 
 /** Status: public or private, the address, the checklist, a refusal, what was done, the two confirms and the ready hint. */
 export function PublishStatus({
@@ -42,10 +43,11 @@ export function PublishStatus({
   const { t } = useI18n()
 
   return (
-    <section className="publish__section publish__status" aria-labelledby="publish-status-heading">
-      <h2 className="publish__heading" id="publish-status-heading">
-        {t('universe.publish.status')}
-      </h2>
+    <Section
+      title={t('universe.publish.status')}
+      className="publish__status"
+      titleId="publish-status-heading"
+    >
       <p className="publication__state" data-testid="publication-status">
         <span className="publication__badge" data-state={isPublic ? 'public' : 'private'}>
           {isPublic ? t('universe.publish.badgePublic') : t('universe.publish.badgePrivate')}
@@ -131,6 +133,6 @@ export function PublishStatus({
           {t('universe.publish.ready')}
         </p>
       ) : null}
-    </section>
+    </Section>
   )
 }

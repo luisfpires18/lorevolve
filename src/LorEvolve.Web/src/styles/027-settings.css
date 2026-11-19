@@ -1,12 +1,1 @@
 /* ---------- Settings ---------- */
-
-.settings__section {
-  padding: var(--space-7) 0;
-  border-top: 1px solid var(--rule);
-  max-width: 34rem;
-}
-
-.settings__section:first-of-type {
-  border-top: 0;
-  padding-top: 0;
-}

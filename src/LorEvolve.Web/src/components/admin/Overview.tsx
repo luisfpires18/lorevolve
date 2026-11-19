@@ -5,6 +5,7 @@ import { dateFormat } from '../../i18n/format'
 import { useI18n } from '../../i18n'
 import { NOT_TRACKED } from '../../admin/adminConstants'
 import { Stat } from './Stat'
+import { Section } from '../Section'
 
 // ---------- Main ----------
 
@@ -21,10 +22,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
 
   return (
     <>
-      <section className="adminsection" aria-labelledby="admin-measured">
-        <h2 className="settings__heading" id="admin-measured">
-          {t('admin.main.measured')}
-        </h2>
+      <Section title={t('admin.main.measured')} titleId="admin-measured" rule={false}>
         <p className="settings__note" data-testid="admin-generated">
           {t('admin.main.counted', { time: formatDateTime(overview.generatedAt) })}
         </p>
@@ -78,12 +76,9 @@ export function Overview({ overview }: { overview: AdminOverview }) {
             testId="stat-apps"
           />
         </ul>
-      </section>
+      </Section>
 
-      <section className="adminsection" aria-labelledby="admin-trend">
-        <h2 className="settings__heading" id="admin-trend">
-          {t('admin.main.trend.heading')}
-        </h2>
+      <Section title={t('admin.main.trend.heading')} titleId="admin-trend" rule={false}>
         <p className="settings__note">{t('admin.main.trend.note')}</p>
         <ol className="admintrend" data-testid="admin-trend">
           {trend.map((month) => (
@@ -98,12 +93,9 @@ export function Overview({ overview }: { overview: AdminOverview }) {
             </li>
           ))}
         </ol>
-      </section>
+      </Section>
 
-      <section className="adminsection" aria-labelledby="admin-untracked">
-        <h2 className="settings__heading" id="admin-untracked">
-          {t('admin.untracked.heading')}
-        </h2>
+      <Section title={t('admin.untracked.heading')} titleId="admin-untracked" rule={false}>
         <p className="settings__note">{t('admin.untracked.note')}</p>
         <ul className="adminstats" data-testid="admin-untracked">
           <Stat
@@ -131,7 +123,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
             testId="stat-ai"
           />
         </ul>
-      </section>
+      </Section>
     </>
   )
 }

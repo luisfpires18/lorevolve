@@ -139,6 +139,10 @@
   accent-color: var(--accent);
 }
 
+.aichangeitem__heading .sectiontitle {
+  margin: 0;
+}
+
 .aichangeitem__heading {
   flex: 1;
   min-width: 0;
@@ -156,13 +160,6 @@
 
 .aichangeitem__action[data-action='2'] {
   color: var(--danger);
-}
-
-.aichangeitem__title {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: 600;
-  overflow-wrap: anywhere;
 }
 
 .aichangeitem__outcome {

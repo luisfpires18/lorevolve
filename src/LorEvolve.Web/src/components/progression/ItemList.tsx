@@ -4,6 +4,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { ItemRow } from './ItemRow'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
+import { SectionTitle } from '../Section'
 
 /** An entry's forms or abilities on the main profile: each as the author said it, nothing filled in. */
 export function ItemList({
@@ -55,9 +56,9 @@ export function ItemList({
   return (
     <section className="progitems" aria-labelledby={headingId} data-testid={`${kind}-list`}>
       <div className="progression__head">
-        <h3 className="rail__heading" id={headingId}>
+        <SectionTitle level={3} tone="label" id={headingId}>
           {words.title}
-        </h3>
+        </SectionTitle>
         {access.editContent ? (
           <NewButton
             tone="secondary"
