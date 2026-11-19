@@ -1,12 +1,9 @@
-import { Pencil, Trash } from 'lucide-react'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import type { ProjectField } from '../../projectEntities/types'
-import { ActionMenu } from '../ActionMenu'
-import { TypeIcon } from '../TypeIcon'
+import { TypeRow } from '../TypeRow'
+import { TypeRowActions } from '../TypeRowActions'
 import { t } from '../../i18n'
 import { TemplateFields } from './TemplateFields'
-import { Button } from '../Button'
-import { ActionIcon } from '../ActionIcon'
 
 /** One template's row: its icon, name and chip, Edit, Fields and the menu with Delete, then its fields when open. */
 export function TemplateRow({
@@ -39,65 +36,31 @@ export function TemplateRow({
   remove: (template: TypeTemplate) => Promise<void>
 }) {
   return (
-    <li
-      className="types__row"
-      data-testid={`template-${template.id}`}
+    <TypeRow
+      name={template.name}
+      icon={template.icon}
+      testId={`template-${template.id}`}
       data-template-name={template.name}
+      badges={<span className="chip">{t('entityTypes.page.templates.chip')}</span>}
+      actions={
+        <TypeRowActions
+          name={template.name}
+          onEdit={canEdit ? () => setEditing(template) : undefined}
+          editTestId={`template-edit-${template.id}`}
+          fields={{
+            open: openId === template.id,
+            count: template.fields.length,
+            onToggle: () => setOpenId(openId === template.id ? null : template.id),
+            testId: `template-fields-open-${template.id}`,
+          }}
+          onDelete={canEdit ? () => void remove(template) : undefined}
+          deleteLabel={t('entityTypes.page.templates.delete')}
+          deleteDisabled={busy}
+          deleteTestId={`template-delete-${template.id}`}
+          menuTestId={`template-actions-${template.id}`}
+        />
+      }
     >
-      <div className="types__head">
-        <span className="types__icon">
-          <TypeIcon iconKey={template.icon} />
-        </span>
-        <span className="types__name">
-          <bdi>{template.name}</bdi>
-        </span>
-        <span className="chip">{t('entityTypes.page.templates.chip')}</span>
-        <span className="types__actions">
-          {canEdit ? (
-            <Button
-              tone="secondary"
-              size="sm"
-              icon={Pencil}
-              aria-label={t('entityTypes.page.editLabel', { name: template.name })}
-              data-testid={`template-edit-${template.id}`}
-              onClick={() => setEditing(template)}
-            >
-              {t('entityTypes.page.edit')}
-            </Button>
-          ) : null}
-          <Button
-            tone="secondary"
-            size="sm"
-            aria-expanded={openId === template.id}
-            aria-label={t('entityTypes.page.fieldsLabel', { name: template.name })}
-            data-testid={`template-fields-open-${template.id}`}
-            onClick={() => setOpenId(openId === template.id ? null : template.id)}
-          >
-            {t('entityTypes.page.fields')}
-            {template.fields.length > 0 ? (
-              <span className="types__fieldcount">{template.fields.length}</span>
-            ) : null}
-          </Button>
-          {canEdit ? (
-            <ActionMenu
-              label={t('entityTypes.page.moreActions', { name: template.name })}
-              triggerTestId={`template-actions-${template.id}`}
-            >
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
-                disabled={busy}
-                data-testid={`template-delete-${template.id}`}
-                onClick={() => void remove(template)}
-              >
-                <ActionIcon icon={Trash} />
-                {t('entityTypes.page.templates.delete')}
-              </button>
-            </ActionMenu>
-          ) : null}
-        </span>
-      </div>
-
       {openId === template.id ? (
         <TemplateFields
           universeId={universeId}
@@ -111,6 +74,6 @@ export function TemplateRow({
           failing={failing}
         />
       ) : null}
-    </li>
+    </TypeRow>
   )
 }

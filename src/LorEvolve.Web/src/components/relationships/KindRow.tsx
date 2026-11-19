@@ -5,6 +5,7 @@ import type { useUniverseAccess } from '../../universes/access'
 import { draftFrom, type TypeDraft } from '../../relationships/typeDraft'
 import { constraintSummary, familySummary, reading } from '../../relationships/typeSummaries'
 import { Button } from '../Button'
+import { TypeRow } from '../TypeRow'
 
 export function KindRow({
   type,
@@ -29,44 +30,44 @@ export function KindRow({
   const family = familySummary(type.familySemantic)
 
   return (
-    <li className="types__row" data-reltype-name={type.name}>
-      <div className="types__head">
-        <span className="types__name">
-          <bdi>{type.name}</bdi>
-        </span>
-        <span className="types__count">
-          {tn('relationships.types.relationCount', type.relationshipCount, {
-            n: type.relationshipCount,
-          })}
-        </span>
-        {access.editContent ? (
-          <Button
-            tone="secondary"
-            size="sm"
-            onClick={() => {
-              setMessage(null)
-              setFieldErrors({})
-              setIsAdding(false)
-              setEditingId(type.id)
-              setDraft(draftFrom(type))
-            }}
-            data-testid={`edit-reltype-${type.name}`}
-          >
-            {t('relationships.types.edit')}
-          </Button>
-        ) : null}
-        {access.editContent && type.relationshipCount === 0 ? (
-          <Button
-            tone="danger-quiet"
-            size="sm"
-            onClick={() => remove(type)}
-            data-testid={`delete-reltype-${type.name}`}
-          >
-            {t('relationships.types.delete')}
-          </Button>
-        ) : null}
-      </div>
-
+    <TypeRow
+      name={type.name}
+      data-reltype-name={type.name}
+      count={tn('relationships.types.relationCount', type.relationshipCount, {
+        n: type.relationshipCount,
+      })}
+      actions={
+        access.editContent ? (
+          <>
+            <Button
+              tone="secondary"
+              size="sm"
+              onClick={() => {
+                setMessage(null)
+                setFieldErrors({})
+                setIsAdding(false)
+                setEditingId(type.id)
+                setDraft(draftFrom(type))
+              }}
+              data-testid={`edit-reltype-${type.name}`}
+            >
+              {t('relationships.types.edit')}
+            </Button>
+            {/* Only a kind no relation uses can go. */}
+            {type.relationshipCount === 0 ? (
+              <Button
+                tone="danger-quiet"
+                size="sm"
+                onClick={() => remove(type)}
+                data-testid={`delete-reltype-${type.name}`}
+              >
+                {t('relationships.types.delete')}
+              </Button>
+            ) : null}
+          </>
+        ) : null
+      }
+    >
       <p className="types__description">{reading(type)}</p>
       {summary ? (
         <p
@@ -82,6 +83,6 @@ export function KindRow({
         </p>
       ) : null}
       {type.description ? <p className="types__description prose">{type.description}</p> : null}
-    </li>
+    </TypeRow>
   )
 }

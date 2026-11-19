@@ -5,7 +5,7 @@ import { TypeIcon } from '../TypeIcon'
 import { useI18n } from '../../i18n'
 import type { EntityType } from '../../lore/typeDefinitions'
 import { branchIds, type TypeNode } from '../../lore/typeTree'
-import { TypeRow } from './TypeRow'
+import { LoreTypeRow as TypeRow } from './LoreTypeRow'
 
 /** The Lore types as one list reordered by the grip: the drag context, its words, each row, and what the pointer carries. */
 export function TypeListDnd({

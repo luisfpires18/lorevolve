@@ -13,6 +13,7 @@ import type { useTermManagerState } from '../../ruleValidation/useTermManagerSta
 import type { termManagerActions } from '../../ruleValidation/termManagerActions'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { TypeRow } from '../TypeRow'
 
 /** One kind's terms, each with its use, Rename and Delete, and the rename row in its place. */
 export function TermGroup({
@@ -48,83 +49,89 @@ export function TermGroup({
         <ul className="types__list" aria-labelledby={groupId}>
           {group.map((term) =>
             renaming?.id === term.id ? (
-              <li className="types__row" key={term.id}>
-                <Field
-                  label={tx('canon.terms.renameLabel', {
-                    name: <Quoted text={term.name} />,
-                  })}
-                  id={`${groupId}-rename`}
-                  className="terms__rename"
-                  error={renaming.error ? <span role="alert">{renaming.error}</span> : undefined}
-                >
-                  {(control) => (
-                    <>
-                      <div className="termselect__row">
-                        <input
-                          id={control.id}
-                          className="field__input termselect__name"
-                          type="text"
-                          dir="auto"
-                          autoFocus
-                          maxLength={TERM_NAME_MAX_LENGTH}
-                          value={renaming.text}
-                          onChange={(event) =>
-                            setRenaming({
-                              ...renaming,
-                              text: event.target.value,
-                              error: null,
-                            })
-                          }
-                          onKeyDown={onRenameKeyDown}
-                          aria-invalid={control['aria-invalid']}
-                          aria-describedby={control['aria-describedby']}
-                          data-testid={`rename-term-input-${term.name}`}
-                        />
-                        <FormActions
-                          submitLabel={t('canon.terms.saveName')}
-                          disabled={busyId === term.id}
-                          onSubmit={() => void saveRename()}
-                          submitTestId={`save-term-${term.name}`}
-                          onCancel={() => setRenaming(null)}
-                          size="sm"
-                        />
-                      </div>
-                    </>
-                  )}
-                </Field>
-              </li>
+              <TypeRow
+                key={term.id}
+                name={term.name}
+                head={
+                  <Field
+                    label={tx('canon.terms.renameLabel', {
+                      name: <Quoted text={term.name} />,
+                    })}
+                    id={`${groupId}-rename`}
+                    className="terms__rename"
+                    error={renaming.error ? <span role="alert">{renaming.error}</span> : undefined}
+                  >
+                    {(control) => (
+                      <>
+                        <div className="termselect__row">
+                          <input
+                            id={control.id}
+                            className="field__input termselect__name"
+                            type="text"
+                            dir="auto"
+                            autoFocus
+                            maxLength={TERM_NAME_MAX_LENGTH}
+                            value={renaming.text}
+                            onChange={(event) =>
+                              setRenaming({
+                                ...renaming,
+                                text: event.target.value,
+                                error: null,
+                              })
+                            }
+                            onKeyDown={onRenameKeyDown}
+                            aria-invalid={control['aria-invalid']}
+                            aria-describedby={control['aria-describedby']}
+                            data-testid={`rename-term-input-${term.name}`}
+                          />
+                          <FormActions
+                            submitLabel={t('canon.terms.saveName')}
+                            disabled={busyId === term.id}
+                            onSubmit={() => void saveRename()}
+                            submitTestId={`save-term-${term.name}`}
+                            onCancel={() => setRenaming(null)}
+                            size="sm"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </Field>
+                }
+              />
             ) : (
-              <li className="types__row" key={term.id} data-term-name={term.name}>
-                <div className="types__head">
-                  <span className="types__name">
-                    <bdi>{term.name}</bdi>
-                  </span>
-                  <span className="types__count">{usage(term)}</span>
-                  {access.editContent ? (
-                    <Button
-                      tone="secondary"
-                      size="sm"
-                      aria-label={t('canon.terms.renameAria', { name: term.name })}
-                      onClick={() => setRenaming({ id: term.id, text: term.name, error: null })}
-                      data-testid={`rename-term-${term.name}`}
-                    >
-                      {t('canon.terms.rename')}
-                    </Button>
-                  ) : null}
-                  {access.editContent && term.ruleCount === 0 && term.momentCount === 0 ? (
-                    <Button
-                      tone="danger-quiet"
-                      size="sm"
-                      aria-label={t('canon.terms.deleteAria', { name: term.name })}
-                      disabled={busyId === term.id}
-                      onClick={() => void remove(term)}
-                      data-testid={`delete-term-${term.name}`}
-                    >
-                      {t('canon.terms.deleteButton')}
-                    </Button>
-                  ) : null}
-                </div>
-              </li>
+              <TypeRow
+                key={term.id}
+                name={term.name}
+                data-term-name={term.name}
+                count={usage(term)}
+                actions={
+                  access.editContent ? (
+                    <>
+                      <Button
+                        tone="secondary"
+                        size="sm"
+                        aria-label={t('canon.terms.renameAria', { name: term.name })}
+                        onClick={() => setRenaming({ id: term.id, text: term.name, error: null })}
+                        data-testid={`rename-term-${term.name}`}
+                      >
+                        {t('canon.terms.rename')}
+                      </Button>
+                      {term.ruleCount === 0 && term.momentCount === 0 ? (
+                        <Button
+                          tone="danger-quiet"
+                          size="sm"
+                          aria-label={t('canon.terms.deleteAria', { name: term.name })}
+                          disabled={busyId === term.id}
+                          onClick={() => void remove(term)}
+                          data-testid={`delete-term-${term.name}`}
+                        >
+                          {t('canon.terms.deleteButton')}
+                        </Button>
+                      ) : null}
+                    </>
+                  ) : null
+                }
+              />
             ),
           )}
         </ul>
