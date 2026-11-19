@@ -269,7 +269,7 @@ test.describe('text direction', () => {
     )
     await expectLorEvolveStaysLeftToRight(page, [
       page.locator('.entry__kind'),
-      page.locator('.entry__crumbs'),
+      page.locator('.crumb'),
       status,
       page.getByTestId('entry-views'),
       page.locator('.entry__tools'),
@@ -282,7 +282,7 @@ test.describe('text direction', () => {
     await expectIsolated(page.getByTestId('entry-name'), Text.numbers)
     // The reading is said once, as the heading over the links it gathers.
     await expectIsolated(
-      page.getByTestId('relationship-list').locator('.relations__reading').first(),
+      page.getByTestId('relationship-list').locator('.sectiontitle').first(),
       'والد',
     )
     const relation = page.getByTestId('relationship-list').locator('li.relation').first()

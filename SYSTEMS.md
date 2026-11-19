@@ -406,6 +406,13 @@ Repository index. Paths and one-line responsibilities only.
 | `src/lib/useAsyncRead.ts` | #410: one read as `Load<T>` (loading, ready, error) with `retry` and a quiet `refresh` that keeps the value shown on failure. Replaces `admin/useLoad` and `lib/useUsageLoad` (deleted). |
 | `src/lib/errorText.ts` | #410: the message a caught error shows, or the caller's fallback. |
 | `src/components/Pager.tsx` | #411: Previous, the position and Next under a numbered list (`page`, `totalPages`, `onPage`, `disabled`, `testId`); draws nothing for one page. Replaces twelve hand-written navs. |
+| `src/components/Crumb.tsx` | #412: the way back up as a named nav (`items`, `back`, `testId`); replaces the lore path, entry, story and AI change crumbs and the bare back links. |
+| `src/components/DocumentHead.tsx` | #412: back link, title with its menu and lede for an idea, board or world rule, editing or reading. |
+| `src/components/EntryHead.tsx` | #412: the head of a Lore entry and of a project entry: crumb, type, status, name or name field with a hidden `h1`, summary slot. |
+| `src/components/ViewLinks.tsx` | #412: routed views as links (`items`, `current` or router-marked); `IdeasTabs`, `ShelfViewNav` and `EntryViewsNav` use it. |
+| `src/components/Section.tsx` | #412: `Section` (a titled block: rule, bare, narrow, danger) and `SectionTitle` (section and label tones); replaces the settings, publish, admin, profile and chronology blocks and the label headings. |
+| `src/lib/useTitleDetail.ts` | #412: `TitleDetailContext` (set by `UniverseWorkspace`) and `useTitleDetail(name)`, so a game's name leads the shell's tab title. |
+| `uiContract/heads.test.ts` | #412: keeps heads, crumbs, views, blocks and the tab title on their shared parts, with self tests; lists only shrink. |
 | `src/components/ShowMore.tsx` | #411: Show more under a list that grows (`hasMore`, `status`, `onMore`, `shown`, `total`, `announce`, `disabled`, `testId`): count line, error line, button. Replaces eight buttons in six files. |
 | `src/components/SearchField.tsx` | #411: a search box over a list or in a drawer: label (or `hideLabel`), Search icon, input, `clearOnEscape` (idea pickers only), `trailing` slot. `PortalSearch` and `UniverseSearch` stay their own. |
 | `src/lib/useDebouncedValue.ts` | #411: `useDebouncedValue(value)` and `DEBOUNCE_MS` (200): the one wait for typing before a read or an address change. |
@@ -424,7 +431,7 @@ Repository index. Paths and one-line responsibilities only.
 | `src/lore/fieldInheritance.ts` | `ancestorsOf`, `withInheritedFields`: a type as its entries see it, with every ancestor field (and section) first. `useWorkspaceTypes().entryTypes` serves it to the entry, Lore and Mass create screens. Tested by `fieldInheritance.test.ts`. |
 | `src/lib/localDrafts.ts` | Recovery copies of unsaved writing in the browser's IndexedDB: keyed by account, universe (or none, for an idea), kind and id; one ordered queue per copy; every failure a rejected promise. Never sent anywhere. |
 | `src/lib/useLocalDraft.ts` | One editor's recovery copy: the copy found on opening (bounded wait), kept after typing pauses and on hide or unmount, forgotten once the writing is saved again, discarded by choice; `sameSave`. |
-| `src/lib/useDocumentTitle.ts` | The tab's title, "parts — joined | LorEvolve": portal pages, `WorkspaceLayout` and the universe shell each own their screen's; nothing beneath a shell sets one. |
+| `src/lib/useDocumentTitle.ts` | The tab's title, "parts — joined | LorEvolve": portal pages, `WorkspaceLayout` and the universe shell each own their screen's; nothing beneath a shell sets one (a name a screen reads is handed up with `useTitleDetail`). |
 | `src/lib/returnFocus.ts` | `useReturnFocus`: hands the focus back to whatever opened a story drawer once it closes. |
 | `src/lib/queryTab.ts` | `useQueryTab`: a page's tab in `?tab=`, the first tab leaving it out; a chosen tab replaces the history entry (Settings) or pushes one (Types, so Back and Forward walk the tabs). |
 | `src/universes/access.ts` | Presentation-only capabilities (ADR 0041 amendment): `capabilitiesOf(accessRole)`, `canEditContent` and the rest, `UniverseAccessContext` provided by the workspace and read with `useUniverseAccess()`, role labels and one-line descriptions. Never security. |

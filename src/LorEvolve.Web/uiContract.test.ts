@@ -89,7 +89,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['relation__kind', '#248'],
   ['relation__menu', '#248'],
   ['relation__span', '#248'],
-  ['relations__group', '#248'],
   ['relform__subject', '#248'],
   ['restore__summary', '#248'],
   ['reviewtrigger', '#248'],
@@ -119,7 +118,7 @@ const DIALOG_FILES = [
 
 // Font sizes written as a literal in src/styles/ instead of a --text-* token. Only goes down:
 // lower it when a screen's sizes move to tokens.
-const MAX_LITERAL_FONT_SIZES = 199
+const MAX_LITERAL_FONT_SIZES = 194
 
 const stylesheet = readdirSync(join(webRoot, 'src/styles'))
   .filter((file) => file.endsWith('.css'))

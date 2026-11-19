@@ -234,7 +234,7 @@ async function shape(page: Page): Promise<Shape> {
       gutter: parseFloat(getComputedStyle(root).getPropertyValue('--gutter')) * 16,
       canvas: box('.canvas') ?? box('.home__body'),
       search: box('.unisearch'),
-      header: box('.pageheader') ?? box('.entry__head') ?? box('.home__heading'),
+      header: box('.pageheader') ?? box('.entry__head'),
       title: box('h1'),
       entryMain: box('.entry__main'),
       entryRail: box('.entry__rail'),
