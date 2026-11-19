@@ -186,9 +186,6 @@ const places: Dictionary['places'] = {
   viewer: {
     stage: 'Mapa: {name}',
     pinReview: '{title} (posição a aguardar revisão)',
-    zoom: 'Zoom',
-    zoomIn: 'Aumentar',
-    zoomOut: 'Reduzir',
     fit: 'Ajustar o mapa inteiro',
     hint: 'Arrasta para deslocar e usa a roda para ampliar. Com o mapa em foco, as setas deslocam, mais e menos ampliam, e 0 ajusta o mapa inteiro. Tab chega a cada marcador; Enter seleciona-o.',
     hintPlacing:

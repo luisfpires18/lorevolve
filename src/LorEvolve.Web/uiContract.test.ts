@@ -28,7 +28,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['artwork', '#248'],
   ['board', '#248'],
   ['board__layout', '#248'],
-  ['boardcanvas__controls', '#248'],
   ['boardlist', '#248'],
   ['checkbox', '#248'],
   ['chron', '#248'],

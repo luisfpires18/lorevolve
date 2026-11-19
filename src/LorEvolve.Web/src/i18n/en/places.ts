@@ -184,9 +184,6 @@ const places = {
   viewer: {
     stage: 'Map: {name}',
     pinReview: '{title} (position awaiting review)',
-    zoom: 'Zoom',
-    zoomIn: 'Zoom in',
-    zoomOut: 'Zoom out',
     fit: 'Fit the whole map',
     hint: 'Drag to pan and scroll to zoom. With the map focused, the arrow keys pan, plus and minus zoom, and 0 fits the whole map. Tab reaches each pin; Enter selects it.',
     hintPlacing:
