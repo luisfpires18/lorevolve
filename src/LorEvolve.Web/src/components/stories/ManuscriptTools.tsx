@@ -12,7 +12,7 @@ import type { Chronology } from '../../chronology/types'
 import type { Chapter, Scene } from '../../stories/types'
 import { storyProjectPath } from '../../projects/sections'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
-import { Button } from '../Button'
+import { DisclosureButton } from '../DisclosureButton'
 
 export type ManuscriptToolsProps = ReturnType<typeof useManuscriptState> & {
   universeId: string
@@ -59,34 +59,34 @@ export function ManuscriptTools({
   return (
     <div className="manuscript__tools rowtools">
       {hasContext ? (
-        <Button
+        <DisclosureButton
           tone="text"
           icon={Info}
           className="manuscript__detailstoggle"
-          aria-expanded={isContextOpen}
-          aria-controls={contextId}
-          onClick={() => setIsContextOpen((open) => !open)}
+          expanded={isContextOpen}
+          controls={contextId}
+          onToggle={() => setIsContextOpen((open) => !open)}
           title={t('manuscript.editor.detailsTitle')}
           data-testid="manuscript-details-toggle"
         >
           <span className="visually-hidden">{t('manuscript.editor.detailsName')}</span>
-        </Button>
+        </DisclosureButton>
       ) : null}
       {access.manageHistory && (stored.updatedAt !== null || isHistoryOpen) ? (
-        <Button
+        <DisclosureButton
           tone="text"
           icon={History}
-          aria-expanded={isHistoryOpen}
-          aria-controls={historyId}
+          expanded={isHistoryOpen}
+          controls={historyId}
           aria-describedby={titleId}
-          onClick={() => setIsHistoryOpen((open) => !open)}
+          onToggle={() => setIsHistoryOpen((open) => !open)}
           data-testid="manuscript-history-toggle"
         >
           <span className="manuscript__toolname">{t('manuscript.editor.historyName')}</span>
           <span className="manuscript__toolshort" aria-hidden="true">
             {t('manuscript.editor.historyShort')}
           </span>
-        </Button>
+        </DisclosureButton>
       ) : null}
       <LoreContext
         universeId={universeId}

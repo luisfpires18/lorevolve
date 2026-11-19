@@ -19,6 +19,7 @@ export function SchemaTypeFields({
   refresh,
   failing,
   type,
+  id,
 }: {
   projectId: string
   busy: boolean
@@ -29,13 +30,15 @@ export function SchemaTypeFields({
   refresh: () => void
   failing: (error: unknown) => void
   type: ProjectEntityType
+  /** The open panel's id, which the row's Fields button names in `aria-controls`. */
+  id?: string
 }) {
   useI18n()
 
   return (
     <>
       {openTypeId === type.id ? (
-        <div className="types__fields" data-testid={`project-type-fields-panel-${type.id}`}>
+        <div id={id} className="types__fields" data-testid={`project-type-fields-panel-${type.id}`}>
           {type.fields.length === 0 && type.inheritedFields.length === 0 ? (
             <p className="projectcard__meta">{t('projects.schema.noFields')}</p>
           ) : (

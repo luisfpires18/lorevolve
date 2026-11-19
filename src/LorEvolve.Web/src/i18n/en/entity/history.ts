@@ -34,8 +34,6 @@ const entityHistory = {
   nowShowing: 'now showing',
   version: 'Version {number}',
   restoredVersion: 'restored version {number}',
-  hide: 'Hide',
-  view: 'View',
   restoring: 'Restoring…',
   restore: 'Restore',
   opening: 'Opening…',

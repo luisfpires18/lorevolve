@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react'
+import { useId, type KeyboardEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Layers } from 'lucide-react'
 import { TypeFields } from '../TypeFields'
@@ -70,6 +70,7 @@ export function LoreTypeRow({
     else moveButtons.current.delete(key)
   }
   const edit = access.editContent
+  const fieldsId = useId()
   return (
     <TypeRow
       name={type.name}
@@ -167,6 +168,7 @@ export function LoreTypeRow({
             count: type.fields.length,
             onToggle: () => setOpenTypeId(openTypeId === type.id ? null : type.id),
             testId: `fields-${type.name}`,
+            controls: fieldsId,
           }}
           onDelete={edit ? () => void removeType(type) : undefined}
           deleteTestId={`delete-type-${type.name}`}
@@ -200,6 +202,7 @@ export function LoreTypeRow({
 
       {openTypeId === type.id ? (
         <TypeFields
+          id={fieldsId}
           universeId={universe.id}
           type={type}
           tree={tree}

@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import type { ProjectField } from '../../projectEntities/types'
 import { TypeRow } from '../TypeRow'
@@ -35,6 +36,7 @@ export function TemplateRow({
   failing: (error: unknown) => void
   remove: (template: TypeTemplate) => Promise<void>
 }) {
+  const fieldsId = useId()
   return (
     <TypeRow
       name={template.name}
@@ -52,6 +54,7 @@ export function TemplateRow({
             count: template.fields.length,
             onToggle: () => setOpenId(openId === template.id ? null : template.id),
             testId: `template-fields-open-${template.id}`,
+            controls: fieldsId,
           }}
           onDelete={canEdit ? () => void remove(template) : undefined}
           deleteLabel={t('entityTypes.page.templates.delete')}
@@ -63,6 +66,7 @@ export function TemplateRow({
     >
       {openId === template.id ? (
         <TemplateFields
+          id={fieldsId}
           universeId={universeId}
           canEdit={canEdit}
           template={template}

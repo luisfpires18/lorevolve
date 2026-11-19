@@ -5,6 +5,7 @@ import { sameSave } from '../lib/useLocalDraft'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
+import { DisclosureButton } from './DisclosureButton'
 import { QuietNote } from './QuietNote'
 
 interface RecoveredDraftProps {
@@ -111,15 +112,16 @@ export function RecoveredDraft({
         >
           {t('entity.recovered.discard')}
         </Button>
-        <Button
+        <DisclosureButton
           tone="secondary"
-          aria-expanded={isShowing}
-          aria-controls={previewId}
-          onClick={() => setIsShowing((showing) => !showing)}
+          expanded={isShowing}
+          expandedLabel={t('entity.recovered.hide')}
+          controls={previewId}
+          onToggle={() => setIsShowing((showing) => !showing)}
           data-testid={`${testId}-preview-toggle`}
         >
-          {isShowing ? t('entity.recovered.hide') : t('entity.recovered.show')}
-        </Button>
+          {t('entity.recovered.show')}
+        </DisclosureButton>
       </div>
 
       {isShowing ? (

@@ -1,8 +1,10 @@
-import { ArrowDown, ArrowUp, ListTree, Pencil, Trash } from 'lucide-react'
+import { ListTree, Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
+import { DisclosureButton } from './DisclosureButton'
+import { MoveItems } from './MoveItems'
 import { NewButton } from './NewButton'
 
 type Direction = 'up' | 'down'
@@ -37,7 +39,14 @@ export function TypeRowActions({
   addChild?: { onAdd: () => void; testId: string; itemTestId?: string }
   onEdit?: () => void
   editTestId?: string
-  fields: { open: boolean; count: number; onToggle: () => void; testId: string }
+  fields: {
+    open: boolean
+    count: number
+    onToggle: () => void
+    testId: string
+    /** The id of the fields region the button shows and hides. */
+    controls: string
+  }
   onDelete?: () => void
   deleteLabel?: string
   deleteDisabled?: boolean
@@ -48,44 +57,22 @@ export function TypeRowActions({
   return (
     <>
       {move ? (
-        <span
-          className="types__move"
-          role="group"
-          aria-label={t('entityTypes.page.orderOf', { name })}
-        >
-          {(['up', 'down'] as const).map((direction) => {
-            const isEnd = direction === 'up' ? move.isFirst : move.isLast
-            return (
-              <Button
-                tone="text"
-                size="sm"
-                icon={direction === 'up' ? ArrowUp : ArrowDown}
-                className="types__movebutton"
-                key={direction}
-                ref={(element) => move.buttonRef(direction, element)}
-                aria-disabled={isEnd || move.busy || undefined}
-                aria-label={
-                  direction === 'up'
-                    ? t('entityTypes.page.moveUpLabel', { name })
-                    : t('entityTypes.page.moveDownLabel', { name })
-                }
-                title={
-                  isEnd
-                    ? direction === 'up'
-                      ? t('entityTypes.page.alreadyFirst')
-                      : t('entityTypes.page.alreadyLast')
-                    : undefined
-                }
-                onClick={() => {
-                  if (!isEnd) move.onMove(direction)
-                }}
-                data-testid={`move-${direction}-${name}`}
-              >
-                {direction === 'up' ? t('entityTypes.page.up') : t('entityTypes.page.down')}
-              </Button>
-            )
-          })}
-        </span>
+        <MoveItems
+          look="icon"
+          name={name}
+          first={move.isFirst}
+          last={move.isLast}
+          busy={move.busy}
+          onMove={(step) => move.onMove(step === -1 ? 'up' : 'down')}
+          buttonRef={move.buttonRef}
+          groupLabel={t('entityTypes.page.orderOf', { name })}
+          groupClassName="types__move"
+          endTitles={{
+            first: t('entityTypes.page.alreadyFirst'),
+            last: t('entityTypes.page.alreadyLast'),
+          }}
+          testIds={{ up: `move-up-${name}`, down: `move-down-${name}` }}
+        />
       ) : null}
       {/* A type straight inside this one, its parent already chosen - the quick way to build a branch.
           Quiet like Up and Down; on a phone it waits in the row's menu instead. Coming back from the
@@ -115,17 +102,18 @@ export function TypeRowActions({
           {t('entityTypes.page.edit')}
         </Button>
       ) : null}
-      <Button
+      <DisclosureButton
         tone="secondary"
         size="sm"
-        aria-expanded={fields.open}
+        expanded={fields.open}
+        controls={fields.controls}
         aria-label={t('entityTypes.page.fieldsLabel', { name })}
-        onClick={fields.onToggle}
+        onToggle={fields.onToggle}
         data-testid={fields.testId}
       >
         {t('entityTypes.page.fields')}
         {fields.count > 0 ? <span className="types__fieldcount">{fields.count}</span> : null}
-      </Button>
+      </DisclosureButton>
       {addChild || move || onDelete ? (
         <ActionMenu label={t('entityTypes.page.moreActions', { name })} triggerTestId={menuTestId}>
           {addChild ? (
@@ -143,25 +131,16 @@ export function TypeRowActions({
             </button>
           ) : null}
           {/* The grip's plain alternative on a wide screen, where Up and Down are not set out on the row. */}
-          {move
-            ? (['up', 'down'] as const).map((direction) =>
-                (direction === 'up' ? move.isFirst : move.isLast) ? null : (
-                  <button
-                    key={direction}
-                    className="actionmenu__item types__moveitem"
-                    type="button"
-                    onClick={() => move.onMove(direction)}
-                    disabled={move.busy}
-                    data-testid={`move-${direction}-item-${name}`}
-                  >
-                    <ActionIcon icon={direction === 'up' ? ArrowUp : ArrowDown} />
-                    {direction === 'up'
-                      ? t('entityTypes.page.moveUp')
-                      : t('entityTypes.page.moveDown')}
-                  </button>
-                ),
-              )
-            : null}
+          {move ? (
+            <MoveItems
+              first={move.isFirst}
+              last={move.isLast}
+              busy={move.busy}
+              onMove={(step) => move.onMove(step === -1 ? 'up' : 'down')}
+              itemClassName="types__moveitem"
+              testIds={{ up: `move-up-item-${name}`, down: `move-down-item-${name}` }}
+            />
+          ) : null}
           {onDelete ? (
             <button
               className="actionmenu__item actionmenu__item--danger"
