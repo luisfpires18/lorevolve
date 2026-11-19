@@ -101,15 +101,23 @@ test('a busy label ends in an ellipsis, in both languages', () => {
   assert.deepEqual(lackEllipsis(keys, [enText, ptText]), [], 'A busy label ends in …')
 })
 
-// The only keys that may say Previous, Next or Show more (#411). A pager or load-more label written again fails here.
+// The only keys that may say Previous, Next or Show more (#411), alone or at the start of a value ("Show more worlds").
+// A pager or load-more label written again fails here.
 const LIST_WORDS = new Set(['shell.pager.previous', 'shell.pager.next', 'shell.showMore.label'])
 const strayListWords = (text: Map<string, string>, words: string[]) =>
   [...text]
-    .filter(([key, value]) => words.includes(value) && !LIST_WORDS.has(key))
+    .filter(
+      ([key, value]) =>
+        words.some((w) => value === w || value.startsWith(w + ' ')) && !LIST_WORDS.has(key),
+    )
     .map(([key]) => key)
 
 test('Previous, Next and Show more are written once per language, in shell', () => {
   assert.deepEqual(strayListWords(new Map([['a.next', 'Next']]), ['Next']), ['a.next'])
+  assert.deepEqual(strayListWords(new Map([['a.more', 'Show more worlds']]), ['Show more']), [
+    'a.more',
+  ])
+  assert.deepEqual(strayListWords(new Map([['a.nextly', 'Nextly']]), ['Next']), [])
   assert.deepEqual(
     strayListWords(enText, ['Previous', 'Next', 'Show more']),
     [],

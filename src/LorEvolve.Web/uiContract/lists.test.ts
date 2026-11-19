@@ -33,7 +33,10 @@ const CLOCKS = new Map<string, string>([
   ['src/components/SaveAction.tsx', 'the Saved note fades after 2 seconds'],
   ['src/export/api.ts', 'revokes a download address after the click'],
   ['src/lib/launch.ts', 'the opening waits for its animation'],
-  ['src/lib/useLocalDraft.ts', 'a draft is written after typing stops and flushed on leave'],
+  [
+    'src/lib/useLocalDraft.ts',
+    'saves the draft when typing stops and must also save it on leave, which a settled value cannot do',
+  ],
   ['src/lore/useEntryArrival.ts', 'the arrival highlight is removed after 2.4 seconds'],
   ['src/stories/useStoryArrival.ts', 'the arrival highlight is removed after 2.4 seconds'],
   ['src/universes/useWorkspaceReads.ts', 'preloads the workspace after 2.5 seconds'],
@@ -44,6 +47,8 @@ type Guard = (source: string) => boolean
 const handPager: Guard = (source) => /className="pager"|pager__position/.test(source)
 const handSearch: Guard = (source) => /type="search"/.test(source)
 const handTimer: Guard = (source) => /\bsetTimeout\(/.test(source)
+// The Show more label is ShowMore's own: the key read anywhere else draws the button by hand.
+const handShowMoreLabel: Guard = (source) => /shell\.showMore\.label/.test(source)
 
 // An `onClick={...}` that names a load-more handler: Show more is `ShowMore onMore={...}`.
 const handShowMore: Guard = (source) =>
@@ -72,6 +77,8 @@ test('each guard catches the hand-written form', () => {
   assert.ok(handShowMore('<Button onClick={loadMore}>More</Button>'))
   assert.ok(handShowMore('<button onClick={() => void readMore()}>More</button>'))
   assert.ok(!handShowMore('<ShowMore onMore={loadMore} />'))
+  assert.ok(handShowMoreLabel("<Button>{t('shell.showMore.label')}</Button>"))
+  assert.ok(!handShowMoreLabel('<ShowMore onMore={loadMore} />'))
   assert.ok(handSearch('<input type="search" />'))
   assert.ok(!handSearch('<SearchField value="" onChange={set} />'))
   assert.ok(handTimer('const t = setTimeout(() => go(), 150)'))
@@ -85,6 +92,7 @@ test('the pages of a list are Pager', () => {
 
 test('a growing list continues with ShowMore', () => {
   check(handShowMore, tsxFiles, new Set())
+  check(handShowMoreLabel, sourceFiles, new Set(['src/components/ShowMore.tsx']))
 })
 
 test('a search box is SearchField; the two header bars are their own', () => {
