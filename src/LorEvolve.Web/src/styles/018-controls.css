@@ -16,12 +16,12 @@
   max-width: 30rem;
 }
 
-.controls__searchfield {
+.searchfield {
   position: relative;
   display: block;
 }
 
-.controls__searchicon {
+.searchfield__icon {
   position: absolute;
   top: 50%;
   left: 0.8rem;
@@ -32,8 +32,13 @@
   pointer-events: none;
 }
 
-.controls__searchfield .field__input {
+.searchfield__input {
   padding-left: 2.5rem;
+}
+
+/* Room at the end for the trailing control (Lore's Exact toggle). */
+.searchfield--trailing .searchfield__input {
+  padding-right: 6.75rem;
 }
 
 /* `.segmented`: a choice among two to four values on this screen, `aria-pressed` on each - not a

@@ -8,6 +8,8 @@ interface FieldBase {
   error?: ReactNode
   /** Extra classes on the `.field` wrapper. */
   className?: string
+  /** The label stays for screen readers and is not drawn. */
+  hideLabel?: boolean
 }
 
 /** Input form: `id` is `name`, everything else goes on the `<input>`. */
@@ -64,6 +66,7 @@ export function Field(props: FieldProps) {
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const labelId = `${id}-label`
+  const labelClass = props.hideLabel ? 'field__label visually-hidden' : 'field__label'
   const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ')
 
   let control: ReactNode
@@ -72,9 +75,17 @@ export function Field(props: FieldProps) {
   let Wrapper: 'div' | 'fieldset' = 'div'
   let disabled: boolean | undefined
   if ('name' in props) {
-    const { label: _l, hint: _h, error: _e, className: _c, children: _k, ...input } = props
+    const {
+      label: _l,
+      hint: _h,
+      error: _e,
+      className: _c,
+      children: _k,
+      hideLabel: _x,
+      ...input
+    } = props
     labelNode = (
-      <label className="field__label" htmlFor={id}>
+      <label className={labelClass} htmlFor={id}>
         {label}
       </label>
     )
@@ -109,7 +120,7 @@ export function Field(props: FieldProps) {
   } else {
     testId = props['data-testid']
     labelNode = (
-      <label className="field__label" htmlFor={id}>
+      <label className={labelClass} htmlFor={id}>
         {label}
       </label>
     )

@@ -14,6 +14,18 @@ const shell: Dictionary['shell'] = {
       reload: 'Recarregar',
     },
   },
+  pager: {
+    label: 'Paginação',
+    previous: 'Anterior',
+    next: 'Seguinte',
+    position: 'Página {page} de {total}',
+  },
+  showMore: {
+    label: 'Mostrar mais',
+    loading: 'A carregar…',
+    error: 'Não foi possível carregar mais.',
+    shown: 'A mostrar {shown} de {total}',
+  },
   workspace: {
     screen: {
       ideas: 'Ideias',
