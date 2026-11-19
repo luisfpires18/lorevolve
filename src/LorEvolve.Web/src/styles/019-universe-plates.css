@@ -158,7 +158,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .plate:hover,
   .plate:hover .plate__image {
     transform: none;
   }

@@ -101,7 +101,7 @@ export type CardEntity = Pick<
   Partial<Pick<EntitySummary, 'aliases' | 'image' | 'canonStatus' | 'articleExcerpt'>>
 
 /** The inside of a card; only `EntityCard` draws it. */
-export function EntityCardBody({
+function EntityCardBody({
   universeId,
   entity,
   eager = false,

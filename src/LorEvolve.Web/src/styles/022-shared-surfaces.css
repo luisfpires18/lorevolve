@@ -58,6 +58,16 @@
   transition-duration: 80ms;
 }
 
+/* Asked for less motion, the cards stay put under the pointer; the edge and shadow still answer. */
+@media (prefers-reduced-motion: reduce) {
+  .entitycard:hover,
+  .typecard:hover,
+  .plate:hover,
+  .doorway:hover {
+    transform: none;
+  }
+}
+
 /* A row that opens as a whole: its title is the one link, stretched over the row, so the link's name stays the
    title and nothing else in the row may be a control. The Ideas and World Rules lists. */
 .rowlink {

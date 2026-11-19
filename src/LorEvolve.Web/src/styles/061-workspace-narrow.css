@@ -267,9 +267,7 @@
   }
 
   /* Colour still answers a hover or a press; nothing moves. */
-  .button:active,
-  .doorway:hover,
-  .doorway:active {
+  .button:active {
     transform: none;
   }
 

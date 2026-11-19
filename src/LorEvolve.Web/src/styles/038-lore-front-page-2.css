@@ -98,12 +98,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .typecard:hover {
-    transform: none;
-  }
-}
-
 @media (max-width: 640px) {
   /* One line of groups that scrolls inside itself, so many groups never push the cards a screen down; the page itself
      never scrolls sideways. */

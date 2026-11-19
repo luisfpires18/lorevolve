@@ -94,12 +94,6 @@
   width: 55%;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .entitycard:hover {
-    transform: none;
-  }
-}
-
 /* The identity part of a row (EntityRow): tile, name, kind line. */
 .entityrow__tile {
   border-radius: var(--radius-sm);

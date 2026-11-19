@@ -90,7 +90,8 @@
   text-decoration: none;
 }
 
-.contents--management .doorway {
+/* :where keeps this at one class, so the shared hover and press shadows still win over it. */
+.contents--management :where(.doorway) {
   background: transparent;
   box-shadow: none;
 }
