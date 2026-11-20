@@ -48,7 +48,9 @@ export function DiscoveryFamilies({
                     n: formatCount(result.totalCount),
                     q,
                   })
-                : tn('places.discovery.count', result.totalCount, { n: formatCount(result.totalCount) })}
+                : tn('places.discovery.count', result.totalCount, {
+                    n: formatCount(result.totalCount),
+                  })}
           </QuietNote>
         ) : null}
       </div>
