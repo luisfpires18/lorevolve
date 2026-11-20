@@ -1,7 +1,6 @@
 import { useId, type ReactNode } from 'react'
 import { IdeaBoardPicker } from './IdeaBoardPicker'
 import { BoardFields } from './ideas/BoardFields'
-import { BoardNotices } from './ideas/BoardNotices'
 import { BoardToolbar } from './ideas/BoardToolbar'
 import { BoardUnavailable } from './ideas/BoardUnavailable'
 import { BoardWork } from './ideas/BoardWork'
@@ -16,6 +15,7 @@ import { useDraftedEditor } from '../lib/useDraftedEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 import { DocumentHead } from './DocumentHead'
+import { EditorNotices } from './EditorNotices'
 import { EditorSaveBar } from './EditorSaveBar'
 
 interface IdeaBoardEditorProps {
@@ -118,6 +118,7 @@ export function IdeaBoardEditor({
     cardsById,
   }
   const { addPicked } = cards
+  const { conflict } = base
 
   return (
     <article className="board" aria-labelledby={headingId} data-testid="board-editor">
@@ -138,7 +139,53 @@ export function IdeaBoardEditor({
         updatedAt={stored.updatedAt}
       />
 
-      <BoardNotices {...view} />
+      <EditorNotices
+        testId="board"
+        recoveryId={recoveryId}
+        recovery={
+          view.offer && view.copy
+            ? {
+                what: view.isNew ? t('ideas.board.recoveryNew') : t('ideas.board.recoveryThis'),
+                draft: view.offer,
+                savedUpdatedAt: stored.updatedAt,
+                preview: (
+                  <div
+                    className="recovery__prose idea__preview prose"
+                    role="region"
+                    aria-label={t('ideas.board.recoveredDraft')}
+                    tabIndex={0}
+                  >
+                    <p className="idea__previewtitle">
+                      {view.copy.title || t('ideas.board.untitled')}
+                    </p>
+                    <p>
+                      {t('ideas.board.countsStop', {
+                        cards: tn('ideas.board.cards', view.copy.cards.length),
+                        lines: tn('ideas.board.lines', view.copy.connections.length),
+                      })}
+                    </p>
+                  </div>
+                ),
+                onRecover: view.recoverDraft,
+                onDiscard: view.discardDraft,
+              }
+            : null
+        }
+        conflict={
+          conflict
+            ? {
+                text: t('ideas.board.conflict.text'),
+                onKeepMine: () => void view.save(conflict.updatedAt),
+                keepLabel: t('ideas.board.conflict.keepMine'),
+                onLoadSaved: () => void view.loadSavedVersion(),
+                loadLabel: t('ideas.board.conflict.loadSaved'),
+                busy: view.isSaving,
+              }
+            : null
+        }
+        failure={view.failure}
+        failureClassName="idea__failure"
+      />
 
       <BoardFields {...view} />
 

@@ -2,7 +2,8 @@ import { useId, type ReactNode } from 'react'
 import { IdeaReferencePicker } from './IdeaReferencePicker'
 import { IdeaFormFields } from './ideas/IdeaFormFields'
 import { IdeaHead } from './ideas/IdeaHead'
-import { IdeaNotices } from './ideas/IdeaNotices'
+import { EditorNotices } from './EditorNotices'
+import { QuietNote } from './QuietNote'
 import { IdeaReferences } from './ideas/IdeaReferences'
 import { EditorSaveBar } from './EditorSaveBar'
 import { IdeaUnavailable } from './ideas/IdeaUnavailable'
@@ -150,19 +151,49 @@ export function IdeaEditor({
         />
       </DocumentHead>
 
-      <IdeaNotices
-        offer={offer}
-        copy={copy}
+      <EditorNotices
+        testId="idea"
         recoveryId={recoveryId}
-        isNew={isNew}
-        stored={stored}
-        recoverDraft={recoverDraft}
-        discardDraft={discardDraft}
-        conflict={conflict}
-        isSaving={isSaving}
-        save={save}
-        loadSavedVersion={loadSavedVersion}
+        recovery={
+          offer && copy
+            ? {
+                what: isNew ? t('ideas.editor.recoveryNew') : t('ideas.editor.recoveryThis'),
+                draft: offer,
+                savedUpdatedAt: stored.updatedAt,
+                preview: (
+                  <div
+                    className="recovery__prose idea__preview prose"
+                    role="region"
+                    aria-label={t('ideas.editor.recoveredDraft')}
+                    tabIndex={0}
+                  >
+                    <p className="idea__previewtitle">{copy.title || t('ideas.editor.untitled')}</p>
+                    {copy.body === '' ? (
+                      <QuietNote size="body">{t('ideas.editor.noBody')}</QuietNote>
+                    ) : (
+                      copy.body
+                    )}
+                  </div>
+                ),
+                onRecover: recoverDraft,
+                onDiscard: discardDraft,
+              }
+            : null
+        }
+        conflict={
+          conflict
+            ? {
+                text: t('ideas.editor.conflict.text'),
+                onKeepMine: () => void save(conflict.updatedAt),
+                keepLabel: t('ideas.editor.conflict.keepMine'),
+                onLoadSaved: loadSavedVersion,
+                loadLabel: t('ideas.editor.conflict.loadSaved'),
+                busy: isSaving,
+              }
+            : null
+        }
         failure={failure}
+        failureClassName="idea__failure"
       />
 
       <form

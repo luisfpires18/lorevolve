@@ -6,7 +6,9 @@ import { guardMark, moveState, openCount, type MachineTransition } from '../../w
 import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState'
 import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
-import { MachineNotices } from './MachineNotices'
+import { EditorNotices } from '../EditorNotices'
+import { Callout } from '../Callout'
+import { FormActions } from '../FormActions'
 import { MachineStates } from './MachineStates'
 import { MachineTransitions } from './MachineTransitions'
 import { MachineBinding } from './MachineBinding'
@@ -92,16 +94,33 @@ export function MachinePanelBody({
 
   return (
     <div data-testid="machine-panel">
-      <MachineNotices
-        conflict={conflict}
-        saving={saving}
-        keepMine={keepMine}
-        loadSaved={loadSaved}
+      <EditorNotices
+        testId="machine"
+        conflict={
+          conflict
+            ? {
+                text: t(`${m}.conflict`),
+                onKeepMine: () => void keepMine(),
+                keepLabel: t(`${m}.keepMine`),
+                onLoadSaved: () => void loadSaved(),
+                loadLabel: t(`${m}.loadSaved`),
+                busy: saving,
+              }
+            : null
+        }
         failure={failure}
-        connecting={connecting}
-        stateName={stateName}
-        setConnecting={setConnecting}
       />
+
+      {connecting ? (
+        <Callout look="notice" role="status" testId="machine-connecting">
+          <p>{t(`${m}.connecting`, { name: stateName.get(connecting) ?? '' })}</p>
+          <FormActions
+            size="sm"
+            onCancel={() => setConnecting(null)}
+            cancelTestId="machine-connecting-cancel"
+          />
+        </Callout>
+      ) : null}
 
       {draft.states.length > 0 ? (
         <SystemMachineCanvas

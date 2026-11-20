@@ -11,7 +11,7 @@ import { useSaveShortcut } from '../../lib/useSaveShortcut'
 import { EditorSaveBar } from '../EditorSaveBar'
 import { ManuscriptHead } from '../stories/ManuscriptHead'
 import { ScriptPartFields } from './ScriptPartFields'
-import { ScriptPartNotices } from './ScriptPartNotices'
+import { EditorNotices } from '../EditorNotices'
 import { Button } from '../Button'
 import { FormMessage } from '../FormMessage'
 import { QuietNote } from '../QuietNote'
@@ -122,7 +122,20 @@ export function ScriptPart({
         setScript={setScript}
       />
 
-      <ScriptPartNotices changed={changed} failure={failure} load={load} />
+      <EditorNotices
+        testId="project-script"
+        conflict={
+          changed
+            ? {
+                text: t('projects.structure.changed'),
+                onLoadSaved: () => void load(),
+                loadLabel: t('projects.script.reload'),
+              }
+            : null
+        }
+        failure={failure}
+        failureTestId="project-script-save-failed"
+      />
 
       {canEdit ? (
         <EditorSaveBar

@@ -11,11 +11,10 @@ import { worldRuleActions } from '../worldRules/worldRuleActions'
 import { useSaveShortcut } from '../lib/useSaveShortcut'
 import { sameFields } from '../worldRules/ruleDraft'
 import { DocumentHead } from './DocumentHead'
-import { ConflictBar } from './ConflictBar'
+import { EditorNotices } from './EditorNotices'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
 import { Announce } from './Announce'
 import { ReadGate } from './ReadGate'
-import { FormMessage } from './FormMessage'
 
 interface WorldRuleEditorProps {
   universeId: string
@@ -140,23 +139,23 @@ export function WorldRuleEditor({
             updatedAt={stored.updatedAt}
           />
 
-          {conflict ? (
-            <ConflictBar
-              text={t('canon.editor.conflict')}
-              onKeepMine={() => void save(conflict.updatedAt)}
-              keepLabel={t('canon.editor.keepMine')}
-              onLoadSaved={() => void loadSavedVersion()}
-              loadLabel={t('canon.editor.loadSaved')}
-              busy={isSaving}
-              testId="world-rule"
-            />
-          ) : null}
-
-          {failure ? (
-            <FormMessage className="rule__failure" testId="world-rule-error">
-              {failure}
-            </FormMessage>
-          ) : null}
+          <EditorNotices
+            testId="world-rule"
+            conflict={
+              conflict
+                ? {
+                    text: t('canon.editor.conflict'),
+                    onKeepMine: () => void save(conflict.updatedAt),
+                    keepLabel: t('canon.editor.keepMine'),
+                    onLoadSaved: () => void loadSavedVersion(),
+                    loadLabel: t('canon.editor.loadSaved'),
+                    busy: isSaving,
+                  }
+                : null
+            }
+            failure={failure}
+            failureClassName="rule__failure"
+          />
 
           <WorldRuleForm
             universeId={universeId}
