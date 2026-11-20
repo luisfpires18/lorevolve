@@ -1,14 +1,10 @@
 import type { ReactNode, RefObject } from 'react'
-import { ImageMinus, ImagePlus, ImageUp, Crop } from 'lucide-react'
-import { IMAGE_ACCEPT } from '../lore/images'
 import type { FieldImageRef } from '../lore/types'
 import { PictureWithFallback } from './PictureWithFallback'
-import { ActionIcon } from './ActionIcon'
+import { PictureActions } from './PictureActions'
 import { CroppedPicture } from './ImageCropDialog'
 import type { FieldImageApi, PendingFieldImage } from './FieldImageInput'
 import { useI18n } from '../i18n'
-import { Button } from './Button'
-import { buttonClass } from '../lib/buttonClass'
 
 /** The picture row of an Image field: the preview, the file input, the pick label and the actions. */
 export function FieldImageRow({
@@ -24,7 +20,7 @@ export function FieldImageRow({
   api,
   preview,
   hasPicture,
-  busyOrDisabled,
+  disabled,
   testId,
   choose,
   reframe,
@@ -42,7 +38,7 @@ export function FieldImageRow({
   api: FieldImageApi
   preview: string | null
   hasPicture: boolean
-  busyOrDisabled: boolean
+  disabled: boolean
   testId: (part: string) => string
   choose: (file: File | undefined) => Promise<void>
   reframe: () => Promise<void>
@@ -77,48 +73,29 @@ export function FieldImageRow({
       )}
 
       <div className="imagefield__actions">
-        {/* The input comes first so the label can be styled from its state. */}
-        <input
-          ref={input}
-          {...control}
-          className="imagefield__input"
-          type="file"
-          accept={IMAGE_ACCEPT}
-          disabled={busyOrDisabled}
-          onChange={(event) => void choose(event.target.files?.[0])}
-          data-testid={testId('input')}
+        <PictureActions
+          input={input}
+          control={control}
+          inputId={inputId}
+          hasPicture={hasPicture}
+          busy={busy}
+          disabled={disabled}
+          onFile={(file) => void choose(file)}
+          onReframe={() => void reframe()}
+          onRemove={() => void remove()}
+          labels={{
+            add: t('entity.image.add'),
+            replace: t('entity.image.replace'),
+            reframe: t('entity.fieldImage.reframe'),
+            remove: t('entity.image.remove'),
+            removing: t('entity.image.removing'),
+          }}
+          testIds={{
+            input: testId('input'),
+            reframe: testId('reframe'),
+            remove: testId('remove'),
+          }}
         />
-
-        <label
-          className={buttonClass({ tone: 'secondary', className: 'imagefield__pick' })}
-          htmlFor={inputId}
-        >
-          <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
-          {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
-        </label>
-
-        {hasPicture ? (
-          <>
-            <Button
-              tone="secondary"
-              icon={Crop}
-              disabled={busyOrDisabled}
-              onClick={() => void reframe()}
-              data-testid={testId('reframe')}
-            >
-              {t('entity.fieldImage.reframe')}
-            </Button>
-            <Button
-              tone="danger-quiet"
-              icon={ImageMinus}
-              disabled={busyOrDisabled}
-              onClick={() => void remove()}
-              data-testid={testId('remove')}
-            >
-              {busy ? t('entity.image.removing') : t('entity.image.remove')}
-            </Button>
-          </>
-        ) : null}
       </div>
     </div>
   )

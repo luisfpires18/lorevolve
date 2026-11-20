@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Field } from './Field'
 import { fieldImageUrl, removeFieldImage, setFieldImage, setFieldImageCrop } from '../lore/images'
 import type { EntityImageCrop, FieldImageRef } from '../lore/types'
@@ -10,11 +10,10 @@ import {
 } from '../lore/fieldKinds'
 import { ImageCropDialog } from './ImageCropDialog'
 import { FieldImageRow } from './FieldImageRow'
-import type { Framing } from '../lore/fieldImageFraming'
-import { useFieldImagePreview } from '../lore/useFieldImagePreview'
+import { pictureRatio } from '../lore/fieldImageFraming'
 import { fieldImageActions } from '../lore/fieldImageActions'
 import { useI18n } from '../i18n'
-import { useImagePick } from '../lib/useImagePick'
+import { usePictureFraming } from '../lib/usePictureFraming'
 
 /**
  * A picture chosen for an Image field of an entry that does not exist yet, with the frame the author chose.
@@ -80,9 +79,12 @@ export function FieldImageInput({
 }) {
   const { t } = useI18n()
   const inputId = useId()
-  const [busy, setBusy] = useState(false)
-  const { input, error, setError, pick } = useImagePick('entity.image.tooBig')
-  const [framing, setFraming] = useState<Framing | null>(null)
+  const { input, error, setError, busy, framing, setFraming, preview, choose, remove } =
+    usePictureFraming<FieldImageRef, { aspect: number }>({
+      tooBigKey: 'entity.image.tooBig',
+      pending,
+      onPending,
+    })
 
   const api: FieldImageApi = given ?? {
     url: (stored, variant) => fieldImageUrl(universeId, entityId!, stored, variant),
@@ -94,21 +96,15 @@ export function FieldImageInput({
   const frame = shape ?? FieldImageShape.Free
   const fixedAspect = aspectOfShape(frame)
 
-  const { preview } = useFieldImagePreview({ pending, framing })
-
   const hasPicture = Boolean(pending || image)
-  const busyOrDisabled = busy || disabled
   const testId = (part: string) => `field-image-${fieldId}-${part}`
 
-  const { choose, reframe, keep, remove } = fieldImageActions({
+  const { reframe, keep } = fieldImageActions({
     entityId,
     image,
     pending,
     onPending,
     onChanged,
-    t,
-    pick,
-    setBusy,
     setError,
     framing,
     setFraming,
@@ -116,6 +112,9 @@ export function FieldImageInput({
     fixedAspect,
     preview,
   })
+
+  const framed = (source: string) =>
+    Promise.resolve(fixedAspect ?? pictureRatio(source)).then((aspect) => ({ aspect }))
 
   return (
     <>
@@ -147,14 +146,21 @@ export function FieldImageInput({
             placeholder={placeholder}
             input={input}
             busy={busy}
+            disabled={disabled}
             api={api}
             preview={preview}
             hasPicture={hasPicture}
-            busyOrDisabled={busyOrDisabled}
             testId={testId}
-            choose={choose}
+            choose={(file) => choose(file, framed)}
             reframe={reframe}
-            remove={remove}
+            remove={() =>
+              remove({
+                stored: Boolean(entityId && image),
+                run: api.remove,
+                done: () => onChanged(null),
+                failed: () => t('entity.image.removeFailed'),
+              })
+            }
           />
         )}
       </Field>
