@@ -42,7 +42,7 @@ export function IdeaReferences({
       <h2 className="idea__subheading" id={referencesId}>
         {t('ideas.editor.references.heading')}
       </h2>
-      <p className="field__hint">{t('ideas.editor.references.hint')}</p>
+      <QuietNote>{t('ideas.editor.references.hint')}</QuietNote>
 
       <Field
         group

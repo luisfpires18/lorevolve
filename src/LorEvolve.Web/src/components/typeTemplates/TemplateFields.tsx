@@ -8,6 +8,7 @@ import { t } from '../../i18n'
 import { NewButton } from '../NewButton'
 import { Pencil, Trash } from 'lucide-react'
 import { confirmAction } from '../../lib/confirm'
+import { QuietNote } from '../QuietNote'
 
 /** A template's open fields panel: each field with Edit and Delete, the field form, and Add field. */
 export function TemplateFields({
@@ -37,7 +38,7 @@ export function TemplateFields({
   return (
     <div id={id} className="types__fields" data-testid={`template-fields-panel-${template.id}`}>
       {template.fields.length === 0 ? (
-        <p className="projectcard__meta">{t('projects.schema.noFields')}</p>
+        <QuietNote>{t('projects.schema.noFields')}</QuietNote>
       ) : (
         <ul className="fieldlist" data-testid={`template-fields-${template.id}`}>
           {template.fields.map((field) => (

@@ -17,6 +17,7 @@ import { errorText } from '../lib/errorText'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 import { DateText } from './DateText'
+import { QuietNote } from './QuietNote'
 
 type LoadState =
   | { kind: 'ready'; for: string; entity: ProjectEntityDetail }
@@ -221,9 +222,9 @@ export function ProjectEntityDetailView({
 
         <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
           {picture ? null : (
-            <p className="projectcard__meta" data-testid="game-entity-no-image">
+            <QuietNote testId="game-entity-no-image">
               {t('projects.gameEntities.entity.noImage')}
-            </p>
+            </QuietNote>
           )}
           <p className="rail__meta">
             {tx('entity.page.rail.created', { date: <DateText value={entity.createdAt} /> })}

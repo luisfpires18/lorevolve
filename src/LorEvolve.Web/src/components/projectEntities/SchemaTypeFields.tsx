@@ -8,6 +8,7 @@ import { FieldForm } from '../FieldForm'
 import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { NewButton } from '../NewButton'
 import { Trash } from 'lucide-react'
+import { QuietNote } from '../QuietNote'
 
 /** A type's open field list: the fields it hands down, its own, and the form to add one. */
 export function SchemaTypeFields({
@@ -41,7 +42,7 @@ export function SchemaTypeFields({
       {openTypeId === type.id ? (
         <div id={id} className="types__fields" data-testid={`project-type-fields-panel-${type.id}`}>
           {type.fields.length === 0 && type.inheritedFields.length === 0 ? (
-            <p className="projectcard__meta">{t('projects.schema.noFields')}</p>
+            <QuietNote>{t('projects.schema.noFields')}</QuietNote>
           ) : (
             /* The same rows the lore types screen draws for a type's fields, because they are the same thing:
                        what the type above hands down first, quieter, then this type's own. */

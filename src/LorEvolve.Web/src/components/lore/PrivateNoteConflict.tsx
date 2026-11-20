@@ -1,6 +1,7 @@
 import { EditConflict, LatestText } from '../EditConflict'
 import { getPrivateNote, type PrivateNote } from '../../lore/privateNote'
 import { useI18n } from '../../i18n'
+import { QuietNote } from '../QuietNote'
 
 /** The note was saved somewhere else while it was open: the latest, and the two ways out. */
 export function PrivateNoteConflict({
@@ -22,7 +23,7 @@ export function PrivateNoteConflict({
       renderLatest={(latest) => (
         <LatestText label={t('entity.privateNote.latestLabel')}>
           {latest.content === '' ? (
-            <p className="entry__blank">{t('entity.privateNote.latestBlank')}</p>
+            <QuietNote size="body">{t('entity.privateNote.latestBlank')}</QuietNote>
           ) : (
             <div className="recovery__prose prose" dir="auto">
               {latest.content}

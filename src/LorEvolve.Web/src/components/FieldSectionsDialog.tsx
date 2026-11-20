@@ -11,6 +11,7 @@ import { SectionFieldPlacer } from './lore/SectionFieldPlacer'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * A type's field sections (Issue #26) in the drawer every LorEvolve form uses: name, order, fold and remove sections, put each
@@ -110,7 +111,7 @@ export function FieldSectionsDialog({
         </div>
       ) : null}
 
-      <p className="field__hint">{t('entityTypes.sections.hint')}</p>
+      <QuietNote spacing="hint">{t('entityTypes.sections.hint')}</QuietNote>
 
       <SectionListEditor
         sections={sections}

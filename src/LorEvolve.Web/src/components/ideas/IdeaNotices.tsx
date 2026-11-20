@@ -4,6 +4,7 @@ import type { useIdeaDraft } from '../../ideas/useIdeaDraft'
 import { useI18n } from '../../i18n'
 import { ConflictBar } from '../ConflictBar'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /** An idea editor's notices: the recovery copy offered, the stale-save choice, and why a save failed. */
 export function IdeaNotices({
@@ -51,7 +52,7 @@ export function IdeaNotices({
               >
                 <p className="idea__previewtitle">{copy.title || t('ideas.editor.untitled')}</p>
                 {copy.body === '' ? (
-                  <p className="entry__blank">{t('ideas.editor.noBody')}</p>
+                  <QuietNote size="body">{t('ideas.editor.noBody')}</QuietNote>
                 ) : (
                   copy.body
                 )}

@@ -3,6 +3,7 @@ import { Field } from '../Field'
 import { CheckField } from '../CheckField'
 import { ORIGINAL_CREATOR_MAX, ORIGINAL_WORK_MAX } from '../../publishing/types'
 import type { Attribution } from '../../publishing/publicDetailsDraft'
+import { QuietNote } from '../QuietNote'
 
 /** The "based on" attribution field: the box, then whose work and which, when ticked. */
 export function PublicAttributionField({
@@ -56,9 +57,9 @@ export function PublicAttributionField({
                   onChange={(event) => attribute({ creator: event.target.value })}
                   data-testid="original-creator"
                 />
-                <p className="field__hint" id={creatorHintId}>
+                <QuietNote spacing="hint" id={creatorHintId}>
                   {t('universe.publicDetails.creatorHint')}
-                </p>
+                </QuietNote>
               </>
             )}
           </Field>

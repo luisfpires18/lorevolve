@@ -2,6 +2,7 @@ import { t } from '../../i18n'
 import { Field } from '../Field'
 import { AgeOrder, type AgeOrderValue } from '../../relationships/types'
 import { MAX_KEY, MIN_KEY, type TypeDraft } from '../../relationships/typeDraft'
+import { QuietNote } from '../QuietNote'
 
 export function KindFormCanon({
   draft,
@@ -17,7 +18,7 @@ export function KindFormCanon({
   return (
     <fieldset className="reltype__canon" data-testid="reltype-canon">
       <legend className="reltype__legend">{t('relationships.types.canonLegend')}</legend>
-      <p className="field__hint">{t('relationships.types.canonHint')}</p>
+      <QuietNote>{t('relationships.types.canonHint')}</QuietNote>
 
       <p className="reltype__direction" data-testid="reltype-direction">
         <span className="reltype__end">{t('relationships.types.source')}</span>
@@ -28,9 +29,7 @@ export function KindFormCanon({
       </p>
 
       {draft.isSymmetric ? (
-        <p className="field__hint" data-testid="reltype-no-order">
-          {t('relationships.types.noOrder')}
-        </p>
+        <QuietNote testId="reltype-no-order">{t('relationships.types.noOrder')}</QuietNote>
       ) : (
         <Field
           label={t('relationships.types.ageOrdering')}

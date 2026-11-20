@@ -76,14 +76,14 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
                     <p className="era__readname">
                       <bdi>{era.name}</bdi>
                     </p>
-                    <p className="field__hint">
+                    <QuietNote spacing="hint">
                       {tx(
                         era.direction === EraDirection.Descending
                           ? 'time.chronology.reading.countsDown'
                           : 'time.chronology.reading.countsUp',
                         { sample: <bdi>{sample}</bdi> },
                       )}
-                    </p>
+                    </QuietNote>
                   </div>
                 </li>
               )

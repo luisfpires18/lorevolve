@@ -10,6 +10,7 @@ import { t } from '../../i18n'
 import { Field } from '../Field'
 import { SegmentedControl } from '../SegmentedControl'
 import type { useCanonConflicts } from '../../canon/useCanonConflicts'
+import { QuietNote } from '../QuietNote'
 
 /**
  * The status filters, in the order an author works through them. `null` is deliberately
@@ -74,7 +75,9 @@ export function CanonControls({
                   </option>
                 ))}
               </select>
-              {severity !== null ? <p className="field__hint">{SEVERITY_HINTS[severity]}</p> : null}
+              {severity !== null ? (
+                <QuietNote spacing="hint">{SEVERITY_HINTS[severity]}</QuietNote>
+              ) : null}
             </>
           )}
         </Field>

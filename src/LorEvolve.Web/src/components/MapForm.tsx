@@ -8,6 +8,7 @@ import { MapFormPicture } from './MapFormPicture'
 import { MapFormReplace } from './MapFormReplace'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * Three small forms in the one drawer: a new map (its picture and details in one request), a map's details (saved over
@@ -107,11 +108,11 @@ export function MapForm(props: MapFormProps) {
       ) : null}
 
       {progress ? (
-        <p className="field__hint" role="status" data-testid="map-upload-progress">
+        <QuietNote spacing="hint" role="status" testId="map-upload-progress">
           {progress.ratio !== null && progress.ratio < 1
             ? t('places.mapForm.uploading', { percent: Math.round(progress.ratio * 100) })
             : t('places.mapForm.uploaded')}
-        </p>
+        </QuietNote>
       ) : null}
     </Drawer>
   )

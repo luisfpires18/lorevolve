@@ -17,6 +17,7 @@ import { FamilyLinkSide } from './relationships/FamilyLinkSide'
 import { FamilyLinkStatus } from './relationships/FamilyLinkStatus'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface Props {
   universeId: string
@@ -110,11 +111,11 @@ export function FamilyLinkForm({
     <div className="relform familylink" data-testid="family-link-form">
       {preview ? <FamilyLinkPreview preview={preview} /> : null}
       {kind ? (
-        <p className="field__hint">
+        <QuietNote spacing="hint">
           {isParentKind
             ? t('places.linkForm.hintParent', { word: FAMILY_SEMANTIC_WORDS[kind.familySemantic] })
             : t('places.linkForm.hintOther')}
-        </p>
+        </QuietNote>
       ) : null}
 
       <div className="relform__grid">

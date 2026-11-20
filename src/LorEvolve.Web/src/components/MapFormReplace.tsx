@@ -1,6 +1,7 @@
 import { Field } from './Field'
 import type { MapDetail, ReplacePinsPolicy } from '../maps/types'
 import { useI18n } from '../i18n'
+import { QuietNote } from './QuietNote'
 
 export function MapFormReplace({
   map,
@@ -29,9 +30,9 @@ export function MapFormReplace({
       error={fieldErrors.pins}
     >
       {map?.calibration ? (
-        <p className="field__hint" data-testid="map-replace-scale-note">
+        <QuietNote spacing="hint" testId="map-replace-scale-note">
           {t('places.mapForm.scaleNote')}
-        </p>
+        </QuietNote>
       ) : null}
       <label className="mapform__choice">
         <input

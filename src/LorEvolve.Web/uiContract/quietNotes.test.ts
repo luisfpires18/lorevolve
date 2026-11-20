@@ -2,7 +2,8 @@
 //
 // Keeps the quiet lines on their shared part (#456): QuietNote draws a settings note and a "saved" line, so no file
 // writes `settings__note` or `settings__saved`. `entry__blank`, `projectcard__meta` and a hint outside a Field
-// (`field__hint`) still have hand-written copies; the lists below only shrink, and a stale entry fails.
+// (`field__hint`) are drawn by it too; the few files that stay are listed below, the list only shrinks, and a stale
+// entry fails.
 // Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
@@ -42,89 +43,28 @@ test('a settings note and a saved line are drawn by QuietNote', () => {
   }
 })
 
-// Still hand-written; a later stage of #456 moves them.
-const ENTRY_BLANK = [
-  'src/components/EntityArticle.tsx',
-  'src/components/ideas/IdeaNotices.tsx',
-  'src/components/lore/ArticleEditing.tsx',
-  'src/components/lore/ArticleHistory.tsx',
-  'src/components/lore/LoreContextDrawer.tsx',
-  'src/components/lore/LorePreview.tsx',
-  'src/components/lore/PrivateNoteConflict.tsx',
-  'src/components/projectEntities/ScriptPartFields.tsx',
-  'src/components/stories/ManuscriptBody.tsx',
-  'src/components/stories/ManuscriptNotices.tsx',
-  'src/components/stories/ManuscriptRevision.tsx',
-]
-
-const PROJECT_CARD_META = [
-  'src/components/ChapterPages.tsx',
-  'src/components/ComicCollections.tsx',
-  'src/components/PickOneDrawer.tsx',
-  'src/components/ProjectCard.tsx',
-  'src/components/ProjectEntityDetailView.tsx',
-  'src/components/ProjectEntityFields.tsx',
-  'src/components/ProjectOutline.tsx',
-  'src/components/ProjectSchema.tsx',
-  'src/components/ProjectScript.tsx',
-  'src/components/ProjectSeasons.tsx',
-  'src/components/TypeTemplates.tsx',
-  'src/components/projectEntities/PagePanels.tsx',
-  'src/components/projectEntities/SchemaTypeFields.tsx',
-  'src/components/projectEntities/ScriptEditor.tsx',
-  'src/components/projectEntities/ScriptPart.tsx',
-  'src/components/projects/SagaSection.tsx',
-  'src/components/projects/SagasUnassigned.tsx',
-  'src/components/typeTemplates/TemplateFields.tsx',
-]
-
-// A hint outside a Field. Field.tsx and CheckField.tsx draw `field__hint` for good.
-const FIELD_HINT = [
-  'src/components/CharCount.tsx',
-  'src/components/EraRelations.tsx',
-  'src/components/FamilyKindDialog.tsx',
-  'src/components/FamilyLinkForm.tsx',
-  'src/components/FeedbackButton.tsx',
-  'src/components/FieldSectionsDialog.tsx',
-  'src/components/MapForm.tsx',
-  'src/components/MapFormPicture.tsx',
-  'src/components/MapFormReplace.tsx',
-  'src/components/MapPinForm.tsx',
-  'src/components/MomentPick.tsx',
-  'src/components/PublicDetailsForm.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/SystemMachineTry.tsx',
-  'src/components/TypeGroupsField.tsx',
-  'src/components/UniverseArtworkField.tsx',
-  'src/components/UniverseColourField.tsx',
-  'src/components/WorldRuleCheckSection.tsx',
-  'src/components/canon/CanonControls.tsx',
-  'src/components/ideas/BoardInspector.tsx',
-  'src/components/ideas/BoardToolbar.tsx',
-  'src/components/ideas/IdeaReferences.tsx',
-  'src/components/lore/MassCreateDefaults.tsx',
-  'src/components/publishing/PublicAttributionField.tsx',
-  'src/components/publishing/PublishStatus.tsx',
-  'src/components/relationships/KindFormCanon.tsx',
-  'src/components/relationships/KindFormFamily.tsx',
-  'src/components/relationships/RelationsWhen.tsx',
-  'src/components/stories/SceneFormFields.tsx',
-  'src/components/timeline/MomentDating.tsx',
-  'src/components/timeline/MomentDetails.tsx',
-  'src/components/universes/InviteForm.tsx',
-  'src/components/worldLogic/MachineTransitions.tsx',
-  'src/pages/ChronologyPage.tsx',
-  'src/components/Field.tsx',
-  'src/components/CheckField.tsx',
-]
+// Still hand-written, each for a reason a QuietNote would change: the summary line wears `entry__summary` on top of
+// `projectcard__meta` (a later rule wins both margin and size); the three hints below carry a class of their own whose
+// sheet loads before `.field__hint`, so the margin they end up with comes from that rule; CharCount and the shared
+// Field and CheckField draw the hint class for good; a hint after a segmented control takes the `.segmented +`
+// margin; EraRelations styles a `summary`, which QuietNote cannot be.
+const STAYS: Record<string, string[]> = {
+  entry__blank: [],
+  projectcard__meta: ['src/components/ProjectEntityDetailView.tsx'],
+  field__hint: [
+    'src/components/CharCount.tsx',
+    'src/components/CheckField.tsx',
+    'src/components/EraRelations.tsx',
+    'src/components/Field.tsx',
+    'src/components/TypeGroupsField.tsx',
+    'src/components/lore/MassCreateDefaults.tsx',
+    'src/components/timeline/MomentDating.tsx',
+    'src/components/universes/InviteForm.tsx',
+  ],
+}
 
 test('the other quiet lines only stay where the list says', () => {
-  const lists: Record<string, string[]> = {
-    entry__blank: ENTRY_BLANK,
-    projectcard__meta: PROJECT_CARD_META,
-    field__hint: FIELD_HINT,
-  }
-  for (const [token, allowed] of Object.entries(lists)) {
+  for (const [token, allowed] of Object.entries(STAYS)) {
     const found = codeFiles.filter((file) => writes(read(file), token))
     assert.deepEqual(
       found.filter((file) => !allowed.includes(file)),

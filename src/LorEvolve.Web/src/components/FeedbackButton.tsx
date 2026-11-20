@@ -9,6 +9,7 @@ import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/
 import { FormActions } from './FormActions'
 import { SegmentedField } from './SegmentedField'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * Report a bug or ask for a feature, from any signed-in page: a small button at the window's corner opens a dialog, and what
@@ -148,11 +149,11 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
               onChange={(event) => setText(event.target.value)}
               data-testid="feedback-text"
             />
-            <p className="field__hint">
+            <QuietNote spacing="hint">
               {kind === FeedbackKind.Bug
                 ? t('data.feedback.hintBug')
                 : t('data.feedback.hintFeature')}
-            </p>
+            </QuietNote>
           </>
         )}
       </Field>

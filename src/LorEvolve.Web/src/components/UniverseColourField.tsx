@@ -3,6 +3,7 @@ import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { HEX, PICKER_IDLE, normalizeHex } from '../universes/universeFormInput'
 import { Button } from './Button'
+import { QuietNote } from './QuietNote'
 
 export function UniverseColourField({
   colourId,
@@ -82,9 +83,9 @@ export function UniverseColourField({
               </Button>
             ) : null}
           </div>
-          <p className="field__hint" id={`${colourId}-hint`}>
+          <QuietNote spacing="hint" id={`${colourId}-hint`}>
             {accentColor ? t('universe.form.colourHintSet') : t('universe.form.colourHintUnset')}
-          </p>
+          </QuietNote>
         </>
       )}
     </Field>

@@ -16,6 +16,7 @@ import { EntityImageField } from './EntityImageField'
 import { ProjectEntryForm } from './ProjectEntryForm'
 import { errorText } from '../lib/errorText'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * An entry's field values (#287), in its own type's order and read from its own game's types, so a same-named type of
@@ -87,9 +88,7 @@ export function ProjectEntityFields({
                       alt={t('projects.gameEntities.entity.fieldImageAlt', { name: row.name })}
                     />
                   ) : shown === null || shown === EMPTY_FACT ? (
-                    <span className="projectcard__meta">
-                      {t('projects.gameEntities.entity.noValue')}
-                    </span>
+                    <QuietNote as="span">{t('projects.gameEntities.entity.noValue')}</QuietNote>
                   ) : (
                     shown
                   )}
@@ -99,9 +98,9 @@ export function ProjectEntityFields({
           })}
         </dl>
       ) : (
-        <p className="projectcard__meta" data-testid="game-entity-no-fields">
+        <QuietNote testId="game-entity-no-fields">
           {t('projects.gameEntities.entity.noFields')}
-        </p>
+        </QuietNote>
       )}
       {editing && type ? (
         <Drawer

@@ -165,9 +165,9 @@ export function QuickCreateDialog({
         ) : null}
 
         {types.kind === 'loading' ? (
-          <p className="field__hint" role="status">
+          <QuietNote spacing="hint" role="status">
             {t('lore.quickCreate.readingTypes')}
-          </p>
+          </QuietNote>
         ) : types.kind === 'error' ? (
           <FormMessage>{t('lore.quickCreate.typesFailed')}</FormMessage>
         ) : eligible.length === 0 ? (

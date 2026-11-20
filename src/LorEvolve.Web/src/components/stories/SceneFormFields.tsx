@@ -11,6 +11,7 @@ import { EMPTY_POINT, type SceneDraft } from '../../stories/sceneDraft'
 import type { Chapter, PlotArc, Scene } from '../../stories/types'
 import type { RefObject } from 'react'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** The scene form's fields: title, chapter, summary, beats, notes, point of view, date and lore. */
 export function SceneFormFields({
@@ -171,9 +172,9 @@ export function SceneFormFields({
         />
 
         {unreckoned ? (
-          <p className="field__hint" data-testid="scene-unreckoned">
+          <QuietNote spacing="hint" testId="scene-unreckoned">
             {t('stories.sceneForm.unreckoned')}
-          </p>
+          </QuietNote>
         ) : null}
 
         {hasPoint ? (

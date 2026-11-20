@@ -163,9 +163,9 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
         placeholder={t('places.pinForm.lorePlaceholder')}
         error={fieldErrors.entityid}
       />
-      <p className="field__hint">
+      <QuietNote spacing="hint">
         {trashed ? t('places.pinForm.loreHintTrashed') : t('places.pinForm.loreHint')}
-      </p>
+      </QuietNote>
 
       <Field id="map-pin-title" label={t('places.pinForm.titleLabel')} error={fieldErrors.title}>
         {(control) => (

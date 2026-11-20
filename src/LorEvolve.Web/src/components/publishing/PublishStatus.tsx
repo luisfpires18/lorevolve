@@ -130,9 +130,9 @@ export function PublishStatus({
       ) : null}
 
       {!isPublic && missing.length === 0 && !detailsDirty && !confirming ? (
-        <p className="field__hint" data-testid="publication-ready">
+        <QuietNote spacing="hint" testId="publication-ready">
           {t('universe.publish.ready')}
-        </p>
+        </QuietNote>
       ) : null}
     </Section>
   )

@@ -134,9 +134,9 @@ export function PublicDetailsForm({
               }}
               data-testid="public-summary"
             />
-            <p className="field__hint" id={summaryHintId}>
+            <QuietNote spacing="hint" id={summaryHintId}>
               {t('universe.publicDetails.summaryHint', { max: PUBLIC_SUMMARY_MAX })}
-            </p>
+            </QuietNote>
           </>
         )}
       </Field>

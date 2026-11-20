@@ -6,6 +6,7 @@ import { EMPTY_POINT } from '../../stories/sceneDraft'
 import type { chronologyOf } from '../../stories/sceneDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
 import { FormActions } from '../FormActions'
+import { QuietNote } from '../QuietNote'
 
 export function RelationsWhen({
   chronology,
@@ -72,11 +73,11 @@ export function RelationsWhen({
               errors={{}}
             />
             {!whenReady ? (
-              <p className="field__hint" data-testid="relations-when-hint">
+              <QuietNote spacing="hint" testId="relations-when-hint">
                 {reckonsInEras
                   ? t('relationships.section.whenHintEras')
                   : t('relationships.section.whenHint')}
-              </p>
+              </QuietNote>
             ) : null}
             <div className="actions actions--tight">
               <FormActions

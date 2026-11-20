@@ -31,6 +31,16 @@
   font-size: var(--text-xs);
 }
 
+/* The size of the text around it, for a line that stands in for a value ("no summary yet"). */
+.quietnote--body {
+  font-size: inherit;
+}
+
+/* A hint under a control: the small text with a gap below, as `Field` draws its hint. */
+.quietnote--hint {
+  margin: 0 0 var(--space-2);
+}
+
 /* The accent line that says a change was saved. */
 .quietnote--saved {
   margin: 0 0 var(--space-4);

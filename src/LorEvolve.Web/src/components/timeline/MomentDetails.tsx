@@ -8,6 +8,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { DETAIL_ERROR_KEYS, type MomentDraft } from '../../timeline/momentDraft'
 import { Button } from '../Button'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /** The folded validation details: the kind of event, the method and the one who took part. */
 export function MomentDetails({
@@ -58,7 +59,7 @@ export function MomentDetails({
       </summary>
 
       <div className="moment__detailsbody">
-        <p className="field__hint">{t('time.momentForm.detailsHint')}</p>
+        <QuietNote>{t('time.momentForm.detailsHint')}</QuietNote>
 
         {termsFailed ? (
           <FormMessage>

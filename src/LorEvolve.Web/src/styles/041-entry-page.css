@@ -163,10 +163,6 @@
   border-top: 0;
 }
 
-.entry__blank {
-  color: var(--muted);
-}
-
 .rail__block {
   display: flex;
   flex-direction: column;

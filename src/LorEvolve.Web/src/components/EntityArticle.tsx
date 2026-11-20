@@ -147,9 +147,9 @@ export function EntityArticleSection({
       ) : null}
 
       {load.kind === 'missing' ? (
-        <p className="entry__blank" data-testid="article-missing">
+        <QuietNote size="body" testId="article-missing">
           {t('entity.article.missing')}
-        </p>
+        </QuietNote>
       ) : null}
 
       {load.kind === 'error' ? (
@@ -169,7 +169,7 @@ export function EntityArticleSection({
           savedUpdatedAt={stored.updatedAt}
           preview={
             isEmptyDocument(offer.content) ? (
-              <p className="entry__blank">{t('entity.article.draftBlank')}</p>
+              <QuietNote size="body">{t('entity.article.draftBlank')}</QuietNote>
             ) : (
               <LoreArticle content={offer.content} />
             )

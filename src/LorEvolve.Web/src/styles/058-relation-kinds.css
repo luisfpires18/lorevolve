@@ -41,10 +41,6 @@
   color: var(--ink);
 }
 
-.reltype__canon .field__hint {
-  margin: 0;
-}
-
 .reltype__direction {
   display: flex;
   flex-wrap: wrap;

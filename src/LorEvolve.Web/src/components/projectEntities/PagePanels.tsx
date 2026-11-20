@@ -6,6 +6,7 @@ import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
 import { Trash } from 'lucide-react'
 import { confirmAction } from '../../lib/confirm'
+import { QuietNote } from '../QuietNote'
 
 /** A page's panels, each with what it shows, what is said, and its menu. */
 export function PagePanels({
@@ -33,7 +34,7 @@ export function PagePanels({
         <li key={panel.id} data-testid={`project-panel-${panel.id}`}>
           <span>{panel.description ?? ''}</span>
           {panel.dialogue ? <blockquote>{panel.dialogue}</blockquote> : null}
-          <span className="projectcard__meta">
+          <QuietNote as="span">
             {t('projects.pages.shows')}:{' '}
             {panel.canonEntityId && panel.canonEntityName ? (
               // A usable way through to the entry, which is where its picture is served from: the Media
@@ -47,7 +48,7 @@ export function PagePanels({
             ) : (
               t('projects.pages.showsNone')
             )}
-          </span>
+          </QuietNote>
 
           <PanelLore
             universeId={universeId}

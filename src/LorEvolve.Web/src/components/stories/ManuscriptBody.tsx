@@ -6,6 +6,7 @@ import { NameLinker } from '../NameLinker'
 import { SegmentedControl } from '../SegmentedControl'
 import type { Scene } from '../../stories/types'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
+import { QuietNote } from '../QuietNote'
 
 /** Write or Read, the name linker, and the writer. */
 export function ManuscriptBody({
@@ -93,7 +94,7 @@ export function ManuscriptBody({
           data-testid="manuscript-read"
         >
           {draft === '' ? (
-            <p className="entry__blank">{t('manuscript.editor.nothingYet')}</p>
+            <QuietNote size="body">{t('manuscript.editor.nothingYet')}</QuietNote>
           ) : (
             <MentionProse universeId={universeId} text={draft} />
           )}
