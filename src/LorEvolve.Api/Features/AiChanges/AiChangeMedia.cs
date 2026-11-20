@@ -13,7 +13,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 // ---------- What an AI sends ----------
 
-[Description("A picture for an entry: its profile picture, when it has none yet, or one more picture in one of its appearances. The AI sends no file: the person uploads it in LorEvolve, on the proposal's review page, and approves it there.")]
+[Description("A picture for an entry: its profile picture, when it has none yet, or one more picture in one of its appearances. No file goes in propose_changes: the person uploads it on the proposal's review page, or the AI sends it with propose_entry_image.")]
 public sealed record AiImageInput(
     [property: Description("The entry's id.")] Guid? Entry = null,
     [property: Description("An appearance of that entry, by id from get_change_options with loreId. Leave it out for the entry's profile picture.")] Guid? Appearance = null,
@@ -27,6 +27,9 @@ public sealed record MediaValues(Guid EntityId, Guid? AppearanceId, string? Note
 /// route behind the session, never a storage URL.
 /// </summary>
 public sealed record AiChangeMediaInfo(bool Uploaded, string? FileName, string? ContentType, int? Width, int? Height, long? ByteSize, DateTime? UploadedAt);
+
+/// <summary>Why a picture was not held: the HTTP answer for the review page, and the same reason in words for MCP.</summary>
+internal sealed record MediaHoldRefusal(IResult Http, string Message);
 
 // ---------- What is held ----------
 
@@ -184,10 +187,43 @@ public static partial class AiChangeMediaEndpoints
             return Problems.Field(rejection!.Field, rejection.Message);
         }
 
+        var refusal = await HoldAsync(
+            db, store, clock, loggerFactory.CreateLogger(LoggerName), universeId, proposalId, operationId, userId, role, media, bytes, prepared,
+            ImagePreparation.TrimFileName(file.FileName), cancellationToken);
+        if (refusal is not null)
+        {
+            return refusal.Http;
+        }
+
+        return Results.Ok(await AiChangeViews.ReadAsync(db, universeId, proposalId, userId, role, cancellationToken));
+    }
+
+    /// <summary>
+    /// Quarantines a checked picture for a pending media change: written to the store under its future keys with no
+    /// transaction open, then recorded - replacing an earlier upload for the same change, whose objects are swept after
+    /// the commit. Shared by the review page's upload and the MCP tool that hands a picture over (#441). Null when held.
+    /// </summary>
+    internal static async Task<MediaHoldRefusal?> HoldAsync(
+        LorEvolveDbContext db,
+        IMediaObjectStore store,
+        TimeProvider clock,
+        ILogger logger,
+        Guid universeId,
+        Guid proposalId,
+        Guid operationId,
+        string userId,
+        UniverseRole role,
+        MediaValues media,
+        MemoryStream bytes,
+        PreparedImage prepared,
+        string? fileName,
+        CancellationToken cancellationToken)
+    {
         var held = await db.AiChangeMedia.Where(row => row.UploadedByUserId == userId && row.OperationId != operationId).SumAsync(row => (long?)row.ByteSize, cancellationToken) ?? 0;
         if (held + bytes.Length > MaxStagedBytesPerAccount)
         {
-            return Problems.Field(ImagePreparation.FileField, $"You have {ImagePreparation.Megabytes(held)} MB of pictures waiting for review, and at most {ImagePreparation.Megabytes(MaxStagedBytesPerAccount)} MB can wait at once. Approve or reject some first.");
+            var message = $"You have {ImagePreparation.Megabytes(held)} MB of pictures waiting for review, and at most {ImagePreparation.Megabytes(MaxStagedBytesPerAccount)} MB can wait at once. Approve or reject some first.";
+            return new MediaHoldRefusal(Problems.Field(ImagePreparation.FileField, message), message);
         }
 
         var assetId = Guid.NewGuid();
@@ -195,7 +231,6 @@ public static partial class AiChangeMediaEndpoints
         var (originalKey, thumbnailKey) = media.AppearanceId is { } appearanceId
             ? (AppearanceImageKeys.Original(universeId, media.EntityId, appearanceId, assetId, prepared.Extension), AppearanceImageKeys.Thumbnail(universeId, media.EntityId, appearanceId, assetId))
             : (EntityImageKeys.Original(universeId, media.EntityId, assetId, prepared.Extension), EntityImageKeys.Thumbnail(universeId, media.EntityId, assetId, thumbnailId));
-        var logger = loggerFactory.CreateLogger(LoggerName);
 
         try
         {
@@ -209,12 +244,12 @@ public static partial class AiChangeMediaEndpoints
         }
         catch (MediaStorageUnavailableException exception)
         {
-            return MediaProblem.Unavailable(exception);
+            return new MediaHoldRefusal(MediaProblem.Unavailable(exception), StorageUnavailableMessage);
         }
         catch (MediaStorageFailedException exception)
         {
             await SweepAsync(store, logger, originalKey, thumbnailKey);
-            return MediaProblem.Unavailable(exception);
+            return new MediaHoldRefusal(MediaProblem.Unavailable(exception), StorageUnavailableMessage);
         }
         catch (Exception)
         {
@@ -232,7 +267,7 @@ public static partial class AiChangeMediaEndpoints
             {
                 await transaction.DisposeAsync();
                 await SweepAsync(store, logger, originalKey, thumbnailKey);
-                return Results.NotFound();
+                return new MediaHoldRefusal(Results.NotFound(), "That picture change is no longer waiting for review.");
             }
 
             var earlier = await db.AiChangeMedia.FirstOrDefaultAsync(row => row.OperationId == operationId, cancellationToken);
@@ -254,7 +289,7 @@ public static partial class AiChangeMediaEndpoints
                 OriginalKey = originalKey,
                 ThumbnailKey = thumbnailKey,
                 ContentType = prepared.ContentType,
-                FileName = ImagePreparation.TrimFileName(file.FileName),
+                FileName = fileName,
                 Width = prepared.Width,
                 Height = prepared.Height,
                 ByteSize = bytes.Length,
@@ -279,8 +314,10 @@ public static partial class AiChangeMediaEndpoints
             await SweepAsync(store, logger, replaced);
         }
 
-        return Results.Ok(await AiChangeViews.ReadAsync(db, universeId, proposalId, userId, role, cancellationToken));
+        return null;
     }
+
+    private const string StorageUnavailableMessage = "Picture storage is unavailable right now. Try again in a moment.";
 
     /// <summary>The preview: whoever may read the proposal, while the file is held for it. Never cached beyond the session.</summary>
     private static async Task<IResult> ReadAsync(
@@ -335,7 +372,7 @@ public static partial class AiChangeMediaEndpoints
     }
 
     /// <summary>The media change a person may hand a picture to now: pending, in an open proposal, theirs or theirs to approve.</summary>
-    private static async Task<MediaValues?> PendingAsync(
+    internal static async Task<MediaValues?> PendingAsync(
         LorEvolveDbContext db,
         Guid universeId,
         Guid proposalId,

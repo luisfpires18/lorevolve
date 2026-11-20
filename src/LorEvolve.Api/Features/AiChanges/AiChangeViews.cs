@@ -828,7 +828,7 @@ internal static class AiChangeViews
                 _types = await db.EntityTypes.AsNoTracking().Where(type => type.UniverseId == universeId).ToDictionaryAsync(type => type.Id, type => type.Name, cancellationToken),
                 _fields = fields.ToDictionary(field => field.Id, field => (field.Name, field.Kind, field.DisplayOrder, field.Options.ToDictionary(option => option.Id, option => option.Value))),
                 _relationshipTypes = await db.RelationshipTypes.AsNoTracking().Where(type => type.UniverseId == universeId).ToDictionaryAsync(type => type.Id, type => type.Name, cancellationToken),
-                _entries = await db.Entities.AsNoTracking().Where(entity => entity.UniverseId == universeId && ids.Contains(entity.Id)).ToDictionaryAsync(entity => entity.Id, entity => entity.Name, cancellationToken),
+                _entries = await db.Entities.IgnoreQueryFilters().AsNoTracking().Where(entity => entity.UniverseId == universeId && ids.Contains(entity.Id)).ToDictionaryAsync(entity => entity.Id, entity => entity.Name, cancellationToken),
                 _stories = await db.Stories.AsNoTracking().Where(story => story.UniverseId == universeId && ids.Contains(story.Id)).ToDictionaryAsync(story => story.Id, story => story.Title, cancellationToken),
                 _chapters = await db.Chapters.AsNoTracking().Where(chapter => chapter.Story!.UniverseId == universeId && ids.Contains(chapter.Id)).ToDictionaryAsync(chapter => chapter.Id, chapter => chapter.Title, cancellationToken),
                 _scenes = await db.Scenes.AsNoTracking().Where(scene => scene.Story!.UniverseId == universeId && ids.Contains(scene.Id)).ToDictionaryAsync(scene => scene.Id, scene => (scene.Title, scene.StoryId), cancellationToken),
