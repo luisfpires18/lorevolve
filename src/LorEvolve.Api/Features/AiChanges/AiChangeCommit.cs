@@ -783,8 +783,8 @@ internal static class AiChangeCommit
 
     /// <summary>
     /// A quarantined picture attached through its upload's own commit (ADR 0062): the objects already stored under the
-    /// picture's keys become its image row's, and the quarantine row goes in the same transaction. The entry gone or given a
-    /// picture meanwhile, the appearance gone or full, or storage out of room refuses the approval whole; the picture stays
+    /// picture's keys become its image row's, and the quarantine row goes in the same transaction; a profile picture already
+    /// there is replaced (#445). The entry gone meanwhile, the appearance gone or full, or storage out of room refuses the approval whole; the picture stays
     /// in quarantine for the change to be rejected or approved again.
     /// </summary>
     private static async Task<(Guid? Id, IResult? Problem)> AttachAsync(
@@ -825,7 +825,7 @@ internal static class AiChangeCommit
                     },
                     hold,
                     cancellationToken)
-                : await EntityImageEndpoints.AttachFirstAsync(
+                : await EntityImageEndpoints.AttachStagedAsync(
                     db,
                     clock,
                     universeId,
@@ -862,7 +862,7 @@ internal static class AiChangeCommit
                 AiChangeCodes.ChangedSince,
                 "Changed since the proposal",
                 media.AppearanceId is null
-                    ? "The entry was trashed or given a picture since, so this one wasn't attached."
+                    ? "The entry was trashed since, so this picture wasn't attached."
                     : "The appearance was removed or its gallery filled up since, so this picture wasn't attached."));
         }
 

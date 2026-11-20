@@ -418,9 +418,8 @@ internal static partial class AiChangeStaging
         }
 
         /// <summary>
-        /// A picture change carries no file: where it goes, and what the person should upload. The entry must be live and, for a
-        /// profile picture, have none yet - an AI change never replaces one, since the replaced picture is deleted for good -
-        /// and an appearance must be the entry's, with room in its gallery.
+        /// A picture change carries no file: where it goes, and what the person should upload. The entry must be live - a profile
+        /// picture already there is replaced on approval (#445) - and an appearance must be the entry's, with room in its gallery.
         /// </summary>
         private async Task<AiChangeWork?> MediaAsync(CancellationToken cancellationToken)
         {

@@ -116,6 +116,14 @@ public static partial class EntityFieldImageEndpoints
             .SelectMany(key => new[] { key.OriginalKey, key.CropKey })
             .ToHashSet(StringComparer.Ordinal);
 
+        // A profile picture an approved AI change replaced (#445) is dropped here too: kept while any entry still names it.
+        named.UnionWith((await db.EntityImages.AsNoTracking()
+                .Where(image => dropped.Contains(image.OriginalKey) || dropped.Contains(image.ThumbnailKey) || dropped.Contains(image.DisplayKey!))
+                .Select(image => new { image.OriginalKey, image.ThumbnailKey, image.DisplayKey })
+                .ToListAsync(cancellationToken))
+            .SelectMany(key => new[] { key.OriginalKey, key.ThumbnailKey, key.DisplayKey })
+            .OfType<string>());
+
         await MediaObjectWrites.SweepAsync(
             store,
             loggerFactory.CreateLogger(LoggerName),
