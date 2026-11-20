@@ -47,7 +47,6 @@ export function useProjectSchema({
   const [templates, setTemplates] = useState<TypeTemplate[]>([])
   const [fromTemplate, setFromTemplate] = useState(false)
   const [openTypeId, setOpenTypeId] = useState<string | null>(null)
-  const [addingFieldTo, setAddingFieldTo] = useState<string | null>(null)
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
 
   useEffect(() => {
@@ -91,8 +90,6 @@ export function useProjectSchema({
     setFromTemplate,
     openTypeId,
     setOpenTypeId,
-    addingFieldTo,
-    setAddingFieldTo,
     tree,
     after,
     refresh,

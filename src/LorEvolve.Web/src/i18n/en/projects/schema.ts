@@ -31,15 +31,6 @@ const projectsSchema = {
   fields: 'Fields',
   noFields: 'No fields yet.',
   addField: 'Add field',
-  fieldName: 'Field name',
-  fieldKind: 'What goes in it?',
-  fieldOptions: 'Choices, one per line',
-  fieldRequired: 'Required',
-  imageShape: 'Crop shape',
-  imageShapeHint: 'The frame each picture in this field is cropped to.',
-  fieldAdding: 'Adding…',
-  fieldSaving: 'Saving…',
-  deleteField: 'Delete field',
 }
 
 export default projectsSchema

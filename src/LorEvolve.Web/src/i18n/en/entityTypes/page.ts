@@ -30,7 +30,6 @@ const entityTypesPage = {
     deleteTitle: 'Delete this template?',
     deleteMessage: 'Existing game types made from it are kept as they are.',
     deleteConfirm: 'Delete template',
-    editField: 'Edit field',
     loadFailed: 'The templates could not be loaded.',
     actionFailed: 'That change could not be saved.',
   },

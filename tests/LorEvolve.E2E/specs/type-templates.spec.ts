@@ -83,39 +83,49 @@ test.describe('Types: Templates', () => {
 
     // Fields: text, select with options, image.
     await row.getByRole('button', { name: /^Fields/ }).click()
+    // The fields drawer is Lore's: only the project kinds, no link to a Lore entry.
     const add = row.locator('[data-testid^="template-field-add-"]')
+    const dialog = page.getByTestId('field-dialog')
     await add.click()
-    await page.getByTestId('project-field-new-name').fill('Label')
-    await page.getByTestId('project-field-new-save').click()
-    await expect(row.getByText('Label')).toBeVisible()
+    await expect(dialog.getByTestId('field-kind').locator('option')).toHaveCount(8)
+    await expect(
+      dialog.getByTestId('field-kind').locator('option', { hasText: 'Link to an entity' }),
+    ).toHaveCount(0)
+    await dialog.getByTestId('field-name').fill('Label')
+    await dialog.getByTestId('save-field').click()
+    await expect(dialog).toHaveCount(0)
+    await expect(row.getByTestId('field-row-Label')).toBeVisible()
 
     await add.click()
-    await page.getByTestId('project-field-new-name').fill('Tier')
-    await page.getByTestId('project-field-new-kind').selectOption({ label: 'Choose one' })
-    await page.getByTestId('project-field-new-options').fill('Low\nHigh')
-    await page.getByTestId('project-field-new-save').click()
-    await expect(row.getByText('Tier')).toBeVisible()
+    await dialog.getByTestId('field-name').fill('Tier')
+    await dialog.getByTestId('field-kind').selectOption({ label: 'Choose one' })
+    await dialog.getByTestId('field-options').fill('Low, High')
+    await dialog.getByTestId('save-field').click()
+    await expect(row.getByTestId('field-row-Tier')).toBeVisible()
 
+    // An image field asks its crop shape and is never required.
     await add.click()
-    await page.getByTestId('project-field-new-name').fill('Portrait')
-    await page.getByTestId('project-field-new-kind').selectOption({ label: 'Image' })
-    await page.getByTestId('project-field-new-save').click()
-    await expect(row.getByText('Portrait')).toBeVisible()
+    await dialog.getByTestId('field-name').fill('Portrait')
+    await dialog.getByTestId('field-kind').selectOption({ label: 'Image' })
+    await expect(dialog.getByTestId('field-image-shape')).toBeVisible()
+    await expect(dialog.getByTestId('field-required')).toHaveCount(0)
+    await dialog.getByTestId('save-field').click()
+    await expect(row.getByTestId('field-row-Portrait')).toBeVisible()
 
-    // A duplicate name is refused with the reason.
+    // A duplicate name is refused with the reason, in the drawer.
     await add.click()
-    await page.getByTestId('project-field-new-name').fill('Label')
-    await page.getByTestId('project-field-new-save').click()
-    await expect(page.getByTestId('type-templates-failed')).toBeVisible()
-    await page.getByTestId('project-field-new-cancel').click()
+    await dialog.getByTestId('field-name').fill('Label')
+    await dialog.getByTestId('save-field').click()
+    await expect(dialog.getByTestId('field-dialog-error')).toBeVisible()
+    await dialog.getByTestId('cancel-field').click()
     await acceptConfirm(page)
+    await expect(dialog).toHaveCount(0)
 
-    // Edit a field.
-    await row.locator('[data-testid^="template-field-actions-"]').first().click()
-    await page.locator('[data-testid^="template-field-edit-"]').first().click()
-    await page.getByTestId('project-field-new-name').fill('Caption')
-    await page.getByTestId('project-field-new-save').click()
-    await expect(row.getByText('Caption')).toBeVisible()
+    // Edit a field: the row's own Edit button.
+    await row.getByTestId('edit-field-Label').click()
+    await dialog.getByTestId('field-name').fill('Caption')
+    await dialog.getByTestId('save-field').click()
+    await expect(row.getByTestId('field-row-Caption')).toBeVisible()
 
     // Edit the template and reload.
     const renamed = `${name}2`

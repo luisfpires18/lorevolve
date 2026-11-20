@@ -4,7 +4,7 @@ import { MoveItems } from '../MoveItems'
 import { ChapterPages } from '../ChapterPages'
 import { t, useI18n } from '../../i18n'
 import { useState, type Dispatch, type SetStateAction } from 'react'
-import { confirmAction } from '../../lib/confirm'
+import { confirmDelete } from '../../lib/confirm'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { ScriptEditor } from './ScriptEditor'
@@ -49,13 +49,15 @@ export function SeasonEpisodes({
   }
 
   async function remove(episodeId: string, title: string) {
-    const confirmed = await confirmAction({
-      title: t('projects.structure.deleteTitle', { name: title }),
-      message: t('projects.structure.deleteEmpty'),
-      confirmLabel: say.deleteEpisode(),
-      variant: 'destructive',
-    })
-    if (confirmed) run(() => deleteEpisode(projectId, season.id, episodeId))
+    await confirmDelete(
+      {
+        title: t('projects.structure.deleteTitle', { name: title }),
+        message: t('projects.structure.deleteEmpty'),
+        confirmLabel: say.deleteEpisode(),
+      },
+      () => deleteEpisode(projectId, season.id, episodeId),
+      run,
+    )
   }
 
   return (

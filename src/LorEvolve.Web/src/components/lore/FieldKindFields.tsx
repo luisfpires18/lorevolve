@@ -16,6 +16,7 @@ export function FieldKindFields({
   options,
   setOptions,
   fieldErrors,
+  kinds = KIND_ORDER,
 }: {
   field: FieldDefinition | null
   latest: FieldDefinition | undefined
@@ -27,6 +28,8 @@ export function FieldKindFields({
   options: string
   setOptions: (options: string) => void
   fieldErrors: Record<string, string>
+  /** The kinds offered, in order: every kind unless the place allows fewer (a project field has no link). */
+  kinds?: FieldKindValue[]
 }) {
   const { t, tn } = useI18n()
   // The kind is frozen while any entry holds a value, or any older version recorded one (Issue #39).
@@ -62,7 +65,7 @@ export function FieldKindFields({
         onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
         data-testid="field-kind"
       >
-        {KIND_ORDER.map((each) => (
+        {kinds.map((each) => (
           <option key={each} value={each}>
             {FIELD_KIND_LABELS[each]}
           </option>

@@ -85,7 +85,6 @@ const entityTypesFields = {
   },
   leaveEdit: 'Your changes to “{name}” have not been saved. Leave without saving them?',
   leaveNew: 'This field has not been added. Leave without saving it?',
-  leaveEdited: 'This field has unsaved changes. Leave without saving them?',
   keptMine:
     'Your changes are kept. Saving now replaces what someone else saved with everything this drawer shows.',
   nameRequired: 'Give the field a name.',
