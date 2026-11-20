@@ -17,7 +17,7 @@ const srcFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 
 const tsFiles = srcFiles.filter((file) => /\.tsx?$/.test(file))
 const cssFiles = srcFiles.filter((file) => file.endsWith('.css'))
 
-const EM_DASH = '—'
+const EM_DASH = String.fromCharCode(0x2014)
 const stripComments = (code: string) =>
   code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
 const tokens = (source: string) => classStrings(source).flatMap((value) => value.split(/\s+/))
