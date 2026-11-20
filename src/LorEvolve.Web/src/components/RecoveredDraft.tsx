@@ -95,7 +95,7 @@ export function RecoveredDraft({
         <QuietNote className="recovery__hint">{t('entity.recovered.hint')}</QuietNote>
       </div>
 
-      <div className="recovery__actions">
+      <div className="actions recovery__actions">
         <Button
           tone="secondary"
           onClick={onRecover}

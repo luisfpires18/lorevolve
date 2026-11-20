@@ -98,7 +98,7 @@ export function TypeGroupRow({
             <span className="typegroups__usage">{usedBy(group)}</span>
           </span>
           {canEdit ? (
-            <span className="typegroups__actions">
+            <span className="actions actions--compact">
               <MoveItems
                 look="icon"
                 name={t('entityTypes.groupsPanel.groupNamed', { name: group.name })}

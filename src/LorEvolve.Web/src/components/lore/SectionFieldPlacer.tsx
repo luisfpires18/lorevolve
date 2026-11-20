@@ -54,7 +54,7 @@ export function SectionFieldPlacer({
                     </option>
                   ))}
                 </select>
-                <span className="sectionlist__actions">
+                <span className="actions actions--compact sectionlist__actions">
                   <MoveItems
                     look="icon"
                     name={field.name}

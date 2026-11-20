@@ -77,7 +77,7 @@ export function SeasonEpisodes({
           </span>
           {/* The script is what an author opens an episode for, so it stays on the row. Order, moving to
                       another season and deleting are the row's secondary verbs and go in its menu. */}
-          <div className="fieldlist__actions">
+          <div className="actions actions--compact fieldlist__actions">
             <Button
               tone="secondary"
               size="sm"

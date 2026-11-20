@@ -45,7 +45,7 @@ export function SagasUnassigned({
               data-testid={`unassigned-${production.projectId}`}
             >
               <Production universeId={universeId} production={production} />
-              <div className="fieldlist__actions">
+              <div className="actions actions--compact fieldlist__actions">
                 <Button
                   tone="secondary"
                   size="sm"

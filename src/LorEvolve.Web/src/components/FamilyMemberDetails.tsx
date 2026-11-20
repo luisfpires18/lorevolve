@@ -251,7 +251,7 @@ export function FamilyMemberDetails({
           </section>
         </div>
 
-        <footer className="familydetails__actions">
+        <footer className="actions familydetails__actions">
           <Button tone="secondary" to={entryPath(node.entityId)}>
             {t('places.memberDetails.openEntry')}
           </Button>

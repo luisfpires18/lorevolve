@@ -37,7 +37,9 @@ export function ProjectCard({
         <div className="projectcard__head">
           <Title className={titleClassName}>{title}</Title>
           {meta ? <p className="projectcard__meta">{meta}</p> : null}
-          {actions ? <div className="projectcard__actions">{actions}</div> : null}
+          {actions ? (
+            <div className="actions actions--tight projectcard__actions">{actions}</div>
+          ) : null}
         </div>
       )}
       {children}

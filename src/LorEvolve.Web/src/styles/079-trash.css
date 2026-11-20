@@ -90,9 +90,6 @@
    turns to the danger ink under the pointer or the focus - never colour alone. The red is kept for the last step. */
 .trash__actions {
   flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   gap: var(--space-1) var(--space-2);
 }
 

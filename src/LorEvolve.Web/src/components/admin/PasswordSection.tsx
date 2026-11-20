@@ -47,7 +47,7 @@ export function PasswordSection({
       <p className="settings__note">
         {user.isBlocked ? t('admin.password.noteBlocked') : t('admin.password.note')}
       </p>
-      <div className="form__actions">
+      <div className="actions form__actions">
         <Button
           tone="secondary"
           disabled={user.isBlocked}

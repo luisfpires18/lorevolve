@@ -38,7 +38,7 @@
     0 0 0 6px rgb(var(--portal-accent-rgb) / 0.08);
 }
 
-.pauthor__avatar img {
+.pauthor__avatar img.pauthor__photo {
   display: block;
   width: 100%;
   height: 100%;

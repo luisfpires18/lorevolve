@@ -56,7 +56,7 @@ export function SectionListEditor({
                 />
                 <span>{t('entityTypes.sections.startsCollapsed')}</span>
               </label>
-              <span className="sectionlist__actions">
+              <span className="actions actions--compact sectionlist__actions">
                 <MoveItems
                   look="icon"
                   name={sectionLabel(section, index)}

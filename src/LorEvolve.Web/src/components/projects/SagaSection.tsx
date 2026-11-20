@@ -159,7 +159,7 @@ export function SagaSection({
                       data-testid={`phase-member-${member.projectId}`}
                     >
                       <Production universeId={universeId} production={member} />
-                      <div className="fieldlist__actions">
+                      <div className="actions actions--compact fieldlist__actions">
                         <ActionMenu
                           label={t('projects.common.more', { name: member.name })}
                           triggerTestId={`member-actions-${member.projectId}`}

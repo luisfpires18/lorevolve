@@ -138,7 +138,7 @@ export function UniverseArtworkField({
         )}
       </div>
 
-      <div className="artwork__actions">
+      <div className="actions actions--tight artwork__actions">
         <input
           ref={input}
           id={inputId}

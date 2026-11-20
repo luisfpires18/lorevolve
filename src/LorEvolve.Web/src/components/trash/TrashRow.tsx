@@ -147,7 +147,7 @@ export function TrashRow({
       data-kind={kindKey}
     >
       {what}
-      <div className="trash__actions">
+      <div className="actions trash__actions">
         <Button
           tone="secondary"
           icon={ArchiveRestore}

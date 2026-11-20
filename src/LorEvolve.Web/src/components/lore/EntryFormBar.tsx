@@ -35,7 +35,7 @@ export function EntryFormBar({
             ? t('entity.page.bar.newEntry')
             : t('entity.page.bar.noChanges')}
       </QuietNote>
-      <div className="actionbar__actions">
+      <div className="actions actions--tight actionbar__actions">
         <Button
           icon={suggesting ? FilePenLine : Check}
           ref={saveButton}

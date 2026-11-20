@@ -78,7 +78,7 @@ export function RelationsWhen({
                   : t('relationships.section.whenHint')}
               </p>
             ) : null}
-            <div className="relwhen__actions">
+            <div className="actions actions--tight">
               <FormActions
                 submitLabel={t('relationships.section.show')}
                 disabled={!whenReady}

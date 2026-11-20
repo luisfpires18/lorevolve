@@ -127,12 +127,6 @@
   font-size: var(--text-sm);
 }
 
-.projectcard__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
 /*
  * What belongs under a row rather than beside it: a page's panels and the form that adds one. A `fieldlist__row` is a
  * wrapping flex line, so a full-width item takes the next line of its own accord instead of being squeezed in beside

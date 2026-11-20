@@ -130,7 +130,7 @@ export function ProfileAvatar({ name }: { name: string }) {
     <div className="avatar" data-testid="profile-avatar-field">
       <Avatar image={image} name={name} className="avatar__photo" testId="profile-avatar" />
 
-      <div className="avatar__actions">
+      <div className="actions actions--tight avatar__actions">
         {/* The input comes first so the label can be styled from its state - focus and disabled
             both travel forwards through a sibling selector and not backwards. */}
         <input

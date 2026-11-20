@@ -61,7 +61,9 @@ export function PageHeader({
             {lede ? <div className="pageheader__lede">{lede}</div> : null}
           </div>
         )}
-        {actions ? <div className="pageheader__actions">{actions}</div> : null}
+        {actions ? (
+          <div className="actions actions--tight pageheader__actions">{actions}</div>
+        ) : null}
       </div>
       {children ? <div className="pageheader__slot">{children}</div> : null}
     </header>

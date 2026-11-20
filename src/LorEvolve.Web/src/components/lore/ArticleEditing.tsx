@@ -136,7 +136,7 @@ export function ArticleEditing({
             {t('entity.article.recoveryWarning')}
           </p>
         ) : null}
-        <div className="article__actions">
+        <div className="actions actions--tight article__actions">
           <Button
             icon={Check}
             disabled={!isDirty || isSaving || isTooLong}

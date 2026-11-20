@@ -32,7 +32,7 @@ export function IdeaSaveBar({
           {t('ideas.editor.recoveryWarning')}
         </p>
       ) : null}
-      <div className="idea__actions">
+      <div className="actions idea__actions">
         <SaveAction
           label={isNew ? t('ideas.editor.create') : t('ideas.editor.save')}
           isDirty={isDirty}

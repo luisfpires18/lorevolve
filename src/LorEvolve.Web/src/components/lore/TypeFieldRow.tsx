@@ -48,7 +48,7 @@ export function TypeFieldRow({
         </span>
       </div>
       {canEdit ? (
-        <span className="fieldlist__actions">
+        <span className="actions actions--compact fieldlist__actions">
           <Button
             tone="secondary"
             size="sm"

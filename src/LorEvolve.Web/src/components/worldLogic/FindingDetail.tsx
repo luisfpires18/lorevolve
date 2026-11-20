@@ -93,7 +93,7 @@ export function FindingDetail({
               {t('canon.worldLogic.integrity.undismiss')}
             </Button>
           ) : (
-            <div className="form__actions">
+            <div className="actions form__actions">
               <Button
                 tone="secondary"
                 busy={deciding}

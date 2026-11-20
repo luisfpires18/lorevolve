@@ -276,7 +276,7 @@ function PanelCard({
               readOnly={!canEdit}
             />
           ))}
-          <div className="comicpage__actions">
+          <div className="actions">
             {canEdit ? (
               <Button disabled={saving} onClick={save} data-testid={testId('save')}>
                 {saving ? t('projects.structure.saving') : t('shell.actions.save')}

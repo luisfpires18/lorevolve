@@ -158,7 +158,7 @@ export function FieldFilterEditor({
         )}
       </div>
 
-      <div className="lore__fieldeditoractions">
+      <div className="actions actions--tight">
         <FormActions
           submitLabel={t('lore.filters.apply')}
           disabled={!complete}

@@ -14,10 +14,3 @@
   font-size: 1.25rem;
   margin: 0 0 1.5rem;
 }
-
-.form__actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}

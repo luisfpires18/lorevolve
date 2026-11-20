@@ -117,7 +117,7 @@ export function WorldRuleForm({
       />
 
       <div className="manuscript__bar rule__bar">
-        <div className="rule__actions">
+        <div className="actions rule__actions">
           <SaveAction
             label={isNew ? t('canon.editor.create') : t('canon.editor.save')}
             isDirty={isDirty}

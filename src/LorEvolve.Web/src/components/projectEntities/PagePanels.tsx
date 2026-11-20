@@ -70,7 +70,7 @@ export function PagePanels({
             }
           />
 
-          <div className="projectcard__actions">
+          <div className="actions actions--tight projectcard__actions">
             <ActionMenu
               label={t('projects.common.more', {
                 name: panel.description ?? String(place + 1),

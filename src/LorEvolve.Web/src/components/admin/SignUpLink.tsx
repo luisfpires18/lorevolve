@@ -82,7 +82,7 @@ export function SignUpLink() {
             {error}
           </p>
         ) : null}
-        <div className="form__actions">
+        <div className="actions form__actions">
           <Button
             busy={sending}
             busyLabel={t('admin.signUp.sending')}

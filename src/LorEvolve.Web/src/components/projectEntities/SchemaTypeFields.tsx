@@ -74,7 +74,7 @@ export function SchemaTypeFields({
                       <span className="fieldlist__name">{field.name}</span>
                       <span className="fieldlist__meta">{FIELD_KIND_LABELS[field.kind]}</span>
                     </span>
-                    <div className="fieldlist__actions">
+                    <div className="actions actions--compact fieldlist__actions">
                       <ActionMenu
                         label={t('projects.common.more', { name: field.name })}
                         triggerTestId={`project-field-actions-${field.id}`}

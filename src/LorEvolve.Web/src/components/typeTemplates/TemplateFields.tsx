@@ -48,7 +48,7 @@ export function TemplateFields({
                 <span className="fieldlist__meta">{FIELD_KIND_LABELS[field.kind]}</span>
               </span>
               {canEdit ? (
-                <div className="fieldlist__actions">
+                <div className="actions actions--compact fieldlist__actions">
                   <ActionMenu
                     label={t('projects.common.more', { name: field.name })}
                     triggerTestId={`template-field-actions-${field.id}`}

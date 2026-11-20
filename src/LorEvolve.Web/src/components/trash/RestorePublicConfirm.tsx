@@ -49,7 +49,7 @@ export function RestorePublicConfirm({
             ? t('data.trash.publish.textHiddenStory')
             : t('data.trash.publish.textHidden')}
       </p>
-      <div className="form__actions">
+      <div className="actions form__actions">
         <Button onClick={onRestore} data-testid="trash-confirm-restore">
           {visible ? t('data.trash.publish.restoreVisible') : t('data.trash.publish.restoreHidden')}
         </Button>

@@ -40,7 +40,7 @@ export function LoreResultActions({
   return (
     <>
       {chosenName ? (
-        <div className="lore__resultactions" data-testid="lore-result-actions">
+        <div className="actions lore__resultactions" data-testid="lore-result-actions">
           <div className="lore__pagesize">
             <label className="lore__pagesizelabel" htmlFor="lore-sort">
               {t('lore.page.sortBy')}

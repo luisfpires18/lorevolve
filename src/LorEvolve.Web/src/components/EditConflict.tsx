@@ -97,7 +97,7 @@ export function EditConflict<T>({
       </div>
 
       {state === null || state.kind === 'error' ? (
-        <div className="editconflict__actions">
+        <div className="actions editconflict__actions">
           <Button tone="secondary" onClick={() => void review()} data-testid={`${testId}-review`}>
             {t('entity.conflict.review')}
           </Button>
@@ -132,7 +132,7 @@ export function EditConflict<T>({
             {t('entity.conflict.latestHeading')}
           </h3>
           {renderLatest(state.value)}
-          <div className="editconflict__actions">
+          <div className="actions editconflict__actions">
             <Button
               onClick={() => onKeepMine(state.value)}
               aria-describedby={hintId}

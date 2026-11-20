@@ -154,7 +154,7 @@ export function LorePreview({
             </div>
           ) : null}
 
-          <div className="lorepreview__actions">
+          <div className="actions">
             {canLink ? (
               <Button
                 tone={isLinked ? 'secondary' : 'primary'}
