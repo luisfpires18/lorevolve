@@ -1,6 +1,6 @@
 # Before and after evidence: shared form fields (#415)
 
-Before = `origin/dev` `ffb8aafd` in a detached worktree with its own `npm ci`, Vite on 5194. After = `feat/shared-fields` `66f69335` (PR #439), Vite on 5193. One API on 5185 behind both and one scratch database taken from a snapshot (`VACUUM INTO`) after seeding, so both sides see the same data; the database was not restored between the sides because no write reaches it (every write is aborted at the network). Same script, same steps and the same network interception on both sides (`cap415.mjs`, kept with the rest of the pipeline outside the repo).
+Before = `origin/dev` `ffb8aafd` in a detached worktree with its own `npm ci`, Vite on 5305. After = `feat/shared-fields` `23d5a9bf` (PR #439, the correction pass), Vite on 5304. One API on 5185 behind both and one scratch database taken from a snapshot (`VACUUM INTO`) after seeding, so both sides see the same data; the snapshot is put back before each side. Same script, same steps and the same network interception on both sides (`cap415.mjs`, kept with the rest of the pipeline outside the repo).
 
 ## Setup and seed
 
@@ -12,16 +12,16 @@ The #414 snapshot is the start (owner and member accounts, universe `{W}` "Seed 
 
 - States: 105 (the plan's 99 and 6 more that split a long form or add the within-the-limit counters: `project-entry-kinds-lower`, `project-entry-edit-lower`, `type-dialog-errors-lower`, `world-rule-description-over`, `idea-body-within`, `world-rule-description-within`). Reached: 105 before, 105 after. Not reached: see the last section.
 - PNGs: 840 (105 states x 8), 420 pairs. Each pair is one state, viewport and theme, before beside after.
-- DOM (desktop light): 91 of 105 states differ (class names, attributes, ids, wrappers, words), 14 are identical.
-- Pixels: 143 pairs identical, 277 differing (143 + 277 = 420). 26 states are identical in all four pairs; 79 states have at least one differing pair.
-- Differing pairs by eye: 212 intended (in 54 states, each named in the plan's "Now matches"), 50 not named in the plan but judged (in 14 states, listed under Regressions and Smaller shifts), 15 rendering noise of at most 42 pixels, or 715 for one line that moves 1 px between two passes (in 11 states).
-- Regressions: none that break a screen or a control. Three changes are not named by the plan and move an error to another place (the relation periods, the family link kind, the calendar months); they are written out under Regressions so the owner can accept or send them back.
+- DOM (desktop light): 90 of 105 states differ (class names, attributes, ids, wrappers, words), 15 are identical.
+- Pixels: 179 pairs identical, 241 differing (179 + 241 = 420). 38 states are identical in all four pairs; 67 states have at least one differing pair.
+- Differing pairs by eye: 228 intended (in 58 states: named in the plan's "Now matches", or the shared Field look, class F, an owner check), 0 not named in the plan and not intended (in 0 states), 13 rendering noise (in 9 states: at most 15 pixels, or text antialiasing with every box in place, see Noise).
+- Regressions: none. The three error placements the first pass reported (the relation periods, the family link kind, the calendar months) are back where dev draws them, and the smaller shifts it listed as not named are back to dev or are the shared Field look (class F); see Regressions and Smaller shifts.
 - Phone `scrollWidth - clientWidth`: 0 px on all 420 phone shots of both sides except `map-calibration` and `map-calibration-errors` (7 px), which are the same on both sides. h1: exactly one on every shot of both sides except `project-entity-fields-failed` (none, on both sides: the page is the failure card). Tab titles: none change.
-- Failed states: none on either side after the re-runs (the first pass failed `lore-field-filter` on a phone and `manuscript-too-long` on a phone on both sides, and showed the message out of view in `project-entries-save-failed`, `project-entity-fields-save-failed` and `board-save-failed`; those five states were captured again on both sides with the fixed steps and replaced, so every file in this folder is from one script).
+- Failed states: none on either side (one retry of `public-details`, dark desktop, passed). Both sides were captured in full from one script; the 26 states with a `CheckField` were captured again on both sides after its last correction and replaced, and one before shot (`scene-beats-errors`, dark desktop, the sidebar scrolled on that take) was taken again.
 
 PNGs are 256-colour (median cut, no dither); every count is taken on the 256-colour files in this folder. A palette is chosen per image, so a small real change can shift pixels over the whole page; the judged differences use the raw captures (kept out of the repo).
 
-Repeatability: a second full pass of the after side matched the first on 358 of 420 raw files. The other 62 differ by 1 to 42 pixels on 61 files (page edges, the scrollbar, input corners) and by 715 pixels on one (`mass-create-defaults`, light desktop: "Nothing to create yet." is 1 px lower on one pass and where it is on dev on the other). Against the second pass, 279 of the 280 raw differing pairs show the same changed pixel count as against the first pass (within 2% or 50 pixels); the one that does not is that `mass-create-defaults` pair, which is why it is counted as noise. The differences judged below are therefore the branch, not the run.
+Repeatability: this pass was checked by taking again, on both sides, the pairs that looked suspicious. `scene-beats-errors` (dark desktop) differed by 22,181 pixels only because the sidebar was scrolled in the first before take; a second take of both sides is identical, and it replaced the first. `public-author-photo`, `public-name-error` and `crop-dialog-error` (light phone) came out the same on a second take (0 to 7 pixels apart on each side) and the same against each other; their difference is text antialiasing, and a probe run of the after side without the tab row line (the CI fix) gives 1 to 7 pixels against dev. `feedback-dialog` gave the same 458 pixels on a second take. The differences judged below are therefore the branch, not the run.
 
 ## Computed style of the textarea and select looks
 
@@ -93,7 +93,7 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 | `map-pin-form` | Harbour map, Add pin, a click on the map (drawer) | 4 of 4 | differs |
 | `map-pin-errors` | The same drawer, Place pin pressed with no title (client refusal) | 4 of 4 | differs |
 | `map-calibration` | Harbour map, Set the scale again (the percent pairs, distance and unit) | 0 of 4 | differs |
-| `map-calibration-errors` | The same form saved with no distance (client refusal) | 2 of 4 | differs |
+| `map-calibration-errors` | The same form saved with no distance (client refusal) | 1 of 4 | differs |
 
 ### Relations (7)
 
@@ -103,9 +103,9 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 | `relation-periods-errors` | Add relationship, "Mara" picked, Add period, saved, the save answered 400 naming `periods` and `periods[0]` | 4 of 4 | differs |
 | `relation-status` | Add relationship, the status group centred | 4 of 4 | differs |
 | `family-link-form` | Tamsin's family tree, Add connection, the status group centred | 0 of 4 | same |
-| `family-link-kind-error` | Add connection, "Mara" picked, saved, the save answered 400 naming `RelationshipTypeId` | 4 of 4 | differs |
-| `family-kind-dialog` | Add connection, New family relationship kind (drawer) | 4 of 4 | differs |
-| `relation-kind-form` | Types, Relation Kinds, Add relation kind (form) | 4 of 4 | differs |
+| `family-link-kind-error` | Add connection, "Mara" picked, saved, the save answered 400 naming `RelationshipTypeId` | 0 of 4 | same |
+| `family-kind-dialog` | Add connection, New family relationship kind (drawer) | 0 of 4 | differs |
+| `relation-kind-form` | Types, Relation Kinds, Add relation kind (form) | 0 of 4 | differs |
 
 ### Knowledge (2)
 
@@ -121,19 +121,19 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 | `lore-field-filter` | Lore, Character, Add field filter, the first field (on a phone Filters is pressed first) | 4 of 4 | differs |
 | `lore-results-pagesize` | Lore, Character: sort and items per page | 4 of 4 | differs |
 | `entry-field-error` | Mara, Edit, saved, the save answered 400 naming the Weapon field | 4 of 4 | differs |
-| `entry-name-error` | Mara, Edit, saved, the save answered 400 naming `name` | 2 of 4 | differs |
+| `entry-name-error` | Mara, Edit, saved, the save answered 400 naming `name` | 0 of 4 | differs |
 | `type-field-required` | Types, Character fields, Add field (drawer): the required box | 0 of 4 | differs |
 | `type-dialog` | Types, New type (drawer): icons and groups | 4 of 4 | differs |
 | `type-dialog-errors` | New type saved, the save answered 400 naming name, icon, groups and parent | 4 of 4 | differs |
 | `type-dialog-errors-lower` | The same drawer scrolled to the groups and parent errors | 4 of 4 | differs |
-| `mass-create-defaults` | Mass create for Character: default type and status | 1 of 4 | same |
+| `mass-create-defaults` | Mass create for Character: default type and status | 0 of 4 | same |
 | `private-note` | Mara, Private note (drawer) | 4 of 4 | differs |
 | `private-note-too-long` | The same drawer with 20 001 characters typed | 1 of 4 | differs |
 | `entity-image-too-big` | Mara, Edit, a 9 MB file chosen for the picture | 0 of 4 | differs |
 | `field-image-too-big` | New "Everything" entry, a 9 MB file chosen for the Portrait field | 4 of 4 | differs |
 | `article-too-long` | Mara's article, Edit article, 200 001 characters typed | 0 of 4 | same |
 | `quick-create-required` | Mara, Edit, "Erandor" typed into the Kingdom picker, Create "Erandor": the quick-create drawer with the required Motto, Create pressed | 1 of 4 | same |
-| `quick-capture-error` | Ideas, a line typed into the capture box, Capture pressed, the save answered 500 | 3 of 4 | differs |
+| `quick-capture-error` | Ideas, a line typed into the capture box, Capture pressed, the save answered 500 | 0 of 4 | differs |
 | `ai-change-edit` | The AI change proposal, Edit before approving (form) | 4 of 4 | differs |
 
 ### Universe and publishing (9)
@@ -148,16 +148,16 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 | `public-attribution` | Publish, "based on someone else's work" checked (attribution fields) | 2 of 4 | differs |
 | `public-attribution-errors` | The same, creator and work typed, saved, the save answered 400 naming both | 2 of 4 | differs |
 | `artwork-too-big` | Publish, a 9 MB file chosen for the artwork | 4 of 4 | differs |
-| `public-author-photo` | Profile, Author page: the photo option | 0 of 4 | differs |
+| `public-author-photo` | Profile, Author page: the photo option | 2 of 4 | differs |
 
 ### Account and backups (5)
 
 | State | Opened by | Pairs | DOM |
 |---|---|---|---|
 | `profile-avatar-too-big` | Profile, a 9 MB file chosen for the photo | 4 of 4 | differs |
-| `crop-dialog-error` | Profile, a file that is not a picture chosen for the photo (the framing dialog) | 1 of 4 | differs |
+| `crop-dialog-error` | Profile, a file that is not a picture chosen for the photo (the framing dialog) | 2 of 4 | differs |
 | `public-name-load-failed` | Profile, the public name read answered 500 | 4 of 4 | differs |
-| `public-name-error` | Profile, a public name typed and saved, the save answered 400 | 1 of 4 | differs |
+| `public-name-error` | Profile, a public name typed and saved, the save answered 400 | 2 of 4 | differs |
 | `restore-choose-error` | All universes, Restore backup, a file chosen, Check backup, the upload answered 400 | 0 of 4 | same |
 
 ### Stories (5)
@@ -166,21 +166,21 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 |---|---|---|---|
 | `story-form-status` | Writing, New story (drawer) | 0 of 4 | same |
 | `story-public-summary-count` | The story's publication panel, Edit public summary, 273 of 300 characters typed | 0 of 4 | same |
-| `scene-beats-errors` | Story structure, Edit scene, two beats added, saved, the save answered 400 naming `beats`, `beats[0].title` and `beats[1].note` | 2 of 4 | differs |
+| `scene-beats-errors` | Story structure, Edit scene, two beats added, saved, the save answered 400 naming `beats`, `beats[0].title` and `beats[1].note` | 1 of 4 | differs |
 | `manuscript-too-long` | Manuscript of "The wall at dusk", 1 000 001 characters typed | 0 of 4 | same |
-| `scene-form-failed` | Edit scene saved, the save answered 500 | 1 of 4 | same |
+| `scene-form-failed` | Edit scene saved, the save answered 500 | 0 of 4 | same |
 
 ### Time (7)
 
 | State | Opened by | Pairs | DOM |
 |---|---|---|---|
 | `calendar-mode` | Timeline configuration, the Calendar block | 0 of 4 | differs |
-| `calendar-months-error` | A month added, Save, the save answered 400 naming `months` | 4 of 4 | differs |
+| `calendar-months-error` | A month added, Save, the save answered 400 naming `months` | 0 of 4 | differs |
 | `era-style` | Timeline configuration, the era direction and write-as groups | 0 of 4 | differs |
 | `chronology-eras-error` | A period added, Save, the save answered 400 naming `eras` | 0 of 4 | differs |
 | `moment-dating` | Timeline, New moment (drawer): the dating group | 0 of 4 | same |
 | `moment-status` | The same drawer: the status group | 1 of 4 | same |
-| `era-form-failed` | Mara's progression, Add stage, a name typed, saved, the save answered 500 | 1 of 4 | same |
+| `era-form-failed` | Mara's progression, Add stage, a name typed, saved, the save answered 500 | 0 of 4 | same |
 
 ### Ideas (6)
 
@@ -188,8 +188,8 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 |---|---|---|---|
 | `idea-body-near-limit` | New idea, 18 200 of 20 000 characters in the body (counter shown near the limit) | 0 of 4 | differs |
 | `idea-body-over` | New idea, 20 001 characters (counter over the limit) | 0 of 4 | differs |
-| `idea-body-within` | New idea, 1 200 characters (no counter within the limit) | 2 of 4 | differs |
-| `idea-references-error` | New idea, a title typed, Create idea, the save answered 400 naming `references` | 4 of 4 | differs |
+| `idea-body-within` | New idea, 1 200 characters (no counter within the limit) | 0 of 4 | differs |
+| `idea-references-error` | New idea, a title typed, Create idea, the save answered 400 naming `references` | 0 of 4 | differs |
 | `idea-reference-picker` | New idea, Add reference (drawer) | 2 of 4 | differs |
 | `board-save-failed` | Harbour board, a note added, Save changes, the save answered 500 | 0 of 4 | same |
 
@@ -200,12 +200,12 @@ The area look is vertical resize, line height 1.6 (25.6 px), padding 0.6rem (9.6
 | `world-rule-description-near` | New world rule, 9 100 of 10 000 characters in the description | 0 of 4 | differs |
 | `world-rule-description-over` | New world rule, 10 001 characters | 0 of 4 | differs |
 | `world-rule-description-within` | New world rule, 1 200 characters | 0 of 4 | differs |
-| `world-rule-check-error` | New world rule, a title typed, "Limit how many times" chosen, saved, the save answered 400 naming the four check fields | 4 of 4 | differs |
+| `world-rule-check-error` | New world rule, a title typed, "Limit how many times" chosen, saved, the save answered 400 naming the four check fields | 0 of 4 | differs |
 | `new-term-event-kind` | New world rule, Limit chosen, New event kind (the name form) | 0 of 4 | differs |
 | `new-term-method` | The same, New method | 0 of 4 | differs |
 | `term-name-error` | Types, Event Kinds and Methods, "Coronation" typed, Add event kind, the save answered 400 | 0 of 4 | differs |
 | `term-rename-error` | The same page, Rename "Coronation", a name typed, Enter, the save answered 400 | 4 of 4 | differs |
-| `machine-state-initial` | System machine, the first state opened (drawer, Initial state box) | 4 of 4 | differs |
+| `machine-state-initial` | System machine, the first state opened (drawer, Initial state box) | 0 of 4 | differs |
 
 ### Feedback (1)
 
@@ -227,10 +227,11 @@ Every differing pair was opened, before beside after: the desktop and phone ligh
 - **H**: The type icon hint moves above the picker.
 - **N**: The relation notes box loses its 46 rem cap and top margin.
 - **T**: The new placeholders.
-- **X**: rendering noise (at most 42 pixels; 715 for `mass-create-defaults`), see Repeatability.
-- **U**: a difference the plan does not name; see Regressions and Smaller shifts.
+- **F**: The shared Field look on a screen the plan does not name: a refused control is drawn invalid (the red border), a CheckField label is the shared `.check` label, a select the shared select look; an owner check.
+- **X**: rendering noise: a few pixels at an edge, or text antialiasing with every box in place (measured), see Repeatability.
+- **U**: a difference the plan does not name and that is not intended; see Regressions.
 
-Intended differences (the plan's "Now matches"):
+Intended differences (the plan's "Now matches", and F):
 
 - `ai-change-edit` (4 of 4 pairs, S): the select text starts 4 px further left (inline padding 12 px to 8 px).
 - `artwork-too-big` (4 of 4 pairs, E C): the bare red line becomes the tinted message box; the public summary above gains its count on its own line, so everything below moves 14 px down.
@@ -238,9 +239,12 @@ Intended differences (the plan's "Now matches"):
 - `comic-entry-drawer` (4 of 4 pairs, S): the select text starts 4 px further left.
 - `comic-page-editor` (4 of 4 pairs, A): the panel text boxes take the area look (vertical resize, line height 1.6, padding).
 - `comic-page-failed` (4 of 4 pairs, A): the same boxes; the failure text beside Save reads the same.
+- `entry-field-error` (4 of 4 pairs, F): the refused field is drawn invalid (the red border) through `FieldInput error`; dev kept the focus ring.
 - `episode-form` (4 of 4 pairs, R): "Title (required)".
-- `family-kind-dialog` (4 of 4 pairs, A): the description box takes the area look, so the fields below move a few pixels.
+- `feedback-dialog` (4 of 4 pairs, F): "What is it?" is the shared `SegmentedField` label (a label over the group, was a legend), 1 to 2 px from dev; the page behind the scrim is the same.
 - `field-image-too-big` (4 of 4 pairs, P E): the project entry form with Lore's controls; the image refusal is the tinted message box.
+- `knowledge-other-error` (4 of 4 pairs, F S): the same, with the refusals in their places.
+- `knowledge-record-form` (4 of 4 pairs, F S): the "Who knows" block keeps dev's spacing; the "from the start" box is the shared CheckField label (was `.checkbox`), 3 px shorter, so what follows sits 2 to 3 px higher; the story and scene selects take the select look.
 - `lore-field-filter` (4 of 4 pairs, S): the select text starts 4 px further left.
 - `lore-results-pagesize` (4 of 4 pairs, S): the select text starts 4 px further left.
 - `map-form` (4 of 4 pairs, A): the Description box takes the area look.
@@ -273,6 +277,7 @@ Intended differences (the plan's "Now matches"):
 - `public-details-errors` (4 of 4 pairs, C): the same, with the summary, category and genres refusals.
 - `public-name-load-failed` (4 of 4 pairs, E): the bare red line becomes the tinted message box.
 - `relation-form-notes` (4 of 4 pairs, N): the Notes box has no 46 rem cap and no top margin now (A14), so it spans the form and sits 14 px higher.
+- `relation-periods-errors` (4 of 4 pairs, N): the period refusals are where dev draws them ("Check the periods below." above the periods, "The period ends before it starts." under "Period 1"); the Notes box below loses its cap and top margin, so the buttons sit 13 px higher.
 - `relation-status` (4 of 4 pairs, N): the Notes box has no cap and no top margin (A14).
 - `saga-add-drawer` (4 of 4 pairs, R A): "Name (required)"; the Summary box takes the area look.
 - `saga-group-drawer` (4 of 4 pairs, R A): the same.
@@ -289,50 +294,40 @@ Intended differences (the plan's "Now matches"):
 
 Not named by the plan, judged:
 
-- `calendar-months-error` (4 of 4 pairs): the months list sits 8 px lower (the group wrapper) and the months error moves from below "Add month" to between the list and "Add month".
-- `entry-field-error` (4 of 4 pairs): the refused field now has the red invalid border (the control gets aria-invalid from `FieldInput error`); before it kept the blue focus ring.
-- `family-link-kind-error` (4 of 4 pairs): the kind error moves from under the select to under the "New family relationship kind" button.
-- `feedback-dialog` (4 of 4 pairs): 460 pixels in the page behind the scrim, on a few text rows (they repeat on a second pass); the dialog itself reads the same by eye.
-- `idea-body-within` (2 of 4 pairs): the References group is 5 px lower (the group wrapper).
-- `idea-reference-picker` (2 of 4 pairs): only the page behind the drawer, 5 to 10 px lower from the References group wrapper; the drawer is the same.
-- `idea-references-error` (4 of 4 pairs): the References block is 10 px lower; the error stays under the Add reference button.
-- `knowledge-other-error` (4 of 4 pairs): the "Who knows" block and the checkbox are 25 to 40 px tighter (Field spacing, CheckField); the refusals read the same.
-- `knowledge-record-form` (4 of 4 pairs): the same tighter "Who knows" block, about 29 px higher on a desktop drawer.
-- `machine-state-initial` (4 of 4 pairs): the Initial state checkbox glyph is drawn 1 px lower and left (CheckField).
-- `relation-kind-form` (4 of 4 pairs): the form sits 1 px higher and its text is positioned sub-pixel differently; the same form by eye (the Reads-the-same box is the CheckField).
-- `relation-periods-errors` (4 of 4 pairs): the period refusal moves from under the "Period 1" heading to under the To row, and "Check the periods below." from the top of the block to under "Add period", so it no longer sits above the periods it points at.
-- `scene-beats-errors` (2 of 4 pairs): each beat row is about 6 px taller (the group wrapper per beat); the error texts and arrows stay in the same order.
-- `world-rule-check-error` (4 of 4 pairs): the check block is 8 px lower (the group wrapper); the four refusals keep their places.
 
 Noise:
 
-- `crop-dialog-error` (1 of 4 pairs): a one-level colour step in a pixel row of one dark phone shot, no changed pixel in luminance.
-- `entry-name-error` (2 of 4 pairs): 21 pixels at input corners, not visible by eye.
-- `era-form-failed` (1 of 4 pairs): at most 13 pixels at the page edge.
-- `map-calibration-errors` (2 of 4 pairs): 9 pixels light, 42 dark, at the scrollbar edge.
-- `mass-create-defaults` (1 of 4 pairs): the line "Nothing to create yet." is 1 px lower on one pass and in its old place on the other (715 pixels, light desktop only).
-- `moment-status` (1 of 4 pairs): 4 pixels, dark desktop only.
-- `private-note-too-long` (1 of 4 pairs): 2 pixels light desktop dark, 10 dark phone.
-- `public-name-error` (1 of 4 pairs): 8 pixels, dark phone only.
-- `quick-capture-error` (3 of 4 pairs): 6 to 15 pixels at input corners.
+- `crop-dialog-error` (2 of 4 pairs): text antialiasing on the phone below the tab row, every box the same to a hundredth of a pixel: the tab row no longer scrolls 1 px up and down (the CI fix), which changes how the page is layered; a probe run without that one line gives 1 to 7 pixels (2,600 pixels behind the framing dialog).
+- `idea-reference-picker` (2 of 4 pairs): 15 and 5 pixels on the page behind the drawer, desktop only.
+- `map-calibration-errors` (1 of 4 pairs): 5 pixels at the scrollbar edge, dark desktop only.
+- `moment-status` (1 of 4 pairs): 11 pixels, light phone only.
+- `private-note-too-long` (1 of 4 pairs): 10 pixels, light phone only.
+- `public-author-photo` (2 of 4 pairs): text antialiasing on the phone below the tab row, every box the same to a hundredth of a pixel: the tab row no longer scrolls 1 px up and down (the CI fix), which changes how the page is layered; a probe run without that one line gives 1 to 7 pixels (17,600 pixels).
+- `public-name-error` (2 of 4 pairs): text antialiasing on the phone below the tab row, every box the same to a hundredth of a pixel: the tab row no longer scrolls 1 px up and down (the CI fix), which changes how the page is layered; a probe run without that one line gives 1 to 7 pixels (17,600 pixels).
 - `quick-create-required` (1 of 4 pairs): 9 pixels, dark phone only.
-- `scene-form-failed` (1 of 4 pairs): 23 pixels, light desktop only.
+- `scene-beats-errors` (1 of 4 pairs): 15 pixels at the scrollbar edge, dark phone only; the beat rows are where dev draws them.
 
-### Identical pairs (143)
+### Identical pairs (179)
 
-26 states are identical in all four pairs: `project-script-too-long`, `project-entity-fields-failed`, `map-calibration`, `family-link-form`, `type-field-required`, `entity-image-too-big`, `article-too-long`, `universe-colour-error`, `public-author-photo`, `restore-choose-error`, `story-form-status`, `story-public-summary-count`, `manuscript-too-long`, `calendar-mode`, `era-style`, `chronology-eras-error`, `moment-dating`, `idea-body-near-limit`, `idea-body-over`, `board-save-failed`, `world-rule-description-near`, `world-rule-description-over`, `world-rule-description-within`, `new-term-event-kind`, `new-term-method`, `term-name-error`. Of those, the ones whose DOM differs (a wrapper, an id, an `aria-` attribute or a count that draws nothing) are: `project-script-too-long`, `map-calibration`, `type-field-required`, `entity-image-too-big`, `universe-colour-error`, `public-author-photo`, `calendar-mode`, `era-style`, `chronology-eras-error`, `idea-body-near-limit`, `idea-body-over`, `world-rule-description-near`, `world-rule-description-over`, `world-rule-description-within`, `new-term-event-kind`, `new-term-method`, `term-name-error`. In the remaining states some of the four pairs are identical too (the count is under Result in one place).
+38 states are identical in all four pairs: `project-script-too-long`, `project-entity-fields-failed`, `map-calibration`, `family-link-form`, `family-link-kind-error`, `family-kind-dialog`, `relation-kind-form`, `entry-name-error`, `type-field-required`, `mass-create-defaults`, `entity-image-too-big`, `article-too-long`, `quick-capture-error`, `universe-colour-error`, `restore-choose-error`, `story-form-status`, `story-public-summary-count`, `manuscript-too-long`, `scene-form-failed`, `calendar-mode`, `calendar-months-error`, `era-style`, `chronology-eras-error`, `moment-dating`, `era-form-failed`, `idea-body-near-limit`, `idea-body-over`, `idea-body-within`, `idea-references-error`, `board-save-failed`, `world-rule-description-near`, `world-rule-description-over`, `world-rule-description-within`, `world-rule-check-error`, `new-term-event-kind`, `new-term-method`, `term-name-error`, `machine-state-initial`. Of those, the ones whose DOM differs (a wrapper, an id, an `aria-` attribute or a count that draws nothing) are: `project-script-too-long`, `map-calibration`, `family-kind-dialog`, `relation-kind-form`, `entry-name-error`, `type-field-required`, `entity-image-too-big`, `quick-capture-error`, `universe-colour-error`, `calendar-mode`, `calendar-months-error`, `era-style`, `chronology-eras-error`, `idea-body-near-limit`, `idea-body-over`, `idea-body-within`, `idea-references-error`, `world-rule-description-near`, `world-rule-description-over`, `world-rule-description-within`, `world-rule-check-error`, `new-term-event-kind`, `new-term-method`, `term-name-error`, `machine-state-initial`. In the remaining states some of the four pairs are identical too (the count is under Result in one place).
 
 ## Regressions
 
-None breaks a screen, a control or a reading order. Three states show an error in another place than on dev, which the plan marks as "No change expected" (F3, F8, F9) or does not name (F1), so they are reported as they are:
+None. The first pass (`fda045e4`) reported three error placements that differed from dev; the correction puts each back through the shared parts, and this pass shows them where dev draws them:
 
-1. `relation-periods-errors` (desktop and phone, light and dark): the period refusal ("The period ends before it starts.") was under the "Period 1" heading, above the From row; it is now under the To row, above "Add period". The block refusal "Check the periods below." was at the top of the block, above the periods; it is now under "Add period", so its word "below" points at nothing.
-2. `family-link-kind-error` (all four pairs): "Pick a kind of family relationship." was directly under the kind select; it is now under the "New family relationship kind" button, so the button sits between the select and its refusal.
-3. `calendar-months-error` (desktop and phone): the months list is 8 px lower (a group wrapper with a hidden heading) and its refusal ("A calendar needs at least one month.") moves from under the "Add month" button to between the list and the button. The tinted message box below is unchanged.
+1. `relation-periods-errors`: "Check the periods below." is at the top of the block again, above the periods (`Field errorAbove` on the fieldset), and "The period ends before it starts." is under the "Period 1" heading, above the From row (the heading row stays outside the period's `Field group`, whose error is drawn above the dates). What still differs there is the Notes box below the periods (class N).
+2. `family-link-kind-error`: "Pick a kind of family relationship." is directly under the kind select again, and the "New family relationship kind" button follows it (`Field after`).
+3. `calendar-months-error`: the refusal is under "Add month" again (the button is part of the group's control) and the list is where dev draws it.
 
 ## Smaller shifts that were not named
 
-Each of these changes only spacing or a glyph by a few pixels and keeps the order and the words: `entry-field-error` (the refused field now has the red invalid border (the control gets aria-invalid from `FieldInput error`); before it kept the blue focus ring); `feedback-dialog` (460 pixels in the page behind the scrim, on a few text rows (they repeat on a second pass); the dialog itself reads the same by eye); `idea-body-within` (the References group is 5 px lower (the group wrapper)); `idea-reference-picker` (only the page behind the drawer, 5 to 10 px lower from the References group wrapper; the drawer is the same); `idea-references-error` (the References block is 10 px lower; the error stays under the Add reference button); `knowledge-other-error` (the "Who knows" block and the checkbox are 25 to 40 px tighter (Field spacing, CheckField); the refusals read the same); `knowledge-record-form` (the same tighter "Who knows" block, about 29 px higher on a desktop drawer); `machine-state-initial` (the Initial state checkbox glyph is drawn 1 px lower and left (CheckField)); `relation-kind-form` (the form sits 1 px higher and its text is positioned sub-pixel differently; the same form by eye (the Reads-the-same box is the CheckField)); `scene-beats-errors` (each beat row is about 6 px taller (the group wrapper per beat); the error texts and arrows stay in the same order); `world-rule-check-error` (the check block is 8 px lower (the group wrapper); the four refusals keep their places).
+The first pass listed eleven. Their causes, and what this pass shows:
+
+- A hidden `Field` label is absolutely placed by an ancestor outside the field; in a scrolling drawer it hung below the drawer and let the drawer itself scroll a few pixels (`scene-beats-errors`, 6 px). It is now pinned to that ancestor's corner (`.field > .field__label.visually-hidden`), and the beat rows are where dev draws them.
+- A group wrapper broke its parent's stack, so the parts inside lost the parent's gap (`idea-body-within`, `idea-reference-picker`, `idea-references-error`, `world-rule-check-error`, and the "Who knows" block of `knowledge-record-form` and `knowledge-other-error`). Those fields are now `field--flow`: the wrapper draws no box, its group is a `.field__stack` with the parent's gap, and the spacing is dev's.
+- A `CheckField` wrapper put its label in a line box 3 px taller than the label, where dev drew the label as an item of the form stack (`relation-kind-form`, and the 1 px glyph of `machine-state-initial`). Those CheckFields, and the one in the family kind dialog, are `field--flow` now, and the forms are where dev draws them.
+- `feedback-dialog`: "What is it?" is the shared `SegmentedField` label (a label over the group, was a legend), 1 to 2 px from dev; the page behind the scrim is the same.
+- What is left is intended and is an owner check (class F): `entry-field-error` (the refused field is drawn invalid (the red border) through `FieldInput error`; dev kept the focus ring); `feedback-dialog` ("What is it?" is the shared `SegmentedField` label (a label over the group, was a legend), 1 to 2 px from dev; the page behind the scrim is the same); `knowledge-other-error` (the same, with the refusals in their places); `knowledge-record-form` (the "Who knows" block keeps dev's spacing; the "from the start" box is the shared CheckField label (was `.checkbox`), 3 px shorter, so what follows sits 2 to 3 px higher; the story and scene selects take the select look).
 
 ## Not reachable
 
