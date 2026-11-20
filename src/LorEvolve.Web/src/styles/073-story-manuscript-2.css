@@ -40,19 +40,6 @@
   margin-top: var(--space-4);
 }
 
-.manuscript__conflicttext {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 0.925rem;
-}
-
-.manuscript__conflictactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.7rem;
-}
-
 .manuscript__recovery .recovery {
   margin: 1rem 0 0;
 }

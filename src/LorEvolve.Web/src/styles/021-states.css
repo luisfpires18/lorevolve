@@ -37,6 +37,7 @@
 .recovery,
 .chron__caution,
 .manuscript__conflict,
+.conflictbar,
 .editconflict,
 .idea__elsewhere {
   padding: var(--space-3) var(--space-4);
@@ -71,6 +72,25 @@
   margin: 0 0 var(--space-1);
   font-weight: 600;
   color: var(--callout-tone);
+}
+
+/* `.conflictbar`: a save refused as stale - what changed, then keep mine or load saved. */
+.conflictbar {
+  --callout-tone: var(--warning);
+  margin-top: var(--space-4);
+}
+
+.conflictbar__text {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.925rem;
+}
+
+.conflictbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
 }
 
 /* `EmptyState`: a line, a hint, one way to begin. No illustration and no panel around it. */

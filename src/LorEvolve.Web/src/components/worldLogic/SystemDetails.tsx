@@ -3,7 +3,7 @@ import { t } from '../../i18n'
 import { SYSTEM_NAME_MAX_LENGTH, SYSTEM_SUMMARY_MAX_LENGTH } from '../../worldLogic/types'
 import type { useSystemEditorState } from '../../worldLogic/useSystemEditorState'
 import type { systemEditorActions } from '../../worldLogic/systemEditorActions'
-import { Button } from '../Button'
+import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
 
 type State = ReturnType<typeof useSystemEditorState>
@@ -42,20 +42,12 @@ export function SystemDetails({
   return (
     <>
       {conflict ? (
-        <div className="manuscript__conflict" role="alert" data-testid="system-editor-conflict">
-          <p className="manuscript__conflicttext">
-            {t('canon.worldLogic.systems.editor.conflict')}
-          </p>
-          <div className="manuscript__conflictactions">
-            <Button
-              tone="secondary"
-              onClick={() => void reread()}
-              data-testid="system-editor-load-saved"
-            >
-              {t('canon.worldLogic.systems.editor.loadSaved')}
-            </Button>
-          </div>
-        </div>
+        <ConflictBar
+          text={t('canon.worldLogic.systems.editor.conflict')}
+          onLoadSaved={() => void reread()}
+          loadLabel={t('canon.worldLogic.systems.editor.loadSaved')}
+          testId="system-editor"
+        />
       ) : null}
 
       {failure ? (
