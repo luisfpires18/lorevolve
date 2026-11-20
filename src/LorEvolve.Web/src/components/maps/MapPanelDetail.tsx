@@ -98,7 +98,7 @@ export function MapPanelDetail({
             })}
           </QuietNote>
           {canEdit ? (
-            <div className="pincard__actions">
+            <div className="actions actions--tight pincard__actions">
               <Button
                 tone="secondary"
                 size="sm"

@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
+import { EMPTY_FACT } from '../lore/facts'
 import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import {
   IMAGE_ACCEPT,
@@ -205,7 +206,7 @@ export function EntityImageField({
               />
             ) : (
               <span className="imagefield__preview imagefield__preview--blank" aria-hidden="true">
-                —
+                {EMPTY_FACT}
               </span>
             )}
 

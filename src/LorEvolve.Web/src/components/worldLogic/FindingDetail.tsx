@@ -1,8 +1,8 @@
 import { t } from '../../i18n'
-import { formatDateTime } from '../../lib/dates'
 import type { WorldLogicFindingDetail, WorldLogicFindingRow } from '../../worldLogic/types'
 import { historyLabel } from '../../worldLogic/findingLabels'
 import { Button } from '../Button'
+import { DateText } from '../DateText'
 
 /** An opened finding: the version it was checked at, its evidence, the rationale, its history and the decisions. */
 export function FindingDetail({
@@ -67,7 +67,7 @@ export function FindingDetail({
           <li key={`${at}-${entry.action}-${entry.at}`}>
             {historyLabel(entry.action)}
             {' · '}
-            <time dateTime={entry.at}>{formatDateTime(entry.at)}</time>
+            <DateText value={entry.at} withTime />
             {entry.actorId === null ? ` · ${t('canon.worldLogic.integrity.byCheck')}` : null}
             {entry.note ? ` · ${entry.note}` : null}
           </li>
@@ -93,7 +93,7 @@ export function FindingDetail({
               {t('canon.worldLogic.integrity.undismiss')}
             </Button>
           ) : (
-            <div className="form__actions">
+            <div className="actions form__actions">
               <Button
                 tone="secondary"
                 busy={deciding}

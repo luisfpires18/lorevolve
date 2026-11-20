@@ -3,6 +3,7 @@ import { ImageOff } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { FieldImageInput } from './FieldImageInput'
+import { PictureWithFallback } from './PictureWithFallback'
 import { ApiError } from '../lib/api'
 import type { FieldImageRef } from '../lore/types'
 import { nodeImageApi } from '../projectEntities/nodeImages'
@@ -75,7 +76,6 @@ export function ComicArt({
   onChanged: (image: FieldImageRef | null) => void
 }) {
   const canEdit = useUniverseAccess().editContent
-  const [broken, setBroken] = useState(false)
   const placeholder = (
     <span
       className="imagefield__preview imagefield__preview--blank comicart__placeholder"
@@ -89,14 +89,14 @@ export function ComicArt({
   if (!canEdit)
     return (
       <figure className="imagefield__row" data-testid={`comic-art-readonly-${nodeId}`}>
-        {image && !broken ? (
-          <img
+        {image ? (
+          <PictureWithFallback
             className="imagefield__preview imagefield__preview--field"
             src={nodeImageApi(projectId, nodeId).url(image, 'crop')}
             alt={label}
             width={image.width}
             height={image.height}
-            onError={() => setBroken(true)}
+            fallback={placeholder}
           />
         ) : (
           placeholder
@@ -276,7 +276,7 @@ function PanelCard({
               readOnly={!canEdit}
             />
           ))}
-          <div className="comicpage__actions">
+          <div className="actions">
             {canEdit ? (
               <Button disabled={saving} onClick={save} data-testid={testId('save')}>
                 {saving ? t('projects.structure.saving') : t('shell.actions.save')}

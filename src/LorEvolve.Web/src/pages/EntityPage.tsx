@@ -18,7 +18,7 @@ import { useEntryState } from '../lore/useEntryState'
 import { useEntryPicture } from '../lore/useEntryPicture'
 import { useEntryLoad } from '../lore/useEntryLoad'
 import { useEntryForm } from '../lore/useEntryForm'
-import { useEntryArrival } from '../lore/useEntryArrival'
+import { useArrivalMark } from '../lib/useArrivalMark'
 import { useEntrySave } from '../lore/useEntrySave'
 import { useEntryActions } from '../lore/useEntryActions'
 
@@ -104,7 +104,15 @@ function EntityScreen({ view }: { view: EntryView }) {
   const pictures = useEntryPicture(base)
   const load = useEntryLoad(base)
   const form = useEntryForm({ ...base, ...load })
-  useEntryArrival(base)
+  // A link to `#article` - a search result whose words were in the article - lands on it once the entry is on screen.
+  // The entry's id and the location's key run it again for another entry, or the same link followed twice.
+  const arrivedFor = base.status === 'ready' ? (base.detail?.id ?? null) : null
+  useArrivalMark({
+    targetId: arrivedFor !== null && location.hash === '#article' ? 'article' : null,
+    runKey: `${arrivedFor}|${location.key}`,
+    block: 'start',
+    focus: '[data-arrival-focus]',
+  })
   const saving = useEntrySave({ ...base, ...load, ...form })
   const actions = useEntryActions({ ...base, ...load })
   const { draft, selectedType } = load

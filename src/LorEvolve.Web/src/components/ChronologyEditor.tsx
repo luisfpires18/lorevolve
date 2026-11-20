@@ -201,7 +201,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
         {/* Nothing to save and no periods to save: no lone disabled button under the empty state. */}
         {dirty || drafts.length > 0 ? (
-          <div className="form__actions eras__actions">
+          <div className="actions form__actions eras__actions">
             <SaveAction
               label={t('time.periods.save')}
               isDirty={dirty}

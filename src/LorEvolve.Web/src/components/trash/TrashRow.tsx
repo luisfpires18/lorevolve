@@ -1,7 +1,6 @@
 import { t, tx } from '../../i18n'
 import type { useUniverseAccess } from '../../universes/access'
 import { ArchiveRestore } from 'lucide-react'
-import { formatDateTime } from '../../lib/dates'
 import { TRASH_KIND_KEYS, TRASH_KIND_LABELS, TrashKind, type TrashItem } from '../../trash/types'
 import { EntityTile } from '../EntityTile'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
@@ -12,6 +11,7 @@ import { KindTile } from './KindTile'
 import { RestorePublicConfirm } from './RestorePublicConfirm'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 /** One row of the Trash: what it was and where, and Restore and Delete permanently with their questions; or its checkbox while selecting. */
 export function TrashRow({
@@ -97,7 +97,7 @@ export function TrashRow({
           </span>{' '}
           {tx('data.trash.row.meta', {
             where: whereItWas(item),
-            date: formatDateTime(item.trashedAt),
+            date: <DateText value={item.trashedAt} withTime />,
           })}
         </QuietNote>
         {waiting ? (
@@ -147,7 +147,7 @@ export function TrashRow({
       data-kind={kindKey}
     >
       {what}
-      <div className="trash__actions">
+      <div className="actions trash__actions">
         <Button
           tone="secondary"
           icon={ArchiveRestore}

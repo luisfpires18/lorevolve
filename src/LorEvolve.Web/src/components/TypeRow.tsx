@@ -65,7 +65,9 @@ export function TypeRow({
               {count}
             </span>
           ) : null}
-          {actions ? <span className="types__actions">{actions}</span> : null}
+          {actions ? (
+            <span className="actions actions--tight types__actions">{actions}</span>
+          ) : null}
         </div>
       )}
       {children}

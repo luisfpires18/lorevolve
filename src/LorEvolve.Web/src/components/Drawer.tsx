@@ -106,7 +106,7 @@ export function Drawer({
     </header>
   )
   const bodyClass = bodyClassName ? `drawer__body ${bodyClassName}` : 'drawer__body'
-  const footer = <footer className="drawer__actions">{actions(() => void close())}</footer>
+  const footer = <footer className="actions drawer__actions">{actions(() => void close())}</footer>
 
   let panel: ReactNode
   if (onSubmit && submitFrom === 'body') {

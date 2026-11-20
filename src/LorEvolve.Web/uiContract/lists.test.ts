@@ -33,12 +33,11 @@ const CLOCKS = new Map<string, string>([
   ['src/components/SaveAction.tsx', 'the Saved note fades after 2 seconds'],
   ['src/export/api.ts', 'revokes a download address after the click'],
   ['src/lib/launch.ts', 'the opening waits for its animation'],
+  ['src/lib/useArrivalMark.ts', 'the arrival highlight is removed after 2.4 seconds'],
   [
     'src/lib/useLocalDraft.ts',
     'saves the draft when typing stops and must also save it on leave, which a settled value cannot do',
   ],
-  ['src/lore/useEntryArrival.ts', 'the arrival highlight is removed after 2.4 seconds'],
-  ['src/stories/useStoryArrival.ts', 'the arrival highlight is removed after 2.4 seconds'],
   ['src/universes/useWorkspaceReads.ts', 'preloads the workspace after 2.5 seconds'],
 ])
 

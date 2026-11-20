@@ -4,8 +4,7 @@ import { formatSpan } from '../../lib/dates'
 import type { Chronology } from '../../chronology/types'
 import { periodText } from '../../relationships/periods'
 import { Validity, type RelationshipView } from '../../relationships/types'
-import { CANON_LABELS } from '../../lore/types'
-import { StatusBadge } from '../StatusBadge'
+import { CanonBadge } from '../CanonBadge'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import { EntityRow } from '../EntityRow'
@@ -50,7 +49,7 @@ export function RelationRow({
             <span className="relation__kind">
               <bdi>{view.relatedEntityTypeName}</bdi>
             </span>
-            <StatusBadge step={view.canonStatus} label={CANON_LABELS[view.canonStatus]} />
+            <CanonBadge status={view.canonStatus} />
             {(view.periods ?? []).length > 0 ? (
               <span className="relation__span" data-testid="relation-periods-text">
                 {(view.periods ?? []).map((period) => periodText(period, chronology)).join('; ')}

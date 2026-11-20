@@ -129,7 +129,7 @@ export default function InvitationPage() {
           link: <Link to="/">{t('auth.invitation.signedOut.explore')}</Link>,
         })}
       >
-        <div className="invite__actions" data-testid="invitation-signed-out">
+        <div className="actions" data-testid="invitation-signed-out">
           <Button to="/login" state={from} data-testid="invitation-sign-in">
             {t('auth.invitation.signedOut.signIn')}
           </Button>
@@ -206,7 +206,7 @@ export default function InvitationPage() {
                 {actionError}
               </p>
             ) : null}
-            <div className="invite__actions">
+            <div className="actions">
               <Button
                 busy={busy}
                 busyLabel={t('auth.invitation.ready.working')}

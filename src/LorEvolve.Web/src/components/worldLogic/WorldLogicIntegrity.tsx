@@ -1,7 +1,6 @@
 import { EmptyState } from '../EmptyState'
 import { TabPanel } from '../QueryTabs'
 import { t, useI18n } from '../../i18n'
-import { formatDateTime } from '../../lib/dates'
 import type { useUniverseAccess } from '../../universes/access'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
@@ -11,6 +10,7 @@ import { FindingRow } from './FindingRow'
 import { Button } from '../Button'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
+import { DateText } from '../DateText'
 
 /** The Integrity tab: the check and what it last said, one row per finding, the empty states and the pager. */
 export function WorldLogicIntegrity({
@@ -65,7 +65,7 @@ export function WorldLogicIntegrity({
       {sweep ? (
         <p className="notice" data-testid="world-logic-integrity-checked">
           {tx('canon.worldLogic.integrity.checked', {
-            time: <time dateTime={sweep.evaluatedAt}>{formatDateTime(sweep.evaluatedAt)}</time>,
+            time: <DateText value={sweep.evaluatedAt} withTime />,
           })}
         </p>
       ) : null}

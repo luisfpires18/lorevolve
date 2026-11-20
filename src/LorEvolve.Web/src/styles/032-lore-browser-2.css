@@ -45,11 +45,6 @@
   white-space: nowrap;
 }
 
-.lore__fieldeditoractions {
-  display: flex;
-  gap: var(--space-2);
-}
-
 /* The one line of the create label that can grow with an author's type name: cut, whole in the
    button's accessible name. */
 .lore__createlabel {

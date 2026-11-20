@@ -21,7 +21,7 @@ export function CropperActions({
   const { t } = useI18n()
 
   return (
-    <footer className="cropper__actions">
+    <footer className="actions cropper__actions">
       <Button
         icon={Check}
         disabled={!crop || saving}

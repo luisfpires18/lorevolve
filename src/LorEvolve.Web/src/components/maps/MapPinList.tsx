@@ -3,6 +3,7 @@ import type { MapDetail } from '../../maps/types'
 import { useI18n } from '../../i18n'
 import { QuietNote } from '../QuietNote'
 import { SectionTitle } from '../Section'
+import { HeadingCount } from '../HeadingCount'
 
 export function MapPinList({
   map,
@@ -21,7 +22,7 @@ export function MapPinList({
     <>
       <SectionTitle level={2} tone="label">
         {t('places.mapPage.pins')}{' '}
-        {map.pins.length > 0 ? <span className="mapscreen__count">({map.pins.length})</span> : null}
+        {map.pins.length > 0 ? <HeadingCount n={map.pins.length} /> : null}
       </SectionTitle>
       {map.pins.length === 0 ? (
         <QuietNote className="mapscreen__empty" testId="map-pins-empty">

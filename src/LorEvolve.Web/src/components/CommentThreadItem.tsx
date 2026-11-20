@@ -1,12 +1,12 @@
 import { COMMENT_MAX_LENGTH, type CommentThread } from '../comments/api'
 import { useI18n } from '../i18n'
-import { formatDateTime } from '../lib/dates'
 import { Field } from './Field'
 import type { useUniverseAccess } from '../universes/access'
 import { confirmAction } from '../lib/confirm'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
+import { DateText } from './DateText'
 
 /** One comment thread: its comments, how it was resolved, the reply form or Reply, and Resolve or Reopen. */
 export function CommentThreadItem({
@@ -60,7 +60,7 @@ export function CommentThreadItem({
                   <bdi>{comment.authorName}</bdi>
                 )}
               </span>
-              <time dateTime={comment.createdAt}>{formatDateTime(comment.createdAt)}</time>
+              <DateText value={comment.createdAt} withTime />
             </p>
             <p className="reviewcomment__body" dir="auto" data-testid="comment-body">
               {comment.body}
@@ -79,7 +79,12 @@ export function CommentThreadItem({
                 <bdi>{thread.resolvedByName}</bdi>
               ),
           })}
-          {thread.resolvedAt ? <> · {formatDateTime(thread.resolvedAt)}</> : null}
+          {thread.resolvedAt ? (
+            <>
+              {' · '}
+              <DateText value={thread.resolvedAt} withTime />
+            </>
+          ) : null}
         </QuietNote>
       ) : null}
 

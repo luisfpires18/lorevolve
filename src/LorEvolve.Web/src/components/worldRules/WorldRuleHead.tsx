@@ -1,10 +1,10 @@
 import { Trash2 } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
-import { formatDateTime } from '../../lib/dates'
 import { t, useI18n } from '../../i18n'
 import type { Stored } from '../../worldRules/ruleDraft'
 import { DocumentHead } from '../DocumentHead'
+import { DateText } from '../DateText'
 
 /** The world rule editor's head: Back, the title with the actions menu, and the lede with the saved moment. */
 export function WorldRuleHead({
@@ -56,7 +56,7 @@ export function WorldRuleHead({
             <>
               {' '}
               {tx('canon.editor.lastSaved', {
-                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+                time: <DateText value={stored.updatedAt} withTime />,
               })}
             </>
           ) : null}

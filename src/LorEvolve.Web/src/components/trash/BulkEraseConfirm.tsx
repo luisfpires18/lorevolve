@@ -42,7 +42,7 @@ export function BulkEraseConfirm({
       error={error}
       errorTestId="trash-bulk-error"
       actions={
-        <div className="form__actions">
+        <div className="actions form__actions">
           <Button
             tone="danger"
             aria-disabled={busy || undefined}

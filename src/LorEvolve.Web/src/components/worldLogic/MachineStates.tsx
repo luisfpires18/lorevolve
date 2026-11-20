@@ -66,7 +66,7 @@ export function MachineStates({
           })}
         </ul>
       ) : null}
-      <div className="form__actions">
+      <div className="actions form__actions">
         <NewButton
           tone="secondary"
           disabled={draft.states.length >= MACHINE_MAX_STATES}

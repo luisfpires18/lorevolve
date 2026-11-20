@@ -1,9 +1,9 @@
 import { CardGrid } from '../CardGrid'
 import type { DatabaseBackupStatus } from '../../admin/api'
 import { formatBytes } from '../../lib/bytes'
-import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Stat } from './Stat'
+import { DateText } from '../DateText'
 
 const OUTCOME_KEYS = {
   Running: 'admin.backups.outcome.running',
@@ -36,9 +36,11 @@ export function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
       <Stat
         label={t('admin.backups.lastVerified.label')}
         value={
-          status.lastVerified
-            ? formatDateTime(status.lastVerified.createdAt)
-            : t('admin.backups.lastVerified.none')
+          status.lastVerified ? (
+            <DateText value={status.lastVerified.createdAt} withTime />
+          ) : (
+            t('admin.backups.lastVerified.none')
+          )
         }
         source={
           status.stale
@@ -68,14 +70,16 @@ export function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
         label={t('admin.backups.attempt.label')}
         value={last ? t(OUTCOME_KEYS[last.outcome]) : t('admin.backups.attempt.none')}
         source={
-          last?.error
-            ? t('admin.backups.attempt.failures', {
-                error: last.error,
-                count: status.consecutiveFailures,
-              })
-            : last
-              ? formatDateTime(last.startedAt)
-              : t('admin.backups.attempt.schedule')
+          last?.error ? (
+            t('admin.backups.attempt.failures', {
+              error: last.error,
+              count: status.consecutiveFailures,
+            })
+          ) : last ? (
+            <DateText value={last.startedAt} withTime />
+          ) : (
+            t('admin.backups.attempt.schedule')
+          )
         }
         testId="stat-backup-attempt"
       />

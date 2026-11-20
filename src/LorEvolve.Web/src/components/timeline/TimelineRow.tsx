@@ -1,9 +1,8 @@
 import { useUniverseAccess } from '../../universes/access'
 import { useI18n } from '../../i18n'
-import { CANON_LABELS } from '../../lore/types'
 import { formatTimelineDate } from '../../timeline/format'
 import { DATE_KIND_LABELS, type TimelineEntry, type TimelineItem } from '../../timeline/types'
-import { StatusBadge } from '../StatusBadge'
+import { CanonBadge } from '../CanonBadge'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { Dispatch, SetStateAction } from 'react'
 import type { FormState } from '../../timeline/useTimelineState'
@@ -63,18 +62,8 @@ export function TimelineRow({
           <span className="moment__source" data-testid="timeline-source">
             {SOURCE_LABELS[source]}
           </span>
-          {item.event ? (
-            <StatusBadge
-              step={item.event.canonStatus}
-              label={CANON_LABELS[item.event.canonStatus]}
-            />
-          ) : null}
-          {item.loreFact ? (
-            <StatusBadge
-              step={item.loreFact.canonStatus}
-              label={CANON_LABELS[item.loreFact.canonStatus]}
-            />
-          ) : null}
+          {item.event ? <CanonBadge status={item.event.canonStatus} /> : null}
+          {item.loreFact ? <CanonBadge status={item.loreFact.canonStatus} /> : null}
         </p>
         {item.event && access.editContent ? (
           <MomentMenu entry={item.event} setForm={setForm} remove={remove} />

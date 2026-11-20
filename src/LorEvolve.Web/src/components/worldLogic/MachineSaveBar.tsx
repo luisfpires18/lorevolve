@@ -24,7 +24,7 @@ export function MachineSaveBar({
   }) {
   return (
     <div className="manuscript__bar idea__bar">
-      <div className="idea__actions">
+      <div className="actions idea__actions">
         <SaveAction
           label={t(`${m}.saveChanges`)}
           isDirty={isDirty}

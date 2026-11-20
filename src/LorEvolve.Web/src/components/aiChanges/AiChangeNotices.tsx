@@ -1,9 +1,9 @@
 import type { Change, Proposal } from '../../aiChanges/types'
 import { useI18n } from '../../i18n'
-import { formatDateTime } from '../../lib/dates'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useAiChangeState } from '../../aiChanges/useAiChangeState'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 /** What stands above the decision: the note while open, pictures still to hand over, a block, read-only, and the feedback. */
 export function AiChangeNotices({
@@ -32,9 +32,14 @@ export function AiChangeNotices({
               t('review.aiChange.note.thisUniverse')
             ),
           })}
-          {open
-            ? ` ${t('review.aiChange.note.expires', { date: formatDateTime(proposal.proposal.expiresAt) })}`
-            : null}
+          {open ? (
+            <>
+              {' '}
+              {tx('review.aiChange.note.expires', {
+                date: <DateText value={proposal.proposal.expiresAt} withTime />,
+              })}
+            </>
+          ) : null}
         </p>
       ) : null}
 

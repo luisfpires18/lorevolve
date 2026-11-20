@@ -73,7 +73,7 @@ export function MapScaleSummary({
         </p>
       )}
       {canEdit ? (
-        <div className="pincard__actions">
+        <div className="actions actions--tight pincard__actions">
           <Button
             tone="secondary"
             size="sm"
@@ -191,7 +191,7 @@ export function MapCalibrationForm({
         setPoint={setPoint}
       />
 
-      <div className="pincard__actions">
+      <div className="actions actions--tight pincard__actions">
         <FormActions
           submitLabel={t('places.calibration.save')}
           busy={isSaving}

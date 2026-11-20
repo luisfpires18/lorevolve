@@ -15,6 +15,8 @@ import { SignUpLink } from './SignUpLink'
 import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
+import { formatCount } from '../../i18n/format'
+import { TagList } from '../TagList'
 
 // ---------- Users ----------
 
@@ -61,7 +63,7 @@ export function UsersScreen() {
       {result && result.items.length > 0 ? (
         <>
           <p className="settings__note" role="status" data-testid="admin-user-count">
-            {tn('admin.users.count', result.totalCount, { n: result.totalCount })}
+            {tn('admin.users.count', result.totalCount, { n: formatCount(result.totalCount) })}
           </p>
           <CardGrid min={15} testId="admin-user-grid">
             {result.items.map((user) => (
@@ -81,14 +83,16 @@ export function UsersScreen() {
                         {user.publicDisplayName}
                       </QuietNote>
                     ) : null}
-                    <p className="adminuser__tags">
-                      <span className="admintag">{t(ROLE_KEYS[user.role])}</span>
-                      {user.isBlocked ? (
-                        <span className="admintag admintag--blocked">
-                          {t('admin.users.blocked')}
-                        </span>
-                      ) : null}
-                    </p>
+                    <TagList
+                      look="round"
+                      className="adminuser__tags"
+                      tags={[
+                        t(ROLE_KEYS[user.role]),
+                        ...(user.isBlocked
+                          ? [{ text: t('admin.users.blocked'), tone: 'danger' as const }]
+                          : []),
+                      ]}
+                    />
                   </div>
                   <Button
                     tone="secondary"

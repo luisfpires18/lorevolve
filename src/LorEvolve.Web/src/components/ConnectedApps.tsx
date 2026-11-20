@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { t, tx, useI18n } from '../i18n'
-import { formatDate, formatDateTime } from '../lib/dates'
 import {
   ConnectedAppStatus,
   disconnectApp,
@@ -17,6 +16,7 @@ import { Section } from './Section'
 import { Announce } from './Announce'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { DateText } from './DateText'
 
 const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
   get [ConnectedAppStatus.Active]() {
@@ -172,10 +172,12 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           {tx('data.connectedApps.reads', { universe: <bdi>{app.universeName}</bdi> })}
         </p>
         <p className="connectedapps__meta">
-          {t('data.connectedApps.connectedOn', { date: formatDate(app.createdAt) })}
+          {tx('data.connectedApps.connectedOn', { date: <DateText value={app.createdAt} /> })}
           {' · '}
           {app.lastUsedAt
-            ? t('data.connectedApps.lastUsed', { date: formatDateTime(app.lastUsedAt) })
+            ? tx('data.connectedApps.lastUsed', {
+                date: <DateText value={app.lastUsedAt} withTime />,
+              })
             : t('data.connectedApps.neverUsed')}
         </p>
         <p

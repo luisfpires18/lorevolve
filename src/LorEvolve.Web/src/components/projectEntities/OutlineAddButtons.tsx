@@ -34,5 +34,5 @@ export function OutlineAddButtons({
       {t('projects.structure.add', { level: levelWord(level) })}
     </NewButton>
   ))
-  return parent ? buttons : <div className="form__actions">{buttons}</div>
+  return parent ? buttons : <div className="actions form__actions">{buttons}</div>
 }

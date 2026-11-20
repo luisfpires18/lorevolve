@@ -1,5 +1,4 @@
 import { useId, useState, type ReactNode } from 'react'
-import { formatDateTime } from '../lib/dates'
 import type { LocalDraft } from '../lib/localDrafts'
 import { sameSave } from '../lib/useLocalDraft'
 import { confirmAction } from '../lib/confirm'
@@ -7,6 +6,7 @@ import { useI18n } from '../i18n'
 import { Button } from './Button'
 import { DisclosureButton } from './DisclosureButton'
 import { QuietNote } from './QuietNote'
+import { DateText } from './DateText'
 
 interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
@@ -76,7 +76,7 @@ export function RecoveredDraft({
         <p className="recovery__text">
           {tx('entity.recovered.kept', {
             what,
-            time: <time dateTime={draft.savedAt}>{formatDateTime(draft.savedAt)}</time>,
+            time: <DateText value={draft.savedAt} withTime />,
           })}
         </p>
         {savedSince ? (
@@ -84,7 +84,7 @@ export function RecoveredDraft({
             {savedUpdatedAt ? (
               <>
                 {tx('entity.recovered.savedAgain', {
-                  time: <time dateTime={savedUpdatedAt}>{formatDateTime(savedUpdatedAt)}</time>,
+                  time: <DateText value={savedUpdatedAt} withTime />,
                 })}
               </>
             ) : (
@@ -95,7 +95,7 @@ export function RecoveredDraft({
         <QuietNote className="recovery__hint">{t('entity.recovered.hint')}</QuietNote>
       </div>
 
-      <div className="recovery__actions">
+      <div className="actions recovery__actions">
         <Button
           tone="secondary"
           onClick={onRecover}

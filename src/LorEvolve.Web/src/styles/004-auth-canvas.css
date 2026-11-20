@@ -66,13 +66,6 @@
   font-size: 0.925rem;
 }
 
-/* An invitation's page (030) borrows the sign-in canvas: its choices sit where a form's button would. */
-.invite__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
 .invite__role {
   margin: -1.75rem 0 var(--space-6);
   color: var(--muted);

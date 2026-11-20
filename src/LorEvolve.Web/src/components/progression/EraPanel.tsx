@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { EraRelations } from '../EraRelations'
 import type { Chronology } from '../../chronology/types'
 import { t, useI18n } from '../../i18n'
-import { renderFact } from '../../lore/facts'
+import { EMPTY_FACT, renderFact } from '../../lore/facts'
 import type { EntityDetail } from '../../lore/types'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
 import { formatSpan, resolveFields, type FieldSource } from '../../progression/eras'
@@ -148,10 +148,10 @@ export function EraPanel({
               <dt className="facts__key">{field.definition.name}</dt>
               <dd className="facts__value prose">
                 {field.source === 'cleared'
-                  ? '—'
+                  ? EMPTY_FACT
                   : field.value
                     ? renderFact(field.value, chronology)
-                    : '—'}
+                    : EMPTY_FACT}
                 <span className={`erasource erasource--${field.source}`}>
                   {SOURCE_LABELS[field.source]}
                 </span>

@@ -36,7 +36,7 @@ export function ConflictBar({
   return (
     <div className="conflictbar" role="alert" data-testid={`${testId}-conflict`}>
       <p className="conflictbar__text">{text}</p>
-      <div className="conflictbar__actions">
+      <div className="actions conflictbar__actions">
         {onKeepMine ? (
           <Button
             tone="secondary"

@@ -54,7 +54,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
 
   return (
     <div data-testid="cinema-sagas">
-      <div className="form__actions">
+      <div className="actions form__actions">
         <NewButton
           data-testid="saga-new"
           onClick={() => setEditing({ saga: null, phase: null, forPhase: false })}

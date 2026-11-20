@@ -97,7 +97,7 @@ export function StoryScenes(
             {hasStructure ? t('stories.page.asideStructured') : t('stories.page.aside')}
           </QuietNote>
           {access.editContent ? (
-            <div className="story__toolbaractions">
+            <div className="actions">
               {newArc}
               {newChapter}
               <span className="story__create">{newScene}</span>

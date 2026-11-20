@@ -124,7 +124,7 @@ export function NameLinker({
           </ul>
         </>
       )}
-      <div className="recovery__actions">
+      <div className="actions recovery__actions">
         {rows.length > 0 ? (
           <Button
             disabled={chosen.length === 0}

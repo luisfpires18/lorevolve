@@ -24,13 +24,6 @@
     box-shadow 700ms ease;
 }
 
-.article[data-arrived] {
-  background: var(--surface);
-  box-shadow:
-    inset 2px 0 0 var(--accent),
-    0 0 0 0.6rem var(--surface);
-}
-
 .article__title:focus {
   outline: none;
 }
@@ -108,9 +101,6 @@
 }
 
 .article__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
   margin-left: auto;
 }
 
@@ -134,13 +124,6 @@
 .article__conflicttext {
   margin: 0;
   font-size: 0.925rem;
-}
-
-.article__conflictactions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.7rem;
 }
 
 /* Saved somewhere else while being edited (ADR 0043): the notice, then the latest version on request. Stacked at every
@@ -167,9 +150,6 @@
 }
 
 .editconflict__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
   margin-top: 0.7rem;
 }
 

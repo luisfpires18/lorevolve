@@ -9,6 +9,7 @@ import { useFold } from './fold'
 import type { Chronology } from '../chronology/types'
 import { sceneWhen } from '../stories/format'
 import type { Scene, SceneBeat, SceneLoreReference } from '../stories/types'
+import { HeadingCount } from './HeadingCount'
 
 /*
  * What a scene refers to, drawn the same way wherever a scene is shown - its card on the Scenes view and its page on the
@@ -121,7 +122,7 @@ export function SceneLore({
   return (
     <div className="scene__refs scene__refs--lore">
       <span className="scene__label" id={labelId}>
-        {t('stories.scene.lore')} <span className="scene__count">{entities.length}</span>
+        {t('stories.scene.lore')} <HeadingCount n={entities.length} look="pill" />
       </span>
       {onReorder ? (
         <DndContext
@@ -197,7 +198,7 @@ export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: S
           label={t('stories.scene.beatsFoldLabel')}
           testId={`${testId}-beats-toggle`}
         />
-        {t('stories.scene.beats')} <span className="scene__count">{beats.length}</span>
+        {t('stories.scene.beats')} <HeadingCount n={beats.length} look="pill" />
       </span>
       <ol
         id={foldBodyId}

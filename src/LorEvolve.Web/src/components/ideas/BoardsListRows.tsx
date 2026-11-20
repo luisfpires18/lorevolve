@@ -1,8 +1,8 @@
 import type { IdeaBoardPage, IdeaBoardSummary } from '../../ideas/boards'
-import { formatDate, formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { LinkRow } from '../LinkRow'
+import { DateText } from '../DateText'
 
 /** The rows of the boards list: each board opens, or in Recently deleted, restores. */
 export function BoardsListRows({
@@ -49,13 +49,13 @@ export function BoardsListRows({
               {deleted && board.deletedAt ? (
                 <span>
                   {tx('ideas.boards.deletedAt', {
-                    time: <time dateTime={board.deletedAt}>{formatDateTime(board.deletedAt)}</time>,
+                    time: <DateText value={board.deletedAt} withTime />,
                   })}
                 </span>
               ) : (
                 <span>
                   {tx('ideas.boards.updatedAt', {
-                    time: <time dateTime={board.updatedAt}>{formatDate(board.updatedAt)}</time>,
+                    time: <DateText value={board.updatedAt} />,
                   })}
                 </span>
               )}

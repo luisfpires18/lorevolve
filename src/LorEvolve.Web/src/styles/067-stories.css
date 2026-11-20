@@ -142,21 +142,10 @@
   margin: 1.5rem 0 0.25rem;
 }
 
-.story__toolbaractions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
-}
-
 .story__aside {
   margin: 0;
 }
 
 .empty__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
   margin-top: 1.25rem;
 }

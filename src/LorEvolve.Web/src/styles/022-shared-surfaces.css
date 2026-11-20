@@ -174,6 +174,17 @@
   gap: var(--space-5);
 }
 
+/* Placeholders appear only if the read takes longer than a moment, so a fast load never flashes them. */
+@keyframes skeleton-appear {
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
+}
+
 /* Placeholder cards (`CardSkeleton`) wait 300 ms before they show, so a quick read never flashes them. */
 .cardskeleton {
   animation: skeleton-appear 0s linear 300ms both;
@@ -247,4 +258,31 @@
 
 .showmore__error {
   color: var(--danger);
+}
+
+/* A row reached by a link (useArrivalMark) is marked for a moment: the surface behind it and the accent on its edge, so
+   the eye can tell which row the link meant. The mark fades through each place's own transition, unless motion is
+   reduced there. The row holds the focus by then, and the mark is what shows it. */
+:is(.article, .scene, .plotarc)[data-arrived] {
+  background: var(--surface);
+  box-shadow:
+    inset 2px 0 0 var(--accent),
+    0 0 0 0.6rem var(--surface);
+}
+
+/* A count beside a heading's words (HeadingCount): quiet figures, or the scene's raised pill. */
+.headingcount {
+  font-variant-numeric: tabular-nums;
+}
+
+.headingcount[data-look='quiet'] {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.headingcount[data-look='pill'] {
+  margin-inline-start: 0.2rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--raised);
 }

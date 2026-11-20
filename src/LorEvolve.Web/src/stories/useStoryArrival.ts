@@ -1,10 +1,18 @@
 import { useEffect } from 'react'
 import { revealInFolds } from '../components/fold'
+import { useArrivalMark } from '../lib/useArrivalMark'
 import type { Location } from 'react-router-dom'
 import type { StoryViewName, useStoryState } from './useStoryState'
 
-/** How long a scene reached by a link stays marked, so the eye can pick it out from its neighbours. */
-const ARRIVAL_MS = 2400
+/** The id a link's hash names, or null for no hash or one that is not valid text (read in render, so it must not throw). */
+function hashTarget(hash: string) {
+  if (hash.length < 2) return null
+  try {
+    return decodeURIComponent(hash.slice(1))
+  } catch {
+    return null
+  }
+}
 
 /** Puts the focus back on a moved row's menu, and takes a link to a scene to the scene. */
 export function useStoryArrival({
@@ -30,20 +38,10 @@ export function useStoryArrival({
   // marked for a moment so the eye can tell which of twenty rows it meant. The location's key runs it again when the
   // same link is followed twice.
   const isReady = state.kind === 'ready'
-  useEffect(() => {
-    if (!isReady || location.hash.length < 2) return
-    const target = document.getElementById(decodeURIComponent(location.hash.slice(1)))
-    if (!target) return
-
-    revealInFolds(target)
-    target.scrollIntoView({ block: 'center' })
-    target.focus({ preventScroll: true })
-    target.setAttribute('data-arrived', 'true')
-    const timer = window.setTimeout(() => target.removeAttribute('data-arrived'), ARRIVAL_MS)
-
-    return () => {
-      window.clearTimeout(timer)
-      target.removeAttribute('data-arrived')
-    }
-  }, [isReady, view, location.hash, location.key])
+  useArrivalMark({
+    targetId: isReady ? hashTarget(location.hash) : null,
+    runKey: `${view}|${location.key}`,
+    block: 'center',
+    reveal: revealInFolds,
+  })
 }

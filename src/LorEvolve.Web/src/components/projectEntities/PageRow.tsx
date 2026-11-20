@@ -54,7 +54,7 @@ export function PageRow({
             : tn('projects.pages.panelCount', page.panels.length)}
         </span>
       </span>
-      <div className="fieldlist__actions">
+      <div className="actions actions--compact fieldlist__actions">
         <ActionMenu
           label={t('projects.common.more', { name: page.name ?? String(index + 1) })}
           triggerTestId={`project-page-actions-${page.id}`}

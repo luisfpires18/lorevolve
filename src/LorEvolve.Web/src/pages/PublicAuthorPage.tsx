@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PortalError, PortalMissing } from '../components/PortalMissing'
+import { Avatar } from '../components/Avatar'
 import { WorldCard } from '../components/WorldCard'
 import { ShowMore } from '../components/ShowMore'
 import {
@@ -12,6 +13,7 @@ import {
 import { usePublicPages } from '../portal/usePublicPages'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { useI18n } from '../i18n'
+import { formatCount } from '../i18n/format'
 
 type LoadState =
   | { slug: string; kind: 'ready'; author: PublicAuthor }
@@ -62,7 +64,7 @@ export default function PublicAuthorPage() {
   if (!current) {
     return (
       <div className="pauthor" role="status" aria-label={t('portal.author.opening')}>
-        <div className="pauthor__head pauthor__head--skeleton" />
+        <div className="pauthor__head pskeleton pskeleton--author" />
       </div>
     )
   }
@@ -79,27 +81,17 @@ function Author({ author }: { author: PublicAuthor }) {
     [author.slug],
   )
   const worlds = usePublicPages<PublicUniverse>(author.slug, fetchWorlds)
-  const [photoFailed, setPhotoFailed] = useState(false)
 
   return (
     <div className="pauthor" data-testid="public-author">
       <header className="pauthor__head">
         <span className="pauthor__avatar" aria-hidden="true">
-          {author.avatarUrl && !photoFailed ? (
-            <img
-              src={author.avatarUrl}
-              alt=""
-              width={320}
-              height={320}
-              decoding="async"
-              onError={() => setPhotoFailed(true)}
-              data-testid="public-author-avatar"
-            />
-          ) : (
-            <span className="pauthor__initial" data-testid="public-author-placeholder">
-              {Array.from(author.displayName.trim())[0]?.toLocaleUpperCase() ?? '·'}
-            </span>
-          )}
+          <Avatar
+            src={author.avatarUrl}
+            name={author.displayName}
+            className="pauthor__photo"
+            testId="public-author-avatar"
+          />
         </span>
         <div className="pauthor__text">
           <p className="pread__eyebrow">{t('portal.author.eyebrow')}</p>
@@ -108,7 +100,7 @@ function Author({ author }: { author: PublicAuthor }) {
           </h1>
           {worlds.status === 'ready' ? (
             <p className="pauthor__count" data-testid="public-author-count">
-              {tn('portal.author.count', worlds.totalCount, { n: worlds.totalCount })}
+              {tn('portal.author.count', worlds.totalCount, { n: formatCount(worlds.totalCount) })}
             </p>
           ) : null}
         </div>

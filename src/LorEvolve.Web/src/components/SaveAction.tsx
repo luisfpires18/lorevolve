@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { useI18n } from '../i18n'
@@ -18,7 +18,7 @@ interface SaveActionProps {
   /** Bumped by the editor after each save the API confirmed; the button says "Saved" for a moment. */
   saves: number
   /** What the status says when nothing is unsaved and no save just happened: "Saved", "Not saved yet". */
-  restingStatus: string
+  restingStatus: ReactNode
   statusId: string
   statusTestId: string
   testId: string

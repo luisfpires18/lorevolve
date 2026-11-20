@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { StatusBadge } from '../StatusBadge'
+import { CanonBadge } from '../CanonBadge'
 import { CANON_LABELS, CanonStatus } from '../../lore/types'
 import type { RelationshipView } from '../../relationships/types'
 import { useI18n } from '../../i18n'
@@ -49,8 +49,8 @@ export function FamilyOtherRelations({
               <bdi>{relation.relatedEntityName}</bdi>
             </Link>
             {relation.canonStatus === CanonStatus.Canon ? null : (
-              <StatusBadge
-                step={relation.canonStatus}
+              <CanonBadge
+                status={relation.canonStatus}
                 label={t('places.familyPage.relationshipStatus', {
                   status: CANON_LABELS[relation.canonStatus],
                 })}

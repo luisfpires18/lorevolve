@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { EMPTY_FACT } from '../lore/facts'
 import type { Change } from '../lib/editConflict'
 import { errorText } from '../lib/errorText'
 import { isNotFound, type Load } from '../lib/useAsyncRead'
@@ -96,7 +97,7 @@ export function EditConflict<T>({
       </div>
 
       {state === null || state.kind === 'error' ? (
-        <div className="editconflict__actions">
+        <div className="actions editconflict__actions">
           <Button tone="secondary" onClick={() => void review()} data-testid={`${testId}-review`}>
             {t('entity.conflict.review')}
           </Button>
@@ -131,7 +132,7 @@ export function EditConflict<T>({
             {t('entity.conflict.latestHeading')}
           </h3>
           {renderLatest(state.value)}
-          <div className="editconflict__actions">
+          <div className="actions editconflict__actions">
             <Button
               onClick={() => onKeepMine(state.value)}
               aria-describedby={hintId}
@@ -191,13 +192,13 @@ export function ChangeList({
           <dd className="changelist__value" data-side="latest">
             <span className="changelist__side">{sides.latest}</span>
             <span dir="auto" data-testid={`${testId}-latest-value`}>
-              {change.latest || '—'}
+              {change.latest || EMPTY_FACT}
             </span>
           </dd>
           <dd className="changelist__value" data-side="mine">
             <span className="changelist__side">{sides.mine}</span>
             <span dir="auto" data-testid={`${testId}-mine-value`}>
-              {change.mine || '—'}
+              {change.mine || EMPTY_FACT}
             </span>
           </dd>
         </div>

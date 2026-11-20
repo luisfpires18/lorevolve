@@ -143,7 +143,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
 
       {/* Simple dates with nothing to change have nothing to save, so no lone quiet button sits under the note. */}
       {dirty || mode === 'custom' ? (
-        <div className="form__actions eras__actions">
+        <div className="actions form__actions eras__actions">
           <SaveAction
             label={label}
             isDirty={dirty}

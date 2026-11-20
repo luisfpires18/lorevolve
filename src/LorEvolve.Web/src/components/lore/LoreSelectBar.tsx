@@ -37,7 +37,7 @@ export function LoreSelectBar({
               ? t('lore.page.selectHint')
               : t('lore.page.selected', { n: selected.length })}
           </QuietNote>
-          <div className="actionbar__actions">
+          <div className="actions actions--tight actionbar__actions">
             <Button
               icon={Trash2}
               onClick={() => void trashSelected()}

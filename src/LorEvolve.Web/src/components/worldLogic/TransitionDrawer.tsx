@@ -165,7 +165,7 @@ export function TransitionDrawer({
             </select>
           )}
         </Field>
-        <div className="form__actions">
+        <div className="actions form__actions">
           <NewButton
             tone="secondary"
             size="sm"

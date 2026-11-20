@@ -42,7 +42,7 @@ export function EraseConfirm({
       error={error}
       errorTestId="trash-erase-error"
       actions={
-        <div className="form__actions">
+        <div className="actions form__actions">
           <Button
             tone="danger"
             aria-disabled={busy || undefined}

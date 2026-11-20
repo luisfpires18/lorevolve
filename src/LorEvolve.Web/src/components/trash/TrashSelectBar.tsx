@@ -30,7 +30,7 @@ export function TrashSelectBar({
           ? t('data.trash.bar.hint')
           : t('data.trash.bar.selected', { n: selected.length })}
       </QuietNote>
-      <div className="actionbar__actions">
+      <div className="actions actions--tight actionbar__actions">
         {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
         <Button
           tone="danger-quiet"

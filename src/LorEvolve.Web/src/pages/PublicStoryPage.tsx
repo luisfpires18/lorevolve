@@ -59,7 +59,7 @@ export default function PublicStoryPage() {
   if (!current) {
     return (
       <div className="pread" role="status" aria-label={t('portal.story.opening')}>
-        <div className="pread__skeleton" />
+        <div className="pskeleton pskeleton--page" />
       </div>
     )
   }

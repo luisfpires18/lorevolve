@@ -3,7 +3,7 @@ import { countWords, sourceWords, STATUS_WORDS } from '../../aiChanges/words'
 import { Crumb } from '../Crumb'
 import { PageHeader } from '../PageHeader'
 import { useI18n } from '../../i18n'
-import { formatDateTime } from '../../lib/dates'
+import { DateText } from '../DateText'
 
 /** The proposal's head: the way back, its summary, where it came from and who sent it when, its status and its count. */
 export function AiChangeHeader({
@@ -37,11 +37,7 @@ export function AiChangeHeader({
           {tx('review.aiChange.lede', {
             source: <span data-testid="ai-change-source">{sourceWords(proposal.proposal)}</span>,
             who: <bdi>{who}</bdi>,
-            time: (
-              <time dateTime={proposal.proposal.createdAt}>
-                {formatDateTime(proposal.proposal.createdAt)}
-              </time>
-            ),
+            time: <DateText value={proposal.proposal.createdAt} withTime />,
           })}
           <br />
           <span

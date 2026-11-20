@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { EntityTile } from './EntityTile'
 import { NameList } from './NameList'
-import { StatusBadge } from './StatusBadge'
+import { CanonBadge } from './CanonBadge'
 import { TypeIcon } from './TypeIcon'
-import { CANON_LABELS, type EntitySummary } from '../lore/types'
+import { type EntitySummary } from '../lore/types'
 
 /**
  * A Lore card: what the entry looks like, what it is called, what kind of thing it is and how
@@ -155,11 +155,7 @@ function EntityCardBody({
             </span>
           </span>
           {entity.canonStatus === undefined ? null : (
-            <StatusBadge
-              className="entitycard__status"
-              step={entity.canonStatus}
-              label={CANON_LABELS[entity.canonStatus]}
-            />
+            <CanonBadge status={entity.canonStatus} className="entitycard__status" />
           )}
         </span>
 

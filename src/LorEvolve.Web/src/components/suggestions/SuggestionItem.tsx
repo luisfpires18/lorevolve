@@ -1,12 +1,12 @@
 import { ChangeList } from '../EditConflict'
 import { useI18n } from '../../i18n'
-import { formatDateTime } from '../../lib/dates'
 import type { Change } from '../../lib/editConflict'
 import { SuggestionStatus, type Suggestion } from '../../suggestions/api'
 import type { useUniverseAccess } from '../../universes/access'
 import { CHANGED_SINCE } from '../../suggestions/suggestionList'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 /** One suggestion: who and when, its changed fields, how it was decided, and Accept and Reject while it is open. */
 export function SuggestionItem<T>({
@@ -48,7 +48,7 @@ export function SuggestionItem<T>({
             <bdi>{suggestion.proposedByName}</bdi>
           )}
         </span>
-        <time dateTime={suggestion.createdAt}>{formatDateTime(suggestion.createdAt)}</time>
+        <DateText value={suggestion.createdAt} withTime />
       </p>
 
       {isOpen && suggestion.targetChanged ? (
@@ -85,7 +85,12 @@ export function SuggestionItem<T>({
                 ),
             },
           )}
-          {suggestion.resolvedAt ? <> · {formatDateTime(suggestion.resolvedAt)}</> : null}
+          {suggestion.resolvedAt ? (
+            <>
+              {' · '}
+              <DateText value={suggestion.resolvedAt} withTime />
+            </>
+          ) : null}
         </QuietNote>
       )}
 

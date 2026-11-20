@@ -5,6 +5,7 @@ import { TypeRow } from '../TypeRow'
 import { TypeRowActions } from '../TypeRowActions'
 import { t } from '../../i18n'
 import { TemplateFields } from './TemplateFields'
+import { TagList } from '../TagList'
 
 /** One template's row: its icon, name and chip, Edit, Fields and the menu with Delete, then its fields when open. */
 export function TemplateRow({
@@ -43,7 +44,7 @@ export function TemplateRow({
       icon={template.icon}
       testId={`template-${template.id}`}
       data-template-name={template.name}
-      badges={<span className="chip">{t('entityTypes.page.templates.chip')}</span>}
+      badges={<TagList tags={[t('entityTypes.page.templates.chip')]} />}
       actions={
         <TypeRowActions
           name={template.name}

@@ -27,7 +27,7 @@ export function BoardSaveBar({
           {t('ideas.board.recoveryWarning')}
         </p>
       ) : null}
-      <div className="idea__actions">
+      <div className="actions idea__actions">
         <SaveAction
           label={isNew ? t('ideas.board.create') : t('ideas.board.save')}
           isDirty={isDirty}

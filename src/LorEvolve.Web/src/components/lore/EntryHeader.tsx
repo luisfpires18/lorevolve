@@ -4,10 +4,10 @@ import { EntryHead } from '../EntryHead'
 import type { PendingFieldImage } from '../FieldImageInput'
 import { NameList } from '../NameList'
 import { TypeIcon } from '../TypeIcon'
-import { CANON_LABELS, type CanonStatusValue, type EntityDetail } from '../../lore/types'
+import { type CanonStatusValue, type EntityDetail } from '../../lore/types'
 import { CanonStatusPicker } from '../CanonStatusPicker'
 import { typeChoices } from '../../lore/typeTree'
-import { StatusBadge } from '../StatusBadge'
+import { CanonBadge } from '../CanonBadge'
 import { useI18n } from '../../i18n'
 import type { Draft } from '../../lore/entryDraft'
 import type { Dispatch, SetStateAction } from 'react'
@@ -109,11 +109,7 @@ export function EntryHeader({
           />
         ) : (
           // Read only: the status, stated, with nothing to press.
-          <StatusBadge
-            step={draft.canonStatus}
-            label={CANON_LABELS[draft.canonStatus]}
-            testId="entry-canon-status"
-          />
+          <CanonBadge status={draft.canonStatus} testId="entry-canon-status" />
         )
       }
       name={<bdi>{detail?.name}</bdi>}

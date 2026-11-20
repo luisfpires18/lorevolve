@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
-import { formatDate } from '../../lib/dates'
 import {
   changeInvitationRole,
   revokeInvitation,
@@ -14,6 +13,7 @@ import { Button } from '../Button'
 import { errorText } from '../../lib/errorText'
 import { QuietNote } from '../QuietNote'
 import { confirmAction } from '../../lib/confirm'
+import { DateText } from '../DateText'
 
 // ---------- Pending invitations ----------
 
@@ -30,7 +30,7 @@ export function InvitationRow({
   onChanged: (next: PendingInvitation) => void
   onRevoked: () => void
 }) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const id = useId()
   const row = useRef<HTMLLIElement>(null)
   const [busy, setBusy] = useState(false)
@@ -87,7 +87,7 @@ export function InvitationRow({
           <bdi>{invitation.email}</bdi>
         </p>
         <QuietNote className="collab__meta">
-          {t('universe.collab.expires', { date: formatDate(invitation.expiresAt) })}
+          {tx('universe.collab.expires', { date: <DateText value={invitation.expiresAt} /> })}
         </QuietNote>
       </div>
       <div className="collab__controls">

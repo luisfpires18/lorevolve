@@ -67,7 +67,7 @@ export default function ConnectAuthorizePage() {
       ))}
       {token ? <input type="hidden" name={token.fieldName} value={token.token} /> : null}
       {content}
-      <div className="form__actions consent__actions">
+      <div className="actions form__actions consent__actions">
         {load.kind === 'ready' ? (
           <Button
             type="submit"

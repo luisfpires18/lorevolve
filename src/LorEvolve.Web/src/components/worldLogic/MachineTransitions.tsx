@@ -72,7 +72,7 @@ export function MachineTransitions({
         </ul>
       ) : null}
       {draft.states.length === 1 ? <p className="field__hint">{t(`${m}.needTwoStates`)}</p> : null}
-      <div className="form__actions">
+      <div className="actions form__actions">
         <NewButton
           tone="secondary"
           disabled={draft.states.length < 2 || draft.transitions.length >= MACHINE_MAX_TRANSITIONS}

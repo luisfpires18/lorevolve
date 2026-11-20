@@ -2,7 +2,6 @@ import { LoreOnMaps } from '../LoreOnMaps'
 import { EntityArticleSection } from '../EntityArticle'
 import { FieldSectionFold } from '../FieldSectionFold'
 import { fieldImageUrl } from '../../lore/images'
-import { formatDate } from '../../lib/dates'
 import type { EntityDetail, FieldValue } from '../../lore/types'
 import type { FieldSection, EntityType } from '../../lore/typeDefinitions'
 import { renderFact } from '../../lore/facts'
@@ -11,6 +10,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { Chronology } from '../../chronology/types'
 import type { SectionGroup } from '../../lore/fieldSections'
 import { SectionTitle } from '../Section'
+import { DateText } from '../DateText'
+import { TagList } from '../TagList'
 
 /** The Article view beside the picture: the article itself, and the rail of facts, pictures, tags, maps and dates. */
 export function EntryArticleView({
@@ -38,7 +39,7 @@ export function EntryArticleView({
   selectedType: EntityType | null
   factSections: { ungrouped: FieldValue[]; groups: SectionGroup<FieldValue>[] }
 }) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const isNew = entityId === undefined
   const fact = (value: FieldValue) => (
     <EntryFact key={value.fieldDefinitionId} value={value} chronology={chronology} />
@@ -110,13 +111,7 @@ export function EntryArticleView({
             <SectionTitle level={2} tone="label">
               {t('entity.page.rail.tags')}
             </SectionTitle>
-            <p className="dossier__tags" data-testid="entry-tags">
-              {detail!.tags.map((tag) => (
-                <span className="chip" key={tag}>
-                  {tag}
-                </span>
-              ))}
-            </p>
+            <TagList tags={detail!.tags} className="dossier__tags" testId="entry-tags" />
           </div>
         ) : null}
 
@@ -126,9 +121,9 @@ export function EntryArticleView({
 
         {detail ? (
           <p className="rail__meta">
-            {t('entity.page.rail.created', { date: formatDate(detail.createdAt) })}
+            {tx('entity.page.rail.created', { date: <DateText value={detail.createdAt} /> })}
             <br />
-            {t('entity.page.rail.lastChanged', { date: formatDate(detail.updatedAt) })}
+            {tx('entity.page.rail.lastChanged', { date: <DateText value={detail.updatedAt} /> })}
           </p>
         ) : null}
       </aside>

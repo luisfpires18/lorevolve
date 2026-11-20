@@ -9,14 +9,6 @@ export const NODE_BODY_MAX_LENGTH = 400_000
 /** The levels that may hold a picture (#295). */
 export const ART_LEVELS = ['page', 'panel']
 
-/** Whether a stored picture is drawn, or the placeholder stands in: no picture, or its crop failed to load. */
-export function showsArt(
-  image: { cropId: string } | null | undefined,
-  brokenCropId: string | null,
-) {
-  return Boolean(image) && image!.cropId !== brokenCropId
-}
-
 export type ProjectNodeSummary = {
   id: string
   parentId: string | null

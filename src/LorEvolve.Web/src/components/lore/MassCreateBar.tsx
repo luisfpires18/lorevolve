@@ -43,7 +43,7 @@ export function MassCreateBar({
         <QuietNote className="actionbar__status" testId="mass-create-status" role="status">
           {status}
         </QuietNote>
-        <div className="actionbar__actions">
+        <div className="actions actions--tight actionbar__actions">
           <Button
             icon={Check}
             className="saveaction"

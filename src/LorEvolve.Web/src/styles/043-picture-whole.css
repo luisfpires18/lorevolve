@@ -170,13 +170,6 @@ html:has(.viewer[open]) {
   margin: 0;
 }
 
-.comicpage__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .imagefield__row {
   display: flex;
   flex-wrap: wrap;

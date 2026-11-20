@@ -238,3 +238,21 @@ a.button--danger:visited {
     height: var(--control-touch);
   }
 }
+
+/* A row of buttons (Button, FormActions, a footer's actions): beside one another, wrapping onto the next line on a phone,
+   centred on the cross axis. A screen places the row with its own class after this one - margin, padding, border, a
+   different gap - and the two modifiers tighten the gap. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actions--tight {
+  gap: var(--space-2);
+}
+
+.actions--compact {
+  gap: var(--space-1);
+}

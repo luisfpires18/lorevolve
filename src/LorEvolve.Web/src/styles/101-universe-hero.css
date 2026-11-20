@@ -121,8 +121,3 @@
     order: -1;
   }
 }
-
-.pworld-hero--skeleton {
-  min-height: 24rem;
-  background: var(--portal-card);
-}

@@ -84,12 +84,6 @@ summary.reviewsection__title {
   cursor: pointer;
 }
 
-.reviewsection__count {
-  color: var(--muted);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
-
 .reviewsection__list,
 .reviewthread__comments {
   margin: 0;

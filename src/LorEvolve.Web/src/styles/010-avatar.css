@@ -51,13 +51,10 @@
   cursor: default;
 }
 
-/* Wrapping, centred, and under the circle: three short actions fit one row on a desktop and fold
-   to two on a phone without either being reached for sideways. */
+/* Centred and under the circle: three short actions fit one row on a desktop and fold
+   to two on a phone without either being reached for sideways (the row is `.actions`). */
 .avatar__actions {
-  display: flex;
-  flex-wrap: wrap;
   justify-content: center;
-  gap: 0.5rem;
   margin-top: 1rem;
 }
 

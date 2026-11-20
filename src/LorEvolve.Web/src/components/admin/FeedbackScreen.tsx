@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react'
 import { EmptyState } from '../EmptyState'
-import { formatDateTime } from '../../lib/dates'
 import { FeedbackKind, listFeedback } from '../../feedback/api'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
@@ -9,6 +8,7 @@ import { PageHeader } from '../PageHeader'
 import { Pager } from '../Pager'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 /** Bug reports and feature requests from the button on every signed-in page, newest first. Read only. */
 export function FeedbackScreen() {
@@ -39,7 +39,7 @@ export function FeedbackScreen() {
                   {' · '}
                   <bdi>{report.userName ?? t('admin.feedback.removedAccount')}</bdi>
                   {' · '}
-                  {formatDateTime(report.createdAt)}
+                  <DateText value={report.createdAt} withTime />
                   {report.page ? (
                     <>
                       {' · '}

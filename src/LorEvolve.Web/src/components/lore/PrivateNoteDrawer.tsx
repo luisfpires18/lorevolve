@@ -2,7 +2,6 @@ import { QuietNote } from '../QuietNote'
 import { useEffect, useId, useRef, useState } from 'react'
 import { SaveAction } from '../SaveAction'
 import { ApiError } from '../../lib/api'
-import { formatDateTime } from '../../lib/dates'
 import { Drawer } from '../Drawer'
 import { isChangedElsewhere } from '../../lib/editConflict'
 import {
@@ -20,6 +19,7 @@ import { FormActions } from '../FormActions'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
+import { DateText } from '../DateText'
 
 interface DrawerProps extends PrivateNotesProps {
   onClose: () => void
@@ -28,7 +28,7 @@ interface DrawerProps extends PrivateNotesProps {
 type LoadState = 'loading' | 'ready' | 'error'
 
 export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerProps) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const editor = useRef<HTMLTextAreaElement>(null)
   const form = useRef<HTMLFormElement>(null)
   const headingId = useId()
@@ -213,7 +213,9 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
               restingStatus={
                 stored.updatedAt === null
                   ? t('entity.privateNote.nothingSaved')
-                  : t('entity.privateNote.savedAt', { when: formatDateTime(stored.updatedAt) })
+                  : tx('entity.privateNote.savedAt', {
+                      when: <DateText value={stored.updatedAt} withTime />,
+                    })
               }
               statusId={statusId}
               statusTestId="private-note-status"

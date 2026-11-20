@@ -15,13 +15,6 @@
   border-bottom: 1px solid var(--portal-line);
 }
 
-.pauthor__head--skeleton {
-  height: 9rem;
-  border: 0;
-  border-radius: var(--portal-radius);
-  background: var(--portal-card);
-}
-
 /* The chosen photo's square, or the name's first letter in a ring - never an invented face. */
 .pauthor__avatar {
   display: flex;
@@ -38,14 +31,14 @@
     0 0 0 6px rgb(var(--portal-accent-rgb) / 0.08);
 }
 
-.pauthor__avatar img {
+.pauthor__avatar img.pauthor__photo {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.pauthor__initial {
+.pauthor__photo--blank {
   color: rgb(var(--portal-ink-rgb) / 0.78);
   font-family: var(--display);
   font-size: clamp(2.25rem, 5vw, 3.25rem);

@@ -83,7 +83,6 @@ export function FieldImageInput({
   const [busy, setBusy] = useState(false)
   const { input, error, setError, pick } = useImagePick('entity.image.tooBig')
   const [framing, setFraming] = useState<Framing | null>(null)
-  const [brokenCrop, setBrokenCrop] = useState<string | null>(null)
 
   const api: FieldImageApi = given ?? {
     url: (stored, variant) => fieldImageUrl(universeId, entityId!, stored, variant),
@@ -148,8 +147,6 @@ export function FieldImageInput({
             placeholder={placeholder}
             input={input}
             busy={busy}
-            brokenCrop={brokenCrop}
-            setBrokenCrop={setBrokenCrop}
             api={api}
             preview={preview}
             hasPicture={hasPicture}

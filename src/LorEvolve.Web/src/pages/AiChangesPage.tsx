@@ -7,7 +7,6 @@ import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { useI18n } from '../i18n'
-import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { ShowMore } from '../components/ShowMore'
 import { LoadError } from '../components/LoadError'
@@ -15,6 +14,7 @@ import { LoadingNote } from '../components/LoadingNote'
 import { QuietNote } from '../components/QuietNote'
 import { errorText } from '../lib/errorText'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { DateText } from '../components/DateText'
 
 /**
  * Pending AI Changes (ADR 0047): the proposals an AI staged and a person decides on, from an app over MCP and from the
@@ -127,7 +127,7 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
                         ),
                       })}
                   {' · '}
-                  <time dateTime={proposal.createdAt}>{formatDateTime(proposal.createdAt)}</time>
+                  <DateText value={proposal.createdAt} withTime />
                 </QuietNote>
                 <QuietNote className="aichanges__meta" wrap>
                   <span className="aichanges__status" data-status={proposal.status}>

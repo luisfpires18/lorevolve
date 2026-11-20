@@ -112,5 +112,5 @@ export function FormActions({
       ) : null}
     </>
   )
-  return inline ? <div className="form__actions">{buttons}</div> : buttons
+  return inline ? <div className="actions form__actions">{buttons}</div> : buttons
 }

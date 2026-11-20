@@ -18,6 +18,7 @@ import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { CardGrid } from '../components/CardGrid'
 import { CatalogCard } from '../components/CatalogCard'
+import { formatCount } from '../i18n/format'
 
 /** The kinds each category lists: the same sets the routes in `App.tsx` give `ProjectsPage`, so a count equals its list. */
 const KINDS_BY_SECTION = new Map<string, readonly ProjectKindValue[]>([
@@ -105,7 +106,7 @@ export default function ProjectsDirectory() {
                     ? null
                     : count === 0
                       ? t('projects.directory.none')
-                      : tn('projects.directory.count', count, { n: count })
+                      : tn('projects.directory.count', count, { n: formatCount(count) })
                 }
                 metaTestId="projects-directory-count"
                 testId="projects-directory-card"

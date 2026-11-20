@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { EntityRow } from './EntityRow'
-import { StatusBadge } from './StatusBadge'
+import { CanonBadge } from './CanonBadge'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { linkSentence, type FamilyReading } from '../familyTree/reading'
 import { POSITION_LABELS, type FamilyTree } from '../familyTree/types'
@@ -154,7 +154,7 @@ export function FamilyMemberDetails({
             meta={
               <>
                 <bdi>{node.entityTypeName}</bdi>
-                <StatusBadge step={node.canonStatus} label={CANON_LABELS[node.canonStatus]} />
+                <CanonBadge status={node.canonStatus} />
               </>
             }
           />
@@ -251,7 +251,7 @@ export function FamilyMemberDetails({
           </section>
         </div>
 
-        <footer className="familydetails__actions">
+        <footer className="actions familydetails__actions">
           <Button tone="secondary" to={entryPath(node.entityId)}>
             {t('places.memberDetails.openEntry')}
           </Button>

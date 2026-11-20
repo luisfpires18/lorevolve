@@ -38,3 +38,8 @@ export function numberFormat(options: Intl.NumberFormatOptions = {}, english?: s
   }
   return formatter
 }
+
+/** A whole number as the app's language groups it (English "1,234"). Use it for every count shown to a reader. */
+export function formatCount(n: number) {
+  return numberFormat({}, 'en').format(n)
+}

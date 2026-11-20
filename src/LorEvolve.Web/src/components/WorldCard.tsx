@@ -1,8 +1,9 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BrandMark } from './BrandMark'
+import { PictureWithFallback } from './PictureWithFallback'
+import { GenreChips } from './portal/GenreChips'
 import { authorPath, worldPath, type PublicUniverse } from '../portal/api'
-import { categoryLabel, genreKey, genreLabel } from '../publishing/types'
+import { categoryLabel } from '../publishing/types'
 import { useI18n } from '../i18n'
 
 /**
@@ -29,29 +30,26 @@ export function WorldCard({
   eager?: boolean
 }) {
   const { t, tx } = useI18n()
-  const [broken, setBroken] = useState(false)
 
   return (
     <li className="worldcard">
       <div className="worldcard__panel">
         <div className="worldcard__art">
-          {broken ? (
-            <span className="worldcard__fallback" data-testid="worldcard-fallback">
-              <BrandMark className="worldcard__mark" />
-            </span>
-          ) : (
-            <img
-              className="worldcard__image"
-              src={world.cardImageUrl}
-              alt=""
-              width={960}
-              height={600}
-              loading={eager ? 'eager' : 'lazy'}
-              fetchPriority={eager ? 'high' : undefined}
-              decoding="async"
-              onError={() => setBroken(true)}
-            />
-          )}
+          <PictureWithFallback
+            className="worldcard__image"
+            src={world.cardImageUrl}
+            alt=""
+            width={960}
+            height={600}
+            loading={eager ? 'eager' : 'lazy'}
+            fetchPriority={eager ? 'high' : undefined}
+            decoding="async"
+            fallback={
+              <span className="worldcard__fallback" data-testid="worldcard-fallback">
+                <BrandMark className="worldcard__mark" />
+              </span>
+            }
+          />
         </div>
         <div className="worldcard__text">
           <h3 className="worldcard__name" dir="auto" title={world.name}>
@@ -59,13 +57,7 @@ export function WorldCard({
               <bdi>{world.name}</bdi>
             </Link>
           </h3>
-          <ul className="worldcard__genres" aria-label={t('portal.card.genres')}>
-            {world.genres.map((genre) => (
-              <li className="genrechip" data-genre={genreKey(genre)} key={genre}>
-                {genreLabel(genre)}
-              </li>
-            ))}
-          </ul>
+          <GenreChips genres={world.genres} label={t('portal.card.genres')} />
           {world.originalCreator ? (
             <p
               className="worldcard__original"

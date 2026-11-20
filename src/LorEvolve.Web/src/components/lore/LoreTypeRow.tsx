@@ -8,6 +8,7 @@ import { TypeRowActions } from '../TypeRowActions'
 import { useI18n } from '../../i18n'
 import type { EntityType, EntityTypeGroup } from '../../lore/typeDefinitions'
 import { typePathLabel, type TypeNode, type TypeTree } from '../../lore/typeTree'
+import { formatCount } from '../../i18n/format'
 
 /** One type in the Types list: its grip, icon, name, groups and count, its actions, description, why it cannot go, and its fields. */
 export function LoreTypeRow({
@@ -119,7 +120,7 @@ export function LoreTypeRow({
       countTestId={`type-count-${type.name}`}
       count={
         <>
-          {tn('entityTypes.page.count', type.entityCount, { n: type.entityCount })}
+          {tn('entityTypes.page.count', type.entityCount, { n: formatCount(type.entityCount) })}
           {type.trashedEntityCount > 0 ? (
             <span className="types__trashed">
               {type.trashedEntityCount === type.entityCount

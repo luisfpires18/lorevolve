@@ -87,11 +87,7 @@
 }
 
 .lore__resultactions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   justify-content: flex-end;
-  gap: var(--space-3);
   margin-left: auto;
   /* With the first row of filters, however many field filters wrap beneath it. */
   align-self: flex-start;

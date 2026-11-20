@@ -21,7 +21,7 @@ export function EmptyState({
     <div className="empty" data-testid={testId}>
       <p className="empty__line">{title}</p>
       {hint ? <p className="empty__hint">{hint}</p> : null}
-      {action ? <div className="empty__actions">{action}</div> : null}
+      {action ? <div className="actions empty__actions">{action}</div> : null}
     </div>
   )
 }

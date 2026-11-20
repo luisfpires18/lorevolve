@@ -1,9 +1,9 @@
 import { useId } from 'react'
+import { EMPTY_FACT } from '../lore/facts'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
 import { VersionActor } from './VersionActor'
 import type { Chronology } from '../chronology/types'
-import { formatDateTime } from '../lib/dates'
 import { describeChanges, imagesNotRestored, RevisionKind } from '../lore/revisions'
 import { CANON_LABELS } from '../lore/types'
 import { useI18n } from '../i18n'
@@ -13,6 +13,7 @@ import { Button } from './Button'
 import { DisclosureButton } from './DisclosureButton'
 import { LoadError } from './LoadError'
 import { QuietNote } from './QuietNote'
+import { DateText } from './DateText'
 
 export interface EntityHistoryProps {
   universeId: string
@@ -114,7 +115,7 @@ export function EntityHistory({
           {revisions.map((revision, index) => (
             <li className="version" key={revision.id} data-version={revision.number}>
               <p className="version__when">
-                <time dateTime={revision.createdAt}>{formatDateTime(revision.createdAt)}</time>
+                <DateText value={revision.createdAt} withTime />
               </p>
 
               <div className="version__body">
@@ -137,7 +138,7 @@ export function EntityHistory({
                         number:
                           revisions.find(
                             (candidate) => candidate.id === revision.restoredFromRevisionId,
-                          )?.number ?? '—',
+                          )?.number ?? EMPTY_FACT,
                       })}
                     </span>
                   ) : null}
