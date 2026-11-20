@@ -1,23 +1,17 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useId } from 'react'
 import { EMPTY_FACT } from '../lore/facts'
-import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import {
-  IMAGE_ACCEPT,
   entityImageUrl,
   removeEntityImage,
   setEntityImage,
   setEntityThumbnail,
 } from '../lore/images'
 import type { EntityImageCrop, EntityImageRef } from '../lore/types'
-import type { Framing } from './entityImageFraming'
-import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
 import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
+import { PictureActions } from './PictureActions'
 import { useI18n } from '../i18n'
-import { Button } from './Button'
-import { buttonClass } from '../lib/buttonClass'
-import { useImagePick } from '../lib/useImagePick'
-import { confirmAction } from '../lib/confirm'
+import { usePictureFraming } from '../lib/usePictureFraming'
 
 /** A picture chosen for an entry that does not exist yet, with the square the author framed. */
 export interface PendingImage {
@@ -60,55 +54,14 @@ export function EntityImageField({
 }) {
   const { t } = useI18n()
   const inputId = useId()
-  const [busy, setBusy] = useState(false)
-  const { input, error, setError, pick } = useImagePick('entity.image.tooBig')
-  const [framing, setFraming] = useState<Framing | null>(null)
-
-  // A held file is shown from the browser's own copy of it, so nothing is uploaded to preview
-  // it. The URL is derived from the file rather than stored in state - it is a value, not an
-  // event - and it holds memory until it is revoked, which is what the effect below is for.
-  // Keyed on the file rather than the pending pair, so reframing a held file keeps its URL.
-  const pendingFile = pending?.file ?? null
-  const preview = useMemo(
-    () => (pendingFile ? URL.createObjectURL(pendingFile) : null),
-    [pendingFile],
-  )
-
-  useEffect(() => {
-    if (!preview) return
-
-    return () => {
-      URL.revokeObjectURL(preview)
-    }
-  }, [preview])
-
-  // A file picked for framing has a URL of its own, released when the cropper closes either way.
-  useEffect(() => {
-    if (framing?.kind !== 'file' || !framing.ownsSource) return
-
-    const source = framing.source
-    return () => {
-      URL.revokeObjectURL(source)
-    }
-  }, [framing])
+  const { input, error, setError, busy, framing, setFraming, preview, choose, remove } =
+    usePictureFraming<EntityImageRef>({
+      tooBigKey: 'entity.image.tooBig',
+      pending,
+      onPending,
+    })
 
   const hasPicture = Boolean(pending || image)
-  const busyOrDisabled = busy || disabled
-
-  function choose(chosen: File | undefined) {
-    // The picker is reset either way, so choosing the same file twice after a failure still
-    // fires a change event.
-    const file = pick(chosen)
-    if (!file) return
-
-    setFraming({
-      kind: 'file',
-      file,
-      source: URL.createObjectURL(file),
-      ownsSource: true,
-      initial: null,
-    })
-  }
 
   function reframe() {
     setError(null)
@@ -148,34 +101,6 @@ export function EntityImageField({
     setFraming(null)
   }
 
-  async function remove() {
-    setError(null)
-
-    if (pending) {
-      onPending(null)
-      return
-    }
-
-    if (!entityId || !image) return
-    const confirmed = await confirmAction({
-      title: t('shell.confirm.removePicture.title'),
-      message: t('shell.confirm.removePicture.message'),
-      confirmLabel: t('shell.confirm.removePicture.confirm'),
-      variant: 'destructive',
-    })
-    if (!confirmed) return
-
-    setBusy(true)
-    try {
-      await removeEntityImage(universeId, entityId)
-      onChanged(null)
-    } catch {
-      setError(t('entity.image.removeFailed'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <>
       <Field
@@ -211,49 +136,36 @@ export function EntityImageField({
             )}
 
             <div className="imagefield__actions">
-              {/* The input comes first so the label can be styled from its state - focus and
-              disabled both travel forwards through a sibling selector and not backwards. */}
-              <input
-                ref={input}
-                {...control}
-                className="imagefield__input"
-                type="file"
-                accept={IMAGE_ACCEPT}
-                disabled={busyOrDisabled}
-                onChange={(event) => choose(event.target.files?.[0])}
-                data-testid="entity-image-input"
+              <PictureActions
+                input={input}
+                control={control}
+                inputId={inputId}
+                hasPicture={hasPicture}
+                busy={busy}
+                disabled={disabled}
+                onFile={(file) => void choose(file)}
+                onReframe={reframe}
+                onRemove={() =>
+                  void remove({
+                    stored: Boolean(entityId && image),
+                    run: () => removeEntityImage(universeId, entityId!),
+                    done: () => onChanged(null),
+                    failed: () => t('entity.image.removeFailed'),
+                  })
+                }
+                labels={{
+                  add: t('entity.image.add'),
+                  replace: t('entity.image.replace'),
+                  reframe: t('entity.image.editThumbnail'),
+                  remove: t('entity.image.remove'),
+                  removing: t('entity.image.removing'),
+                }}
+                testIds={{
+                  input: 'entity-image-input',
+                  reframe: 'entity-image-reframe',
+                  remove: 'entity-image-remove',
+                }}
               />
-
-              <label
-                className={buttonClass({ tone: 'secondary', className: 'imagefield__pick' })}
-                htmlFor={inputId}
-              >
-                <ActionIcon icon={hasPicture ? ImageUp : ImagePlus} />
-                {hasPicture ? t('entity.image.replace') : t('entity.image.add')}
-              </label>
-
-              {hasPicture ? (
-                <>
-                  <Button
-                    tone="secondary"
-                    icon={Crop}
-                    disabled={busyOrDisabled}
-                    onClick={reframe}
-                    data-testid="entity-image-reframe"
-                  >
-                    {t('entity.image.editThumbnail')}
-                  </Button>
-                  <Button
-                    tone="danger-quiet"
-                    icon={ImageMinus}
-                    disabled={busyOrDisabled}
-                    onClick={() => void remove()}
-                    data-testid="entity-image-remove"
-                  >
-                    {busy ? t('entity.image.removing') : t('entity.image.remove')}
-                  </Button>
-                </>
-              ) : null}
             </div>
           </div>
         )}

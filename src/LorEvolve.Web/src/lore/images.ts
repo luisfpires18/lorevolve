@@ -1,9 +1,6 @@
 import { apiFetch } from '../lib/api'
 import type { EntityImageCrop, EntityImageRef, FieldImageRef } from './types'
 
-// Shared with the profile photo, which the same cropper frames and the same server code cuts.
-export { IMAGE_ACCEPT, IMAGE_MAX_BYTES } from '../lib/imageCrop'
-
 function base(universeId: string, entityId: string) {
   return `/api/universes/${universeId}/entities/${entityId}/image`
 }

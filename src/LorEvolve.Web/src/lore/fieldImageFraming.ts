@@ -1,16 +1,8 @@
-import type { EntityImageCrop, FieldImageRef } from './types'
+import type { FieldImageRef } from './types'
+import type { PictureFraming } from '../lib/usePictureFraming'
 
-/** What the cropper is open on: a file just picked, or a stored picture reframed from its own original. */
-export type Framing =
-  | {
-      kind: 'file'
-      file: File
-      source: string
-      ownsSource: boolean
-      initial: EntityImageCrop | null
-      aspect: number
-    }
-  | { kind: 'stored'; image: FieldImageRef; source: string; aspect: number }
+/** What an Image field's cropper is open on: the shared framing, with the frame's width over its height. */
+export type Framing = PictureFraming<FieldImageRef, { aspect: number }>
 
 /** The picture's own width over its height, as the browser draws it. */
 export function pictureRatio(source: string) {

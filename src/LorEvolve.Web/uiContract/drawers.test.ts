@@ -242,10 +242,12 @@ test('the Cinema and Comic drawers are the shared drawer forms', () => {
 })
 
 test('every delete asks first', () => {
-  // `trashActions.tsx` and `universeSettingsActions.ts` ask inline (#255); `FieldImageInput.tsx`
-  // only binds the call, which `lore/fieldImageActions.ts` asks before making.
+  // `trashActions.tsx` and `universeSettingsActions.ts` ask inline (#255); the three picture controls
+  // only bind the call, which `lib/usePictureFraming.ts` asks before making.
   const ASKED_ELSEWHERE = [
+    'src/components/EntityImageField.tsx',
     'src/components/FieldImageInput.tsx',
+    'src/components/UniverseArtworkField.tsx',
     'src/trash/trashActions.tsx',
     'src/universes/universeSettingsActions.ts',
   ]
