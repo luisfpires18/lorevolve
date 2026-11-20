@@ -2,7 +2,10 @@ import { useEffect } from 'react'
 import { useLeaveGuard } from './leaveGuard'
 import type { LocalDraftState } from './useLocalDraft'
 
-interface DraftedEditorArgs<F> extends Pick<LocalDraftState, 'found' | 'keep' | 'forget' | 'discard'> {
+interface DraftedEditorArgs<F> extends Pick<
+  LocalDraftState,
+  'found' | 'keep' | 'forget' | 'discard'
+> {
   /** The saved version has been read. */
   isReady: boolean
   isNew: boolean

@@ -25,7 +25,8 @@ export function useSaveShortcut(
       if (event.defaultPrevented || !isSaveShortcut(event)) return
       if (scope) {
         const focused = document.activeElement
-        const inside = focused === null || focused === document.body || scope.current?.contains(focused)
+        const inside =
+          focused === null || focused === document.body || scope.current?.contains(focused)
         if (!inside) return
       }
       event.preventDefault()

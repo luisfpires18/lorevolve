@@ -68,9 +68,7 @@ export function UniverseForm({
     payloadKey(inputOf(name, description, accentColor, aiHelp, starterTypes)) !== opened
   const { confirmLeave } = useDiscardGuard(
     isDirty,
-    initial
-      ? t('universe.form.leaveEdited', { name: initial.name })
-      : t('universe.form.leaveNew'),
+    initial ? t('universe.form.leaveEdited', { name: initial.name }) : t('universe.form.leaveNew'),
   )
 
   async function cancel() {

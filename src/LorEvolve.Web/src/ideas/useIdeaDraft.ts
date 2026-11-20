@@ -6,7 +6,17 @@ import type { useIdeaState } from './useIdeaState'
 
 /** What an idea's editor holds against what is saved, and the recovery copy that follows it. */
 export function useIdeaDraft(
-  { load, isNew, draft, stored, found, discard, keep, forget, titleInput }: ReturnType<typeof useIdeaState>,
+  {
+    load,
+    isNew,
+    draft,
+    stored,
+    found,
+    discard,
+    keep,
+    forget,
+    titleInput,
+  }: ReturnType<typeof useIdeaState>,
   leaveMessage: string,
 ) {
   const drafted = useDraftedEditor({
