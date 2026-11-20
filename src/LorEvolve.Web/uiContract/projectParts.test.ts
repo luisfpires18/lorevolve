@@ -176,7 +176,6 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/stories/StorySceneCards.tsx',
   'src/components/stories/StoryScenes.tsx',
   'src/components/stories/StoryShelf.tsx',
-  'src/components/stories/StoryUnavailable.tsx',
   'src/components/stories/WritingProjectShelf.tsx',
   'src/components/typeTemplates/TemplateRow.tsx',
 ]
