@@ -24,7 +24,6 @@ export const GameEntitiesPage = lazyWithPreload(() => import('./pages/GameEntiti
 export const CategoryShelfPage = lazyWithPreload(() => import('./pages/CategoryShelfPage'))
 export const GameEntityPage = lazyWithPreload(() => import('./pages/GameEntityPage'))
 export const IdeaBoardPage = lazyWithPreload(() => import('./pages/IdeaBoardPage'))
-export const IdeaBoardsPage = lazyWithPreload(() => import('./pages/IdeaBoardsPage'))
 export const ForgotPasswordPage = lazyWithPreload(() => import('./pages/ForgotPasswordPage'))
 export const IdeaPage = lazyWithPreload(() => import('./pages/IdeaPage'))
 export const IdeasPage = lazyWithPreload(() => import('./pages/IdeasPage'))
@@ -86,7 +85,7 @@ const DEEPER: Record<string, (next: string) => Screen> = {
   'family-tree': () => FamilyTreePage,
   'world-rules': () => WorldRulePage,
   stories: () => StoryPage,
-  ideas: (next) => (next === 'boards' ? IdeaBoardsPage : IdeaPage),
+  ideas: (next) => (next === 'boards' ? IdeasPage : IdeaPage),
   'ai-changes': () => AiChangePage,
 }
 

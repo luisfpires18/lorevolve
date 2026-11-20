@@ -107,8 +107,7 @@ const PLACES = [
   'editconflict__actions',
   'recovery__actions',
   'empty__actions',
-  'idea__actions',
-  'rule__actions',
+  'editorbar__actions',
   'avatar__actions',
   'pageheader__actions',
   'actionbar__actions',
@@ -178,8 +177,8 @@ test('the guards fail on a bad snippet and pass a good one', () => {
   assert.equal(rowRuleWithOwnLayout('.foo__actions { display: flex; gap: 0.6rem; }'), true)
   assert.equal(rowRuleWithOwnLayout('.foo__actions { margin-left: auto; }'), false)
   assert.equal(rowRuleWithOwnLayout('.confirm__actions { display: flex; gap: 1rem; }'), false)
-  assert.equal(rowWithoutActions('<div className={`idea__actions ${x}`} />'), true)
-  assert.equal(rowWithoutActions('<div className="actions idea__actions" />'), false)
+  assert.equal(rowWithoutActions('<div className={`editorbar__actions ${x}`} />'), true)
+  assert.equal(rowWithoutActions('<div className="actions editorbar__actions" />'), false)
   assert.equal(hasSkeletonKeyframes('@keyframes skeleton-appear { from { opacity: 0; } }'), true)
   assert.equal(paintsPortalCardSkeleton('.foo--skeleton { background: var(--portal-card); }'), true)
   assert.equal(paintsPortalCardSkeleton('.pskeleton { background: var(--portal-card); }'), false)

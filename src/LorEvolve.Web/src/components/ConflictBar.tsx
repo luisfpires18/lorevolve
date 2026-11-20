@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { ButtonSize } from '../lib/buttonClass'
 import { Button } from './Button'
 
-interface ConflictBarProps {
+export interface ConflictBarProps {
   /** What changed elsewhere. */
   text: ReactNode
   /** Given: Keep mine saves the draft over the newer version. */

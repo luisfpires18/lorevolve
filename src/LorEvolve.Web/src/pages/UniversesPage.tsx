@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { SearchField } from '../components/SearchField'
 import { SegmentedControl } from '../components/SegmentedControl'
 import { Pager } from '../components/Pager'
-import { useDebouncedValue } from '../lib/useDebouncedValue'
+import { useSearchedPage } from '../lib/useSearchedPage'
 import { useI18n } from '../i18n'
 import { RestoreBackup } from '../components/RestoreBackup'
 import { UniverseCard } from '../components/UniverseCard'
@@ -23,11 +23,9 @@ export default function UniversesPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [search, setSearch] = useState('')
-  const searched = useDebouncedValue(search)
-  const [pageFor, setPageFor] = useState(searched)
+  // Only typing waits, so a search does not fire a request per keystroke.
+  const { search, setSearch, searched, page, setPage } = useSearchedPage()
   const [includeArchived, setIncludeArchived] = useState(false)
-  const [page, setPage] = useState(1)
   const [isCreating, setIsCreating] = useState(false)
   // No universe at all, archived ones included: the page opens on the form that names the first one.
   const [isFirstRun, setIsFirstRun] = useState(false)
@@ -40,13 +38,6 @@ export default function UniversesPage() {
     if (open === isRestoring) return
     setSearchParams(open ? { restore: '' } : {}, { replace: true })
     if (open) setIsCreating(false)
-  }
-
-  // Only typing waits, so a search does not fire a request per keystroke. A search that has settled goes back to the
-  // first page in the same render - one request.
-  if (pageFor !== searched) {
-    setPageFor(searched)
-    setPage(1)
   }
 
   // Everything else - the first load, a page, the archive filter, trying again, coming back - asks at once.

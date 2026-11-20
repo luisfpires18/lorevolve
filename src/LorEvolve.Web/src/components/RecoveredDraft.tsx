@@ -8,7 +8,7 @@ import { DisclosureButton } from './DisclosureButton'
 import { QuietNote } from './QuietNote'
 import { DateText } from './DateText'
 
-interface RecoveredDraftProps {
+export interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
   what: string
   draft: LocalDraft

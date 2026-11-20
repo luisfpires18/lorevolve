@@ -15,7 +15,9 @@ import { useManuscriptActions } from '../stories/useManuscriptActions'
 import { ManuscriptHead } from './stories/ManuscriptHead'
 import { ManuscriptNotices } from './stories/ManuscriptNotices'
 import { ManuscriptBody } from './stories/ManuscriptBody'
-import { ManuscriptSaveBar } from './stories/ManuscriptSaveBar'
+import { ManuscriptTools } from './stories/ManuscriptTools'
+import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
+import { EditorSaveBar } from './EditorSaveBar'
 import { Announce } from './Announce'
 import { ReadGate } from './ReadGate'
 
@@ -163,7 +165,32 @@ export function ManuscriptEditor({
       data-testid="manuscript-scene"
       data-title={scene.title}
     >
-      <ManuscriptHead {...view} where={where} />
+      <ManuscriptHead
+        where={where}
+        titleId={titleId}
+        title={scene.title}
+        whereTestId="manuscript-where"
+        titleTestId="manuscript-scene-title"
+        tools={<ManuscriptTools {...view} />}
+        context={
+          hasContext ? (
+            <div
+              className="manuscript__context"
+              id={state.contextId}
+              data-open={state.isContextOpen ? 'true' : 'false'}
+            >
+              <SceneStamp
+                universeId={universeId}
+                chronology={chronology}
+                scene={scene}
+                testId="manuscript"
+              />
+              <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
+              <SceneBeatList beats={scene.beats} testId="manuscript" />
+            </div>
+          ) : null
+        }
+      />
 
       {isHistoryOpen && access.manageHistory ? (
         <ManuscriptHistory
@@ -212,7 +239,46 @@ export function ManuscriptEditor({
           <>
             <ManuscriptNotices {...view} />
             <ManuscriptBody {...view} />
-            <ManuscriptSaveBar {...view} />
+            {access.editContent ? (
+              <EditorSaveBar
+                keyShortcuts
+                count={{
+                  id: tooLongId,
+                  used: draft.length,
+                  max: MANUSCRIPT_MAX_LENGTH,
+                  show: 'over',
+                  words: { tooLong: 'manuscript.editor.tooLong' },
+                  className: 'manuscript__toolong',
+                  testId: 'manuscript-too-long',
+                }}
+                warning={
+                  state.failed && isDirty
+                    ? {
+                        text: t('manuscript.editor.noRecoveryCopy'),
+                        testId: 'manuscript-recovery-warning',
+                      }
+                    : null
+                }
+                save={{
+                  label: t('manuscript.editor.save'),
+                  isDirty,
+                  isSaving: state.isSaving,
+                  isBlocked: isTooLong,
+                  saves: state.saves,
+                  restingStatus:
+                    stored.updatedAt === null
+                      ? t('manuscript.editor.nothingSaved')
+                      : t('manuscript.editor.savedStatus'),
+                  statusId,
+                  statusTestId: 'manuscript-status',
+                  testId: 'manuscript-save',
+                  type: 'button',
+                  onSave: () => void save(stored.version),
+                }}
+              >
+                {publication}
+              </EditorSaveBar>
+            ) : null}
           </>
         )}
       </ReadGate>
