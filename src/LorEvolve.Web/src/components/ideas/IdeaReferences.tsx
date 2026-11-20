@@ -10,6 +10,7 @@ import {
 } from '../../ideas/types'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { Field } from '../Field'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
 
@@ -43,86 +44,95 @@ export function IdeaReferences({
       </h2>
       <p className="field__hint">{t('ideas.editor.references.hint')}</p>
 
-      {draft.universeId === null ? (
-        <QuietNote className="idea__noreferences" testId="idea-references-need-universe">
-          {t('ideas.editor.references.needUniverse')}
-        </QuietNote>
-      ) : draft.references.length === 0 ? (
-        <QuietNote className="idea__noreferences">{t('ideas.editor.references.none')}</QuietNote>
-      ) : (
-        <ul className="idearefs" data-testid="idea-reference-list">
-          {draft.references.map((reference) => {
-            const kind = IDEA_REFERENCE_KIND_LABELS[reference.kind]
-            const kindKey = IDEA_REFERENCE_KIND_KEYS[reference.kind]
-            const context = referenceContext(reference)
-            return (
-              <li
-                className="idearef"
-                key={referenceKey(reference)}
-                data-testid="idea-reference"
-                data-kind={kindKey.charAt(0).toUpperCase() + kindKey.slice(1)}
-                data-name={reference.name}
-                data-trashed={reference.isInTrash ? 'true' : 'false'}
-              >
-                <span className="idearef__kind">{kind}</span>
-                <span className="idearef__what">
-                  {reference.isInTrash || draft.universeId === null ? (
-                    <span className="idearef__name">
-                      <bdi>{reference.name}</bdi>
-                    </span>
-                  ) : (
-                    <Link
-                      className="idearef__name"
-                      to={referencePath(draft.universeId, reference)}
-                      data-testid="idea-reference-open"
-                    >
-                      <bdi>{reference.name}</bdi>
-                    </Link>
-                  )}
-                  {context ? <span className="idearef__context">{context}</span> : null}
-                  {reference.isInTrash ? (
-                    <span className="idearef__trashed" data-testid="idea-reference-trashed">
-                      {t('ideas.editor.references.trashed')}
-                    </span>
-                  ) : null}
-                </span>
-                <Button
-                  tone="secondary"
-                  size="sm"
-                  icon={X}
-                  className="idearef__remove"
-                  disabled={isHeld}
-                  onClick={() => removeReference(reference)}
-                  aria-label={t('ideas.editor.references.removeAria', {
-                    kind: kind.toLowerCase(),
-                    name: reference.name,
-                  })}
-                  data-testid="idea-reference-remove"
-                >
-                  <span className="idearef__removelabel">
-                    {t('ideas.editor.references.remove')}
-                  </span>
-                </Button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-
-      <NewButton
-        tone="secondary"
-        ref={addButton}
-        disabled={draft.universeId === null || isHeld}
-        onClick={() => setIsPicking(true)}
-        data-testid="idea-add-reference"
+      <Field
+        group
+        hideLabel
+        label={t('ideas.editor.references.heading')}
+        error={fieldErrors.references}
+        errorTestId="idea-references-error"
       >
-        {t('ideas.editor.references.add')}
-      </NewButton>
-      {fieldErrors.references ? (
-        <p className="field__error" data-testid="idea-references-error">
-          {fieldErrors.references}
-        </p>
-      ) : null}
+        {(group) => (
+          <div {...group}>
+            {draft.universeId === null ? (
+              <QuietNote className="idea__noreferences" testId="idea-references-need-universe">
+                {t('ideas.editor.references.needUniverse')}
+              </QuietNote>
+            ) : draft.references.length === 0 ? (
+              <QuietNote className="idea__noreferences">
+                {t('ideas.editor.references.none')}
+              </QuietNote>
+            ) : (
+              <ul className="idearefs" data-testid="idea-reference-list">
+                {draft.references.map((reference) => {
+                  const kind = IDEA_REFERENCE_KIND_LABELS[reference.kind]
+                  const kindKey = IDEA_REFERENCE_KIND_KEYS[reference.kind]
+                  const context = referenceContext(reference)
+                  return (
+                    <li
+                      className="idearef"
+                      key={referenceKey(reference)}
+                      data-testid="idea-reference"
+                      data-kind={kindKey.charAt(0).toUpperCase() + kindKey.slice(1)}
+                      data-name={reference.name}
+                      data-trashed={reference.isInTrash ? 'true' : 'false'}
+                    >
+                      <span className="idearef__kind">{kind}</span>
+                      <span className="idearef__what">
+                        {reference.isInTrash || draft.universeId === null ? (
+                          <span className="idearef__name">
+                            <bdi>{reference.name}</bdi>
+                          </span>
+                        ) : (
+                          <Link
+                            className="idearef__name"
+                            to={referencePath(draft.universeId, reference)}
+                            data-testid="idea-reference-open"
+                          >
+                            <bdi>{reference.name}</bdi>
+                          </Link>
+                        )}
+                        {context ? <span className="idearef__context">{context}</span> : null}
+                        {reference.isInTrash ? (
+                          <span className="idearef__trashed" data-testid="idea-reference-trashed">
+                            {t('ideas.editor.references.trashed')}
+                          </span>
+                        ) : null}
+                      </span>
+                      <Button
+                        tone="secondary"
+                        size="sm"
+                        icon={X}
+                        className="idearef__remove"
+                        disabled={isHeld}
+                        onClick={() => removeReference(reference)}
+                        aria-label={t('ideas.editor.references.removeAria', {
+                          kind: kind.toLowerCase(),
+                          name: reference.name,
+                        })}
+                        data-testid="idea-reference-remove"
+                      >
+                        <span className="idearef__removelabel">
+                          {t('ideas.editor.references.remove')}
+                        </span>
+                      </Button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            <NewButton
+              tone="secondary"
+              ref={addButton}
+              disabled={draft.universeId === null || isHeld}
+              onClick={() => setIsPicking(true)}
+              data-testid="idea-add-reference"
+            >
+              {t('ideas.editor.references.add')}
+            </NewButton>
+          </div>
+        )}
+      </Field>
     </section>
   )
 }

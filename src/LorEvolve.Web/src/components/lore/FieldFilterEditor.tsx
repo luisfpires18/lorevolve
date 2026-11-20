@@ -75,7 +75,7 @@ export function FieldFilterEditor({
           </label>
           <select
             id={opId}
-            className="field__input lore__fieldeditorop"
+            className="field__input field__input--select lore__fieldeditorop"
             value={op}
             onChange={(event) => setOp(event.target.value as FieldFilterOp)}
             data-testid="lore-field-filter-op"
@@ -130,7 +130,7 @@ export function FieldFilterEditor({
             ) : (
               <select
                 id={valueId}
-                className="field__input"
+                className="field__input field__input--select"
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
                 data-testid="lore-field-filter-value"

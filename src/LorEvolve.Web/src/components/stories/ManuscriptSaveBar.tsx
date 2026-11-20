@@ -3,10 +3,8 @@ import { t, useI18n } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { SaveAction } from '../SaveAction'
 import { MANUSCRIPT_MAX_LENGTH } from '../../stories/types'
-import { numberFormat } from '../../i18n/format'
+import { CharCount } from '../CharCount'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
-
-const count = (value: number) => numberFormat({}, 'en').format(value)
 
 /** The count against the limit, the recovery warning, the prose's publication control and Save. */
 export function ManuscriptSaveBar({
@@ -35,18 +33,15 @@ export function ManuscriptSaveBar({
     <>
       {access.editContent ? (
         <div className="manuscript__bar">
-          {isTooLong ? (
-            <p
-              className="field__error manuscript__toolong"
-              id={tooLongId}
-              data-testid="manuscript-too-long"
-            >
-              {t('manuscript.editor.tooLong', {
-                used: count(draft.length),
-                max: count(MANUSCRIPT_MAX_LENGTH),
-              })}
-            </p>
-          ) : null}
+          <CharCount
+            id={tooLongId}
+            used={draft.length}
+            max={MANUSCRIPT_MAX_LENGTH}
+            show="over"
+            words={{ tooLong: 'manuscript.editor.tooLong' }}
+            className="manuscript__toolong"
+            testId="manuscript-too-long"
+          />
           {failed && isDirty ? (
             <p
               className="recovery__warning"

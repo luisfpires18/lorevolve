@@ -60,21 +60,16 @@ export function MassCreateDefaults({
         )}
       </Field>
 
-      <Field
-        label={t('lore.massCreate.defaultStatus')}
-        id={`${id}-default-status`}
-        group
-        className="masscreate__default"
-      >
-        {(control) => (
-          <CanonStatusPicker
-            {...control}
-            testId="mass-default-status"
-            value={defaultStatus}
-            onChange={setDefaultStatus}
-          />
-        )}
-      </Field>
+      <CanonStatusPicker
+        field={{
+          label: t('lore.massCreate.defaultStatus'),
+          id: `${id}-default-status`,
+          className: 'masscreate__default',
+        }}
+        testId="mass-default-status"
+        value={defaultStatus}
+        onChange={setDefaultStatus}
+      />
 
       {rows.length > 0 ? (
         <Button

@@ -53,16 +53,12 @@ export function MomentBasics({
         )}
       </Field>
 
-      <Field label={t('time.momentForm.status')} group>
-        {(control) => (
-          <CanonStatusPicker
-            {...control}
-            optionTestId="moment-canon-"
-            value={draft.canonStatus}
-            onChange={(canonStatus) => edit({ canonStatus })}
-          />
-        )}
-      </Field>
+      <CanonStatusPicker
+        field={{ label: t('time.momentForm.status') }}
+        optionTestId="moment-canon-"
+        value={draft.canonStatus}
+        onChange={(canonStatus) => edit({ canonStatus })}
+      />
     </>
   )
 }

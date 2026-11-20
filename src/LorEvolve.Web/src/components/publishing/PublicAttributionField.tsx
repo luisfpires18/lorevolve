@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import { Field } from '../Field'
+import { CheckField } from '../CheckField'
 import { ORIGINAL_CREATOR_MAX, ORIGINAL_WORK_MAX } from '../../publishing/types'
 import type { Attribution } from '../../publishing/publicDetailsDraft'
 
@@ -27,26 +28,20 @@ export function PublicAttributionField({
       className="publication__attribution"
       data-testid="public-attribution"
     >
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={attribution.based}
-          aria-controls={attribution.based ? creatorId : undefined}
-          onChange={(event) => attribute({ based: event.target.checked })}
-          data-testid="based-on-external-work"
-        />
-        {t('universe.publicDetails.basedOn')}
-      </label>
+      <CheckField
+        label={t('universe.publicDetails.basedOn')}
+        checked={attribution.based}
+        aria-controls={attribution.based ? creatorId : undefined}
+        onChange={(based) => attribute({ based })}
+        testId="based-on-external-work"
+      />
       {attribution.based ? (
         <div className="publication__attributionfields">
           <Field
             label={t('universe.publicDetails.creator')}
             id={creatorId}
-            error={
-              fieldErrors.originalcreator ? (
-                <span role="alert">{fieldErrors.originalcreator}</span>
-              ) : undefined
-            }
+            error={fieldErrors.originalcreator}
+            announce
           >
             {(control) => (
               <>
@@ -70,11 +65,8 @@ export function PublicAttributionField({
           <Field
             label={t('universe.publicDetails.work')}
             id={workId}
-            error={
-              fieldErrors.originalwork ? (
-                <span role="alert">{fieldErrors.originalwork}</span>
-              ) : undefined
-            }
+            error={fieldErrors.originalwork}
+            announce
           >
             {(control) => (
               <input

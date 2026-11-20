@@ -35,13 +35,15 @@ export function FamilyLinkKindField({
   }
 
   return (
-    <Field label={t('places.linkForm.connection')} id="family-link-kind">
+    <Field
+      label={t('places.linkForm.connection')}
+      id="family-link-kind"
+      error={fieldErrors.relationshiptypeid}
+    >
       {(control) => (
         <>
           <select
             {...control}
-            aria-invalid={fieldErrors.relationshiptypeid ? true : undefined}
-            aria-describedby={fieldErrors.relationshiptypeid ? 'family-link-kind-error' : undefined}
             className="field__input field__input--select"
             value={kind?.id ?? ''}
             onChange={(event) => {
@@ -56,11 +58,6 @@ export function FamilyLinkKindField({
               </option>
             ))}
           </select>
-          {fieldErrors.relationshiptypeid ? (
-            <p className="field__error" id="family-link-kind-error">
-              {fieldErrors.relationshiptypeid}
-            </p>
-          ) : null}
           <NewButton
             tone="secondary"
             size="sm"

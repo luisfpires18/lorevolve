@@ -15,7 +15,6 @@ const data = {
     sendFailed: 'That could not be sent. Try again.',
     title: 'Report a bug or ask for a feature',
     kindLabel: 'What is it?',
-    kindGroup: 'What is it?',
     kindBug: 'Bug',
     kindFeature: 'Feature request',
     textBug: 'What went wrong?',

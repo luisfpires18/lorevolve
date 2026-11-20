@@ -1,4 +1,5 @@
 import { Drawer } from '../Drawer'
+import { CheckField } from '../CheckField'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
 import { useReturnFocus } from '../../lib/returnFocus'
@@ -156,23 +157,20 @@ export function RecordForm({
         )}
       </Field>
 
-      <label className="checkbox" htmlFor={startId}>
-        <input
-          id={startId}
-          type="checkbox"
-          checked={draft.knownFromStart}
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              knownFromStart: event.target.checked,
-              storyId: event.target.checked ? '' : current.storyId,
-              sceneId: event.target.checked ? '' : current.sceneId,
-            }))
-          }
-          data-testid="knowledge-from-start"
-        />{' '}
-        {t('ai.knowledge.fromStartLabel')}
-      </label>
+      <CheckField
+        id={startId}
+        label={t('ai.knowledge.fromStartLabel')}
+        checked={draft.knownFromStart}
+        onChange={(knownFromStart) =>
+          setDraft((current) => ({
+            ...current,
+            knownFromStart,
+            storyId: knownFromStart ? '' : current.storyId,
+            sceneId: knownFromStart ? '' : current.sceneId,
+          }))
+        }
+        testId="knowledge-from-start"
+      />
 
       {draft.knownFromStart ? null : (
         <RecordSceneFields

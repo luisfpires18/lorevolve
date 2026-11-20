@@ -7,7 +7,7 @@ import {
 } from '../../worldRules/types'
 import { t } from '../../i18n'
 import type { RefObject } from 'react'
-import { count, type Fields, type Stored } from '../../worldRules/ruleDraft'
+import type { Fields, Stored } from '../../worldRules/ruleDraft'
 import type { worldRuleActions } from '../../worldRules/worldRuleActions'
 
 /** The world rule's form: the title, the description with its count, the check, and the save bar. */
@@ -17,13 +17,11 @@ export function WorldRuleForm({
   titleId,
   descriptionId,
   statusId,
-  countId,
   stored,
   draft,
   fieldErrors,
   isDirty,
   isTooLong,
-  nearLimit,
   isSaving,
   saves,
   titleInput,
@@ -36,13 +34,11 @@ export function WorldRuleForm({
   titleId: string
   descriptionId: string
   statusId: string
-  countId: string
   stored: Stored
   draft: Fields
   fieldErrors: Record<string, string>
   isDirty: boolean
   isTooLong: boolean
-  nearLimit: boolean
   isSaving: boolean
   saves: number
   titleInput: RefObject<HTMLInputElement | null>
@@ -85,45 +81,30 @@ export function WorldRuleForm({
       </Field>
 
       <Field
+        as="textarea"
         label={t('canon.editor.description')}
         hint={t('canon.editor.descriptionHint')}
         id={descriptionId}
         error={fieldErrors.description}
-      >
-        {(control) => (
-          <>
-            <textarea
-              id={control.id}
-              className="field__input field__input--area rule__description"
-              rows={8}
-              dir="auto"
-              value={draft.description}
-              placeholder={t('canon.editor.descriptionPlaceholder')}
-              spellCheck
-              onChange={(event) => edit({ description: event.target.value })}
-              aria-invalid={isTooLong || fieldErrors.description ? true : undefined}
-              aria-describedby={
-                [control['aria-describedby'], nearLimit ? countId : null]
-                  .filter(Boolean)
-                  .join(' ') || undefined
-              }
-              data-testid="world-rule-description"
-            />
-            {nearLimit ? (
-              <p
-                className={isTooLong ? 'field__error' : 'field__hint rule__count'}
-                id={countId}
-                data-testid="world-rule-description-count"
-              >
-                {t(isTooLong ? 'canon.editor.countTooLong' : 'canon.editor.count', {
-                  used: count(draft.description.length),
-                  max: count(WORLD_RULE_DESCRIPTION_MAX_LENGTH),
-                })}
-              </p>
-            ) : null}
-          </>
-        )}
-      </Field>
+        controlClassName="rule__description"
+        rows={8}
+        dir="auto"
+        value={draft.description}
+        placeholder={t('canon.editor.descriptionPlaceholder')}
+        spellCheck
+        onChange={(event) => edit({ description: event.target.value })}
+        aria-invalid={isTooLong || fieldErrors.description ? true : undefined}
+        data-testid="world-rule-description"
+        count={{
+          used: draft.description.length,
+          max: WORLD_RULE_DESCRIPTION_MAX_LENGTH,
+          show: 'near',
+          words: { count: 'canon.editor.count', tooLong: 'canon.editor.countTooLong' },
+          // The margin is the hint's; over the limit the count is the plain error, as before.
+          className: isTooLong ? undefined : 'rule__count',
+          testId: 'world-rule-description-count',
+        }}
+      />
 
       <WorldRuleCheckSection
         universeId={universeId}

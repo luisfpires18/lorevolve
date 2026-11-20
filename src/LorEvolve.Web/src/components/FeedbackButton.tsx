@@ -8,7 +8,7 @@ import { Field } from './Field'
 import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
 import { FormActions } from './FormActions'
-import { SegmentedControl } from './SegmentedControl'
+import { SegmentedField } from './SegmentedField'
 
 /**
  * Report a bug or ask for a feature, from any signed-in page: a small button at the window's corner opens a dialog, and what
@@ -116,25 +116,24 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
         </p>
       ) : null}
 
-      <Field label={t('data.feedback.kindLabel')} group="fieldset" disabled={sending}>
-        <SegmentedControl
-          label={t('data.feedback.kindGroup')}
-          options={[
-            {
-              value: FeedbackKind.Bug,
-              label: t('data.feedback.kindBug'),
-              testId: 'feedback-kind-bug',
-            },
-            {
-              value: FeedbackKind.Feature,
-              label: t('data.feedback.kindFeature'),
-              testId: 'feedback-kind-feature',
-            },
-          ]}
-          value={kind}
-          onChange={setKind}
-        />
-      </Field>
+      <SegmentedField
+        label={t('data.feedback.kindLabel')}
+        disabled={sending}
+        options={[
+          {
+            value: FeedbackKind.Bug,
+            label: t('data.feedback.kindBug'),
+            testId: 'feedback-kind-bug',
+          },
+          {
+            value: FeedbackKind.Feature,
+            label: t('data.feedback.kindFeature'),
+            testId: 'feedback-kind-feature',
+          },
+        ]}
+        value={kind}
+        onChange={setKind}
+      />
 
       <Field
         label={

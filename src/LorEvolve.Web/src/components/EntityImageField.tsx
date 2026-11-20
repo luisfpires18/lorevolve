@@ -1,8 +1,7 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import {
   IMAGE_ACCEPT,
-  IMAGE_MAX_BYTES,
   entityImageUrl,
   removeEntityImage,
   setEntityImage,
@@ -16,6 +15,7 @@ import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
+import { useImagePick } from '../lib/useImagePick'
 
 /** A picture chosen for an entry that does not exist yet, with the square the author framed. */
 export interface PendingImage {
@@ -58,9 +58,8 @@ export function EntityImageField({
 }) {
   const { t } = useI18n()
   const inputId = useId()
-  const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { input, error, setError, pick } = useImagePick('entity.image.tooBig')
   const [framing, setFraming] = useState<Framing | null>(null)
 
   // A held file is shown from the browser's own copy of it, so nothing is uploaded to preview
@@ -94,18 +93,11 @@ export function EntityImageField({
   const hasPicture = Boolean(pending || image)
   const busyOrDisabled = busy || disabled
 
-  function choose(file: File | undefined) {
+  function choose(chosen: File | undefined) {
     // The picker is reset either way, so choosing the same file twice after a failure still
     // fires a change event.
-    if (input.current) input.current.value = ''
+    const file = pick(chosen)
     if (!file) return
-
-    setError(null)
-
-    if (file.size > IMAGE_MAX_BYTES) {
-      setError(t('entity.image.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
-      return
-    }
 
     setFraming({
       kind: 'file',
@@ -183,13 +175,9 @@ export function EntityImageField({
         className="imagefield"
         data-testid="entity-image-field"
         hint={pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}
-        error={
-          error ? (
-            <span role="alert" data-testid="entity-image-error">
-              {error}
-            </span>
-          ) : undefined
-        }
+        error={error ?? undefined}
+        announce
+        errorTestId="entity-image-error"
       >
         {(control) => (
           <div className="imagefield__row">

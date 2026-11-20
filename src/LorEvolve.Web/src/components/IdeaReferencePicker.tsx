@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { Field } from './Field'
 import { SearchField } from './SearchField'
-import { SegmentedControl } from './SegmentedControl'
+import { SegmentedField } from './SegmentedField'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { Drawer } from './Drawer'
 import { Quoted } from './NameList'
@@ -118,20 +117,16 @@ export function IdeaReferencePicker({
         <FormActions onCancel={onClose} dismiss="close" cancelTestId="idea-picker-close" />
       )}
     >
-      <Field label={t('ideas.picker.whatToReference')} group>
-        {(control) => (
-          <SegmentedControl
-            {...control}
-            options={IDEA_REFERENCE_KINDS.map((option) => ({
-              value: option,
-              label: IDEA_REFERENCE_KIND_LABELS[option],
-              testId: `idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`,
-            }))}
-            value={kind}
-            onChange={setKind}
-          />
-        )}
-      </Field>
+      <SegmentedField
+        label={t('ideas.picker.whatToReference')}
+        options={IDEA_REFERENCE_KINDS.map((option) => ({
+          value: option,
+          label: IDEA_REFERENCE_KIND_LABELS[option],
+          testId: `idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[option]}`,
+        }))}
+        value={kind}
+        onChange={setKind}
+      />
 
       <SearchField
         id={searchId}

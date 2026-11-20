@@ -195,8 +195,8 @@ const canon: Dictionary['canon'] = {
     deleteButton: 'Eliminar',
     newKind: 'Tipo de evento ou método',
     newName: 'Nome',
-    placeholderEventKind: 'Coroação, Ressurreição…',
-    placeholderMethod: 'Pela Coroa de Sal…',
+    placeholderEventKind: 'Insira um tipo de evento',
+    placeholderMethod: 'Insira um método',
     add: 'Adicionar {word}',
   },
 }

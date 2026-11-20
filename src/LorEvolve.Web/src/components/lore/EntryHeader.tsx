@@ -132,13 +132,19 @@ export function EntryHeader({
             aria-label={t('entity.page.head.nameLabel')}
             placeholder={t('entity.page.head.namePlaceholder')}
             dir="auto"
+            aria-invalid={fieldErrors.name ? true : undefined}
+            aria-describedby={fieldErrors.name ? 'entry-name-error' : undefined}
             value={draft.name}
             onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           />
         ) : undefined
       }
     >
-      {fieldErrors.name ? <p className="field__error">{fieldErrors.name}</p> : null}
+      {fieldErrors.name ? (
+        <p className="field__error" id="entry-name-error">
+          {fieldErrors.name}
+        </p>
+      ) : null}
 
       {!isEditing && (detail?.aliases.length ?? 0) > 0 ? (
         <QuietNote className="entry__aliases" size="ui" testId="entry-aliases">

@@ -1,4 +1,5 @@
 import { t } from '../../i18n'
+import { CheckField } from '../CheckField'
 import { Field } from '../Field'
 import type { TypeDraft } from '../../relationships/typeDraft'
 import { KindFormCanon } from './KindFormCanon'
@@ -54,15 +55,12 @@ export function KindForm({
         />
       )}
 
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={draft.isSymmetric}
-          onChange={(event) => edit({ isSymmetric: event.target.checked })}
-          data-testid="reltype-symmetric"
-        />
-        <span>{t('relationships.types.symmetric')}</span>
-      </label>
+      <CheckField
+        label={t('relationships.types.symmetric')}
+        checked={draft.isSymmetric}
+        onChange={(isSymmetric) => edit({ isSymmetric })}
+        testId="reltype-symmetric"
+      />
 
       <Field
         label={t('relationships.types.description')}

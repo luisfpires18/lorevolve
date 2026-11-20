@@ -175,7 +175,7 @@ const stories: Dictionary['stories'] = {
     eyebrow: 'Publicação',
     label: 'Resumo público',
     hint: 'Mostrado aos leitores no portal público. A tua premissa continua privada.',
-    count: '{count} de {max} carateres',
+    count: '{used} de {max} carateres',
     saving: 'A guardar…',
     save: 'Guardar',
   },

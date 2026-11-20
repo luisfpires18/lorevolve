@@ -6,6 +6,7 @@ import { getPublicAuthorSettings, setPublicAuthorPhoto } from '../publishing/api
 import type { PublicAuthorSettings } from '../publishing/types'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
+import { CheckField } from './CheckField'
 import { SectionTitle } from './Section'
 
 /**
@@ -85,23 +86,19 @@ export function PublicAuthorSection() {
         </p>
       )}
 
-      <label className="check" htmlFor={photoId}>
-        <input
-          id={photoId}
-          type="checkbox"
-          checked={pending ?? settings.photoIsPublic}
-          disabled={busy || !settings.hasPhoto}
-          onChange={(event) => void toggle(event.target.checked)}
-          aria-describedby={`${photoId}-hint`}
-          data-testid="public-photo-toggle"
-        />
-        <span>{t('portal.authorSection.showPhoto')}</span>
-      </label>
-      <p className="field__hint" id={`${photoId}-hint`}>
-        {settings.hasPhoto
-          ? t('portal.authorSection.photoHintHas')
-          : t('portal.authorSection.photoHintNone')}
-      </p>
+      <CheckField
+        id={photoId}
+        label={t('portal.authorSection.showPhoto')}
+        hint={
+          settings.hasPhoto
+            ? t('portal.authorSection.photoHintHas')
+            : t('portal.authorSection.photoHintNone')
+        }
+        checked={pending ?? settings.photoIsPublic}
+        disabled={busy || !settings.hasPhoto}
+        onChange={(checked) => void toggle(checked)}
+        testId="public-photo-toggle"
+      />
       {message ? (
         <p className="form__message" role="alert">
           {message}

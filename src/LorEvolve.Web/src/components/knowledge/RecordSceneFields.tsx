@@ -27,64 +27,57 @@ export function RecordSceneFields({
 }) {
   return (
     <>
-      <Field label={t('ai.knowledge.form.story')} id={storyId}>
-        {(control) => (
-          <select
-            {...control}
-            className="field__input"
-            value={draft.storyId}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                storyId: event.target.value,
-                sceneId: '',
-              }))
-            }
-            data-testid="knowledge-story"
-          >
-            <option value="">
-              {stories === null
-                ? t('ai.knowledge.form.readingStories')
-                : t('ai.knowledge.form.chooseStory')}
-            </option>
-            {(stories ?? []).map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.title}
+      <Field
+        as="select"
+        label={t('ai.knowledge.form.story')}
+        id={storyId}
+        value={draft.storyId}
+        onChange={(event) =>
+          setDraft((current) => ({
+            ...current,
+            storyId: event.target.value,
+            sceneId: '',
+          }))
+        }
+        data-testid="knowledge-story"
+      >
+        <option value="">
+          {stories === null
+            ? t('ai.knowledge.form.readingStories')
+            : t('ai.knowledge.form.chooseStory')}
+        </option>
+        {(stories ?? []).map((candidate) => (
+          <option key={candidate.id} value={candidate.id}>
+            {candidate.title}
+          </option>
+        ))}
+      </Field>
+      <Field
+        as="select"
+        label={t('ai.knowledge.form.scene')}
+        id={sceneId}
+        error={errors.sceneId}
+        value={draft.sceneId}
+        disabled={draft.storyId === ''}
+        onChange={(event) => setDraft((current) => ({ ...current, sceneId: event.target.value }))}
+        data-testid="knowledge-scene"
+      >
+        <option value="">
+          {draft.storyId === ''
+            ? t('ai.knowledge.form.chooseStoryFirst')
+            : story === null
+              ? t('ai.knowledge.form.readingScenes')
+              : t('ai.knowledge.form.chooseSceneOption')}
+        </option>
+        {groupedScenes.map((group) => (
+          <optgroup key={group.label} label={group.label}>
+            {group.scenes.map((scene) => (
+              <option key={scene.id} value={scene.id}>
+                {scene.title}
               </option>
             ))}
-          </select>
-        )}
-      </Field>
-      <Field label={t('ai.knowledge.form.scene')} id={sceneId} error={errors.sceneId}>
-        {(control) => (
-          <select
-            {...control}
-            className="field__input"
-            value={draft.sceneId}
-            disabled={draft.storyId === ''}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, sceneId: event.target.value }))
-            }
-            data-testid="knowledge-scene"
-          >
-            <option value="">
-              {draft.storyId === ''
-                ? t('ai.knowledge.form.chooseStoryFirst')
-                : story === null
-                  ? t('ai.knowledge.form.readingScenes')
-                  : t('ai.knowledge.form.chooseSceneOption')}
-            </option>
-            {groupedScenes.map((group) => (
-              <optgroup key={group.label} label={group.label}>
-                {group.scenes.map((scene) => (
-                  <option key={scene.id} value={scene.id}>
-                    {scene.title}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        )}
+          </optgroup>
+        ))}
       </Field>
     </>
   )

@@ -8,6 +8,7 @@ import { useI18n } from '../../i18n'
 import type { useEntityArticle } from '../../lore/useEntityArticle'
 import type { useArticleEditing } from '../../lore/useArticleEditing'
 import { Button } from '../Button'
+import { CharCount } from '../CharCount'
 
 // The editor and its 125 KB of Tiptap and ProseMirror come only when an author presses Edit; reading needs neither.
 const LoreEditor = lazy(() =>
@@ -119,15 +120,16 @@ export function ArticleEditing({
         >
           {status.text}
         </p>
-        {isTooLong ? (
-          <p
-            className="field__error article__toolong"
-            id={tooLongId}
-            data-testid="article-too-long"
-          >
-            {t('entity.article.tooLong')}
-          </p>
-        ) : null}
+        {/* The limit is on the serialised text, not a count of its own: 1 against 0 shows it only when too long. */}
+        <CharCount
+          id={tooLongId}
+          used={isTooLong ? 1 : 0}
+          max={0}
+          show="over"
+          words={{ tooLong: 'entity.article.tooLong' }}
+          className="article__toolong"
+          testId="article-too-long"
+        />
         {failed && isDirty ? (
           <p className="recovery__warning" role="status" data-testid="article-recovery-warning">
             {t('entity.article.recoveryWarning')}

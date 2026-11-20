@@ -28,12 +28,9 @@ export function UniverseColourField({
       id={`${colourId}-hex`}
       className="colourfield"
       error={
-        fieldErrors.accentcolor ? (
-          <span role="alert">{fieldErrors.accentcolor}</span>
-        ) : colourInvalid ? (
-          <span role="alert">{t('universe.form.colourInvalid')}</span>
-        ) : undefined
+        fieldErrors.accentcolor || (colourInvalid ? t('universe.form.colourInvalid') : undefined)
       }
+      announce
     >
       {(control) => (
         <>

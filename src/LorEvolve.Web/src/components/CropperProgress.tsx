@@ -49,7 +49,7 @@ export function CropperProgress({
       )}
 
       {error ? (
-        <p className="field__error" role="alert" data-testid="image-crop-error">
+        <p className="form__message" role="alert" data-testid="image-crop-error">
           {error}
         </p>
       ) : null}

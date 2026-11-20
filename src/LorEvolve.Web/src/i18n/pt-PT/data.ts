@@ -17,7 +17,6 @@ const data: Dictionary['data'] = {
     sendFailed: 'Não foi possível enviar. Tenta novamente.',
     title: 'Comunicar um erro ou pedir uma funcionalidade',
     kindLabel: 'Do que se trata?',
-    kindGroup: 'Do que se trata?',
     kindBug: 'Erro',
     kindFeature: 'Pedido de funcionalidade',
     textBug: 'O que correu mal?',

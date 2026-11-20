@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Field } from './Field'
 import { fieldImageUrl, removeFieldImage, setFieldImage, setFieldImageCrop } from '../lore/images'
 import type { EntityImageCrop, FieldImageRef } from '../lore/types'
@@ -14,6 +14,7 @@ import type { Framing } from '../lore/fieldImageFraming'
 import { useFieldImagePreview } from '../lore/useFieldImagePreview'
 import { fieldImageActions } from '../lore/fieldImageActions'
 import { useI18n } from '../i18n'
+import { useImagePick } from '../lib/useImagePick'
 
 /**
  * A picture chosen for an Image field of an entry that does not exist yet, with the frame the author chose.
@@ -79,9 +80,8 @@ export function FieldImageInput({
 }) {
   const { t } = useI18n()
   const inputId = useId()
-  const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { input, error, setError, pick } = useImagePick('entity.image.tooBig')
   const [framing, setFraming] = useState<Framing | null>(null)
   const [brokenCrop, setBrokenCrop] = useState<string | null>(null)
 
@@ -108,7 +108,7 @@ export function FieldImageInput({
     onPending,
     onChanged,
     t,
-    input,
+    pick,
     setBusy,
     setError,
     framing,
@@ -133,13 +133,9 @@ export function FieldImageInput({
             <span>{pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}</span>
           </>
         }
-        error={
-          error ? (
-            <span role="alert" data-testid={testId('error')}>
-              {error}
-            </span>
-          ) : undefined
-        }
+        error={error ?? undefined}
+        announce
+        errorTestId={testId('error')}
       >
         {(control) => (
           <FieldImageRow

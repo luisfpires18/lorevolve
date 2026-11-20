@@ -63,34 +63,34 @@ export function WorldRuleCheckSection({
         {t('canon.check.hint')}
       </p>
 
-      <div className="rule__choices">
-        <label className="check">
-          <input
-            type="radio"
-            name={radioName}
-            checked={!isLimit}
-            onChange={() => onChange({ kind: WorldRuleValidationKind.None })}
-            data-testid="world-rule-check-none"
-          />
-          <span>{t('canon.check.none')}</span>
-        </label>
-        <label className="check">
-          <input
-            type="radio"
-            name={radioName}
-            checked={isLimit}
-            onChange={() =>
-              onChange({ kind: WorldRuleValidationKind.MaxOccurrencesPerParticipantAndMethod })
-            }
-            data-testid="world-rule-check-limit"
-          />
-          <span>{t('canon.check.limit')}</span>
-        </label>
-      </div>
-
-      {errors[CHECK_ERROR_KEYS.kind] ? (
-        <p className="field__error">{errors[CHECK_ERROR_KEYS.kind]}</p>
-      ) : null}
+      <Field group hideLabel label={t('canon.check.legend')} error={errors[CHECK_ERROR_KEYS.kind]}>
+        {(group) => (
+          <div className="rule__choices" {...group}>
+            <label className="check">
+              <input
+                type="radio"
+                name={radioName}
+                checked={!isLimit}
+                onChange={() => onChange({ kind: WorldRuleValidationKind.None })}
+                data-testid="world-rule-check-none"
+              />
+              <span>{t('canon.check.none')}</span>
+            </label>
+            <label className="check">
+              <input
+                type="radio"
+                name={radioName}
+                checked={isLimit}
+                onChange={() =>
+                  onChange({ kind: WorldRuleValidationKind.MaxOccurrencesPerParticipantAndMethod })
+                }
+                data-testid="world-rule-check-limit"
+              />
+              <span>{t('canon.check.limit')}</span>
+            </label>
+          </div>
+        )}
+      </Field>
 
       {isLimit ? (
         <div className="rule__checkfields" data-testid="world-rule-check-fields">

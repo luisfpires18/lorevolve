@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { Drawer } from '../Drawer'
+import { CheckField } from '../CheckField'
 import { Field } from '../Field'
 import { t } from '../../i18n'
 import { confirmAction } from '../../lib/confirm'
@@ -139,17 +140,12 @@ export function StateDrawer({
         error={errors?.y}
         data-testid="machine-state-y"
       />
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={form.initial}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, initial: event.target.checked }))
-          }
-          data-testid="machine-state-initial"
-        />
-        <span>{t(`${m}.fields.initial`)}</span>
-      </label>
+      <CheckField
+        label={t(`${m}.fields.initial`)}
+        checked={form.initial}
+        onChange={(initial) => setForm((current) => ({ ...current, initial }))}
+        testId="machine-state-initial"
+      />
     </Drawer>
   )
 }

@@ -173,7 +173,7 @@ const stories = {
     eyebrow: 'Publishing',
     label: 'Public summary',
     hint: 'Shown to readers on the public portal. Your premise stays private.',
-    count: '{count} of {max} characters',
+    count: '{used} of {max} characters',
     saving: 'Saving…',
     save: 'Save',
   },

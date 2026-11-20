@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n'
+import { CheckField } from './CheckField'
 
 /** The type drawer's behaviour section for a new type: whether its entries take part in the Family Tree. */
 export function TypeDialogBehaviour({
@@ -14,18 +15,17 @@ export function TypeDialogBehaviour({
       <h3 className="sectionrule sectionrule--accent" id="type-behaviour">
         {t('entityTypes.page.dialog.behaviour')}
       </h3>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={familyTreeEligible}
-          onChange={(event) => setFamilyTreeEligible(event.target.checked)}
-          data-testid="type-family"
-        />
-        <span>
-          <span className="types__familylabel">{t('entityTypes.page.dialog.familyLabel')}</span>
-          {t('entityTypes.page.dialog.familyText')}
-        </span>
-      </label>
+      <CheckField
+        label={
+          <span>
+            <span className="types__familylabel">{t('entityTypes.page.dialog.familyLabel')}</span>
+            {t('entityTypes.page.dialog.familyText')}
+          </span>
+        }
+        checked={familyTreeEligible}
+        onChange={setFamilyTreeEligible}
+        testId="type-family"
+      />
     </section>
   )
 }

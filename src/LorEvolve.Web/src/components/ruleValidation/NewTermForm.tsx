@@ -51,7 +51,8 @@ export function NewTermForm({
       <Field
         label={t('canon.terms.newName')}
         id={`${headingId}-new-name`}
-        error={newError ? <span role="alert">{newError}</span> : undefined}
+        error={newError || undefined}
+        announce
       >
         {(control) => (
           <input

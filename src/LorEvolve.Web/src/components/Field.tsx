@@ -2,6 +2,7 @@ import {
   useId,
   type InputHTMLAttributes,
   type ReactNode,
+  type Ref,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react'
@@ -42,6 +43,7 @@ type InputField = FieldBase &
 type TextareaField = FieldBase &
   Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className' | 'children'> & {
     as: 'textarea'
+    ref?: Ref<HTMLTextAreaElement>
     controlClassName?: string
     count?: FieldCount
     children?: undefined
@@ -51,6 +53,7 @@ type TextareaField = FieldBase &
 type SelectField = FieldBase &
   Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> & {
     as: 'select'
+    ref?: Ref<HTMLSelectElement>
     controlClassName?: string
     count?: undefined
     children: ReactNode

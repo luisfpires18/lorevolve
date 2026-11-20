@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { EntityPicker } from '../EntityPicker'
+import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { Draft, Side } from '../../knowledge/recordDraft'
 
@@ -22,41 +23,50 @@ export function RecordOtherField({
   errors: Record<string, string>
 }) {
   return (
-    <>
-      {side === 'knows' ? (
-        <>
-          <p className="knowledge__fixedlabel">{t('ai.knowledge.form.whoKnowsFixed')}</p>
-          <p className="knowledge__fixed" data-testid="knowledge-knower">
-            <bdi>{entityName}</bdi>
-          </p>
-          <EntityPicker
-            label={t('ai.knowledge.form.aboutOptional')}
-            universeId={universeId}
-            value={draft.other}
-            onChange={(other) => setDraft((current) => ({ ...current, other }))}
-            excludeId={entityId}
-          />
-        </>
-      ) : (
-        <>
-          <EntityPicker
-            label={t('ai.knowledge.form.whoKnowsPicker')}
-            universeId={universeId}
-            value={draft.other}
-            onChange={(other) => setDraft((current) => ({ ...current, other }))}
-            excludeId={entityId}
-          />
-          <p className="knowledge__fixedlabel">{t('ai.knowledge.form.aboutFixed')}</p>
-          <p className="knowledge__fixed" data-testid="knowledge-subject">
-            <bdi>{entityName}</bdi>
-          </p>
-        </>
+    <Field
+      group
+      hideLabel
+      label={
+        side === 'knows'
+          ? t('ai.knowledge.form.whoKnowsFixed')
+          : t('ai.knowledge.form.whoKnowsPicker')
+      }
+      error={errors.other}
+      errorTestId="knowledge-other-error"
+    >
+      {(group) => (
+        <div {...group}>
+          {side === 'knows' ? (
+            <>
+              <p className="knowledge__fixedlabel">{t('ai.knowledge.form.whoKnowsFixed')}</p>
+              <p className="knowledge__fixed" data-testid="knowledge-knower">
+                <bdi>{entityName}</bdi>
+              </p>
+              <EntityPicker
+                label={t('ai.knowledge.form.aboutOptional')}
+                universeId={universeId}
+                value={draft.other}
+                onChange={(other) => setDraft((current) => ({ ...current, other }))}
+                excludeId={entityId}
+              />
+            </>
+          ) : (
+            <>
+              <EntityPicker
+                label={t('ai.knowledge.form.whoKnowsPicker')}
+                universeId={universeId}
+                value={draft.other}
+                onChange={(other) => setDraft((current) => ({ ...current, other }))}
+                excludeId={entityId}
+              />
+              <p className="knowledge__fixedlabel">{t('ai.knowledge.form.aboutFixed')}</p>
+              <p className="knowledge__fixed" data-testid="knowledge-subject">
+                <bdi>{entityName}</bdi>
+              </p>
+            </>
+          )}
+        </div>
       )}
-      {errors.other ? (
-        <p className="field__error" data-testid="knowledge-other-error">
-          {errors.other}
-        </p>
-      ) : null}
-    </>
+    </Field>
   )
 }

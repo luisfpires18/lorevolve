@@ -7,7 +7,7 @@ import { IdeaReferences } from './ideas/IdeaReferences'
 import { IdeaSaveBar } from './ideas/IdeaSaveBar'
 import { IdeaUnavailable } from './ideas/IdeaUnavailable'
 import { ideaActions } from '../ideas/ideaActions'
-import { IDEA_BODY_MAX_LENGTH, type IdeaDetail } from '../ideas/types'
+import type { IdeaDetail } from '../ideas/types'
 import { useIdeaDraft } from '../ideas/useIdeaDraft'
 import { useIdeaRead } from '../ideas/useIdeaRead'
 import { useIdeaSave } from '../ideas/useIdeaSave'
@@ -69,7 +69,6 @@ export function IdeaEditor({
   const referencesId = useId()
   const statusId = useId()
   const recoveryId = useId()
-  const bodyCountId = useId()
 
   const base = useIdeaState({ ideaId, defaultUniverseId, contextUniverse })
   const {
@@ -128,8 +127,6 @@ export function IdeaEditor({
     universes?.find((universe) => universe.id === draft.universeId) ??
     (stored.universe && stored.universe.id === draft.universeId ? stored.universe : null)
 
-  const nearLimit = draft.body.length > IDEA_BODY_MAX_LENGTH * 0.9
-
   return (
     <article className="idea" aria-labelledby={headingId} data-testid="idea-editor">
       <IdeaHead
@@ -171,14 +168,12 @@ export function IdeaEditor({
           titleId={titleId}
           bodyId={bodyId}
           universeFieldId={universeFieldId}
-          bodyCountId={bodyCountId}
           fieldErrors={fieldErrors}
           titleInput={titleInput}
           draft={draft}
           isHeld={isHeld}
           edit={edit}
           isTooLong={isTooLong}
-          nearLimit={nearLimit}
           changeUniverse={changeUniverse}
           chosenUniverse={chosenUniverse}
           universes={universes}

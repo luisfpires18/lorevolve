@@ -105,23 +105,20 @@ export function EditChange({
         true,
       )}
       {draft.canonStatus !== undefined && draft.canonStatus !== null ? (
-        <Field label={t('review.aiChange.edit.canon')} id={`${id}-canon`}>
-          {(control) => (
-            <select
-              id={control.id}
-              className="field__input"
-              value={draft.canonStatus ?? ''}
-              onChange={(event) =>
-                setDraft({ ...draft, canonStatus: Number(event.target.value) as CanonStatusValue })
-              }
-            >
-              {[CanonStatus.Idea, CanonStatus.Draft, CanonStatus.Canon].map((status) => (
-                <option key={status} value={status}>
-                  {CANON_LABELS[status]}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          label={t('review.aiChange.edit.canon')}
+          id={`${id}-canon`}
+          value={draft.canonStatus ?? ''}
+          onChange={(event) =>
+            setDraft({ ...draft, canonStatus: Number(event.target.value) as CanonStatusValue })
+          }
+        >
+          {[CanonStatus.Idea, CanonStatus.Draft, CanonStatus.Canon].map((status) => (
+            <option key={status} value={status}>
+              {CANON_LABELS[status]}
+            </option>
+          ))}
         </Field>
       ) : null}
       {error ? (

@@ -1,4 +1,3 @@
-import { Field } from '../Field'
 import { CanonStatusPicker } from '../CanonStatusPicker'
 import type { CanonStatusValue } from '../../lore/types'
 import { useI18n } from '../../i18n'
@@ -13,15 +12,11 @@ export function FamilyLinkStatus({
   const { t } = useI18n()
 
   return (
-    <Field label={t('places.linkForm.status')} group>
-      {(control) => (
-        <CanonStatusPicker
-          {...control}
-          optionTestId="family-link-canon-"
-          value={canonStatus}
-          onChange={setCanonStatus}
-        />
-      )}
-    </Field>
+    <CanonStatusPicker
+      field={{ label: t('places.linkForm.status') }}
+      optionTestId="family-link-canon-"
+      value={canonStatus}
+      onChange={setCanonStatus}
+    />
   )
 }

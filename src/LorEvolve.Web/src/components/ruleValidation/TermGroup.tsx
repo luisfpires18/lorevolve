@@ -59,7 +59,8 @@ export function TermGroup({
                     })}
                     id={`${groupId}-rename`}
                     className="terms__rename"
-                    error={renaming.error ? <span role="alert">{renaming.error}</span> : undefined}
+                    error={renaming.error || undefined}
+                    announce
                   >
                     {(control) => (
                       <>

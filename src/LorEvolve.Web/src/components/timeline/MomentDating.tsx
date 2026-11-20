@@ -1,5 +1,5 @@
 import { Field } from '../Field'
-import { SegmentedControl } from '../SegmentedControl'
+import { SegmentedField } from '../SegmentedField'
 import { ChronologyPointFields, type ChronologyPointPart } from '../ChronologyPointFields'
 import type { Chronology } from '../../chronology/types'
 import { t, useI18n } from '../../i18n'
@@ -82,25 +82,18 @@ export function MomentDating({
 
   return (
     <>
-      <Field
+      <SegmentedField
         label={t('time.momentForm.when')}
-        group
         hint={DATE_KIND_HINTS[draft.dateKind]}
         error={fieldErrors.datekind}
-      >
-        {(control) => (
-          <SegmentedControl
-            {...control}
-            options={DATE_KIND_ORDER.map((option) => ({
-              value: option,
-              label: DATE_KIND_LABELS[option],
-              testId: `moment-kind-${DATE_KIND_KEYS[option]}`,
-            }))}
-            value={draft.dateKind}
-            onChange={chooseKind}
-          />
-        )}
-      </Field>
+        options={DATE_KIND_ORDER.map((option) => ({
+          value: option,
+          label: DATE_KIND_LABELS[option],
+          testId: `moment-kind-${DATE_KIND_KEYS[option]}`,
+        }))}
+        value={draft.dateKind}
+        onChange={chooseKind}
+      />
 
       {isDated ? (
         <>
