@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using LorEvolve.Api.Data;
 using LorEvolve.Api.Features.AiChanges;
 using LorEvolve.Api.Features.Media;
+using LorEvolve.Api.Features.Universes;
 using Microsoft.EntityFrameworkCore;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -53,13 +54,17 @@ public sealed class LorEvolveMcpEntryImageTools(
     [Description("Send a picture for one entry - a lore entry, or a project's entry such as a game's unit - for the person to review in LorEvolve. "
         + "Only when the person asked for it. It becomes the entry's profile picture, replacing the current one once approved, or one more picture in an appearance "
         + "(appearance ids from get_change_options with loreId). Send the file as image_file, or as image_base64 if you can read its bytes. "
+        + "For an entry you are creating, don't wait for it to be approved: in propose_changes, add an image change with entryRef set to the entry's change id, "
+        + "then call this with proposal and change (that image change's id) instead of entry, and one approval creates the entry with its picture. "
         + "PNG, JPEG or WebP, up to 8 MB. LorEvolve names the file after the entry, such as wolf.png. Nothing changes until the person approves it.")]
     public async Task<CallToolResult> ProposeEntryImageAsync(
-        [Description("The entry's id.")] string? entry,
+        [Description("The entry's id, for an entry that exists. Leave it out when you give proposal and change.")] string? entry = null,
         [Description("Optional: an appearance of that entry, by id. Leave it out for the profile picture.")] string? appearance = null,
         [Description("Optional: one short line for the reviewer, such as \"Wolf, front view\".")] string? note = null,
         [Description("The picture, as a file.")] McpFileInput? image_file = null,
         [Description("The picture's bytes in base64, when no file can be sent.")] string? image_base64 = null,
+        [Description("Optional: a pending proposal's id, from propose_changes, that holds an image change for this picture.")] string? proposal = null,
+        [Description("With proposal: the image change's own id, as you gave it in propose_changes.")] string? change = null,
         CancellationToken cancellationToken = default)
     {
         if (await RoleAsync(db, caller, cancellationToken) is not { } role)
@@ -67,9 +72,14 @@ public sealed class LorEvolveMcpEntryImageTools(
             return Error("not_allowed", "Your role in this universe can only read, or this connection can't propose changes. Nothing was staged.");
         }
 
+        if (!string.IsNullOrWhiteSpace(proposal))
+        {
+            return await HoldForChangeAsync(role, proposal, change, image_file, image_base64, cancellationToken);
+        }
+
         if (!Guid.TryParse(entry, out var entityId))
         {
-            return Error("invalid_input", "Give the entry's id, exactly as a read tool gave it.");
+            return Error("invalid_input", "Give the entry's id, exactly as a read tool gave it, or a proposal and its image change.");
         }
 
         Guid? appearanceId = null;
@@ -93,21 +103,13 @@ public sealed class LorEvolveMcpEntryImageTools(
             return Error("not_found", "That entry isn't in this universe, or it is in the Trash. Nothing was staged.");
         }
 
-        var (bytes, problem) = image_file is not null
-            ? await DownloadAsync(image_file, cancellationToken)
-            : Decode(image_base64);
-        if (bytes is null)
+        var (bytes, prepared, problem) = await ReadPictureAsync(image_file, image_base64, cancellationToken);
+        if (problem is not null)
         {
-            return Error("invalid_image", problem!);
+            return problem;
         }
 
         using var _ = bytes;
-        var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, cancellationToken);
-        if (prepared is null)
-        {
-            return Error("invalid_image", rejection!.Message + " Nothing was staged.");
-        }
-
         var staged = await AiChangeStaging.StageAsync(
             db,
             clock,
@@ -118,20 +120,91 @@ public sealed class LorEvolveMcpEntryImageTools(
                 string.IsNullOrWhiteSpace(note) ? $"A picture for {name}" : note,
                 [new AiChangeOperationInput("image", "create", "image", Image: new AiImageInput(entityId, appearanceId, note))]),
             cancellationToken);
-        if (staged.Proposal is not { } proposal)
+        if (staged.Proposal is not { } made)
         {
             return Error("invalid_proposal", "Nothing was staged: " + string.Join(" ", staged.Issues.Select(issue => issue.Message)));
         }
 
-        var operation = proposal.Operations.Single();
-        var reviewUrl = $"{site.Base}/app/universes/{caller.UniverseId:D}/ai-changes/{proposal.Id:D}";
+        return await HoldAsync(role, made.Id, made.Operations.Single().Id, new MediaValues(entityId, appearanceId, note), name, bytes!, prepared!, cancellationToken);
+    }
+
+    /// <summary>
+    /// The file for an image change already staged (#466), most often one for an entry the same proposal creates, so the entry
+    /// and its picture are approved together. The change must be pending and the caller's to hand a picture to, as on the review page.
+    /// </summary>
+    private async Task<CallToolResult> HoldForChangeAsync(
+        UniverseRole role, string proposal, string? change, McpFileInput? file, string? base64, CancellationToken cancellationToken)
+    {
+        var key = change?.Trim();
+        if (!Guid.TryParse(proposal, out var proposalId) || string.IsNullOrEmpty(key))
+        {
+            return Error("invalid_input", "Give the proposal's id, as propose_changes gave it, and the image change's own id. Nothing was held.");
+        }
+
+        var operations = await db.AiChangeOperations.AsNoTracking()
+            .Where(operation => operation.ProposalId == proposalId && operation.Proposal!.UniverseId == caller.UniverseId)
+            .Select(operation => new { operation.Id, operation.Key, operation.Resource, operation.Proposed })
+            .ToListAsync(cancellationToken);
+        var picked = operations.FirstOrDefault(operation => operation.Key == key && operation.Resource == AiChangeResource.Media);
+        if (picked is null || await AiChangeMediaEndpoints.PendingAsync(db, caller.UniverseId, proposalId, picked.Id, caller.UserId, role, cancellationToken) is not { } media)
+        {
+            return Error("not_found", "That proposal has no pending image change with that id that you can send a picture for. Nothing was held.");
+        }
+
+        // The entry's name for the file: the stored entry, or the one its create change in this proposal will make.
+        var creator = media.EntryRef is { } entryRef ? operations.FirstOrDefault(operation => operation.Key == entryRef) : null;
+        var name = await db.Entities.IgnoreQueryFilters().AsNoTracking()
+            .Where(candidate => candidate.Id == media.EntityId && candidate.UniverseId == caller.UniverseId)
+            .Select(candidate => candidate.Name)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? (creator is null ? null : AiChangeJson.ReadProposed(creator.Resource, AiChangeAction.Create, creator.Proposed) switch
+            {
+                LoreValues lore => lore.Name,
+                ProjectEntryValues entry => entry.Name,
+                _ => null,
+            })
+            ?? string.Empty;
+
+        var (bytes, prepared, problem) = await ReadPictureAsync(file, base64, cancellationToken);
+        if (problem is not null)
+        {
+            return problem;
+        }
+
+        using var _ = bytes;
+        return await HoldAsync(role, proposalId, picked.Id, media, name, bytes!, prepared!, cancellationToken);
+    }
+
+    private async Task<(MemoryStream? Bytes, PreparedImage? Prepared, CallToolResult? Problem)> ReadPictureAsync(
+        McpFileInput? file, string? base64, CancellationToken cancellationToken)
+    {
+        var (bytes, problem) = file is not null ? await DownloadAsync(file, cancellationToken) : Decode(base64);
+        if (bytes is null)
+        {
+            return (null, null, Error("invalid_image", problem!));
+        }
+
+        var (prepared, rejection) = await ImagePreparation.PrepareAsync(bytes, bytes.Length, null, cancellationToken);
+        if (prepared is null)
+        {
+            await bytes.DisposeAsync();
+            return (null, null, Error("invalid_image", rejection!.Message + " Nothing was staged."));
+        }
+
+        return (bytes, prepared, null);
+    }
+
+    private async Task<CallToolResult> HoldAsync(
+        UniverseRole role, Guid proposalId, Guid operationId, MediaValues media, string name, MemoryStream bytes, PreparedImage prepared, CancellationToken cancellationToken)
+    {
+        var reviewUrl = $"{site.Base}/app/universes/{caller.UniverseId:D}/ai-changes/{proposalId:D}";
         var refusal = await AiChangeMediaEndpoints.HoldAsync(
-            db, store, clock, loggerFactory.CreateLogger(AiChangeMediaEndpoints.LoggerName), caller.UniverseId, proposal.Id, operation.Id,
-            caller.UserId, role, new MediaValues(entityId, appearanceId, note), bytes, prepared, FileName(name, prepared.Extension), cancellationToken);
+            db, store, clock, loggerFactory.CreateLogger(AiChangeMediaEndpoints.LoggerName), caller.UniverseId, proposalId, operationId,
+            caller.UserId, role, media, bytes, prepared, FileName(name, prepared.Extension), cancellationToken);
 
         return Result(new
         {
-            proposalId = proposal.Id,
+            proposalId,
             status = "waiting_for_review",
             reviewUrl,
             uploaded = refusal is null,
