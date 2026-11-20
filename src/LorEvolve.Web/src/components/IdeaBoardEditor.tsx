@@ -2,7 +2,7 @@ import { useId, type ReactNode } from 'react'
 import { IdeaBoardPicker } from './IdeaBoardPicker'
 import { BoardFields } from './ideas/BoardFields'
 import { BoardToolbar } from './ideas/BoardToolbar'
-import { BoardUnavailable } from './ideas/BoardUnavailable'
+import { RecordUnavailable } from './ideas/RecordUnavailable'
 import { BoardWork } from './ideas/BoardWork'
 import { boardCardActions } from '../ideas/boardCardActions'
 import { boardDraftActions } from '../ideas/boardDraftActions'
@@ -87,10 +87,13 @@ export function IdeaBoardEditor({
 
   if (load.kind !== 'ready') {
     return (
-      <BoardUnavailable
+      <RecordUnavailable
         load={load}
+        testIdPrefix="board"
+        words="ideas.board"
         listPath={listPath}
         contextUniverse={contextUniverse}
+        elsewhere={{ open: t('ideas.board.elsewhere.open') }}
         reread={drafts.reread}
       />
     )

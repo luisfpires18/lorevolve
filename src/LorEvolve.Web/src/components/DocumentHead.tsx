@@ -86,10 +86,7 @@ function RecordDocumentHead(head: RecordHead) {
         <>
           {head.lede}
           {!isNew && updatedAt ? (
-            <>
-              {' '}
-              {tx(head.lastSavedKey, { time: <DateText value={updatedAt} withTime /> })}
-            </>
+            <> {tx(head.lastSavedKey, { time: <DateText value={updatedAt} withTime /> })}</>
           ) : null}
         </>
       }

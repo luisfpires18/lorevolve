@@ -1,5 +1,6 @@
 import type { RefObject } from 'react'
 import { Field } from '../Field'
+import { UniverseSelect } from './UniverseSelect'
 import type { Fields } from '../../ideas/ideaDraft'
 import { IDEA_BODY_MAX_LENGTH, IDEA_TITLE_MAX_LENGTH } from '../../ideas/types'
 import type { UniverseSummary } from '../../universes/types'
@@ -87,8 +88,10 @@ export function IdeaFormFields({
         }}
       />
 
-      <Field
-        as="select"
+      <UniverseSelect
+        universes={universes}
+        archivedKey="ideas.editor.fields.archivedUniverse"
+        stray={chosenUniverse ? { id: chosenUniverse.id, label: chosenUniverse.name } : null}
         id={universeFieldId}
         label={t('ideas.editor.fields.universe')}
         hint={t('ideas.editor.fields.universeHint')}
@@ -98,18 +101,7 @@ export function IdeaFormFields({
         onChange={(event) => changeUniverse(event.target.value === '' ? null : event.target.value)}
         data-testid="idea-universe"
         controlClassName="idea__universe"
-      >
-        {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
-          <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
-        ) : null}
-        {(universes ?? []).map((universe) => (
-          <option key={universe.id} value={universe.id}>
-            {universe.isArchived
-              ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
-              : universe.name}
-          </option>
-        ))}
-      </Field>
+      />
     </>
   )
 }

@@ -6,7 +6,7 @@ import { EditorNotices } from './EditorNotices'
 import { QuietNote } from './QuietNote'
 import { IdeaReferences } from './ideas/IdeaReferences'
 import { EditorSaveBar } from './EditorSaveBar'
-import { IdeaUnavailable } from './ideas/IdeaUnavailable'
+import { RecordUnavailable } from './ideas/RecordUnavailable'
 import { ideaActions } from '../ideas/ideaActions'
 import type { IdeaDetail } from '../ideas/types'
 import { useIdeaDraft } from '../ideas/useIdeaDraft'
@@ -111,11 +111,13 @@ export function IdeaEditor({
 
   if (load.kind !== 'ready') {
     return (
-      <IdeaUnavailable
+      <RecordUnavailable
         load={load}
+        testIdPrefix="idea"
+        words="ideas.editor"
         listPath={listPath}
-        listLabel={listLabel}
         contextUniverse={contextUniverse}
+        elsewhere={{ open: t('ideas.editor.openInAll'), back: listLabel }}
         reread={reread}
       />
     )
@@ -143,12 +145,7 @@ export function IdeaEditor({
         lastSavedKey="ideas.editor.lastSaved"
         updatedAt={stored.updatedAt}
       >
-        <IdeaHead
-          isNew={isNew}
-          stored={stored}
-          contextUniverse={contextUniverse}
-          ideaId={ideaId}
-        />
+        <IdeaHead isNew={isNew} stored={stored} contextUniverse={contextUniverse} ideaId={ideaId} />
       </DocumentHead>
 
       <EditorNotices
