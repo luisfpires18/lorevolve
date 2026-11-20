@@ -54,16 +54,15 @@ export function useFormSave(options: FormSaveOptions) {
       } else if (handled) {
         // The form showed this refusal its own way.
       } else if (error instanceof ApiError && (!badRequestOnly || error.status === 400)) {
-        const refused = error.fieldErrors
-        setFieldErrors(refused)
+        setFieldErrors(error.fieldErrors)
         setMessage(
-          Object.keys(refused).length === 0
+          Object.keys(error.fieldErrors).length === 0
             ? error.message
             : typeof needChange === 'function'
-              ? needChange(refused, error)
+              ? needChange(error.fieldErrors, error)
               : needChange,
         )
-        onFieldErrors?.(refused, error)
+        onFieldErrors?.(error.fieldErrors, error)
       } else {
         setMessage(typeof failed === 'function' ? failed(error) : failed)
       }
