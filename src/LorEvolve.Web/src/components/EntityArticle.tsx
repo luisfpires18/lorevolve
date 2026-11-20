@@ -9,9 +9,8 @@ import { useArticleEditing } from '../lore/useArticleEditing'
 import { ArticleEditing } from './lore/ArticleEditing'
 import { ArticleHistory } from './lore/ArticleHistory'
 import { Button } from './Button'
-import { LoadError } from './LoadError'
 import { Announce } from './Announce'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { QuietNote } from './QuietNote'
 
 export interface EntityArticleSectionProps {
@@ -142,25 +141,25 @@ export function EntityArticleSection({
         </QuietNote>
       ) : null}
 
-      {load.kind === 'loading' ? (
-        <LoadingNote testId="article-loading">{t('entity.article.opening')}</LoadingNote>
-      ) : null}
-
-      {load.kind === 'missing' ? (
-        <QuietNote size="body" testId="article-missing">
-          {t('entity.article.missing')}
-        </QuietNote>
-      ) : null}
-
-      {load.kind === 'error' ? (
-        <LoadError
-          message={t('entity.article.openFailed')}
-          onRetry={reread}
-          retryLabel={t('entity.article.retry')}
-          retryTestId="article-retry"
-          testId="article-load-error"
-        />
-      ) : null}
+      {/* The article itself is drawn below, with its draft offer and editor; the gate says only how the read went. */}
+      <ReadGate
+        load={load}
+        loading={{ text: t('entity.article.opening'), testId: 'article-loading' }}
+        error={{
+          message: t('entity.article.openFailed'),
+          onRetry: reread,
+          retryLabel: t('entity.article.retry'),
+          retryTestId: 'article-retry',
+          testId: 'article-load-error',
+        }}
+        missing={
+          <QuietNote size="body" testId="article-missing">
+            {t('entity.article.missing')}
+          </QuietNote>
+        }
+      >
+        {() => null}
+      </ReadGate>
 
       {offer && access.editContent ? (
         <RecoveredDraft

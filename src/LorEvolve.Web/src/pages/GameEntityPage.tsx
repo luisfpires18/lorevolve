@@ -5,8 +5,9 @@ import { useGameProject } from '../projects/useGameProject'
 import { useTitleDetail } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { LoadingNote } from '../components/LoadingNote'
-import { LoadError } from '../components/LoadError'
+import { ReadGate } from '../components/ReadGate'
+import type { Load } from '../lib/useAsyncRead'
+import type { ProjectDetail } from '../projects/types'
 
 /**
  * One entry of a game, on its own screen (#286). The game is checked first, exactly as the game's directory checks it
@@ -20,36 +21,42 @@ export default function GameEntityPage() {
   const { loading, failed, retry, game } = useGameProject(projectId, universeId)
   useTitleDetail(game?.name ?? null)
 
-  if (loading) return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
-
-  if (failed)
-    return (
-      <LoadError message={t('projects.one.failed')} onRetry={retry} testId="game-project-failed" />
-    )
-
-  if (game === null || !universeId || !entityId) {
-    return (
-      <EmptyState
-        title={t('projects.gameEntities.notFound')}
-        hint={t('projects.gameEntities.notFoundHint')}
-        action={
-          <Link to={`/app/universes/${universeId}/game-entities`}>
-            {t('projects.gameEntities.back')}
-          </Link>
-        }
-        testId="game-entities-missing"
-      />
-    )
-  }
+  // useGameProject answers in flags; the gate reads them as one state. A null game (403 too, G9) is drawn below.
+  const load: Load<ProjectDetail | null> = loading
+    ? { kind: 'loading' }
+    : failed
+      ? { kind: 'error', message: t('projects.one.failed') }
+      : { kind: 'ready', value: game }
 
   return (
-    <ProjectEntityDetailView
-      key={entityId}
-      projectId={game.id}
-      universeId={universeId}
-      entityId={entityId}
-      gameName={game.name}
-      gameHref={`/app/universes/${universeId}/game-entities/${game.id}`}
-    />
+    <ReadGate
+      load={load}
+      loading={{ text: t('projects.list.loading') }}
+      error={{ onRetry: retry, testId: 'game-project-failed' }}
+    >
+      {(game) =>
+        game === null || !universeId || !entityId ? (
+          <EmptyState
+            title={t('projects.gameEntities.notFound')}
+            hint={t('projects.gameEntities.notFoundHint')}
+            action={
+              <Link to={`/app/universes/${universeId}/game-entities`}>
+                {t('projects.gameEntities.back')}
+              </Link>
+            }
+            testId="game-entities-missing"
+          />
+        ) : (
+          <ProjectEntityDetailView
+            key={entityId}
+            projectId={game.id}
+            universeId={universeId}
+            entityId={entityId}
+            gameName={game.name}
+            gameHref={`/app/universes/${universeId}/game-entities/${game.id}`}
+          />
+        )
+      }
+    </ReadGate>
   )
 }

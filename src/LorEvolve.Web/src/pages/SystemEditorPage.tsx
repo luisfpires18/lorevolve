@@ -10,10 +10,9 @@ import { useSystemEditorState } from '../worldLogic/useSystemEditorState'
 import { systemEditorActions } from '../worldLogic/systemEditorActions'
 import { SystemDetails } from '../components/worldLogic/SystemDetails'
 import { Button } from '../components/Button'
-import { LoadError } from '../components/LoadError'
+import { ReadGate } from '../components/ReadGate'
 import { EmptyState } from '../components/EmptyState'
 import { Announce } from '../components/Announce'
-import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * Creates a System, or edits and deletes a saved one, at `world-logic/systems/new` or `world-logic/systems/:systemId`.
@@ -85,37 +84,37 @@ function SystemEditor({
     navigate,
   })
 
-  if (load.kind === 'loading') {
-    return <LoadingNote>{t('canon.worldLogic.systems.loading')}</LoadingNote>
-  }
-
-  if (load.kind === 'missing') {
+  // The gate draws loading, missing and failed; the editor below reads the system from its own state.
+  if (load.kind !== 'ready') {
     return (
-      <EmptyState
-        title={t('canon.worldLogic.systems.editor.gone')}
-        action={
-          <Button tone="secondary" to={listPath}>
-            {t('canon.worldLogic.systems.editor.back')}
-          </Button>
+      <ReadGate
+        load={load}
+        loading={{ text: t('canon.worldLogic.systems.loading') }}
+        error={{
+          message: t('canon.worldLogic.systems.readFailed'),
+          onRetry: () => void reread(),
+          retryLabel: t('canon.rules.retry'),
+          action: (
+            <Button tone="secondary" to={listPath}>
+              {t('canon.worldLogic.systems.editor.back')}
+            </Button>
+          ),
+          testId: 'system-editor-unavailable',
+        }}
+        missing={
+          <EmptyState
+            title={t('canon.worldLogic.systems.editor.gone')}
+            action={
+              <Button tone="secondary" to={listPath}>
+                {t('canon.worldLogic.systems.editor.back')}
+              </Button>
+            }
+            testId="system-editor-unavailable"
+          />
         }
-        testId="system-editor-unavailable"
-      />
-    )
-  }
-
-  if (load.kind === 'error') {
-    return (
-      <LoadError
-        message={t('canon.worldLogic.systems.readFailed')}
-        onRetry={() => void reread()}
-        retryLabel={t('canon.rules.retry')}
-        action={
-          <Button tone="secondary" to={listPath}>
-            {t('canon.worldLogic.systems.editor.back')}
-          </Button>
-        }
-        testId="system-editor-unavailable"
-      />
+      >
+        {() => null}
+      </ReadGate>
     )
   }
 

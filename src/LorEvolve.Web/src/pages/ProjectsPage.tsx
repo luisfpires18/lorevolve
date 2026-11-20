@@ -9,8 +9,7 @@ import { t, useI18n } from '../i18n'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { LinkRow } from '../components/LinkRow'
 import { useTitleDetail } from '../lib/useTitleDetail'
 
@@ -97,27 +96,28 @@ export default function ProjectsPage({
     />
   )
 
-  if (state === null || state.for !== requested) {
+  // A read for another key is still loading here; the gate draws that line and the failed one under the head.
+  if (state === null || state.for !== requested || state.kind === 'failed') {
     return (
       <>
         {head}
-        <LoadingNote>{t('projects.list.loading')}</LoadingNote>
-      </>
-    )
-  }
-
-  if (state.kind === 'failed') {
-    return (
-      <>
-        {head}
-        <LoadError
-          message={t('projects.list.failed')}
-          onRetry={() => {
-            setState(null)
-            setAttempt((current) => current + 1)
+        <ReadGate
+          load={
+            state?.for === requested
+              ? { kind: 'error', message: t('projects.list.failed') }
+              : { kind: 'loading' }
+          }
+          loading={{ text: t('projects.list.loading') }}
+          error={{
+            onRetry: () => {
+              setState(null)
+              setAttempt((current) => current + 1)
+            },
+            testId: 'projects-failed',
           }}
-          testId="projects-failed"
-        />
+        >
+          {() => null}
+        </ReadGate>
       </>
     )
   }

@@ -12,8 +12,7 @@ import { useUniverseAccess } from '../universes/access'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { OutcomeNotice } from '../components/OutcomeNotice'
 import { QuietNote } from '../components/QuietNote'
 
@@ -77,74 +76,79 @@ export default function MapsPage() {
           </OutcomeNotice>
         ) : null}
 
-        {state.kind === 'loading' ? <LoadingNote>{t('places.maps.loading')}</LoadingNote> : null}
-
-        {state.kind === 'error' ? (
-          <LoadError
-            message={t('places.maps.error')}
-            onRetry={retry}
-            retryLabel={t('places.maps.retry')}
-            testId="maps-load-error"
-          />
-        ) : null}
-
-        {state.kind === 'ready' && state.value.length > 0 ? (
-          <ul className="maplist" data-testid="map-list">
-            {state.value.map((map) => (
-              <li className="mapcard" key={map.id} data-testid="map-card" data-map-name={map.name}>
-                <Link
-                  className="mapcard__link"
-                  to={mapPath(universe.id, map.id)}
-                  data-testid="map-open"
-                >
-                  <span className="mapcard__picture">
-                    <img
-                      src={mapImageUrl(universe.id, map.id, map.image.assetId, 'display')}
-                      alt=""
-                      width={map.image.width}
-                      height={map.image.height}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </span>
-                  <span className="mapcard__name">
-                    <bdi>{map.name}</bdi>
-                  </span>
-                </Link>
-                {map.description ? (
-                  <p className="mapcard__description" dir="auto">
-                    {map.description}
-                  </p>
-                ) : null}
-                <QuietNote className="mapcard__meta" testId="map-pin-count">
-                  {t('places.maps.meta', {
-                    pins:
-                      map.pinCount === 0
-                        ? t('places.maps.noPins')
-                        : tn('places.maps.pins', map.pinCount, { n: map.pinCount }),
-                    width: map.image.width,
-                    height: map.image.height,
-                  })}
-                </QuietNote>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {state.kind === 'ready' && state.value.length === 0 ? (
-          <EmptyState
-            testId="maps-empty"
-            title={t('places.maps.emptyTitle')}
-            hint={
-              access.editContent ? t('places.maps.emptyHintEditor') : t('places.maps.emptyHint')
-            }
-            action={
-              access.editContent ? (
-                <NewButton onClick={() => setCreating(true)}>{t('places.maps.new')}</NewButton>
-              ) : undefined
-            }
-          />
-        ) : null}
+        <ReadGate
+          load={state}
+          loading={{ text: t('places.maps.loading') }}
+          error={{
+            message: t('places.maps.error'),
+            onRetry: retry,
+            retryLabel: t('places.maps.retry'),
+            testId: 'maps-load-error',
+          }}
+        >
+          {(maps) =>
+            maps.length > 0 ? (
+              <ul className="maplist" data-testid="map-list">
+                {maps.map((map) => (
+                  <li
+                    className="mapcard"
+                    key={map.id}
+                    data-testid="map-card"
+                    data-map-name={map.name}
+                  >
+                    <Link
+                      className="mapcard__link"
+                      to={mapPath(universe.id, map.id)}
+                      data-testid="map-open"
+                    >
+                      <span className="mapcard__picture">
+                        <img
+                          src={mapImageUrl(universe.id, map.id, map.image.assetId, 'display')}
+                          alt=""
+                          width={map.image.width}
+                          height={map.image.height}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </span>
+                      <span className="mapcard__name">
+                        <bdi>{map.name}</bdi>
+                      </span>
+                    </Link>
+                    {map.description ? (
+                      <p className="mapcard__description" dir="auto">
+                        {map.description}
+                      </p>
+                    ) : null}
+                    <QuietNote className="mapcard__meta" testId="map-pin-count">
+                      {t('places.maps.meta', {
+                        pins:
+                          map.pinCount === 0
+                            ? t('places.maps.noPins')
+                            : tn('places.maps.pins', map.pinCount, { n: map.pinCount }),
+                        width: map.image.width,
+                        height: map.image.height,
+                      })}
+                    </QuietNote>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                testId="maps-empty"
+                title={t('places.maps.emptyTitle')}
+                hint={
+                  access.editContent ? t('places.maps.emptyHintEditor') : t('places.maps.emptyHint')
+                }
+                action={
+                  access.editContent ? (
+                    <NewButton onClick={() => setCreating(true)}>{t('places.maps.new')}</NewButton>
+                  ) : undefined
+                }
+              />
+            )
+          }
+        </ReadGate>
       </TabPanel>
 
       <TabPanel idPrefix="maps" id="interactive" tab={tab}>

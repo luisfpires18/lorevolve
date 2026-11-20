@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import type { Load } from '../lib/useAsyncRead'
-import { LoadError } from './LoadError'
+import { ReadGate } from './ReadGate'
 
 /**
  * One allowance in the Usage section: its name, then its numbers once read, or the loading and failed states in its own
@@ -29,23 +29,19 @@ export function UsageItem<T>({
         {name}
       </h3>
 
-      {load.kind === 'loading' ? (
-        <p className="usage__status" role="status">
-          {t('account.usage.checking')}
-        </p>
-      ) : null}
-
-      {load.kind === 'error' ? (
-        <LoadError
-          message={t('account.usage.failed')}
-          onRetry={onRetry}
-          retryLabel={t('account.usage.retry')}
-          testId={`${testId}-error`}
-          className="usage__error"
-        />
-      ) : null}
-
-      {load.kind === 'ready' ? children(load.value, labelId) : null}
+      <ReadGate
+        load={load}
+        loading={{ text: t('account.usage.checking'), className: 'usage__status' }}
+        error={{
+          message: t('account.usage.failed'),
+          onRetry,
+          retryLabel: t('account.usage.retry'),
+          testId: `${testId}-error`,
+          className: 'usage__error',
+        }}
+      >
+        {(value) => children(value, labelId)}
+      </ReadGate>
     </div>
   )
 }

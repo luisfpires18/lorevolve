@@ -12,8 +12,7 @@ import { AiChangeDecision } from '../components/aiChanges/AiChangeDecision'
 import { AiChangeHeader } from '../components/aiChanges/AiChangeHeader'
 import { AiChangeNotices } from '../components/aiChanges/AiChangeNotices'
 import { ChangeItem } from '../components/aiChanges/ChangeItem'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 
 /**
  * One proposal's review (ADR 0047). Every change an AI proposed, described by LorEvolve - what it creates, what it changes
@@ -37,32 +36,32 @@ export default function AiChangePage() {
     [proposal],
   )
 
-  if (load.kind === 'loading') {
-    return <LoadingNote>{t('review.aiChange.opening')}</LoadingNote>
-  }
-
-  if (load.kind === 'missing') {
+  // The gate draws loading, missing and failed; the ready page below needs the proposal outside it.
+  if (!proposal) {
     return (
-      <EmptyState
-        testId="ai-change-missing"
-        title={t('review.aiChange.missing.title')}
-        hint={
-          <>
-            {t('review.aiChange.missing.hint')}{' '}
-            <Link to="..">{t('review.aiChange.missing.back')}</Link>
-          </>
+      <ReadGate
+        load={load}
+        loading={{ text: t('review.aiChange.opening') }}
+        error={{
+          message: t('review.aiChange.loadFailed'),
+          onRetry: () => setReads((count) => count + 1),
+          retryLabel: t('review.aiChange.retry'),
+        }}
+        missing={
+          <EmptyState
+            testId="ai-change-missing"
+            title={t('review.aiChange.missing.title')}
+            hint={
+              <>
+                {t('review.aiChange.missing.hint')}{' '}
+                <Link to="..">{t('review.aiChange.missing.back')}</Link>
+              </>
+            }
+          />
         }
-      />
-    )
-  }
-
-  if (load.kind === 'error' || !proposal) {
-    return (
-      <LoadError
-        message={t('review.aiChange.loadFailed')}
-        onRetry={() => setReads((count) => count + 1)}
-        retryLabel={t('review.aiChange.retry')}
-      />
+      >
+        {() => null}
+      </ReadGate>
     )
   }
 

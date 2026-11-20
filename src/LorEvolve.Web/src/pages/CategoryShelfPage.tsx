@@ -17,8 +17,7 @@ import { ShelfCards } from '../components/projects/ShelfCards'
 import { ShelfViewNav } from '../components/projects/ShelfViewNav'
 import { NewButton } from '../components/NewButton'
 import { Announce } from '../components/Announce'
-import { LoadingNote } from '../components/LoadingNote'
-import { LoadError } from '../components/LoadError'
+import { ReadGate } from '../components/ReadGate'
 import { FormMessage } from '../components/FormMessage'
 
 /**
@@ -79,16 +78,19 @@ export default function CategoryShelfPage({
 
       {views && showView ? <views.Body universeId={universe.id} /> : null}
 
-      {!showView && state.kind === 'loading' ? (
-        <LoadingNote>{t('projects.list.loading')}</LoadingNote>
-      ) : null}
-
-      {!showView && state.kind === 'error' ? (
-        <LoadError
-          message={t('projects.list.failed')}
-          onRetry={shelf.retry}
-          testId="projects-failed"
-        />
+      {/* The cards sit below the notices, so the gate draws only the loading and failed lines here. */}
+      {!showView ? (
+        <ReadGate
+          load={state}
+          loading={{ text: t('projects.list.loading') }}
+          error={{
+            message: t('projects.list.failed'),
+            onRetry: shelf.retry,
+            testId: 'projects-failed',
+          }}
+        >
+          {() => null}
+        </ReadGate>
       ) : null}
 
       <Announce testId="shelf-announcement">{announcement}</Announce>

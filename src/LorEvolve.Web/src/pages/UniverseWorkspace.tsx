@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, useLocation, useParams } from 'react-router-dom'
+import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
@@ -14,8 +14,6 @@ import { t, useI18n } from '../i18n'
 import type { UniverseDetail } from '../universes/types'
 import { artworkUrl } from '../publishing/api'
 import type { UniverseArtworkRef } from '../publishing/types'
-import { WorkspaceLoadError } from '../components/universes/WorkspaceLoadError'
-import { WorkspaceMissing } from '../components/universes/WorkspaceMissing'
 import { WorkspaceRail } from '../components/universes/WorkspaceRail'
 import { WorkspaceSidebar } from '../components/universes/WorkspaceSidebar'
 import { useWorkspaceNav } from '../universes/useWorkspaceNav'
@@ -23,7 +21,8 @@ import { useWorkspaceReads } from '../universes/useWorkspaceReads'
 import { useWorkspaceSetters } from '../universes/useWorkspaceSetters'
 import { useWorkspaceState } from '../universes/useWorkspaceState'
 import { currentSection } from '../universes/workspaceSections'
-import { LoadingNote } from '../components/LoadingNote'
+import { EmptyState } from '../components/EmptyState'
+import { ReadGate } from '../components/ReadGate'
 
 export interface WorkspaceContext {
   universe: UniverseDetail
@@ -97,16 +96,35 @@ function Workspace() {
       : []),
   )
 
-  if (state.kind === 'loading') {
-    return <LoadingNote>{t('workspace.rail.opening')}</LoadingNote>
-  }
-
-  if (state.kind === 'missing') {
-    return <WorkspaceMissing />
-  }
-
-  if (state.kind === 'error') {
-    return <WorkspaceLoadError state={state} refresh={refresh} refreshTypes={refreshTypes} />
+  if (state.kind !== 'ready') {
+    // shortcut: the hint's first sentence is English in every language (gap G3), until it gets a key in both dictionaries.
+    return (
+      <ReadGate
+        load={state}
+        loading={{ text: t('workspace.rail.opening') }}
+        error={{
+          onRetry: () => {
+            refresh()
+            refreshTypes().catch(() => undefined)
+          },
+          retryLabel: t('workspace.missing.tryAgain'),
+        }}
+        missing={
+          <EmptyState
+            testId="universe-missing"
+            title={t('workspace.missing.title')}
+            hint={
+              <>
+                It may have been deleted, or it belongs to someone else.{' '}
+                <Link to="/app">{t('workspace.missing.back')}</Link>
+              </>
+            }
+          />
+        }
+      >
+        {() => null}
+      </ReadGate>
+    )
   }
 
   const { universe, chronology } = state.value

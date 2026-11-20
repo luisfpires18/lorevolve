@@ -16,6 +16,7 @@ import { Section } from './Section'
 import { Announce } from './Announce'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { LoadingNote } from './LoadingNote'
 import { DateText } from './DateText'
 import { FormMessage } from './FormMessage'
 
@@ -76,9 +77,7 @@ export function ConnectedApps() {
       <QuietNote spacing="block">{t('data.connectedApps.note')}</QuietNote>
 
       {load.kind === 'loading' ? (
-        <p className="usage__status" role="status">
-          {t('data.connectedApps.loading')}
-        </p>
+        <LoadingNote className="usage__status">{t('data.connectedApps.loading')}</LoadingNote>
       ) : load.kind !== 'ready' ? (
         <FormMessage as="div" testId="connected-apps-error">
           <p>{t('data.connectedApps.loadFailed')}</p>
