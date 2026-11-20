@@ -530,7 +530,8 @@ public static class EntityEndpoints
         string actorUserId,
         CancellationToken cancellationToken,
         Guid? projectId = null,
-        Guid? canonEntityId = null)
+        Guid? canonEntityId = null,
+        Guid? entityId = null)
     {
         if (await CheckEntryAsync(db, universeId, request, cancellationToken, projectId) is { } refused)
         {
@@ -540,7 +541,8 @@ public static class EntityEndpoints
         var now = DateTime.UtcNow;
         var entity = new LoreEntity
         {
-            Id = Guid.NewGuid(),
+            // An approved AI change names the id: its change's own, under which a picture for it may already be held (#466).
+            Id = entityId ?? Guid.NewGuid(),
             UniverseId = universeId,
             ProjectId = projectId,
             CanonEntityId = canonEntityId,
