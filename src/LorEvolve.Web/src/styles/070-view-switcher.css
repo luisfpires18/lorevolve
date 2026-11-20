@@ -139,14 +139,6 @@
   align-items: center;
 }
 
-.scene__count {
-  margin-inline-start: 0.2rem;
-  padding: 0 0.4rem;
-  border-radius: 999px;
-  background: var(--raised);
-  font-variant-numeric: tabular-nums;
-}
-
 .scene__refs--lore .scene__lore {
   gap: var(--space-2);
 }

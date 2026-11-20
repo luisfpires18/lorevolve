@@ -11,6 +11,7 @@ import { SuggestionItem } from './suggestions/SuggestionItem'
 import { Button } from './Button'
 import { ShowMore } from './ShowMore'
 import { QuietNote } from './QuietNote'
+import { HeadingCount } from './HeadingCount'
 
 interface ReviewSuggestionsProps<T> {
   universeId: string
@@ -60,10 +61,6 @@ export function ReviewSuggestions<T>({
   const items = [...(loaded?.items ?? [])].sort(newestFirst)
   const open = items.filter((each) => each.status === SuggestionStatus.Open)
   const decided = items.filter((each) => each.status !== SuggestionStatus.Open)
-
-  /** How many are listed, and a plus while older ones have not been read yet. */
-  const counted = (state: SuggestionState, count: number) =>
-    `${count}${loaded?.more[state] ? '+' : ''}`
 
   function moreButton(state: SuggestionState) {
     return (
@@ -128,7 +125,7 @@ export function ReviewSuggestions<T>({
             <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
               <h3 className="reviewsection__title" id={`${headingId}-open`}>
                 {tx('review.suggestions.open', {
-                  n: <span className="reviewsection__count">{counted('open', open.length)}</span>,
+                  n: <HeadingCount n={open.length} more={Boolean(loaded?.more.open)} />,
                 })}
               </h3>
               <ol className="reviewsection__list" data-testid="suggestions-open">
@@ -151,11 +148,7 @@ export function ReviewSuggestions<T>({
             <details className="reviewsection" data-testid="suggestions-decided-group">
               <summary className="reviewsection__title">
                 {tx('review.suggestions.decided', {
-                  n: (
-                    <span className="reviewsection__count">
-                      {counted('decided', decided.length)}
-                    </span>
-                  ),
+                  n: <HeadingCount n={decided.length} more={Boolean(loaded?.more.decided)} />,
                 })}
               </summary>
               <ol className="reviewsection__list" data-testid="suggestions-decided">

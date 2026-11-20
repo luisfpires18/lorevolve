@@ -258,3 +258,20 @@
     inset 2px 0 0 var(--accent),
     0 0 0 0.6rem var(--surface);
 }
+
+/* A count beside a heading's words (HeadingCount): quiet figures, or the scene's raised pill. */
+.headingcount {
+  font-variant-numeric: tabular-nums;
+}
+
+.headingcount[data-look='quiet'] {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.headingcount[data-look='pill'] {
+  margin-inline-start: 0.2rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--raised);
+}

@@ -12,6 +12,7 @@ import { CommentThreadItem } from './CommentThreadItem'
 import { CommentNewForm } from './CommentNewForm'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
+import { HeadingCount } from './HeadingCount'
 
 const SUBJECT_WORDS = {
   entry: 'review.comments.subject.entry',
@@ -166,7 +167,7 @@ export function CommentsDrawer<T>({
               <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
                 <h3 className="reviewsection__title" id={`${headingId}-open`}>
                   {tx('review.comments.open', {
-                    n: <span className="reviewsection__count">{open.length}</span>,
+                    n: <HeadingCount n={open.length} />,
                   })}
                 </h3>
                 <ol className="reviewsection__list" data-testid="comments-open">
@@ -194,7 +195,7 @@ export function CommentsDrawer<T>({
               <details className="reviewsection" data-testid="comments-resolved-group">
                 <summary className="reviewsection__title">
                   {tx('review.comments.resolved', {
-                    n: <span className="reviewsection__count">{resolved.length}</span>,
+                    n: <HeadingCount n={resolved.length} />,
                   })}
                 </summary>
                 <ol className="reviewsection__list" data-testid="comments-resolved">
