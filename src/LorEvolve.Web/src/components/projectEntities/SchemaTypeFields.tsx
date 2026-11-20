@@ -87,7 +87,8 @@ export function SchemaTypeFields({
                           onClick={async () => {
                             const confirmed = await confirmAction({
                               title: t('entityTypes.fields.deleteTitle', { name: field.name }),
-                              message: t('entityTypes.fields.deleteMessage'),
+                              // The client cannot see whether entries hold a value; the API refuses when they do.
+                              message: t('projects.structure.deleteEmpty'),
                               confirmLabel: t('entityTypes.fields.deleteConfirm'),
                               variant: 'destructive',
                             })

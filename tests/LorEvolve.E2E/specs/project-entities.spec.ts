@@ -137,7 +137,6 @@ test.describe('Project entities', () => {
     const map = types.locator('> li', { hasText: 'Map' }).first().locator('.types__head')
     await map.getByRole('button', { name: /More actions/ }).click()
     await map.getByRole('button', { name: 'Delete type' }).click()
-    await acceptConfirm(page)
     await expect(page.getByTestId('project-schema-failed')).toBeVisible()
     await expect(types).toContainText('Map')
   })
