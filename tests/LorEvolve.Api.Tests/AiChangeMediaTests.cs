@@ -136,6 +136,68 @@ public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task A_replacement_rolled_back_keeps_the_old_picture_and_its_objects_and_the_staged_one_for_a_retry()
+    {
+        var (owner, ownerId, u, bilbo, _) = await World("mediarollback");
+        var firstId = await Staged(_factory, u, ownerId, Picture("face", bilbo));
+        var firstOperation = (await Read(owner, u, firstId)).Operations.Single().Id;
+        await CollaborationTestClient.Ok(owner.PutAsync(Media(u, firstId, firstOperation), CollaborationTestClient.PngForm()));
+        await ApproveAll(owner, u, firstId);
+        var old = await Profile(bilbo);
+
+        var againId = await Staged(_factory, u, ownerId, Picture("again", bilbo));
+        var againOperation = (await Read(owner, u, againId)).Operations.Single().Id;
+        await CollaborationTestClient.Ok(owner.PutAsync(Media(u, againId, againOperation), CollaborationTestClient.PngForm()));
+        var staged = await Held(againOperation);
+
+        // The replacement runs inside an approval's transaction, which then rolls back (#445).
+        await WithDb(_factory, async db =>
+        {
+            await using (var transaction = await db.Database.BeginTransactionAsync())
+            {
+                Assert.True(await EntityImageEndpoints.AttachStagedAsync(
+                    db,
+                    TimeProvider.System,
+                    u,
+                    bilbo,
+                    new EntityImage
+                    {
+                        AssetId = staged.AssetId,
+                        ThumbnailId = staged.ThumbnailId,
+                        OriginalKey = staged.OriginalKey,
+                        ThumbnailKey = staged.ThumbnailKey,
+                        ContentType = staged.ContentType,
+                        FileName = staged.FileName,
+                        Width = staged.Width,
+                        Height = staged.Height,
+                        ByteSize = staged.ByteSize,
+                        UploadedAt = staged.UploadedAt,
+                    },
+                    hold: null,
+                    ownerId,
+                    default));
+                Assert.Contains(old.OriginalKey, db.DroppedFieldImageKeys);
+                await transaction.RollbackAsync();
+            }
+
+            db.ChangeTracker.Clear();
+            await EntityFieldImageEndpoints.SweepDroppedAsync(db, _factory.Media, NullLoggerFactory.Instance, default);
+        });
+
+        var kept = await Profile(bilbo);
+        Assert.Equal(old.AssetId, kept.AssetId);
+        Assert.True(_factory.Media.Contains(old.OriginalKey));
+        Assert.True(_factory.Media.Contains(old.ThumbnailKey));
+        Assert.True(_factory.Media.Contains(staged.OriginalKey));
+        Assert.Equal(againOperation, (await Held(againOperation)).OperationId);
+
+        // The retry replaces it.
+        await ApproveAll(owner, u, againId);
+        Assert.Equal(staged.AssetId, (await Profile(bilbo)).AssetId);
+        Assert.False(_factory.Media.Contains(old.OriginalKey));
+    }
+
+    [Fact]
     public async Task A_rejected_or_replaced_picture_leaves_nothing_once_swept()
     {
         var (owner, ownerId, u, bilbo, cloak) = await World("mediasweep");
