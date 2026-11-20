@@ -13,7 +13,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 // ---------- What an AI sends ----------
 
-[Description("A picture for an entry: its profile picture, when it has none yet, or one more picture in one of its appearances. No file goes in propose_changes: the person uploads it on the proposal's review page, or the AI sends it with propose_entry_image.")]
+[Description("A picture for an entry: its profile picture, replacing the current one once approved, or one more picture in one of its appearances. No file goes in propose_changes: the person uploads it on the proposal's review page, or the AI sends it with propose_entry_image.")]
 public sealed record AiImageInput(
     [property: Description("The entry's id.")] Guid? Entry = null,
     [property: Description("An appearance of that entry, by id from get_change_options with loreId. Leave it out for the entry's profile picture.")] Guid? Appearance = null,

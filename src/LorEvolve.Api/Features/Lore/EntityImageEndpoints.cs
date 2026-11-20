@@ -415,12 +415,13 @@ public static partial class EntityImageEndpoints
     }
 
     /// <summary>
-    /// A first picture, whose objects are already stored, becomes the entry's image inside the caller's transaction - an
-    /// approved AI change's staged picture (ADR 0062). The same commit as an upload's: under the writer lock the entry must be
-    /// live and still have no picture, the hold is consumed first, and the change is recorded in the entry's history as an
-    /// upload records it. False when the entry is gone or has a picture now: nothing was written.
+    /// A picture whose objects are already stored becomes the entry's image inside the caller's transaction - an approved AI
+    /// change's staged picture (ADR 0062). The same commit as an upload's: under the writer lock the entry must be live, the
+    /// hold is consumed first, a picture already there is replaced, and the change is recorded in the entry's history as an
+    /// upload records it. The replaced picture's keys are noted for the route to sweep after its commit
+    /// (<see cref="EntityFieldImageEndpoints.SweepDroppedAsync"/>). False when the entry is gone: nothing was written.
     /// </summary>
-    internal static async Task<bool> AttachFirstAsync(
+    internal static async Task<bool> AttachStagedAsync(
         LorEvolveDbContext db,
         TimeProvider clock,
         Guid universeId,
@@ -435,12 +436,20 @@ public static partial class EntityImageEndpoints
         var live = await db.Entities.IgnoreQueryFilters().AnyAsync(
             candidate => candidate.Id == entityId && candidate.UniverseId == universeId && candidate.DeletedAt == null,
             cancellationToken);
-        if (!live || await db.EntityImages.AnyAsync(image => image.EntityId == entityId, cancellationToken))
+        if (!live)
         {
             return false;
         }
 
         await AccountStorage.ConsumeAsync(db, clock, hold, cancellationToken);
+        var current = await db.EntityImages.FirstOrDefaultAsync(image => image.EntityId == entityId, cancellationToken);
+        if (current is not null)
+        {
+            db.DroppedFieldImageKeys.AddRange([current.OriginalKey, current.ThumbnailKey, .. current.DisplayKey is { } display ? [display] : Array.Empty<string>()]);
+            db.EntityImages.Remove(current);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
         stored.EntityId = entityId;
         db.EntityImages.Add(stored);
         await db.SaveChangesAsync(cancellationToken);

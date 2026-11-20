@@ -119,7 +119,7 @@ internal static class AiChangeCatalog
         + "the calendar, event kinds and methods change only through a schema proposal (see schema), never in the same proposal as "
         + "content. A project's own types and fields are not lore: read them with get_project_schema, and create or update them "
         + "as project_type and project_field beside the project's entries. An image change sends no file: it says which entry, or which of its appearances, a picture is for, and the person "
-        + "uploads the picture on the proposal's review page in LorEvolve, then approves it; an AI never replaces a profile picture. "
+        + "uploads the picture on the proposal's review page in LorEvolve, then approves it; an approved profile picture replaces the entry's current one. "
         + "remove moves an item to LorEvolve's Trash (an idea to its owner's deleted ideas), "
         + "from where it can be restored; nothing is ever deleted for good. An article is written as blocks (paragraph, heading, bullet_list, "
         + "numbered_list, quote) of plain text, apart from the entry's fields. reorder takes the whole order of a container. Ideas are the "
