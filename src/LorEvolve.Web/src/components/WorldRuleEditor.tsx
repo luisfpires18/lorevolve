@@ -13,9 +13,8 @@ import { sameFields } from '../worldRules/ruleDraft'
 import { WorldRuleHead } from './worldRules/WorldRuleHead'
 import { ConflictBar } from './ConflictBar'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
-import { LoadError } from './LoadError'
 import { Announce } from './Announce'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { FormMessage } from './FormMessage'
 
 interface WorldRuleEditorProps {
@@ -102,83 +101,77 @@ export function WorldRuleEditor({
   // Ctrl+S and Cmd+S save the rule.
   useSaveShortcut(() => void save(stored.updatedAt))
 
-  if (load.kind === 'loading') {
-    return <LoadingNote testId="world-rule-loading">{t('canon.editor.opening')}</LoadingNote>
-  }
-
-  if (load.kind === 'missing') {
-    return (
-      <EmptyState
-        testId="world-rule-missing"
-        title={t('canon.editor.missing.title')}
-        hint={tx('canon.editor.missing.hint', {
-          trash: <Link to={trashPath}>{t('canon.editor.missing.openTrash')}</Link>,
-          rules: <Link to={listPath}>{t('canon.editor.missing.rules')}</Link>,
-        })}
-      />
-    )
-  }
-
-  if (load.kind === 'error') {
-    return (
-      <LoadError
-        message={load.message}
-        onRetry={reread}
-        retryLabel={t('canon.editor.retry')}
-        testId="world-rule-load-error"
-      />
-    )
-  }
-
   return (
-    <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
-      <WorldRuleHead
-        listPath={listPath}
-        headingId={headingId}
-        isNew={isNew}
-        stored={stored}
-        isSaving={isSaving}
-        remove={remove}
-      />
-
-      {conflict ? (
-        <ConflictBar
-          text={t('canon.editor.conflict')}
-          onKeepMine={() => void save(conflict.updatedAt)}
-          keepLabel={t('canon.editor.keepMine')}
-          onLoadSaved={() => void loadSavedVersion()}
-          loadLabel={t('canon.editor.loadSaved')}
-          busy={isSaving}
-          testId="world-rule"
+    <ReadGate
+      load={load}
+      loading={{ text: t('canon.editor.opening'), testId: 'world-rule-loading' }}
+      error={{
+        onRetry: reread,
+        retryLabel: t('canon.editor.retry'),
+        testId: 'world-rule-load-error',
+      }}
+      missing={
+        <EmptyState
+          testId="world-rule-missing"
+          title={t('canon.editor.missing.title')}
+          hint={tx('canon.editor.missing.hint', {
+            trash: <Link to={trashPath}>{t('canon.editor.missing.openTrash')}</Link>,
+            rules: <Link to={listPath}>{t('canon.editor.missing.rules')}</Link>,
+          })}
         />
-      ) : null}
+      }
+    >
+      {() => (
+        <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
+          <WorldRuleHead
+            listPath={listPath}
+            headingId={headingId}
+            isNew={isNew}
+            stored={stored}
+            isSaving={isSaving}
+            remove={remove}
+          />
 
-      {failure ? (
-        <FormMessage className="rule__failure" testId="world-rule-error">
-          {failure}
-        </FormMessage>
-      ) : null}
+          {conflict ? (
+            <ConflictBar
+              text={t('canon.editor.conflict')}
+              onKeepMine={() => void save(conflict.updatedAt)}
+              keepLabel={t('canon.editor.keepMine')}
+              onLoadSaved={() => void loadSavedVersion()}
+              loadLabel={t('canon.editor.loadSaved')}
+              busy={isSaving}
+              testId="world-rule"
+            />
+          ) : null}
 
-      <WorldRuleForm
-        universeId={universeId}
-        isNew={isNew}
-        titleId={titleId}
-        descriptionId={descriptionId}
-        statusId={statusId}
-        stored={stored}
-        draft={draft}
-        fieldErrors={fieldErrors}
-        isDirty={isDirty}
-        isTooLong={isTooLong}
-        isSaving={isSaving}
-        saves={saves}
-        titleInput={titleInput}
-        edit={edit}
-        editCheck={editCheck}
-        save={save}
-      />
+          {failure ? (
+            <FormMessage className="rule__failure" testId="world-rule-error">
+              {failure}
+            </FormMessage>
+          ) : null}
 
-      <Announce testId="world-rule-announcer">{announcement}</Announce>
-    </article>
+          <WorldRuleForm
+            universeId={universeId}
+            isNew={isNew}
+            titleId={titleId}
+            descriptionId={descriptionId}
+            statusId={statusId}
+            stored={stored}
+            draft={draft}
+            fieldErrors={fieldErrors}
+            isDirty={isDirty}
+            isTooLong={isTooLong}
+            isSaving={isSaving}
+            saves={saves}
+            titleInput={titleInput}
+            edit={edit}
+            editCheck={editCheck}
+            save={save}
+          />
+
+          <Announce testId="world-rule-announcer">{announcement}</Announce>
+        </article>
+      )}
+    </ReadGate>
   )
 }

@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import type { MoveTarget } from '../components/SceneCard'
 import { Visibility } from '../publishing/types'
@@ -15,13 +15,14 @@ import { storyPatches } from '../stories/storyPatches'
 import { storySceneMoves } from '../stories/storySceneMoves'
 import { storyChapterMoves } from '../stories/storyChapterMoves'
 import { storyRemovals } from '../stories/storyRemovals'
-import { StoryUnavailable } from '../components/stories/StoryUnavailable'
 import { StoryHeader } from '../components/stories/StoryHeader'
 import { StoryBar } from '../components/stories/StoryBar'
 import { StoryManuscript } from '../components/stories/StoryManuscript'
 import { StoryScenes } from '../components/stories/StoryScenes'
 import { StoryForms } from '../components/stories/StoryForms'
 import { LoadError } from '../components/LoadError'
+import { ReadGate } from '../components/ReadGate'
+import { EmptyState } from '../components/EmptyState'
 import { Announce } from '../components/Announce'
 
 /**
@@ -84,7 +85,33 @@ function StoryView({ view }: { view: StoryViewName }) {
   }
 
   if (state.kind !== 'ready') {
-    return <StoryUnavailable state={state} universe={universe} retry={retry} />
+    return (
+      <ReadGate
+        load={state}
+        loading={{ text: t('stories.page.opening') }}
+        error={{
+          message: t('stories.page.loadError'),
+          onRetry: retry,
+          retryLabel: t('stories.page.retry'),
+          testId: 'story-load-error',
+        }}
+        missing={
+          <EmptyState
+            testId="story-missing"
+            title={t('stories.page.missing.title')}
+            hint={tx('stories.page.missing.hint', {
+              link: (
+                <Link to={`/app/universes/${universe.id}/writing`}>
+                  {t('stories.page.missing.back')}
+                </Link>
+              ),
+            })}
+          />
+        }
+      >
+        {() => null}
+      </ReadGate>
+    )
   }
 
   const story = state.value

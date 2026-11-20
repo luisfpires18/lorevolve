@@ -10,8 +10,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { Button } from '../components/Button'
 import { Pager } from '../components/Pager'
 import { NewButton } from '../components/NewButton'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { LinkRow } from '../components/LinkRow'
 import { OutcomeNotice } from '../components/OutcomeNotice'
 import { useAsyncRead } from '../lib/useAsyncRead'
@@ -60,8 +59,6 @@ export default function WorldRulesPage() {
     })
   }
 
-  const result = state.kind === 'ready' ? state.value : null
-
   return (
     <section className="rules" aria-labelledby={headingId} data-testid="world-rules">
       <PageHeader
@@ -86,84 +83,86 @@ export default function WorldRulesPage() {
         </OutcomeNotice>
       ) : null}
 
-      {state.kind === 'loading' ? <LoadingNote>{t('canon.rules.loading')}</LoadingNote> : null}
+      <ReadGate
+        load={state}
+        loading={{ text: t('canon.rules.loading') }}
+        error={{
+          message: t('canon.rules.readFailed'),
+          onRetry: retry,
+          retryLabel: t('canon.rules.retry'),
+          testId: 'world-rules-load-error',
+        }}
+      >
+        {(result) => (
+          <>
+            {result.items.length > 0 ? (
+              <ul className="rulelist" data-testid="world-rule-list">
+                {result.items.map((rule) => (
+                  <LinkRow
+                    look="rule"
+                    key={rule.id}
+                    to={`${basePath}/${rule.id}`}
+                    title={rule.title}
+                    titleTestId="world-rule-open"
+                    excerpt={
+                      rule.excerpt ? (
+                        <>
+                          {rule.excerpt}
+                          {rule.isExcerptShortened ? '…' : null}
+                        </>
+                      ) : null
+                    }
+                    excerptTestId="world-rule-excerpt"
+                    testId="world-rule-row"
+                    data-title={rule.title}
+                    meta={
+                      <>
+                        {rule.hasCheck ? (
+                          <span className="rulerow__check" data-testid="world-rule-has-check">
+                            {t('canon.rules.checked')}
+                          </span>
+                        ) : null}
+                        {tx('canon.rules.updated', {
+                          time: <DateText value={rule.updatedAt} />,
+                        })}
+                      </>
+                    }
+                  />
+                ))}
+              </ul>
+            ) : null}
 
-      {state.kind === 'error' ? (
-        <LoadError
-          message={t('canon.rules.readFailed')}
-          onRetry={retry}
-          retryLabel={t('canon.rules.retry')}
-          testId="world-rules-load-error"
-        />
-      ) : null}
+            {result.items.length === 0 && result.totalCount === 0 ? (
+              <EmptyState
+                testId="world-rules-empty"
+                title={t('canon.rules.empty.title')}
+                hint={t('canon.rules.empty.hint')}
+                action={
+                  access.editContent ? (
+                    <NewButton to={`${basePath}/new`} data-testid="empty-new-world-rule">
+                      {t('canon.rules.emptyNewRule')}
+                    </NewButton>
+                  ) : undefined
+                }
+              />
+            ) : null}
 
-      {result && result.items.length > 0 ? (
-        <ul className="rulelist" data-testid="world-rule-list">
-          {result.items.map((rule) => (
-            <LinkRow
-              look="rule"
-              key={rule.id}
-              to={`${basePath}/${rule.id}`}
-              title={rule.title}
-              titleTestId="world-rule-open"
-              excerpt={
-                rule.excerpt ? (
-                  <>
-                    {rule.excerpt}
-                    {rule.isExcerptShortened ? '…' : null}
-                  </>
-                ) : null
-              }
-              excerptTestId="world-rule-excerpt"
-              testId="world-rule-row"
-              data-title={rule.title}
-              meta={
-                <>
-                  {rule.hasCheck ? (
-                    <span className="rulerow__check" data-testid="world-rule-has-check">
-                      {t('canon.rules.checked')}
-                    </span>
-                  ) : null}
-                  {tx('canon.rules.updated', {
-                    time: <DateText value={rule.updatedAt} />,
-                  })}
-                </>
-              }
-            />
-          ))}
-        </ul>
-      ) : null}
+            {result.items.length === 0 && result.totalCount > 0 ? (
+              <EmptyState
+                testId="world-rules-page-empty"
+                title={t('canon.rules.pageEmpty.title')}
+                action={
+                  <Button tone="secondary" onClick={() => goToPage(1)}>
+                    {t('canon.rules.pageEmpty.first')}
+                  </Button>
+                }
+              />
+            ) : null}
 
-      {result && result.items.length === 0 && result.totalCount === 0 ? (
-        <EmptyState
-          testId="world-rules-empty"
-          title={t('canon.rules.empty.title')}
-          hint={t('canon.rules.empty.hint')}
-          action={
-            access.editContent ? (
-              <NewButton to={`${basePath}/new`} data-testid="empty-new-world-rule">
-                {t('canon.rules.emptyNewRule')}
-              </NewButton>
-            ) : undefined
-          }
-        />
-      ) : null}
-
-      {result && result.items.length === 0 && result.totalCount > 0 ? (
-        <EmptyState
-          testId="world-rules-page-empty"
-          title={t('canon.rules.pageEmpty.title')}
-          action={
-            <Button tone="secondary" onClick={() => goToPage(1)}>
-              {t('canon.rules.pageEmpty.first')}
-            </Button>
-          }
-        />
-      ) : null}
-
-      {result ? (
-        <Pager page={result.page} totalPages={result.totalPages} onPage={goToPage} />
-      ) : null}
+            <Pager page={result.page} totalPages={result.totalPages} onPage={goToPage} />
+          </>
+        )}
+      </ReadGate>
     </section>
   )
 }

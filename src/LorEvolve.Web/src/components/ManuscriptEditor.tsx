@@ -16,9 +16,8 @@ import { ManuscriptHead } from './stories/ManuscriptHead'
 import { ManuscriptNotices } from './stories/ManuscriptNotices'
 import { ManuscriptBody } from './stories/ManuscriptBody'
 import { ManuscriptSaveBar } from './stories/ManuscriptSaveBar'
-import { LoadError } from './LoadError'
 import { Announce } from './Announce'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 
 interface ManuscriptEditorProps {
   universeId: string
@@ -192,35 +191,31 @@ export function ManuscriptEditor({
         />
       ) : null}
 
-      {load.kind === 'loading' ? (
-        <LoadingNote testId="manuscript-loading">{t('manuscript.editor.opening')}</LoadingNote>
-      ) : null}
-
-      {load.kind === 'missing' ? (
-        <EmptyState
-          testId="manuscript-missing"
-          title={t('manuscript.editor.missing.title')}
-          hint={t('manuscript.editor.missing.hint')}
-        />
-      ) : null}
-
-      {load.kind === 'error' ? (
-        <LoadError
-          message={load.message}
-          onRetry={reread}
-          retryLabel={t('manuscript.editor.retry')}
-          retryTestId="manuscript-retry"
-          testId="manuscript-load-error"
-        />
-      ) : null}
-
-      {isReady ? (
-        <>
-          <ManuscriptNotices {...view} />
-          <ManuscriptBody {...view} />
-          <ManuscriptSaveBar {...view} />
-        </>
-      ) : null}
+      <ReadGate
+        load={load}
+        loading={{ text: t('manuscript.editor.opening'), testId: 'manuscript-loading' }}
+        error={{
+          onRetry: reread,
+          retryLabel: t('manuscript.editor.retry'),
+          retryTestId: 'manuscript-retry',
+          testId: 'manuscript-load-error',
+        }}
+        missing={
+          <EmptyState
+            testId="manuscript-missing"
+            title={t('manuscript.editor.missing.title')}
+            hint={t('manuscript.editor.missing.hint')}
+          />
+        }
+      >
+        {() => (
+          <>
+            <ManuscriptNotices {...view} />
+            <ManuscriptBody {...view} />
+            <ManuscriptSaveBar {...view} />
+          </>
+        )}
+      </ReadGate>
 
       <Announce testId="manuscript-announcer">{announcement}</Announce>
     </section>

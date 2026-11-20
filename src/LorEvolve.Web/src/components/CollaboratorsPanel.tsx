@@ -9,9 +9,8 @@ import { CollaboratorInvitations } from './universes/CollaboratorInvitations'
 import { CollaboratorMembers } from './universes/CollaboratorMembers'
 import { CopyLink } from './universes/CopyLink'
 import { InviteForm } from './universes/InviteForm'
-import { LoadError } from './LoadError'
 import { Announce } from './Announce'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { Section } from './Section'
 import { QuietNote } from './QuietNote'
@@ -46,8 +45,6 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
       current.kind === 'ready' ? { kind: 'ready', value: change(current.value) } : current,
     )
   }
-
-  const data = state.kind === 'ready' ? state.value : null
 
   return (
     <div className="collab" data-testid="collaborators-panel">
@@ -87,36 +84,32 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
         ) : null}
       </Section>
 
-      {state.kind === 'loading' ? <LoadingNote>{t('universe.collab.loading')}</LoadingNote> : null}
+      <ReadGate
+        load={state}
+        loading={{ text: t('universe.collab.loading') }}
+        error={{ onRetry: retry, retryLabel: t('universe.collab.retry') }}
+      >
+        {(data) => (
+          <>
+            <CollaboratorMembers
+              universeId={universeId}
+              data={data}
+              update={update}
+              setAnnouncement={setAnnouncement}
+            />
 
-      {state.kind === 'error' ? (
-        <LoadError
-          message={state.message}
-          onRetry={retry}
-          retryLabel={t('universe.collab.retry')}
-        />
-      ) : null}
-
-      {data ? (
-        <>
-          <CollaboratorMembers
-            universeId={universeId}
-            data={data}
-            update={update}
-            setAnnouncement={setAnnouncement}
-          />
-
-          <CollaboratorInvitations
-            universeId={universeId}
-            data={data}
-            highlight={highlight}
-            created={created}
-            setCreated={setCreated}
-            update={update}
-            setAnnouncement={setAnnouncement}
-          />
-        </>
-      ) : null}
+            <CollaboratorInvitations
+              universeId={universeId}
+              data={data}
+              highlight={highlight}
+              created={created}
+              setCreated={setCreated}
+              update={update}
+              setAnnouncement={setAnnouncement}
+            />
+          </>
+        )}
+      </ReadGate>
     </div>
   )
 }

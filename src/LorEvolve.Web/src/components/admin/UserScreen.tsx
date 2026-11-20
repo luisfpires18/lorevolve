@@ -6,9 +6,8 @@ import { ApiError } from '../../lib/api'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { EmptyState } from '../EmptyState'
-import { LoadError } from '../LoadError'
 import { UserDetail } from './UserDetail'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 
 export function UserScreen() {
   const { t } = useI18n()
@@ -31,18 +30,19 @@ export function UserScreen() {
         items={[{ to: '/admin/users', label: t('admin.user.all'), testId: 'admin-back-users' }]}
       />
 
-      {state.kind === 'loading' ? <LoadingNote>{t('admin.user.opening')}</LoadingNote> : null}
-      {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
-      {state.kind === 'ready' && state.value === null ? (
-        <EmptyState title={t('admin.user.notFound')} testId="admin-user-missing" />
-      ) : null}
-      {state.kind === 'ready' && state.value !== null ? (
-        <UserDetail
-          user={state.value}
-          onChange={(value) => setState({ kind: 'ready', value })}
-          onStale={retry}
-        />
-      ) : null}
+      <ReadGate load={state} loading={{ text: t('admin.user.opening') }} error={{ onRetry: retry }}>
+        {(user) =>
+          user === null ? (
+            <EmptyState title={t('admin.user.notFound')} testId="admin-user-missing" />
+          ) : (
+            <UserDetail
+              user={user}
+              onChange={(value) => setState({ kind: 'ready', value })}
+              onStale={retry}
+            />
+          )
+        }
+      </ReadGate>
     </>
   )
 }
