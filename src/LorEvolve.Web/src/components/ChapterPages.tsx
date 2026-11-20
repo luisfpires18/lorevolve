@@ -65,7 +65,7 @@ export function ChapterPages({
   return (
     <section data-testid={`chapter-pages-${chapterId}`}>
       <PageHeader
-        level={2}
+        level={3}
         size="panel"
         titleClassName="sectionrule--accent"
         title={t('projects.pages.title')}
@@ -102,11 +102,12 @@ export function ChapterPages({
       {/* The page drawer opens from the head above, rather than a form open under every chapter an author expands. */}
       {addingPage ? (
         <NameSummaryDrawer
-          testId="project-page-new"
+          testId={`project-page-new-${chapterId}`}
           eyebrow={t('projects.pages.title')}
           title={t('projects.pages.add')}
           initial={null}
           nameOptional
+          busy={busy}
           words={{
             save: t('projects.pages.add'),
             name: t('projects.pages.name'),

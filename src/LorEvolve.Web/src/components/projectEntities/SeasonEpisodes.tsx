@@ -106,6 +106,10 @@ export function SeasonEpisodes({
                   up: `project-episode-up-${episode.id}`,
                   down: `project-episode-down-${episode.id}`,
                 }}
+                words={{
+                  first: t('projects.common.alreadyFirst'),
+                  last: t('projects.common.alreadyLast'),
+                }}
                 // Moving between seasons needs no drag: the other seasons are a short list of items.
                 menuItems={seasons
                   .filter((other) => other.id !== season.id)

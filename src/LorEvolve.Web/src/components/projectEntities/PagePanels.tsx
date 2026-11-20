@@ -54,6 +54,10 @@ export function PagePanels({
                 up: `project-panel-up-${panel.id}`,
                 down: `project-panel-down-${panel.id}`,
               }}
+              words={{
+                first: t('projects.common.alreadyFirst'),
+                last: t('projects.common.alreadyLast'),
+              }}
               onDelete={() =>
                 void confirmDelete(
                   {

@@ -67,7 +67,11 @@ export function PageRow({
           }}
           moveTestIds={{ up: `project-page-up-${page.id}`, down: `project-page-down-${page.id}` }}
           addChild={{ onAdd: () => setAddingTo(page.id), testId: `project-panel-add-${page.id}` }}
-          words={{ addChild: t('projects.pages.addPanel') }}
+          words={{
+            addChild: t('projects.pages.addPanel'),
+            first: t('projects.common.alreadyFirst'),
+            last: t('projects.common.alreadyLast'),
+          }}
           onDelete={() =>
             void confirmDelete(
               {

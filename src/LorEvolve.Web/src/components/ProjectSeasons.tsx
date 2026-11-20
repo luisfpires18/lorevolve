@@ -72,6 +72,7 @@ export function ProjectSeasons({
           eyebrow={say.title()}
           title={say.add()}
           initial={null}
+          busy={busy}
           words={{
             save: say.add(),
             saving: t('projects.seasons.saving'),

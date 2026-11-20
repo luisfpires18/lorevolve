@@ -32,6 +32,8 @@ interface NameSummaryDrawerProps {
   words: NameSummaryWords | NameSummaryText
   /** The name may be left empty, as a comic page's may. */
   nameOptional?: boolean
+  /** The list is busy elsewhere, as with a move in flight: saving waits. */
+  busy?: boolean
   onClose: () => void
   /** A rejection keeps the drawer open with its message. */
   onSave: (input: { name: string; summary: string | null }) => Promise<unknown>
@@ -58,6 +60,7 @@ export function NameSummaryDrawer({
   initial,
   words,
   nameOptional = false,
+  busy = false,
   onClose,
   onSave,
 }: NameSummaryDrawerProps) {
@@ -69,6 +72,7 @@ export function NameSummaryDrawer({
   const text = typeof words === 'string' ? textOf(words) : words
 
   function save() {
+    if (busy || saving) return
     setSaving(true)
     setError(null)
     onSave({ name: name.trim(), summary: summary.trim() || null }).catch((failure: unknown) => {
@@ -93,7 +97,7 @@ export function NameSummaryDrawer({
           submitLabel={text.save}
           busy={saving}
           busyLabel={text.saving}
-          disabled={!nameOptional && name.trim() === ''}
+          disabled={busy || (!nameOptional && name.trim() === '')}
           submitTestId={`${testId}-save`}
           onCancel={close}
           cancelTestId={`${testId}-cancel`}

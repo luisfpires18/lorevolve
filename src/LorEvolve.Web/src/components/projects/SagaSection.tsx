@@ -61,7 +61,14 @@ export function SagaSection({
           }}
           onEdit={() => setEditing({ saga, phase: null, forPhase: false })}
           editTestId={`saga-edit-${saga.id}`}
-          words={{ addChild: t('projects.sagas.newPhase'), edit: t('projects.sagas.editSaga') }}
+          words={{
+            addChild: t('projects.sagas.newPhase'),
+            addChildLabel: t('projects.sagas.newPhaseNamed', { name: saga.name }),
+            edit: t('projects.sagas.editSaga'),
+            editLabel: t('projects.sagas.editSagaNamed', { name: saga.name }),
+            first: t('projects.common.alreadyFirst'),
+            last: t('projects.common.alreadyLast'),
+          }}
           onDelete={() =>
             confirmDelete(
               t('projects.sagas.deleteSagaTitle', { name: saga.name }),
@@ -105,7 +112,12 @@ export function SagaSection({
                   moveTestIds={{ up: `phase-${phase.id}-up`, down: `phase-${phase.id}-down` }}
                   onEdit={() => setEditing({ saga, phase, forPhase: true })}
                   editTestId={`phase-edit-${phase.id}`}
-                  words={{ edit: t('projects.sagas.editPhase') }}
+                  words={{
+                    edit: t('projects.sagas.editPhase'),
+                    editLabel: t('projects.sagas.editPhaseNamed', { name: phase.name }),
+                    first: t('projects.common.alreadyFirst'),
+                    last: t('projects.common.alreadyLast'),
+                  }}
                   onDelete={() =>
                     confirmDelete(
                       t('projects.sagas.deletePhaseTitle', { name: phase.name }),
@@ -150,6 +162,10 @@ export function SagaSection({
                           moveTestIds={{
                             up: `member-${member.projectId}-up`,
                             down: `member-${member.projectId}-down`,
+                          }}
+                          words={{
+                            first: t('projects.common.alreadyFirst'),
+                            last: t('projects.common.alreadyLast'),
                           }}
                           menuItems={
                             <ActionMenuItem

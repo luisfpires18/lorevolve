@@ -94,7 +94,13 @@ export function SeasonItem({
           }}
           onEdit={() => setRenaming(season.id)}
           editTestId={`project-season-rename-${season.id}`}
-          words={{ addChild: say.addEpisode(), edit: t('projects.seasons.rename') }}
+          words={{
+            addChild: say.addEpisode(),
+            edit: t('projects.seasons.rename'),
+            editLabel: t('projects.seasons.renameNamed', { name: season.name }),
+            first: t('projects.common.alreadyFirst'),
+            last: t('projects.common.alreadyLast'),
+          }}
           onDelete={() => void remove()}
           deleteLabel={say.delete()}
           deleteDisabled={busy}
@@ -125,6 +131,7 @@ export function SeasonItem({
           eyebrow={say.title()}
           title={t('projects.seasons.rename')}
           initial={{ name: season.name, summary: season.summary }}
+          busy={busy}
           words={{
             save: t('projects.seasons.renameSave'),
             name: t('projects.seasons.name'),

@@ -12,6 +12,7 @@ const projectsSeasons: Dictionary['projects']['seasons'] = {
   summary: 'Descrição',
   saving: 'A adicionar…',
   rename: 'Mudar o nome',
+  renameNamed: 'Mudar o nome de {name}',
   renameSave: 'Guardar',
   delete: 'Eliminar temporada',
   noEpisodes: 'Ainda não há episódios.',

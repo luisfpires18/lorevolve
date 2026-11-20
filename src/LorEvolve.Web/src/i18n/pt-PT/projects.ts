@@ -35,6 +35,8 @@ const projects = {
   common: {
     loading: 'A ler',
     more: 'Mais ações para {name}',
+    alreadyFirst: 'Já é o primeiro',
+    alreadyLast: 'Já é o último',
     addPicture: 'Adicionar imagem',
     changePicture: 'Mudar imagem',
   },
