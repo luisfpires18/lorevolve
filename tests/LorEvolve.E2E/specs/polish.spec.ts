@@ -163,7 +163,7 @@ test.describe('product-wide polish', () => {
     const { asked } = await dialogs(page)
 
     await page.goto(`/app/universes/${universeId}/settings`)
-    const nameField = page.getByLabel('Name', { exact: true }).first()
+    const nameField = page.getByLabel('Name (required)', { exact: true }).first()
     await expect(nameField).toHaveValue(name)
     await expect(nameField).not.toBeFocused()
 

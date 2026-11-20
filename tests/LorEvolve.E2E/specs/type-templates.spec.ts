@@ -90,7 +90,7 @@ test.describe('Types: Templates', () => {
 
     await add.click()
     await page.getByTestId('project-field-new-name').fill('Tier')
-    await page.getByTestId('project-field-new-kind').selectOption({ label: 'One choice' })
+    await page.getByTestId('project-field-new-kind').selectOption({ label: 'Choose one' })
     await page.getByTestId('project-field-new-options').fill('Low\nHigh')
     await page.getByTestId('project-field-new-save').click()
     await expect(row.getByText('Tier')).toBeVisible()
