@@ -16,7 +16,7 @@ namespace LorEvolve.Api.Tests;
 /// Phase 4 of issue 59 (ADR 0062): an AI asks for a picture; the person hands the file over on the review page, where it is
 /// checked by the upload gate and held in quarantine - previewed only there, counted nowhere, attached to nothing - until
 /// approval attaches it through the upload's own commit. A rejected, replaced or abandoned picture leaves nothing behind once
-/// the sweep runs; a picture never replaces an entry's existing one.
+/// the sweep runs; an approved profile picture replaces the entry's current one.
 /// </summary>
 public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixture<LorEvolveApiFactory>
 {
@@ -105,7 +105,7 @@ public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixt
     }
 
     [Fact]
-    public async Task A_profile_picture_is_added_only_to_an_entry_without_one_and_recorded_in_its_history()
+    public async Task A_profile_picture_is_added_or_replaces_the_current_one_and_is_recorded_in_its_history()
     {
         var (owner, ownerId, u, bilbo, _) = await World("mediaprofile");
         var proposalId = await Staged(_factory, u, ownerId, Picture("face", bilbo));
@@ -117,9 +117,21 @@ public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.NotNull(entry.Image);
         await WithDb(_factory, async db => Assert.True(await db.EntityRevisions.AnyAsync(revision => revision.EntityId == bilbo && revision.ActorUserId == ownerId)));
 
-        // Now it has one: an AI change never replaces it.
-        var again = await Stage(_factory, u, ownerId, Picture("again", bilbo));
-        Assert.Equal(AiChangeCodes.Unsupported, Assert.Single(again.Issues).Code);
+        // Now it has one: an approved picture replaces it (#445), and the old one's objects are swept after the commit.
+        var first = await Profile(bilbo);
+        var againId = await Staged(_factory, u, ownerId, Picture("again", bilbo));
+        var againOperation = Assert.Single((await Read(owner, u, againId)).Operations);
+        Assert.Equal(AiChangeCodes.AwaitingUpload, Assert.Single(againOperation.Issues).Code);
+        await CollaborationTestClient.Ok(owner.PutAsync(Media(u, againId, againOperation.Id), CollaborationTestClient.PngForm()));
+        await ApproveAll(owner, u, againId);
+
+        var second = await Profile(bilbo);
+        Assert.NotEqual(first.AssetId, second.AssetId);
+        Assert.False(_factory.Media.Contains(first.OriginalKey));
+        Assert.False(_factory.Media.Contains(first.ThumbnailKey));
+        Assert.True(_factory.Media.Contains(second.OriginalKey));
+
+        // A picture change is still create only.
         Assert.Equal(AiChangeCodes.Unsupported, Assert.Single((await Stage(_factory, u, ownerId, new AiChangeOperationInput("edit", "update", "image", bilbo, Image: new AiImageInput(bilbo)))).Issues).Code);
     }
 
@@ -186,6 +198,13 @@ public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixt
         AiChangeMedia? media = null;
         await WithDb(_factory, async db => media = await db.AiChangeMedia.AsNoTracking().SingleAsync(row => row.OperationId == operation));
         return media!;
+    }
+
+    private async Task<EntityImage> Profile(Guid entry)
+    {
+        EntityImage? image = null;
+        await WithDb(_factory, async db => image = await db.EntityImages.AsNoTracking().SingleAsync(row => row.EntityId == entry));
+        return image!;
     }
 
     private static async Task<ProgressionResponse> Progression(HttpClient client, Guid u, Guid entry) =>

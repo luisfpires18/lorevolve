@@ -51,7 +51,7 @@ public sealed class LorEvolveMcpEntryImageTools(
     [McpServerTool(Name = ProposeImageTool, Title = "Propose a picture for an entry", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
     [McpMeta("openai/fileParams", JsonValue = """["image_file"]""")]
     [Description("Send a picture for one entry - a lore entry, or a project's entry such as a game's unit - for the person to review in LorEvolve. "
-        + "Only when the person asked for it. It becomes the entry's profile picture when it has none, or one more picture in an appearance "
+        + "Only when the person asked for it. It becomes the entry's profile picture, replacing the current one once approved, or one more picture in an appearance "
         + "(appearance ids from get_change_options with loreId). Send the file as image_file, or as image_base64 if you can read its bytes. "
         + "PNG, JPEG or WebP, up to 8 MB. LorEvolve names the file after the entry, such as wolf.png. Nothing changes until the person approves it.")]
     public async Task<CallToolResult> ProposeEntryImageAsync(

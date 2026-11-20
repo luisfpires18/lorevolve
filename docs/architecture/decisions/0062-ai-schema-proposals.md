@@ -134,7 +134,7 @@ file and sweeps the old objects.
 
 **Approval attaches through the upload's own commit.** Room is held before the approval's transaction
 (`AccountStorage.ReserveAsync`, as every upload holds it before its commit, ADR 0042) and consumed inside it by
-`AppearanceImageEndpoints.AttachAsync` or `EntityImageEndpoints.AttachFirstAsync` - the routes' own in-transaction steps,
+`AppearanceImageEndpoints.AttachAsync` or `EntityImageEndpoints.AttachStagedAsync` (was `AttachFirstAsync`; it replaces since #445) - the routes' own in-transaction steps,
 extracted: the target still live, the gallery not full, the entry still without a picture, the history recorded - and the
 quarantine row goes in the same commit, so the picture's row owns the objects from then on. Out of room, or the target gone,
 refuses the approval whole and the picture stays in quarantine. Every hold is given back afterwards.
@@ -171,6 +171,15 @@ review upload's own step (`AiChangeMediaEndpoints.HoldAsync`): the same decoders
 - **A refused hold keeps the proposal.** Out of room or storage down: the change stays `awaiting_upload` and the tool says
   to upload on the review page.
 - The proposal tools' gate covers it: a connection that may not propose never sees it.
+
+## Amendment, 2026-11-20: an approved picture replaces the profile picture (#445)
+
+The owner asked for an AI picture to replace an entry's current one. Phase 4's "only when it has none" is lifted: staging no
+longer refuses it, and `EntityImageEndpoints.AttachStagedAsync` (was `AttachFirstAsync`) replaces the row inside the
+approval's transaction, as a manual upload does. The person still sees and approves it first. The replaced picture's keys go
+on `DroppedFieldImageKeys`, and the sweep that already runs after every approval commit deletes only keys no `EntityImages`
+or `EntityFieldImages` row still names, so a rolled-back approval keeps the old picture whole. The hold still takes the new
+picture's full size, not only the growth.
 
 ## A friendly MCP address per universe
 
