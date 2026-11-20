@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom'
 import { deletePanel, movePanel, savePanel, type ProjectPage } from '../../projectEntities/pages'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
 import { Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { confirmAction } from '../../lib/confirm'
 
 /** A page's panels, each with what it shows, what is said, and its menu. */
@@ -93,11 +92,11 @@ export function PagePanels({
                   )
                 }
               />
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
+              <ActionMenuItem
+                icon={Trash}
+                tone="danger"
                 disabled={busy}
-                data-testid={`project-panel-delete-${panel.id}`}
+                testId={`project-panel-delete-${panel.id}`}
                 onClick={async () => {
                   const confirmed = await confirmAction({
                     title: t('projects.pages.deletePanelTitle', {
@@ -112,9 +111,8 @@ export function PagePanels({
                   }
                 }}
               >
-                <ActionIcon icon={Trash} />
                 {t('projects.pages.deletePanel')}
-              </button>
+              </ActionMenuItem>
             </ActionMenu>
           </div>
         </li>

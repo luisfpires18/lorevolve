@@ -1,17 +1,9 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import {
-  ArrowRightLeft,
-  BookOpen,
-  FilePenLine,
-  ListPlus,
-  PenLine,
-  Pencil,
-  Trash,
-} from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ArrowRightLeft, BookOpen, FilePenLine, ListPlus, PenLine, Pencil } from 'lucide-react'
+import { ActionMenuItem } from './ActionMenu'
+import { RowMenu } from './RowMenu'
 import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
 import { OutlineItem } from './OutlineItem'
@@ -144,21 +136,23 @@ export function SceneCard({
             {access.editContent ? t('stories.scene.write') : t('stories.scene.read')}
           </Button>
           {access.editContent || access.suggestChanges ? (
-            <ActionMenu
+            <RowMenu
               label={t('stories.scene.moreActions', { title: scene.title })}
               triggerTestId="scene-actions"
               panelClassName="actionmenu__panel--wide"
+              divided
+              onRemove={access.editContent ? () => onDelete(scene) : undefined}
+              removeLabel={t('stories.scene.delete')}
+              removeTestId="scene-delete"
             >
               {access.suggestChanges && !access.editContent ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
+                <ActionMenuItem
+                  icon={FilePenLine}
                   onClick={() => onSuggest(scene)}
-                  data-testid="scene-suggest"
+                  testId="scene-suggest"
                 >
-                  <ActionIcon icon={FilePenLine} />
                   {t('stories.scene.suggest')}
-                </button>
+                </ActionMenuItem>
               ) : null}
               {access.editContent ? (
                 <MoveItems
@@ -169,12 +163,11 @@ export function SceneCard({
                 />
               ) : null}
               {(access.editContent ? moveTargets : []).map((target) => (
-                <button
+                <ActionMenuItem
+                  icon={ArrowRightLeft}
                   key={target.chapterId ?? 'unchaptered'}
-                  className="actionmenu__item"
-                  type="button"
                   onClick={() => onMoveTo(scene, target.chapterId)}
-                  data-testid="scene-move-to-option"
+                  testId="scene-move-to-option"
                   data-target={
                     (target.arc ? `${target.arc}, ` : '') +
                     (target.chapter
@@ -182,7 +175,6 @@ export function SceneCard({
                       : unchaptered())
                   }
                 >
-                  <ActionIcon icon={ArrowRightLeft} />
                   <span className="actionmenu__text">
                     {tx('stories.scene.moveTo', {
                       target: (
@@ -193,34 +185,18 @@ export function SceneCard({
                       ),
                     })}
                   </span>
-                </button>
+                </ActionMenuItem>
               ))}
               {access.editContent ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
+                <ActionMenuItem
+                  icon={ListPlus}
                   onClick={() => onAddBeat(scene)}
-                  data-testid="scene-add-beat"
+                  testId="scene-add-beat"
                 >
-                  <ActionIcon icon={ListPlus} />
                   {t('stories.scene.addBeat')}
-                </button>
+                </ActionMenuItem>
               ) : null}
-              {access.editContent ? (
-                <>
-                  <hr className="actionmenu__divider" />
-                  <button
-                    className="actionmenu__item actionmenu__item--danger"
-                    type="button"
-                    onClick={() => onDelete(scene)}
-                    data-testid="scene-delete"
-                  >
-                    <ActionIcon icon={Trash} />
-                    {t('stories.scene.delete')}
-                  </button>
-                </>
-              ) : null}
-            </ActionMenu>
+            </RowMenu>
           ) : null}
         </>
       }

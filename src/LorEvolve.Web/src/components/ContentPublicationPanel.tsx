@@ -2,6 +2,7 @@ import { Globe, Lock, PenLine } from 'lucide-react'
 import type { ContentKind, ContentPublicationState } from '../publishing/types'
 import { t, useI18n } from '../i18n'
 import type { wordsOf } from '../publishing/contentPublicationWords'
+import { ActionMenuItem } from './ActionMenu'
 
 /** The publication menu's body: what the state means, Edit summary for a story, and Publish or Make private. */
 export function ContentPublicationPanel({
@@ -49,48 +50,37 @@ export function ContentPublicationPanel({
         ) : null}
       </div>
       {kind === 'story' ? (
-        <button
-          className="actionmenu__item"
-          type="button"
+        <ActionMenuItem
+          icon={PenLine}
           disabled={busy}
           onClick={() => setEditingSummary(true)}
-          data-testid="edit-story-public-summary"
+          testId="edit-story-public-summary"
         >
-          <PenLine
-            className="button__icon"
-            aria-hidden="true"
-            focusable="false"
-            strokeWidth={1.75}
-          />
           {state.publicSummary
             ? t('stories.publication.content.editSummary')
             : t('stories.publication.content.writeSummary')}
-        </button>
+        </ActionMenuItem>
       ) : null}
       {isSelected ? (
-        <button
-          className="actionmenu__item"
-          type="button"
+        <ActionMenuItem
+          icon={Lock}
           disabled={busy}
           aria-describedby={noteId}
           onClick={() => void change(false)}
-          data-testid={`unpublish-${kind}`}
+          testId={`unpublish-${kind}`}
         >
-          <Lock className="button__icon" aria-hidden="true" focusable="false" strokeWidth={1.75} />
           {t('stories.publication.content.makePrivate')}
-        </button>
+        </ActionMenuItem>
       ) : (
-        <button
-          className="actionmenu__item"
-          type="button"
+        <ActionMenuItem
+          icon={Globe}
           disabled={busy || missingSummary}
           aria-describedby={noteId}
           onClick={() => void change(true)}
-          data-testid={`publish-${kind}`}
+          testId={`publish-${kind}`}
         >
-          <Globe className="button__icon" aria-hidden="true" focusable="false" strokeWidth={1.75} />
           {words.publish}
-        </button>
+        </ActionMenuItem>
       )}
     </>
   )

@@ -1,6 +1,5 @@
-import { Pencil, Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { Trash2 } from 'lucide-react'
+import { RowMenu } from '../RowMenu'
 import { t, useI18n } from '../../i18n'
 import type { TimelineEntry } from '../../timeline/types'
 import type { Dispatch, SetStateAction } from 'react'
@@ -18,29 +17,17 @@ export function MomentMenu({
 }) {
   useI18n()
   return (
-    <ActionMenu
+    <RowMenu
       label={t('time.timeline.moreActions', { title: entry.title })}
       triggerTestId={`moment-actions-${entry.title}`}
-    >
-      <button
-        className="actionmenu__item"
-        type="button"
-        onClick={() => setForm({ mode: 'edit', entry })}
-        data-testid={`menu-edit-moment-${entry.title}`}
-      >
-        <ActionIcon icon={Pencil} />
-        {t('time.timeline.editMoment')}
-      </button>
-      <hr className="actionmenu__divider" />
-      <button
-        className="actionmenu__item actionmenu__item--danger"
-        type="button"
-        onClick={() => void remove(entry)}
-        data-testid={`delete-moment-${entry.title}`}
-      >
-        <ActionIcon icon={Trash2} />
-        {t('time.timeline.deleteMoment')}
-      </button>
-    </ActionMenu>
+      onEdit={() => setForm({ mode: 'edit', entry })}
+      editLabel={t('time.timeline.editMoment')}
+      editTestId={`menu-edit-moment-${entry.title}`}
+      divided
+      onRemove={() => void remove(entry)}
+      removeIcon={Trash2}
+      removeLabel={t('time.timeline.deleteMoment')}
+      removeTestId={`delete-moment-${entry.title}`}
+    />
   )
 }

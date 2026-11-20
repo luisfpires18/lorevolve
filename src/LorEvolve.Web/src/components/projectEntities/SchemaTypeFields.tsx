@@ -1,14 +1,13 @@
 import { addProjectField, deleteProjectField } from '../../projectEntities/api'
 import { confirmAction } from '../../lib/confirm'
 import type { ProjectEntityType } from '../../projectEntities/types'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { FieldForm } from '../FieldForm'
 import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { NewButton } from '../NewButton'
 import { Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 
 /** A type's open field list: the fields it hands down, its own, and the form to add one. */
 export function SchemaTypeFields({
@@ -79,11 +78,11 @@ export function SchemaTypeFields({
                         label={t('projects.common.more', { name: field.name })}
                         triggerTestId={`project-field-actions-${field.id}`}
                       >
-                        <button
-                          className="actionmenu__item actionmenu__item--danger"
-                          type="button"
+                        <ActionMenuItem
+                          icon={Trash}
+                          tone="danger"
                           disabled={busy}
-                          data-testid={`project-field-delete-${field.id}`}
+                          testId={`project-field-delete-${field.id}`}
                           onClick={async () => {
                             const confirmed = await confirmAction({
                               title: t('entityTypes.fields.deleteTitle', { name: field.name }),
@@ -99,9 +98,8 @@ export function SchemaTypeFields({
                               .catch(failing)
                           }}
                         >
-                          <ActionIcon icon={Trash} />
                           {t('projects.schema.deleteField')}
-                        </button>
+                        </ActionMenuItem>
                       </ActionMenu>
                     </div>
                   </li>

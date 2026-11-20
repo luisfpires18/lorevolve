@@ -1,10 +1,8 @@
 import { useUniverseAccess } from '../../universes/access'
 import { FilePenLine, FileText, Hourglass, ListTree, Pencil, Trash } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { useI18n } from '../../i18n'
 import { ViewChips } from '../ViewChips'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import type { StoryDetail } from '../../stories/types'
 import type { useStoryState } from '../../stories/useStoryState'
 import type { storyRemovals } from '../../stories/storyRemovals'
@@ -55,42 +53,32 @@ export function StoryBar({
         label={t('stories.page.storyActions', { title: story.title })}
         triggerTestId="story-actions"
       >
-        <Link className="actionmenu__item" to={timelinePath} data-testid="menu-story-timeline">
-          <ActionIcon icon={Hourglass} />
+        <ActionMenuItem icon={Hourglass} to={timelinePath} testId="menu-story-timeline">
           {t('stories.page.menuTimeline')}
-        </Link>
+        </ActionMenuItem>
         {access.suggestChanges && !access.editContent ? (
-          <button
-            className="actionmenu__item"
-            type="button"
+          <ActionMenuItem
+            icon={FilePenLine}
             onClick={() => setStoryForm('suggest')}
-            data-testid="suggest-story"
+            testId="suggest-story"
           >
-            <ActionIcon icon={FilePenLine} />
             {t('stories.page.suggest')}
-          </button>
+          </ActionMenuItem>
         ) : null}
         {access.editContent ? (
           <>
-            <button
-              className="actionmenu__item"
-              type="button"
-              onClick={() => setStoryForm('edit')}
-              data-testid="edit-story"
-            >
-              <ActionIcon icon={Pencil} />
+            <ActionMenuItem icon={Pencil} onClick={() => setStoryForm('edit')} testId="edit-story">
               {t('stories.page.editStory')}
-            </button>
+            </ActionMenuItem>
             <hr className="actionmenu__divider" />
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
+            <ActionMenuItem
+              icon={Trash}
+              tone="danger"
               onClick={() => void removeStory()}
-              data-testid="delete-story"
+              testId="delete-story"
             >
-              <ActionIcon icon={Trash} />
               {t('stories.page.deleteStory')}
-            </button>
+            </ActionMenuItem>
           </>
         ) : null}
       </ActionMenu>

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { listProjectTypes } from '../projectEntities/api'
 import type { ProjectEntitySummary, ProjectEntityType } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
 import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
 import type { CrumbItem } from './Crumb'
 import { PageHeader } from './PageHeader'
@@ -185,14 +185,13 @@ function TypeCards({
                 }
               >
                 {tree.ordered.map((node) => (
-                  <Link
+                  <ActionMenuItem
                     key={node.type.id}
-                    className="actionmenu__item"
                     to={`${pathname}?type=${node.type.id}&add=1`}
-                    data-testid={`project-entities-new-${node.type.id}`}
+                    testId={`project-entities-new-${node.type.id}`}
                   >
                     {tx('lore.page.newType', { type: <bdi>{node.type.name}</bdi> })}
-                  </Link>
+                  </ActionMenuItem>
                 ))}
               </ActionMenu>
             ) : null

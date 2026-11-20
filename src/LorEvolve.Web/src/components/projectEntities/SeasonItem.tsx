@@ -6,7 +6,7 @@ import {
   saveSeason,
   type ProjectSeason,
 } from '../../projectEntities/seasons'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
@@ -16,7 +16,6 @@ import { SeasonEpisodes } from './SeasonEpisodes'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
 import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { ProjectCard } from '../ProjectCard'
 import { confirmAction } from '../../lib/confirm'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
@@ -146,28 +145,25 @@ export function SeasonItem({
             }}
             onMove={(step) => run(() => moveSeason(projectId, season.id, { place: index + step }))}
           />
-          <button
-            className="actionmenu__item"
-            type="button"
-            data-testid={`project-season-rename-${season.id}`}
+          <ActionMenuItem
+            icon={Pencil}
+            testId={`project-season-rename-${season.id}`}
             onClick={() => {
               setRenaming(season.id)
               setRenameTo(season.name)
             }}
           >
-            <ActionIcon icon={Pencil} />
             {t('projects.seasons.rename')}
-          </button>
-          <button
-            className="actionmenu__item actionmenu__item--danger"
-            type="button"
+          </ActionMenuItem>
+          <ActionMenuItem
+            icon={Trash}
+            tone="danger"
             disabled={busy}
-            data-testid={`project-season-delete-${season.id}`}
+            testId={`project-season-delete-${season.id}`}
             onClick={() => void remove()}
           >
-            <ActionIcon icon={Trash} />
             {say.delete()}
-          </button>
+          </ActionMenuItem>
         </ActionMenu>
       }
     >

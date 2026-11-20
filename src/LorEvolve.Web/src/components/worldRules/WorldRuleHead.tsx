@@ -1,6 +1,5 @@
 import { Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { t, useI18n } from '../../i18n'
 import type { Stored } from '../../worldRules/ruleDraft'
 import { DocumentHead } from '../DocumentHead'
@@ -32,21 +31,15 @@ export function WorldRuleHead({
       titleTestId="world-rule-heading"
       actions={
         !isNew ? (
-          <ActionMenu
+          <RowMenu
             label={t('canon.editor.actions', { title: stored.title })}
             triggerTestId="world-rule-actions"
-          >
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              disabled={isSaving}
-              onClick={() => void remove()}
-              data-testid="world-rule-delete"
-            >
-              <ActionIcon icon={Trash2} />
-              {t('canon.editor.delete')}
-            </button>
-          </ActionMenu>
+            busy={isSaving}
+            onRemove={() => void remove()}
+            removeIcon={Trash2}
+            removeLabel={t('canon.editor.delete')}
+            removeTestId="world-rule-delete"
+          />
         ) : null
       }
       lede={

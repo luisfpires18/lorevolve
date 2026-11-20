@@ -13,7 +13,7 @@ import {
 } from '../lore/fieldFilters'
 import type { EntityType, FieldDefinition } from '../lore/typeDefinitions'
 import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { FieldFilterEditor, type EntryName } from './lore/FieldFilterEditor'
 import { buttonClass } from '../lib/buttonClass'
 import { QuietNote } from './QuietNote'
@@ -111,15 +111,13 @@ export function LoreFieldFilters({
             panelTestId="lore-field-filter-menu"
           >
             {fields.map((field) => (
-              <button
+              <ActionMenuItem
                 key={field.id}
-                className="actionmenu__item"
-                type="button"
                 onClick={() => setEditing(field)}
-                data-testid="lore-field-filter-option"
+                testId="lore-field-filter-option"
               >
                 <bdi>{field.name}</bdi>
-              </button>
+              </ActionMenuItem>
             ))}
           </ActionMenu>
         )}

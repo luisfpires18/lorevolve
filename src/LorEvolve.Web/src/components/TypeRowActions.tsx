@@ -1,6 +1,5 @@
 import { ListTree, Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
 import { DisclosureButton } from './DisclosureButton'
@@ -117,18 +116,17 @@ export function TypeRowActions({
       {addChild || move || onDelete ? (
         <ActionMenu label={t('entityTypes.page.moreActions', { name })} triggerTestId={menuTestId}>
           {addChild ? (
-            <button
-              className="actionmenu__item types__addchilditem"
-              type="button"
+            <ActionMenuItem
+              icon={ListTree}
+              className="types__addchilditem"
               onClick={addChild.onAdd}
               aria-label={
                 addChild.itemTestId ? t('entityTypes.page.addChildLabel', { name }) : undefined
               }
-              data-testid={addChild.itemTestId}
+              testId={addChild.itemTestId}
             >
-              <ActionIcon icon={ListTree} />
               {t('entityTypes.page.addChildType')}
-            </button>
+            </ActionMenuItem>
           ) : null}
           {/* The grip's plain alternative on a wide screen, where Up and Down are not set out on the row. */}
           {move ? (
@@ -142,16 +140,15 @@ export function TypeRowActions({
             />
           ) : null}
           {onDelete ? (
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
+            <ActionMenuItem
+              icon={Trash}
+              tone="danger"
               disabled={deleteDisabled}
               onClick={onDelete}
-              data-testid={deleteTestId}
+              testId={deleteTestId}
             >
-              <ActionIcon icon={Trash} />
               {deleteLabel ?? t('entityTypes.page.deleteType')}
-            </button>
+            </ActionMenuItem>
           ) : null}
         </ActionMenu>
       ) : null}

@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { t, useI18n } from '../../i18n'
 import { describeScene, type KnowledgeIssue, type KnowledgeRecord } from '../../knowledge/api'
 import type { Side } from '../../knowledge/recordDraft'
@@ -144,26 +142,16 @@ export function RecordList({
                 </p>
                 {canEdit ? (
                   <div className="knowledge__tools">
-                    <ActionMenu label={t('ai.knowledge.actions')} triggerTestId="knowledge-actions">
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => onEdit(record)}
-                        data-testid="knowledge-edit"
-                      >
-                        <ActionIcon icon={Pencil} />
-                        {t('ai.knowledge.edit')}
-                      </button>
-                      <button
-                        className="actionmenu__item actionmenu__item--danger"
-                        type="button"
-                        onClick={() => void onRemove(record)}
-                        data-testid="knowledge-delete"
-                      >
-                        <ActionIcon icon={Trash} />
-                        {t('ai.knowledge.remove.button')}
-                      </button>
-                    </ActionMenu>
+                    <RowMenu
+                      label={t('ai.knowledge.actions')}
+                      triggerTestId="knowledge-actions"
+                      onEdit={() => onEdit(record)}
+                      editLabel={t('ai.knowledge.edit')}
+                      editTestId="knowledge-edit"
+                      onRemove={() => void onRemove(record)}
+                      removeLabel={t('ai.knowledge.remove.button')}
+                      removeTestId="knowledge-delete"
+                    />
                   </div>
                 ) : null}
               </li>

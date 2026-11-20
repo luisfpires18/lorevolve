@@ -1,8 +1,7 @@
 import { useUniverseAccess } from '../../universes/access'
 import { Image as ImageIcon } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { ShelfCard } from '../ShelfCard'
 import { pictureUrl, storyCoverStore } from '../../covers/api'
@@ -57,15 +56,13 @@ export function StoryShelf({
                 label={t('stories.browse.moreActions', { title: story.title })}
                 triggerTestId="story-actions"
               >
-                <button
-                  className="actionmenu__item"
-                  type="button"
+                <ActionMenuItem
+                  icon={ImageIcon}
                   onClick={() => setCovering(story)}
-                  data-testid="story-cover"
+                  testId="story-cover"
                 >
-                  <ActionIcon icon={ImageIcon} />
                   {t(story.cover ? 'projects.common.changePicture' : 'projects.common.addPicture')}
-                </button>
+                </ActionMenuItem>
                 <MoveItems
                   first={index === 0}
                   last={index === stories.length - 1}

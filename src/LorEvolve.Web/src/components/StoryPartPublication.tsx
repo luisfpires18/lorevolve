@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { ChevronDown, Globe, Lock } from 'lucide-react'
-import { ActionMenu } from './ActionMenu'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { setStoryPartPublication } from '../publishing/api'
 import { Visibility, type StoryPartKind, type VisibilityValue } from '../publishing/types'
 import { t, useI18n } from '../i18n'
@@ -160,31 +160,15 @@ export function StoryPartPublication({
             </p>
           ))}
         </div>
-        <button
-          className="actionmenu__item"
-          type="button"
+        <ActionMenuItem
+          icon={isSelected ? Lock : Globe}
           disabled={busy}
           aria-describedby={noteId}
           onClick={() => void change(!isSelected)}
-          data-testid={isSelected ? `unpublish-${kind}` : `publish-${kind}`}
+          testId={isSelected ? `unpublish-${kind}` : `publish-${kind}`}
         >
-          {isSelected ? (
-            <Lock
-              className="button__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-          ) : (
-            <Globe
-              className="button__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-          )}
           {isSelected ? t('stories.publication.part.makePrivate') : words.verb}
-        </button>
+        </ActionMenuItem>
       </ActionMenu>
       {failed ? (
         <span className="contentpub__error" role="alert" data-testid={`${kind}-publication-error`}>

@@ -1,6 +1,6 @@
 import { Archive, Pencil, Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenuItem } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
@@ -63,29 +63,22 @@ export function TypeFieldRow({
           >
             {t('entityTypes.fields.edit')}
           </Button>
-          <ActionMenu
+          <RowMenu
             label={t('entityTypes.fields.moreActions', { name: field.name })}
             triggerTestId={`field-actions-${field.name}`}
+            onRemove={() => void remove(field)}
+            removeIcon={Trash2}
+            removeLabel={t('entityTypes.fields.deleteField')}
+            removeTestId={`delete-field-${field.name}`}
           >
-            <button
-              className="actionmenu__item"
-              type="button"
+            <ActionMenuItem
+              icon={Archive}
               onClick={() => void archive(field)}
-              data-testid={`archive-field-${field.name}`}
+              testId={`archive-field-${field.name}`}
             >
-              <ActionIcon icon={Archive} />
               {t('entityTypes.fields.archiveField')}
-            </button>
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              onClick={() => void remove(field)}
-              data-testid={`delete-field-${field.name}`}
-            >
-              <ActionIcon icon={Trash2} />
-              {t('entityTypes.fields.deleteField')}
-            </button>
-          </ActionMenu>
+            </ActionMenuItem>
+          </RowMenu>
         </span>
       ) : null}
       <FieldBlockedNote

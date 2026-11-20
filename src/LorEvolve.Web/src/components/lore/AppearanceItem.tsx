@@ -1,8 +1,6 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { MoveItems } from '../MoveItems'
 import { ImageViewer } from '../ImageViewer'
 import { appearanceImageUrl } from '../../progression/api'
@@ -67,20 +65,17 @@ export function AppearanceItem({
           <bdi>{appearance.label}</bdi>
         </h4>
         {access.editContent ? (
-          <ActionMenu
+          <RowMenu
             label={t('progression.appearanceList.actions', { name: appearance.label })}
             triggerTestId={`appearance-actions-${appearance.label}`}
+            busy={locked}
+            onEdit={onEdit}
+            editLabel={t('progression.appearanceList.edit')}
+            editTestId="edit-appearance"
+            onRemove={onRemove}
+            removeLabel={t('progression.appearanceList.remove')}
+            removeTestId="remove-appearance"
           >
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={locked}
-              onClick={onEdit}
-              data-testid="edit-appearance"
-            >
-              <ActionIcon icon={Pencil} />
-              {t('progression.appearanceList.edit')}
-            </button>
             <MoveItems
               first={!canMoveEarlier}
               last={!canMoveLater}
@@ -88,17 +83,7 @@ export function AppearanceItem({
               wording="earlier-later"
               onMove={onMove}
             />
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              disabled={locked}
-              onClick={onRemove}
-              data-testid="remove-appearance"
-            >
-              <ActionIcon icon={Trash} />
-              {t('progression.appearanceList.remove')}
-            </button>
-          </ActionMenu>
+          </RowMenu>
         ) : null}
       </div>
       {appearance.notes ? <p className="progitems__description prose">{appearance.notes}</p> : null}

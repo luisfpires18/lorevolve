@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { OutlineItem } from '../OutlineItem'
 import { t, useI18n } from '../../i18n'
@@ -18,7 +18,6 @@ import {
 import type { Dispatch, SetStateAction } from 'react'
 import { WORDS } from '../../projects/comicCollectionWords'
 import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 
 /** One collection: its head and menu, and the entries in it with the way to move them. */
 export function ComicCollectionItem({
@@ -75,28 +74,24 @@ export function ComicCollectionItem({
                 run(() => moveComicCollection(universeId, collection.id, index + step))
               }
             />
-            <button
-              className="actionmenu__item"
-              type="button"
-              data-testid={`comic-collection-entry-new-${collection.id}`}
+            <ActionMenuItem
+              icon={Plus}
+              testId={`comic-collection-entry-new-${collection.id}`}
               onClick={() => setAdding(collection)}
             >
-              <ActionIcon icon={Plus} />
               {t('projects.comics.addEntry')}
-            </button>
-            <button
-              className="actionmenu__item"
-              type="button"
-              data-testid={`comic-collection-edit-${collection.id}`}
+            </ActionMenuItem>
+            <ActionMenuItem
+              icon={Pencil}
+              testId={`comic-collection-edit-${collection.id}`}
               onClick={() => setEditing({ kind, collection })}
             >
-              <ActionIcon icon={Pencil} />
               {t('projects.comics.edit')}
-            </button>
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              data-testid={`comic-collection-delete-${collection.id}`}
+            </ActionMenuItem>
+            <ActionMenuItem
+              icon={Trash}
+              tone="danger"
+              testId={`comic-collection-delete-${collection.id}`}
               onClick={() =>
                 void confirmAction({
                   title: t('projects.comics.deleteTitle', {
@@ -109,9 +104,8 @@ export function ComicCollectionItem({
                 })
               }
             >
-              <ActionIcon icon={Trash} />
               {t('projects.comics.delete')}
-            </button>
+            </ActionMenuItem>
           </ActionMenu>
         ) : null
       }
@@ -173,18 +167,16 @@ export function ComicCollectionItem({
                           }
                         />
                       ) : null}
-                      <button
-                        className="actionmenu__item"
-                        type="button"
+                      <ActionMenuItem
+                        icon={FolderInput}
                         disabled={busy}
-                        data-testid={`comic-entry-remove-${id}`}
+                        testId={`comic-entry-remove-${id}`}
                         onClick={() =>
                           run(() => removeComicEntry(universeId, collection.id, entry.nodeId))
                         }
                       >
-                        <ActionIcon icon={FolderInput} />
                         {t('projects.comics.remove')}
-                      </button>
+                      </ActionMenuItem>
                     </ActionMenu>
                   ) : null
                 }

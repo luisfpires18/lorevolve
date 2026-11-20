@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
 import { DocumentHead } from '../DocumentHead'
@@ -35,16 +34,15 @@ export function BoardHead({
             label={t('ideas.board.moreActions', { title: stored.title })}
             triggerTestId="board-actions"
           >
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
+            <ActionMenuItem
+              icon={Trash2}
+              tone="danger"
               disabled={isSaving}
               onClick={() => void remove()}
-              data-testid="board-delete"
+              testId="board-delete"
             >
-              <ActionIcon icon={Trash2} />
               {t('ideas.board.deleteBoard')}
-            </button>
+            </ActionMenuItem>
           </ActionMenu>
         ) : null
       }

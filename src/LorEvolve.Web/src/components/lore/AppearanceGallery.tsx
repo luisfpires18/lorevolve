@@ -1,6 +1,6 @@
-import { ImagePlus, Trash } from 'lucide-react'
+import { ImagePlus } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { MoveItems } from '../MoveItems'
 import { IMAGE_ACCEPT } from '../../lib/imageCrop'
 import { appearanceDisplayUrl } from '../../progression/api'
@@ -72,9 +72,13 @@ export function AppearanceGallery({
                   />
                 </button>
                 {access.editContent ? (
-                  <ActionMenu
+                  <RowMenu
                     label={t('progression.appearanceList.pictureActions', { name })}
                     triggerTestId={`picture-actions-${index + 1}`}
+                    busy={locked}
+                    onRemove={() => void remove(image, index)}
+                    removeLabel={t('progression.appearanceList.deletePicture')}
+                    removeTestId="remove-picture"
                   >
                     <MoveItems
                       first={index === 0}
@@ -84,17 +88,7 @@ export function AppearanceGallery({
                       axis="horizontal"
                       onMove={(step) => void move(image, step)}
                     />
-                    <button
-                      className="actionmenu__item actionmenu__item--danger"
-                      type="button"
-                      disabled={locked}
-                      onClick={() => void remove(image, index)}
-                      data-testid="remove-picture"
-                    >
-                      <ActionIcon icon={Trash} />
-                      {t('progression.appearanceList.deletePicture')}
-                    </button>
-                  </ActionMenu>
+                  </RowMenu>
                 ) : null}
               </li>
             )
