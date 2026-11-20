@@ -1,9 +1,7 @@
 import { t, useI18n } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { LoreContext } from '../LoreContext'
 import { findMentions } from '../../lore/mentions'
 import { ReviewComments } from '../ReviewComments'
@@ -110,49 +108,42 @@ export function ManuscriptTools({
         triggerTestId="manuscript-scene-actions"
       >
         {access.editContent ? (
-          <button
-            className="actionmenu__item"
-            type="button"
+          <ActionMenuItem
+            icon={Pencil}
             onClick={() => onEditScene(scene)}
-            data-testid="manuscript-edit-scene"
+            testId="manuscript-edit-scene"
           >
-            <ActionIcon icon={Pencil} />
             {t('manuscript.editor.editScene')}
-          </button>
+          </ActionMenuItem>
         ) : null}
         {access.suggestChanges && !access.editContent ? (
-          <button
-            className="actionmenu__item"
-            type="button"
+          <ActionMenuItem
+            icon={FilePenLine}
             onClick={() => onSuggestScene(scene)}
-            data-testid="manuscript-suggest-scene"
+            testId="manuscript-suggest-scene"
           >
-            <ActionIcon icon={FilePenLine} />
             {t('manuscript.editor.suggest')}
-          </button>
+          </ActionMenuItem>
         ) : null}
         {access.editContent && scene.entities.some((entity) => !entity.isTrashed) ? (
-          <button
-            className="actionmenu__item"
-            type="button"
+          <ActionMenuItem
+            icon={AtSign}
             onClick={() => {
               setIsReading(false)
               setIsLinking(true)
             }}
-            data-testid="manuscript-link-names"
+            testId="manuscript-link-names"
           >
-            <ActionIcon icon={AtSign} />
             {t('manuscript.editor.linkNames')}
-          </button>
+          </ActionMenuItem>
         ) : null}
-        <Link
-          className="actionmenu__item"
+        <ActionMenuItem
+          icon={LocateFixed}
           to={`${storyProjectPath(universeId, storyId)}#scene-${scene.id}`}
-          data-testid="manuscript-show-scene"
+          testId="manuscript-show-scene"
         >
-          <ActionIcon icon={LocateFixed} />
           {t('manuscript.editor.showInScenes')}
-        </Link>
+        </ActionMenuItem>
       </ActionMenu>
     </div>
   )

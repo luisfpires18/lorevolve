@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenuItem } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { MoveItems } from '../MoveItems'
 import { OutlineItem } from '../OutlineItem'
 import {
@@ -15,8 +16,7 @@ import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { OutlineAddButtons } from './OutlineAddButtons'
 import { Button } from '../Button'
-import { FolderInput, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
+import { FolderInput } from 'lucide-react'
 
 type OutlineBranchProps = {
   parentId: string | null
@@ -66,9 +66,13 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                 >
                   {t('projects.structure.edit')}
                 </Button>
-                <ActionMenu
+                <RowMenu
                   label={t('projects.common.more', { name: nameOf(node) })}
                   triggerTestId={`project-node-actions-${node.id}`}
+                  busy={busy}
+                  onRemove={() => void remove(current, node)}
+                  removeLabel={t('projects.structure.delete')}
+                  removeTestId={`project-node-delete-${node.id}`}
                 >
                   <MoveItems
                     first={index === 0}
@@ -83,12 +87,11 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                     }
                   />
                   {moveTargets(current, node).map((target) => (
-                    <button
+                    <ActionMenuItem
+                      icon={FolderInput}
                       key={target?.id ?? 'root'}
-                      className="actionmenu__item"
-                      type="button"
                       disabled={busy}
-                      data-testid={`project-node-move-${node.id}-${target?.id ?? 'root'}`}
+                      testId={`project-node-move-${node.id}-${target?.id ?? 'root'}`}
                       onClick={() =>
                         // Moved to the end of its new list; the server clamps the place.
                         run(() =>
@@ -99,23 +102,12 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                         )
                       }
                     >
-                      <ActionIcon icon={FolderInput} />
                       {target
                         ? t('projects.structure.moveTo', { name: nameOf(target) })
                         : t('projects.structure.moveToTop')}
-                    </button>
+                    </ActionMenuItem>
                   ))}
-                  <button
-                    className="actionmenu__item actionmenu__item--danger"
-                    type="button"
-                    disabled={busy}
-                    data-testid={`project-node-delete-${node.id}`}
-                    onClick={() => void remove(current, node)}
-                  >
-                    <ActionIcon icon={Trash} />
-                    {t('projects.structure.delete')}
-                  </button>
-                </ActionMenu>
+                </RowMenu>
               </>
             }
           >

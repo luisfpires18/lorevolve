@@ -1,6 +1,16 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { Ellipsis } from 'lucide-react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
+import { Link, type LinkProps } from 'react-router-dom'
+import { Ellipsis, type LucideIcon } from 'lucide-react'
 import { iconButtonClass } from '../lib/buttonClass'
+import { ActionIcon } from './ActionIcon'
 
 interface ActionMenuProps {
   /** The trigger's accessible name. Say whose: "More actions for The door that should be shut". */
@@ -22,7 +32,7 @@ interface ActionMenuProps {
   panelTestId?: string
 
   /**
-   * The items: ordinary `<button>`s and `<Link>`s with `.actionmenu__item`, plus anything else the
+   * The items: `ActionMenuItem`s (a `<button>`, or a `<Link>` with a `to`), plus anything else the
    * menu needs (an `.actionmenu__context` block, an `.actionmenu__divider`). Pressing an item closes
    * the menu and hands the focus back to the trigger first, so an item that opens a drawer returns
    * focus to something that still exists. An item marked `data-keep-open` leaves it open - for one
@@ -171,5 +181,62 @@ export function ActionMenu({
         </div>
       ) : null}
     </div>
+  )
+}
+
+interface ItemLook {
+  /** Drawn first, through ActionIcon: decorative, the label names the action. Left out by a plain list of choices. */
+  icon?: LucideIcon
+  /** `danger` is the red of a delete or a remove. */
+  tone?: 'default' | 'danger'
+  /** Leaves the menu open when pressed, for an item that reports its own progress ("Signing out"). */
+  keepOpen?: boolean
+  testId?: string
+  /** Extra classes after the item's own, for the one place that adds a hook. */
+  className?: string
+  children: ReactNode
+}
+
+type ItemProps = ItemLook &
+  (
+    | ({ to: string } & Omit<LinkProps, 'className' | 'children' | 'to'>)
+    | ({ to?: undefined } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'>)
+  )
+
+/**
+ * One row of an `ActionMenu`: a `<button>`, or a `<Link>` when it has a `to`. The one place that
+ * writes `.actionmenu__item`, so every item draws its icon, colours and danger tone alike.
+ * Native props (`onClick`, `disabled`, `aria-*`) go straight to the element.
+ */
+export function ActionMenuItem({
+  icon,
+  tone = 'default',
+  keepOpen,
+  testId,
+  className,
+  children,
+  ...rest
+}: ItemProps) {
+  const classes = ['actionmenu__item', tone === 'danger' && 'actionmenu__item--danger', className]
+    .filter(Boolean)
+    .join(' ')
+  const content = (
+    <>
+      {icon ? <ActionIcon icon={icon} /> : null}
+      {children}
+    </>
+  )
+  const marks = { 'data-keep-open': keepOpen ? true : undefined, 'data-testid': testId }
+  if (rest.to !== undefined) {
+    return (
+      <Link className={classes} {...marks} {...rest}>
+        {content}
+      </Link>
+    )
+  }
+  return (
+    <button className={classes} type="button" {...marks} {...rest}>
+      {content}
+    </button>
   )
 }

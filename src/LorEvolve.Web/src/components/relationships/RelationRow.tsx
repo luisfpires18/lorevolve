@@ -5,10 +5,8 @@ import type { Chronology } from '../../chronology/types'
 import { periodText } from '../../relationships/periods'
 import { Validity, type RelationshipView } from '../../relationships/types'
 import { CanonBadge } from '../CanonBadge'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { EntityRow } from '../EntityRow'
-import { Pencil, Trash } from 'lucide-react'
 import type { useUniverseAccess } from '../../universes/access'
 
 export function RelationRow({
@@ -76,34 +74,21 @@ export function RelationRow({
       </EntityRow>
 
       {access.editContent ? (
-        <ActionMenu
+        <RowMenu
           className="relation__menu"
           label={t('relationships.section.moreActions', {
             label: view.label,
             related: view.relatedEntityName,
           })}
           triggerTestId={`relationship-actions-${view.relatedEntityName}`}
-        >
-          <button
-            className="actionmenu__item"
-            type="button"
-            onClick={() => openEdit(view)}
-            data-testid={`edit-relationship-${view.relatedEntityName}`}
-          >
-            <ActionIcon icon={Pencil} />
-            {t('relationships.section.edit')}
-          </button>
-          <hr className="actionmenu__divider" />
-          <button
-            className="actionmenu__item actionmenu__item--danger"
-            type="button"
-            onClick={() => void remove(view)}
-            data-testid={`delete-relationship-${view.relatedEntityName}`}
-          >
-            <ActionIcon icon={Trash} />
-            {t('relationships.section.remove')}
-          </button>
-        </ActionMenu>
+          onEdit={() => openEdit(view)}
+          editLabel={t('relationships.section.edit')}
+          editTestId={`edit-relationship-${view.relatedEntityName}`}
+          divided
+          onRemove={() => void remove(view)}
+          removeLabel={t('relationships.section.remove')}
+          removeTestId={`delete-relationship-${view.relatedEntityName}`}
+        />
       ) : null}
     </li>
   )

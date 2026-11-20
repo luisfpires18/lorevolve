@@ -1,5 +1,5 @@
 import { createPanel, deletePage, movePage, type ProjectPage } from '../../projectEntities/pages'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { t, tn, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
@@ -7,7 +7,6 @@ import { PagePanels } from './PagePanels'
 import { PanelForm } from './PanelForm'
 import { NewButton } from '../NewButton'
 import { Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { confirmAction } from '../../lib/confirm'
 
 /** One page in a chapter: its name, its menu, its panels, and the form to add a panel. */
@@ -68,11 +67,11 @@ export function PageRow({
               run(() => movePage(projectId, volumeId, chapterId, page.id, index + step))
             }
           />
-          <button
-            className="actionmenu__item actionmenu__item--danger"
-            type="button"
+          <ActionMenuItem
+            icon={Trash}
+            tone="danger"
             disabled={busy}
-            data-testid={`project-page-delete-${page.id}`}
+            testId={`project-page-delete-${page.id}`}
             onClick={async () => {
               const confirmed = await confirmAction({
                 title: t('projects.pages.deleteTitle', { name: page.name ?? String(index + 1) }),
@@ -83,9 +82,8 @@ export function PageRow({
               if (confirmed) run(() => deletePage(projectId, volumeId, chapterId, page.id))
             }}
           >
-            <ActionIcon icon={Trash} />
             {t('projects.pages.delete')}
-          </button>
+          </ActionMenuItem>
         </ActionMenu>
       </div>
       {/* Under the page's own row rather than beside it: the row is a line, its panels are a list. */}

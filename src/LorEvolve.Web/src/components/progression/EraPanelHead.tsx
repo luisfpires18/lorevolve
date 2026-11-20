@@ -1,6 +1,5 @@
-import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { Pencil } from 'lucide-react'
+import { RowMenu } from '../RowMenu'
 import { MoveItems } from '../MoveItems'
 import { useI18n } from '../../i18n'
 import type { EntityDetail } from '../../lore/types'
@@ -63,9 +62,14 @@ export function EraPanelHead({
           <Button tone="secondary" size="sm" icon={Pencil} onClick={onEdit} data-testid="edit-era">
             {t('progression.era.edit')}
           </Button>
-          <ActionMenu
+          <RowMenu
             label={t('progression.era.moreActions', { name: era.name })}
             triggerTestId="era-actions"
+            busy={busy}
+            divided
+            onRemove={onRemove}
+            removeLabel={t('progression.era.remove')}
+            removeTestId="remove-era"
           >
             <MoveItems
               first={isFirst}
@@ -76,18 +80,7 @@ export function EraPanelHead({
               testIds={{ up: 'era-earlier', down: 'era-later' }}
               onMove={onMove}
             />
-            <hr className="actionmenu__divider" />
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              disabled={busy}
-              onClick={onRemove}
-              data-testid="remove-era"
-            >
-              <ActionIcon icon={Trash} />
-              {t('progression.era.remove')}
-            </button>
-          </ActionMenu>
+          </RowMenu>
         </div>
       ) : null}
     </header>

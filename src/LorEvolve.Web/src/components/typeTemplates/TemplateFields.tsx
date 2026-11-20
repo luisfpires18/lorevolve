@@ -1,13 +1,12 @@
 import { addTemplateField, deleteTemplateField, saveTemplateField } from '../../typeTemplates/api'
 import type { TypeTemplate } from '../../typeTemplates/types'
 import type { ProjectField } from '../../projectEntities/types'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { FieldForm } from '../FieldForm'
 import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { t } from '../../i18n'
 import { NewButton } from '../NewButton'
 import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 import { confirmAction } from '../../lib/confirm'
 
 /** A template's open fields panel: each field with Edit and Delete, the field form, and Add field. */
@@ -53,20 +52,18 @@ export function TemplateFields({
                     label={t('projects.common.more', { name: field.name })}
                     triggerTestId={`template-field-actions-${field.id}`}
                   >
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      data-testid={`template-field-edit-${field.id}`}
+                    <ActionMenuItem
+                      icon={Pencil}
+                      testId={`template-field-edit-${field.id}`}
                       onClick={() => setFieldForm({ templateId: template.id, field })}
                     >
-                      <ActionIcon icon={Pencil} />
                       {t('entityTypes.page.templates.editField')}
-                    </button>
-                    <button
-                      className="actionmenu__item actionmenu__item--danger"
-                      type="button"
+                    </ActionMenuItem>
+                    <ActionMenuItem
+                      icon={Trash}
+                      tone="danger"
                       disabled={busy}
-                      data-testid={`template-field-delete-${field.id}`}
+                      testId={`template-field-delete-${field.id}`}
                       onClick={async () => {
                         const confirmed = await confirmAction({
                           title: t('entityTypes.fields.deleteTitle', { name: field.name }),
@@ -81,9 +78,8 @@ export function TemplateFields({
                           .catch(failing)
                       }}
                     >
-                      <ActionIcon icon={Trash} />
                       {t('projects.schema.deleteField')}
-                    </button>
+                    </ActionMenuItem>
                   </ActionMenu>
                 </div>
               ) : null}

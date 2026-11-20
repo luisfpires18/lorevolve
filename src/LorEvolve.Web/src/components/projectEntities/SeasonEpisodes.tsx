@@ -1,5 +1,5 @@
 import { deleteEpisode, moveEpisode, type ProjectSeason } from '../../projectEntities/seasons'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { ChapterPages } from '../ChapterPages'
 import { t, useI18n } from '../../i18n'
@@ -10,7 +10,6 @@ import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonW
 import { ScriptEditor } from './ScriptEditor'
 import { Button } from '../Button'
 import { FolderInput, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 
 /** A season's episodes, each with its menu, and with its pages or its script when opened. */
 export function SeasonEpisodes({
@@ -108,12 +107,11 @@ export function SeasonEpisodes({
               {seasons
                 .filter((other) => other.id !== season.id)
                 .map((other) => (
-                  <button
-                    className="actionmenu__item"
+                  <ActionMenuItem
+                    icon={FolderInput}
                     key={other.id}
-                    type="button"
                     disabled={busy}
-                    data-testid={`project-episode-to-${episode.id}-${other.id}`}
+                    testId={`project-episode-to-${episode.id}-${other.id}`}
                     onClick={() =>
                       run(() =>
                         moveEpisode(projectId, season.id, episode.id, {
@@ -123,20 +121,18 @@ export function SeasonEpisodes({
                       )
                     }
                   >
-                    <ActionIcon icon={FolderInput} />
                     {say.moveToSeason()} {other.name}
-                  </button>
+                  </ActionMenuItem>
                 ))}
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
+              <ActionMenuItem
+                icon={Trash}
+                tone="danger"
                 disabled={busy}
-                data-testid={`project-episode-delete-${episode.id}`}
+                testId={`project-episode-delete-${episode.id}`}
                 onClick={() => void remove(episode.id, episode.title)}
               >
-                <ActionIcon icon={Trash} />
                 {say.deleteEpisode()}
-              </button>
+              </ActionMenuItem>
             </ActionMenu>
           </div>
           {/* Only a comic has a level below the chapter (#147). */}

@@ -1,9 +1,9 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowRightLeft, Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ArrowRightLeft } from 'lucide-react'
+import { ActionMenuItem } from './ActionMenu'
+import { RowMenu } from './RowMenu'
 import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
 import { OutlineItem } from './OutlineItem'
@@ -100,21 +100,19 @@ export function ChapterSection({
             >
               {t('stories.chapter.addScene')}
             </NewButton>
-            <ActionMenu
+            <RowMenu
               label={t('stories.chapter.moreActions', {
                 label: chapterLabel(index, chapter.title),
               })}
               triggerTestId="chapter-actions"
+              onEdit={() => onEdit(chapter, index)}
+              editLabel={t('stories.chapter.edit')}
+              editTestId="chapter-edit"
+              divided
+              onRemove={() => onDelete(chapter, index)}
+              removeLabel={t('stories.chapter.delete')}
+              removeTestId="chapter-delete"
             >
-              <button
-                className="actionmenu__item"
-                type="button"
-                onClick={() => onEdit(chapter, index)}
-                data-testid="chapter-edit"
-              >
-                <ActionIcon icon={Pencil} />
-                {t('stories.chapter.edit')}
-              </button>
               <MoveItems
                 first={index === 0}
                 last={index === count - 1}
@@ -123,31 +121,19 @@ export function ChapterSection({
               />
               {onMoveToArc
                 ? arcTargets.map((target) => (
-                    <button
+                    <ActionMenuItem
+                      icon={ArrowRightLeft}
                       key={target.id ?? 'no-arc'}
-                      className="actionmenu__item"
-                      type="button"
                       onClick={() => onMoveToArc(chapter, target.id)}
-                      data-testid="chapter-move-to-arc"
+                      testId="chapter-move-to-arc"
                     >
-                      <ActionIcon icon={ArrowRightLeft} />
                       {target.id === null
                         ? t('stories.chapter.moveOutOfArc')
                         : t('stories.chapter.moveToArc', { label: target.label })}
-                    </button>
+                    </ActionMenuItem>
                   ))
                 : null}
-              <hr className="actionmenu__divider" />
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
-                onClick={() => onDelete(chapter, index)}
-                data-testid="chapter-delete"
-              >
-                <ActionIcon icon={Trash} />
-                {t('stories.chapter.delete')}
-              </button>
-            </ActionMenu>
+            </RowMenu>
           </>
         ) : null
       }

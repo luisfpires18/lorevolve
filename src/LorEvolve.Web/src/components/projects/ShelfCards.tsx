@@ -1,6 +1,5 @@
 import { Image as ImageIcon } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { ShelfCard, shelfStep, type ShelfFrame } from '../ShelfCard'
 import { pictureUrl, projectCoverStore } from '../../covers/api'
@@ -69,17 +68,15 @@ export function ShelfCards({
                 label={t('projects.common.more', { name: project.name })}
                 triggerTestId="shelf-actions"
               >
-                <button
-                  className="actionmenu__item"
-                  type="button"
+                <ActionMenuItem
+                  icon={ImageIcon}
                   onClick={() => setCovering(project)}
-                  data-testid="shelf-cover"
+                  testId="shelf-cover"
                 >
-                  <ActionIcon icon={ImageIcon} />
                   {t(
                     project.cover ? 'projects.common.changePicture' : 'projects.common.addPicture',
                   )}
-                </button>
+                </ActionMenuItem>
                 <MoveItems
                   first={neighbour(state.value, index, -1) < 0}
                   last={neighbour(state.value, index, 1) < 0}

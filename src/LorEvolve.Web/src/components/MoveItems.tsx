@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react'
 import { useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
+import { ActionMenuItem } from './ActionMenu'
 import { Button } from './Button'
 import { IconButton } from './IconButton'
 
@@ -128,17 +128,16 @@ export function MoveItems(props: MenuLook | ButtonLook) {
     <>
       {directions.map((direction) =>
         edge === 'hide' && atEnd(direction) ? null : (
-          <button
+          <ActionMenuItem
             key={direction}
-            className={['actionmenu__item', itemClassName].filter(Boolean).join(' ')}
-            type="button"
+            icon={icons[direction]}
+            className={itemClassName}
             disabled={busy || (edge === 'disable' && atEnd(direction)) || undefined}
             onClick={() => onMove(step(direction))}
-            data-testid={testIds?.[direction]}
+            testId={testIds?.[direction]}
           >
-            <ActionIcon icon={icons[direction]} />
             {t(WORDS[wording][direction].plain)}
-          </button>
+          </ActionMenuItem>
         ),
       )}
     </>

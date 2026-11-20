@@ -5,7 +5,7 @@ import {
   type ProjectEntitySummary,
   type ProjectField,
 } from '../../projectEntities/types'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { EntityCard } from '../EntityCard'
 import { CardGrid } from '../CardGrid'
 import { t, useI18n } from '../../i18n'
@@ -13,7 +13,6 @@ import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntr
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
 import { EntryPictures } from './EntryPictures'
 import { Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
 
 /** The entries as cards, each opening to its own form and pictures. */
 export function ProjectEntryList({
@@ -70,11 +69,11 @@ export function ProjectEntryList({
                 label={t('projects.common.more', { name: entry.name })}
                 triggerTestId={`project-entry-actions-${entry.id}`}
               >
-                <button
-                  className="actionmenu__item actionmenu__item--danger"
-                  type="button"
+                <ActionMenuItem
+                  icon={Trash}
+                  tone="danger"
                   disabled={busy}
-                  data-testid={`project-entry-delete-${entry.id}`}
+                  testId={`project-entry-delete-${entry.id}`}
                   onClick={async () => {
                     const confirmed = await confirmAction({
                       title: t('projects.entries.trash.title', { name: entry.name }),
@@ -89,9 +88,8 @@ export function ProjectEntryList({
                       .catch(failing)
                   }}
                 >
-                  <ActionIcon icon={Trash} />
                   {t('projects.entries.delete')}
-                </button>
+                </ActionMenuItem>
               </ActionMenu>
             }
           />

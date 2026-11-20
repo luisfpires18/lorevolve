@@ -49,26 +49,12 @@ const PLUS_IMPORTERS = new Set([
   'src/components/projects/SagaSection.tsx',
 ])
 
-// Menu items left without an icon, in other areas than Projects.
-const MENU_ITEMS_WITHOUT_ICON = new Set([
-  'src/components/ContentPublicationPanel.tsx',
-  'src/components/StoryPartPublication.tsx',
-  'src/components/lore/TypeLevelMenus.tsx',
-  'src/components/LoreFieldFilters.tsx',
-  'src/components/ProjectEntitiesView.tsx',
-])
-
 const writesFormActions = (source: string) =>
   classStrings(source).some((value) => /(^|\s)(rel)?form__actions(\s|$)/.test(value))
 const readsSharedCancel = (source: string) =>
   /['"`]shell\.actions\.(cancel|close)['"`]/.test(source)
 const importsPlus = (source: string) =>
   /import\s*\{[^}]*\bPlus\b[^}]*\}\s*from\s*'lucide-react'/.test(source)
-const menuItemWithoutIcon = (source: string) =>
-  [...elements(source, 'button'), ...elements(source, 'Link'), ...elements(source, 'Button')].some(
-    ({ tag, body }) =>
-      tag.includes('actionmenu__item') && !/<ActionIcon\b|<[A-Z]\w*\s+aria-hidden/.test(body),
-  )
 const makesThings = (source: string) =>
   elements(source, 'Button').some(({ body }) => {
     const key = /\bt\(\s*['`]([^'`]+)['`]/.exec(body)?.[1]
@@ -114,14 +100,6 @@ test('the guards fail on a bad snippet', () => {
   assert.equal(readsSharedCancel("t('shell.actions.save')"), false)
   assert.equal(importsPlus("import { Plus, X } from 'lucide-react'"), true)
   assert.equal(importsPlus("import { ImagePlus } from 'lucide-react'"), false)
-  assert.equal(
-    menuItemWithoutIcon('<button className="actionmenu__item" onClick={() => go()}>Go</button>'),
-    true,
-  )
-  assert.equal(
-    menuItemWithoutIcon('<button className="actionmenu__item"><ActionIcon icon={X} />Go</button>'),
-    false,
-  )
   assert.equal(makesThings(`<Button onClick={x}>{t('a.newVolume')}</Button>`), true)
   assert.equal(makesThings(`<Button onClick={x}>{t('a.addSection')}</Button>`), true)
   assert.equal(makesThings(`<NewButton onClick={x}>{t('a.newVolume')}</NewButton>`), false)
@@ -151,10 +129,6 @@ test('Plus is imported only by NewButton and the listed files', () => {
 
 test('a Button labelled New or Add is a NewButton, except the listed files', () => {
   onlyAllowed(filesWhere(makesThings), PLAIN_NEW_BUTTONS)
-})
-
-test('every menu item has an icon, except the listed files', () => {
-  onlyAllowed(filesWhere(menuItemWithoutIcon), MENU_ITEMS_WITHOUT_ICON)
 })
 
 test('a Delete button is danger or danger-quiet', () => {

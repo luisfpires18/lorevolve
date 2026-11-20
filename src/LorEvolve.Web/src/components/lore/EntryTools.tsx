@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom'
-import { Copy, FilePenLine, Network, Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { Copy, FilePenLine, Network, Pencil } from 'lucide-react'
+import { ActionMenuItem } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { PrivateNotes } from '../PrivateNotes'
 import { ContentPublication } from '../ContentPublication'
 import type { EntityDetail } from '../../lore/types'
@@ -92,39 +91,28 @@ export function EntryTools({
         />
       ) : null}
       {access.editContent || access.manageTrash ? (
-        <ActionMenu
+        <RowMenu
           label={t('entity.page.tools.moreActions', {
             name: detail?.name ?? t('entity.page.tools.moreActionsFallback'),
           })}
           triggerTestId="entity-actions"
+          divided
+          onRemove={access.manageTrash ? () => void moveToTrash() : undefined}
+          busy={isSaving}
+          removeLabel={t('entity.page.tools.moveToTrash')}
+          removeTestId="trash-entity"
         >
           {/* A new entry filled from this one, to change before it is created (Issue #27). */}
           {access.editContent ? (
-            <Link
-              className="actionmenu__item"
+            <ActionMenuItem
+              icon={Copy}
               to={`/app/universes/${universe.id}/lore/new?from=${entityId}`}
-              data-testid="duplicate-entity"
+              testId="duplicate-entity"
             >
-              <ActionIcon icon={Copy} />
               {t('entity.page.tools.duplicate')}
-            </Link>
+            </ActionMenuItem>
           ) : null}
-          {access.manageTrash ? (
-            <>
-              <hr className="actionmenu__divider" />
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
-                onClick={() => void moveToTrash()}
-                disabled={isSaving}
-                data-testid="trash-entity"
-              >
-                <ActionIcon icon={Trash} />
-                {t('entity.page.tools.moveToTrash')}
-              </button>
-            </>
-          ) : null}
-        </ActionMenu>
+        </RowMenu>
       ) : null}
     </div>
   )

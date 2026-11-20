@@ -1,7 +1,6 @@
 import { ImageUp, Pencil, Trash2 } from 'lucide-react'
 import { Crumb } from '../Crumb'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import type { Fraction } from '../MapCalibration'
 import { PageHeader } from '../PageHeader'
 import { mapsPath } from '../../maps/api'
@@ -58,34 +57,29 @@ export function MapHeader({
               triggerTestId="map-actions"
               panelTestId="map-actions-panel"
             >
-              <button
-                className="actionmenu__item"
-                type="button"
+              <ActionMenuItem
+                icon={Pencil}
                 onClick={() => setDialog('details')}
-                data-testid="map-edit-details"
+                testId="map-edit-details"
               >
-                <ActionIcon icon={Pencil} />
                 {t('places.mapPage.editDetails')}
-              </button>
-              <button
-                className="actionmenu__item"
-                type="button"
+              </ActionMenuItem>
+              <ActionMenuItem
+                icon={ImageUp}
                 onClick={() => setDialog('replace')}
-                data-testid="map-replace-image"
+                testId="map-replace-image"
               >
-                <ActionIcon icon={ImageUp} />
                 {t('places.mapPage.replacePicture')}
-              </button>
+              </ActionMenuItem>
               <hr className="actionmenu__divider" />
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
+              <ActionMenuItem
+                icon={Trash2}
+                tone="danger"
                 onClick={() => void removeMap(map)}
-                data-testid="map-delete"
+                testId="map-delete"
               >
-                <ActionIcon icon={Trash2} />
                 {t('places.mapPage.deleteMap')}
-              </button>
+              </ActionMenuItem>
             </ActionMenu>
           </>
         ) : undefined

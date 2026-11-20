@@ -1,9 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { RowMenu } from './RowMenu'
 import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
 import { OutlineItem } from './OutlineItem'
@@ -90,36 +88,24 @@ export function ArcSection({
               >
                 {t('stories.arc.addChapter')}
               </NewButton>
-              <ActionMenu
+              <RowMenu
                 label={t('stories.arc.moreActions', { label: arcLabel(index, arc.title) })}
                 triggerTestId="arc-actions"
+                onEdit={() => onEdit(arc, index)}
+                editLabel={t('stories.arc.edit')}
+                editTestId="arc-edit"
+                divided
+                onRemove={() => onDelete(arc, index)}
+                removeLabel={t('stories.arc.delete')}
+                removeTestId="arc-delete"
               >
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onEdit(arc, index)}
-                  data-testid="arc-edit"
-                >
-                  <ActionIcon icon={Pencil} />
-                  {t('stories.arc.edit')}
-                </button>
                 <MoveItems
                   first={index === 0}
                   last={index === count - 1}
                   testIds={{ up: 'arc-move-up', down: 'arc-move-down' }}
                   onMove={(step) => onMove(arc, step)}
                 />
-                <hr className="actionmenu__divider" />
-                <button
-                  className="actionmenu__item actionmenu__item--danger"
-                  type="button"
-                  onClick={() => onDelete(arc, index)}
-                  data-testid="arc-delete"
-                >
-                  <ActionIcon icon={Trash} />
-                  {t('stories.arc.delete')}
-                </button>
-              </ActionMenu>
+              </RowMenu>
             </>
           ) : null}
         </>

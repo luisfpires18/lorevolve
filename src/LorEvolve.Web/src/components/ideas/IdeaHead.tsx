@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { Quoted } from '../NameList'
 import type { Stored } from '../../ideas/ideaDraft'
 import { useI18n } from '../../i18n'
@@ -47,16 +46,15 @@ export function IdeaHead({
             label={t('ideas.editor.moreActions', { title: stored.title })}
             triggerTestId="idea-actions"
           >
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
+            <ActionMenuItem
+              icon={Trash2}
+              tone="danger"
               disabled={isSaving}
               onClick={() => void remove()}
-              data-testid="idea-delete"
+              testId="idea-delete"
             >
-              <ActionIcon icon={Trash2} />
               {t('ideas.editor.deleteIdea')}
-            </button>
+            </ActionMenuItem>
           </ActionMenu>
         ) : null
       }

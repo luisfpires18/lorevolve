@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
-import { ActionMenu } from '../ActionMenu'
+import { RowMenu } from '../RowMenu'
 import { MoveItems } from '../MoveItems'
 import { useI18n } from '../../i18n'
 import type { Ability, Appearance, Form } from '../../progression/types'
@@ -45,20 +43,17 @@ export function ItemRow({
           <bdi>{item.name}</bdi>
         </h4>
         {access.editContent ? (
-          <ActionMenu
+          <RowMenu
             label={t('progression.items.actions', { name: item.name })}
             triggerTestId={`${kind}-actions-${item.name}`}
+            busy={busy}
+            onEdit={() => onEdit(item)}
+            editLabel={words.edit}
+            editTestId={`edit-${kind}`}
+            onRemove={() => onRemove(item)}
+            removeLabel={words.remove}
+            removeTestId={`remove-${kind}`}
           >
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy}
-              onClick={() => onEdit(item)}
-              data-testid={`edit-${kind}`}
-            >
-              <ActionIcon icon={Pencil} />
-              {words.edit}
-            </button>
             <MoveItems
               first={index === 0}
               last={index === items.length - 1}
@@ -66,17 +61,7 @@ export function ItemRow({
               wording="earlier-later"
               onMove={(step) => onMove(item, step)}
             />
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              disabled={busy}
-              onClick={() => onRemove(item)}
-              data-testid={`remove-${kind}`}
-            >
-              <ActionIcon icon={Trash} />
-              {words.remove}
-            </button>
-          </ActionMenu>
+          </RowMenu>
         ) : null}
       </div>
       {item.description ? <p className="progitems__description prose">{item.description}</p> : null}
