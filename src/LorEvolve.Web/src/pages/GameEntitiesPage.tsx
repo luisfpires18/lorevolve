@@ -47,6 +47,7 @@ export default function GameEntitiesPage() {
       error={{ onRetry: retry, testId: 'game-project-failed' }}
     >
       {(project) =>
+        // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
         project === null ? (
           <EmptyState
             title={t('projects.gameEntities.notFound')}
