@@ -6,8 +6,7 @@ import { useUniverseAccess } from '../universes/access'
 import { getWorldRule } from '../worldRules/api'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import type { WorldRulesListNotice } from './WorldRulesPage'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { EmptyState } from '../components/EmptyState'
 import { DocumentHead } from '../components/DocumentHead'
@@ -92,27 +91,27 @@ function WorldRuleReading({
         title={state.kind === 'ready' ? <bdi>{state.value.title}</bdi> : t('canon.rule.heading')}
         titleTestId="world-rule-heading"
       />
-      {state.kind === 'loading' ? <LoadingNote>{t('canon.rule.opening')}</LoadingNote> : null}
-      {state.kind === 'missing' ? (
-        <EmptyState title={t('canon.rule.missing')} testId="world-rule-missing" />
-      ) : null}
-      {state.kind === 'error' ? (
-        <LoadError message={state.message} onRetry={retry} retryLabel={t('canon.rule.retry')} />
-      ) : null}
-      {state.kind === 'ready' ? (
-        <>
-          {state.value.description ? (
-            <p className="rule__reading prose" data-testid="world-rule-text">
-              {state.value.description}
+      <ReadGate
+        load={state}
+        loading={{ text: t('canon.rule.opening') }}
+        error={{ onRetry: retry, retryLabel: t('canon.rule.retry') }}
+        missing={<EmptyState title={t('canon.rule.missing')} testId="world-rule-missing" />}
+      >
+        {(rule) => (
+          <>
+            {rule.description ? (
+              <p className="rule__reading prose" data-testid="world-rule-text">
+                {rule.description}
+              </p>
+            ) : (
+              <p className="notice">{t('canon.rule.noDescription')}</p>
+            )}
+            <p className="rule__meta">
+              {tx('canon.rule.lastChanged', { date: <DateText value={rule.updatedAt} /> })}
             </p>
-          ) : (
-            <p className="notice">{t('canon.rule.noDescription')}</p>
-          )}
-          <p className="rule__meta">
-            {tx('canon.rule.lastChanged', { date: <DateText value={state.value.updatedAt} /> })}
-          </p>
-        </>
-      ) : null}
+          </>
+        )}
+      </ReadGate>
     </article>
   )
 }

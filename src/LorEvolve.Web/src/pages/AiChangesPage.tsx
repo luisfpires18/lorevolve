@@ -9,8 +9,7 @@ import { SegmentedControl } from '../components/SegmentedControl'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { ShowMore } from '../components/ShowMore'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { QuietNote } from '../components/QuietNote'
 import { errorText } from '../lib/errorText'
 import { useAsyncRead } from '../lib/useAsyncRead'
@@ -76,80 +75,92 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
         />
       </PageHeader>
 
-      {load.kind === 'loading' ? (
-        <LoadingNote>{t('review.aiChanges.loading')}</LoadingNote>
-      ) : load.kind !== 'ready' ? (
-        <LoadError
-          message={t('review.aiChanges.loadFailed')}
-          onRetry={retry}
-          retryLabel={t('review.aiChanges.retry')}
-        />
-      ) : load.value.items.length === 0 ? (
-        <EmptyState
-          testId="ai-changes-empty"
-          title={
-            state === 'open' ? t('review.aiChanges.emptyOpen') : t('review.aiChanges.emptyDecided')
-          }
-          hint={t('review.aiChanges.emptyHint')}
-        />
-      ) : (
-        <>
-          <ul className="aichanges__list">
-            {load.value.items.map((proposal) => (
-              <li className="aichanges__item" key={proposal.id} data-testid="ai-change-proposal">
-                <Link
-                  className="aichanges__link"
-                  to={reviewPath(proposal.universeId, proposal.id)}
-                  // The proposal's Back returns to this list, account-wide or the universe's.
-                  state={{ backTo: `${location.pathname}${location.search}` }}
-                >
-                  <span className="aichanges__summary" dir="auto">
-                    {proposal.summary ??
-                      tn('review.aiChanges.proposedChanges', proposal.operationCount, {
-                        n: proposal.operationCount,
-                      })}
-                  </span>
-                </Link>
-                <QuietNote className="aichanges__meta" wrap>
-                  {inUniverse ? null : (
-                    <>
-                      <bdi>{proposal.universeName}</bdi>
+      <ReadGate
+        load={load}
+        loading={{ text: t('review.aiChanges.loading') }}
+        error={{
+          message: t('review.aiChanges.loadFailed'),
+          onRetry: retry,
+          retryLabel: t('review.aiChanges.retry'),
+        }}
+      >
+        {(proposals) =>
+          proposals.items.length === 0 ? (
+            <EmptyState
+              testId="ai-changes-empty"
+              title={
+                state === 'open'
+                  ? t('review.aiChanges.emptyOpen')
+                  : t('review.aiChanges.emptyDecided')
+              }
+              hint={t('review.aiChanges.emptyHint')}
+            />
+          ) : (
+            <>
+              <ul className="aichanges__list">
+                {proposals.items.map((proposal) => (
+                  <li
+                    className="aichanges__item"
+                    key={proposal.id}
+                    data-testid="ai-change-proposal"
+                  >
+                    <Link
+                      className="aichanges__link"
+                      to={reviewPath(proposal.universeId, proposal.id)}
+                      // The proposal's Back returns to this list, account-wide or the universe's.
+                      state={{ backTo: `${location.pathname}${location.search}` }}
+                    >
+                      <span className="aichanges__summary" dir="auto">
+                        {proposal.summary ??
+                          tn('review.aiChanges.proposedChanges', proposal.operationCount, {
+                            n: proposal.operationCount,
+                          })}
+                      </span>
+                    </Link>
+                    <QuietNote className="aichanges__meta" wrap>
+                      {inUniverse ? null : (
+                        <>
+                          <bdi>{proposal.universeName}</bdi>
+                          {' · '}
+                        </>
+                      )}
+                      <span data-testid="ai-change-source">{sourceWords(proposal)}</span>
                       {' · '}
-                    </>
-                  )}
-                  <span data-testid="ai-change-source">{sourceWords(proposal)}</span>
-                  {' · '}
-                  {proposal.proposedByMe
-                    ? t('review.aiChanges.askedByYou')
-                    : tx('review.aiChanges.askedBy', {
-                        name: (
-                          <bdi>{proposal.proposedByName ?? t('review.aiChanges.askedByGone')}</bdi>
-                        ),
-                      })}
-                  {' · '}
-                  <DateText value={proposal.createdAt} withTime />
-                </QuietNote>
-                <QuietNote className="aichanges__meta" wrap>
-                  <span className="aichanges__status" data-status={proposal.status}>
-                    {STATUS_WORDS[proposal.status]}
-                  </span>
-                  {' · '}
-                  {countWords(proposal)}
-                  {proposal.status === ProposalStatus.Open && proposal.committedCount > 0
-                    ? ` · ${tn('review.aiChanges.alreadyApplied', proposal.committedCount, { n: proposal.committedCount })}`
-                    : null}
-                </QuietNote>
-              </li>
-            ))}
-          </ul>
-          <ShowMore
-            align="start"
-            hasMore={load.value.hasMore}
-            status={more ? 'loading' : 'idle'}
-            onMore={() => void readMore()}
-          />
-        </>
-      )}
+                      {proposal.proposedByMe
+                        ? t('review.aiChanges.askedByYou')
+                        : tx('review.aiChanges.askedBy', {
+                            name: (
+                              <bdi>
+                                {proposal.proposedByName ?? t('review.aiChanges.askedByGone')}
+                              </bdi>
+                            ),
+                          })}
+                      {' · '}
+                      <DateText value={proposal.createdAt} withTime />
+                    </QuietNote>
+                    <QuietNote className="aichanges__meta" wrap>
+                      <span className="aichanges__status" data-status={proposal.status}>
+                        {STATUS_WORDS[proposal.status]}
+                      </span>
+                      {' · '}
+                      {countWords(proposal)}
+                      {proposal.status === ProposalStatus.Open && proposal.committedCount > 0
+                        ? ` · ${tn('review.aiChanges.alreadyApplied', proposal.committedCount, { n: proposal.committedCount })}`
+                        : null}
+                    </QuietNote>
+                  </li>
+                ))}
+              </ul>
+              <ShowMore
+                align="start"
+                hasMore={proposals.hasMore}
+                status={more ? 'loading' : 'idle'}
+                onMore={() => void readMore()}
+              />
+            </>
+          )
+        }
+      </ReadGate>
     </section>
   )
 }

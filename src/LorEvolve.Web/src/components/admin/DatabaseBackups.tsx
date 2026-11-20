@@ -3,9 +3,8 @@ import { getDatabaseBackups, runDatabaseBackup } from '../../admin/api'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { BackupFacts } from './BackupFacts'
-import { LoadError } from '../LoadError'
 import { Button } from '../Button'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 import { errorText } from '../../lib/errorText'
 import { Section } from '../Section'
 import { FormMessage } from '../FormMessage'
@@ -46,19 +45,27 @@ export function DatabaseBackups() {
       testId="admin-backups"
       rule={false}
     >
-      {state.kind === 'loading' ? <LoadingNote>{t('admin.backups.reading')}</LoadingNote> : null}
-      {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
-      {state.kind === 'ready' ? <BackupFacts status={state.value} /> : null}
-      {state.kind === 'ready' && state.value.enabled && !state.value.problem ? (
-        <Button
-          tone="secondary"
-          onClick={() => void runNow()}
-          disabled={starting || running}
-          data-testid="admin-backup-run"
-        >
-          {running ? t('admin.backups.backingUp') : t('admin.backups.runNow')}
-        </Button>
-      ) : null}
+      <ReadGate
+        load={state}
+        loading={{ text: t('admin.backups.reading') }}
+        error={{ onRetry: retry }}
+      >
+        {(status) => (
+          <>
+            <BackupFacts status={status} />
+            {status.enabled && !status.problem ? (
+              <Button
+                tone="secondary"
+                onClick={() => void runNow()}
+                disabled={starting || running}
+                data-testid="admin-backup-run"
+              >
+                {running ? t('admin.backups.backingUp') : t('admin.backups.runNow')}
+              </Button>
+            ) : null}
+          </>
+        )}
+      </ReadGate>
       {message ? <FormMessage>{message}</FormMessage> : null}
     </Section>
   )

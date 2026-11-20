@@ -18,8 +18,7 @@ import { EraPanel } from './progression/EraPanel'
 import { EraList } from './progression/EraList'
 import { ProgressionItems } from './progression/ProgressionItems'
 import { ProgressionHistory } from './progression/ProgressionHistory'
-import { LoadError } from './LoadError'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { FormMessage } from './FormMessage'
 
 interface ProgressionViewProps {
@@ -72,18 +71,21 @@ export function ProgressionView({
     onChanged()
   }
 
-  if (failed) {
+  // A failed read wins over a progression already shown, as before.
+  if (failed || !progression) {
     return (
-      <LoadError
-        message={t('progression.view.readFailed')}
-        onRetry={() => void load()}
-        retryLabel={t('progression.view.retry')}
-      />
+      <ReadGate
+        load={
+          failed
+            ? { kind: 'error', message: t('progression.view.readFailed') }
+            : { kind: 'loading' }
+        }
+        loading={{ text: t('progression.view.reading') }}
+        error={{ onRetry: () => void load(), retryLabel: t('progression.view.retry') }}
+      >
+        {() => null}
+      </ReadGate>
     )
-  }
-
-  if (!progression) {
-    return <LoadingNote>{t('progression.view.reading')}</LoadingNote>
   }
 
   const selectedId = params.get('era')

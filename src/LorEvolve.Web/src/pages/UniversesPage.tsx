@@ -15,8 +15,7 @@ import { createUniverse, listUniverses } from '../universes/api'
 import { EmptyState } from '../components/EmptyState'
 import { Button } from '../components/Button'
 import { NewButton } from '../components/NewButton'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { useAsyncRead } from '../lib/useAsyncRead'
 
 export default function UniversesPage() {
@@ -74,7 +73,6 @@ export default function UniversesPage() {
     setPage(1)
   }
 
-  const result = state.kind === 'ready' ? state.value : null
   const isFiltered = search.trim().length > 0
   const isStarting = isFirstRun && !isDismissed && !isRestoring
 
@@ -162,49 +160,59 @@ export default function UniversesPage() {
         />
       </div>
 
-      {state.kind === 'loading' ? <LoadingNote>{t('universe.list.loading')}</LoadingNote> : null}
+      <ReadGate
+        load={state}
+        loading={{ text: t('universe.list.loading') }}
+        error={{ onRetry: retry, retryLabel: t('universe.list.retry') }}
+      >
+        {(result) => (
+          <>
+            {result.items.length > 0 ? (
+              <CardGrid gap={5} testId="universe-grid">
+                {result.items.map((universe) => (
+                  <li key={universe.id}>
+                    <UniverseCard universe={universe} />
+                  </li>
+                ))}
+              </CardGrid>
+            ) : null}
 
-      {state.kind === 'error' ? (
-        <LoadError message={state.message} onRetry={retry} retryLabel={t('universe.list.retry')} />
-      ) : null}
+            {result.items.length === 0 && !isStarting ? (
+              <EmptyState
+                testId="universe-empty"
+                title={
+                  <>
+                    {isFiltered
+                      ? t('universe.list.emptyFilteredTitle')
+                      : t('universe.list.emptyTitle')}
+                  </>
+                }
+                hint={
+                  <>
+                    {isFiltered
+                      ? t('universe.list.emptyFilteredHint')
+                      : t('universe.list.emptyHint')}
+                  </>
+                }
+                action={
+                  isFiltered ? undefined : (
+                    <NewButton
+                      onClick={() => {
+                        setRestoring(false)
+                        setIsCreating(true)
+                      }}
+                    >
+                      {t('universe.list.emptyNew')}
+                    </NewButton>
+                  )
+                }
+              />
+            ) : null}
 
-      {result && result.items.length > 0 ? (
-        <CardGrid gap={5} testId="universe-grid">
-          {result.items.map((universe) => (
-            <li key={universe.id}>
-              <UniverseCard universe={universe} />
-            </li>
-          ))}
-        </CardGrid>
-      ) : null}
-
-      {result && result.items.length === 0 && !isStarting ? (
-        <EmptyState
-          testId="universe-empty"
-          title={
-            <>
-              {isFiltered ? t('universe.list.emptyFilteredTitle') : t('universe.list.emptyTitle')}
-            </>
-          }
-          hint={
-            <>{isFiltered ? t('universe.list.emptyFilteredHint') : t('universe.list.emptyHint')}</>
-          }
-          action={
-            isFiltered ? undefined : (
-              <NewButton
-                onClick={() => {
-                  setRestoring(false)
-                  setIsCreating(true)
-                }}
-              >
-                {t('universe.list.emptyNew')}
-              </NewButton>
-            )
-          }
-        />
-      ) : null}
-
-      {result ? <Pager page={result.page} totalPages={result.totalPages} onPage={setPage} /> : null}
+            <Pager page={result.page} totalPages={result.totalPages} onPage={setPage} />
+          </>
+        )}
+      </ReadGate>
     </>
   )
 }

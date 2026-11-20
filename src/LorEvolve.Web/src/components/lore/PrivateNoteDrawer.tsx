@@ -16,8 +16,8 @@ import { Field } from '../Field'
 import type { PrivateNotesProps } from '../PrivateNotes'
 import { PrivateNoteConflict } from './PrivateNoteConflict'
 import { FormActions } from '../FormActions'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
+import type { Load } from '../../lib/useAsyncRead'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
 import { DateText } from '../DateText'
 import { FormMessage } from '../FormMessage'
@@ -25,8 +25,6 @@ import { FormMessage } from '../FormMessage'
 interface DrawerProps extends PrivateNotesProps {
   onClose: () => void
 }
-
-type LoadState = 'loading' | 'ready' | 'error'
 
 export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerProps) {
   const { t, tx } = useI18n()
@@ -37,7 +35,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
   const hintId = useId()
   const statusId = useId()
 
-  const [load, setLoad] = useState<LoadState>('loading')
+  const [load, setLoad] = useState<Load<null>>({ kind: 'loading' })
   const [reads, setReads] = useState(0)
   const [stored, setStored] = useState<PrivateNote>({
     entityId,
@@ -52,7 +50,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
   const [conflict, setConflict] = useState(false)
   const inFlight = useRef(false)
 
-  const isReady = load === 'ready'
+  const isReady = load.kind === 'ready'
   const isDirty = isReady && draft !== stored.content
   const isTooLong = draft.length > PRIVATE_NOTE_MAX_LENGTH
 
@@ -63,10 +61,10 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       .then((note) => {
         setStored(note)
         setDraft(note.content)
-        setLoad('ready')
+        setLoad({ kind: 'ready', value: null })
       })
       .catch(() => {
-        if (!controller.signal.aborted) setLoad('error')
+        if (!controller.signal.aborted) setLoad({ kind: 'error', message: '' })
       })
 
     return () => controller.abort()
@@ -75,7 +73,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
   function reread() {
     setConflict(false)
     setFailure(null)
-    setLoad('loading')
+    setLoad({ kind: 'loading' })
     setReads((current) => current + 1)
   }
 
@@ -143,85 +141,83 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
         <FormActions onCancel={close} dismiss="close" cancelTestId="private-note-close" />
       )}
     >
-      {load === 'loading' ? (
-        <LoadingNote testId="private-note-loading">{t('entity.privateNote.opening')}</LoadingNote>
-      ) : null}
-
-      {load === 'error' ? (
-        <LoadError
-          message={t('entity.privateNote.openFailed')}
-          onRetry={reread}
-          retryLabel={t('entity.privateNote.retry')}
-          testId="private-note-load-error"
-        />
-      ) : null}
-
-      {isReady ? (
-        <form
-          className="reviewform privatenote"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void save()
-          }}
-          ref={form}
-        >
-          {conflict ? (
-            <PrivateNoteConflict
-              universeId={universeId}
-              entityId={entityId}
-              keepMine={keepMine}
-              reread={reread}
-            />
-          ) : null}
-
-          {failure ? <FormMessage testId="private-note-error">{failure}</FormMessage> : null}
-
-          <Field
-            as="textarea"
-            label={t('entity.privateNote.field')}
-            id={textId}
-            ref={editor}
-            controlClassName="privatenote__text"
-            rows={12}
-            dir="auto"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={t('entity.privateNote.placeholder')}
-            spellCheck
-            aria-describedby={describedBy}
-            aria-keyshortcuts="Control+S Meta+S"
-            data-testid="private-note-text"
-            count={{
-              used: draft.length,
-              max: PRIVATE_NOTE_MAX_LENGTH,
-              show: 'over',
-              words: { tooLong: 'entity.privateNote.tooLong' },
-              testId: 'private-note-too-long',
+      <ReadGate
+        load={load}
+        loading={{ text: t('entity.privateNote.opening'), testId: 'private-note-loading' }}
+        error={{
+          message: t('entity.privateNote.openFailed'),
+          onRetry: reread,
+          retryLabel: t('entity.privateNote.retry'),
+          testId: 'private-note-load-error',
+        }}
+      >
+        {() => (
+          <form
+            className="reviewform privatenote"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void save()
             }}
-          />
+            ref={form}
+          >
+            {conflict ? (
+              <PrivateNoteConflict
+                universeId={universeId}
+                entityId={entityId}
+                keepMine={keepMine}
+                reread={reread}
+              />
+            ) : null}
 
-          <div className="privatenote__bar">
-            <SaveAction
-              label={t('entity.privateNote.save')}
-              isDirty={isDirty}
-              isSaving={isSaving}
-              isBlocked={isTooLong}
-              saves={saves}
-              restingStatus={
-                stored.updatedAt === null
-                  ? t('entity.privateNote.nothingSaved')
-                  : tx('entity.privateNote.savedAt', {
-                      when: <DateText value={stored.updatedAt} withTime />,
-                    })
-              }
-              statusId={statusId}
-              statusTestId="private-note-status"
-              testId="private-note-save"
-              keyShortcuts="Control+S Meta+S"
+            {failure ? <FormMessage testId="private-note-error">{failure}</FormMessage> : null}
+
+            <Field
+              as="textarea"
+              label={t('entity.privateNote.field')}
+              id={textId}
+              ref={editor}
+              controlClassName="privatenote__text"
+              rows={12}
+              dir="auto"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={t('entity.privateNote.placeholder')}
+              spellCheck
+              aria-describedby={describedBy}
+              aria-keyshortcuts="Control+S Meta+S"
+              data-testid="private-note-text"
+              count={{
+                used: draft.length,
+                max: PRIVATE_NOTE_MAX_LENGTH,
+                show: 'over',
+                words: { tooLong: 'entity.privateNote.tooLong' },
+                testId: 'private-note-too-long',
+              }}
             />
-          </div>
-        </form>
-      ) : null}
+
+            <div className="privatenote__bar">
+              <SaveAction
+                label={t('entity.privateNote.save')}
+                isDirty={isDirty}
+                isSaving={isSaving}
+                isBlocked={isTooLong}
+                saves={saves}
+                restingStatus={
+                  stored.updatedAt === null
+                    ? t('entity.privateNote.nothingSaved')
+                    : tx('entity.privateNote.savedAt', {
+                        when: <DateText value={stored.updatedAt} withTime />,
+                      })
+                }
+                statusId={statusId}
+                statusTestId="private-note-status"
+                testId="private-note-save"
+                keyShortcuts="Control+S Meta+S"
+              />
+            </div>
+          </form>
+        )}
+      </ReadGate>
     </Drawer>
   )
 }

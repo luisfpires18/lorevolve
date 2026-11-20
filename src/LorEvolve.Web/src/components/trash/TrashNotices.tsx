@@ -3,8 +3,7 @@ import { Link } from 'react-router-dom'
 import { CanonBlockNotice } from '../CanonBlockNotice'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useTrashState } from '../../trash/useTrashState'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 
 /** What stands above the list: a refused restore's findings, what a restore did, loading, and a failed read. */
 export function TrashNotices({
@@ -37,15 +36,14 @@ export function TrashNotices({
         </div>
       ) : null}
 
-      {state.kind === 'loading' ? <LoadingNote>{t('data.trash.loading')}</LoadingNote> : null}
-
-      {state.kind === 'error' ? (
-        <LoadError
-          message={state.message}
-          onRetry={() => load()}
-          retryLabel={t('data.trash.retry')}
-        />
-      ) : null}
+      {/* The list itself is drawn below the notices. */}
+      <ReadGate
+        load={state}
+        loading={{ text: t('data.trash.loading') }}
+        error={{ onRetry: () => load(), retryLabel: t('data.trash.retry') }}
+      >
+        {() => null}
+      </ReadGate>
     </>
   )
 }
