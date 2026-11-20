@@ -8,6 +8,7 @@ import { Field } from './Field'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
 import { FormActions } from './FormActions'
 import { SegmentedField } from './SegmentedField'
+import { FormMessage } from './FormMessage'
 
 /**
  * Report a bug or ask for a feature, from any signed-in page: a small button at the window's corner opens a dialog, and what
@@ -107,11 +108,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
         />
       )}
     >
-      {error ? (
-        <p className="form__message" role="alert" data-testid="feedback-error">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId="feedback-error">{error}</FormMessage> : null}
 
       <SegmentedField
         label={t('data.feedback.kindLabel')}

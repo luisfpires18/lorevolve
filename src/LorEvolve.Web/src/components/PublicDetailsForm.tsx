@@ -19,6 +19,7 @@ import { attributionOf, detailsOf, type Attribution } from '../publishing/public
 import { publicDetailsActions } from '../publishing/publicDetailsActions'
 import { PublicAttributionField } from './publishing/PublicAttributionField'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * The public details a universe is published with: its summary, its category and its genres. Its own form and
@@ -102,11 +103,7 @@ export function PublicDetailsForm({
       noValidate
       data-testid="public-details"
     >
-      {message ? (
-        <p className="form__message" role="alert">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage>{message}</FormMessage> : null}
 
       <Field
         label={t('universe.publicDetails.summary')}

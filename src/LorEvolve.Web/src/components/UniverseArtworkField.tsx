@@ -21,6 +21,7 @@ import type { TextKey } from '../i18n/core'
 import type { Dictionary } from '../i18n/en'
 import { QuietNote } from './QuietNote'
 import { confirmAction } from '../lib/confirm'
+import { FormMessage } from './FormMessage'
 
 type Framing =
   { kind: 'file'; file: File } | { kind: 'stored'; artwork: UniverseArtworkRef; source: string }
@@ -192,11 +193,7 @@ export function UniverseArtworkField({
 
       <p className="field__hint">{artwork && isPublic ? t(`${w}.hintPublic`) : t(`${w}.hint`)}</p>
 
-      {error ? (
-        <p className="form__message" role="alert" data-testid={`${testId}-error`}>
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId={`${testId}-error`}>{error}</FormMessage> : null}
 
       {framing && source ? (
         <ImageCropDialog

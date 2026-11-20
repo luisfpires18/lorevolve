@@ -6,6 +6,7 @@ import { RecoveredDraft } from '../RecoveredDraft'
 import { getSceneManuscript } from '../../stories/api'
 import type { SceneManuscript } from '../../stories/types'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
+import { FormMessage } from '../FormMessage'
 
 /** The recovery offer, the conflict with the latest saved prose, and a failed save. */
 export function ManuscriptNotices({
@@ -87,13 +88,9 @@ export function ManuscriptNotices({
       ) : null}
 
       {failure ? (
-        <p
-          className="form__message manuscript__failure"
-          role="alert"
-          data-testid="manuscript-error"
-        >
+        <FormMessage className="manuscript__failure" testId="manuscript-error">
           {failure}
-        </p>
+        </FormMessage>
       ) : null}
     </>
   )

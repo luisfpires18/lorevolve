@@ -3,6 +3,7 @@ import type { Fields, Stored } from '../../ideas/ideaDraft'
 import type { useIdeaDraft } from '../../ideas/useIdeaDraft'
 import { useI18n } from '../../i18n'
 import { ConflictBar } from '../ConflictBar'
+import { FormMessage } from '../FormMessage'
 
 /** An idea editor's notices: the recovery copy offered, the stale-save choice, and why a save failed. */
 export function IdeaNotices({
@@ -76,9 +77,9 @@ export function IdeaNotices({
       ) : null}
 
       {failure ? (
-        <p className="form__message idea__failure" role="alert" data-testid="idea-error">
+        <FormMessage className="idea__failure" testId="idea-error">
           {failure}
-        </p>
+        </FormMessage>
       ) : null}
     </>
   )

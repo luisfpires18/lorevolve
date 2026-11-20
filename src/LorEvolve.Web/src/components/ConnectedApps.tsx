@@ -17,6 +17,7 @@ import { Announce } from './Announce'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { DateText } from './DateText'
+import { FormMessage } from './FormMessage'
 
 const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
   get [ConnectedAppStatus.Active]() {
@@ -79,12 +80,12 @@ export function ConnectedApps() {
           {t('data.connectedApps.loading')}
         </p>
       ) : load.kind !== 'ready' ? (
-        <div className="form__message" role="alert" data-testid="connected-apps-error">
+        <FormMessage as="div" testId="connected-apps-error">
           <p>{t('data.connectedApps.loadFailed')}</p>
           <Button tone="secondary" size="sm" onClick={retry}>
             {t('data.connectedApps.retry')}
           </Button>
-        </div>
+        </FormMessage>
       ) : load.value.length === 0 ? (
         <QuietNote className="connectedapps__empty" size="ui" testId="connected-apps-empty">
           {t('data.connectedApps.empty')}
@@ -253,11 +254,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           {t('data.connectedApps.stopped')}
         </p>
       ) : null}
-      {error ? (
-        <p className="form__message connectedapps__error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage className="connectedapps__error">{error}</FormMessage> : null}
     </li>
   )
 }

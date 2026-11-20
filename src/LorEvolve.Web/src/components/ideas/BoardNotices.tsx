@@ -4,6 +4,7 @@ import type { useDraftedEditor } from '../../lib/useDraftedEditor'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
 import { ConflictBar } from '../ConflictBar'
+import { FormMessage } from '../FormMessage'
 
 /** A board editor's notices: the recovery copy offered, the stale-save choice, and why a save failed. */
 export function BoardNotices({
@@ -73,9 +74,9 @@ export function BoardNotices({
       ) : null}
 
       {failure ? (
-        <p className="form__message idea__failure" role="alert" data-testid="board-error">
+        <FormMessage className="idea__failure" testId="board-error">
           {failure}
-        </p>
+        </FormMessage>
       ) : null}
     </>
   )

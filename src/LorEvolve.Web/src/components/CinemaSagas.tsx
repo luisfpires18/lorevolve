@@ -20,6 +20,7 @@ import { NewButton } from './NewButton'
 import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
+import { FormMessage } from './FormMessage'
 
 /**
  * Cinema Sagas and Phases (#289): a universe's release order across its independent films and series. Every action
@@ -63,11 +64,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
         </NewButton>
       </div>
 
-      {failed ? (
-        <p className="form__message" role="alert">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage>{failed}</FormMessage> : null}
 
       {data.sagas.length === 0 ? (
         <EmptyState

@@ -21,6 +21,7 @@ import { t } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { Button } from './Button'
 import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
   dialogue: 4,
@@ -290,9 +291,7 @@ function PanelCard({
           </div>
         </>
       ) : status ? (
-        <p className="form__message" role="alert">
-          {status}
-        </p>
+        <FormMessage>{status}</FormMessage>
       ) : null}
     </article>
   )

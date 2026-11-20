@@ -14,6 +14,7 @@ import { StoryChapterSections, type StoryChapterSectionsProps } from './StoryCha
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
 import { SectionTitle } from '../Section'
+import { FormMessage } from '../FormMessage'
 
 /** The Scenes view: the toolbar, the story's scenes or chapters, and each arc with its chapters. */
 export function StoryScenes(
@@ -106,11 +107,7 @@ export function StoryScenes(
         </div>
       )}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="story-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="story-error">{message}</FormMessage> : null}
 
       {isEmpty ? (
         <EmptyState

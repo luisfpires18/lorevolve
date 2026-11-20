@@ -8,6 +8,7 @@ import { useProjectSchema } from '../projectEntities/useProjectSchema'
 import { SchemaHead } from './projectEntities/SchemaHead'
 import { SchemaTypeItem } from './projectEntities/SchemaTypeItem'
 import { Button } from './Button'
+import { FormMessage } from './FormMessage'
 
 /**
  * A project's own types, and the fields on them (#144).
@@ -141,11 +142,7 @@ export function ProjectSchema({
         />
       ) : null}
 
-      {failed ? (
-        <p className="form__message" role="alert" data-testid="project-schema-failed">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage testId="project-schema-failed">{failed}</FormMessage> : null}
 
       {offerStarters ? (
         <EmptyState

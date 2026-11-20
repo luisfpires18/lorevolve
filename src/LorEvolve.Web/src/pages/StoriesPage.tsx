@@ -22,6 +22,7 @@ import { LoadError } from '../components/LoadError'
 import { Announce } from '../components/Announce'
 import { LoadingNote } from '../components/LoadingNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { FormMessage } from '../components/FormMessage'
 
 /**
  * The stories told in this universe. A story is narrative an author writes with the lore - it draws
@@ -123,11 +124,7 @@ export default function StoriesPage() {
       ) : null}
 
       <Announce testId="stories-announcement">{announcement}</Announce>
-      {moveError ? (
-        <p className="form__message" role="alert" data-testid="stories-move-error">
-          {moveError}
-        </p>
-      ) : null}
+      {moveError ? <FormMessage testId="stories-move-error">{moveError}</FormMessage> : null}
 
       {state.kind === 'ready' && state.value.stories.length > 0 ? (
         <StoryShelf

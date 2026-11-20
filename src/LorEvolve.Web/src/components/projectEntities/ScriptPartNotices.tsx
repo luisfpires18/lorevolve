@@ -1,5 +1,6 @@
 import { t } from '../../i18n'
 import { ConflictBar } from '../ConflictBar'
+import { FormMessage } from '../FormMessage'
 
 export function ScriptPartNotices({
   changed,
@@ -20,11 +21,7 @@ export function ScriptPartNotices({
           testId="project-script"
         />
       ) : null}
-      {failure ? (
-        <p className="form__message" role="alert" data-testid="project-script-save-failed">
-          {failure}
-        </p>
-      ) : null}
+      {failure ? <FormMessage testId="project-script-save-failed">{failure}</FormMessage> : null}
     </>
   )
 }

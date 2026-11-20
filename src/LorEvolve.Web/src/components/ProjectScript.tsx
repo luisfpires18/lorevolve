@@ -10,6 +10,7 @@ import { projectPath } from '../projects/sections'
 import { scriptParts } from '../projectEntities/scriptParts'
 import { ScriptPart } from './projectEntities/ScriptPart'
 import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 /**
  * A Series', Film's or Comic's Script view (#377): every node of its structure listed beside the text it holds, in the
@@ -57,9 +58,7 @@ export function ProjectScript({
 
   if (tree === null) {
     return failed ? (
-      <p className="form__message" role="alert" data-testid="project-script-failed">
-        {failed}
-      </p>
+      <FormMessage testId="project-script-failed">{failed}</FormMessage>
     ) : (
       <p className="projectcard__meta">{t('projects.common.loading')}</p>
     )

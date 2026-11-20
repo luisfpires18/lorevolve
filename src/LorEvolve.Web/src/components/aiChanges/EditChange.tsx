@@ -11,6 +11,7 @@ import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { CANON_LABELS, CanonStatus, type CanonStatusValue } from '../../lore/types'
 import { FormActions } from '../FormActions'
+import { FormMessage } from '../FormMessage'
 
 /** The plain values a reviewer may change before approving. Saved over the proposal's revision, then checked again. */
 export function EditChange({
@@ -121,11 +122,7 @@ export function EditChange({
           ))}
         </Field>
       ) : null}
-      {error ? (
-        <p className="form__message" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage>{error}</FormMessage> : null}
       <FormActions
         submitLabel={t('review.aiChange.edit.save')}
         busy={saving}

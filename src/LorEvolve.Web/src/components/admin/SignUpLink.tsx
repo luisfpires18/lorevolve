@@ -7,6 +7,7 @@ import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { Section } from '../Section'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 /**
  * A sign-up link for someone with no universe to be invited into. While registration is invitation-only it lets that one
@@ -77,11 +78,7 @@ export function SignUpLink() {
           onChange={(event) => setEmail(event.target.value)}
           data-testid="admin-signup-email"
         />
-        {error ? (
-          <p className="form__message" role="alert">
-            {error}
-          </p>
-        ) : null}
+        {error ? <FormMessage>{error}</FormMessage> : null}
         <div className="actions form__actions">
           <Button
             busy={sending}

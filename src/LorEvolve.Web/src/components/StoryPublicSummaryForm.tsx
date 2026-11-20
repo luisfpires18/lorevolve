@@ -6,6 +6,7 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { PUBLIC_SUMMARY_MAX, type ContentPublicationState } from '../publishing/types'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * A story's public summary (Task 011): the few lines readers of the public portal are shown about it, in the same
@@ -74,11 +75,7 @@ export function StoryPublicSummaryForm({
         />
       )}
     >
-      {error ? (
-        <p className="form__message" role="alert" data-testid="story-public-summary-error">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId="story-public-summary-error">{error}</FormMessage> : null}
 
       <Field
         as="textarea"

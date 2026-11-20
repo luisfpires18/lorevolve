@@ -8,6 +8,7 @@ import { createChapter, moveChapterToArc, updateChapter } from '../stories/api'
 import { arcLabel } from '../stories/format'
 import type { Chapter, PlotArc } from '../stories/types'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface ChapterDraft {
   title: string
@@ -133,11 +134,7 @@ export function ChapterForm({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="chapter-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="chapter-error">{message}</FormMessage> : null}
 
       <Field
         id="chapter-title"

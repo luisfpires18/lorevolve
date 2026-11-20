@@ -15,6 +15,7 @@ import { SettingsDelete } from '../components/universes/SettingsDelete'
 import { universeSettingsActions } from '../universes/universeSettingsActions'
 import { useUniverseSettingsState } from '../universes/useUniverseSettingsState'
 import { Section } from '../components/Section'
+import { FormMessage } from '../components/FormMessage'
 
 const TAB_IDS = ['general', 'appearance', 'collaborators', 'data', 'advanced'] as const
 
@@ -149,11 +150,7 @@ export default function UniverseSettings() {
 
           <SettingsDelete {...state} universe={universe} remove={remove} />
 
-          {error ? (
-            <p className="form__message" role="alert">
-              {error}
-            </p>
-          ) : null}
+          {error ? <FormMessage>{error}</FormMessage> : null}
         </Panel>
       </div>
     </article>

@@ -9,6 +9,7 @@ import { NewButton } from './NewButton'
 import { ProjectCard } from './ProjectCard'
 import { useLoadedList } from '../lib/useLoadedList'
 import { useDiscardGuard } from '../lib/useDiscardGuard'
+import { FormMessage } from './FormMessage'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -100,9 +101,7 @@ export function ChapterPages({
       }
     >
       {failed ? (
-        <p className="form__message" role="alert" data-testid={`chapter-pages-failed-${chapterId}`}>
-          {failed}
-        </p>
+        <FormMessage testId={`chapter-pages-failed-${chapterId}`}>{failed}</FormMessage>
       ) : null}
 
       {pages === null ? <p className="projectcard__meta">{t('projects.common.loading')}</p> : null}
