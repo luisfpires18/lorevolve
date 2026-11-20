@@ -8,6 +8,7 @@ import { OutlineBranch } from './projectEntities/OutlineBranch'
 import { NodeEditor } from './projectEntities/NodeEditor'
 import { PageHeader } from './PageHeader'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
@@ -41,7 +42,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
     return failed ? (
       <FormMessage testId="project-outline-failed">{failed}</FormMessage>
     ) : (
-      <p className="projectcard__meta">{t('projects.common.loading')}</p>
+      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
   return (

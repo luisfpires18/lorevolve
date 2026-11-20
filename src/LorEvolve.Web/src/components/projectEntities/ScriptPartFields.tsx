@@ -4,6 +4,7 @@ import { ScriptField } from '../ComicPageEditor'
 import { t } from '../../i18n'
 import { PANEL_SCRIPT, type PanelScript } from '../../projectEntities/structure'
 import type { useScriptPartState } from '../../projectEntities/useScriptPartState'
+import { QuietNote } from '../QuietNote'
 
 export function ScriptPartFields({
   universeId,
@@ -51,7 +52,7 @@ export function ScriptPartFields({
           data-testid="project-script-read"
         >
           {draft === '' ? (
-            <p className="entry__blank">{t('projects.script.nothingYet')}</p>
+            <QuietNote size="body">{t('projects.script.nothingYet')}</QuietNote>
           ) : (
             <MentionProse universeId={universeId} text={draft} />
           )}

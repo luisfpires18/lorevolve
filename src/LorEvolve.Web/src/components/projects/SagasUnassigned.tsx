@@ -9,6 +9,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { Production } from './Production'
 import { Button } from '../Button'
 import { PageHeader } from '../PageHeader'
+import { QuietNote } from '../QuietNote'
 
 /** The productions that belong to no phase, each with the way to add it to one. */
 export function SagasUnassigned({
@@ -35,7 +36,7 @@ export function SagasUnassigned({
         lede={t('projects.sagas.unassignedHint')}
       />
       {data.unassigned.length === 0 ? (
-        <p className="projectcard__meta">{t('projects.sagas.noUnassigned')}</p>
+        <QuietNote spacing="flush">{t('projects.sagas.noUnassigned')}</QuietNote>
       ) : (
         <ul className="fieldlist">
           {data.unassigned.map((production) => (

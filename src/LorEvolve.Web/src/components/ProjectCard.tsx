@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { QuietNote } from './QuietNote'
 
 /**
  * A boxed card in a project's list (#413): a head with its title, a quiet line and the card's verbs, then what the
@@ -36,7 +37,7 @@ export function ProjectCard({
       {head ?? (
         <div className="projectcard__head">
           <Title className={titleClassName}>{title}</Title>
-          {meta ? <p className="projectcard__meta">{meta}</p> : null}
+          {meta ? <QuietNote spacing="flush">{meta}</QuietNote> : null}
           {actions ? (
             <div className="actions actions--tight projectcard__actions">{actions}</div>
           ) : null}

@@ -10,6 +10,7 @@ import type { useArticleEditing } from '../../lore/useArticleEditing'
 import { Button } from '../Button'
 import { CharCount } from '../CharCount'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 // The editor and its 125 KB of Tiptap and ProseMirror come only when an author presses Edit; reading needs neither.
 const LoreEditor = lazy(() =>
@@ -77,7 +78,7 @@ export function ArticleEditing({
           renderLatest={(latest) => (
             <LatestText label={t('entity.article.latestLabel')}>
               {isEmptyDocument(latest.content) ? (
-                <p className="entry__blank">{t('entity.article.latestBlank')}</p>
+                <QuietNote size="body">{t('entity.article.latestBlank')}</QuietNote>
               ) : (
                 <LoreArticle content={latest.content} />
               )}

@@ -5,6 +5,7 @@ import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
 import { errorText } from '../../lib/errorText'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /**
  * One episode's script. Read on open rather than carried by the list, and saved over the version it was read at, so a
@@ -125,7 +126,7 @@ export function ScriptEditor({
        * take back what the author typed in between, which the E2E spec caught doing exactly that.
        */}
       {script === null ? (
-        <p className="projectcard__meta">{t('projects.common.loading')}</p>
+        <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
       ) : (
         <Field
           as="textarea"

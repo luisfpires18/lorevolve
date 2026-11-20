@@ -14,6 +14,7 @@ import { ScriptPartHead } from './ScriptPartHead'
 import { ScriptPartNotices } from './ScriptPartNotices'
 import { Button } from '../Button'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /** One part's text, and a panel's four script fields, with its own save. */
 export function ScriptPart({
@@ -89,7 +90,7 @@ export function ScriptPart({
         </Button>
       </FormMessage>
     ) : (
-      <p className="projectcard__meta">{t('projects.common.loading')}</p>
+      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
 

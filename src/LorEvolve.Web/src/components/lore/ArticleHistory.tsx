@@ -240,7 +240,9 @@ export function ArticleHistory({
                           {t('entity.articleHistory.snapshotOpening')}
                         </QuietNote>
                       ) : isEmptyDocument(viewing.detail.content) ? (
-                        <p className="entry__blank">{t('entity.articleHistory.snapshotBlank')}</p>
+                        <QuietNote size="body">
+                          {t('entity.articleHistory.snapshotBlank')}
+                        </QuietNote>
                       ) : (
                         <LoreArticle content={viewing.detail.content} />
                       )}

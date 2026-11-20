@@ -9,6 +9,7 @@ import {
   type FamilySemanticValue,
 } from '../../relationships/types'
 import { FAMILY_KEY, type TypeDraft } from '../../relationships/typeDraft'
+import { QuietNote } from '../QuietNote'
 
 export function KindFormFamily({
   draft,
@@ -22,12 +23,12 @@ export function KindFormFamily({
   return (
     <fieldset className="reltype__canon" data-testid="reltype-family">
       <legend className="reltype__legend">{t('relationships.types.familyLegend')}</legend>
-      <p className="field__hint">{t('relationships.types.familyHint')}</p>
+      <QuietNote spacing="flush">{t('relationships.types.familyHint')}</QuietNote>
 
       {draft.isSymmetric ? (
-        <p className="field__hint" data-testid="reltype-no-family">
+        <QuietNote spacing="flush" testId="reltype-no-family">
           {t('relationships.types.noFamily')}
-        </p>
+        </QuietNote>
       ) : null}
 
       <Field
@@ -74,9 +75,9 @@ export function KindFormFamily({
         </p>
       ) : null}
       {draft.familySemantic === FamilySemantic.NonStructuralFamily ? (
-        <p className="field__hint" data-testid="reltype-family-listed">
+        <QuietNote spacing="flush" testId="reltype-family-listed">
           {t('relationships.types.familyListedHint')}
-        </p>
+        </QuietNote>
       ) : null}
     </fieldset>
   )

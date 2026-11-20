@@ -17,6 +17,7 @@ import { Production } from './Production'
 import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
 import { ProjectCard } from '../ProjectCard'
 import { PageHeader } from '../PageHeader'
+import { QuietNote } from '../QuietNote'
 
 /** One saga: its head and menu, and its phases with their productions. */
 export function SagaSection({
@@ -92,7 +93,7 @@ export function SagaSection({
       />
 
       {saga.phases.length === 0 ? (
-        <p className="projectcard__meta">{t('projects.sagas.noPhases')}</p>
+        <QuietNote spacing="flush">{t('projects.sagas.noPhases')}</QuietNote>
       ) : (
         <ol className="projectcardlist">
           {saga.phases.map((phase, phaseIndex) => (
@@ -140,7 +141,7 @@ export function SagaSection({
             >
               {phase.summary ? <p className="prose">{phase.summary}</p> : null}
               {phase.members.length === 0 ? (
-                <p className="projectcard__meta">{t('projects.sagas.noMembers')}</p>
+                <QuietNote spacing="flush">{t('projects.sagas.noMembers')}</QuietNote>
               ) : (
                 <ol className="fieldlist" data-testid={`phase-members-${phase.id}`}>
                   {phase.members.map((member, memberIndex) => (

@@ -6,6 +6,7 @@ import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { listTimelineItems } from '../timeline/api'
 import { TimelineSource } from '../timeline/types'
 import type { MomentRef } from '../progression/types'
+import { QuietNote } from './QuietNote'
 
 /**
  * One timeline moment, found by searching the universe's moments by title. The chosen one is a token with Remove; one in the
@@ -103,7 +104,7 @@ export function MomentPick({
                 ))}
               </ul>
             ) : found ? (
-              <p className="field__hint">{t('time.momentPick.none')}</p>
+              <QuietNote spacing="hint">{t('time.momentPick.none')}</QuietNote>
             ) : null}
           </>
         )

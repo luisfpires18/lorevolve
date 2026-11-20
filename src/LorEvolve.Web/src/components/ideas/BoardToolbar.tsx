@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /** A board editor's toolbar, the hint when the board is full, and the line being drawn. */
 export function BoardToolbar({
@@ -66,9 +67,9 @@ export function BoardToolbar({
         </Button>
       </div>
       {isFull ? (
-        <p className="field__hint" data-testid="board-full">
+        <QuietNote spacing="hint" testId="board-full">
           {t('ideas.board.cardsFull', { max: BOARD_MAX_CARDS })}
-        </p>
+        </QuietNote>
       ) : null}
       {connecting ? (
         <p className="notice board__connecting" role="status" data-testid="board-connecting">

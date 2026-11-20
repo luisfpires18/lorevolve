@@ -6,6 +6,7 @@ import { evaluateSystemMachine } from '../worldLogic/api'
 import { markText, type GuardMarkValue } from '../worldLogic/markText'
 import type { SystemMachineTryResult } from '../worldLogic/types'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 const m = 'canon.worldLogic.systems.machine'
 
@@ -82,7 +83,7 @@ export function SystemMachineTry({
       {failed ? (
         <FormMessage testId="machine-try-failed">{t(`${m}.try.failed`)}</FormMessage>
       ) : null}
-      <p className="field__hint" role="status" data-testid="machine-try-result">
+      <QuietNote spacing="hint" role="status" testId="machine-try-result">
         {entry && result ? (
           result.value === null ? (
             t(`${m}.try.outside`)
@@ -90,7 +91,7 @@ export function SystemMachineTry({
             <bdi>{t(`${m}.try.value`, { value: result.value })}</bdi>
           )
         ) : null}
-      </p>
+      </QuietNote>
     </section>
   )
 }

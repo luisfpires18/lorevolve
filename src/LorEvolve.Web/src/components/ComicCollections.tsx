@@ -21,6 +21,7 @@ import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 import { PageHeader } from './PageHeader'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 const ARCS_AND_EVENTS: ComicCollectionKind[] = ['story-arc', 'event']
 
@@ -87,7 +88,7 @@ export function ComicCollections({
             />
 
             {ofKind.length === 0 ? (
-              <p className="projectcard__meta">{t(WORDS[kind].none)}</p>
+              <QuietNote spacing="flush">{t(WORDS[kind].none)}</QuietNote>
             ) : (
               <ol className="scenes">
                 {ofKind.map((collection, index) => (

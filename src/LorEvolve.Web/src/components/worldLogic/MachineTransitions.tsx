@@ -6,6 +6,7 @@ import { MACHINE_MAX_TRANSITIONS } from '../../worldLogic/types'
 import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState'
 import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
+import { QuietNote } from '../QuietNote'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -71,7 +72,9 @@ export function MachineTransitions({
           })}
         </ul>
       ) : null}
-      {draft.states.length === 1 ? <p className="field__hint">{t(`${m}.needTwoStates`)}</p> : null}
+      {draft.states.length === 1 ? (
+        <QuietNote spacing="hint">{t(`${m}.needTwoStates`)}</QuietNote>
+      ) : null}
       <div className="actions form__actions">
         <NewButton
           tone="secondary"

@@ -7,6 +7,7 @@ import { getSceneManuscript } from '../../stories/api'
 import type { SceneManuscript } from '../../stories/types'
 import type { useManuscriptState } from '../../stories/useManuscriptState'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /** The recovery offer, the conflict with the latest saved prose, and a failed save. */
 export function ManuscriptNotices({
@@ -45,7 +46,7 @@ export function ManuscriptNotices({
             savedUpdatedAt={stored.updatedAt}
             preview={
               offer.content === '' ? (
-                <p className="entry__blank">{t('manuscript.editor.draftEmpty')}</p>
+                <QuietNote size="body">{t('manuscript.editor.draftEmpty')}</QuietNote>
               ) : (
                 <div
                   className="recovery__prose prose"
@@ -72,7 +73,7 @@ export function ManuscriptNotices({
             renderLatest={(latest) => (
               <LatestText label={t('manuscript.editor.latestLabel')}>
                 {latest.content === '' ? (
-                  <p className="entry__blank">{t('manuscript.editor.latestEmpty')}</p>
+                  <QuietNote size="body">{t('manuscript.editor.latestEmpty')}</QuietNote>
                 ) : (
                   <div className="recovery__prose prose" dir="auto">
                     {plainMentions(latest.content)}

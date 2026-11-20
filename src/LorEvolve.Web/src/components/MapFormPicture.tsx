@@ -4,6 +4,7 @@ import { MAP_IMAGE_ACCEPT, MAP_IMAGE_MAX_BYTES } from '../maps/api'
 import { useI18n } from '../i18n'
 import type { RefObject } from 'react'
 import type { MapFormProps } from '../maps/mapDraft'
+import { QuietNote } from './QuietNote'
 
 export function MapFormPicture({
   mode,
@@ -39,12 +40,12 @@ export function MapFormPicture({
             data-testid="map-file-input"
           />
           {file ? (
-            <p className="field__hint" data-testid="map-file-chosen">
+            <QuietNote spacing="hint" testId="map-file-chosen">
               {tx('places.mapForm.chosen', {
                 name: <bdi>{file.name}</bdi>,
                 size: formatBytes(file.size),
               })}
-            </p>
+            </QuietNote>
           ) : null}
         </>
       )}

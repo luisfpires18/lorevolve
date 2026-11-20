@@ -10,6 +10,7 @@ import { ProjectCard } from './ProjectCard'
 import { useLoadedList } from '../lib/useLoadedList'
 import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -104,7 +105,9 @@ export function ChapterPages({
         <FormMessage testId={`chapter-pages-failed-${chapterId}`}>{failed}</FormMessage>
       ) : null}
 
-      {pages === null ? <p className="projectcard__meta">{t('projects.common.loading')}</p> : null}
+      {pages === null ? (
+        <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
+      ) : null}
 
       {/* The page form opens from the head above, rather than sitting open under every chapter an author expands. */}
       {addingPage ? (
@@ -157,7 +160,7 @@ export function ChapterPages({
       ) : null}
 
       {pages !== null && pages.length === 0 ? (
-        <p className="projectcard__meta">{t('projects.pages.empty')}</p>
+        <QuietNote spacing="flush">{t('projects.pages.empty')}</QuietNote>
       ) : null}
 
       <ol className="fieldlist" data-testid={`chapter-page-list-${chapterId}`}>

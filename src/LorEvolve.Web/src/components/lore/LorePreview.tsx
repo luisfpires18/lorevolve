@@ -76,14 +76,14 @@ export function LorePreview({
       </Button>
 
       {state.kind === 'loading' ? (
-        <p className="entry__blank" role="status" id={nameId}>
+        <QuietNote size="body" role="status" id={nameId}>
           {t('lore.preview.opening')}
-        </p>
+        </QuietNote>
       ) : null}
       {state.kind === 'missing' ? (
-        <p className="entry__blank" id={nameId} data-testid="lore-preview-missing">
+        <QuietNote size="body" id={nameId} testId="lore-preview-missing">
           {t('lore.preview.missing')}
-        </p>
+        </QuietNote>
       ) : null}
       {state.kind === 'error' ? (
         <FormMessage id={nameId} testId="lore-preview-error">

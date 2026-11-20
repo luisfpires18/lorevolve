@@ -4,6 +4,7 @@ import { Field } from './Field'
 import { FormActions } from './FormActions'
 import { errorText } from '../lib/errorText'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface PickOneDrawerProps {
   testId: string
@@ -74,7 +75,7 @@ export function PickOneDrawer({
       )}
     >
       {emptyText !== undefined && options.length === 0 ? (
-        <p className="projectcard__meta">{emptyText}</p>
+        <QuietNote spacing="flush">{emptyText}</QuietNote>
       ) : (
         <Field
           as="select"

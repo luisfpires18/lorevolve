@@ -226,10 +226,6 @@ a.idearow__title:focus-visible {
   color: var(--muted);
 }
 
-.idea__references .field__hint {
-  margin: 0;
-}
-
 .idea__noreferences {
   margin: 0;
   font-size: 0.9rem;

@@ -5,6 +5,7 @@ import type { BoardSelection } from '../../ideas/boardSelection'
 import { useI18n } from '../../i18n'
 import { BoardCardInspector } from './BoardCardInspector'
 import { BoardLineInspector } from './BoardLineInspector'
+import { QuietNote } from '../QuietNote'
 
 /** A board editor's inspector: the chosen card, the chosen line, or what the board holds. */
 export function BoardInspector({
@@ -77,7 +78,7 @@ export function BoardInspector({
               lines: tn('ideas.board.lines', draft.connections.length),
             })}
           </h2>
-          <p className="field__hint">{t('ideas.board.inspector.hint')}</p>
+          <QuietNote spacing="hint">{t('ideas.board.inspector.hint')}</QuietNote>
         </>
       )}
     </aside>

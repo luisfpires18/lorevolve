@@ -191,7 +191,9 @@ export function UniverseArtworkField({
         ) : null}
       </div>
 
-      <p className="field__hint">{artwork && isPublic ? t(`${w}.hintPublic`) : t(`${w}.hint`)}</p>
+      <QuietNote spacing="hint">
+        {artwork && isPublic ? t(`${w}.hintPublic`) : t(`${w}.hint`)}
+      </QuietNote>
 
       {error ? <FormMessage testId={`${testId}-error`}>{error}</FormMessage> : null}
 

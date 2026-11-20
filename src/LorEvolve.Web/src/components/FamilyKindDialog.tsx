@@ -14,6 +14,7 @@ import {
 } from '../relationships/types'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface Props {
   universeId: string
@@ -114,9 +115,9 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       />
 
       {isSymmetric ? (
-        <p className="field__hint" data-testid="family-kind-both-ways">
+        <QuietNote spacing="hint" testId="family-kind-both-ways">
           {tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}
-        </p>
+        </QuietNote>
       ) : (
         <Field
           label={t('places.kindDialog.inverse')}

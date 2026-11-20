@@ -11,6 +11,7 @@ import { scriptParts } from '../projectEntities/scriptParts'
 import { ScriptPart } from './projectEntities/ScriptPart'
 import { errorText } from '../lib/errorText'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * A Series', Film's or Comic's Script view (#377): every node of its structure listed beside the text it holds, in the
@@ -60,7 +61,7 @@ export function ProjectScript({
     return failed ? (
       <FormMessage testId="project-script-failed">{failed}</FormMessage>
     ) : (
-      <p className="projectcard__meta">{t('projects.common.loading')}</p>
+      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
 

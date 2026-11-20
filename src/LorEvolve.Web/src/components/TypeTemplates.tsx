@@ -16,6 +16,7 @@ import { t, useI18n } from '../i18n'
 import { TemplateRow } from './typeTemplates/TemplateRow'
 import { NewButton } from './NewButton'
 import { LoadError } from './LoadError'
+import { QuietNote } from './QuietNote'
 
 const NO_TYPES = buildTypeTree<TreeType>([])
 
@@ -62,7 +63,7 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
   }
 
   if (templates === null) {
-    return <p className="projectcard__meta">{t('projects.common.loading')}</p>
+    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
   }
 
   return (

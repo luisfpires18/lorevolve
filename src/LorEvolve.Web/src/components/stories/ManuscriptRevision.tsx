@@ -117,7 +117,7 @@ export function ManuscriptRevision({
               {t('manuscript.history.opening')}
             </QuietNote>
           ) : viewing.detail.content === '' ? (
-            <p className="entry__blank">{t('manuscript.history.noText')}</p>
+            <QuietNote size="body">{t('manuscript.history.noText')}</QuietNote>
           ) : (
             <div
               className="mshistory__text prose"

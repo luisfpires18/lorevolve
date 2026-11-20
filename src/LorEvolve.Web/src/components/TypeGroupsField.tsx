@@ -4,6 +4,7 @@ import { Field } from './Field'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
+import { QuietNote } from './QuietNote'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }
@@ -234,9 +235,9 @@ export function TypeGroupsField({
         )}
       </Field>
 
-      <p className="field__hint" data-testid="type-groups-elsewhere">
+      <QuietNote spacing="hint" testId="type-groups-elsewhere">
         {t('entityTypes.groupsField.elsewhere')}
-      </p>
+      </QuietNote>
     </section>
   )
 }

@@ -11,6 +11,7 @@ import { FormActions } from '../FormActions'
 import { Announce } from '../Announce'
 import { SearchField } from '../SearchField'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /**
  * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
@@ -138,9 +139,9 @@ export function LoreContextDrawer({
               {t('lore.context.inScenePick')}
             </h3>
             {linked.length === 0 ? (
-              <p className="entry__blank" data-testid="lore-context-none">
+              <QuietNote size="body" testId="lore-context-none">
                 {access.editContent ? t('lore.context.noneEditable') : t('lore.context.none')}
-              </p>
+              </QuietNote>
             ) : (
               <ul className="relations__rows" data-testid="lore-context-linked-list">
                 {linked.map((row) => (
@@ -204,11 +205,11 @@ export function LoreContextDrawer({
                   {t('lore.context.searchFailed')}
                 </FormMessage>
               ) : term !== '' && !results ? (
-                <p className="entry__blank">{t('lore.context.searchingNote')}</p>
+                <QuietNote size="body">{t('lore.context.searchingNote')}</QuietNote>
               ) : results && results.length === 0 ? (
-                <p className="entry__blank" data-testid="lore-context-no-results">
+                <QuietNote size="body" testId="lore-context-no-results">
                   {tx('lore.context.nothingMatches', { term: <bdi>{term}</bdi> })}
-                </p>
+                </QuietNote>
               ) : results ? (
                 <ul className="relations__rows" data-testid="lore-context-results">
                   {results.map((row) => (
