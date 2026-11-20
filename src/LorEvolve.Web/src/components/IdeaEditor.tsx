@@ -14,6 +14,7 @@ import { useIdeaSave } from '../ideas/useIdeaSave'
 import { useIdeaState } from '../ideas/useIdeaState'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
+import { DocumentHead } from './DocumentHead'
 
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
@@ -125,17 +126,29 @@ export function IdeaEditor({
 
   return (
     <article className="idea" aria-labelledby={headingId} data-testid="idea-editor">
-      <IdeaHead
+      <DocumentHead
+        testIdPrefix="idea"
         listPath={listPath}
         listLabel={listLabel}
-        headingId={headingId}
         isNew={isNew}
-        stored={stored}
-        isSaving={isSaving}
-        remove={remove}
-        contextUniverse={contextUniverse}
-        ideaId={ideaId}
-      />
+        title={stored.title}
+        newTitle={t('ideas.editor.newIdea')}
+        menuLabel={t('ideas.editor.moreActions', { title: stored.title })}
+        deleteLabel={t('ideas.editor.deleteIdea')}
+        onDelete={() => void remove()}
+        busy={isSaving}
+        titleId={headingId}
+        lede={t('ideas.editor.lede')}
+        lastSavedKey="ideas.editor.lastSaved"
+        updatedAt={stored.updatedAt}
+      >
+        <IdeaHead
+          isNew={isNew}
+          stored={stored}
+          contextUniverse={contextUniverse}
+          ideaId={ideaId}
+        />
+      </DocumentHead>
 
       <IdeaNotices
         offer={offer}

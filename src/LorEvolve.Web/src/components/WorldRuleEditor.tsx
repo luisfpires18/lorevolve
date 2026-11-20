@@ -10,7 +10,7 @@ import { useWorldRuleReads } from '../worldRules/useWorldRuleReads'
 import { worldRuleActions } from '../worldRules/worldRuleActions'
 import { useSaveShortcut } from '../lib/useSaveShortcut'
 import { sameFields } from '../worldRules/ruleDraft'
-import { WorldRuleHead } from './worldRules/WorldRuleHead'
+import { DocumentHead } from './DocumentHead'
 import { ConflictBar } from './ConflictBar'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
 import { Announce } from './Announce'
@@ -123,13 +123,21 @@ export function WorldRuleEditor({
     >
       {() => (
         <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
-          <WorldRuleHead
+          <DocumentHead
+            testIdPrefix="world-rule"
             listPath={listPath}
-            headingId={headingId}
+            listLabel={t('canon.editor.back')}
             isNew={isNew}
-            stored={stored}
-            isSaving={isSaving}
-            remove={remove}
+            title={stored.title}
+            newTitle={t('canon.editor.newRule')}
+            menuLabel={t('canon.editor.actions', { title: stored.title })}
+            deleteLabel={t('canon.editor.delete')}
+            onDelete={() => void remove()}
+            busy={isSaving}
+            titleId={headingId}
+            lede={t('canon.editor.lede')}
+            lastSavedKey="canon.editor.lastSaved"
+            updatedAt={stored.updatedAt}
           />
 
           {conflict ? (

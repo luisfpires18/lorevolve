@@ -1,7 +1,6 @@
 import { useId, type ReactNode } from 'react'
 import { IdeaBoardPicker } from './IdeaBoardPicker'
 import { BoardFields } from './ideas/BoardFields'
-import { BoardHead } from './ideas/BoardHead'
 import { BoardNotices } from './ideas/BoardNotices'
 import { BoardSaveBar } from './ideas/BoardSaveBar'
 import { BoardToolbar } from './ideas/BoardToolbar'
@@ -17,6 +16,7 @@ import { useBoardState } from '../ideas/useBoardState'
 import { useDraftedEditor } from '../lib/useDraftedEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
+import { DocumentHead } from './DocumentHead'
 
 interface IdeaBoardEditorProps {
   /** The board being edited, or null for a new one. */
@@ -121,7 +121,22 @@ export function IdeaBoardEditor({
 
   return (
     <article className="board" aria-labelledby={headingId} data-testid="board-editor">
-      <BoardHead {...view} />
+      <DocumentHead
+        testIdPrefix="board"
+        listPath={listPath}
+        listLabel={listLabel}
+        isNew={base.isNew}
+        title={stored.title}
+        newTitle={t('ideas.board.newBoard')}
+        menuLabel={t('ideas.board.moreActions', { title: stored.title })}
+        deleteLabel={t('ideas.board.deleteBoard')}
+        onDelete={() => void drafts.remove()}
+        busy={base.isSaving}
+        titleId={headingId}
+        lede={t('ideas.board.lede')}
+        lastSavedKey="ideas.board.lastSaved"
+        updatedAt={stored.updatedAt}
+      />
 
       <BoardNotices {...view} />
 
