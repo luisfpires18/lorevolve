@@ -1,5 +1,7 @@
+import { useContext } from 'react'
 import type { ReactNode, Ref } from 'react'
 import { useI18n } from '../i18n'
+import { DrawerLockContext } from '../lib/drawerGuard'
 import type { ButtonSize } from '../lib/buttonClass'
 import { Button } from './Button'
 
@@ -23,7 +25,7 @@ interface FormActionsProps {
   dismiss?: 'cancel' | 'close'
   /** Replaces the Cancel words: "Keep it". */
   cancelLabel?: ReactNode
-  /** Cancel is disabled while busy. Default: it stays enabled. */
+  /** Cancel is disabled while busy. Default: it stays enabled, except inside a drawer whose save is in flight. */
   lockCancel?: boolean
   cancelTestId?: string
   /** Given: a danger-quiet button after Cancel, disabled while busy. */
@@ -67,6 +69,7 @@ export function FormActions({
   children,
 }: FormActionsProps) {
   const { t } = useI18n()
+  const drawerLocked = useContext(DrawerLockContext)
   const buttons = (
     <>
       {submitLabel !== undefined ? (
@@ -89,7 +92,7 @@ export function FormActions({
         <Button
           tone="secondary"
           size={size}
-          disabled={lockCancel && busy}
+          disabled={(lockCancel && busy) || drawerLocked}
           onClick={onCancel}
           data-testid={cancelTestId}
         >

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
+import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { IconButton } from './IconButton'
 
@@ -35,6 +36,7 @@ export function ImageViewer({
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   useReturnFocus()
+  const { dialogProps } = useDrawerGuard(false, '', onClose)
 
   useEffect(() => {
     const element = dialog.current
@@ -51,11 +53,9 @@ export function ImageViewer({
       className="viewer"
       ref={dialog}
       aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault()
-        onClose()
-      }}
+      onCancel={dialogProps.onCancel}
       onKeyDown={(event) => {
+        dialogProps.onKeyDown(event)
         // A modal dialog makes the page behind it inert, but Tab can still leave for the browser's own
         // chrome. Kept inside: the dialog holds one control, so Tab stays on it.
         if (event.key !== 'Tab') return
