@@ -56,7 +56,7 @@ export default function PublicWorldPage() {
   if (!current) {
     return (
       <div className="pworld pworld--loading" role="status" aria-label={t('portal.world.opening')}>
-        <div className="pworld-hero pworld-hero--skeleton" />
+        <div className="pworld-hero pskeleton pskeleton--hero" />
       </div>
     )
   }

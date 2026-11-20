@@ -15,13 +15,6 @@
   border-bottom: 1px solid var(--portal-line);
 }
 
-.pauthor__head--skeleton {
-  height: 9rem;
-  border: 0;
-  border-radius: var(--portal-radius);
-  background: var(--portal-card);
-}
-
 /* The chosen photo's square, or the name's first letter in a ring - never an invented face. */
 .pauthor__avatar {
   display: flex;

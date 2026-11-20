@@ -6,10 +6,26 @@
   padding: clamp(1.5rem, 4vw, 3rem) 0 var(--space-9);
 }
 
-.pread__skeleton {
-  height: 20rem;
+/* A portal page's loading block, one `div`: the card colour in the portal's radius, sized by its modifier. The author's
+   is a compound selector because `.pauthor__head`, which it shares an element with, loads after this file and sets a
+   border; the hero keeps `pworld-hero` and its edge-to-edge shape. */
+.pskeleton {
   border-radius: var(--portal-radius);
   background: var(--portal-card);
+}
+
+.pskeleton--page {
+  height: 20rem;
+}
+
+.pskeleton.pskeleton--author {
+  height: 9rem;
+  border: 0;
+}
+
+.pskeleton--hero {
+  min-height: 24rem;
+  border-radius: 0;
 }
 
 .pcrumbs ol {

@@ -64,7 +64,7 @@ export default function PublicAuthorPage() {
   if (!current) {
     return (
       <div className="pauthor" role="status" aria-label={t('portal.author.opening')}>
-        <div className="pauthor__head pauthor__head--skeleton" />
+        <div className="pauthor__head pskeleton pskeleton--author" />
       </div>
     )
   }

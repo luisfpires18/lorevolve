@@ -54,16 +54,6 @@
    Six card shapes where the first page is about to be. They appear only if the read takes longer
    than a moment, so a fast load never flashes them. Static: nothing shimmers. */
 
-@keyframes skeleton-appear {
-  from {
-    visibility: hidden;
-  }
-
-  to {
-    visibility: visible;
-  }
-}
-
 .skeletoncard {
   display: grid;
   grid-template-columns: 6rem minmax(0, 1fr);

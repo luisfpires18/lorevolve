@@ -65,7 +65,7 @@ export default function PublicLorePage() {
   if (!current) {
     return (
       <div className="pread" role="status" aria-label={t('portal.lore.opening')}>
-        <div className="pread__skeleton" />
+        <div className="pskeleton pskeleton--page" />
       </div>
     )
   }
