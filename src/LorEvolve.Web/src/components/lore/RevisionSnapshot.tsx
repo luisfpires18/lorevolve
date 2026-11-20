@@ -16,6 +16,8 @@ import { FieldKind } from '../../lore/fieldKinds'
 import { t, useI18n } from '../../i18n'
 import { QuietNote } from '../QuietNote'
 import { TagList } from '../TagList'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 /** One version read whole, in the same shapes the dossier uses for the live entry. */
 export function Snapshot({
@@ -53,14 +55,13 @@ export function Snapshot({
       ) : null}
 
       {revision.fields.length > 0 ? (
-        <dl className="facts">
+        <FactList>
           {revision.fields.map((value) => (
-            <div className="facts__row" key={value.fieldDefinitionId}>
-              <dt className="facts__key">{value.name}</dt>
-              <dd className="facts__value prose">{renderRevisionFact(value, chronology)}</dd>
-            </div>
+            <Fact name={value.name} key={value.fieldDefinitionId} valueClassName="prose">
+              {renderRevisionFact(value, chronology)}
+            </Fact>
           ))}
-        </dl>
+        </FactList>
       ) : null}
 
       {revision.tags.length > 0 ? <TagList tags={revision.tags} className="dossier__tags" /> : null}

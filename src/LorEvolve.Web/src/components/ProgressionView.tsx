@@ -11,7 +11,8 @@ import { useUniverseAccess } from '../universes/access'
 import { useProgressionState } from '../progression/useProgressionState'
 import { progressionActions } from '../progression/progressionActions'
 import { progressionItemActions } from '../progression/progressionItemActions'
-import { ProgressionHead } from './progression/ProgressionHead'
+import { NewButton } from './NewButton'
+import { PanelHead } from './PanelHead'
 import { Overview } from './progression/Overview'
 import { EraNav } from './progression/EraNav'
 import { EraPanel } from './progression/EraPanel'
@@ -117,7 +118,24 @@ export function ProgressionView({
       aria-labelledby="progression-heading"
       data-testid="progression"
     >
-      <ProgressionHead access={access} setEditing={setEditing} />
+      <PanelHead
+        look="display"
+        align="start"
+        titleId="progression-heading"
+        title={t('progression.view.title')}
+        action={
+          access.editContent ? (
+            <NewButton
+              tone="secondary"
+              size="sm"
+              onClick={() => setEditing('new')}
+              data-testid="add-era"
+            >
+              {t('progression.view.addStage')}
+            </NewButton>
+          ) : null
+        }
+      />
 
       {message ? <FormMessage testId="progression-message">{message}</FormMessage> : null}
 

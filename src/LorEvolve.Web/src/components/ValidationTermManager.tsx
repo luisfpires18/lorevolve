@@ -7,7 +7,7 @@ import { termManagerActions } from '../ruleValidation/termManagerActions'
 import { TermGroup } from './ruleValidation/TermGroup'
 import { NewTermForm } from './ruleValidation/NewTermForm'
 import { LoadingNote } from './LoadingNote'
-import { SectionTitle } from './Section'
+import { PanelHead } from './PanelHead'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -42,9 +42,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
 
   return (
     <section className="reltypes terms" aria-labelledby={headingId} data-testid="validation-terms">
-      <div className="relations__head">
-        <SectionTitle id={headingId}>{t('canon.terms.heading')}</SectionTitle>
-      </div>
+      <PanelHead look="section" titleId={headingId} title={t('canon.terms.heading')} />
 
       <QuietNote spacing="block">{t('canon.terms.note')}</QuietNote>
 

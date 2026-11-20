@@ -5,6 +5,8 @@ import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
 import { QuietNote } from './QuietNote'
+import { SectionTitle } from './Section'
+import { Token } from './Token'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
 export type GroupChoice = { id: string } | { name: string }
@@ -97,9 +99,9 @@ export function TypeGroupsField({
 
   return (
     <section className="drawer__group" aria-labelledby={`${ids}-heading`} data-testid="type-groups">
-      <h3 className="sectionrule sectionrule--accent" id={`${ids}-heading`}>
+      <SectionTitle level={3} tone="rule-accent" id={`${ids}-heading`}>
         {t('entityTypes.groupsField.heading')}
-      </h3>
+      </SectionTitle>
       <p className="field__hint typegroups__lede">{t('entityTypes.groupsField.lede')}</p>
 
       <Field
@@ -120,26 +122,20 @@ export function TypeGroupsField({
                   const label = labelOf(choice)
                   const key = 'id' in choice ? choice.id : `new:${choice.name}`
                   return (
-                    <li
-                      className="token"
+                    <Token
+                      as="li"
                       key={key}
-                      data-testid="type-group-chosen"
+                      testId="type-group-chosen"
                       data-group-name={label}
+                      removeLabel={t('entityTypes.groupsField.remove', { name: label })}
+                      onRemove={() => onChange(value.filter((other) => other !== choice))}
+                      removeTestId={`type-group-remove-${label}`}
                     >
                       <bdi>{label}</bdi>
                       {'name' in choice ? (
                         <span className="typegroups__new">{t('entityTypes.groupsField.new')}</span>
                       ) : null}
-                      <button
-                        className="token__remove"
-                        type="button"
-                        aria-label={t('entityTypes.groupsField.remove', { name: label })}
-                        onClick={() => onChange(value.filter((other) => other !== choice))}
-                        data-testid={`type-group-remove-${label}`}
-                      >
-                        &times;
-                      </button>
-                    </li>
+                    </Token>
                   )
                 })}
               </ul>

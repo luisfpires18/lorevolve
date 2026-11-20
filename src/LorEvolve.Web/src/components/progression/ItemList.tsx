@@ -4,7 +4,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { ItemRow } from './ItemRow'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
-import { SectionTitle } from '../Section'
+import { PanelHead } from '../PanelHead'
 
 /** An entry's forms or abilities on the main profile: each as the author said it, nothing filled in. */
 export function ItemList({
@@ -55,22 +55,26 @@ export function ItemList({
 
   return (
     <section className="progitems" aria-labelledby={headingId} data-testid={`${kind}-list`}>
-      <div className="progression__head">
-        <SectionTitle level={3} tone="label" id={headingId}>
-          {words.title}
-        </SectionTitle>
-        {access.editContent ? (
-          <NewButton
-            tone="secondary"
-            size="sm"
-            onClick={onAdd}
-            disabled={busy}
-            data-testid={`add-${kind}`}
-          >
-            {words.add}
-          </NewButton>
-        ) : null}
-      </div>
+      <PanelHead
+        look="label"
+        level={3}
+        align="start"
+        titleId={headingId}
+        title={words.title}
+        action={
+          access.editContent ? (
+            <NewButton
+              tone="secondary"
+              size="sm"
+              onClick={onAdd}
+              disabled={busy}
+              data-testid={`add-${kind}`}
+            >
+              {words.add}
+            </NewButton>
+          ) : null
+        }
+      />
       {items.length === 0 ? (
         <QuietNote>{words.empty}</QuietNote>
       ) : (

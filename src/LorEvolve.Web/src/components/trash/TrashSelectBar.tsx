@@ -2,7 +2,7 @@ import { t } from '../../i18n'
 import type { TrashItem } from '../../trash/types'
 import type { useTrashState } from '../../trash/useTrashState'
 import { Button } from '../Button'
-import { QuietNote } from '../QuietNote'
+import { ActionBar } from '../ActionBar'
 
 /** The bar while selecting: how many are selected, Delete permanently, Select page, Clear and Done. */
 export function TrashSelectBar({
@@ -24,53 +24,55 @@ export function TrashSelectBar({
   stopSelecting: () => void
 }) {
   return (
-    <footer className="actionbar trash__selectbar" data-testid="trash-selectbar">
-      <QuietNote className="actionbar__status" testId="trash-selected-count" role="status">
-        {selected.length === 0
+    <ActionBar
+      className="trash__selectbar"
+      testId="trash-selectbar"
+      statusTestId="trash-selected-count"
+      status={
+        selected.length === 0
           ? t('data.trash.bar.hint')
-          : t('data.trash.bar.selected', { n: selected.length })}
-      </QuietNote>
-      <div className="actions actions--tight actionbar__actions">
-        {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
-        <Button
-          tone="danger-quiet"
-          ref={bulkDeleteRef}
-          onClick={askToBulkErase}
-          disabled={selected.length === 0}
-          data-testid="trash-bulk-delete"
-        >
-          {selected.length > 0
-            ? t('data.trash.bar.delete', { n: selected.length })
-            : t('data.trash.bar.deleteNone')}
-        </Button>
-        <Button
-          tone="secondary"
-          ref={selectPageRef}
-          onClick={selectPage}
-          disabled={pageItems.length === 0 || selected.length === pageItems.length}
-          data-testid="trash-select-page"
-        >
-          {t('data.trash.bar.selectPage')}
-        </Button>
-        <Button
-          tone="text"
-          onClick={clearSelection}
-          disabled={selected.length === 0}
-          data-testid="trash-clear-selection"
-        >
-          {t('data.trash.bar.clear')}
-        </Button>
-        <Button
-          tone="secondary"
-          onClick={() => {
-            stopSelecting()
-            requestAnimationFrame(() => selectToggleRef.current?.focus())
-          }}
-          data-testid="trash-select-done"
-        >
-          {t('shell.actions.done')}
-        </Button>
-      </div>
-    </footer>
+          : t('data.trash.bar.selected', { n: selected.length })
+      }
+    >
+      {/* The one red control on the screen while selecting; the selection's own tools stay neutral. */}
+      <Button
+        tone="danger-quiet"
+        ref={bulkDeleteRef}
+        onClick={askToBulkErase}
+        disabled={selected.length === 0}
+        data-testid="trash-bulk-delete"
+      >
+        {selected.length > 0
+          ? t('data.trash.bar.delete', { n: selected.length })
+          : t('data.trash.bar.deleteNone')}
+      </Button>
+      <Button
+        tone="secondary"
+        ref={selectPageRef}
+        onClick={selectPage}
+        disabled={pageItems.length === 0 || selected.length === pageItems.length}
+        data-testid="trash-select-page"
+      >
+        {t('data.trash.bar.selectPage')}
+      </Button>
+      <Button
+        tone="text"
+        onClick={clearSelection}
+        disabled={selected.length === 0}
+        data-testid="trash-clear-selection"
+      >
+        {t('data.trash.bar.clear')}
+      </Button>
+      <Button
+        tone="secondary"
+        onClick={() => {
+          stopSelecting()
+          requestAnimationFrame(() => selectToggleRef.current?.focus())
+        }}
+        data-testid="trash-select-done"
+      >
+        {t('shell.actions.done')}
+      </Button>
+    </ActionBar>
   )
 }

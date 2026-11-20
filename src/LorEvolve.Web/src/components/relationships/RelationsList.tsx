@@ -9,6 +9,7 @@ import type { useRelationsState } from '../../relationships/useRelationsState'
 import { byReading } from '../../relationships/relationDraft'
 import { RelationRow } from './RelationRow'
 import { SectionTitle } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 export function RelationsList({
   views,
@@ -40,9 +41,9 @@ export function RelationsList({
   const { t, tx } = useI18n()
 
   return views === null ? (
-    <p className="relations__quiet" role="status">
+    <QuietNote size="body" className="relations__quiet" role="status">
       {t('relationships.section.readingRelations')}
-    </p>
+    </QuietNote>
   ) : views.length === 0 && !isAdding ? (
     <EmptyState
       testId="relations-empty"

@@ -20,6 +20,7 @@ import { UniverseRole } from '../universes/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { DateText } from '../components/DateText'
 import { Callout } from '../components/Callout'
+import { SectionTitle } from '../components/Section'
 
 /**
  * A universe's front page, set as a book's contents: its name and opening line, then a doorway into
@@ -137,9 +138,9 @@ function Contents({ name, sections }: { name: string; sections: readonly Section
   useI18n()
   return (
     <section className={`contents contents--${name}`} aria-labelledby={`contents-${name}`}>
-      <h2 className="contents__heading sectionrule" id={`contents-${name}`}>
+      <SectionTitle tone="rule" className="contents__heading" id={`contents-${name}`}>
         {t(`workspace.rail.groups.${name}` as never)}
-      </h2>
+      </SectionTitle>
       <CardGrid min={14} className="contents__list">
         {sections.map((section) => (
           <li key={section.segment}>

@@ -3,6 +3,7 @@ import { t, useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { EraScene, EraStory } from '../../progression/types'
 import { useEraStoryChoices } from '../../progression/useEraStoryChoices'
+import { Token } from '../Token'
 
 /**
  * The stories an era covers, and scenes of those stories: each chosen one as a token with Remove, the universe's other live
@@ -51,25 +52,21 @@ export function EraStories({
             {stories.length > 0 ? (
               <ul className="storylinks__list">
                 {stories.map((story) => (
-                  <li className="token" key={story.id} data-testid="era-story">
+                  <Token
+                    as="li"
+                    key={story.id}
+                    testId="era-story"
+                    note={story.isTrashed ? t('time.eraForm.storyInTrash') : undefined}
+                    removeLabel={t('time.eraForm.removeStory', { title: story.title })}
+                    onRemove={() =>
+                      onChange(
+                        stories.filter((one) => one.id !== story.id),
+                        scenes.filter((scene) => scene.storyId !== story.id),
+                      )
+                    }
+                  >
                     <bdi>{story.title}</bdi>
-                    {story.isTrashed ? (
-                      <span className="token__note"> {t('time.eraForm.storyInTrash')}</span>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="token__remove"
-                      aria-label={t('time.eraForm.removeStory', { title: story.title })}
-                      onClick={() =>
-                        onChange(
-                          stories.filter((one) => one.id !== story.id),
-                          scenes.filter((scene) => scene.storyId !== story.id),
-                        )
-                      }
-                    >
-                      &times;
-                    </button>
-                  </li>
+                  </Token>
                 ))}
               </ul>
             ) : null}
@@ -121,25 +118,21 @@ export function EraStories({
               {scenes.length > 0 ? (
                 <ul className="storylinks__list">
                   {scenes.map((scene) => (
-                    <li className="token" key={scene.id} data-testid="era-scene">
+                    <Token
+                      as="li"
+                      key={scene.id}
+                      testId="era-scene"
+                      note={scene.isTrashed ? t('time.eraForm.sceneInTrash') : undefined}
+                      removeLabel={t('time.eraForm.removeScene', { title: scene.title })}
+                      onRemove={() =>
+                        onChange(
+                          stories,
+                          scenes.filter((one) => one.id !== scene.id),
+                        )
+                      }
+                    >
                       <bdi>{scene.title}</bdi>
-                      {scene.isTrashed ? (
-                        <span className="token__note"> {t('time.eraForm.sceneInTrash')}</span>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="token__remove"
-                        aria-label={t('time.eraForm.removeScene', { title: scene.title })}
-                        onClick={() =>
-                          onChange(
-                            stories,
-                            scenes.filter((one) => one.id !== scene.id),
-                          )
-                        }
-                      >
-                        &times;
-                      </button>
-                    </li>
+                    </Token>
                   ))}
                 </ul>
               ) : null}

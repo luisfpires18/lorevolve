@@ -12,6 +12,8 @@ import type { SectionGroup } from '../../lore/fieldSections'
 import { SectionTitle } from '../Section'
 import { DateText } from '../DateText'
 import { TagList } from '../TagList'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 /** The Article view beside the picture: the article itself, and the rail of facts, pictures, tags, maps and dates. */
 export function EntryArticleView({
@@ -42,7 +44,9 @@ export function EntryArticleView({
   const { t, tx } = useI18n()
   const isNew = entityId === undefined
   const fact = (value: FieldValue) => (
-    <EntryFact key={value.fieldDefinitionId} value={value} chronology={chronology} />
+    <Fact key={value.fieldDefinitionId} name={value.name} valueClassName="prose">
+      {renderFact(value, chronology)}
+    </Fact>
   )
   return (
     <>
@@ -62,15 +66,13 @@ export function EntryArticleView({
 
       <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
         {(detail?.fields.length ?? 0) > 0 && factSections.groups.length === 0 ? (
-          <dl className="facts" data-testid="entry-fields">
-            {detail!.fields.map(fact)}
-          </dl>
+          <FactList testId="entry-fields">{detail!.fields.map(fact)}</FactList>
         ) : null}
 
         {factSections.groups.length > 0 ? (
           <div className="facts__sections" data-testid="entry-fields">
             {factSections.ungrouped.length > 0 ? (
-              <dl className="facts">{factSections.ungrouped.map(fact)}</dl>
+              <FactList>{factSections.ungrouped.map(fact)}</FactList>
             ) : null}
             {factSections.groups.map(({ section, items }) => (
               <FieldSectionFold
@@ -81,7 +83,7 @@ export function EntryArticleView({
                   setSectionOpen((current) => ({ ...current, [section.id]: open }))
                 }
               >
-                <dl className="facts">{items.map(fact)}</dl>
+                <FactList>{items.map(fact)}</FactList>
               </FieldSectionFold>
             ))}
           </div>
@@ -128,14 +130,5 @@ export function EntryArticleView({
         ) : null}
       </aside>
     </>
-  )
-}
-
-function EntryFact({ value, chronology }: { value: FieldValue; chronology: Chronology }) {
-  return (
-    <div className="facts__row">
-      <dt className="facts__key">{value.name}</dt>
-      <dd className="facts__value prose">{renderFact(value, chronology)}</dd>
-    </div>
   )
 }

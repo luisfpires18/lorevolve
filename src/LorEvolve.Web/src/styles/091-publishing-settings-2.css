@@ -1,11 +1,11 @@
-/* The tab row is the rule above a tab's first section, and above the account's facts. */
+/* The tab row is the rule above a tab's first section, and above the account's facts (a ruled FactList). */
 .profile .tabs__panel > .section:first-child {
   margin-top: var(--space-5);
   padding-top: 0;
   border-top: 0;
 }
 
-.profile .tabs__panel > .profile__facts:first-child {
+.profile .tabs__panel > .facts--ruled:first-child {
   margin-top: 0;
   border-top: 0;
 }

@@ -83,38 +83,6 @@
   overflow-wrap: anywhere;
 }
 
-.profile__facts {
-  margin: 2rem 0 0;
-  border-top: 1px solid var(--rule);
-}
-
-/* Ruled rows, label left and value right, which is how every other list of facts in LorEvolve
-   reads. Left-aligned inside a centred column: a right-ragged column of emails would be
-   harder to read than the centring is worth. */
-.profile__fact {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid var(--rule);
-  text-align: left;
-}
-
-.profile__label {
-  flex: none;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.profile__value {
-  min-width: 0;
-  margin: 0;
-  font-size: 0.925rem;
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-
 .profile__note {
   margin: 1.5rem 0 0;
   font-size: 0.8rem;

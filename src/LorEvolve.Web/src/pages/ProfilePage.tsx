@@ -14,6 +14,8 @@ import { useI18n } from '../i18n'
 import { useQueryTab } from '../lib/queryTab'
 import { listUniverses } from '../universes/api'
 import { QuietNote } from '../components/QuietNote'
+import { Fact } from '../components/Fact'
+import { FactList } from '../components/FactList'
 
 /**
  * The signed-in account, and only what LorEvolve genuinely knows about it.
@@ -79,22 +81,16 @@ export default function ProfilePage() {
       />
 
       <TabPanel idPrefix="profile" id="account" tab={tab}>
-        <dl className="profile__facts">
-          <div className="profile__fact">
-            <dt className="profile__label">{t('account.profile.email')}</dt>
-            <dd className="profile__value" data-testid="profile-email">
-              {user.email}
-            </dd>
-          </div>
+        <FactList look="ruled">
+          <Fact name={t('account.profile.email')} valueTestId="profile-email">
+            {user.email}
+          </Fact>
           {universeCount === null ? null : (
-            <div className="profile__fact">
-              <dt className="profile__label">{t('account.profile.universes')}</dt>
-              <dd className="profile__value" data-testid="profile-universes">
-                {universeCount}
-              </dd>
-            </div>
+            <Fact name={t('account.profile.universes')} valueTestId="profile-universes">
+              {universeCount}
+            </Fact>
           )}
-        </dl>
+        </FactList>
 
         <Section title={t('account.profile.publishing')} titleId="profile-public-heading">
           <PublicNameForm />
