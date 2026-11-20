@@ -34,29 +34,22 @@ export function EpisodeForm({
         onSubmit(title, synopsis.length > 0 ? synopsis : null)
       }}
     >
-      <Field label={t('projects.seasons.episodeTitle')} requiredMark>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            data-testid="project-episode-new-title"
-            required
-          />
-        )}
-      </Field>
-      <Field label={t('projects.seasons.synopsis')}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={synopsis}
-            onChange={(event) => setSynopsis(event.target.value)}
-            data-testid="project-episode-new-synopsis"
-          />
-        )}
-      </Field>
+      <Field
+        label={t('projects.seasons.episodeTitle')}
+        requiredMark
+        name={null}
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        data-testid="project-episode-new-title"
+        required
+      />
+      <Field
+        label={t('projects.seasons.synopsis')}
+        name={null}
+        value={synopsis}
+        onChange={(event) => setSynopsis(event.target.value)}
+        data-testid="project-episode-new-synopsis"
+      />
       <FormActions
         submitLabel={addLabel}
         disabled={busy}

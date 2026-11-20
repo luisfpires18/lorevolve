@@ -33,30 +33,24 @@ export function RelationFormFields({
   return (
     <div className="relform__grid">
       <Field
+        as="select"
         label={t('relationships.section.reading')}
         id="relation-reading"
         error={fieldErrors.relationshiptypeid}
+        value={readingValue}
+        onChange={(event) => {
+          const chosen = choices.find((choice) => choice.key === event.target.value)
+          if (chosen) {
+            edit({ typeId: chosen.typeId, useInverse: chosen.useInverse })
+          }
+        }}
+        data-testid="relationship-reading"
       >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value={readingValue}
-            onChange={(event) => {
-              const chosen = choices.find((choice) => choice.key === event.target.value)
-              if (chosen) {
-                edit({ typeId: chosen.typeId, useInverse: chosen.useInverse })
-              }
-            }}
-            data-testid="relationship-reading"
-          >
-            {choices.map((choice) => (
-              <option key={choice.key} value={choice.key}>
-                {choice.label}
-              </option>
-            ))}
-          </select>
-        )}
+        {choices.map((choice) => (
+          <option key={choice.key} value={choice.key}>
+            {choice.label}
+          </option>
+        ))}
       </Field>
 
       <EntityPicker

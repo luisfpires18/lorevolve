@@ -21,6 +21,8 @@ interface FieldBase {
   after?: ReactNode
   /** Extra classes on the `.field` wrapper. */
   className?: string
+  /** `inline` sets the label beside the control, in one row (a sort or page size select in a toolbar). */
+  look?: 'stacked' | 'inline'
   /** The label stays for screen readers and is not drawn. */
   hideLabel?: boolean
   /** Draws " (required)" after the label; native `required` is a separate prop. */
@@ -34,10 +36,12 @@ interface FieldBase {
 /** A character count under the control; its id is the field's id plus `-count`. */
 type FieldCount = Omit<CharCountProps, 'id'>
 
-/** Input form: `id` is `name`, everything else goes on the `<input>`. */
+/** Input form: `id` is `name`, everything else goes on the `<input>`; `name={null}` writes no name and `id` is the id. */
 type InputField = FieldBase &
-  Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'children'> & {
-    name: string
+  Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'children' | 'name'> & {
+    name: string | null
+    ref?: Ref<HTMLInputElement>
+    controlClassName?: string
     as?: undefined
     count?: FieldCount
     children?: undefined
@@ -154,6 +158,7 @@ export function Field(props: FieldProps) {
       errorAbove: _b,
       after: _f,
       className: _c,
+      look: _o,
       hideLabel: _x,
       requiredMark: _r,
       announce: _a,
@@ -190,8 +195,15 @@ export function Field(props: FieldProps) {
         />
       )
     } else {
-      const { children: _k, ...input } = rest as InputField
-      control = <input {...input} {...shared} name={id} className="field__input" />
+      const { children: _k, name, ...input } = rest as InputField
+      control = (
+        <input
+          {...input}
+          {...shared}
+          name={name ?? undefined}
+          className={['field__input', controlClassName].filter(Boolean).join(' ')}
+        />
+      )
     }
   } else if (props.group === 'fieldset') {
     testId = props['data-testid']
@@ -233,7 +245,9 @@ export function Field(props: FieldProps) {
 
   return (
     <Wrapper
-      className={props.className ? `field ${props.className}` : 'field'}
+      className={['field', props.look === 'inline' ? 'field--inline' : null, props.className]
+        .filter(Boolean)
+        .join(' ')}
       data-testid={testId}
       disabled={disabled}
       aria-describedby={Wrapper === 'fieldset' ? describedBy || undefined : undefined}

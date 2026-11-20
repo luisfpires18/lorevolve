@@ -142,32 +142,24 @@ export function PublicDetailsForm({
       </Field>
 
       <Field
+        as="select"
         label={t('universe.publicDetails.category')}
         id={categoryId}
         error={fieldErrors.category}
         announce
+        value={category}
+        onChange={(event) => {
+          setSavedMessage(false)
+          setCategory(event.target.value)
+        }}
+        data-testid="public-category"
       >
-        {(control) => (
-          <select
-            id={control.id}
-            className="field__input field__input--select"
-            value={category}
-            aria-describedby={control['aria-describedby']}
-            aria-invalid={control['aria-invalid']}
-            onChange={(event) => {
-              setSavedMessage(false)
-              setCategory(event.target.value)
-            }}
-            data-testid="public-category"
-          >
-            <option value="">{t('universe.publicDetails.categoryChoose')}</option>
-            {CATEGORIES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {categoryLabel(option.value)}
-              </option>
-            ))}
-          </select>
-        )}
+        <option value="">{t('universe.publicDetails.categoryChoose')}</option>
+        {CATEGORIES.map((option) => (
+          <option key={option.value} value={option.value}>
+            {categoryLabel(option.value)}
+          </option>
+        ))}
       </Field>
 
       <Field

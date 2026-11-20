@@ -42,26 +42,22 @@ export function BoardsControls({
       />
 
       {universe ? null : (
-        <Field id={showId} className="ideas__show" label={t('ideas.boards.show')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={show}
-              onChange={(event) => update({ show: event.target.value })}
-              data-testid="boards-show"
-            >
-              <option value="">{t('ideas.boards.allBoards')}</option>
-              <option value={UNASSIGNED}>{t('ideas.boards.noUniverse')}</option>
-              {(universes ?? []).map((one) => (
-                <option key={one.id} value={one.id}>
-                  {one.isArchived
-                    ? t('ideas.boards.archivedUniverse', { name: one.name })
-                    : one.name}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          id={showId}
+          className="ideas__show"
+          label={t('ideas.boards.show')}
+          value={show}
+          onChange={(event) => update({ show: event.target.value })}
+          data-testid="boards-show"
+        >
+          <option value="">{t('ideas.boards.allBoards')}</option>
+          <option value={UNASSIGNED}>{t('ideas.boards.noUniverse')}</option>
+          {(universes ?? []).map((one) => (
+            <option key={one.id} value={one.id}>
+              {one.isArchived ? t('ideas.boards.archivedUniverse', { name: one.name }) : one.name}
+            </option>
+          ))}
         </Field>
       )}
 

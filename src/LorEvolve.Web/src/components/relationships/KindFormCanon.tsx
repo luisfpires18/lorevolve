@@ -34,27 +34,19 @@ export function KindFormCanon({
         </QuietNote>
       ) : (
         <Field
+          as="select"
           label={t('relationships.types.ageOrdering')}
           id="reltype-age-order"
           error={orderError}
+          value={draft.ageOrder}
+          onChange={(event) => edit({ ageOrder: Number(event.target.value) as AgeOrderValue })}
+          data-testid="reltype-age-order"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={draft.ageOrder}
-              onChange={(event) => edit({ ageOrder: Number(event.target.value) as AgeOrderValue })}
-              data-testid="reltype-age-order"
-            >
-              <option value={AgeOrder.None}>{t('relationships.types.noAgeRule')}</option>
-              <option value={AgeOrder.SourceOlder}>
-                {t('relationships.types.sourceMustBeOlder')}
-              </option>
-              <option value={AgeOrder.SourceYounger}>
-                {t('relationships.types.sourceMustBeYounger')}
-              </option>
-            </select>
-          )}
+          <option value={AgeOrder.None}>{t('relationships.types.noAgeRule')}</option>
+          <option value={AgeOrder.SourceOlder}>{t('relationships.types.sourceMustBeOlder')}</option>
+          <option value={AgeOrder.SourceYounger}>
+            {t('relationships.types.sourceMustBeYounger')}
+          </option>
         </Field>
       )}
 

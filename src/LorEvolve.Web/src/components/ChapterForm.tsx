@@ -141,85 +141,61 @@ export function ChapterForm({
         label={t('stories.chapterForm.titleLabel')}
         hint={t('stories.chapterForm.titleHint')}
         error={fieldErrors.title}
-      >
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            ref={title}
-            type="text"
-            dir="auto"
-            placeholder={t('stories.chapterForm.titlePlaceholder')}
-            value={draft.title}
-            onChange={(event) => edit({ title: event.target.value })}
-            data-testid="chapter-title-input"
-          />
-        )}
-      </Field>
+        name={null}
+        ref={title}
+        type="text"
+        dir="auto"
+        placeholder={t('stories.chapterForm.titlePlaceholder')}
+        value={draft.title}
+        onChange={(event) => edit({ title: event.target.value })}
+        data-testid="chapter-title-input"
+      />
 
       {arcs.length > 0 ? (
         <Field
+          as="select"
           id="chapter-arc"
           label={t('stories.chapterForm.arcLabel')}
           hint={
             chapter ? t('stories.chapterForm.arcHintMove') : t('stories.chapterForm.arcHintNew')
           }
           error={fieldErrors.plotarcid}
+          value={draft.arcId}
+          onChange={(event) => edit({ arcId: event.target.value })}
+          data-testid="chapter-arc-select"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={draft.arcId}
-              onChange={(event) => edit({ arcId: event.target.value })}
-              data-testid="chapter-arc-select"
-            >
-              <option value="">{t('stories.chapterForm.noArc')}</option>
-              {arcs.map((arc, index) => (
-                <option key={arc.id} value={arc.id}>
-                  {arcLabel(index, arc.title)}
-                </option>
-              ))}
-            </select>
-          )}
+          <option value="">{t('stories.chapterForm.noArc')}</option>
+          {arcs.map((arc, index) => (
+            <option key={arc.id} value={arc.id}>
+              {arcLabel(index, arc.title)}
+            </option>
+          ))}
         </Field>
       ) : null}
 
       <Field
+        as="textarea"
         id="chapter-summary"
         label={t('stories.chapterForm.summaryLabel')}
         hint={t('stories.chapterForm.summaryHint')}
         error={fieldErrors.summary}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={3}
-            value={draft.summary}
-            onChange={(event) => edit({ summary: event.target.value })}
-            data-testid="chapter-summary-input"
-          />
-        )}
-      </Field>
+        rows={3}
+        value={draft.summary}
+        onChange={(event) => edit({ summary: event.target.value })}
+        data-testid="chapter-summary-input"
+      />
 
       <Field
+        as="textarea"
         id="chapter-notes"
         label={t('stories.chapterForm.notesLabel')}
         hint={t('stories.chapterForm.notesHint')}
         error={fieldErrors.notes}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            value={draft.notes}
-            onChange={(event) => edit({ notes: event.target.value })}
-            data-testid="chapter-notes-input"
-          />
-        )}
-      </Field>
+        rows={4}
+        value={draft.notes}
+        onChange={(event) => edit({ notes: event.target.value })}
+        data-testid="chapter-notes-input"
+      />
     </Drawer>
   )
 }

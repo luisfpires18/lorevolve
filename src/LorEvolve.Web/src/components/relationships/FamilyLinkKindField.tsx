@@ -36,6 +36,7 @@ export function FamilyLinkKindField({
 
   return (
     <Field
+      as="select"
       label={t('places.linkForm.connection')}
       id="family-link-kind"
       error={fieldErrors.relationshiptypeid}
@@ -50,25 +51,18 @@ export function FamilyLinkKindField({
           {t('places.linkForm.newKind')}
         </NewButton>
       }
+      value={kind?.id ?? ''}
+      onChange={(event) => {
+        setKindId(event.target.value)
+        setFocalIsSource(true)
+      }}
+      data-testid="family-link-kind"
     >
-      {(control) => (
-        <select
-          {...control}
-          className="field__input field__input--select"
-          value={kind?.id ?? ''}
-          onChange={(event) => {
-            setKindId(event.target.value)
-            setFocalIsSource(true)
-          }}
-          data-testid="family-link-kind"
-        >
-          {kinds.map((candidate) => (
-            <option key={candidate.id} value={candidate.id}>
-              {kindOption(candidate)}
-            </option>
-          ))}
-        </select>
-      )}
+      {kinds.map((candidate) => (
+        <option key={candidate.id} value={candidate.id}>
+          {kindOption(candidate)}
+        </option>
+      ))}
     </Field>
   )
 }

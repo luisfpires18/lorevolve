@@ -83,24 +83,16 @@ export function BlockSection({
         }}
       >
         <Field
+          as="textarea"
           label={t('admin.block.reasonLabel')}
           id="admin-reason"
           error={error ? <span data-testid="admin-reason-error">{error}</span> : undefined}
-        >
-          {(control) => (
-            <textarea
-              id={control.id}
-              className="field__input field__input--area"
-              rows={3}
-              maxLength={500}
-              value={reason}
-              aria-invalid={control['aria-invalid']}
-              aria-describedby={control['aria-describedby']}
-              onChange={(event) => setReason(event.target.value)}
-              data-testid="admin-reason"
-            />
-          )}
-        </Field>
+          rows={3}
+          maxLength={500}
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          data-testid="admin-reason"
+        />
         <Button
           tone={block ? 'danger-quiet' : 'primary'}
           type="submit"

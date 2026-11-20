@@ -31,30 +31,24 @@ export function ItemUnlockField({
       hint={t('progression.item.unlock.hint')}
     >
       <Field
+        as="select"
         label={t('progression.item.unlock.stage')}
         id="item-unlock-era"
         error={errorOf('unlockEraId')}
+        value={draft.unlockEraId}
+        onChange={(event) => edit({ unlockEraId: event.target.value })}
+        data-testid={`${kind}-unlock-era`}
       >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value={draft.unlockEraId}
-            onChange={(event) => edit({ unlockEraId: event.target.value })}
-            data-testid={`${kind}-unlock-era`}
-          >
-            <option value="">
-              {base.eras.length === 0
-                ? t('progression.item.unlock.noStages')
-                : t('progression.item.unlock.notSaid')}
-            </option>
-            {base.eras.map((era) => (
-              <option key={era.id} value={era.id}>
-                {era.name}
-              </option>
-            ))}
-          </select>
-        )}
+        <option value="">
+          {base.eras.length === 0
+            ? t('progression.item.unlock.noStages')
+            : t('progression.item.unlock.notSaid')}
+        </option>
+        {base.eras.map((era) => (
+          <option key={era.id} value={era.id}>
+            {era.name}
+          </option>
+        ))}
       </Field>
 
       <ScenePicks

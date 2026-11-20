@@ -32,33 +32,27 @@ export function KindFormFamily({
       ) : null}
 
       <Field
+        as="select"
         label={t('relationships.types.familyMeaning')}
         id="reltype-family-meaning"
         error={fieldErrors[FAMILY_KEY]}
+        value={
+          draft.isSymmetric && isParentSemantic(draft.familySemantic)
+            ? FamilySemantic.None
+            : draft.familySemantic
+        }
+        onChange={(event) =>
+          edit({ familySemantic: Number(event.target.value) as FamilySemanticValue })
+        }
+        data-testid="reltype-family-meaning"
       >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value={
-              draft.isSymmetric && isParentSemantic(draft.familySemantic)
-                ? FamilySemantic.None
-                : draft.familySemantic
-            }
-            onChange={(event) =>
-              edit({ familySemantic: Number(event.target.value) as FamilySemanticValue })
-            }
-            data-testid="reltype-family-meaning"
-          >
-            {FAMILY_SEMANTIC_ORDER.filter(
-              (option) => !draft.isSymmetric || !isParentSemantic(option),
-            ).map((option) => (
-              <option key={option} value={option}>
-                {FAMILY_SEMANTIC_LABELS[option]}
-              </option>
-            ))}
-          </select>
-        )}
+        {FAMILY_SEMANTIC_ORDER.filter(
+          (option) => !draft.isSymmetric || !isParentSemantic(option),
+        ).map((option) => (
+          <option key={option} value={option}>
+            {FAMILY_SEMANTIC_LABELS[option]}
+          </option>
+        ))}
       </Field>
 
       {!draft.isSymmetric && isParentSemantic(draft.familySemantic) ? (

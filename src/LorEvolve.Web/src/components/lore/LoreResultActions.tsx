@@ -7,6 +7,7 @@ import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
 import { Button } from '../Button'
+import { Field } from '../Field'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -41,44 +42,38 @@ export function LoreResultActions({
     <>
       {chosenName ? (
         <div className="actions lore__resultactions" data-testid="lore-result-actions">
-          <div className="lore__pagesize">
-            <label className="lore__pagesizelabel" htmlFor="lore-sort">
-              {t('lore.page.sortBy')}
-            </label>
-            <select
-              id="lore-sort"
-              className="field__input field__input--select lore__pagesizeselect"
-              value={sort ?? ''}
-              onChange={(event) => update({ sort: event.target.value || null, page: null }, true)}
-              data-testid="lore-sort"
-            >
-              <option value="">
-                {ranked ? t('lore.page.sortBest') : t('lore.page.sortUpdated')}
-              </option>
-              {ranked ? <option value="updated">{t('lore.page.sortUpdated')}</option> : null}
-              <option value="name">{t('lore.page.sortName')}</option>
-              <option value="created">{t('lore.page.sortCreated')}</option>
-            </select>
-          </div>
+          <Field
+            as="select"
+            look="inline"
+            id="lore-sort"
+            label={t('lore.page.sortBy')}
+            value={sort ?? ''}
+            onChange={(event) => update({ sort: event.target.value || null, page: null }, true)}
+            data-testid="lore-sort"
+          >
+            <option value="">
+              {ranked ? t('lore.page.sortBest') : t('lore.page.sortUpdated')}
+            </option>
+            {ranked ? <option value="updated">{t('lore.page.sortUpdated')}</option> : null}
+            <option value="name">{t('lore.page.sortName')}</option>
+            <option value="created">{t('lore.page.sortCreated')}</option>
+          </Field>
           {offerPageSize ? (
-            <div className="lore__pagesize">
-              <label className="lore__pagesizelabel" htmlFor="lore-page-size">
-                {t('lore.page.perPage')}
-              </label>
-              <select
-                id="lore-page-size"
-                className="field__input field__input--select lore__pagesizeselect"
-                value={pageSize}
-                onChange={(event) => changePageSize(Number(event.target.value))}
-                data-testid="lore-page-size"
-              >
-                {LORE_PAGE_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Field
+              as="select"
+              look="inline"
+              id="lore-page-size"
+              label={t('lore.page.perPage')}
+              value={pageSize}
+              onChange={(event) => changePageSize(Number(event.target.value))}
+              data-testid="lore-page-size"
+            >
+              {LORE_PAGE_SIZES.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </Field>
           ) : null}
           {access.manageTrash && (pageItems.length > 0 || isSelecting) ? (
             <Button

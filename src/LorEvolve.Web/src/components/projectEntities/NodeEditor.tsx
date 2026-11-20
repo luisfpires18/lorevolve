@@ -127,34 +127,26 @@ export function NodeEditor({
       {failed ? <FormMessage testId="project-node-editor-failed">{failed}</FormMessage> : null}
       {node ? (
         <>
-          <Field label={t('projects.structure.titleLabel')}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={title}
-                maxLength={200}
-                readOnly={!canEdit}
-                placeholder={t('projects.structure.titlePlaceholder')}
-                onChange={(event) => setTitle(event.target.value)}
-                data-testid="project-node-title"
-              />
-            )}
-          </Field>
-          <Field label={t('projects.structure.summaryLabel')}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={summary}
-                maxLength={2000}
-                readOnly={!canEdit}
-                placeholder={t('projects.structure.summaryPlaceholder')}
-                onChange={(event) => setSummary(event.target.value)}
-                data-testid="project-node-summary"
-              />
-            )}
-          </Field>
+          <Field
+            label={t('projects.structure.titleLabel')}
+            name={null}
+            value={title}
+            maxLength={200}
+            readOnly={!canEdit}
+            placeholder={t('projects.structure.titlePlaceholder')}
+            onChange={(event) => setTitle(event.target.value)}
+            data-testid="project-node-title"
+          />
+          <Field
+            label={t('projects.structure.summaryLabel')}
+            name={null}
+            value={summary}
+            maxLength={2000}
+            readOnly={!canEdit}
+            placeholder={t('projects.structure.summaryPlaceholder')}
+            onChange={(event) => setSummary(event.target.value)}
+            data-testid="project-node-summary"
+          />
           <Field
             label={
               node.level === 'panel'

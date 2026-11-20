@@ -85,22 +85,18 @@ export function TypesHeader({
           onChange={chooseContext}
         />
         {gaming ? (
-          <Field label={t('entityTypes.page.game.label')}>
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={game.id}
-                onChange={(event) => chooseGame(event.target.value)}
-                data-testid="types-game"
-              >
-                {games.map((each) => (
-                  <option key={each.id} value={each.id}>
-                    {each.name}
-                  </option>
-                ))}
-              </select>
-            )}
+          <Field
+            as="select"
+            label={t('entityTypes.page.game.label')}
+            value={game.id}
+            onChange={(event) => chooseGame(event.target.value)}
+            data-testid="types-game"
+          >
+            {games.map((each) => (
+              <option key={each.id} value={each.id}>
+                {each.name}
+              </option>
+            ))}
           </Field>
         ) : null}
       </div>

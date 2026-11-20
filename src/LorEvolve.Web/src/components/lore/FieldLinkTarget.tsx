@@ -27,6 +27,7 @@ export function FieldLinkTarget({
     <>
       {isLink ? (
         <Field
+          as="select"
           label={t('entityTypes.fields.canLinkTo')}
           id="field-target"
           error={fieldErrors.target}
@@ -44,39 +45,32 @@ export function FieldLinkTarget({
               ) : null}
             </>
           }
+          value={target ?? ''}
+          onChange={(event) => setTarget((event.target.value || null) as TargetChoice)}
+          data-testid="field-target"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={target ?? ''}
-              onChange={(event) => setTarget((event.target.value || null) as TargetChoice)}
-              data-testid="field-target"
-            >
-              {target === null ? (
-                <option value="" disabled>
-                  {t('entityTypes.fields.chooseTarget')}
+          {target === null ? (
+            <option value="" disabled>
+              {t('entityTypes.fields.chooseTarget')}
+            </option>
+          ) : null}
+          <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
+          {groups.length > 0 ? (
+            <optgroup label={t('entityTypes.fields.optgroupGroups')}>
+              {groups.map((group) => (
+                <option key={group.id} value={`group:${group.id}`}>
+                  {t('entityTypes.fields.groupOption', { name: group.name })}
                 </option>
-              ) : null}
-              <option value="any">{t('entityTypes.fields.anyLoreType')}</option>
-              {groups.length > 0 ? (
-                <optgroup label={t('entityTypes.fields.optgroupGroups')}>
-                  {groups.map((group) => (
-                    <option key={group.id} value={`group:${group.id}`}>
-                      {t('entityTypes.fields.groupOption', { name: group.name })}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
-              <optgroup label={t('entityTypes.fields.optgroupTypes')}>
-                {tree.ordered.map((node) => (
-                  <option key={node.type.id} value={`type:${node.type.id}`}>
-                    {typePathLabel(node)}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
-          )}
+              ))}
+            </optgroup>
+          ) : null}
+          <optgroup label={t('entityTypes.fields.optgroupTypes')}>
+            {tree.ordered.map((node) => (
+              <option key={node.type.id} value={`type:${node.type.id}`}>
+                {typePathLabel(node)}
+              </option>
+            ))}
+          </optgroup>
         </Field>
       ) : null}
     </>

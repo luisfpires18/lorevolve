@@ -108,62 +108,51 @@ export function NewProject() {
             })
         }}
       >
-        <Field label={t('projects.new.name')} requiredMark>
-          {(control) => (
-            <input
-              {...control}
-              className="field__input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="project-new-name"
-              required
-            />
-          )}
-        </Field>
+        <Field
+          label={t('projects.new.name')}
+          requiredMark
+          name={null}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          data-testid="project-new-name"
+          required
+        />
 
-        <Field label={t('projects.new.kind')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={isCinema(kind) ? ProjectKind.Film : kind}
-              onChange={(event) => {
-                const next = Number(event.target.value) as ProjectKindValue
-                setKind(next)
-                setFormat(formatsFor(next)[0]?.id ?? null)
-              }}
-              data-testid="project-new-kind"
-            >
-              {PICKED.map((value) => (
-                <option key={value} value={value}>
-                  {value === ProjectKind.Film ? t('projects.new.cinema') : kindLabel(value)}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          label={t('projects.new.kind')}
+          value={isCinema(kind) ? ProjectKind.Film : kind}
+          onChange={(event) => {
+            const next = Number(event.target.value) as ProjectKindValue
+            setKind(next)
+            setFormat(formatsFor(next)[0]?.id ?? null)
+          }}
+          data-testid="project-new-kind"
+        >
+          {PICKED.map((value) => (
+            <option key={value} value={value}>
+              {value === ProjectKind.Film ? t('projects.new.cinema') : kindLabel(value)}
+            </option>
+          ))}
         </Field>
 
         {pickFormats(kind).length > 0 ? (
-          <Field label={t('projects.new.format')}>
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={format ?? ''}
-                onChange={(event) => {
-                  const picked = pickFormats(kind).find((one) => one.id === event.target.value)
-                  setFormat(event.target.value)
-                  if (picked && isCinema(kind)) setKind(picked.kind as ProjectKindValue)
-                }}
-                data-testid="project-new-format"
-              >
-                {pickFormats(kind).map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {formatLabel(option.id)}
-                  </option>
-                ))}
-              </select>
-            )}
+          <Field
+            as="select"
+            label={t('projects.new.format')}
+            value={format ?? ''}
+            onChange={(event) => {
+              const picked = pickFormats(kind).find((one) => one.id === event.target.value)
+              setFormat(event.target.value)
+              if (picked && isCinema(kind)) setKind(picked.kind as ProjectKindValue)
+            }}
+            data-testid="project-new-format"
+          >
+            {pickFormats(kind).map((option) => (
+              <option key={option.id} value={option.id}>
+                {formatLabel(option.id)}
+              </option>
+            ))}
           </Field>
         ) : null}
 

@@ -93,33 +93,26 @@ export function ScriptEditor({
         <FormMessage testId={`project-script-failed-${episode.id}`}>{failed}</FormMessage>
       ) : null}
 
-      <Field label={t('projects.seasons.episodeTitle')} requiredMark>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            data-testid={`project-script-title-${episode.id}`}
-            // Typing waits for the read, which would otherwise overwrite what was typed.
-            disabled={script === null}
-            required
-          />
-        )}
-      </Field>
+      <Field
+        label={t('projects.seasons.episodeTitle')}
+        requiredMark
+        name={null}
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+        data-testid={`project-script-title-${episode.id}`}
+        // Typing waits for the read, which would otherwise overwrite what was typed.
+        disabled={script === null}
+        required
+      />
 
-      <Field label={t('projects.seasons.synopsis')}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={synopsis}
-            onChange={(event) => setSynopsis(event.target.value)}
-            data-testid={`project-script-synopsis-${episode.id}`}
-            disabled={script === null}
-          />
-        )}
-      </Field>
+      <Field
+        label={t('projects.seasons.synopsis')}
+        name={null}
+        value={synopsis}
+        onChange={(event) => setSynopsis(event.target.value)}
+        data-testid={`project-script-synopsis-${episode.id}`}
+        disabled={script === null}
+      />
 
       {/*
        * Drawn only once the stored script has arrived. Showing an empty field first and filling it in on arrival would

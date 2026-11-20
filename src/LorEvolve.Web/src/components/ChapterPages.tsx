@@ -130,18 +130,14 @@ export function ChapterPages({
               .catch(failing)
           }}
         >
-          <Field label={t('projects.pages.name')}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t('projects.pages.namePlaceholder')}
-                data-testid={`project-page-new-name-${chapterId}`}
-              />
-            )}
-          </Field>
+          <Field
+            label={t('projects.pages.name')}
+            name={null}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder={t('projects.pages.namePlaceholder')}
+            data-testid={`project-page-new-name-${chapterId}`}
+          />
           <FormActions
             submitLabel={t('projects.pages.add')}
             disabled={busy}
