@@ -1,6 +1,6 @@
 # Before and after evidence: shared small parts for dates, counts, badges, chips and pictures (#417)
 
-PR #444, Issue #417 (LOREX-099). Before is `origin/dev` at `e8cd398c`; after is `feat/shared-small-parts` at `dda0d886`.
+PR #444, Issue #417 (LOREX-099). Before is `origin/dev` at `e8cd398c`; after is `feat/shared-small-parts` at `dda0d886`, with T1, T2, R23 and D28 retaken on the after side at `ee65396e` (the fix for the two regressions found here).
 
 ## Setup and seed
 
@@ -16,9 +16,9 @@ PR #444, Issue #417 (LOREX-099). Before is `origin/dev` at `e8cd398c`; after is 
 |---|---|
 | States | 131 (the plan's 114 split where one named place is two screens: 54 R, 6 T and G, 8 P and M, 7 canon, 5 heading counts, 6 counts, 33 dates, 3 empty fact, 7 skeletons, 2 arrival) |
 | PNGs | 1048 (131 x 8) |
-| Pairs | 524: 396 identical, 128 differing |
+| Pairs | 524: 408 identical, 116 differing |
 | Differing pairs, intended | 80 (each named below) |
-| Differing pairs, regressions | 12 (2 regressions, below) |
+| Differing pairs, regressions | 0 (the two found were fixed in `ee65396e` and retaken, below) |
 | Differing pairs, test environment | 4 (a server time read nine minutes apart) |
 | Differing pairs, rendering | 32 (glyph anti-aliasing next to a new `<time>`, or a few corner pixels) |
 | Failed states | 0 of 524 shots on each side (R11 on the phone rerun with the filter panel opened first) |
@@ -149,7 +149,7 @@ Where `<time>` before is 0, the date was plain text with no `dateTime`; after, i
 | `r22b-lore-select-bar` | Lore, Character, Select, one card picked: the select bar | 0 of 4 | differs |
 | `r22c-mass-create-bar` | Lore, Mass create: the bar | 0 of 4 | differs |
 | `r22d-trash-select-bar` | Trash, Select, one row picked: the select bar | 0 of 4 | differs |
-| `r23-article-editing-bar` | Tamsin, Write the article: the article editing bar | 2 of 4 | differs |
+| `r23-article-editing-bar` | Tamsin, Write the article: the article editing bar | 0 of 4 | differs |
 | `r24a-artwork-field-cover` | Writing shelf, a story's menu, Cover: the artwork field | 0 of 4 | differs |
 | `r24b-artwork-field-publish` | Publish page, the universe artwork field | 0 of 4 | differs |
 | `r25a-map-calibration` | Harbour map, Calibrate | 4 of 4 | differs |
@@ -178,8 +178,8 @@ Where `<time>` before is 0, the date was plain text with no `dateTime`; after, i
 | `r32a-invitation-ready` | An invitation link, signed in (the invitation answered from a fixture) | 0 of 4 | differs |
 | `r32b-invitation-signed-out` | An invitation link, signed out | 0 of 4 | differs |
 | `r32c-connect-consent` | The AI connect consent page for Seed World | 0 of 4 | same |
-| `t1-entry-tags` | Arlen, 12 tags, one long | 4 of 4 | differs |
-| `t2-revision-snapshot` | Arlen, History, a version viewed (tags, an empty Title) | 2 of 4 | differs |
+| `t1-entry-tags` | Arlen, 12 tags, one long | 0 of 4 | differs |
+| `t2-revision-snapshot` | Arlen, History, a version viewed (tags, an empty Title) | 0 of 4 | differs |
 | `t3-admin-users-blocked` | Admin, Users, with a blocked member | 4 of 4 | differs |
 | `t4-templates-row` | Types, Templates, the template row | 0 of 4 | differs |
 | `g1-explore-card` | Explore, world cards with genre chips | 1 of 4 | same |
@@ -239,7 +239,7 @@ Where `<time>` before is 0, the date was plain text with no `dateTime`; after, i
 | `d25-recovered-draft` | Tide clock idea, recovered draft notice | 4 of 4 | differs |
 | `d26-private-note` | Mara, the private note | 1 of 4 | differs |
 | `d27-public-story` | The Long Ebb public page | 4 of 4 | differs |
-| `d28-universes-list` | Universes list | 4 of 4 | differs |
+| `d28-universes-list` | Universes list | 0 of 4 | differs |
 | `d29-universe-overview` | Seed World overview | 4 of 4 | differs |
 | `d30-conflict-entry` | Canon integrity, the conflict entries | 0 of 4 | differs |
 | `d31-project-entity-rail` | Stone warden game entity, the rail | 0 of 4 | differs |
@@ -296,16 +296,6 @@ Every differing pair was opened before next to after, at full size or as a 2x to
 - `p4-author-photo-broken`: the header avatar as P1; the author photo itself already fell back to the initial on both sides (desktop light 13195 px, desktop dark 9541 px, phone light 9125 px, phone dark 9948 px).
 - `p6-account-menu-broken-photo`: the profile picture and the header avatar: an empty circle and a broken image before, the "S" monogram after (desktop light 12292 px, desktop dark 8165 px, phone light 5352 px, phone dark 4246 px).
 
-### X, Regression: entry and revision tags are 2.4 px further apart (3 states, 8 pairs)
-
-- `r23-article-editing-bar`: Tamsin's two tags, "salt" 2.4 px further right (the same gap) (desktop light 4511 px, desktop dark 3038 px).
-- `t1-entry-tags`: the tag gap is 8 px, was 5.6 px (`.dossier__tags` lost its own gap and `.taglist` gives 8 px); on the desktop rail the chips spread and the block is 7.2 px taller (125.8 to 133 px), on the phone 107.2 to 114.4 px, so everything under the tags moves down (desktop light 17615 px, desktop dark 14656 px, phone light 79947 px, phone dark 79559 px).
-- `t2-revision-snapshot`: the same gap; the 12 tags no longer fit on one line: the last tag wraps to a second line (22.6 to 53.2 px) and the version list below moves down about 30 px (desktop light 58691 px, desktop dark 41301 px).
-
-### Y, Regression: the "Updated" date on a universe card moved right (1 state, 4 pairs)
-
-- `d28-universes-list`: the card meta row is a flex row with an 8 px gap; the date is now its own `<time>` flex item, so the gap replaces the collapsed space and the date sits 4.4 px further right ("Updated" to "Nov" 76.3 px before, 80.7 px after) on every card (desktop light 3931 px, desktop dark 4242 px, phone light 5078 px, phone dark 12976 px).
-
 ### T, Environment: a time the server writes when the page asks (1 state, 4 pairs)
 
 - `d11-admin-main`: "Counted Nov 20, 2026, 01:16 PM" before and "01:25 PM" after: the overview is counted at request time, nine minutes apart; nothing else differs (desktop light 2438 px, desktop dark 4575 px, phone light 2491 px, phone dark 4463 px).
@@ -333,18 +323,18 @@ Every differing pair was opened before next to after, at full size or as a 2x to
 - `d22-progression-history`: nothing visible (desktop dark 6 px).
 - `d26-private-note`: nothing visible (phone light 75 px).
 
-### Identical in all four pairs (88 states)
+### Identical in all four pairs (92 states)
 
-`r06-maps-empty`, `r07-idea-save-bar`, `r08-board-save-bar`, `r09-machine-save-bar`, `r10-world-rule-form`, `r11-field-filter-editor`, `r12-types-page`, `r13-type-fields-archived`, `r14-project-schema-fields`, `r15-season-episodes`, `r16-comic-page-rows`, `r17-sagas-unassigned`, `r18-template-fields`, `r19-field-sections-dialog`, `r20-new-map-drawer`, `r21-relations-when`, `r22a-entry-form-bar`, `r22b-lore-select-bar`, `r22c-mass-create-bar`, `r22d-trash-select-bar`, `r24a-artwork-field-cover`, `r24b-artwork-field-publish`, `r27-lore-page-head`, `r28a-calendar`, `r28b-chronology`, `r28c-cinema-saga-form`, `r28d-admin-password`, `r28f-outline-add-buttons`, `r28g-trash-erase-confirm`, `r28h-trash-bulk-confirm`, `r28i-trash-restore-public`, `r28j-finding-detail`, `r28k-machine-states`, `r28l-machine-transitions`, `r28m-transition-drawer`, `r29b-cropper`, `r30b-lore-preview`, `r31a-trash-row`, `r31b-family-details`, `r32a-invitation-ready`, `r32b-invitation-signed-out`, `r32c-connect-consent`, `t4-templates-row`, `g2-public-world-hero`, `m1-members-list`, `m2-public-lore-card-no-picture`, `k1-lore-cards`, `k3-lore-preview`, `k4-timeline-row`, `k5-relation-row`, `k6-family-details`, `k7-family-other-relations`, `h2-suggestions`, `n1-restore-preview-en`, `n3-char-counter`, `d02-entry-history`, `d03-article-history`, `d04-manuscript-history`, `d05-comments`, `d06-suggestions`, `d07-ai-changes-list`, `d08-ai-change-page`, `d10-admin-user`, `d12-feedback`, `d13-backups`, `d15-restore-ready`, `d16a-board-list`, `d16b-board-head`, `d17a-idea-list`, `d17b-idea-head`, `d19-rule-page-head`, `d20-world-logic-integrity`, `d21-rules-and-finding`, `d23-trash`, `d24-invitations-members`, `d30-conflict-entry`, `d31-project-entity-rail`, `e1-era-panel`, `e2-history-restored-unknown`, `e3-image-field-blank`, `s1-lore-loading`, `s2-types-loading`, `s3-public-lore-loading`, `s4-public-story-loading`, `s5-public-world-loading`, `s6-public-author-loading`, `s7-explore-loading`, `a1-entry-article-arrival`.
+`r06-maps-empty`, `r07-idea-save-bar`, `r08-board-save-bar`, `r09-machine-save-bar`, `r10-world-rule-form`, `r11-field-filter-editor`, `r12-types-page`, `r13-type-fields-archived`, `r14-project-schema-fields`, `r15-season-episodes`, `r16-comic-page-rows`, `r17-sagas-unassigned`, `r18-template-fields`, `r19-field-sections-dialog`, `r20-new-map-drawer`, `r21-relations-when`, `r22a-entry-form-bar`, `r22b-lore-select-bar`, `r22c-mass-create-bar`, `r22d-trash-select-bar`, `r23-article-editing-bar`, `r24a-artwork-field-cover`, `r24b-artwork-field-publish`, `r27-lore-page-head`, `r28a-calendar`, `r28b-chronology`, `r28c-cinema-saga-form`, `r28d-admin-password`, `r28f-outline-add-buttons`, `r28g-trash-erase-confirm`, `r28h-trash-bulk-confirm`, `r28i-trash-restore-public`, `r28j-finding-detail`, `r28k-machine-states`, `r28l-machine-transitions`, `r28m-transition-drawer`, `r29b-cropper`, `r30b-lore-preview`, `r31a-trash-row`, `r31b-family-details`, `r32a-invitation-ready`, `r32b-invitation-signed-out`, `r32c-connect-consent`, `t1-entry-tags`, `t2-revision-snapshot`, `t4-templates-row`, `g2-public-world-hero`, `m1-members-list`, `m2-public-lore-card-no-picture`, `k1-lore-cards`, `k3-lore-preview`, `k4-timeline-row`, `k5-relation-row`, `k6-family-details`, `k7-family-other-relations`, `h2-suggestions`, `n1-restore-preview-en`, `n3-char-counter`, `d02-entry-history`, `d03-article-history`, `d04-manuscript-history`, `d05-comments`, `d06-suggestions`, `d07-ai-changes-list`, `d08-ai-change-page`, `d10-admin-user`, `d12-feedback`, `d13-backups`, `d15-restore-ready`, `d16a-board-list`, `d16b-board-head`, `d17a-idea-list`, `d17b-idea-head`, `d19-rule-page-head`, `d20-world-logic-integrity`, `d21-rules-and-finding`, `d23-trash`, `d24-invitations-members`, `d28-universes-list`, `d30-conflict-entry`, `d31-project-entity-rail`, `e1-era-panel`, `e2-history-restored-unknown`, `e3-image-field-blank`, `s1-lore-loading`, `s2-types-loading`, `s3-public-lore-loading`, `s4-public-story-loading`, `s5-public-world-loading`, `s6-public-author-loading`, `s7-explore-loading`, `a1-entry-article-arrival`.
 
 These include most R states: the merged row computes a new gap, wrap or alignment, but with one button per line, or buttons of one height that do not wrap, nothing moves. Every skeleton (the `.pskeleton` classes draw what the three old classes drew), every canon badge (`CanonBadge` renders the same `StatusBadge`), the genre chips, the empty fact (the same character), and the restore preview in both languages: the test browser's language is the app's language, so `formatCount` and the old `toLocaleString` group alike ("12,345", and "12 345" in pt-PT). The difference Decision 4 makes shows only when the browser and the app are set to different languages.
 
 ## Regressions
 
-Two, both differences the plan does not name. No code was changed here.
+Two were found on `dda0d886`, both differences the plan does not name, and both were fixed in `ee65396e`. The after side of T1, T2, R23 and D28 (16 PNGs) was then taken again on the same restored data; all 16 pairs are now pixel identical to before, at full colour and at 256 colours.
 
-1. **Entry and revision tags spread.** `.dossier__tags` was trimmed to its margins and `TagList`'s `.taglist` gives the chips an 8 px gap; they had 5.6 px. Seen in T1 (Arlen's 12 tags: desktop chips 2.4 px further apart each, block 125.8 to 133 px tall; phone 107.2 to 114.4 px), T2 (revision snapshot: the 12 tags no longer fit one line, the last wraps, the row grows from 22.6 to 53.2 px and the version list moves down about 30 px) and R23 (Tamsin's two tags, the second 2.4 px further right). All four pairs of T1, the two desktop pairs of T2 and R23 (on the phone those tags are below the fold). The admin chips (T3) keep 8 px on both sides.
-2. **Universe card "Updated" date moved right.** `UniverseCard`'s meta row is a flex row with an 8 px gap; with the date in its own `<time>`, it becomes a second flex item, so the gap replaces the collapsed space after "Updated" and the date sits 4.4 px further right on every card (measured: date start 76.3 px from the row start before, 80.7 px after). D28, all four pairs.
+1. **Entry and revision tags spread.** On `dda0d886`, `.dossier__tags` had been trimmed to its margins and `.taglist` gave the chips an 8 px gap, where they had 5.6 px: Arlen's tag block grew from 125.8 to 133 px (desktop) and 107.2 to 114.4 px (phone), the revision snapshot's 12 tags wrapped to a second line (22.6 to 53.2 px, the version list about 30 px lower), and Tamsin's second tag sat 2.4 px further right. The fix gives `.dossier__tags` its `gap: 0.35rem` back (`039-lore-phone.css`). Measured after it: gap 5.6 px, block 125.8 px (desktop) and 107.2 px (phone), revision snapshot row 22.6 px, the same as before.
+2. **Universe card "Updated" date moved right.** On `dda0d886` the new `<time>` was a second flex item in the card's meta row, so the 8 px gap replaced the space after "Updated" and the date sat 4.4 px further right. The fix wraps the sentence in one `<span>`, so the row's gap no longer splits it. Measured after it: the date starts at x 293.3 px on the first card, as before (it was 297.7 px).
 
 ## Not reachable, and limits
 
