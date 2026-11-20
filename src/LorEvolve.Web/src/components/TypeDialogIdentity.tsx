@@ -2,6 +2,7 @@ import { Field } from './Field'
 import { TypeIconPicker } from './TypeIconPicker'
 import { useI18n } from '../i18n'
 import type { DialogType } from './TypeDialog'
+import { SectionTitle } from './Section'
 
 /** The type drawer's identity section: the type's name and its icon. */
 export function TypeDialogIdentity({
@@ -26,9 +27,9 @@ export function TypeDialogIdentity({
   const { t } = useI18n()
   return (
     <section className="drawer__group" aria-labelledby="type-identity">
-      <h3 className="sectionrule sectionrule--accent" id="type-identity">
+      <SectionTitle level={3} tone="rule-accent" id="type-identity">
         {t('entityTypes.page.dialog.identity')}
-      </h3>
+      </SectionTitle>
       <Field
         label={t('entityTypes.page.dialog.name')}
         name="type-name"

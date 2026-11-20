@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import type { EntityChoice } from './EntityPicker'
 import { useEntitySearch } from '../lore/useEntitySearch'
 import { listKeyDown, useCloseOnOutside, useKeepListInView } from './entityPickerList'
+import { Token } from './Token'
 
 interface EntityMultiPickerProps {
   label: string
@@ -79,18 +80,14 @@ export function EntityMultiPicker({
         <div ref={wrapper}>
           <div className="tokens" data-testid="participants">
             {value.map((choice) => (
-              <span className="token" key={choice.id}>
+              <Token
+                key={choice.id}
+                removeLabel={t('entity.multiPicker.remove', { name: choice.name })}
+                onRemove={() => onChange(value.filter((candidate) => candidate.id !== choice.id))}
+                removeTestId={`participant-remove-${choice.name}`}
+              >
                 <bdi>{choice.name}</bdi>
-                <button
-                  type="button"
-                  className="token__remove"
-                  aria-label={t('entity.multiPicker.remove', { name: choice.name })}
-                  onClick={() => onChange(value.filter((candidate) => candidate.id !== choice.id))}
-                  data-testid={`participant-remove-${choice.name}`}
-                >
-                  &times;
-                </button>
-              </span>
+              </Token>
             ))}
             <input
               {...control}

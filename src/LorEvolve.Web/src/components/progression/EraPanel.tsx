@@ -14,6 +14,8 @@ import { EraPanelHead } from './EraPanelHead'
 import { EraLooks } from './EraLooks'
 import { EraSteps } from './EraSteps'
 import { SectionTitle } from '../Section'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 /** Getters, so each label is looked up in the current language when read. */
 const SOURCE_LABELS: Record<FieldSource, string> = {
@@ -137,28 +139,26 @@ export function EraPanel({
       ) : null}
 
       {fields.length > 0 ? (
-        <dl className="facts erafacts" data-testid="era-fields-read">
+        <FactList className="erafacts" testId="era-fields-read">
           {fields.map((field) => (
-            <div
-              className="facts__row"
+            <Fact
+              name={field.definition.name}
               key={field.definition.id}
               data-source={field.source}
-              data-testid={`era-fact-${field.definition.name}`}
+              testId={`era-fact-${field.definition.name}`}
+              valueClassName="prose"
             >
-              <dt className="facts__key">{field.definition.name}</dt>
-              <dd className="facts__value prose">
-                {field.source === 'cleared'
-                  ? EMPTY_FACT
-                  : field.value
-                    ? renderFact(field.value, chronology)
-                    : EMPTY_FACT}
-                <span className={`erasource erasource--${field.source}`}>
-                  {SOURCE_LABELS[field.source]}
-                </span>
-              </dd>
-            </div>
+              {field.source === 'cleared'
+                ? EMPTY_FACT
+                : field.value
+                  ? renderFact(field.value, chronology)
+                  : EMPTY_FACT}
+              <span className={`erasource erasource--${field.source}`}>
+                {SOURCE_LABELS[field.source]}
+              </span>
+            </Fact>
           ))}
-        </dl>
+        </FactList>
       ) : null}
 
       <EraItems heading={t('progression.era.forms')} era={era} items={forms} testId="era-forms" />

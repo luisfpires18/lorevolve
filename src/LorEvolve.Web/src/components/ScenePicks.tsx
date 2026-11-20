@@ -5,6 +5,7 @@ import { getStory, listStories } from '../stories/api'
 import { readingOrder } from '../stories/structure'
 import type { StorySummary } from '../stories/types'
 import type { EraScene } from '../progression/types'
+import { Token } from './Token'
 
 /**
  * Scenes chosen from any story of the universe: a story first, then one of its scenes in reading order. Each chosen scene is a
@@ -88,23 +89,20 @@ export function ScenePicks({
       {value.length > 0 ? (
         <ul className="storylinks__list">
           {value.map((scene) => (
-            <li className="token" key={scene.id} data-testid={`${testId}-chosen`}>
-              <bdi>{scene.title}</bdi>
-              <span className="token__note">
-                {' '}
-                {scene.isTrashed
+            <Token
+              as="li"
+              key={scene.id}
+              testId={`${testId}-chosen`}
+              note={
+                scene.isTrashed
                   ? t('stories.picks.noteTrashed', { story: scene.storyTitle })
-                  : t('stories.picks.note', { story: scene.storyTitle })}
-              </span>
-              <button
-                type="button"
-                className="token__remove"
-                aria-label={t('stories.picks.remove', { title: scene.title })}
-                onClick={() => onChange(value.filter((one) => one.id !== scene.id))}
-              >
-                &times;
-              </button>
-            </li>
+                  : t('stories.picks.note', { story: scene.storyTitle })
+              }
+              removeLabel={t('stories.picks.remove', { title: scene.title })}
+              onRemove={() => onChange(value.filter((one) => one.id !== scene.id))}
+            >
+              <bdi>{scene.title}</bdi>
+            </Token>
           ))}
         </ul>
       ) : null}

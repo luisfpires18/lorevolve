@@ -10,6 +10,8 @@ import { t, useI18n } from '../../i18n'
 import { useAppearanceImages } from '../../lore/useAppearanceImages'
 import { AppearanceGallery } from './AppearanceGallery'
 import { FormMessage } from '../FormMessage'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 export function AppearanceItem({
   canMoveEarlier,
@@ -106,39 +108,35 @@ export function AppearanceItem({
       />
 
       {facts.length > 0 || appearance.scenes.length > 0 ? (
-        <dl className="progitems__facts">
+        <FactList look="inline">
           {facts.map((fact) => (
-            <div key={fact.term}>
-              <dt>{fact.term}</dt>
-              <dd data-testid={fact.testId}>{fact.value}</dd>
-            </div>
+            <Fact name={fact.term} key={fact.term} valueTestId={fact.testId}>
+              {fact.value}
+            </Fact>
           ))}
           {appearance.scenes.length > 0 ? (
-            <div>
-              <dt>{t('progression.appearanceList.seenIn')}</dt>
-              <dd>
-                <ul className="eracovers">
-                  {appearance.scenes.map((scene) => (
-                    <li key={scene.id}>
-                      {scene.isTrashed ? (
-                        <span>
-                          {t('progression.appearanceList.sceneInTrash', { title: scene.title })}
-                        </span>
-                      ) : (
-                        <Link
-                          to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
-                        >
-                          {scene.title}
-                        </Link>
-                      )}
-                      <span> · {scene.storyTitle}</span>
-                    </li>
-                  ))}
-                </ul>
-              </dd>
-            </div>
+            <Fact name={t('progression.appearanceList.seenIn')}>
+              <ul className="eracovers">
+                {appearance.scenes.map((scene) => (
+                  <li key={scene.id}>
+                    {scene.isTrashed ? (
+                      <span>
+                        {t('progression.appearanceList.sceneInTrash', { title: scene.title })}
+                      </span>
+                    ) : (
+                      <Link
+                        to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
+                      >
+                        {scene.title}
+                      </Link>
+                    )}
+                    <span> · {scene.storyTitle}</span>
+                  </li>
+                ))}
+              </ul>
+            </Fact>
           ) : null}
-        </dl>
+        </FactList>
       ) : null}
 
       {viewing ? (

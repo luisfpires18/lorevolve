@@ -13,6 +13,7 @@ import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
 import { LoadingNote } from '../LoadingNote'
 import { FormMessage } from '../FormMessage'
+import { SectionTitle } from '../Section'
 
 /**
  * The guard builder, opened from a transition (Issue #359): a rule definition's title and its condition, built from
@@ -115,9 +116,9 @@ export function GuardBuilderDrawer({
             {textInput(title, setTitle, t(`${gb}.placeholders.title`), 'guard-builder-title', true)}
           </Field>
           <div className="drawer__group">
-            <h3 className="sectionrule" id={conditionId}>
+            <SectionTitle level={3} tone="rule" id={conditionId}>
               {t(`${gb}.condition`)}
-            </h3>
+            </SectionTitle>
             <GuardBuilder
               key={reading}
               condition={condition}

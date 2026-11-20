@@ -22,7 +22,7 @@ import { useUniverseAccess } from '../universes/access'
 import { Button } from './Button'
 import { errorText } from '../lib/errorText'
 import { FormMessage } from './FormMessage'
-
+import { SectionTitle } from './Section'
 const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
   dialogue: 4,
   caption: 2,
@@ -151,7 +151,9 @@ export function ComicPageEditor({
 
   return (
     <section className="comicpage" data-testid="comic-page-editor">
-      <h3 className="sectionrule">{t('projects.structure.panel.panels')}</h3>
+      <SectionTitle level={3} tone="rule">
+        {t('projects.structure.panel.panels')}
+      </SectionTitle>
       {panels.length === 0 ? (
         <p className="projects__lede">{t('projects.structure.panel.none')}</p>
       ) : (

@@ -17,6 +17,7 @@ import { t, useI18n } from '../i18n'
 import { FormActions } from './FormActions'
 import { payloadKey } from '../lib/drawerGuard'
 import { useDiscardGuard } from '../lib/useDiscardGuard'
+import { SectionTitle } from './Section'
 
 /**
  * The one entry form (#287): New on the list, and Edit on an entry's own screen. Edit starts from the stored entry and
@@ -147,7 +148,9 @@ export function ProjectEntryForm({
       />
 
       {fields.length > 0 ? (
-        <h3 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h3>
+        <SectionTitle level={3} tone="rule-accent">
+          {t('projects.entries.values')}
+        </SectionTitle>
       ) : null}
 
       {fields.map((field) => {

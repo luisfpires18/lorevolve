@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { AdminUserDetail } from '../../admin/api'
 import { useAuth } from '../../auth/useAuth'
 import { Avatar } from '../Avatar'
@@ -6,7 +7,8 @@ import { formatBytes } from '../../lib/bytes'
 import { useI18n } from '../../i18n'
 import { NOT_RECORDED, NOT_TRACKED, ROLE_KEYS } from '../../admin/adminConstants'
 import { BlockSection } from './BlockSection'
-import { Fact } from './Fact'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 import { PasswordSection } from './PasswordSection'
 import { QuietNote } from '../QuietNote'
 import { Section } from '../Section'
@@ -44,23 +46,23 @@ export function UserDetail({
       />
 
       <Section title={t('admin.user.account.heading')} titleId="admin-account" rule={false}>
-        <dl className="facts admindetail" data-testid="admin-user-facts">
-          <Fact
+        <FactList className="admindetail" testId="admin-user-facts">
+          <AdminFact
             label={t('admin.user.account.id')}
             value={<code>{user.id}</code>}
             testId="admin-user-id"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.email')}
             value={user.email}
             testId="admin-user-email"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.role')}
             value={t(ROLE_KEYS[user.role])}
             testId="admin-user-role"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.status')}
             value={
               user.isBlocked
@@ -73,17 +75,17 @@ export function UserDetail({
             }
             testId="admin-user-status"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.owned')}
             value={user.ownedUniverses}
             testId="admin-user-owned"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.shared')}
             value={user.sharedUniverses}
             testId="admin-user-shared"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.storage')}
             value={t('admin.user.account.storageValue', {
               used: formatBytes(user.storageUsedBytes),
@@ -91,34 +93,34 @@ export function UserDetail({
             })}
             testId="admin-user-storage"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.created')}
             value={user.createdAt ? <DateText value={user.createdAt} withTime /> : NOT_RECORDED}
             testId="admin-user-created"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.account.subscription')}
             value={NOT_TRACKED}
             testId="admin-user-subscription"
           />
-        </dl>
+        </FactList>
       </Section>
 
       <Section title={t('admin.user.signIn.heading')} titleId="admin-sign-in" rule={false}>
-        <dl className="facts admindetail" data-testid="admin-user-sign-in">
-          <Fact
+        <FactList className="admindetail" testId="admin-user-sign-in">
+          <AdminFact
             label={t('admin.user.signIn.last')}
             value={
               user.lastSignInAt ? <DateText value={user.lastSignInAt} withTime /> : NOT_RECORDED
             }
             testId="admin-user-last-login"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.signIn.failed')}
             value={user.failedSignInAttempts}
             testId="admin-user-failed"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.signIn.lockout')}
             value={
               user.lockedOutUntil
@@ -129,12 +131,12 @@ export function UserDetail({
             }
             testId="admin-user-lockout"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.signIn.apps')}
             value={user.connectedApps}
             testId="admin-user-apps"
           />
-          <Fact
+          <AdminFact
             label={t('admin.user.signIn.appsUsed')}
             value={
               user.appLastUsedAt ? (
@@ -145,7 +147,7 @@ export function UserDetail({
             }
             testId="admin-user-apps-used"
           />
-        </dl>
+        </FactList>
       </Section>
 
       <BlockSection user={user} isSelf={me?.id === user.id} onChange={onChange} onStale={onStale} />
@@ -179,5 +181,33 @@ export function UserDetail({
         )}
       </Section>
     </>
+  )
+}
+
+/** An account's fact: a value admin never tracks, or one from before the records began, reads as a quiet word. */
+function AdminFact({
+  label,
+  value,
+  testId,
+}: {
+  label: string
+  value: ReactNode | typeof NOT_TRACKED | typeof NOT_RECORDED
+  testId: string
+}) {
+  const { t } = useI18n()
+  return (
+    <Fact
+      name={label}
+      valueTestId={testId}
+      valueClassName={
+        value === NOT_TRACKED || value === NOT_RECORDED ? 'adminfact--none' : undefined
+      }
+    >
+      {value === NOT_TRACKED
+        ? t('admin.untracked.value')
+        : value === NOT_RECORDED
+          ? t('admin.user.beforeRecords')
+          : value}
+    </Fact>
   )
 }

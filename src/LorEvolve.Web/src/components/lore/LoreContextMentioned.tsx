@@ -5,6 +5,7 @@ import type { Mention } from '../../lore/mentions'
 import type { useUniverseAccess } from '../../universes/access'
 import { Button } from '../Button'
 import { FormMessage } from '../FormMessage'
+import { SectionTitle } from '../Section'
 
 /** The prose's @ mentions, each once, with its entry's name now, a preview, and Add to this scene's Lore. */
 export function LoreContextMentioned({
@@ -37,9 +38,9 @@ export function LoreContextMentioned({
           aria-labelledby={`${headingId}-mentioned`}
           data-testid="lore-context-mentions"
         >
-          <h3 className="sectionrule sectionrule--accent" id={`${headingId}-mentioned`}>
+          <SectionTitle level={3} tone="rule-accent" id={`${headingId}-mentioned`}>
             {t('lore.context.mentioned')}
-          </h3>
+          </SectionTitle>
           {references === 'failed' ? (
             <FormMessage testId="lore-context-mentions-error" role={null}>
               {t('lore.context.mentionedFailed')}

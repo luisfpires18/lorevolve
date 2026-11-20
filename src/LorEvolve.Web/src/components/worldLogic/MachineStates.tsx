@@ -7,6 +7,7 @@ import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
+import { SectionTitle } from '../Section'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -26,7 +27,7 @@ export function MachineStates({
   }) {
   return (
     <section className="machinepanel__group">
-      <h2 className="sectionrule">{t(`${m}.states`)}</h2>
+      <SectionTitle tone="rule">{t(`${m}.states`)}</SectionTitle>
       {draft.states.length > 0 ? (
         <ul className="rulelist" data-testid="machine-state-rows">
           {draft.states.map((state) => {

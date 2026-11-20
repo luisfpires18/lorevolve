@@ -13,6 +13,7 @@ type Actions = ReturnType<typeof machinePanelActions>
 import type { GuardMarkValue } from '../../worldLogic/markText'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
+import { SectionTitle } from '../Section'
 
 /** The machine panel's transitions group: one row per transition with its guard, and Add transition. */
 export function MachineTransitions({
@@ -32,7 +33,7 @@ export function MachineTransitions({
   }) {
   return (
     <section className="machinepanel__group">
-      <h2 className="sectionrule">{t(`${m}.transitions`)}</h2>
+      <SectionTitle tone="rule">{t(`${m}.transitions`)}</SectionTitle>
       {draft.transitions.length > 0 ? (
         <ul className="rulelist" data-testid="machine-transition-rows">
           {draft.transitions.map((transition) => {

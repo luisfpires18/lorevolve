@@ -6,7 +6,7 @@ import { confirmAction } from '../lib/confirm'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
-import { DateText } from './DateText'
+import { VersionActor } from './VersionActor'
 
 /** One comment thread: its comments, how it was resolved, the reply form or Reply, and Resolve or Reopen. */
 export function CommentThreadItem({
@@ -36,7 +36,7 @@ export function CommentThreadItem({
   postReply: (threadId: string) => Promise<void>
   resolve: (thread: CommentThread) => Promise<void>
 }) {
-  const { t, tx } = useI18n()
+  const { t } = useI18n()
   const isReplying = replyTo === thread.id
   const replyId = `${newId}-reply-${thread.id}`
   return (
@@ -53,14 +53,12 @@ export function CommentThreadItem({
             data-testid="comment"
           >
             <p className="reviewcomment__meta">
-              <span className="reviewcomment__author" data-testid="comment-author">
-                {comment.authorName === null ? (
-                  t('review.comments.unknownAuthor')
-                ) : (
-                  <bdi>{comment.authorName}</bdi>
-                )}
-              </span>
-              <DateText value={comment.createdAt} withTime />
+              <VersionActor
+                name={comment.authorName}
+                unknown={t('review.comments.unknownAuthor')}
+                at={comment.createdAt}
+                testId="comment-author"
+              />
             </p>
             <p className="reviewcomment__body" dir="auto" data-testid="comment-body">
               {comment.body}
@@ -71,20 +69,12 @@ export function CommentThreadItem({
 
       {thread.isResolved ? (
         <QuietNote className="reviewthread__resolved" testId="comment-resolved">
-          {tx('review.comments.resolvedBy', {
-            name:
-              thread.resolvedByName === null ? (
-                t('review.comments.unknownResolver')
-              ) : (
-                <bdi>{thread.resolvedByName}</bdi>
-              ),
-          })}
-          {thread.resolvedAt ? (
-            <>
-              {' · '}
-              <DateText value={thread.resolvedAt} withTime />
-            </>
-          ) : null}
+          <VersionActor
+            name={thread.resolvedByName}
+            unknown={t('review.comments.unknownResolver')}
+            lead="review.comments.resolvedBy"
+            at={thread.resolvedAt}
+          />
         </QuietNote>
       ) : null}
 
