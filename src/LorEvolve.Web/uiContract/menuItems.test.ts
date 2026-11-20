@@ -22,7 +22,10 @@ const ITEMS_WITHOUT_ICON = new Map<string, string>([
 
 // Files with one menu that draws Edit and then Remove by hand, with the reason it is no RowMenu.
 const HAND_WRITTEN_ROW_MENUS = new Map<string, string>([
-  ['src/components/maps/MapHeader.tsx', 'three items of its own between Edit and Remove'],
+  [
+    'src/components/maps/MapHeader.tsx',
+    'its panel carries panelTestId (map-actions-panel), which RowMenu does not take',
+  ],
   ['src/components/projectEntities/SeasonItem.tsx', 'Rename comes after the move items'],
   ['src/components/projects/ComicCollectionItem.tsx', 'Edit comes after the move and add items'],
   ['src/components/projects/SagaSection.tsx', 'Edit comes after the move and add items'],
