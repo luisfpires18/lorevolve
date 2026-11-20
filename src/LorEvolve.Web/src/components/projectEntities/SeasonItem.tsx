@@ -18,6 +18,8 @@ import { FormActions } from '../FormActions'
 import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ProjectCard } from '../ProjectCard'
+import { confirmAction } from '../../lib/confirm'
+import { useDiscardGuard } from '../../lib/useDiscardGuard'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
 export function SeasonItem({
@@ -64,6 +66,20 @@ export function SeasonItem({
   index: number
 }) {
   useI18n()
+  const { confirmLeave } = useDiscardGuard(
+    renaming === season.id && renameTo !== season.name && !busy,
+    say.leave(),
+  )
+
+  async function remove() {
+    const confirmed = await confirmAction({
+      title: t('projects.structure.deleteTitle', { name: season.name }),
+      message: t('projects.structure.deleteEmpty'),
+      confirmLabel: say.delete(),
+      variant: 'destructive',
+    })
+    if (confirmed) run(() => deleteSeason(projectId, season.id))
+  }
 
   return (
     <ProjectCard
@@ -105,7 +121,7 @@ export function SeasonItem({
               submitLabel={t('projects.seasons.renameSave')}
               busy={busy}
               submitTestId="project-season-rename-save"
-              onCancel={() => setRenaming(null)}
+              onCancel={() => void confirmLeave().then((ok) => ok && setRenaming(null))}
               cancelTestId="project-season-rename-cancel"
               lockCancel
               size="sm"
@@ -147,7 +163,7 @@ export function SeasonItem({
             type="button"
             disabled={busy}
             data-testid={`project-season-delete-${season.id}`}
-            onClick={() => run(() => deleteSeason(projectId, season.id))}
+            onClick={() => void remove()}
           >
             <ActionIcon icon={Trash} />
             {say.delete()}
@@ -175,6 +191,7 @@ export function SeasonItem({
         <EpisodeForm
           busy={busy}
           addLabel={say.addEpisode()}
+          leaveMessage={say.leaveEpisode()}
           onCancel={() => setAddingTo(null)}
           onSubmit={(title, synopsis) => {
             setBusy(true)

@@ -42,6 +42,9 @@ export function ProjectEntityFields({
   // undefined while reading; null when the read failed, which leaves the stored values and no Edit.
   const [type, setType] = useState<ProjectEntityType | null | undefined>(undefined)
   const [failed, setFailed] = useState<string | null>(null)
+  // The edit form inside the drawer reports these, so the drawer guards and locks.
+  const [entryDirty, setEntryDirty] = useState(false)
+  const [entrySaving, setEntrySaving] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -104,6 +107,9 @@ export function ProjectEntityFields({
           testId="project-entity-edit-drawer"
           titleId="project-entity-edit-title"
           title={t('projects.gameEntities.entity.editTitle')}
+          isDirty={entryDirty}
+          leaveMessage={t('projects.entries.leaveEdited')}
+          busy={entrySaving}
           onClose={() => setEditing(false)}
           actions={() => null}
         >
@@ -137,6 +143,8 @@ export function ProjectEntityFields({
             }}
             onFailed={(error) => setFailed(errorText(error, t('projects.entries.failed')))}
             onCancel={() => setEditing(false)}
+            onDirtyChange={setEntryDirty}
+            onSavingChange={setEntrySaving}
           />
         </Drawer>
       ) : null}

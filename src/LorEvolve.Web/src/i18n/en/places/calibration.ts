@@ -1,4 +1,5 @@
 const placesCalibration = {
+  leave: 'The map scale has unsaved changes. Leave without saving them?',
   removeTitle: 'Remove the scale?',
   removeMessage:
     'Distances can no longer be measured on this map until it is calibrated again. Pins are not touched.',

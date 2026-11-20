@@ -111,6 +111,7 @@ const admin = {
     passwordResetSent: 'Sent a password reset link',
   },
   signUp: {
+    leave: 'This sign-up link has not been made. Leave without making it?',
     heading: 'Sign-up link',
     note: 'For someone to join LorEvolve while registration is invitation-only. The link lets that email address, and only that one, create an account. Email link sends it to them from noreply@lorevolve.com; Make link shows it for you to send yourself.',
     emailLabel: 'Their email address',

@@ -88,6 +88,7 @@ const entityTypesFields: Dictionary['entityTypes']['fields'] = {
   },
   leaveEdit: 'As tuas alterações a “{name}” não foram guardadas. Sair sem as guardar?',
   leaveNew: 'Este campo não foi adicionado. Sair sem o guardar?',
+  leaveEdited: 'Este campo tem alterações por guardar. Sair sem as guardar?',
   keptMine:
     'As tuas alterações foram mantidas. Guardar agora substitui o que outra pessoa guardou por tudo o que este painel mostra.',
   nameRequired: 'Dá um nome ao campo.',

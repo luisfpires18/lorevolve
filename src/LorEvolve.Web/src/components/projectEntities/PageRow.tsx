@@ -8,6 +8,7 @@ import { PanelForm } from './PanelForm'
 import { NewButton } from '../NewButton'
 import { Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
+import { confirmAction } from '../../lib/confirm'
 
 /** One page in a chapter: its name, its menu, its panels, and the form to add a panel. */
 export function PageRow({
@@ -72,7 +73,15 @@ export function PageRow({
             type="button"
             disabled={busy}
             data-testid={`project-page-delete-${page.id}`}
-            onClick={() => run(() => deletePage(projectId, volumeId, chapterId, page.id))}
+            onClick={async () => {
+              const confirmed = await confirmAction({
+                title: t('projects.pages.deleteTitle', { name: page.name ?? String(index + 1) }),
+                message: t('projects.structure.deleteEmpty'),
+                confirmLabel: t('projects.pages.delete'),
+                variant: 'destructive',
+              })
+              if (confirmed) run(() => deletePage(projectId, volumeId, chapterId, page.id))
+            }}
           >
             <ActionIcon icon={Trash} />
             {t('projects.pages.delete')}

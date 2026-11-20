@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Field } from './Field'
 import { createProjectEntity, saveProjectEntity } from '../projectEntities/api'
 import { valuesFromDetail } from '../projectEntities/fieldRows'
@@ -15,6 +15,8 @@ import { emptyValue } from '../lore/document'
 import { asFieldDefinition, NO_ERAS } from '../projectEntities/fieldDefinition'
 import { t, useI18n } from '../i18n'
 import { FormActions } from './FormActions'
+import { payloadKey } from '../lib/drawerGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 
 /**
  * The one entry form (#287): New on the list, and Edit on an entry's own screen. Edit starts from the stored entry and
@@ -30,6 +32,8 @@ export function ProjectEntryForm({
   onSaved,
   onFailed,
   onCancel,
+  onDirtyChange,
+  onSavingChange,
 }: {
   projectId: string
   universeId: string
@@ -41,6 +45,10 @@ export function ProjectEntryForm({
   onSaved: (notice: string | null) => void
   onFailed: (error: unknown) => void
   onCancel: () => void
+  /** Given (inside a drawer): told when the form starts or stops differing, and the drawer guards the leaving. */
+  onDirtyChange?: (dirty: boolean) => void
+  /** Given (inside a drawer): told when a save starts and ends, so the drawer locks. */
+  onSavingChange?: (saving: boolean) => void
 }) {
   useI18n()
   const [busy, setBusy] = useState(false)
@@ -55,6 +63,26 @@ export function ProjectEntryForm({
     fields.filter((one) => one.kind === FieldKind.Image).map((one) => one.id),
   )
   const prefix = entry ? 'project-entry-edit' : 'project-entry-new'
+  const [start] = useState(() => payloadKey({ name, summary, values }))
+  const isDirty =
+    !busy &&
+    (payloadKey({ name, summary, values }) !== start || Object.keys(pendingImages).length > 0)
+  const { confirmLeave } = useDiscardGuard(
+    isDirty,
+    onDirtyChange ? null : t(entry ? 'projects.entries.leaveEdited' : 'projects.entries.leaveNew'),
+  )
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+    onSavingChange?.(busy)
+  }, [isDirty, busy, onDirtyChange, onSavingChange])
+  // Gone, the form holds nothing: the drawer it reported to starts clean next time.
+  useEffect(
+    () => () => {
+      onDirtyChange?.(false)
+      onSavingChange?.(false)
+    },
+    [onDirtyChange, onSavingChange],
+  )
 
   return (
     <form
@@ -161,7 +189,7 @@ export function ProjectEntryForm({
         busy={busy}
         busyLabel={t('projects.entries.saving')}
         submitTestId={`${prefix}-save`}
-        onCancel={onCancel}
+        onCancel={() => void confirmLeave().then((ok) => ok && onCancel())}
         cancelTestId={`${prefix}-cancel`}
         inline
       />

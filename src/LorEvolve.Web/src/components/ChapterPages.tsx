@@ -8,6 +8,7 @@ import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
 import { ProjectCard } from './ProjectCard'
 import { useLoadedList } from '../lib/useLoadedList'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -50,6 +51,10 @@ export function ChapterPages({
     failing,
     run,
   } = useLoadedList(read, t('projects.pages.failed'), { enabled: open, emptyOnFail: [] })
+  const { confirmLeave } = useDiscardGuard(
+    open && addingPage && name !== '' && !busy,
+    t('projects.pages.leave'),
+  )
 
   if (!open) {
     return (
@@ -139,7 +144,13 @@ export function ChapterPages({
             submitLabel={t('projects.pages.add')}
             disabled={busy}
             submitTestId={`project-page-new-save-${chapterId}`}
-            onCancel={() => setAddingPage(false)}
+            onCancel={() =>
+              void confirmLeave().then((ok) => {
+                if (!ok) return
+                setName('')
+                setAddingPage(false)
+              })
+            }
             cancelTestId={`project-page-new-cancel-${chapterId}`}
             inline
           />

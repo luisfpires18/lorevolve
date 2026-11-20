@@ -13,6 +13,7 @@ import { CopyLink } from './CopyLink'
 import { Button } from '../Button'
 import { errorText } from '../../lib/errorText'
 import { QuietNote } from '../QuietNote'
+import { confirmAction } from '../../lib/confirm'
 
 // ---------- Pending invitations ----------
 
@@ -52,6 +53,13 @@ export function InvitationRow({
   }
 
   async function revoke() {
+    const confirmed = await confirmAction({
+      title: t('universe.collab.revokeTitle', { email: invitation.email }),
+      message: t('universe.collab.revokeMessage'),
+      confirmLabel: t('universe.collab.revokeConfirm'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     setBusy(true)
     setError(null)
     try {

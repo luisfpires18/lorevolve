@@ -1,4 +1,5 @@
 import { addProjectField, deleteProjectField } from '../../projectEntities/api'
+import { confirmAction } from '../../lib/confirm'
 import type { ProjectEntityType } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
@@ -83,7 +84,14 @@ export function SchemaTypeFields({
                           type="button"
                           disabled={busy}
                           data-testid={`project-field-delete-${field.id}`}
-                          onClick={() => {
+                          onClick={async () => {
+                            const confirmed = await confirmAction({
+                              title: t('entityTypes.fields.deleteTitle', { name: field.name }),
+                              message: t('entityTypes.fields.deleteMessage'),
+                              confirmLabel: t('entityTypes.fields.deleteConfirm'),
+                              variant: 'destructive',
+                            })
+                            if (!confirmed) return
                             setBusy(true)
                             deleteProjectField(projectId, type.id, field.id)
                               .then(refresh)

@@ -8,6 +8,7 @@ import { SeasonItem } from './projectEntities/SeasonItem'
 import { NewButton } from './NewButton'
 import { FormActions } from './FormActions'
 import { useLoadedList } from '../lib/useLoadedList'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { PageHeader } from './PageHeader'
 
 /**
@@ -50,6 +51,7 @@ export function ProjectSeasons({
     failing,
     run,
   } = useLoadedList(read, t('projects.seasons.failed'), { emptyOnFail: [] })
+  const { confirmLeave } = useDiscardGuard(adding && name !== '' && !busy, say.leave())
 
   if (seasons === null) {
     return <p className="projectcard__meta">{t('projects.common.loading')}</p>
@@ -108,7 +110,13 @@ export function ProjectSeasons({
             busy={busy}
             busyLabel={t('projects.seasons.saving')}
             submitTestId="project-season-new-save"
-            onCancel={() => setAdding(false)}
+            onCancel={() =>
+              void confirmLeave().then((ok) => {
+                if (!ok) return
+                setName('')
+                setAdding(false)
+              })
+            }
             cancelTestId="project-season-new-cancel"
             inline
           />

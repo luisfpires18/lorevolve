@@ -20,6 +20,7 @@ import { useImagePick } from '../lib/useImagePick'
 import type { TextKey } from '../i18n/core'
 import type { Dictionary } from '../i18n/en'
 import { QuietNote } from './QuietNote'
+import { confirmAction } from '../lib/confirm'
 
 type Framing =
   { kind: 'file'; file: File } | { kind: 'stored'; artwork: UniverseArtworkRef; source: string }
@@ -96,6 +97,13 @@ export function UniverseArtworkField({
   }
 
   async function remove() {
+    const confirmed = await confirmAction({
+      title: t('shell.confirm.removePicture.title'),
+      message: t('shell.confirm.removePicture.message'),
+      confirmLabel: t('shell.confirm.removePicture.confirm'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     setError(null)
     setBusy(true)
     try {

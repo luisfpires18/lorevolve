@@ -102,6 +102,9 @@ const relationships: Dictionary['relationships'] = {
     remove: 'Eliminar relação',
   },
   types: {
+    deleteConfirm: 'Eliminar tipo de relação',
+    deleteMessage: 'Nenhuma relação o usa. Não é possível desfazer.',
+    deleteTitle: 'Eliminar o tipo de relação “{name}”?',
     familyParent: 'Família: progenitor {word} → filho',
     familyListed: 'Família: aparece na árvore genealógica, não define ascendência',
     bothWays: '{name}, nos dois sentidos',

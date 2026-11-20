@@ -23,6 +23,8 @@ const projectsSeasons: Dictionary['projects']['seasons'] = {
   episodeTitle: 'Título',
   synopsis: 'Sinopse',
   deleteEpisode: 'Eliminar episódio',
+  leaveEpisode: 'Este episódio tem alterações por guardar. Sair sem as guardar?',
+  leave: 'Esta temporada tem alterações por guardar. Sair sem as guardar?',
   hasScript: 'Guião, {count} caracteres',
   noScript: 'Ainda não há guião',
   openScript: 'Abrir guião',

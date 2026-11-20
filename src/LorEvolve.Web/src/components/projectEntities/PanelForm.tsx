@@ -3,6 +3,7 @@ import { Field } from '../Field'
 import { EntityPicker } from '../EntityPicker'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
+import { useDiscardGuard } from '../../lib/useDiscardGuard'
 
 export function PanelForm({
   busy,
@@ -23,6 +24,10 @@ export function PanelForm({
   const [description, setDescription] = useState('')
   const [dialogue, setDialogue] = useState('')
   const [shows, setShows] = useState<{ id: string; name: string } | null>(null)
+  const { confirmLeave } = useDiscardGuard(
+    (description !== '' || dialogue !== '' || shows !== null) && !busy,
+    t('projects.pages.leavePanel'),
+  )
 
   return (
     <form
@@ -71,7 +76,7 @@ export function PanelForm({
         submitLabel={t('projects.pages.addPanel')}
         disabled={busy}
         submitTestId="project-panel-new-save"
-        onCancel={onCancel}
+        onCancel={() => void confirmLeave().then((ok) => ok && onCancel())}
         cancelTestId="project-panel-new-cancel"
         inline
       />

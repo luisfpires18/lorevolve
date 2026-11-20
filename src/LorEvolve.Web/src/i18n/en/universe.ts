@@ -104,6 +104,9 @@ const universe = {
   settings: universeSettings,
   connect: universeConnect,
   collab: {
+    revokeConfirm: 'Revoke invitation',
+    revokeMessage: 'The link they were sent stops working. You can invite them again.',
+    revokeTitle: 'Revoke the invitation to {email}?',
     loadFailed: 'Collaborators could not be read.',
     inviteHeading: 'Invite someone',
     inviteNote: 'Invite someone to work on this universe.',

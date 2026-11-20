@@ -40,6 +40,9 @@ export function NodeEditor({
   const [node, setNode] = useState<ProjectNodeDetail | null>(null)
   const canEdit = useUniverseAccess().editContent
   const [title, setTitle] = useState('')
+  // A page's panel cards save on their own; the drawer still guards and locks for them.
+  const [panelsDirty, setPanelsDirty] = useState(false)
+  const [panelsSaving, setPanelsSaving] = useState(false)
   const [summary, setSummary] = useState('')
   const [body, setBody] = useState('')
   const [script, setScript] = useState<PanelScript>({
@@ -104,11 +107,11 @@ export function NodeEditor({
       titleId="project-node-editor-title"
       eyebrow={node ? capital(levelWord(node.level)) : null}
       title={node ? nameOf(node) : t('projects.common.loading')}
-      isDirty={isDirty}
+      isDirty={isDirty || panelsDirty}
       leaveMessage={t('projects.structure.leave')}
       onClose={onClose}
       onSubmit={save}
-      busy={saving}
+      busy={saving || panelsSaving}
       actions={(close) => (
         <FormActions
           submitLabel={canEdit ? t('projects.structure.save') : undefined}
@@ -194,7 +197,14 @@ export function NodeEditor({
               onChanged={(image) => setNode({ ...node, image })}
             />
           ) : null}
-          {node.level === 'page' ? <ComicPageEditor projectId={projectId} panels={panels} /> : null}
+          {node.level === 'page' ? (
+            <ComicPageEditor
+              projectId={projectId}
+              panels={panels}
+              onDirtyChange={setPanelsDirty}
+              onSavingChange={setPanelsSaving}
+            />
+          ) : null}
         </>
       ) : null}
     </Drawer>

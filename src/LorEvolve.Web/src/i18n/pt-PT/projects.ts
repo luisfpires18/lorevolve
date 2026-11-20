@@ -147,6 +147,8 @@ const projects = {
   schema: projectsSchema,
   seasons: projectsSeasons,
   sequences: {
+    leaveEpisode: 'Esta cena tem alterações por guardar. Sair sem as guardar?',
+    leave: 'Esta sequência tem alterações por guardar. Sair sem as guardar?',
     title: 'Sequências',
     lede: 'Os trechos em que este filme está dividido, e as cenas que os compõem.',
     empty: 'Ainda não há sequências.',
@@ -165,6 +167,8 @@ const projects = {
   script: projectsScript,
   structure: projectsStructure,
   volumes: {
+    leaveEpisode: 'Este capítulo tem alterações por guardar. Sair sem as guardar?',
+    leave: 'Este volume tem alterações por guardar. Sair sem as guardar?',
     title: 'Volumes',
     lede: 'Os volumes em que esta banda desenhada é reunida, e os capítulos que os compõem.',
     empty: 'Ainda não há volumes.',
@@ -188,6 +192,7 @@ const projects = {
   },
   entries: projectsEntries,
   new: {
+    leave: 'Este projeto ainda não foi criado. Sair sem o criar?',
     cinema: 'Cinema',
     title: 'Novo projeto',
     name: 'Nome',

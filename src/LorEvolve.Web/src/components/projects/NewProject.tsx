@@ -10,6 +10,7 @@ import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
 import { PageHeader } from '../PageHeader'
 import { errorText } from '../../lib/errorText'
+import { useDiscardGuard } from '../../lib/useDiscardGuard'
 
 /** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
 function kindFromParam(raw: string | null): ProjectKindValue {
@@ -58,6 +59,7 @@ export function NewProject() {
   const [summary, setSummary] = useState('')
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
+  useDiscardGuard((name !== '' || summary !== '') && !saving, t('projects.new.leave'))
 
   useDocumentTitle(t('projects.new.title'))
 

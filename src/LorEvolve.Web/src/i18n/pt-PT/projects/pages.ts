@@ -10,6 +10,10 @@ const projectsPages: Dictionary['projects']['pages'] = {
   name: 'Página',
   namePlaceholder: 'Escreva um número ou um nome',
   delete: 'Eliminar página',
+  deletePanelTitle: 'Eliminar a vinheta {name}?',
+  deleteTitle: 'Eliminar a página {name}?',
+  leavePanel: 'Esta vinheta ainda não foi adicionada. Sair sem a adicionar?',
+  leave: 'Esta página ainda não foi adicionada. Sair sem a adicionar?',
   panelCount: {
     one: '1 vinheta',
     other: '{count} vinhetas',

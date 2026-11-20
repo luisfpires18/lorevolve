@@ -1,6 +1,7 @@
 import type { Dictionary } from '../../en'
 
 const placesCalibration: Dictionary['places']['calibration'] = {
+  leave: 'A escala do mapa tem alterações por guardar. Sair sem as guardar?',
   removeTitle: 'Remover a escala?',
   removeMessage:
     'Deixa de ser possível medir distâncias neste mapa até ser calibrado de novo. Os marcadores não são afetados.',

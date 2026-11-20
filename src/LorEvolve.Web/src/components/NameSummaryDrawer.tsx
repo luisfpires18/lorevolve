@@ -61,7 +61,9 @@ export function NameSummaryDrawer({
         <FormActions
           submitLabel={t(`${words}.save`)}
           busy={saving}
-          busyLabel={t(`${words}.saving`)}
+          busyLabel={t(
+            words === 'projects.sagas' ? 'projects.sagas.saving' : 'projects.comics.saving',
+          )}
           disabled={name.trim() === ''}
           submitTestId={`${testId}-save`}
           onCancel={close}

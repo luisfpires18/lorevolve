@@ -105,6 +105,9 @@ const universe: Dictionary['universe'] = {
   settings: universeSettings,
   connect: universeConnect,
   collab: {
+    revokeConfirm: 'Revogar convite',
+    revokeMessage: 'A ligação que recebeu deixa de funcionar. Podes convidar de novo.',
+    revokeTitle: 'Revogar o convite para {email}?',
     loadFailed: 'Não foi possível ler os colaboradores.',
     inviteHeading: 'Convidar alguém',
     inviteNote: 'Convida alguém para trabalhar neste universo.',

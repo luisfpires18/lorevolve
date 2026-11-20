@@ -1,4 +1,5 @@
 import { deleteProjectEntity } from '../../projectEntities/api'
+import { confirmAction } from '../../lib/confirm'
 import {
   FieldKind,
   type ProjectEntitySummary,
@@ -74,7 +75,14 @@ export function ProjectEntryList({
                   type="button"
                   disabled={busy}
                   data-testid={`project-entry-delete-${entry.id}`}
-                  onClick={() => {
+                  onClick={async () => {
+                    const confirmed = await confirmAction({
+                      title: t('projects.entries.trash.title', { name: entry.name }),
+                      message: t('projects.entries.trash.message'),
+                      confirmLabel: t('projects.entries.delete'),
+                      variant: 'warning',
+                    })
+                    if (!confirmed) return
                     setBusy(true)
                     deleteProjectEntity(projectId, entry.id)
                       .then(() => refresh())

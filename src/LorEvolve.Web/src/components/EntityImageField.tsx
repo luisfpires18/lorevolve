@@ -16,6 +16,7 @@ import { useI18n } from '../i18n'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
 import { useImagePick } from '../lib/useImagePick'
+import { confirmAction } from '../lib/confirm'
 
 /** A picture chosen for an entry that does not exist yet, with the square the author framed. */
 export interface PendingImage {
@@ -155,6 +156,13 @@ export function EntityImageField({
     }
 
     if (!entityId || !image) return
+    const confirmed = await confirmAction({
+      title: t('shell.confirm.removePicture.title'),
+      message: t('shell.confirm.removePicture.message'),
+      confirmLabel: t('shell.confirm.removePicture.confirm'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
 
     setBusy(true)
     try {

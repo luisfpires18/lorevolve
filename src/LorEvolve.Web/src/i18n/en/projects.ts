@@ -148,6 +148,8 @@ const projects = {
   schema: projectsSchema,
   seasons: projectsSeasons,
   sequences: {
+    leaveEpisode: 'This scene has unsaved changes. Leave without saving them?',
+    leave: 'This sequence has unsaved changes. Leave without saving them?',
     title: 'Sequences',
     lede: 'The stretches this film is cut into, and the scenes in them.',
     empty: 'No sequences yet.',
@@ -166,6 +168,8 @@ const projects = {
   script: projectsScript,
   structure: projectsStructure,
   volumes: {
+    leaveEpisode: 'This chapter has unsaved changes. Leave without saving them?',
+    leave: 'This volume has unsaved changes. Leave without saving them?',
     title: 'Volumes',
     lede: 'The volumes this comic is collected in, and the chapters in them.',
     empty: 'No volumes yet.',
@@ -189,6 +193,7 @@ const projects = {
   },
   entries: projectsEntries,
   new: {
+    leave: 'This project has not been created. Leave without creating it?',
     cinema: 'Cinema',
     title: 'New project',
     name: 'Name',

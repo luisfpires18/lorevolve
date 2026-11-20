@@ -3,7 +3,9 @@ import { ActionMenu } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { ChapterPages } from '../ChapterPages'
 import { t, useI18n } from '../../i18n'
-import type { Dispatch, SetStateAction } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
+import { confirmAction } from '../../lib/confirm'
+import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { ScriptEditor } from './ScriptEditor'
 import { Button } from '../Button'
@@ -37,6 +39,25 @@ export function SeasonEpisodes({
   season: ProjectSeason
 }) {
   useI18n()
+  const [scriptDirty, setScriptDirty] = useState(false)
+  const { confirmLeave } = useDiscardGuard(scriptDirty, say.leaveEpisode())
+
+  /** Closing a script, or opening another over it, asks first when it has unsaved changes. */
+  async function toggle(episodeId: string) {
+    if (!(await confirmLeave())) return
+    setScriptDirty(false)
+    setEditing(editing === episodeId ? null : episodeId)
+  }
+
+  async function remove(episodeId: string, title: string) {
+    const confirmed = await confirmAction({
+      title: t('projects.structure.deleteTitle', { name: title }),
+      message: t('projects.structure.deleteEmpty'),
+      confirmLabel: say.deleteEpisode(),
+      variant: 'destructive',
+    })
+    if (confirmed) run(() => deleteEpisode(projectId, season.id, episodeId))
+  }
 
   return (
     <ol className="fieldlist" data-testid={`project-episodes-${season.id}`}>
@@ -61,7 +82,7 @@ export function SeasonEpisodes({
               tone="secondary"
               size="sm"
               data-testid={`project-episode-open-${episode.id}`}
-              onClick={() => setEditing(editing === episode.id ? null : episode.id)}
+              onClick={() => void toggle(episode.id)}
             >
               {editing === episode.id
                 ? t('projects.seasons.closeScript')
@@ -111,7 +132,7 @@ export function SeasonEpisodes({
                 type="button"
                 disabled={busy}
                 data-testid={`project-episode-delete-${episode.id}`}
-                onClick={() => run(() => deleteEpisode(projectId, season.id, episode.id))}
+                onClick={() => void remove(episode.id, episode.title)}
               >
                 <ActionIcon icon={Trash} />
                 {say.deleteEpisode()}
@@ -132,7 +153,9 @@ export function SeasonEpisodes({
               projectId={projectId}
               seasonId={season.id}
               episode={episode}
+              onDirtyChange={setScriptDirty}
               onSaved={() => {
+                setScriptDirty(false)
                 setEditing(null)
                 void refresh()
               }}

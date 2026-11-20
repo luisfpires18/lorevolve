@@ -1,5 +1,7 @@
 import { Ruler } from 'lucide-react'
+import { useState } from 'react'
 import { confirmAction } from '../lib/confirm'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { removeMapCalibration } from '../maps/api'
 import { approximate } from '../maps/format'
 import type { MapCalibration, MapDetail } from '../maps/types'
@@ -132,6 +134,11 @@ export function MapCalibrationForm({
 
   const a = points[0] ?? null
   const b = points[1] ?? null
+  const [start] = useState(() => JSON.stringify({ points, distance, unit }))
+  const { confirmLeave } = useDiscardGuard(
+    !isSaving && JSON.stringify({ points, distance, unit }) !== start,
+    t('places.calibration.leave'),
+  )
 
   const { setPoint, save } = calibrationActions({
     distance,
@@ -190,7 +197,7 @@ export function MapCalibrationForm({
           busy={isSaving}
           busyLabel={t('places.calibration.saving')}
           submitTestId="map-calibration-save"
-          onCancel={onCancel}
+          onCancel={() => void confirmLeave().then((ok) => ok && onCancel())}
           lockCancel
           size="sm"
         />

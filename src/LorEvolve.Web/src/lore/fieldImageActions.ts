@@ -3,6 +3,7 @@ import type { EntityImageCrop, FieldImageRef } from './types'
 import type { FieldImageApi, PendingFieldImage } from '../components/FieldImageInput'
 import { pictureRatio, type Framing } from './fieldImageFraming'
 import type { useI18n } from '../i18n'
+import { confirmAction } from '../lib/confirm'
 
 /** An Image field's handlers: pick a file, reframe the picture, keep a crop, remove the picture. */
 export function fieldImageActions({
@@ -93,6 +94,13 @@ export function fieldImageActions({
     }
 
     if (!entityId || !image) return
+    const confirmed = await confirmAction({
+      title: t('shell.confirm.removePicture.title'),
+      message: t('shell.confirm.removePicture.message'),
+      confirmLabel: t('shell.confirm.removePicture.confirm'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
 
     setBusy(true)
     try {
