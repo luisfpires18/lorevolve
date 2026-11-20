@@ -13,6 +13,7 @@ import type { Chapter, PlotArc, Scene } from '../stories/types'
 import { useSceneSave } from '../stories/useSceneSave'
 import { SceneFormFields } from './stories/SceneFormFields'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface SceneFormProps {
   universeId: string
@@ -187,11 +188,7 @@ export function SceneForm({
         </p>
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="scene-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="scene-error">{message}</FormMessage> : null}
 
       {conflict && scene ? (
         <EditConflict

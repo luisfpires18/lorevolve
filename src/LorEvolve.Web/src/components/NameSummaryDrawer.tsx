@@ -4,6 +4,7 @@ import { Field } from './Field'
 import { t } from '../i18n'
 import { FormActions } from './FormActions'
 import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 /** The words a name and summary drawer reads: `${words}.save`, `.saving`, `.name` and the rest. */
 type NameSummaryWords = 'projects.sagas' | 'projects.comics'
@@ -94,11 +95,7 @@ export function NameSummaryDrawer({
         data-testid={`${testId}-summary`}
         onChange={(event) => setSummary(event.target.value)}
       />
-      {error ? (
-        <p className="form__message" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage>{error}</FormMessage> : null}
     </Drawer>
   )
 }

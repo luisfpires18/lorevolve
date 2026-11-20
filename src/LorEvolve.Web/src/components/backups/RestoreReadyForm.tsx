@@ -6,6 +6,7 @@ import type { Stage, useRestoreBackupState } from '../../backups/useRestoreBacku
 import { Restoring } from './Restoring'
 import { FormActions } from '../FormActions'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 /** The checked file: what it holds, the name to restore it under, a failure, and Restore or Choose another. */
 export function RestoreReadyForm({
@@ -90,11 +91,7 @@ export function RestoreReadyForm({
         }}
       />
 
-      {failure ? (
-        <p className="form__message" role="alert" data-testid="restore-failure">
-          {failure}
-        </p>
-      ) : null}
+      {failure ? <FormMessage testId="restore-failure">{failure}</FormMessage> : null}
 
       {stage.kind === 'restoring' ? <Restoring /> : null}
 

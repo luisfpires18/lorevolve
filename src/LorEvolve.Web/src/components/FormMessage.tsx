@@ -12,6 +12,7 @@ export function FormMessage({
   role = 'alert',
   tabIndex,
   ref,
+  as: Tag = 'p',
 }: {
   children?: ReactNode
   testId?: string
@@ -22,20 +23,22 @@ export function FormMessage({
   /** `-1` where the line takes focus after a refused save. */
   tabIndex?: number
   ref?: Ref<HTMLParagraphElement>
+  /** `div` or `ul` where the line holds more than text; the look is the same. */
+  as?: 'p' | 'div' | 'ul'
 }) {
   if (children === null || children === undefined || children === false || children === '') {
     return null
   }
   return (
-    <p
+    <Tag
       className={['form__message', className].filter(Boolean).join(' ')}
       role={role ?? undefined}
       id={id}
       tabIndex={tabIndex}
-      ref={ref}
+      ref={ref as Ref<never>}
       data-testid={testId}
     >
       {children}
-    </p>
+    </Tag>
   )
 }

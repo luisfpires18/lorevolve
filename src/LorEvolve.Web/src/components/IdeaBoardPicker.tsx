@@ -8,6 +8,7 @@ import { IdeaReferenceKind } from '../ideas/types'
 import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
 import { LoadingNote } from './LoadingNote'
+import { FormMessage } from './FormMessage'
 
 /** What a picked idea or entry puts on a card: its id and what the card shows of it. */
 export interface PickedTarget {
@@ -147,9 +148,7 @@ export function IdeaBoardPicker({
         {results === undefined ? (
           <LoadingNote className="ideapicker__notice">{t('ideas.boardPicker.looking')}</LoadingNote>
         ) : results === null ? (
-          <p className="form__message" role="alert">
-            {t('ideas.boardPicker.loadFailed')}
-          </p>
+          <FormMessage>{t('ideas.boardPicker.loadFailed')}</FormMessage>
         ) : results.length === 0 ? (
           <p className="notice ideapicker__notice" data-testid="board-picker-empty">
             {query.trim()

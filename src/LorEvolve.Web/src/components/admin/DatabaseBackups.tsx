@@ -8,6 +8,7 @@ import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
 import { errorText } from '../../lib/errorText'
 import { Section } from '../Section'
+import { FormMessage } from '../FormMessage'
 
 /**
  * Database backups (#54): the age of the last backup that was uploaded and read back, the last attempt and its error, and
@@ -58,11 +59,7 @@ export function DatabaseBackups() {
           {running ? t('admin.backups.backingUp') : t('admin.backups.runNow')}
         </Button>
       ) : null}
-      {message ? (
-        <p className="form__message" role="alert">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage>{message}</FormMessage> : null}
     </Section>
   )
 }

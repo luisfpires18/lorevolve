@@ -19,6 +19,7 @@ import { t } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { FormActions } from '../FormActions'
 import { errorText } from '../../lib/errorText'
+import { FormMessage } from '../FormMessage'
 
 /**
  * One node's title, summary and text, saved over the version it was opened at (ADR 0043). A panel adds its script, a
@@ -123,11 +124,7 @@ export function NodeEditor({
         />
       )}
     >
-      {failed ? (
-        <p className="form__message" role="alert" data-testid="project-node-editor-failed">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage testId="project-node-editor-failed">{failed}</FormMessage> : null}
       {node ? (
         <>
           <Field label={t('projects.structure.titleLabel')}>

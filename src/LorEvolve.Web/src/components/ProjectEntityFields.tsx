@@ -15,6 +15,7 @@ import { Drawer } from './Drawer'
 import { EntityImageField } from './EntityImageField'
 import { ProjectEntryForm } from './ProjectEntryForm'
 import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 /**
  * An entry's field values (#287), in its own type's order and read from its own game's types, so a same-named type of
@@ -113,11 +114,7 @@ export function ProjectEntityFields({
           onClose={() => setEditing(false)}
           actions={() => null}
         >
-          {failed ? (
-            <p className="form__message" role="alert" data-testid="project-entity-edit-failed">
-              {failed}
-            </p>
-          ) : null}
+          {failed ? <FormMessage testId="project-entity-edit-failed">{failed}</FormMessage> : null}
           {/* The entry's own picture, edited as a Lore entry's is: Lore's control and its routes (#286). */}
           <section className="entryform__section">
             <EntityImageField
@@ -149,9 +146,7 @@ export function ProjectEntityFields({
         </Drawer>
       ) : null}
       {failed && !editing ? (
-        <p className="form__message" role="alert" data-testid="project-entity-edit-notice">
-          {failed}
-        </p>
+        <FormMessage testId="project-entity-edit-notice">{failed}</FormMessage>
       ) : null}
     </section>
   )

@@ -12,6 +12,7 @@ import { Field } from '../Field'
 import { RoleSelect } from './RoleSelect'
 import { FormActions } from '../FormActions'
 import { errorText } from '../../lib/errorText'
+import { FormMessage } from '../FormMessage'
 
 // ---------- Inviting ----------
 
@@ -115,11 +116,7 @@ export function InviteForm({
           </>
         )}
       </Field>
-      {errors.form ? (
-        <p className="form__message" role="alert">
-          {errors.form}
-        </p>
-      ) : null}
+      {errors.form ? <FormMessage>{errors.form}</FormMessage> : null}
       <FormActions
         submitLabel={t('universe.collab.create')}
         busy={busy}

@@ -13,6 +13,7 @@ import { CommentNewForm } from './CommentNewForm'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
 import { HeadingCount } from './HeadingCount'
+import { FormMessage } from './FormMessage'
 
 const SUBJECT_WORDS = {
   entry: 'review.comments.subject.entry',
@@ -128,11 +129,7 @@ export function CommentsDrawer<T>({
       />
 
       <TabPanel idPrefix="review" id="comments" tab={tab}>
-        {message ? (
-          <p className="form__message" role="alert" data-testid="comments-error">
-            {message}
-          </p>
-        ) : null}
+        {message ? <FormMessage testId="comments-error">{message}</FormMessage> : null}
 
         {access.comment ? (
           <CommentNewForm

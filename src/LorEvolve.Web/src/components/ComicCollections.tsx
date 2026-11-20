@@ -20,6 +20,7 @@ import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 import { PageHeader } from './PageHeader'
+import { FormMessage } from './FormMessage'
 
 const ARCS_AND_EVENTS: ComicCollectionKind[] = ['story-arc', 'event']
 
@@ -61,11 +62,7 @@ export function ComicCollections({
 
   return (
     <div data-testid="comic-collections">
-      {failed ? (
-        <p className="form__message" role="alert">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage>{failed}</FormMessage> : null}
 
       {kinds.map((kind) => {
         const ofKind = data.collections.filter((collection) => collection.kind === kind)

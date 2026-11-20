@@ -4,6 +4,7 @@ import { getEpisode, saveEpisode, type ProjectEpisodeSummary } from '../../proje
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
 import { errorText } from '../../lib/errorText'
+import { FormMessage } from '../FormMessage'
 
 /**
  * One episode's script. Read on open rather than carried by the list, and saved over the version it was read at, so a
@@ -88,13 +89,7 @@ export function ScriptEditor({
       }}
     >
       {failed ? (
-        <p
-          className="form__message"
-          role="alert"
-          data-testid={`project-script-failed-${episode.id}`}
-        >
-          {failed}
-        </p>
+        <FormMessage testId={`project-script-failed-${episode.id}`}>{failed}</FormMessage>
       ) : null}
 
       <Field label={t('projects.seasons.episodeTitle')} requiredMark>

@@ -14,6 +14,7 @@ import { ProjectEntryList } from './projectEntities/ProjectEntryList'
 import { ProjectEntryForm } from './ProjectEntryForm'
 import { ShowMore } from './ShowMore'
 import { NewButton } from './NewButton'
+import { FormMessage } from './FormMessage'
 
 /**
  * The entries a project holds, by type (#144).
@@ -148,11 +149,7 @@ export function ProjectEntries({
         }
       />
 
-      {failed ? (
-        <p className="form__message" role="alert" data-testid="project-entries-failed">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage testId="project-entries-failed">{failed}</FormMessage> : null}
 
       {fixedTypeId ? null : (
         <Field

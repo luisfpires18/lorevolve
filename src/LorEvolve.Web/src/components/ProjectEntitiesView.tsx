@@ -16,6 +16,7 @@ import { t, tx, useI18n } from '../i18n'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
 import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 /**
  * A project's Entities view (#196): its types as cards, one type's entries a page at a time, and the type editor as an
@@ -215,11 +216,7 @@ function TypeCards({
         />
       )}
 
-      {failed ? (
-        <p className="form__message" role="alert" data-testid="project-entity-types-failed">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage testId="project-entity-types-failed">{failed}</FormMessage> : null}
 
       <div data-testid="project-entity-type-cards">
         {/* A project's types have no groups, so the catalog shows no "Browse by group" and never calls these two. */}

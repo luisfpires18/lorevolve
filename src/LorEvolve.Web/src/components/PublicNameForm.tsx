@@ -6,6 +6,7 @@ import { PUBLIC_NAME_MAX } from '../publishing/types'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * The account's public name: the "by …" on its published universes, and the only thing about the account the
@@ -64,11 +65,7 @@ export function PublicNameForm() {
   }
 
   if (loadFailed) {
-    return (
-      <p className="form__message" role="alert">
-        {t('account.publicName.loadFailed')}
-      </p>
-    )
+    return <FormMessage>{t('account.publicName.loadFailed')}</FormMessage>
   }
 
   return (

@@ -7,6 +7,7 @@ import { Field } from './Field'
 import { createPlotArc, updatePlotArc } from '../stories/api'
 import type { PlotArc } from '../stories/types'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface PlotArcDraft {
   title: string
@@ -115,11 +116,7 @@ export function PlotArcForm({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="plot-arc-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="plot-arc-error">{message}</FormMessage> : null}
 
       <Field
         id="plot-arc-title"

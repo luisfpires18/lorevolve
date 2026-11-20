@@ -18,6 +18,7 @@ import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
 import { useImagePick } from '../lib/useImagePick'
 import { confirmAction } from '../lib/confirm'
+import { FormMessage } from './FormMessage'
 
 /**
  * What the cropper is open on. A file just picked is framed before anything is uploaded; a photo
@@ -179,11 +180,7 @@ export function ProfileAvatar({ name }: { name: string }) {
 
       <p className="avatar__hint">{t('account.avatar.hint')}</p>
 
-      {error ? (
-        <p className="form__message" role="alert" data-testid="profile-photo-error">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId="profile-photo-error">{error}</FormMessage> : null}
 
       {framing && source ? (
         <ImageCropDialog

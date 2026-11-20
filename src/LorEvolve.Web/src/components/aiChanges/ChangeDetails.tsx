@@ -4,6 +4,7 @@ import { isProse } from '../../aiChanges/changeTraits'
 import { MediaChange } from './MediaChange'
 import { ProseChange } from './ProseChange'
 import { QuietNote } from '../QuietNote'
+import { FormMessage } from '../FormMessage'
 
 /** What a change does: its lines, its prose or picture, what it touches, what it needs or is needed by, and what stops it. */
 export function ChangeDetails({
@@ -28,6 +29,7 @@ export function ChangeDetails({
   onUploaded: (next: Proposal) => void
 }) {
   const { t } = useI18n()
+  const issueItems = change.issues.map((issue, index) => <li key={index}>{issue.message}</li>)
 
   return (
     <div id={detailsId}>
@@ -93,18 +95,23 @@ export function ChangeDetails({
       ) : null}
 
       {pending && change.issues.length > 0 ? (
-        <ul
-          className={
-            change.isConflict
-              ? 'callout callout--warning aichangeitem__issues'
-              : 'form__message aichangeitem__issues'
-          }
-          data-testid="ai-change-issues"
-        >
-          {change.issues.map((issue, index) => (
-            <li key={index}>{issue.message}</li>
-          ))}
-        </ul>
+        change.isConflict ? (
+          <ul
+            className="callout callout--warning aichangeitem__issues"
+            data-testid="ai-change-issues"
+          >
+            {issueItems}
+          </ul>
+        ) : (
+          <FormMessage
+            as="ul"
+            role={null}
+            className="aichangeitem__issues"
+            testId="ai-change-issues"
+          >
+            {issueItems}
+          </FormMessage>
+        )
       ) : null}
     </div>
   )

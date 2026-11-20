@@ -9,6 +9,7 @@ import type { UniverseInput } from '../universes/types'
 import { HEX, inputOf, normalizeHex } from '../universes/universeFormInput'
 import { UniverseColourField } from './UniverseColourField'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface UniverseFormProps {
   initial?: UniverseInput
@@ -93,11 +94,7 @@ export function UniverseForm({
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
-      {message ? (
-        <p className="form__message" role="alert" data-testid="universe-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="universe-error">{message}</FormMessage> : null}
 
       {showDetails ? (
         <>

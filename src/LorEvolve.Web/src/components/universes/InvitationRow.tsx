@@ -14,6 +14,7 @@ import { errorText } from '../../lib/errorText'
 import { QuietNote } from '../QuietNote'
 import { confirmAction } from '../../lib/confirm'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 // ---------- Pending invitations ----------
 
@@ -116,11 +117,7 @@ export function InvitationRow({
           {t('universe.collab.revoke')}
         </Button>
       </div>
-      {error ? (
-        <p className="form__message collab__error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage className="collab__error">{error}</FormMessage> : null}
     </li>
   )
 }

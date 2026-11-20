@@ -19,6 +19,7 @@ import { NewButton } from '../components/NewButton'
 import { Announce } from '../components/Announce'
 import { LoadingNote } from '../components/LoadingNote'
 import { LoadError } from '../components/LoadError'
+import { FormMessage } from '../components/FormMessage'
 
 /**
  * One Creation category's projects, each drawn as the thing it will be (owner, 2026-11-17): Gaming on a handheld,
@@ -91,11 +92,7 @@ export default function CategoryShelfPage({
       ) : null}
 
       <Announce testId="shelf-announcement">{announcement}</Announce>
-      {moveError ? (
-        <p className="form__message" role="alert" data-testid="shelf-move-error">
-          {moveError}
-        </p>
-      ) : null}
+      {moveError ? <FormMessage testId="shelf-move-error">{moveError}</FormMessage> : null}
 
       {!showView && state.kind === 'ready' && state.value.length > 0 ? (
         <ShelfCards

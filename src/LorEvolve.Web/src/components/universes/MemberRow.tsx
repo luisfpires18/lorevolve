@@ -15,6 +15,7 @@ import { InlineConfirm } from '../InlineConfirm'
 import { errorText } from '../../lib/errorText'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 // ---------- People ----------
 
@@ -140,11 +141,7 @@ export function MemberRow({
           />
         </InlineConfirm>
       ) : null}
-      {error ? (
-        <p className="form__message collab__error" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage className="collab__error">{error}</FormMessage> : null}
     </li>
   )
 }

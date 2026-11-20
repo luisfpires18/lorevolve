@@ -7,6 +7,7 @@ import { OutlineAddButtons } from './projectEntities/OutlineAddButtons'
 import { OutlineBranch } from './projectEntities/OutlineBranch'
 import { NodeEditor } from './projectEntities/NodeEditor'
 import { PageHeader } from './PageHeader'
+import { FormMessage } from './FormMessage'
 
 /**
  * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
@@ -38,9 +39,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
 
   if (tree === null) {
     return failed ? (
-      <p className="form__message" role="alert" data-testid="project-outline-failed">
-        {failed}
-      </p>
+      <FormMessage testId="project-outline-failed">{failed}</FormMessage>
     ) : (
       <p className="projectcard__meta">{t('projects.common.loading')}</p>
     )
@@ -56,11 +55,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
           actions={<OutlineAddButtons parent={null} tree={tree} busy={busy} add={add} />}
         />
 
-        {failed ? (
-          <p className="form__message" role="alert" data-testid="project-outline-failed">
-            {failed}
-          </p>
-        ) : null}
+        {failed ? <FormMessage testId="project-outline-failed">{failed}</FormMessage> : null}
 
         {tree.nodes.length === 0 ? (
           <EmptyState

@@ -8,6 +8,7 @@ import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 import { CheckField } from './CheckField'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 /**
  * The Profile's view of the account's public author page (ADR 0037): where it is, whether anyone can see it, and the
@@ -41,11 +42,7 @@ export function PublicAuthorSection() {
   }, [photoKey, t])
 
   if (!settings) {
-    return message ? (
-      <p className="form__message" role="alert">
-        {message}
-      </p>
-    ) : null
+    return message ? <FormMessage>{message}</FormMessage> : null
   }
 
   async function toggle(isPublic: boolean) {
@@ -99,11 +96,7 @@ export function PublicAuthorSection() {
         onChange={(checked) => void toggle(checked)}
         testId="public-photo-toggle"
       />
-      {message ? (
-        <p className="form__message" role="alert">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage>{message}</FormMessage> : null}
       <Announce>{announcement}</Announce>
     </div>
   )

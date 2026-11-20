@@ -21,6 +21,7 @@ import {
   type StoryStatusValue,
 } from '../stories/types'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface StoryDraft {
   title: string
@@ -164,11 +165,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         </p>
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="story-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="story-error">{message}</FormMessage> : null}
 
       {conflict && story ? (
         <EditConflict

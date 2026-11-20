@@ -5,6 +5,7 @@ import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { QuietNote } from '../QuietNote'
+import { FormMessage } from '../FormMessage'
 
 /**
  * A picture change's hand-over (ADR 0062): the AI sends no file, so the person uploads it here. It waits in quarantine - seen
@@ -104,11 +105,7 @@ export function MediaChange({
           {t('review.aiChange.media.uploaded')}
         </QuietNote>
       ) : null}
-      {error ? (
-        <p className="form__message" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage>{error}</FormMessage> : null}
     </div>
   )
 }

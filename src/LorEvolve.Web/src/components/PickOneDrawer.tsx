@@ -3,6 +3,7 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { FormActions } from './FormActions'
 import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 interface PickOneDrawerProps {
   testId: string
@@ -90,11 +91,7 @@ export function PickOneDrawer({
           ))}
         </Field>
       )}
-      {error ? (
-        <p className="form__message" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage>{error}</FormMessage> : null}
     </Drawer>
   )
 }

@@ -9,6 +9,7 @@ import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { FormMessage } from './FormMessage'
 
 /**
  * Connect to AI (ADR 0046): an action on the universe's front page, opening a drawer with this universe's MCP URL to copy into an
@@ -95,9 +96,7 @@ function ConnectDrawer({
           {t('ai.connect.loading')}
         </QuietNote>
       ) : load.kind !== 'ready' ? (
-        <p className="form__message" role="alert" data-testid="connect-ai-error">
-          {t('ai.connect.loadFailed')}
-        </p>
+        <FormMessage testId="connect-ai-error">{t('ai.connect.loadFailed')}</FormMessage>
       ) : load.value.url === null ? (
         <QuietNote className="history__quiet" size="ui" testId="connect-ai-unavailable">
           {t('ai.connect.unavailable')}

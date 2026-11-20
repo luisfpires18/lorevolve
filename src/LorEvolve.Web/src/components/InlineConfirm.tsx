@@ -1,4 +1,5 @@
 import { useId, type ReactNode, type RefObject } from 'react'
+import { FormMessage } from './FormMessage'
 
 const TITLE_TAGS = { p: 'p', h2: 'h2', h3: 'h3' } as const
 
@@ -74,13 +75,13 @@ export function InlineConfirm({
       </Title>
       {children}
       {error ? (
-        <p
-          className={look === 'trash' ? 'trash__confirmerror' : 'form__message'}
-          role="alert"
-          data-testid={errorTestId}
-        >
-          {error}
-        </p>
+        look === 'trash' ? (
+          <p className="trash__confirmerror" role="alert" data-testid={errorTestId}>
+            {error}
+          </p>
+        ) : (
+          <FormMessage testId={errorTestId}>{error}</FormMessage>
+        )
       ) : null}
       {actions}
     </div>

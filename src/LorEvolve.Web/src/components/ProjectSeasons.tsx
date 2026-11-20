@@ -10,6 +10,7 @@ import { FormActions } from './FormActions'
 import { useLoadedList } from '../lib/useLoadedList'
 import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { PageHeader } from './PageHeader'
+import { FormMessage } from './FormMessage'
 
 /**
  * The seasons of a project and the episodes in them (#145).
@@ -123,11 +124,7 @@ export function ProjectSeasons({
         </form>
       ) : null}
 
-      {failed ? (
-        <p className="form__message" role="alert" data-testid="project-seasons-failed">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage testId="project-seasons-failed">{failed}</FormMessage> : null}
 
       {seasons.length === 0 ? (
         <EmptyState title={say.empty()} hint={say.emptyHint()} testId="project-seasons-empty" />

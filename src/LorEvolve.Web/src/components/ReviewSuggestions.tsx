@@ -12,6 +12,7 @@ import { Button } from './Button'
 import { ShowMore } from './ShowMore'
 import { QuietNote } from './QuietNote'
 import { HeadingCount } from './HeadingCount'
+import { FormMessage } from './FormMessage'
 
 interface ReviewSuggestionsProps<T> {
   universeId: string
@@ -78,15 +79,21 @@ export function ReviewSuggestions<T>({
   return (
     <>
       {feedback ? (
-        <p
-          className={feedback.isError ? 'form__message' : 'callout'}
-          role={feedback.isError ? 'alert' : 'status'}
-          tabIndex={-1}
-          ref={feedbackLine}
-          data-testid="suggestions-feedback"
-        >
-          {feedback.text}
-        </p>
+        feedback.isError ? (
+          <FormMessage tabIndex={-1} ref={feedbackLine} testId="suggestions-feedback">
+            {feedback.text}
+          </FormMessage>
+        ) : (
+          <p
+            className="callout"
+            role="status"
+            tabIndex={-1}
+            ref={feedbackLine}
+            data-testid="suggestions-feedback"
+          >
+            {feedback.text}
+          </p>
+        )
       ) : null}
 
       {access.suggestChanges ? (

@@ -6,6 +6,7 @@ import type { PublishEverythingPreview, PublishEverythingResult } from '../../pu
 import { PublishEverythingConfirm } from './PublishEverythingConfirm'
 import { Button } from '../Button'
 import { errorText } from '../../lib/errorText'
+import { FormMessage } from '../FormMessage'
 
 /**
  * Publish everything: every Canon lore entry and every Complete story, with its scenes and their text, in one action. The
@@ -85,11 +86,7 @@ export function PublishEverything({
         </Button>
       ) : null}
 
-      {error ? (
-        <p className="form__message" role="alert" data-testid="publish-everything-error">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId="publish-everything-error">{error}</FormMessage> : null}
       {done ? (
         <p className="settings__saved" role="status" data-testid="publish-everything-done">
           {done}

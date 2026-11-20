@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
 import { Section } from '../Section'
+import { FormMessage } from '../FormMessage'
 
 /** Settings → Data: the backup and readable downloads, and the way to restore a backup. */
 export function SettingsData({
@@ -44,11 +45,7 @@ export function SettingsData({
             {t('universe.settings.exportSaved', { name: exportedAs })}
           </p>
         ) : null}
-        {exportError ? (
-          <p className="form__message" role="alert" data-testid="export-error">
-            {exportError}
-          </p>
-        ) : null}
+        {exportError ? <FormMessage testId="export-error">{exportError}</FormMessage> : null}
       </Section>
 
       <Section title={t('universe.settings.restore')} narrow>

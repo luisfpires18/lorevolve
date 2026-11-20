@@ -7,6 +7,7 @@ import { RestoreReadyForm } from './backups/RestoreReadyForm'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 interface RestoreBackupProps {
   onCancel: () => void
@@ -53,7 +54,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
           <h3 className="restore__heading" ref={refusedHeading} tabIndex={-1}>
             {t('admin.restore.refused.heading')}
           </h3>
-          <p className="form__message">{stage.refusal.detail}</p>
+          <FormMessage role={null}>{stage.refusal.detail}</FormMessage>
           {stage.refusal.issues.length > 1 ? (
             <ul className="restore__issues" data-testid="restore-issues">
               {stage.refusal.issues.map((issue, index) => (

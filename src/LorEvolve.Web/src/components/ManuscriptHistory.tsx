@@ -15,6 +15,7 @@ import type {
 import { confirmAction } from '../lib/confirm'
 import { ManuscriptRevision } from './stories/ManuscriptRevision'
 import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 interface ManuscriptHistoryProps {
   /** The panel's id, which the toggle that opens it controls. */
@@ -174,13 +175,17 @@ export function ManuscriptHistory({
       ) : null}
 
       {message ? (
-        <p
-          className={message.tone === 'alert' ? 'form__message' : 'mshistory__done'}
-          role={message.tone}
-          data-testid="manuscript-history-message"
-        >
-          {message.text}
-        </p>
+        message.tone === 'alert' ? (
+          <FormMessage testId="manuscript-history-message">{message.text}</FormMessage>
+        ) : (
+          <p
+            className="mshistory__done"
+            role={message.tone}
+            data-testid="manuscript-history-message"
+          >
+            {message.text}
+          </p>
+        )
       ) : null}
 
       {failed ? (

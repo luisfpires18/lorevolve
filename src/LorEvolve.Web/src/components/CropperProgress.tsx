@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n'
 import type { SaveStage } from './ImageCropDialog'
+import { FormMessage } from './FormMessage'
 
 export function CropperProgress({
   stage,
@@ -48,11 +49,7 @@ export function CropperProgress({
         </div>
       )}
 
-      {error ? (
-        <p className="form__message" role="alert" data-testid="image-crop-error">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId="image-crop-error">{error}</FormMessage> : null}
     </>
   )
 }
