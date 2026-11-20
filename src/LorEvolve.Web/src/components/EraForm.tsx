@@ -1,9 +1,7 @@
-import { useEffect } from 'react'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import type { FieldValue } from '../lore/types'
@@ -78,11 +76,6 @@ export function EraForm({
   const isDirty =
     payloadKey(inputOf(draft, null, reckonsInEras, custom)) !==
     payloadKey(inputOf(initial, null, reckonsInEras, custom))
-  useReturnFocus()
-
-  useEffect(() => {
-    nameInput.current?.focus()
-  }, [])
 
   const index = era ? base.eras.findIndex((one) => one.id === era.id) : -1
   const key = `eras[${index === -1 ? base.eras.length : index}]`
@@ -101,6 +94,7 @@ export function EraForm({
 
   return (
     <Drawer
+      initialFocus={nameInput}
       testId="era-form"
       titleId="era-heading"
       eyebrow={
@@ -113,6 +107,7 @@ export function EraForm({
       leaveMessage={
         era ? t('time.eraForm.leaveGuardEdit', { name: era.name }) : t('time.eraForm.leaveGuardNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t } from '../../i18n'
@@ -7,7 +7,6 @@ import type { MachineTransition } from '../../worldLogic/machine'
 import type { SystemMachineState, SystemRuleSummary } from '../../worldLogic/types'
 import { m, gb, type Rules } from '../../worldLogic/machinePanelTypes'
 import { textInput } from '../../worldLogic/machineDrawerFields'
-import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
 import { FormActions } from '../FormActions'
 import { GuardBuilderDrawer } from './GuardBuilderDrawer'
 import { Button } from '../Button'
@@ -36,7 +35,6 @@ export function TransitionDrawer({
   onDelete?: () => void
   onClose: () => void
 }) {
-  const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [initial] = useState(() => ({
     fromStateId: transition?.fromStateId ?? states[0]?.id ?? '',
@@ -47,7 +45,6 @@ export function TransitionDrawer({
   const [form, setForm] = useState(initial)
   // The guard builder open over this drawer: a new rule, or the chosen one.
   const [building, setBuilding] = useState<{ ruleId: string | null } | null>(null)
-  useDrawerFocus(dialog)
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(initial)
   const ruleList = Array.isArray(rules) ? rules : []
@@ -88,6 +85,7 @@ export function TransitionDrawer({
   return (
     <>
       <Drawer
+        initialFocus="input, select"
         testId="machine-transition-drawer"
         titleId={titleId}
         title={
@@ -99,7 +97,6 @@ export function TransitionDrawer({
               })
             : t(`${m}.newTransition`)
         }
-        dialogRef={dialog}
         isDirty={isDirty}
         leaveMessage={t(`${m}.leaveGuard`)}
         onClose={onClose}

@@ -13,7 +13,6 @@ import {
   type IdeaReference,
   type IdeaReferenceKindValue,
 } from '../ideas/types'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
 import { LoadingNote } from './LoadingNote'
@@ -78,12 +77,6 @@ export function IdeaReferencePicker({
         ? { kind: 'error' }
         : { kind: 'ready', targets: answer.targets }
 
-  useReturnFocus()
-
-  useEffect(() => {
-    search.current?.focus()
-  }, [])
-
   useEffect(() => {
     const controller = new AbortController()
     const asked = `${kind}:${settled}`
@@ -103,6 +96,7 @@ export function IdeaReferencePicker({
 
   return (
     <Drawer
+      initialFocus={search}
       testId="idea-reference-picker"
       titleId={headingId}
       className="ideapicker"

@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
-import { useReturnFocus } from '../lib/returnFocus'
 import { saveStoryPublicSummary } from '../publishing/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
@@ -36,12 +35,6 @@ export function StoryPublicSummaryForm({
 
   const isDirty = draft.trim() !== (summary ?? '').trim()
 
-  useReturnFocus()
-
-  useEffect(() => {
-    field.current?.focus()
-  }, [])
-
   async function save() {
     setError(null)
     setIsSaving(true)
@@ -60,12 +53,14 @@ export function StoryPublicSummaryForm({
 
   return (
     <Drawer
+      initialFocus={field}
       testId="story-public-summary-form"
       titleId="story-public-summary-heading"
       eyebrow={t('stories.summaryForm.eyebrow')}
       title={<bdi>{title}</bdi>}
       isDirty={isDirty}
       leaveMessage={t('stories.summaryForm.leaveUnsaved')}
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

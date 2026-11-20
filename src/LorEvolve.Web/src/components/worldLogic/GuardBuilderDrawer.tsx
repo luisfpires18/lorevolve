@@ -2,7 +2,6 @@ import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { GuardBuilder } from '../GuardBuilder'
 import { t } from '../../i18n'
-import { useReturnFocus } from '../../lib/returnFocus'
 import { sameCondition } from '../../worldLogic/guardSummary'
 import type { SystemRuleSummary } from '../../worldLogic/types'
 import { m, gb } from '../../worldLogic/machinePanelTypes'
@@ -55,7 +54,6 @@ export function GuardBuilderDrawer({
     conflict,
     saving,
   } = state
-  useReturnFocus()
 
   const titleOf = (id: string) => rules.find((rule) => rule.id === id)?.title
   const isDirty = title !== initial.title || !sameCondition(condition, initial.condition)

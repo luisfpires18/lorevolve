@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import type { EntityType } from '../lore/typeDefinitions'
 import type { DraftSection } from '../lore/sectionLayout'
@@ -36,7 +35,6 @@ export function FieldSectionsDialog({
   const { base, sections, placed, order, errors, message, stale, isSaving, focusKey } = state
 
   const isDirty = payloadKey({ sections, placed, order }) !== payloadKey(base.layout)
-  useReturnFocus()
 
   useEffect(() => {
     if (focusKey.current === null) return
@@ -75,6 +73,7 @@ export function FieldSectionsDialog({
       title={t('entityTypes.sections.title')}
       isDirty={isDirty}
       leaveMessage={t('entityTypes.sections.leaveConfirm', { name: type.name })}
+      busy={isSaving}
       onClose={onClose}
       noValidate
       onSubmit={() => void save()}

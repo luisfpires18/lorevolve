@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { CheckField } from './CheckField'
 import { Field } from './Field'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useFormSave } from '../lib/useFormSave'
 import { createRelationshipType } from '../relationships/api'
 import {
@@ -55,12 +54,6 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       semantic: FamilySemantic.NonStructuralFamily,
     })
 
-  useReturnFocus()
-
-  useEffect(() => {
-    document.getElementById('family-kind-name')?.focus()
-  }, [])
-
   // A kind that reads the same both ways names no parent side, so only the meaning that defines no ancestry is left.
   const meanings = isSymmetric ? MEANINGS.filter((each) => !isParentSemantic(each.value)) : MEANINGS
   const chosen =
@@ -85,12 +78,14 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
 
   return (
     <Drawer
+      initialFocus="#family-kind-name"
       testId="family-kind-dialog"
       titleId="family-kind-heading"
       eyebrow={t('places.kindDialog.eyebrow')}
       title={t('places.kindDialog.title')}
       isDirty={isDirty}
       leaveMessage={t('places.kindDialog.leave')}
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

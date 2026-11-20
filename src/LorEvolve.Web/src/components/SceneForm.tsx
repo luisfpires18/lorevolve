@@ -4,7 +4,6 @@ import type { ChronologyPointPart } from './ChronologyPointFields'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { useI18n } from '../i18n'
 import { getScene } from '../stories/api'
@@ -88,7 +87,6 @@ export function SceneForm({
   const isDirty =
     payloadKey(inputOf(draft, reckonsInEras, custom)) !==
       payloadKey(inputOf(initial, reckonsInEras, custom)) || loreOrder(draft) !== loreOrder(initial)
-  useReturnFocus()
 
   useEffect(() => {
     const beat = startWithBeat
@@ -155,6 +153,7 @@ export function SceneForm({
             ? t('stories.sceneForm.leaveUnsaved', { title: scene.title })
             : t('stories.sceneForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

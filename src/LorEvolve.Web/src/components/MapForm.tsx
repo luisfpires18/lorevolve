@@ -1,5 +1,3 @@
-import { useEffect } from 'react'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { useI18n } from '../i18n'
 import { mapFormActions } from '../maps/mapFormActions'
@@ -34,11 +32,6 @@ export function MapForm(props: MapFormProps) {
     progress,
     isDirty,
   } = state
-  useReturnFocus()
-
-  useEffect(() => {
-    firstInput.current?.focus()
-  }, [])
 
   const { choose, save } = mapFormActions({ ...state, props, universeId, onSaved, t })
 
@@ -52,6 +45,7 @@ export function MapForm(props: MapFormProps) {
 
   return (
     <Drawer
+      initialFocus={firstInput}
       testId="map-form"
       titleId="map-form-heading"
       eyebrow={map ? <bdi>{map.name}</bdi> : null}
@@ -60,6 +54,7 @@ export function MapForm(props: MapFormProps) {
       leaveMessage={
         props.mode === 'new' ? t('places.mapForm.leaveNew') : t('places.mapForm.leaveChanges')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

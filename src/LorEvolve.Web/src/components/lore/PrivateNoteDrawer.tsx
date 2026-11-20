@@ -5,7 +5,6 @@ import { ApiError } from '../../lib/api'
 import { formatDateTime } from '../../lib/dates'
 import { Drawer } from '../Drawer'
 import { isChangedElsewhere } from '../../lib/editConflict'
-import { useReturnFocus } from '../../lib/returnFocus'
 import {
   getPrivateNote,
   PRIVATE_NOTE_CHANGED,
@@ -53,8 +52,6 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
   const isReady = load === 'ready'
   const isDirty = isReady && draft !== stored.content
   const isTooLong = draft.length > PRIVATE_NOTE_MAX_LENGTH
-
-  useReturnFocus()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -142,6 +139,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       }
       isDirty={isDirty}
       leaveMessage={t('entity.privateNote.discardGuard')}
+      busy={isSaving}
       onClose={onClose}
       actions={(close) => (
         <FormActions onCancel={close} dismiss="close" cancelTestId="private-note-close" />
