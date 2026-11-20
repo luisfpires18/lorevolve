@@ -13,10 +13,10 @@ import {
   removeComicEntry,
   type ComicCollection,
   type ComicCollectionKind,
+  type Editing,
 } from '../../projects/comicCollections'
 import type { Dispatch, SetStateAction } from 'react'
 import { WORDS } from '../../projects/comicCollectionWords'
-import type { Editing } from './CollectionDrawer'
 import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 

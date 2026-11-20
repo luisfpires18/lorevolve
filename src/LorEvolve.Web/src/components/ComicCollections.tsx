@@ -8,11 +8,13 @@ import {
   saveComicCollection,
   type ComicCollection,
   type ComicCollectionKind,
+  type Editing,
 } from '../projects/comicCollections'
 import { WORDS } from '../projects/comicCollectionWords'
 import { ComicCollectionItem } from './projects/ComicCollectionItem'
-import { CollectionDrawer, type Editing } from './projects/CollectionDrawer'
-import { EntryDrawer } from './projects/EntryDrawer'
+import { NameSummaryDrawer } from './NameSummaryDrawer'
+import { PickOneDrawer } from './PickOneDrawer'
+import { levelWord, nameOf } from '../projectEntities/levelWords'
 import { NewButton } from './NewButton'
 import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
@@ -114,8 +116,12 @@ export function ComicCollections({
       })}
 
       {editing ? (
-        <CollectionDrawer
-          editing={editing}
+        <NameSummaryDrawer
+          testId="comic-collection-drawer"
+          eyebrow={t(WORDS[editing.kind].eyebrow)}
+          title={editing.collection ? t('projects.comics.edit') : t(WORDS[editing.kind].add)}
+          initial={editing.collection}
+          words="projects.comics"
           onClose={() => setEditing(null)}
           onSave={(input) => {
             const { kind, collection } = editing
@@ -131,11 +137,23 @@ export function ComicCollections({
       ) : null}
 
       {adding ? (
-        <EntryDrawer
-          collection={adding}
-          candidates={data.candidates.filter(
-            (node) => !adding.entries.some((entry) => entry.nodeId === node.nodeId),
-          )}
+        <PickOneDrawer
+          testId="comic-entry-drawer"
+          titleId="comic-entry-drawer-heading"
+          title={t('projects.comics.addTitle', { name: adding.name })}
+          label={t('projects.comics.part')}
+          choose={t('projects.comics.choosePart')}
+          options={data.candidates
+            .filter((node) => !adding.entries.some((entry) => entry.nodeId === node.nodeId))
+            .map((node) => ({
+              value: node.nodeId,
+              label: `${node.projectName} - ${levelWord(node.level)} ${nameOf(node)}`,
+            }))}
+          emptyText={t('projects.comics.noCandidates')}
+          submitLabel={t('projects.comics.add')}
+          failed={t('projects.comics.failed')}
+          selectTestId="comic-entry-drawer-node"
+          submitTestId="comic-entry-drawer-save"
           onClose={() => setAdding(null)}
           onAdd={(nodeId) =>
             addComicEntry(universeId, adding.id, nodeId)
