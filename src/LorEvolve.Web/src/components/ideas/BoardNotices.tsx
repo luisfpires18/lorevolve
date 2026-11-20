@@ -1,6 +1,6 @@
 import { RecoveredDraft } from '../RecoveredDraft'
 import type { Fields } from '../../ideas/boardDraft'
-import type { useBoardDraft } from '../../ideas/useBoardDraft'
+import type { useDraftedEditor } from '../../lib/useDraftedEditor'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
@@ -20,7 +20,7 @@ export function BoardNotices({
   loadSavedVersion,
   failure,
 }: ReturnType<typeof useBoardState> & {
-  offer: ReturnType<typeof useBoardDraft>['offer']
+  offer: ReturnType<typeof useDraftedEditor<Fields>>['offer']
   copy: Fields | null
   recoveryId: string
   recoverDraft: () => void

@@ -1,7 +1,7 @@
 import { createIdeaBoard, saveIdeaBoard, type IdeaBoardDetail } from './boards'
 import { fieldsOf, inputOf, sameFields, storedFrom, type Fields } from './boardDraft'
 import type { useI18n } from '../i18n'
-import type { useBoardDraft } from './useBoardDraft'
+import type { useDraftedEditor } from '../lib/useDraftedEditor'
 import type { useBoardState } from './useBoardState'
 import { useSaveShortcut } from '../lib/useSaveShortcut'
 
@@ -25,7 +25,7 @@ export function useBoardSave({
   setStored,
   setSaves,
 }: ReturnType<typeof useBoardState> &
-  ReturnType<typeof useBoardDraft> & {
+  ReturnType<typeof useDraftedEditor<Fields>> & {
     boardId: string | null
     onCreated: (board: IdeaBoardDetail) => void
     t: ReturnType<typeof useI18n>['t']

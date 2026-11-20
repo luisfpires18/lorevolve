@@ -10,11 +10,11 @@ import { BoardWork } from './ideas/BoardWork'
 import { boardCardActions } from '../ideas/boardCardActions'
 import { boardDraftActions } from '../ideas/boardDraftActions'
 import type { IdeaBoardDetail } from '../ideas/boards'
-import { useBoardDraft } from '../ideas/useBoardDraft'
+import { isBlank, parseCopy, sameFields } from '../ideas/boardDraft'
 import { useBoardRead } from '../ideas/useBoardRead'
 import { useBoardSave } from '../ideas/useBoardSave'
 import { useBoardState } from '../ideas/useBoardState'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDraftedEditor } from '../lib/useDraftedEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 
@@ -60,13 +60,17 @@ export function IdeaBoardEditor({
   const inspectorId = useId()
 
   const base = useBoardState({ boardId, defaultUniverseId, contextUniverse })
-  const { discard, load, stored, draft, universes, picking, setPicking, announcement } = base
+  const { load, stored, draft, universes, picking, setPicking, announcement } = base
   useBoardRead({ ...base, boardId, t })
-  const drafting = useBoardDraft(base)
-  const { isDirty } = drafting
-
   const name = draft.title.trim() || stored.title || t('ideas.board.thisBoard')
-  useLeaveGuard(isDirty ? t('ideas.board.leaveGuard', { name }) : null, discard)
+  const drafting = useDraftedEditor({
+    ...base,
+    isReady: load.kind === 'ready',
+    isBlank,
+    same: sameFields,
+    parseCopy,
+    leaveMessage: t('ideas.board.leaveGuard', { name }),
+  })
 
   const saving = useBoardSave({ ...base, ...drafting, boardId, onCreated, t })
   const drafts = boardDraftActions({
