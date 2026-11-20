@@ -133,7 +133,7 @@ export default function ExplorePage() {
         {loading ? (
           <ul className="explore-grid" aria-hidden="true" data-testid="explore-loading">
             {Array.from({ length: 8 }, (_, index) => (
-              <li className="worldcard worldcard--skeleton pskeleton" key={index}>
+              <li className="worldcard worldcard--skeleton" key={index}>
                 <span className="worldcard__art" />
                 <span className="worldcard__text">
                   <span className="worldcard__bone worldcard__bone--name" />

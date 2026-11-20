@@ -266,7 +266,13 @@ test('a loading block has one set of keyframes and one portal skeleton', () => {
     ['src/styles/022-shared-surfaces.css'],
     'the keyframes live in 022-shared-surfaces.css',
   )
-  only(cssFiles, paintsPortalCardSkeleton, [], 'use the .pskeleton class')
+  // The Explore card's own skeleton is the card shell itself, which this task leaves alone.
+  only(
+    cssFiles,
+    paintsPortalCardSkeleton,
+    ['src/styles/099-explore-worlds-2.css'],
+    'use the .pskeleton class',
+  )
 })
 
 test('monogram takes the first character a name carries', () => {

@@ -1,6 +1,8 @@
 /* Loading: the grid's own shape, so the worlds arrive without the page jumping. */
 .worldcard--skeleton {
   overflow: hidden;
+  border-radius: var(--portal-radius);
+  background: var(--portal-card);
   box-shadow: inset 0 0 0 1px rgb(var(--portal-ink-rgb) / 0.07);
 }
 
