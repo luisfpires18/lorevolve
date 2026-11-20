@@ -29,7 +29,7 @@ export function EpisodeForm({
         onSubmit(title, synopsis.length > 0 ? synopsis : null)
       }}
     >
-      <Field label={t('projects.seasons.episodeTitle')}>
+      <Field label={t('projects.seasons.episodeTitle')} requiredMark>
         {(control) => (
           <input
             {...control}

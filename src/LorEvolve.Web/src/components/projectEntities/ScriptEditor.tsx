@@ -83,7 +83,7 @@ export function ScriptEditor({
         </p>
       ) : null}
 
-      <Field label={t('projects.seasons.episodeTitle')}>
+      <Field label={t('projects.seasons.episodeTitle')} requiredMark>
         {(control) => (
           <input
             {...control}
@@ -115,18 +115,14 @@ export function ScriptEditor({
       {script === null ? (
         <p className="projectcard__meta">{t('projects.common.loading')}</p>
       ) : (
-        <Field label={t('projects.seasons.script')}>
-          {(control) => (
-            <textarea
-              {...control}
-              className="field__input"
-              rows={12}
-              value={script}
-              onChange={(event) => setScript(event.target.value)}
-              data-testid={`project-script-text-${episode.id}`}
-            />
-          )}
-        </Field>
+        <Field
+          as="textarea"
+          label={t('projects.seasons.script')}
+          rows={12}
+          value={script}
+          onChange={(event) => setScript(event.target.value)}
+          data-testid={`project-script-text-${episode.id}`}
+        />
       )}
 
       <FormActions

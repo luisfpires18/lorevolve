@@ -142,7 +142,7 @@ export function ProjectSchema({
       ) : null}
 
       {failed ? (
-        <p role="alert" data-testid="project-schema-failed">
+        <p className="form__message" role="alert" data-testid="project-schema-failed">
           {failed}
         </p>
       ) : null}

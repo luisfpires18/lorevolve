@@ -49,7 +49,7 @@ export function ProjectEntriesFilters({
             </label>
             <select
               id="project-entries-sort"
-              className="field__input lore__pagesizeselect"
+              className="field__input field__input--select lore__pagesizeselect"
               value={sort}
               onChange={(event) => setFilter({ sort: event.target.value || null })}
               data-testid="project-entries-sort"

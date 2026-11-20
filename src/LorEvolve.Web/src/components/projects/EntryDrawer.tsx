@@ -55,23 +55,19 @@ export function EntryDrawer({
       {candidates.length === 0 ? (
         <p className="projectcard__meta">{t('projects.comics.noCandidates')}</p>
       ) : (
-        <Field label={t('projects.comics.part')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input"
-              value={chosen}
-              data-testid="comic-entry-drawer-node"
-              onChange={(event) => setChosen(event.target.value)}
-            >
-              <option value="">{t('projects.comics.choosePart')}</option>
-              {candidates.map((node) => (
-                <option key={node.nodeId} value={node.nodeId}>
-                  {nodeLabel(node)}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          label={t('projects.comics.part')}
+          value={chosen}
+          data-testid="comic-entry-drawer-node"
+          onChange={(event) => setChosen(event.target.value)}
+        >
+          <option value="">{t('projects.comics.choosePart')}</option>
+          {candidates.map((node) => (
+            <option key={node.nodeId} value={node.nodeId}>
+              {nodeLabel(node)}
+            </option>
+          ))}
         </Field>
       )}
       {error ? (

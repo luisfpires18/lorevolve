@@ -32,7 +32,8 @@ export function RestoreChooseForm({
         label={t('admin.restore.file.label')}
         hint={t('admin.restore.file.hint')}
         id={fileId}
-        error={chooseError ? <span role="alert">{chooseError}</span> : undefined}
+        error={chooseError ?? undefined}
+        announce
       >
         {(control) => (
           <input

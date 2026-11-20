@@ -121,7 +121,7 @@ export function NodeEditor({
       )}
     >
       {failed ? (
-        <p role="alert" data-testid="project-node-editor-failed">
+        <p className="form__message" role="alert" data-testid="project-node-editor-failed">
           {failed}
         </p>
       ) : null}
@@ -161,20 +161,14 @@ export function NodeEditor({
                 ? t('projects.structure.panel.visualDescription')
                 : t('projects.structure.bodyLabel')
             }
-          >
-            {(control) => (
-              <textarea
-                {...control}
-                className="field__input"
-                rows={12}
-                readOnly={!canEdit}
-                value={body}
-                placeholder={t('projects.structure.bodyPlaceholder')}
-                onChange={(event) => setBody(event.target.value)}
-                data-testid="project-node-body"
-              />
-            )}
-          </Field>
+            as="textarea"
+            rows={12}
+            readOnly={!canEdit}
+            value={body}
+            placeholder={t('projects.structure.bodyPlaceholder')}
+            onChange={(event) => setBody(event.target.value)}
+            data-testid="project-node-body"
+          />
           {node.level === 'panel'
             ? PANEL_SCRIPT.map((part) => (
                 <ScriptField

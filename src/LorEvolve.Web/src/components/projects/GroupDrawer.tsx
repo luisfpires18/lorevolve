@@ -63,7 +63,7 @@ export function GroupDrawer({
         />
       )}
     >
-      <Field label={t('projects.sagas.name')}>
+      <Field label={t('projects.sagas.name')} requiredMark>
         {(control) => (
           <input
             {...control}
@@ -77,20 +77,16 @@ export function GroupDrawer({
           />
         )}
       </Field>
-      <Field label={t('projects.sagas.summary')}>
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input"
-            value={summary}
-            maxLength={4000}
-            rows={3}
-            placeholder={t('projects.sagas.summaryPlaceholder')}
-            data-testid="saga-drawer-summary"
-            onChange={(event) => setSummary(event.target.value)}
-          />
-        )}
-      </Field>
+      <Field
+        as="textarea"
+        label={t('projects.sagas.summary')}
+        value={summary}
+        maxLength={4000}
+        rows={3}
+        placeholder={t('projects.sagas.summaryPlaceholder')}
+        data-testid="saga-drawer-summary"
+        onChange={(event) => setSummary(event.target.value)}
+      />
       {error ? (
         <p className="form__message" role="alert">
           {error}

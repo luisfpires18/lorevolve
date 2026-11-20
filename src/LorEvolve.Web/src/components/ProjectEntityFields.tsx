@@ -108,7 +108,7 @@ export function ProjectEntityFields({
           actions={() => null}
         >
           {failed ? (
-            <p role="alert" data-testid="project-entity-edit-failed">
+            <p className="form__message" role="alert" data-testid="project-entity-edit-failed">
               {failed}
             </p>
           ) : null}
@@ -141,7 +141,7 @@ export function ProjectEntityFields({
         </Drawer>
       ) : null}
       {failed && !editing ? (
-        <p role="alert" data-testid="project-entity-edit-notice">
+        <p className="form__message" role="alert" data-testid="project-entity-edit-notice">
           {failed}
         </p>
       ) : null}

@@ -57,7 +57,7 @@ export function ProjectScript({
 
   if (tree === null) {
     return failed ? (
-      <p role="alert" data-testid="project-script-failed">
+      <p className="form__message" role="alert" data-testid="project-script-failed">
         {failed}
       </p>
     ) : (

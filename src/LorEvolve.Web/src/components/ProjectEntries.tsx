@@ -149,30 +149,26 @@ export function ProjectEntries({
       />
 
       {failed ? (
-        <p role="alert" data-testid="project-entries-failed">
+        <p className="form__message" role="alert" data-testid="project-entries-failed">
           {failed}
         </p>
       ) : null}
 
       {fixedTypeId ? null : (
-        <Field label={t('projects.entries.ofType')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input"
-              value={typeId ?? ''}
-              onChange={(event) => {
-                setTypeId(event.target.value)
-              }}
-              data-testid="project-entries-type"
-            >
-              {types.map((each) => (
-                <option key={each.id} value={each.id}>
-                  {each.name}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          label={t('projects.entries.ofType')}
+          value={typeId ?? ''}
+          onChange={(event) => {
+            setTypeId(event.target.value)
+          }}
+          data-testid="project-entries-type"
+        >
+          {types.map((each) => (
+            <option key={each.id} value={each.id}>
+              {each.name}
+            </option>
+          ))}
         </Field>
       )}
 

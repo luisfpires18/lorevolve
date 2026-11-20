@@ -49,17 +49,13 @@ export function PanelForm({
           />
         )}
       </Field>
-      <Field label={t('projects.pages.dialogue')}>
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input"
-            value={dialogue}
-            onChange={(event) => setDialogue(event.target.value)}
-            data-testid="project-panel-new-dialogue"
-          />
-        )}
-      </Field>
+      <Field
+        as="textarea"
+        label={t('projects.pages.dialogue')}
+        value={dialogue}
+        onChange={(event) => setDialogue(event.target.value)}
+        data-testid="project-panel-new-dialogue"
+      />
       {/* The lore entry this panel shows, chosen with the picker the rest of LorEvolve uses. Optional: a panel of
           scenery names nothing. */}
       <div data-testid="project-panel-new-shows">
