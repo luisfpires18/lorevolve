@@ -150,40 +150,28 @@ public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixt
         await CollaborationTestClient.Ok(owner.PutAsync(Media(u, againId, againOperation), CollaborationTestClient.PngForm()));
         var staged = await Held(againOperation);
 
-        // The replacement runs inside an approval's transaction, which then rolls back (#445).
-        await WithDb(_factory, async db =>
+        // The approval fails after the old picture was replaced in its transaction: the quarantine row's delete, the step
+        // after the attach (#445). The whole approval rolls back, and the sweep after it must keep the old picture's objects.
+        var proposal = await Read(owner, u, againId);
+        var approval = Guid.NewGuid();
+        var replaced = false;
+        _factory.Commands.FailWhen = command =>
         {
-            await using (var transaction = await db.Database.BeginTransactionAsync())
-            {
-                Assert.True(await EntityImageEndpoints.AttachStagedAsync(
-                    db,
-                    TimeProvider.System,
-                    u,
-                    bilbo,
-                    new EntityImage
-                    {
-                        AssetId = staged.AssetId,
-                        ThumbnailId = staged.ThumbnailId,
-                        OriginalKey = staged.OriginalKey,
-                        ThumbnailKey = staged.ThumbnailKey,
-                        ContentType = staged.ContentType,
-                        FileName = staged.FileName,
-                        Width = staged.Width,
-                        Height = staged.Height,
-                        ByteSize = staged.ByteSize,
-                        UploadedAt = staged.UploadedAt,
-                    },
-                    hold: null,
-                    ownerId,
-                    default));
-                Assert.Contains(old.OriginalKey, db.DroppedFieldImageKeys);
-                await transaction.RollbackAsync();
-            }
+            replaced |= command.CommandText.Contains("DELETE FROM \"EntityImages\"", StringComparison.Ordinal);
+            return replaced && command.CommandText.Contains("DELETE FROM \"AiChangeMedia\"", StringComparison.Ordinal);
+        };
+        try
+        {
+            Assert.Equal(HttpStatusCode.InternalServerError, (await Approve(owner, u, proposal, ["again"], approval)).StatusCode);
+        }
+        finally
+        {
+            _factory.Commands.FailWhen = null;
+        }
 
-            db.ChangeTracker.Clear();
-            await EntityFieldImageEndpoints.SweepDroppedAsync(db, _factory.Media, NullLoggerFactory.Instance, default);
-        });
+        Assert.True(replaced);
 
+        Assert.Equal(AiChangeOperationStatus.Pending, Assert.Single((await Read(owner, u, againId)).Operations).Status);
         var kept = await Profile(bilbo);
         Assert.Equal(old.AssetId, kept.AssetId);
         Assert.True(_factory.Media.Contains(old.OriginalKey));
