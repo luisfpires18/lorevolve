@@ -635,7 +635,7 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
         ArticleValues article => [(article.Entry, AiChangeResource.LoreEntry, "entry")],
         PlotArcValues arc => [(arc.Story, AiChangeResource.Story, "story")],
         IdeaValues idea => idea.References.Select(reference => (reference.Target, IdeaKind(reference.Kind), "references")),
-        MediaValues media => [(AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
+        MediaValues media => [(media.EntryRef is { } entryRef ? new AiRef(null, entryRef) : AiRef.To(media.EntityId), AiChangeResource.LoreEntry, "entry")],
         SystemRuleValues rule => rule.DependsOn.Select(dependency => (dependency, AiChangeResource.SystemRule, "dependsOn")),
         LoreSystemValues system => system.RuleIds.Select(rule => (rule, AiChangeResource.SystemRule, "ruleIds")),
         SystemStateValues state => [(state.System, AiChangeResource.LoreSystem, "system")],
@@ -702,7 +702,9 @@ internal sealed partial class AiChangeChecker(LorEvolveDbContext db, Guid univer
             {
                 work.Problem(AiChangeCodes.UnknownRef, $"This refers to \"{key}\", which is not another change in this proposal.", field);
             }
-            else if (other.Resource != kind || other.Action != AiChangeAction.Create)
+            // A picture's entry may be a project's entry as well as a lore entry (#466).
+            else if ((other.Resource != kind && !(work.Proposed is MediaValues && other.Resource == AiChangeResource.ProjectEntry))
+                || other.Action != AiChangeAction.Create)
             {
                 work.Problem(AiChangeCodes.WrongRef, $"This refers to \"{key}\", which doesn't create {Article(kind)}.", field);
             }

@@ -14,6 +14,22 @@ internal sealed partial class AiChangeChecker
     private async Task CheckMediaAsync(AiChangeWork work, IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
     {
         var media = (MediaValues)work.Proposed;
+        if (media.EntryRef is { } entryRef)
+        {
+            // An entry this proposal creates (#466): CheckReferences answers for its change. Until that change is applied there
+            // is no row to look at; once it is, the entry has the id staging gave this picture.
+            if (Resolve(new AiRef(null, entryRef)).Id is null)
+            {
+                await CheckUploadedAsync(work, cancellationToken);
+                if (works.Any(other => other != work && other.IsPending && other.Proposed is MediaValues { EntryRef: { } same } && same == entryRef && other.Sequence < work.Sequence))
+                {
+                    work.Problem(AiChangeCodes.Duplicate, "Another change in this proposal already gives this entry its profile picture.", "entry");
+                }
+
+                return;
+            }
+        }
+
         // A game's unit or a series' character takes a picture too (#441): its own universe only, still.
         var live = await db.Entities.IgnoreQueryFilters().AsNoTracking()
             .AnyAsync(entity => entity.Id == media.EntityId && entity.UniverseId == universeId && entity.DeletedAt == null, cancellationToken);
@@ -50,6 +66,11 @@ internal sealed partial class AiChangeChecker
             }
         }
 
+        await CheckUploadedAsync(work, cancellationToken);
+    }
+
+    private async Task CheckUploadedAsync(AiChangeWork work, CancellationToken cancellationToken)
+    {
         if (work.OperationId == Guid.Empty || !await db.AiChangeMedia.AsNoTracking().AnyAsync(row => row.OperationId == work.OperationId, cancellationToken))
         {
             work.Problem(AiChangeCodes.AwaitingUpload, "Waiting for the picture: upload it here, in LorEvolve, before approving.", "file");
