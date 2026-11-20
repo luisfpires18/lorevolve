@@ -17,7 +17,7 @@ import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
 import { Pencil, Trash } from 'lucide-react'
 import { ProjectCard } from '../ProjectCard'
-import { confirmAction } from '../../lib/confirm'
+import { confirmDelete } from '../../lib/confirm'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
 
 /** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
@@ -71,13 +71,15 @@ export function SeasonItem({
   )
 
   async function remove() {
-    const confirmed = await confirmAction({
-      title: t('projects.structure.deleteTitle', { name: season.name }),
-      message: t('projects.structure.deleteEmpty'),
-      confirmLabel: say.delete(),
-      variant: 'destructive',
-    })
-    if (confirmed) run(() => deleteSeason(projectId, season.id))
+    await confirmDelete(
+      {
+        title: t('projects.structure.deleteTitle', { name: season.name }),
+        message: t('projects.structure.deleteEmpty'),
+        confirmLabel: say.delete(),
+      },
+      () => deleteSeason(projectId, season.id),
+      run,
+    )
   }
 
   return (

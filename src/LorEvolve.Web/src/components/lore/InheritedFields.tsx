@@ -8,8 +8,8 @@ export function InheritedFields({
   inherited,
   summary,
 }: {
-  type: EntityType
-  inherited: { owner: EntityType; fields: FieldDefinition[] }[]
+  type: Pick<EntityType, 'name'>
+  inherited: { owner: Pick<EntityType, 'id' | 'name'>; fields: FieldDefinition[] }[]
   summary: (field: FieldDefinition) => string
 }) {
   const { t, tx } = useI18n()

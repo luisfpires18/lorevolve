@@ -16,6 +16,8 @@ export function FieldKindFields({
   options,
   setOptions,
   fieldErrors,
+  kinds = KIND_ORDER,
+  lines = false,
 }: {
   field: FieldDefinition | null
   latest: FieldDefinition | undefined
@@ -27,6 +29,10 @@ export function FieldKindFields({
   options: string
   setOptions: (options: string) => void
   fieldErrors: Record<string, string>
+  /** The kinds offered, in order: every kind unless the place allows fewer (a project field has no link). */
+  kinds?: FieldKindValue[]
+  /** Options in a textarea, one per line (a project field), rather than one comma-separated line. */
+  lines?: boolean
 }) {
   const { t, tn } = useI18n()
   // The kind is frozen while any entry holds a value, or any older version recorded one (Issue #39).
@@ -62,14 +68,24 @@ export function FieldKindFields({
         onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
         data-testid="field-kind"
       >
-        {KIND_ORDER.map((each) => (
+        {kinds.map((each) => (
           <option key={each} value={each}>
             {FIELD_KIND_LABELS[each]}
           </option>
         ))}
       </Field>
 
-      {hasOptions ? (
+      {hasOptions && lines ? (
+        <Field
+          as="textarea"
+          label={t('projects.schema.fieldOptions')}
+          name="field-options"
+          value={options}
+          onChange={(event) => setOptions(event.target.value)}
+          error={fieldErrors.options}
+          data-testid="field-options"
+        />
+      ) : hasOptions ? (
         <Field
           label={t('entityTypes.fields.options')}
           name="field-options"

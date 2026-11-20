@@ -3,7 +3,7 @@ import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { MoveItems } from '../MoveItems'
 import { OutlineItem } from '../OutlineItem'
 import { t, useI18n } from '../../i18n'
-import { confirmAction } from '../../lib/confirm'
+import { confirmDelete } from '../../lib/confirm'
 import { levelWord, nameOf } from '../../projectEntities/levelWords'
 import { projectPath } from '../../projects/sections'
 import {
@@ -93,15 +93,14 @@ export function ComicCollectionItem({
               tone="danger"
               testId={`comic-collection-delete-${collection.id}`}
               onClick={() =>
-                void confirmAction({
-                  title: t('projects.comics.deleteTitle', {
-                    name: collection.name,
-                  }),
-                  message: t('projects.comics.deleteMessage'),
-                  confirmLabel: t('projects.comics.delete'),
-                  variant: 'destructive',
-                  action: () => deleteComicCollection(universeId, collection.id).then(refresh),
-                })
+                void confirmDelete(
+                  {
+                    title: t('projects.comics.deleteTitle', { name: collection.name }),
+                    message: t('projects.comics.deleteMessage'),
+                    confirmLabel: t('projects.comics.delete'),
+                  },
+                  () => deleteComicCollection(universeId, collection.id).then(refresh),
+                )
               }
             >
               {t('projects.comics.delete')}

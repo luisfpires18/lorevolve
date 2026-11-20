@@ -31,20 +31,21 @@ export function parseTarget(
   return { targetEntityTypeId: null, targetGroupId: null }
 }
 
-export function splitOptions(text: string) {
+/** A select's options as typed: comma-separated, or one per line where `lines` (a project field, whose options may hold commas). */
+export function splitOptions(text: string, lines = false) {
   return text
-    .split(',')
+    .split(lines ? '\n' : ',')
     .map((option) => option.trim())
     .filter(Boolean)
 }
 
 /** What the drawer edits, as it reads for a field (or a new one). */
-export function draftOf(field: FieldDefinition | null) {
+export function draftOf(field: FieldDefinition | null, lines = false) {
   return {
     name: field?.name ?? '',
     kind: field?.kind ?? FieldKind.ShortText,
     isRequired: field?.isRequired ?? false,
-    options: field ? field.options.map((option) => option.value).join(', ') : '',
+    options: field ? field.options.map((option) => option.value).join(lines ? '\n' : ', ') : '',
     semantic: field?.semantic ?? null,
     defaultValue: field?.defaultValue ?? '',
     imageShape: field?.imageShape ?? FieldImageShape.Free,
