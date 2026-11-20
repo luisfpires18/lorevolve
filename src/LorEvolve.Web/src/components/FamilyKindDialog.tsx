@@ -139,6 +139,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       )}
 
       <CheckField
+        className="field--flow"
         label={t('places.kindDialog.symmetric')}
         checked={isSymmetric}
         onChange={setIsSymmetric}

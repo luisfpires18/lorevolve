@@ -56,6 +56,7 @@ export function KindForm({
       )}
 
       <CheckField
+        className="field--flow"
         label={t('relationships.types.symmetric')}
         checked={draft.isSymmetric}
         onChange={(isSymmetric) => edit({ isSymmetric })}

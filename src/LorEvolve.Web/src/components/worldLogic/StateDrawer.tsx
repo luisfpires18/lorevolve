@@ -141,6 +141,7 @@ export function StateDrawer({
         data-testid="machine-state-y"
       />
       <CheckField
+        className="field--flow"
         label={t(`${m}.fields.initial`)}
         checked={form.initial}
         onChange={(initial) => setForm((current) => ({ ...current, initial }))}

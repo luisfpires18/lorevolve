@@ -45,13 +45,6 @@
   align-items: inherit;
 }
 
-/* A CheckField's box and label as a block of its own width: no line box round it, so the field is as tall as
-   the label. */
-.field > .check {
-  display: flex;
-  width: fit-content;
-}
-
 /* A hidden label is absolute, placed by an ancestor far outside the field; at that ancestor's corner it cannot hang
    below a scrolling drawer and make the drawer itself scroll a few pixels. */
 .field > .field__label.visually-hidden {
