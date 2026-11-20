@@ -2,7 +2,7 @@ import { Field } from '../Field'
 import { UniverseSelect } from './UniverseSelect'
 import { BOARD_TITLE_MAX_LENGTH } from '../../ideas/boards'
 import type { Fields } from '../../ideas/boardDraft'
-import type { useBoardState } from '../../ideas/useBoardState'
+import type { useBoardEditor } from '../../ideas/useBoardEditor'
 import { useI18n } from '../../i18n'
 
 /** A board editor's title and universe fields. */
@@ -17,7 +17,7 @@ export function BoardFields({
   changeUniverse,
   chosenUniverse,
   universes,
-}: ReturnType<typeof useBoardState> & {
+}: ReturnType<typeof useBoardEditor> & {
   titleId: string
   universeFieldId: string
   isHeld: boolean
