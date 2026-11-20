@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useId, useRef } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { EntityRow } from '../EntityRow'
-import { StatusBadge } from '../StatusBadge'
+import { CanonBadge } from '../CanonBadge'
 import type { Chronology } from '../../chronology/types'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
 import { getEntity } from '../../lore/api'
 import { EMPTY_FACT, renderFact } from '../../lore/facts'
-import { CANON_LABELS } from '../../lore/types'
 import { listEntityRelationships } from '../../relationships/api'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
@@ -108,10 +107,7 @@ export function LorePreview({
               meta={
                 <>
                   <bdi>{state.value.entity.entityTypeName}</bdi>
-                  <StatusBadge
-                    step={state.value.entity.canonStatus}
-                    label={CANON_LABELS[state.value.entity.canonStatus]}
-                  />
+                  <CanonBadge status={state.value.entity.canonStatus} />
                 </>
               }
             />
