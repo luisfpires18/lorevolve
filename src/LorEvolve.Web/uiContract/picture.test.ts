@@ -8,7 +8,7 @@ import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { literals, read, webRoot } from './support.ts'
+import { read, webRoot } from './support.ts'
 
 const codeFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
   .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.d.ts') && !file.includes('.test.'))
@@ -37,9 +37,9 @@ const readsImageAccept = (source: string) => /(?<![\w$])IMAGE_ACCEPT\b/.test(sou
 // The cropper dialog, imported by name. CroppedPicture and the SaveStage type are other jobs.
 const importsCropDialog = (source: string) =>
   /import\s*(?:type\s*)?\{[^}]*\bImageCropDialog\b[^}]*\}\s*from/.test(source)
-// The classes of a hand-built pick control, written as a class string, a template or an option.
-const PICK_CLASS = /(^|\s)(imagefield|avatar)__(input|pick)(\s|$|\u0001)/
-const writesPickClass = (source: string) => literals(source).some((value) => PICK_CLASS.test(value))
+// The classes of a hand-built pick control, anywhere in the raw text: a class string, a template or an
+// option. Not read through string literals, where an apostrophe in a comment pairs the wrong quotes.
+const writesPickClass = (source: string) => /\b(imagefield|avatar)__(input|pick)\b/.test(source)
 
 const IMAGE_ACCEPT_READERS = new Map<string, string>([
   ['src/components/PictureActions.tsx', 'the component'],
@@ -96,6 +96,11 @@ test('the guards fail on a bad snippet', () => {
   assert.equal(writesPickClass("buttonClass({ className: 'avatar__pick' })"), true)
   assert.equal(writesPickClass('<label className={`btn avatar__pick ${x}`}>'), true)
   assert.equal(writesPickClass('<label className={`avatar__input${x}`}>'), true)
+  assert.equal(
+    writesPickClass(`// the browser's own copy
+<input className="avatar__input" />`),
+    true,
+  )
   assert.equal(writesPickClass('<div className="avatar__photo">'), false)
   assert.equal(writesPickClass('<div className="imagefield__preview">'), false)
 })

@@ -106,7 +106,9 @@ export function usePictureFraming<Stored, Extra extends object = object>({
     done: () => void
     failed: (problem: unknown) => string
   }) {
-    setError(null)
+    // Until-save pictures (`pending` given, even as null) clear the refusal first; the others only
+    // once the question is answered yes.
+    if (pending !== undefined) setError(null)
 
     if (pending) {
       onPending?.(null)
@@ -122,6 +124,7 @@ export function usePictureFraming<Stored, Extra extends object = object>({
     })
     if (!confirmed) return
 
+    setError(null)
     setBusy(true)
     try {
       await run()
