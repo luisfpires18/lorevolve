@@ -111,6 +111,28 @@ public sealed class McpClientInteropTests(McpInteropFixture fixture) : IClassFix
     }
 
     [Fact]
+    public async Task Two_installs_of_one_metadata_document_app_stay_connected_side_by_side()
+    {
+        // Claude web, desktop and Code all sign in as one metadata-document client id: a second sign-in must not end the first.
+        fixture.Documents.Serve(ClaudeLikeDocument, Document(ClaudeLikeDocument, "Claude-like", "http://localhost/callback", "http://127.0.0.1/callback"));
+        var (browser, _) = await NewBrowser(Api, "interop-cimd-twice");
+        var u = (await CreateUniverse(browser, "Twice world")).Id;
+        var options = () => new ClientOAuthOptions
+        {
+            RedirectUri = new Uri("http://localhost:51234/callback"),
+            ClientMetadataDocumentUri = new Uri(ClaudeLikeDocument),
+        };
+
+        await using var web = await SdkClientWithOAuth(browser, u, options());
+        Assert.NotEmpty(await web.ListToolsAsync());
+        await using var desktop = await SdkClientWithOAuth(browser, u, options());
+        Assert.NotEmpty(await desktop.ListToolsAsync());
+
+        Assert.NotEmpty(await web.ListToolsAsync());
+        Assert.Equal(2, (await browser.GetFromJsonAsync<List<ConnectedApp>>("/api/profile/connected-apps"))!.Count);
+    }
+
+    [Fact]
     public async Task A_metadata_document_that_does_not_hold_up_is_refused_and_nothing_is_redirected()
     {
         var (browser, _) = await NewBrowser(Api, "interop-bad");

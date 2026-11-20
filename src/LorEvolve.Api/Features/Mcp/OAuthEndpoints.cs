@@ -210,9 +210,12 @@ public static class OAuthEndpoints
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        // One connection per account, client and universe: approving again replaces the old one.
+        // One connection per account, client and universe: approving again replaces the old one. Not for a metadata-document
+        // client: its id is shared by every install of that app (Claude web, desktop, Code), so replacing would sign the
+        // others out on each new sign-in. Each of those connections stays until revoked or its refresh token expires.
+        var replacesEarlier = !ClientMetadataDocuments.IsDocumentClientId(request.ClientId);
         foreach (var earlier in await db.McpConnections
-                     .Where(connection => connection.UserId == userId && connection.UniverseId == universeId && connection.ClientId == request.ClientId)
+                     .Where(connection => replacesEarlier && connection.UserId == userId && connection.UniverseId == universeId && connection.ClientId == request.ClientId)
                      .ToListAsync(cancellationToken))
         {
             await ConnectedAppEndpoints.RevokeAsync(db, authorizations, tokens, earlier, cancellationToken);
