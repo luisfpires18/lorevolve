@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
-import { confirmAction } from '../lib/confirm'
+import { confirmDelete } from '../lib/confirm'
 import {
   addMember,
   createPhase,
@@ -33,14 +33,10 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
   const read = useCallback((signal?: AbortSignal) => listSagas(universeId, signal), [universeId])
   const { data, failed, busy, refresh, run } = useLoadedList(read, t('projects.sagas.failed'))
 
-  function confirmDelete(title: string, confirmLabel: string, action: () => Promise<unknown>) {
-    void confirmAction({
-      title,
-      message: t('projects.sagas.deleteMessage'),
-      confirmLabel,
-      variant: 'destructive',
-      action: () => action().then(refresh),
-    })
+  function askDelete(title: string, confirmLabel: string, action: () => Promise<unknown>) {
+    void confirmDelete({ title, message: t('projects.sagas.deleteMessage'), confirmLabel }, () =>
+      action().then(refresh),
+    )
   }
 
   if (data === null) {
@@ -86,7 +82,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
           busy={busy}
           setEditing={setEditing}
           run={run}
-          confirmDelete={confirmDelete}
+          confirmDelete={askDelete}
           saga={saga}
           sagaIndex={sagaIndex}
         />

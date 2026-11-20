@@ -19,6 +19,7 @@ export function FieldMeaningShape({
   imageShape,
   setImageShape,
   fieldErrors,
+  meaning = true,
 }: {
   kind: FieldKindValue
   semantic: FieldSemanticValue | null
@@ -27,11 +28,13 @@ export function FieldMeaningShape({
   imageShape: FieldImageShapeValue
   setImageShape: (imageShape: FieldImageShapeValue) => void
   fieldErrors: Record<string, string>
+  /** False where a field has no Canon meaning (a project field): only the image shape is asked. */
+  meaning?: boolean
 }) {
   const { t } = useI18n()
   return (
     <>
-      {semanticsFor(kind).length > 0 ? (
+      {meaning && semanticsFor(kind).length > 0 ? (
         <Field
           as="select"
           label={t('entityTypes.fields.canonMeaningLabel')}

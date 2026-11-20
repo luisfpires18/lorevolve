@@ -33,16 +33,8 @@ const projectsSchema: Dictionary['projects']['schema'] = {
   noEntries: 'Ainda não há registos',
   fields: 'Campos',
   noFields: 'Ainda não há campos.',
-  addField: 'Adicionar campo',
-  fieldName: 'Nome do campo',
-  fieldKind: 'O que vai lá dentro?',
   fieldOptions: 'Opções, uma por linha',
-  fieldRequired: 'Obrigatório',
-  imageShape: 'Forma do recorte',
-  imageShapeHint: 'O enquadramento a que cada imagem deste campo é recortada.',
-  fieldAdding: 'A adicionar…',
-  fieldSaving: 'A guardar…',
-  deleteField: 'Eliminar campo',
+  addField: 'Adicionar campo',
 }
 
 export default projectsSchema

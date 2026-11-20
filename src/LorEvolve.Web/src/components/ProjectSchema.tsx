@@ -70,8 +70,6 @@ export function ProjectSchema({
     setFromTemplate,
     openTypeId,
     setOpenTypeId,
-    addingFieldTo,
-    setAddingFieldTo,
     tree,
     after,
     refresh,
@@ -186,8 +184,6 @@ export function ProjectSchema({
             setChildOf={setChildOf}
             openTypeId={openTypeId}
             setOpenTypeId={setOpenTypeId}
-            addingFieldTo={addingFieldTo}
-            setAddingFieldTo={setAddingFieldTo}
             refresh={refresh}
             failing={failing}
           />

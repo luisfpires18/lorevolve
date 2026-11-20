@@ -48,7 +48,6 @@ const STAYS: string[] = [
   'src/components/FamilyKindDialog.tsx',
   'src/components/FeedbackButton.tsx',
   'src/components/Field.tsx',
-  'src/components/FieldForm.tsx',
   'src/components/FieldInputs.tsx',
   'src/components/MapFormName.tsx',
   'src/components/MapFormPicture.tsx',

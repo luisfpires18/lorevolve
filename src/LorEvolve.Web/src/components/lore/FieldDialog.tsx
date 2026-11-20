@@ -1,11 +1,11 @@
 import { useI18n } from '../../i18n'
 import { payloadKey } from '../../lib/drawerGuard'
 import { Drawer } from '../Drawer'
-import { FieldKind } from '../../lore/fieldKinds'
+import { FieldKind, type FieldKindValue } from '../../lore/fieldKinds'
 import type { EntityType, EntityTypeGroup, FieldDefinition } from '../../lore/typeDefinitions'
 import type { TypeTree } from '../../lore/typeTree'
 import { useFieldDialogState } from '../../lore/useFieldDialogState'
-import { fieldDialogActions } from '../../lore/fieldDialogActions'
+import { fieldDialogActions, type FieldSave } from '../../lore/fieldDialogActions'
 import { FieldStaleNotice } from './FieldStaleNotice'
 import { FieldKindFields } from './FieldKindFields'
 import { FieldLinkTarget } from './FieldLinkTarget'
@@ -22,6 +22,9 @@ import { FormMessage } from '../FormMessage'
  * whether it is required - and an edit sends the field's own order back, so its place is kept. A new link field has no
  * target until the author picks one, "Any Lore type" included: nothing is chosen for them, and nothing from the name.
  * The kind of a field that holds values is shown but cannot change, because the API refuses it.
+ *
+ * With `save` (a project or template field) the drawer asks only name, kind (from `kinds`), options, image shape and
+ * required: no link target, meaning, default text or stale check, and `owner` names the eyebrow.
  */
 export function FieldDialog({
   universeId,
@@ -34,23 +37,33 @@ export function FieldDialog({
   onClose,
   onChanged,
   onSaved,
+  owner,
+  kinds,
+  save: saveTo,
 }: {
-  universeId: string
-  type: EntityType
+  universeId?: string
+  type?: EntityType
   /** The field being edited, as it read when the drawer opened, or null for a new one. */
   field: FieldDefinition | null
   /** The same field as the list reads it now, after any reload; undefined once it is gone. */
-  latest: FieldDefinition | undefined
+  latest?: FieldDefinition
   /** A field's one-line summary, as the list says it. */
-  describe: (field: FieldDefinition) => string
-  tree: TypeTree
-  groups: EntityTypeGroup[]
+  describe?: (field: FieldDefinition) => string
+  tree?: TypeTree
+  groups?: EntityTypeGroup[]
   onClose: () => void
-  onChanged: () => Promise<void>
+  onChanged?: () => Promise<void>
   onSaved: (name: string, wasNew: boolean) => Promise<void>
+  /** The template or project type the field is on, for the eyebrow, where there is no Lore `type`. */
+  owner?: string
+  /** The kinds offered, where the place allows fewer than Lore. */
+  kinds?: FieldKindValue[]
+  /** Saves the field somewhere other than a Lore type; see above. */
+  save?: FieldSave
 }) {
   const { t, tx } = useI18n()
-  const state = useFieldDialogState({ field })
+  // A project field's options are one per line, as its old form had them, so an option may hold a comma.
+  const state = useFieldDialogState({ field, lines: !!saveTo })
   const {
     initial,
     stale,
@@ -98,6 +111,7 @@ export function FieldDialog({
     field,
     onChanged,
     onSaved,
+    saveTo,
     t,
     hasOptions,
     isLink,
@@ -110,7 +124,7 @@ export function FieldDialog({
       initialFocus="#field-name"
       testId="field-dialog"
       titleId="field-heading"
-      eyebrow={tx('entityTypes.fields.dialogEyebrow', { name: <bdi>{type.name}</bdi> })}
+      eyebrow={tx('entityTypes.fields.dialogEyebrow', { name: <bdi>{type?.name ?? owner}</bdi> })}
       title={field ? t('entityTypes.fields.editTitle') : t('entityTypes.fields.addTitle')}
       isDirty={isDirty}
       leaveMessage={
@@ -137,7 +151,7 @@ export function FieldDialog({
     >
       {message ? <FormMessage testId="field-dialog-error">{message}</FormMessage> : null}
 
-      {stale && latest ? (
+      {stale && latest && describe ? (
         <FieldStaleNotice
           latest={latest}
           describe={describe}
@@ -157,17 +171,21 @@ export function FieldDialog({
         options={options}
         setOptions={setOptions}
         fieldErrors={fieldErrors}
+        kinds={kinds}
+        lines={!!saveTo}
       />
 
-      <FieldLinkTarget
-        field={field}
-        tree={tree}
-        groups={groups}
-        isLink={isLink}
-        target={target}
-        setTarget={setTarget}
-        fieldErrors={fieldErrors}
-      />
+      {tree && groups ? (
+        <FieldLinkTarget
+          field={field}
+          tree={tree}
+          groups={groups}
+          isLink={isLink}
+          target={target}
+          setTarget={setTarget}
+          fieldErrors={fieldErrors}
+        />
+      ) : null}
 
       <FieldMeaningShape
         kind={kind}
@@ -177,12 +195,13 @@ export function FieldDialog({
         imageShape={imageShape}
         setImageShape={setImageShape}
         fieldErrors={fieldErrors}
+        meaning={!saveTo}
       />
 
       <FieldDefaultRequired
         type={type}
         field={field}
-        isText={isText}
+        isText={isText && !saveTo}
         isImage={isImage}
         defaultValue={defaultValue}
         setDefaultValue={setDefaultValue}

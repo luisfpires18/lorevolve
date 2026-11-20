@@ -15,7 +15,8 @@ export function FieldDefaultRequired({
   setIsRequired,
   fieldErrors,
 }: {
-  type: EntityType
+  /** The Lore type whose entries a newly required field asks of; without one the hint is left out. */
+  type?: EntityType
   field: FieldDefinition | null
   isText: boolean
   isImage: boolean
@@ -45,7 +46,7 @@ export function FieldDefaultRequired({
         <CheckField
           label={t('entityTypes.fields.requiredLabel')}
           hint={
-            field && isRequired && !field.isRequired
+            type && field && isRequired && !field.isRequired
               ? t('entityTypes.fields.requiredHint', { name: type.name })
               : undefined
           }

@@ -33,7 +33,6 @@ const entityTypesPage: Dictionary['entityTypes']['page'] = {
     deleteTitle: 'Apagar este modelo?',
     deleteMessage: 'Os tipos de jogo já criados a partir dele ficam como estão.',
     deleteConfirm: 'Apagar modelo',
-    editField: 'Editar campo',
     loadFailed: 'Não foi possível carregar os modelos.',
     actionFailed: 'Não foi possível guardar essa alteração.',
   },

@@ -5,7 +5,7 @@ import { MoveItems } from '../MoveItems'
 import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
 import { Trash } from 'lucide-react'
-import { confirmAction } from '../../lib/confirm'
+import { confirmDelete } from '../../lib/confirm'
 import { QuietNote } from '../QuietNote'
 
 /** A page's panels, each with what it shows, what is said, and its menu. */
@@ -98,19 +98,19 @@ export function PagePanels({
                 tone="danger"
                 disabled={busy}
                 testId={`project-panel-delete-${panel.id}`}
-                onClick={async () => {
-                  const confirmed = await confirmAction({
-                    title: t('projects.pages.deletePanelTitle', {
-                      name: panel.description ?? String(place + 1),
-                    }),
-                    message: t('projects.structure.deleteEmpty'),
-                    confirmLabel: t('projects.pages.deletePanel'),
-                    variant: 'destructive',
-                  })
-                  if (confirmed) {
-                    run(() => deletePanel(projectId, volumeId, chapterId, page.id, panel.id))
-                  }
-                }}
+                onClick={() =>
+                  void confirmDelete(
+                    {
+                      title: t('projects.pages.deletePanelTitle', {
+                        name: panel.description ?? String(place + 1),
+                      }),
+                      message: t('projects.structure.deleteEmpty'),
+                      confirmLabel: t('projects.pages.deletePanel'),
+                    },
+                    () => deletePanel(projectId, volumeId, chapterId, page.id, panel.id),
+                    run,
+                  )
+                }
               >
                 {t('projects.pages.deletePanel')}
               </ActionMenuItem>
