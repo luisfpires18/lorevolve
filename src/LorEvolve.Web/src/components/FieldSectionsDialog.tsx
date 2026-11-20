@@ -10,6 +10,7 @@ import { SectionListEditor } from './lore/SectionListEditor'
 import { SectionFieldPlacer } from './lore/SectionFieldPlacer'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * A type's field sections (Issue #26) in the drawer every LorEvolve form uses: name, order, fold and remove sections, put each
@@ -88,11 +89,7 @@ export function FieldSectionsDialog({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="sections-dialog-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="sections-dialog-error">{message}</FormMessage> : null}
 
       {stale ? (
         <div className="callout callout--warning" data-testid="sections-dialog-stale">

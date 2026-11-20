@@ -20,6 +20,7 @@ import { ProgressionItems } from './progression/ProgressionItems'
 import { ProgressionHistory } from './progression/ProgressionHistory'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
+import { FormMessage } from './FormMessage'
 
 interface ProgressionViewProps {
   universeId: string
@@ -116,11 +117,7 @@ export function ProgressionView({
     >
       <ProgressionHead access={access} setEditing={setEditing} />
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="progression-message">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="progression-message">{message}</FormMessage> : null}
 
       {selected ? null : (
         <Overview universeId={universeId} entry={entry} progression={progression} />

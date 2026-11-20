@@ -16,6 +16,7 @@ import {
 } from '../ruleValidation/types'
 import { Button } from './Button'
 import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 interface WorldRuleCheckSectionProps {
   universeId: string
@@ -101,12 +102,12 @@ export function WorldRuleCheckSection({
       {isLimit ? (
         <div className="rule__checkfields" data-testid="world-rule-check-fields">
           {failed ? (
-            <p className="form__message rule__checkwide" role="alert">
+            <FormMessage className="rule__checkwide">
               {t('canon.check.termsFailed')}{' '}
               <Button tone="secondary" size="sm" onClick={reload}>
                 {t('canon.check.retry')}
               </Button>
-            </p>
+            </FormMessage>
           ) : null}
 
           <ValidationTermSelect

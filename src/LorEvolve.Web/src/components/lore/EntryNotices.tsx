@@ -9,6 +9,7 @@ import { entryChanges } from '../../lore/entryChanges'
 import type { EntityType } from '../../lore/typeDefinitions'
 import type { Chronology } from '../../chronology/types'
 import { Announce } from '../Announce'
+import { FormMessage } from '../FormMessage'
 
 /** What the entry has to say under its bar: a Canon block, a message, a sent suggestion, a conflict, and the announcer. */
 export function EntryNotices({
@@ -55,11 +56,7 @@ export function EntryNotices({
         <CanonBlockNotice universeId={universe.id} findings={blocked} linkSubjects={!isNew} />
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="entry-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="entry-error">{message}</FormMessage> : null}
 
       {sent && !isEditing ? (
         <p className="callout" role="status" data-testid="suggestion-sent">

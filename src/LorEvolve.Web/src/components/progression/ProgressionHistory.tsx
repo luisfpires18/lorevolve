@@ -20,6 +20,7 @@ import type {
 } from '../../progression/types'
 import { LoadingNote } from '../LoadingNote'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 /** The progression's own history: each saved version with when and by whom, readable in place and put back on request. */
 export function ProgressionHistory({
@@ -103,11 +104,7 @@ export function ProgressionHistory({
         <ActionIcon icon={History} />
         {t('progression.history.title')}
       </summary>
-      {message ? (
-        <p className="form__message" role="alert">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage>{message}</FormMessage> : null}
       {revisions === null ? (
         open ? (
           <LoadingNote>{t('progression.history.reading')}</LoadingNote>

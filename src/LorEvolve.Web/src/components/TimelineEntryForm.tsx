@@ -15,6 +15,7 @@ import { MomentDating } from './timeline/MomentDating'
 import { MomentDetails } from './timeline/MomentDetails'
 import { StoryLinks } from './timeline/StoryLinks'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface TimelineEntryFormProps {
   universeId: string
@@ -124,11 +125,7 @@ export function TimelineEntryForm({
         <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="moment-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="moment-error">{message}</FormMessage> : null}
 
       <MomentBasics title={title} draft={draft} edit={edit} fieldErrors={fieldErrors} />
 

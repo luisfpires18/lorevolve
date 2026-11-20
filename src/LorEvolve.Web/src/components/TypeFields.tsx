@@ -11,6 +11,7 @@ import { TypeFieldRow } from './lore/TypeFieldRow'
 import { InheritedFields } from './lore/InheritedFields'
 import { TypeFieldTools } from './lore/TypeFieldTools'
 import { ArchivedFields } from './lore/ArchivedFields'
+import { FormMessage } from './FormMessage'
 
 interface TypeFieldsProps {
   universeId: string
@@ -102,11 +103,7 @@ export function TypeFields({
 
   return (
     <div id={id} className="types__fields" data-testid={`type-fields-${type.name}`}>
-      {message ? (
-        <p className="form__message" role="alert" data-testid="fields-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="fields-error">{message}</FormMessage> : null}
 
       <InheritedFields type={type} inherited={inherited} summary={summary} />
 

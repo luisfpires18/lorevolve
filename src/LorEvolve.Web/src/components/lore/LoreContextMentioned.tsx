@@ -4,6 +4,7 @@ import type { SceneLoreReference } from '../../stories/types'
 import type { Mention } from '../../lore/mentions'
 import type { useUniverseAccess } from '../../universes/access'
 import { Button } from '../Button'
+import { FormMessage } from '../FormMessage'
 
 /** The prose's @ mentions, each once, with its entry's name now, a preview, and Add to this scene's Lore. */
 export function LoreContextMentioned({
@@ -40,9 +41,9 @@ export function LoreContextMentioned({
             {t('lore.context.mentioned')}
           </h3>
           {references === 'failed' ? (
-            <p className="form__message" data-testid="lore-context-mentions-error">
+            <FormMessage testId="lore-context-mentions-error" role={null}>
               {t('lore.context.mentionedFailed')}
-            </p>
+            </FormMessage>
           ) : (
             <ul className="relations__rows">
               {mentioned.map((mention) => {

@@ -16,6 +16,7 @@ import { WorldRuleForm } from './worldRules/WorldRuleForm'
 import { LoadError } from './LoadError'
 import { Announce } from './Announce'
 import { LoadingNote } from './LoadingNote'
+import { FormMessage } from './FormMessage'
 
 interface WorldRuleEditorProps {
   universeId: string
@@ -153,9 +154,9 @@ export function WorldRuleEditor({
       ) : null}
 
       {failure ? (
-        <p className="form__message rule__failure" role="alert" data-testid="world-rule-error">
+        <FormMessage className="rule__failure" testId="world-rule-error">
           {failure}
-        </p>
+        </FormMessage>
       ) : null}
 
       <WorldRuleForm

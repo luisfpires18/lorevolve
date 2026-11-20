@@ -4,6 +4,7 @@ import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
+import { FormMessage } from '../FormMessage'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -36,11 +37,7 @@ export function MachineNotices({
         />
       ) : null}
 
-      {failure ? (
-        <p className="form__message" role="alert" data-testid="machine-error">
-          {failure}
-        </p>
-      ) : null}
+      {failure ? <FormMessage testId="machine-error">{failure}</FormMessage> : null}
 
       {connecting ? (
         <div className="notice" role="status" data-testid="machine-connecting">

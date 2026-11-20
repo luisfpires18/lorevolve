@@ -9,6 +9,7 @@ import { useQuickCreate } from '../lore/useQuickCreate'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 export interface Props {
   universeId: string
@@ -99,15 +100,9 @@ export function QuickCreateDialog({
       )}
     >
       {message ? (
-        <p
-          className="form__message"
-          role="alert"
-          tabIndex={-1}
-          ref={messageRef}
-          data-testid="quick-create-error"
-        >
+        <FormMessage testId="quick-create-error" tabIndex={-1} ref={messageRef}>
           {message}
-        </p>
+        </FormMessage>
       ) : null}
 
       <p className="quickcreate__pending" role="status" data-testid="quick-create-pending">
@@ -174,13 +169,9 @@ export function QuickCreateDialog({
             {t('lore.quickCreate.readingTypes')}
           </p>
         ) : types.kind === 'error' ? (
-          <p className="form__message" role="alert">
-            {t('lore.quickCreate.typesFailed')}
-          </p>
+          <FormMessage>{t('lore.quickCreate.typesFailed')}</FormMessage>
         ) : eligible.length === 0 ? (
-          <p className="form__message" role="alert" data-testid="quick-create-no-types">
-            {t('lore.quickCreate.noTypes')}
-          </p>
+          <FormMessage testId="quick-create-no-types">{t('lore.quickCreate.noTypes')}</FormMessage>
         ) : eligible.length === 1 ? (
           <QuietNote className="quickcreate__type" size="ui" wrap testId="quick-create-type">
             {t('lore.quickCreate.typeFixed')} <bdi>{eligible[0].name}</bdi>

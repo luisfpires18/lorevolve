@@ -13,6 +13,7 @@ import { RecordOtherField } from './RecordOtherField'
 import { RecordSceneFields } from './RecordSceneFields'
 import { FormActions } from '../FormActions'
 import { QuietNote } from '../QuietNote'
+import { FormMessage } from '../FormMessage'
 
 // ---------- The form ----------
 
@@ -123,11 +124,7 @@ export function RecordForm({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="knowledge-form-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="knowledge-form-error">{message}</FormMessage> : null}
 
       <RecordOtherField
         universeId={universeId}

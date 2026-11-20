@@ -16,6 +16,7 @@ import { FamilyLinkPreview } from './relationships/FamilyLinkPreview'
 import { FamilyLinkSide } from './relationships/FamilyLinkSide'
 import { FamilyLinkStatus } from './relationships/FamilyLinkStatus'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface Props {
   universeId: string
@@ -154,11 +155,7 @@ export function FamilyLinkForm({
         <FamilyLinkStatus canonStatus={canonStatus} setCanonStatus={setCanonStatus} />
       </div>
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="family-link-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="family-link-error">{message}</FormMessage> : null}
 
       <FormActions
         submitLabel={t('places.linkForm.add')}

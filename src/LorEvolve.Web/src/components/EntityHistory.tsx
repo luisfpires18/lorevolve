@@ -14,6 +14,7 @@ import { DisclosureButton } from './DisclosureButton'
 import { LoadError } from './LoadError'
 import { QuietNote } from './QuietNote'
 import { DateText } from './DateText'
+import { FormMessage } from './FormMessage'
 
 export interface EntityHistoryProps {
   universeId: string
@@ -93,11 +94,7 @@ export function EntityHistory({
         <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="history-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="history-error">{message}</FormMessage> : null}
 
       {status === 'loading' ? null : status === 'error' ? (
         <LoadError

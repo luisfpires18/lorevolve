@@ -12,6 +12,7 @@ import { Button } from '../Button'
 import { Pager } from '../Pager'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
+import { FormMessage } from '../FormMessage'
 
 /** The Canon page's results: the last run, the error, loading and failed lines, the ledger, the empty state and the pager. */
 export function CanonResults({
@@ -59,11 +60,7 @@ export function CanonResults({
         </p>
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="canon-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="canon-error">{message}</FormMessage> : null}
 
       {state.kind === 'loading' ? <LoadingNote>{t('canon.page.loading')}</LoadingNote> : null}
 

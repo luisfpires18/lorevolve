@@ -10,6 +10,7 @@ import { LorePreview } from './LorePreview'
 import { FormActions } from '../FormActions'
 import { Announce } from '../Announce'
 import { SearchField } from '../SearchField'
+import { FormMessage } from '../FormMessage'
 
 /**
  * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
@@ -112,11 +113,7 @@ export function LoreContextDrawer({
         <FormActions onCancel={close} dismiss="close" cancelTestId="lore-context-close" />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="lore-context-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="lore-context-error">{message}</FormMessage> : null}
 
       {preview ? (
         <LorePreview
@@ -203,9 +200,9 @@ export function LoreContextDrawer({
                     : ''}
               </Announce>
               {searchFailed ? (
-                <p className="form__message" data-testid="lore-context-search-error">
+                <FormMessage testId="lore-context-search-error" role={null}>
                   {t('lore.context.searchFailed')}
-                </p>
+                </FormMessage>
               ) : term !== '' && !results ? (
                 <p className="entry__blank">{t('lore.context.searchingNote')}</p>
               ) : results && results.length === 0 ? (

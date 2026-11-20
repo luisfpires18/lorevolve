@@ -12,6 +12,7 @@ import { Button } from './Button'
 import { NewButton } from './NewButton'
 import { Announce } from './Announce'
 import { Section } from './Section'
+import { FormMessage } from './FormMessage'
 
 interface CalendarEditorProps {
   universeId: string
@@ -135,11 +136,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
 
       <Announce testId="month-moved">{moved}</Announce>
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="calendar-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="calendar-error">{message}</FormMessage> : null}
 
       {/* Simple dates with nothing to change have nothing to save, so no lone quiet button sits under the note. */}
       {dirty || mode === 'custom' ? (

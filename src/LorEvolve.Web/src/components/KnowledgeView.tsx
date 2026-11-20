@@ -9,6 +9,7 @@ import { RecordForm } from './knowledge/RecordForm'
 import { NewButton } from './NewButton'
 import { LoadError } from './LoadError'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 interface KnowledgeViewProps {
   universeId: string
@@ -104,11 +105,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
         {tx('ai.knowledge.lede', { name: <bdi>{entityName}</bdi> })}
       </p>
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="knowledge-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="knowledge-error">{message}</FormMessage> : null}
 
       {failed ? (
         <LoadError

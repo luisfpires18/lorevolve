@@ -21,6 +21,7 @@ import { ItemNameFields } from './progression/ItemNameFields'
 import { ItemUnlockField } from './progression/ItemUnlockField'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * One form or one ability of an entry (Issue #42), in the drawer every LorEvolve form uses: what it is; when it was first unlocked
@@ -116,11 +117,7 @@ export function ProgressionItemForm({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid={`${kind}-error`}>
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId={`${kind}-error`}>{message}</FormMessage> : null}
 
       {conflict ? (
         <ItemConflict
