@@ -1,0 +1,137 @@
+/* ---------- Shared rows (#456) ----------
+
+   The looks a FactList takes besides the infobox (`.facts`, in 041), and the head of a panel (PanelHead). Each fact
+   look first takes the infobox's paper away, then sets its own rows exactly as the screen it came from did. */
+
+.facts--ruled,
+.facts--grid,
+.facts--labelled,
+.facts--inline {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* A profile's facts: ruled rows, label left and value right. Left-aligned inside a centred column: a right-ragged
+   column of emails would be harder to read than the centring is worth. */
+.facts--ruled {
+  display: block;
+  margin: 2rem 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+.facts--ruled .facts__row {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+}
+
+.facts--ruled .facts__key {
+  flex: none;
+  font-size: 0.8rem;
+}
+
+.facts--ruled .facts__value {
+  min-width: 0;
+  font-size: 0.925rem;
+  text-align: right;
+}
+
+/* A backup to restore: the names in a column beside the values, stacked on a phone. */
+.facts--grid {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.45rem 1.25rem;
+  margin: 0 0 0.9rem;
+}
+
+.facts--grid .facts__row {
+  display: contents;
+}
+
+.facts--grid .facts__key {
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  padding-top: 0.1rem;
+}
+
+.facts--grid .facts__value {
+  font-size: 0.95rem;
+}
+
+/* A publish confirm: the names in an 8rem column, the value under its name on a phone. */
+.facts--labelled {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-ui);
+}
+
+.facts--labelled .facts__row {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.facts--labelled .facts__key {
+  font-size: inherit;
+}
+
+/* An era's forms and abilities, an appearance: each name and value on one small line. */
+.facts--inline {
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.facts--inline .facts__row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+}
+
+.facts--inline .facts__value {
+  font-size: inherit;
+}
+
+@media (max-width: 640px) {
+  .facts--grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.1rem;
+  }
+
+  .facts--grid .facts__value {
+    margin-bottom: 0.55rem;
+  }
+
+  .facts--labelled .facts__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+/* A panel's head: its title and its add button opposite, the button dropping under the title when it has no room.
+   `--start` tops them instead of centring them, for a head whose button may wrap. */
+.panelhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  flex-wrap: wrap;
+}
+
+.panelhead--start {
+  align-items: flex-start;
+}
+
+.panelhead__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-section);
+}

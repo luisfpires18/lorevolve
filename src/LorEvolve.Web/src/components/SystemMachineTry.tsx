@@ -7,6 +7,7 @@ import { markText, type GuardMarkValue } from '../worldLogic/markText'
 import type { SystemMachineTryResult } from '../worldLogic/types'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
+import { SectionTitle } from './Section'
 
 const m = 'canon.worldLogic.systems.machine'
 
@@ -73,7 +74,7 @@ export function SystemMachineTry({
 
   return (
     <section className="machinepanel__group" data-testid="machine-try">
-      <h2 className="sectionrule">{t(`${m}.try.title`)}</h2>
+      <SectionTitle tone="rule">{t(`${m}.try.title`)}</SectionTitle>
       <EntityPicker
         label={t(`${m}.try.entry`)}
         universeId={universeId}

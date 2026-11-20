@@ -47,29 +47,6 @@
   white-space: pre-line;
 }
 
-.progitems__facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.progitems__facts > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-2);
-}
-
-.progitems__facts dt {
-  color: var(--muted);
-}
-
-.progitems__facts dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
 .itemunlock,
 .itemeras {
   display: flex;

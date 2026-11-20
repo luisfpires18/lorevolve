@@ -8,7 +8,8 @@ import { RecordList } from './knowledge/RecordList'
 import { RecordForm } from './knowledge/RecordForm'
 import { NewButton } from './NewButton'
 import { LoadError } from './LoadError'
-import { SectionTitle } from './Section'
+import { PanelHead } from './PanelHead'
+import { QuietNote } from './QuietNote'
 import { FormMessage } from './FormMessage'
 
 interface KnowledgeViewProps {
@@ -87,23 +88,25 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
       aria-labelledby={headingId}
       data-testid="knowledge-view"
     >
-      <div className="relations__head">
-        <h2 className="relations__title" id={headingId}>
-          {t('ai.knowledge.title')}
-        </h2>
-        {access.editContent ? (
-          <NewButton
-            tone="secondary"
-            onClick={() => setEditing({ side: 'knows', record: null })}
-            data-testid="knowledge-add"
-          >
-            {tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}
-          </NewButton>
-        ) : null}
-      </div>
-      <p className="relations__quiet">
+      <PanelHead
+        look="display"
+        titleId={headingId}
+        title={t('ai.knowledge.title')}
+        action={
+          access.editContent ? (
+            <NewButton
+              tone="secondary"
+              onClick={() => setEditing({ side: 'knows', record: null })}
+              data-testid="knowledge-add"
+            >
+              {tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}
+            </NewButton>
+          ) : null
+        }
+      />
+      <QuietNote size="body" className="relations__quiet">
         {tx('ai.knowledge.lede', { name: <bdi>{entityName}</bdi> })}
-      </p>
+      </QuietNote>
 
       {message ? <FormMessage testId="knowledge-error">{message}</FormMessage> : null}
 
@@ -115,9 +118,9 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
           testId="knowledge-load-error"
         />
       ) : isLoading ? (
-        <p className="relations__quiet" role="status">
+        <QuietNote size="body" className="relations__quiet" role="status">
           {t('ai.knowledge.reading')}
-        </p>
+        </QuietNote>
       ) : (
         <>
           <RecordList
@@ -131,20 +134,24 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
             onRemove={remove}
           />
 
-          <div className="relations__head knowledge__abouthead">
-            <SectionTitle level={3} tone="label" className="knowledge__abouttitle">
-              {tx('ai.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
-            </SectionTitle>
-            {access.editContent ? (
-              <NewButton
-                tone="secondary"
-                onClick={() => setEditing({ side: 'about', record: null })}
-                data-testid="knowledge-add-about"
-              >
-                {tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
-              </NewButton>
-            ) : null}
-          </div>
+          <PanelHead
+            look="label"
+            level={3}
+            className="knowledge__abouthead"
+            titleClassName="knowledge__abouttitle"
+            title={tx('ai.knowledge.knownAbout', { name: <bdi>{entityName}</bdi> })}
+            action={
+              access.editContent ? (
+                <NewButton
+                  tone="secondary"
+                  onClick={() => setEditing({ side: 'about', record: null })}
+                  data-testid="knowledge-add-about"
+                >
+                  {tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
+                </NewButton>
+              ) : null
+            }
+          />
           <RecordList
             records={about}
             side="about"

@@ -5,6 +5,8 @@ import { SelectedLoreReview } from './SelectedLoreReview'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 import { QuietNote } from '../QuietNote'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 /** The confirm before publishing: exactly what becomes public, read fresh, and the lore that goes with it. */
 export function PublishConfirm({
@@ -30,60 +32,44 @@ export function PublishConfirm({
       testId="publish-confirm"
     >
       <QuietNote spacing="block">{t('universe.publish.confirm.anyone')}</QuietNote>
-      <dl className="publication__facts">
-        <div>
-          <dt>{t('universe.publish.confirm.titleLabel')}</dt>
-          <dd>
-            <bdi>{confirming.state.name}</bdi>
-          </dd>
-        </div>
-        <div>
-          <dt>{t('universe.publish.confirm.summary')}</dt>
-          <dd className="prose">{confirming.state.publicSummary}</dd>
-        </div>
-        <div>
-          <dt>{t('universe.publish.confirm.artwork')}</dt>
-          <dd>{t('universe.publish.confirm.artworkValue')}</dd>
-        </div>
-        <div>
-          <dt>{t('universe.publish.confirm.category')}</dt>
-          <dd>{confirming.state.category ? categoryLabel(confirming.state.category) : ''}</dd>
-        </div>
-        <div>
-          <dt>{t('universe.publish.confirm.genres')}</dt>
-          <dd>{confirming.state.genres.map(genreLabel).join(', ')}</dd>
-        </div>
+      <FactList look="labelled">
+        <Fact name={t('universe.publish.confirm.titleLabel')}>
+          <bdi>{confirming.state.name}</bdi>
+        </Fact>
+        <Fact name={t('universe.publish.confirm.summary')} valueClassName="prose">
+          {confirming.state.publicSummary}
+        </Fact>
+        <Fact name={t('universe.publish.confirm.artwork')}>
+          {t('universe.publish.confirm.artworkValue')}
+        </Fact>
+        <Fact name={t('universe.publish.confirm.category')}>
+          {confirming.state.category ? categoryLabel(confirming.state.category) : ''}
+        </Fact>
+        <Fact name={t('universe.publish.confirm.genres')}>
+          {confirming.state.genres.map(genreLabel).join(', ')}
+        </Fact>
         {confirming.state.originalCreator ? (
           <>
-            <div>
-              <dt>{t('universe.publish.confirm.basedOn')}</dt>
-              <dd>
-                {confirming.state.originalWork ? (
-                  tx('universe.publish.confirm.basedOnValue', {
-                    creator: <bdi>{confirming.state.originalCreator}</bdi>,
-                    work: <bdi>{confirming.state.originalWork}</bdi>,
-                  })
-                ) : (
-                  <bdi>{confirming.state.originalCreator}</bdi>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>{t('universe.publish.confirm.curator')}</dt>
-              <dd>
-                <bdi>{confirming.state.authorDisplayName}</bdi>
-              </dd>
-            </div>
+            <Fact name={t('universe.publish.confirm.basedOn')}>
+              {confirming.state.originalWork ? (
+                tx('universe.publish.confirm.basedOnValue', {
+                  creator: <bdi>{confirming.state.originalCreator}</bdi>,
+                  work: <bdi>{confirming.state.originalWork}</bdi>,
+                })
+              ) : (
+                <bdi>{confirming.state.originalCreator}</bdi>
+              )}
+            </Fact>
+            <Fact name={t('universe.publish.confirm.curator')}>
+              <bdi>{confirming.state.authorDisplayName}</bdi>
+            </Fact>
           </>
         ) : (
-          <div>
-            <dt>{t('universe.publish.confirm.author')}</dt>
-            <dd>
-              <bdi>{confirming.state.authorDisplayName}</bdi>
-            </dd>
-          </div>
+          <Fact name={t('universe.publish.confirm.author')}>
+            <bdi>{confirming.state.authorDisplayName}</bdi>
+          </Fact>
         )}
-      </dl>
+      </FactList>
       <SelectedLoreReview selected={confirming.selected} />
       <QuietNote spacing="block">
         <strong>{t('universe.publish.confirm.notPublished')}</strong>{' '}

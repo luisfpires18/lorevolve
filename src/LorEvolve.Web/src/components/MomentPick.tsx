@@ -7,6 +7,7 @@ import { listTimelineItems } from '../timeline/api'
 import { TimelineSource } from '../timeline/types'
 import type { MomentRef } from '../progression/types'
 import { QuietNote } from './QuietNote'
+import { Token } from './Token'
 
 /**
  * One timeline moment, found by searching the universe's moments by title. The chosen one is a token with Remove; one in the
@@ -65,20 +66,15 @@ export function MomentPick({
     <Field label={label} id={id} error={error} data-testid={testId}>
       {(control) =>
         value ? (
-          <p className="token" data-testid={`${testId}-chosen`}>
+          <Token
+            as="p"
+            testId={`${testId}-chosen`}
+            note={value.isTrashed ? t('time.momentPick.inTrash') : undefined}
+            removeLabel={t('time.momentPick.remove', { title: value.title })}
+            onRemove={() => onChange(null)}
+          >
             <bdi>{value.title}</bdi>
-            {value.isTrashed ? (
-              <span className="token__note"> {t('time.momentPick.inTrash')}</span>
-            ) : null}
-            <button
-              type="button"
-              className="token__remove"
-              aria-label={t('time.momentPick.remove', { title: value.title })}
-              onClick={() => onChange(null)}
-            >
-              &times;
-            </button>
-          </p>
+          </Token>
         ) : (
           <>
             <SearchField

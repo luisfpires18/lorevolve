@@ -6,6 +6,7 @@ import { Button } from '../Button'
 import { MoveItems } from '../MoveItems'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
+import { SectionTitle } from '../Section'
 
 /** The sections drawer's list of sections: name, fold, move and remove each one, and Add section. */
 export function SectionListEditor({
@@ -28,9 +29,9 @@ export function SectionListEditor({
   const { t } = useI18n()
   return (
     <section className="drawer__group" aria-labelledby="sections-list">
-      <h3 className="sectionrule sectionrule--accent" id="sections-list">
+      <SectionTitle level={3} tone="rule-accent" id="sections-list">
         {t('entityTypes.sections.heading')}
-      </h3>
+      </SectionTitle>
       {sections.length === 0 ? (
         <QuietNote spacing="block">{t('entityTypes.sections.empty')}</QuietNote>
       ) : (

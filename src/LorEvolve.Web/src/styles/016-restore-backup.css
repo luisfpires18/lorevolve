@@ -70,38 +70,3 @@
   font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
-
-.restore__facts {
-  margin: 0 0 0.9rem;
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 0.45rem 1.25rem;
-}
-
-.restore__fact {
-  display: contents;
-}
-
-.restore__fact dt {
-  font-size: 0.8rem;
-  letter-spacing: 0.02em;
-  color: var(--muted);
-  padding-top: 0.1rem;
-}
-
-.restore__fact dd {
-  margin: 0;
-  font-size: 0.95rem;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 640px) {
-  .restore__facts {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.1rem;
-  }
-
-  .restore__fact dd {
-    margin-bottom: 0.55rem;
-  }
-}

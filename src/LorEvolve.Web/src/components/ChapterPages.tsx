@@ -67,7 +67,7 @@ export function ChapterPages({
       <PageHeader
         level={3}
         size="panel"
-        titleClassName="sectionrule--accent"
+        accent
         title={t('projects.pages.title')}
         actions={
           <>

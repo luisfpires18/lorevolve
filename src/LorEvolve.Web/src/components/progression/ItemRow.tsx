@@ -5,6 +5,8 @@ import { useI18n } from '../../i18n'
 import type { Ability, Appearance, Form } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
 import { unlockParts } from '../../progression/unlockParts'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 /** One form or ability on the main profile: its name, the actions menu, and what the author said of it. */
 export function ItemRow({
@@ -65,65 +67,52 @@ export function ItemRow({
         ) : null}
       </div>
       {item.description ? <p className="progitems__description prose">{item.description}</p> : null}
-      <dl className="progitems__facts">
+      <FactList look="inline">
         {unlock.length > 0 ? (
-          <div>
-            <dt>{t('progression.items.firstUnlocked')}</dt>
-            <dd data-testid={`${kind}-unlock`}>{unlock.join(', ')}</dd>
-          </div>
+          <Fact name={t('progression.items.firstUnlocked')} valueTestId={`${kind}-unlock`}>
+            {unlock.join(', ')}
+          </Fact>
         ) : null}
-        <div>
-          <dt>{t('progression.items.availableIn')}</dt>
-          <dd data-testid={`${kind}-available`}>
-            {item.eras.length === 0
-              ? t('progression.items.noStage')
-              : item.eras.map((era) => era.name).join(', ')}
-          </dd>
-        </div>
+        <Fact name={t('progression.items.availableIn')} valueTestId={`${kind}-available`}>
+          {item.eras.length === 0
+            ? t('progression.items.noStage')
+            : item.eras.map((era) => era.name).join(', ')}
+        </Fact>
         {kind === 'form' &&
         appearances.some((look) => look.forms.some((form) => form.id === item.id)) ? (
-          <div>
-            <dt>{t('progression.items.looks')}</dt>
-            <dd data-testid="form-looks">
-              {appearances
-                .filter((look) => look.forms.some((form) => form.id === item.id))
-                .map((look) => look.label)
-                .join(', ')}
-            </dd>
-          </div>
+          <Fact name={t('progression.items.looks')} valueTestId="form-looks">
+            {appearances
+              .filter((look) => look.forms.some((form) => form.id === item.id))
+              .map((look) => look.label)
+              .join(', ')}
+          </Fact>
         ) : null}
         {'forms' in item && item.forms.length > 0 ? (
-          <div>
-            <dt>{t('progression.items.forms')}</dt>
-            <dd data-testid="ability-forms-read">
-              {item.forms.map((form) => form.name).join(', ')}
-            </dd>
-          </div>
+          <Fact name={t('progression.items.forms')} valueTestId="ability-forms-read">
+            {item.forms.map((form) => form.name).join(', ')}
+          </Fact>
         ) : null}
         {item.scenes.length > 0 ? (
-          <div>
-            <dt>{t('progression.items.usedIn')}</dt>
-            <dd>
-              <ul className="eracovers">
-                {item.scenes.map((scene) => (
-                  <li key={scene.id}>
-                    {scene.isTrashed ? (
-                      <span>{t('progression.era.inTrash', { title: scene.title })}</span>
-                    ) : (
-                      <Link
-                        to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
-                      >
-                        {scene.title}
-                      </Link>
-                    )}
-                    <span> · {scene.storyTitle}</span>
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </div>
+          <Fact name={t('progression.items.usedIn')}>
+            <ul className="eracovers">
+              {item.scenes.map((scene) => (
+                <li key={scene.id}>
+                  {scene.isTrashed ? (
+                    <span>{t('progression.era.inTrash', { title: scene.title })}</span>
+                  ) : (
+                    <Link
+                      to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
+                    >
+                      {scene.title}
+                    </Link>
+                  )}
+                  <span> · {scene.storyTitle}</span>
+                </li>
+              ))}
+            </ul>
+          </Fact>
         ) : null}
-      </dl>
+      </FactList>
     </li>
   )
 }

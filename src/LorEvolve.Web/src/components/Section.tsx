@@ -4,7 +4,9 @@ type Level = 2 | 3 | 4
 
 /**
  * The heading of a block on a screen. `tone="section"` is the body-size heading of a titled block; `tone="label"` is a
- * small muted label over a list. Every other attribute (`id`, `ref`, `tabIndex`, `dir`) passes through to the heading.
+ * small muted label over a list; `tone="rule"` opens a group in tracked capitals with a hairline running on to the end
+ * of the row, and `rule-accent` is that rule smaller, in the accent, over something read or filled in place. Every other
+ * attribute (`id`, `ref`, `tabIndex`, `dir`, `data-*`) passes through to the heading.
  */
 export function SectionTitle({
   level = 2,
@@ -14,13 +16,15 @@ export function SectionTitle({
   ...rest
 }: Omit<ComponentProps<'h2'>, 'children'> & {
   level?: Level
-  tone?: 'section' | 'label'
+  tone?: 'section' | 'label' | 'rule' | 'rule-accent'
   size?: 'xs'
   children?: ReactNode
 }) {
   const Tag = `h${level}` as 'h2'
+  const isRule = tone === 'rule' || tone === 'rule-accent'
   const classes = [
-    'sectiontitle',
+    isRule ? 'sectionrule' : 'sectiontitle',
+    tone === 'rule-accent' && 'sectionrule--accent',
     tone === 'label' && 'sectiontitle--label',
     size && `sectiontitle--${size}`,
     className,

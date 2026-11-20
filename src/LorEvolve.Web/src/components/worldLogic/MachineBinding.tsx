@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { t } from '../../i18n'
 import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState'
 import { m } from '../../worldLogic/machinePanelTypes'
+import { SectionTitle } from '../Section'
 
 type State = ReturnType<typeof useMachinePanelState>
 
@@ -20,7 +21,7 @@ export function MachineBinding({
 }) {
   return (
     <section className="machinepanel__group">
-      <h2 className="sectionrule">{t(`${m}.binding`)}</h2>
+      <SectionTitle tone="rule">{t(`${m}.binding`)}</SectionTitle>
       <ul className="rulelist">
         <li className="rulerow" data-testid="machine-binding-row">
           <button

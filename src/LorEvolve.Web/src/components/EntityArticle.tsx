@@ -12,6 +12,7 @@ import { Button } from './Button'
 import { Announce } from './Announce'
 import { ReadGate } from './ReadGate'
 import { QuietNote } from './QuietNote'
+import { SectionTitle } from './Section'
 
 export interface EntityArticleSectionProps {
   universeId: string
@@ -111,14 +112,15 @@ export function EntityArticleSection({
     >
       <div className="article__head">
         {/* Focusable by script only, so arriving at the article puts a keyboard and a screen reader on its heading. */}
-        <h2
-          className="article__title sectionrule sectionrule--accent"
+        <SectionTitle
+          tone="rule-accent"
+          className="article__title"
           id={headingId}
           tabIndex={-1}
           data-arrival-focus
         >
           {t('entity.article.title')}
-        </h2>
+        </SectionTitle>
         {isReady && !isEditing && hasArticle && access.editContent ? (
           <Button
             tone="secondary"
