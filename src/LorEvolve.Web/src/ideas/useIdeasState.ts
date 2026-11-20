@@ -1,13 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import type { IdeaPage } from './types'
 import type { Load } from '../lib/useAsyncRead'
+import type { Outcome } from '../lib/outcome'
 import type { UniverseSummary } from '../universes/types'
-
-/** What the last restore did, and the way to the idea it brought back. */
-interface Outcome {
-  text: ReactNode
-  link: { to: string; label: ReactNode } | null
-}
 
 /** Every state and ref of an ideas list: what is typed, read and restored, and what was said. */
 export function useIdeasState(search: string) {
@@ -17,7 +12,6 @@ export function useIdeasState(search: string) {
   const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
   const [restoring, setRestoring] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
-  const outcomeRef = useRef<HTMLDivElement>(null)
   return {
     typed,
     setTyped,
@@ -31,6 +25,5 @@ export function useIdeasState(search: string) {
     setRestoring,
     outcome,
     setOutcome,
-    outcomeRef,
   }
 }

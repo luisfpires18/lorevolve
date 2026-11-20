@@ -1,3 +1,4 @@
+import { FormActions } from '../FormActions'
 import { NewButton } from '../NewButton'
 import {
   addableLevels,
@@ -34,5 +35,5 @@ export function OutlineAddButtons({
       {t('projects.structure.add', { level: levelWord(level) })}
     </NewButton>
   ))
-  return parent ? buttons : <div className="actions form__actions">{buttons}</div>
+  return parent ? buttons : <FormActions inline>{buttons}</FormActions>
 }

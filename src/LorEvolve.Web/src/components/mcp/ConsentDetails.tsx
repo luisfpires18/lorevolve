@@ -3,6 +3,7 @@ import { UniverseRole, type UniverseRoleValue } from '../../universes/types'
 import { useI18n } from '../../i18n'
 import { ProposalChoice } from './ProposalChoice'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 export function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id: string }) {
   const { t, tx } = useI18n()
@@ -19,17 +20,29 @@ export function ConsentDetails({ details, id }: { details: ConnectionRequestDeta
             {tx('universe.connect.verified', { host: <strong>{details.verifiedHost}</strong> })}
           </p>
         ) : (
-          <p className="callout callout--warning consent__warning" data-testid="consent-unverified">
+          <Callout
+            look="callout"
+            tone="warning"
+            as="p"
+            className="consent__warning"
+            testId="consent-unverified"
+          >
             {t('universe.connect.unverified')}
-          </p>
+          </Callout>
         )}
         <p className="consent__identity" data-testid="consent-return">
           {tx('universe.connect.returnTo', { host: <strong>{details.redirectHost}</strong> })}
         </p>
         {details.loopbackOnly ? (
-          <p className="callout callout--warning consent__warning" data-testid="consent-loopback">
+          <Callout
+            look="callout"
+            tone="warning"
+            as="p"
+            className="consent__warning"
+            testId="consent-loopback"
+          >
             {t('universe.connect.loopback')}
-          </p>
+          </Callout>
         ) : null}
       </section>
 

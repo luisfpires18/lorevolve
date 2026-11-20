@@ -15,10 +15,6 @@ import { classStrings, filesWith, read, tsxFiles, webRoot } from './uiContract/s
 const HOOK_ONLY = new Map<string, string>([
   ['entitycard__status', 'E2E text-direction.spec.ts reads it'],
   ['entry__head', 'E2E shell-layout and text-direction specs read it'],
-  [
-    'form__actions',
-    'uiContract/actions.test.ts reads it as the form footer row, laid out by .actions',
-  ],
   ['moment__player', 'E2E timeline and text-direction specs read it'],
   [
     'projectcard__actions',

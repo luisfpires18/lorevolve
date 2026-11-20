@@ -17,6 +17,7 @@ import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
 import { LoadingNote } from './LoadingNote'
 import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 /** What to type, per kind, in the words the rest of LorEvolve uses for it. Message keys, read in render. */
 const PLACEHOLDERS = {
@@ -143,9 +144,9 @@ export function IdeaReferencePicker({
           <FormMessage>{t('ideas.picker.loadFailed')}</FormMessage>
         ) : null}
         {results.kind === 'ready' && results.targets.length === 0 ? (
-          <p className="notice ideapicker__notice" data-testid="idea-picker-empty">
+          <Callout look="notice" as="p" className="ideapicker__notice" testId="idea-picker-empty">
             {query.trim() ? t('ideas.picker.emptyNamed') : t('ideas.picker.emptyKind')}
-          </p>
+          </Callout>
         ) : null}
         {results.kind === 'ready' && results.targets.length > 0 ? (
           <ul className="ideapicker__results" data-testid="idea-picker-results">

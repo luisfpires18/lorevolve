@@ -3,6 +3,7 @@ import { articleLinks } from '../../lore/document'
 import { useI18n } from '../../i18n'
 import { copyableReferences, type CopySource, type Draft } from '../../lore/entryDraft'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 /**
  * What a copy takes from the entry it is made from (Issue #27), said above the new entry's form before anything is created.
@@ -29,9 +30,9 @@ export function CopyPanel({
 
   if (!source) {
     return (
-      <p className="callout callout--warning" role="status" data-testid="entry-copy-unavailable">
+      <Callout look="callout" tone="warning" as="p" role="status" testId="entry-copy-unavailable">
         {t('entity.copy.unavailable')}
-      </p>
+      </Callout>
     )
   }
 
@@ -82,16 +83,21 @@ export function CopyPanel({
   }
 
   return (
-    <section
-      className="callout entrycopy"
-      aria-labelledby="entry-copy-title"
-      data-testid="entry-copy"
-    >
-      <p className="callout__title" id="entry-copy-title">
-        {/* Named, not linked: the new form and an entry are one page, and a link from one to the other would carry the open
+    <Callout
+      look="callout"
+      as="section"
+      className="entrycopy"
+      labelledBy="entry-copy-title"
+      testId="entry-copy"
+      title={
+        <>
+          {/* Named, not linked: the new form and an entry are one page, and a link from one to the other would carry the open
             form onto the source. */}
-        {tx('entity.copy.title', { name: <bdi>{detail.name}</bdi> })}
-      </p>
+          {tx('entity.copy.title', { name: <bdi>{detail.name}</bdi> })}
+        </>
+      }
+      titleId="entry-copy-title"
+    >
       <p>{t('entity.copy.intro')}</p>
 
       {aliases.length > 0 || references.length > 0 || article ? (
@@ -174,6 +180,6 @@ export function CopyPanel({
       <QuietNote className="entryform__note" size="ui" testId="entry-copy-skipped">
         {t('entity.copy.skipped')}
       </QuietNote>
-    </section>
+    </Callout>
   )
 }

@@ -17,6 +17,7 @@ import { SagasUnassigned } from './projects/SagasUnassigned'
 import { NameSummaryDrawer } from './NameSummaryDrawer'
 import { PickOneDrawer } from './PickOneDrawer'
 import { NewButton } from './NewButton'
+import { FormActions } from './FormActions'
 import { useLoadedList } from '../lib/useLoadedList'
 import { ReadGate } from './ReadGate'
 import { FormMessage } from './FormMessage'
@@ -54,14 +55,14 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
 
   return (
     <div data-testid="cinema-sagas">
-      <div className="actions form__actions">
+      <FormActions inline>
         <NewButton
           data-testid="saga-new"
           onClick={() => setEditing({ saga: null, phase: null, forPhase: false })}
         >
           {t('projects.sagas.newSaga')}
         </NewButton>
-      </div>
+      </FormActions>
 
       {failed ? <FormMessage>{failed}</FormMessage> : null}
 

@@ -13,6 +13,7 @@ import {
 import { FindingDetail } from './FindingDetail'
 import { LoadingNote } from '../LoadingNote'
 import { DateText } from '../DateText'
+import { Callout } from '../Callout'
 
 /**
  * One finding: which rule produced it, what checking concluded, and, once the author opens it, the records the
@@ -148,9 +149,9 @@ export function FindingRow({
 
       <div id={panelId} hidden={!open} data-testid="world-logic-finding-detail">
         {failed ? (
-          <p className="notice notice--error" role="alert">
+          <Callout look="notice" tone="error" as="p" role="alert">
             {t('canon.worldLogic.integrity.readOneFailed')}
-          </p>
+          </Callout>
         ) : null}
 
         {open && !detail && !failed ? (

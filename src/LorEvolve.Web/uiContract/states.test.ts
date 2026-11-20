@@ -1,7 +1,7 @@
 // Run with `node --test uiContract/states.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps a failed read, a loading line, a quiet line and a screen reader message on their shared parts
-// (#410): LoadError, LoadingNote, QuietNote, Announce, OutcomeNotice, errorText and useAsyncRead.
+// (#410): LoadError, LoadingNote, QuietNote, Announce, Callout, errorText and useAsyncRead.
 // Each list below only shrinks, and a stale entry fails. Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
@@ -15,8 +15,10 @@ const sourceFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encodin
   .map((file) => 'src/' + file.replaceAll('\\', '/'))
   .sort()
 
-// Files that draw `notice notice--error` by hand, with the reason. LoadError is the shared part.
+// Files that draw `notice notice--error` themselves (a `Callout` with that look), with the reason. LoadError is the
+// shared part.
 const ERROR_BLOCKS = new Map<string, string>([
+  ['src/components/LoadError.tsx', 'the shared part'],
   ['src/components/admin/BackupFacts.tsx', 'action error: the backup job reported a problem'],
   ['src/components/lore/MassCreateBar.tsx', 'action error: a create that failed'],
   ['src/components/projects/NewProject.tsx', 'action error: a create that failed'],
@@ -34,8 +36,10 @@ const ERROR_BLOCKS = new Map<string, string>([
   ],
 ])
 
-// Files that draw a `notice` with role="status" by hand. LoadingNote and OutcomeNotice are the parts.
+// Files that draw a `notice` box with role="status" themselves. LoadingNote is the part; a create or delete notice is
+// a `Callout` holding a `<p role="status">`.
 const STATUS_NOTICES = new Map<string, string>([
+  ['src/components/LoadingNote.tsx', 'the part'],
   ['src/pages/ConnectAuthorizePage.tsx', 'auth and consent pages are out of #410 scope'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
   [
@@ -75,12 +79,20 @@ const MISSING_WITHOUT_404 = new Map<string, string>([
 type Guard = (source: string) => boolean
 
 const tags = (source: string) =>
-  ['p', 'div', 'span'].flatMap((name) => elements(source, name).map((element) => element.tag))
+  ['p', 'div', 'span', 'Callout'].flatMap((name) =>
+    elements(source, name).map((element) => element.tag),
+  )
+const noticeLook = (tag: string) => /look="notice"/.test(tag)
 
 const drawsErrorBlock: Guard = (source) =>
-  tags(source).some((tag) => /className="notice notice--error/.test(tag))
+  tags(source).some(
+    (tag) =>
+      /className="notice notice--error/.test(tag) || (noticeLook(tag) && /tone="error"/.test(tag)),
+  )
 const drawsStatusNotice: Guard = (source) =>
-  tags(source).some((tag) => /className="notice[ "]/.test(tag) && /role="status"/.test(tag))
+  tags(source).some(
+    (tag) => (/className="notice[ "]/.test(tag) || noticeLook(tag)) && /role="status"/.test(tag),
+  )
 const drawsHiddenStatus: Guard = (source) =>
   tags(source).some((tag) => /className="visually-hidden"/.test(tag) && /role="status"/.test(tag))
 const writesErrorText: Guard = (source) => /instanceof Error \?/.test(source)
@@ -116,7 +128,11 @@ function check(guard: Guard, files: string[], allowed: Set<string> | Map<string,
 
 test('each guard catches the hand-written form', () => {
   assert.ok(drawsErrorBlock('<div className="notice notice--error" role="alert"><p>x</p></div>'))
+  assert.ok(drawsErrorBlock('<Callout look="notice" tone="error" role="alert"><p>x</p></Callout>'))
+  assert.ok(!drawsErrorBlock('<Callout look="notice" role="alert"><p>x</p></Callout>'))
   assert.ok(drawsStatusNotice('<p className="notice" role="status">x</p>'))
+  assert.ok(drawsStatusNotice('<Callout look="notice" as="p" role="status">x</Callout>'))
+  assert.ok(!drawsStatusNotice('<Callout look="notice"><p role="status">x</p></Callout>'))
   assert.ok(!drawsStatusNotice('<p className="notice__x" role="status">x</p>'))
   assert.ok(drawsHiddenStatus('<span className="visually-hidden" role="status">x</span>'))
   assert.ok(writesErrorText("e instanceof Error ? e.message : 'x'"))
@@ -139,7 +155,7 @@ test('a failed read is LoadError; only action errors draw their own block', () =
   check(drawsErrorBlock, tsxFiles, ERROR_BLOCKS)
 })
 
-test('a loading line is LoadingNote, a create or delete notice is OutcomeNotice', () => {
+test('a loading line is LoadingNote, a create or delete notice is a Callout', () => {
   check(drawsStatusNotice, tsxFiles, STATUS_NOTICES)
 })
 

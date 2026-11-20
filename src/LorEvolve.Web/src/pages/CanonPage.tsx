@@ -9,6 +9,7 @@ import { canonActions } from '../canon/canonActions'
 import { CanonControls } from '../components/canon/CanonControls'
 import { CanonResults } from '../components/canon/CanonResults'
 import { Button } from '../components/Button'
+import { Callout } from '../components/Callout'
 
 /**
  * The review screen for one universe.
@@ -66,9 +67,9 @@ export default function CanonPage() {
         }
       />
 
-      <p className="callout integrity__law">
+      <Callout look="callout" as="p" className="integrity__law">
         {tx('canon.page.law', { high: <strong>{t('canon.page.lawHigh')}</strong> })}
-      </p>
+      </Callout>
 
       <CanonControls
         status={status}

@@ -38,6 +38,10 @@ interface FormActionsProps {
   size?: ButtonSize
   /** Wraps in `.form__actions`, a form's own footer. Default: a fragment, the host has its layout. */
   inline?: boolean
+  /** With `inline`: a placement class kept from the screen. */
+  className?: string
+  /** While busy every button is `aria-disabled`, not `disabled`, so the focus stays on it (the Trash confirms). */
+  softDisable?: boolean
   /** Extra buttons or a status line between the submit and Cancel. */
   children?: ReactNode
 }
@@ -66,10 +70,13 @@ export function FormActions({
   deleteTone = 'danger-quiet',
   size,
   inline,
+  className,
+  softDisable,
   children,
 }: FormActionsProps) {
   const { t } = useI18n()
   const drawerLocked = useContext(DrawerLockContext)
+  const soft = softDisable ? { 'aria-disabled': busy || undefined } : null
   const buttons = (
     <>
       {submitLabel !== undefined ? (
@@ -77,14 +84,13 @@ export function FormActions({
           type={onSubmit ? 'button' : 'submit'}
           tone={submitTone}
           size={size}
-          busy={busy}
-          busyLabel={busyLabel}
+          {...(soft ?? { busy, busyLabel })}
           disabled={disabled}
           onClick={onSubmit}
           data-testid={submitTestId}
           ref={submitRef}
         >
-          {submitLabel}
+          {soft && busy && busyLabel !== undefined ? busyLabel : submitLabel}
         </Button>
       ) : null}
       {children}
@@ -92,6 +98,7 @@ export function FormActions({
         <Button
           tone="secondary"
           size={size}
+          {...soft}
           disabled={(lockCancel && busy) || drawerLocked}
           onClick={onCancel}
           data-testid={cancelTestId}
@@ -103,7 +110,8 @@ export function FormActions({
         <Button
           tone={deleteTone}
           size={size}
-          disabled={busy}
+          {...soft}
+          disabled={!soft && busy}
           onClick={onDelete}
           data-testid={deleteTestId}
         >
@@ -112,5 +120,11 @@ export function FormActions({
       ) : null}
     </>
   )
-  return inline ? <div className="actions form__actions">{buttons}</div> : buttons
+  return inline ? (
+    <div className={className ? `actions form__actions ${className}` : 'actions form__actions'}>
+      {buttons}
+    </div>
+  ) : (
+    buttons
+  )
 }

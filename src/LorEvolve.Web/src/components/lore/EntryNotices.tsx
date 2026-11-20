@@ -10,6 +10,7 @@ import type { EntityType } from '../../lore/typeDefinitions'
 import type { Chronology } from '../../chronology/types'
 import { Announce } from '../Announce'
 import { FormMessage } from '../FormMessage'
+import { Callout } from '../Callout'
 
 /** What the entry has to say under its bar: a Canon block, a message, a sent suggestion, a conflict, and the announcer. */
 export function EntryNotices({
@@ -59,9 +60,9 @@ export function EntryNotices({
       {message ? <FormMessage testId="entry-error">{message}</FormMessage> : null}
 
       {sent && !isEditing ? (
-        <p className="callout" role="status" data-testid="suggestion-sent">
+        <Callout look="callout" as="p" role="status" testId="suggestion-sent">
           {t('entity.page.suggestionSent')}
-        </p>
+        </Callout>
       ) : null}
 
       {conflict && isEditing && !isNew && entityId !== undefined ? (

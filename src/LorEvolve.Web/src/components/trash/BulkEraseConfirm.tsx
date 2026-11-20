@@ -1,7 +1,7 @@
 import { t, useI18n } from '../../i18n'
 import { TRASH_KIND_KEYS, TRASH_KIND_LABELS, type TrashItem } from '../../trash/types'
 import { eraseText, keyOf } from '../../trash/trashText'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 
 /**
@@ -42,24 +42,18 @@ export function BulkEraseConfirm({
       error={error}
       errorTestId="trash-bulk-error"
       actions={
-        <div className="actions form__actions">
-          <Button
-            tone="danger"
-            aria-disabled={busy || undefined}
-            onClick={onErase}
-            data-testid="trash-bulk-delete-confirm"
-          >
-            {busy ? t('data.trash.bulk.deleting') : t('data.trash.bulk.delete')}
-          </Button>
-          <Button
-            tone="secondary"
-            aria-disabled={busy || undefined}
-            onClick={onCancel}
-            data-testid="trash-bulk-cancel"
-          >
-            {t('shell.actions.cancel')}
-          </Button>
-        </div>
+        <FormActions
+          inline
+          softDisable
+          submitLabel={t('data.trash.bulk.delete')}
+          busy={busy}
+          busyLabel={t('data.trash.bulk.deleting')}
+          submitTone="danger"
+          onSubmit={onErase}
+          submitTestId="trash-bulk-delete-confirm"
+          onCancel={onCancel}
+          cancelTestId="trash-bulk-cancel"
+        />
       }
       testId="trash-bulk-confirm"
     >

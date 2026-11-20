@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Globe } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { getPublishEverything, publishEverything } from '../../publishing/api'
@@ -6,6 +6,7 @@ import type { PublishEverythingPreview, PublishEverythingResult } from '../../pu
 import { PublishEverythingConfirm } from './PublishEverythingConfirm'
 import { Button } from '../Button'
 import { errorText } from '../../lib/errorText'
+import { useConfirmFocus } from '../../lib/useConfirmFocus'
 import { FormMessage } from '../FormMessage'
 import { QuietNote } from '../QuietNote'
 
@@ -38,9 +39,7 @@ export function PublishEverything({
   const [done, setDone] = useState<string | null>(null)
   const panel = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (preview) panel.current?.focus()
-  }, [preview])
+  useConfirmFocus(preview, panel)
 
   async function ask() {
     setError(null)

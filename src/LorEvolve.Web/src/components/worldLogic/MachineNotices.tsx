@@ -5,6 +5,7 @@ import { m } from '../../worldLogic/machinePanelTypes'
 import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
 import { FormMessage } from '../FormMessage'
+import { Callout } from '../Callout'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -40,14 +41,14 @@ export function MachineNotices({
       {failure ? <FormMessage testId="machine-error">{failure}</FormMessage> : null}
 
       {connecting ? (
-        <div className="notice" role="status" data-testid="machine-connecting">
+        <Callout look="notice" role="status" testId="machine-connecting">
           <p>{t(`${m}.connecting`, { name: stateName.get(connecting) ?? '' })}</p>
           <FormActions
             size="sm"
             onCancel={() => setConnecting(null)}
             cancelTestId="machine-connecting-cancel"
           />
-        </div>
+        </Callout>
       ) : null}
     </>
   )

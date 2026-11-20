@@ -4,6 +4,7 @@ import type { EntityTypeGroup } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
 import { MoveItems } from '../MoveItems'
 import { FormActions } from '../FormActions'
+import { Callout } from '../Callout'
 
 /** One group on the groups tab: its rename form or its row with the moves, rename and delete, and its problem. */
 export function TypeGroupRow({
@@ -141,7 +142,7 @@ export function TypeGroupRow({
         </div>
       )}
       {problem?.groupId === group.id ? (
-        <div className="callout callout--warning" role="alert" data-testid="type-group-problem">
+        <Callout look="callout" tone="warning" role="alert" testId="type-group-problem">
           <p>{problem.text}</p>
           {problem.fields.length > 1 ? (
             <ul className="typegroups__fields">
@@ -150,7 +151,7 @@ export function TypeGroupRow({
               ))}
             </ul>
           ) : null}
-        </div>
+        </Callout>
       ) : null}
     </li>
   )

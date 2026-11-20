@@ -11,6 +11,7 @@ import { FormActions } from '../FormActions'
 import { PageHeader } from '../PageHeader'
 import { errorText } from '../../lib/errorText'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
+import { Callout } from '../Callout'
 
 /** A `kind` query value only when it names a real kind; the category lists pass theirs (#276). */
 function kindFromParam(raw: string | null): ProjectKindValue {
@@ -166,9 +167,9 @@ export function NewProject() {
         />
 
         {failed ? (
-          <p className="notice notice--error" data-testid="project-new-error">
+          <Callout look="notice" tone="error" as="p" testId="project-new-error">
             {failed}
-          </p>
+          </Callout>
         ) : null}
 
         <FormActions

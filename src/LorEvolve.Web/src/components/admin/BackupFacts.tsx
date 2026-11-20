@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 import { Stat } from './Stat'
 import { DateText } from '../DateText'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 const OUTCOME_KEYS = {
   Running: 'admin.backups.outcome.running',
@@ -25,9 +26,9 @@ export function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
 
   if (status.problem) {
     return (
-      <p className="notice notice--error" role="alert" data-testid="admin-backups-problem">
+      <Callout look="notice" tone="error" as="p" role="alert" testId="admin-backups-problem">
         {status.problem}
-      </p>
+      </Callout>
     )
   }
 

@@ -5,6 +5,7 @@ import { Visibility } from './types'
 import type { useI18n } from '../i18n'
 import type { usePublishState } from './usePublishState'
 import { errorText } from '../lib/errorText'
+import { useConfirmFocus } from '../lib/useConfirmFocus'
 
 /** Reads the publication and, while public, what readers can see; moves the focus to a confirm or a refusal. */
 export function usePublishReads({
@@ -70,9 +71,7 @@ export function usePublishReads({
   const published = isPublic && counted?.slug === slug ? counted : null
 
   // The confirmation takes the focus when it opens, and a refusal does when it appears.
-  useEffect(() => {
-    if (confirming) panel.current?.focus()
-  }, [confirming])
+  useConfirmFocus(confirming, panel)
 
   useEffect(() => {
     if (problem) problemRef.current?.focus()

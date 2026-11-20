@@ -2,6 +2,7 @@ import { t, tx, useI18n } from '../../i18n'
 import { Quoted } from '../NameList'
 import { TrashKind, TrashPublication, type TrashItem } from '../../trash/types'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 
 /**
@@ -49,17 +50,20 @@ export function RestorePublicConfirm({
             ? t('data.trash.publish.textHiddenStory')
             : t('data.trash.publish.textHidden')}
       </p>
-      <div className="actions form__actions">
-        <Button onClick={onRestore} data-testid="trash-confirm-restore">
-          {visible ? t('data.trash.publish.restoreVisible') : t('data.trash.publish.restoreHidden')}
-        </Button>
+      <FormActions
+        inline
+        submitLabel={
+          visible ? t('data.trash.publish.restoreVisible') : t('data.trash.publish.restoreHidden')
+        }
+        onSubmit={onRestore}
+        submitTestId="trash-confirm-restore"
+        onCancel={onCancel}
+        cancelTestId="trash-confirm-cancel"
+      >
         <Button tone="secondary" onClick={onRestorePrivate} data-testid="trash-confirm-private">
           {t('data.trash.publish.restorePrivate')}
         </Button>
-        <Button tone="secondary" onClick={onCancel} data-testid="trash-confirm-cancel">
-          {t('shell.actions.cancel')}
-        </Button>
-      </div>
+      </FormActions>
     </InlineConfirm>
   )
 }

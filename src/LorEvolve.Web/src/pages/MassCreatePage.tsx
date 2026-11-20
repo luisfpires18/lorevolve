@@ -17,6 +17,7 @@ import { MassCreateBar } from '../components/lore/MassCreateBar'
 import { Announce } from '../components/Announce'
 import { ReadGate } from '../components/ReadGate'
 import type { Load } from '../lib/useAsyncRead'
+import { Callout } from '../components/Callout'
 
 /** What Lore is told after a mass create, so it can say how many entries arrived. */
 export interface MassCreatedState {
@@ -100,11 +101,11 @@ export default function MassCreatePage() {
         {() => (
           <>
             {eligible.length === 0 ? (
-              <p className="callout callout--warning" data-testid="mass-create-no-types">
+              <Callout look="callout" tone="warning" as="p" testId="mass-create-no-types">
                 {types.length === 0
                   ? t('lore.massCreate.noTypes')
                   : t('lore.massCreate.allRequired')}
-              </p>
+              </Callout>
             ) : null}
 
             <MassCreateDefaults

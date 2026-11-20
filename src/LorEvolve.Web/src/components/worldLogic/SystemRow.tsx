@@ -7,6 +7,7 @@ import { getSystem } from '../../worldLogic/api'
 import type { SystemDetail, SystemSummary } from '../../worldLogic/types'
 import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
+import { Callout } from '../Callout'
 
 /**
  * One System, and the rule definitions it references once the author opens it.
@@ -81,9 +82,9 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
 
       <div id={panelId} hidden={!open} data-testid="world-logic-system-rules">
         {failed ? (
-          <p className="notice notice--error" role="alert">
+          <Callout look="notice" tone="error" as="p" role="alert">
             {t('canon.worldLogic.systems.readFailed')}
-          </p>
+          </Callout>
         ) : null}
 
         {open && !detail && !failed ? (
@@ -113,9 +114,9 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
         ) : null}
 
         {detail && detail.rules.length === 0 ? (
-          <p className="notice" data-testid="world-logic-system-no-rules">
+          <Callout look="notice" as="p" testId="world-logic-system-no-rules">
             {t('canon.worldLogic.systems.noRules')}
-          </p>
+          </Callout>
         ) : null}
       </div>
     </li>
