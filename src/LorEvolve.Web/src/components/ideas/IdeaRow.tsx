@@ -1,8 +1,8 @@
 import type { IdeaSummary } from '../../ideas/types'
-import { formatDate, formatDateTime } from '../../lib/dates'
 import { tn, useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { LinkRow } from '../LinkRow'
+import { DateText } from '../DateText'
 
 function referenceCountLabel(total: number) {
   return tn('ideas.browser.references', total, { n: total })
@@ -67,13 +67,13 @@ export function IdeaRow({
           {deleted && idea.deletedAt ? (
             <span>
               {tx('ideas.browser.deletedAt', {
-                time: <time dateTime={idea.deletedAt}>{formatDateTime(idea.deletedAt)}</time>,
+                time: <DateText value={idea.deletedAt} withTime />,
               })}
             </span>
           ) : (
             <span>
               {tx('ideas.browser.updatedAt', {
-                time: <time dateTime={idea.updatedAt}>{formatDate(idea.updatedAt)}</time>,
+                time: <DateText value={idea.updatedAt} />,
               })}
             </span>
           )}

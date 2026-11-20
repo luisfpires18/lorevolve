@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
-import { formatDate } from '../../lib/dates'
 import {
   changeCollaboratorRole,
   removeCollaborator,
@@ -14,6 +13,7 @@ import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 import { errorText } from '../../lib/errorText'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 // ---------- People ----------
 
@@ -89,7 +89,7 @@ export function MemberRow({
           <bdi>{member.username}</bdi>
         </p>
         <QuietNote className="collab__meta">
-          {t('universe.collab.joined', { date: formatDate(member.joinedAt) })}
+          {tx('universe.collab.joined', { date: <DateText value={member.joinedAt} /> })}
         </QuietNote>
       </div>
       <div className="collab__controls">

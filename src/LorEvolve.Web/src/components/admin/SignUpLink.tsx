@@ -3,10 +3,10 @@ import { createSignUpLink, emailSignUpLink } from '../../admin/api'
 import { Field } from '../Field'
 import { ApiError } from '../../lib/api'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
-import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { Section } from '../Section'
+import { DateText } from '../DateText'
 
 /**
  * A sign-up link for someone with no universe to be invited into. While registration is invitation-only it lets that one
@@ -105,14 +105,14 @@ export function SignUpLink() {
         <p className="settings__note" role="status" data-testid="admin-signup-sent">
           {tx('admin.signUp.sent', {
             to: <bdi>{sent.to}</bdi>,
-            time: formatDateTime(sent.expiresAt),
+            time: <DateText value={sent.expiresAt} withTime />,
           })}
         </p>
       ) : null}
       {link ? (
         <p className="settings__note" role="status">
           {tx('admin.signUp.link', {
-            time: formatDateTime(link.expiresAt),
+            time: <DateText value={link.expiresAt} withTime />,
             url: <code data-testid="admin-signup-url">{link.url}</code>,
           })}
         </p>

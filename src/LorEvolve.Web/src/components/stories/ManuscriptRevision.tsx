@@ -1,7 +1,6 @@
 import { plainMentions } from '../../lore/mentions'
 import { VersionActor } from '../VersionActor'
 import { t, useI18n } from '../../i18n'
-import { formatDateTime } from '../../lib/dates'
 import {
   ManuscriptRevisionKind,
   type ManuscriptRevisionDetail,
@@ -10,6 +9,7 @@ import {
 import { Button } from '../Button'
 import { DisclosureButton } from '../DisclosureButton'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 /** What a version was, in a few words. */
 function describeVersion(
@@ -58,7 +58,7 @@ export function ManuscriptRevision({
   return (
     <li className="version" data-version={revision.number}>
       <p className="version__when">
-        <time dateTime={revision.createdAt}>{formatDateTime(revision.createdAt)}</time>
+        <DateText value={revision.createdAt} withTime />
       </p>
 
       <div className="version__body">

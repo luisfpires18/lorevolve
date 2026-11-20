@@ -1,8 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { WorldRuleEditor } from '../components/WorldRuleEditor'
-import { t, useI18n } from '../i18n'
-import { formatDate } from '../lib/dates'
+import { t, tx, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { getWorldRule } from '../worldRules/api'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -12,6 +11,7 @@ import { LoadingNote } from '../components/LoadingNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { EmptyState } from '../components/EmptyState'
 import { DocumentHead } from '../components/DocumentHead'
+import { DateText } from '../components/DateText'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -109,7 +109,7 @@ function WorldRuleReading({
             <p className="notice">{t('canon.rule.noDescription')}</p>
           )}
           <p className="rule__meta">
-            {t('canon.rule.lastChanged', { date: formatDate(state.value.updatedAt) })}
+            {tx('canon.rule.lastChanged', { date: <DateText value={state.value.updatedAt} /> })}
           </p>
         </>
       ) : null}

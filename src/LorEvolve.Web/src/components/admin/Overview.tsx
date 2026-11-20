@@ -1,12 +1,12 @@
 import { CardGrid } from '../CardGrid'
 import type { AdminOverview } from '../../admin/api'
 import { formatBytes } from '../../lib/bytes'
-import { formatDateTime } from '../../lib/dates'
 import { dateFormat } from '../../i18n/format'
 import { useI18n } from '../../i18n'
 import { NOT_TRACKED } from '../../admin/adminConstants'
 import { Stat } from './Stat'
 import { Section } from '../Section'
+import { DateText } from '../DateText'
 
 // ---------- Main ----------
 
@@ -17,7 +17,7 @@ const MONTH: Intl.DateTimeFormatOptions = {
 }
 
 export function Overview({ overview }: { overview: AdminOverview }) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const trend = overview.universesCreatedByMonth
   const peak = Math.max(1, ...trend.map((month) => month.count))
 
@@ -25,7 +25,9 @@ export function Overview({ overview }: { overview: AdminOverview }) {
     <>
       <Section title={t('admin.main.measured')} titleId="admin-measured" rule={false}>
         <p className="settings__note" data-testid="admin-generated">
-          {t('admin.main.counted', { time: formatDateTime(overview.generatedAt) })}
+          {tx('admin.main.counted', {
+            time: <DateText value={overview.generatedAt} withTime />,
+          })}
         </p>
         <CardGrid min={13} testId="admin-stats">
           <Stat

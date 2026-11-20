@@ -1,7 +1,6 @@
 import { EmptyState } from '../EmptyState'
 import { TabPanel } from '../QueryTabs'
 import { t, useI18n } from '../../i18n'
-import { formatDate } from '../../lib/dates'
 import type { useUniverseAccess } from '../../universes/access'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
@@ -11,6 +10,7 @@ import { NewButton } from '../NewButton'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { LinkRow } from '../LinkRow'
+import { DateText } from '../DateText'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -79,7 +79,7 @@ export function WorldLogicRules({
                     </span>
                   ) : null}
                   {tx('canon.rules.updated', {
-                    time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
+                    time: <DateText value={rule.updatedAt} />,
                   })}
                 </>
               }

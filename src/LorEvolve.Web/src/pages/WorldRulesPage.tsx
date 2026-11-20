@@ -3,7 +3,6 @@ import { useUniverseAccess } from '../universes/access'
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
 import { Quoted } from '../components/NameList'
 import { t, useI18n } from '../i18n'
-import { formatDate } from '../lib/dates'
 import { listWorldRules } from '../worldRules/api'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
@@ -16,6 +15,7 @@ import { LoadingNote } from '../components/LoadingNote'
 import { LinkRow } from '../components/LinkRow'
 import { OutcomeNotice } from '../components/OutcomeNotice'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { DateText } from '../components/DateText'
 
 /** What a rule's editor says it did before handing back to the list. */
 export interface WorldRulesListNotice {
@@ -125,7 +125,7 @@ export default function WorldRulesPage() {
                     </span>
                   ) : null}
                   {tx('canon.rules.updated', {
-                    time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
+                    time: <DateText value={rule.updatedAt} />,
                   })}
                 </>
               }

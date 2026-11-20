@@ -2,7 +2,6 @@ import { useEffect, useId, useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { t, useI18n } from '../../i18n'
-import { formatDate } from '../../lib/dates'
 import { decideWorldLogicFinding, getWorldLogicFinding } from '../../worldLogic/api'
 import type { WorldLogicFindingDetail, WorldLogicFindingRow } from '../../worldLogic/types'
 import {
@@ -13,6 +12,7 @@ import {
 } from '../../worldLogic/findingLabels'
 import { FindingDetail } from './FindingDetail'
 import { LoadingNote } from '../LoadingNote'
+import { DateText } from '../DateText'
 
 /**
  * One finding: which rule produced it, what checking concluded, and, once the author opens it, the records the
@@ -142,7 +142,7 @@ export function FindingRow({
         </span>
         {' · '}
         {tx('canon.worldLogic.integrity.found', {
-          time: <time dateTime={finding.createdAt}>{formatDate(finding.createdAt)}</time>,
+          time: <DateText value={finding.createdAt} />,
         })}
       </p>
 

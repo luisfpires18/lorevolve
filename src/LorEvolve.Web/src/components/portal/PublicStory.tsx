@@ -1,15 +1,15 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { WorldAttribution } from '../WorldAttribution'
-import { formatDate } from '../../lib/dates'
 import { worldPath, type PublicStoryDetail, type PublicUniverse } from '../../portal/api'
 import { useWorkspaceLink } from '../../portal/useWorkspaceLink'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { useI18n } from '../../i18n'
 import { paragraphs } from '../../portal/storyParagraphs'
+import { DateText } from '../DateText'
 
 export function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDetail }) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   useDocumentTitle(story.title, world.name)
   const owner = useWorkspaceLink(world.slug, { story: story.slug })
   const sections = [
@@ -48,7 +48,9 @@ export function Story({ world, story }: { world: PublicUniverse; story: PublicSt
           after={
             <>
               <span aria-hidden="true"> · </span>
-              <span>{t('portal.story.published', { date: formatDate(story.publishedAt) })}</span>
+              <span>
+                {tx('portal.story.published', { date: <DateText value={story.publishedAt} /> })}
+              </span>
             </>
           }
         />

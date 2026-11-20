@@ -5,9 +5,9 @@ import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
 import { Quoted } from '../NameList'
 import type { Stored } from '../../ideas/ideaDraft'
-import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { DocumentHead } from '../DocumentHead'
+import { DateText } from '../DateText'
 
 /** An idea editor's head: the way back, the heading with its actions menu, the lede, and where the idea belongs. */
 export function IdeaHead({
@@ -67,7 +67,7 @@ export function IdeaHead({
             <>
               {' '}
               {tx('ideas.editor.lastSaved', {
-                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+                time: <DateText value={stored.updatedAt} withTime />,
               })}
             </>
           ) : null}

@@ -5,7 +5,6 @@ import { ArrowRight } from 'lucide-react'
 import { ConnectToAi } from '../components/ConnectToAi'
 import { WipBadge } from '../components/WipBadge'
 import { PageHeader } from '../components/PageHeader'
-import { formatDate } from '../lib/dates'
 import { t, tx, useI18n } from '../i18n'
 import { listEntities } from '../lore/api'
 import { roleDescription, roleLabel, useUniverseAccess } from '../universes/access'
@@ -19,6 +18,7 @@ import {
 } from '../universes/sections'
 import { UniverseRole } from '../universes/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
+import { DateText } from '../components/DateText'
 
 /**
  * A universe's front page, set as a book's contents: its name and opening line, then a doorway into
@@ -95,9 +95,9 @@ export default function UniverseOverview() {
               </p>
             )}
             <p className="overview__meta">
-              {t('workspace.overview.dates', {
-                created: formatDate(universe.createdAt),
-                changed: formatDate(universe.updatedAt),
+              {tx('workspace.overview.dates', {
+                created: <DateText value={universe.createdAt} />,
+                changed: <DateText value={universe.updatedAt} />,
               })}
             </p>
             {shared ? (

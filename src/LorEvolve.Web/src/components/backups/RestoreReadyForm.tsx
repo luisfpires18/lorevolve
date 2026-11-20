@@ -1,11 +1,11 @@
 import type { FormEvent } from 'react'
-import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import { summaryRows } from '../../backups/summaryRows'
 import type { Stage, useRestoreBackupState } from '../../backups/useRestoreBackupState'
 import { Restoring } from './Restoring'
 import { FormActions } from '../FormActions'
+import { DateText } from '../DateText'
 
 /** The checked file: what it holds, the name to restore it under, a failure, and Restore or Choose another. */
 export function RestoreReadyForm({
@@ -50,7 +50,9 @@ export function RestoreReadyForm({
           </div>
           <div className="restore__fact">
             <dt>{t('admin.restore.ready.backedUp')}</dt>
-            <dd>{formatDateTime(stage.validation.preview.generatedAt)}</dd>
+            <dd>
+              <DateText value={stage.validation.preview.generatedAt} withTime />
+            </dd>
           </div>
           <div className="restore__fact">
             <dt>{t('admin.restore.ready.format')}</dt>

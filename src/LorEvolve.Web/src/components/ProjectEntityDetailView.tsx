@@ -5,9 +5,8 @@ import { entityImageUrl, fieldImageUrl } from '../lore/images'
 import { getProjectEntity } from '../projectEntities/api'
 import type { ProjectEntityDetail } from '../projectEntities/types'
 import { ApiError } from '../lib/api'
-import { formatDate } from '../lib/dates'
 import { useUniverseAccess } from '../universes/access'
-import { t, useI18n } from '../i18n'
+import { t, tx, useI18n } from '../i18n'
 import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
 import { TypeIcon } from './TypeIcon'
@@ -17,6 +16,7 @@ import { EntryHead } from './EntryHead'
 import { errorText } from '../lib/errorText'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
+import { DateText } from './DateText'
 
 type LoadState =
   | { kind: 'ready'; for: string; entity: ProjectEntityDetail }
@@ -226,9 +226,9 @@ export function ProjectEntityDetailView({
             </p>
           )}
           <p className="rail__meta">
-            {t('entity.page.rail.created', { date: formatDate(entity.createdAt) })}
+            {tx('entity.page.rail.created', { date: <DateText value={entity.createdAt} /> })}
             <br />
-            {t('entity.page.rail.lastChanged', { date: formatDate(entity.updatedAt) })}
+            {tx('entity.page.rail.lastChanged', { date: <DateText value={entity.updatedAt} /> })}
           </p>
         </aside>
       </div>

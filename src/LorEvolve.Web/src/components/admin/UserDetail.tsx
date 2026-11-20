@@ -3,7 +3,6 @@ import { useAuth } from '../../auth/useAuth'
 import { Avatar } from '../Avatar'
 import { PageHeader } from '../PageHeader'
 import { formatBytes } from '../../lib/bytes'
-import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { NOT_RECORDED, NOT_TRACKED, ROLE_KEYS } from '../../admin/adminConstants'
 import { BlockSection } from './BlockSection'
@@ -11,6 +10,7 @@ import { Fact } from './Fact'
 import { PasswordSection } from './PasswordSection'
 import { QuietNote } from '../QuietNote'
 import { Section } from '../Section'
+import { DateText } from '../DateText'
 
 const HISTORY_KEYS = {
   Block: 'admin.history.blocked',
@@ -65,7 +65,9 @@ export function UserDetail({
             value={
               user.isBlocked
                 ? user.blockedAt
-                  ? t('admin.user.account.blockedSince', { time: formatDateTime(user.blockedAt) })
+                  ? tx('admin.user.account.blockedSince', {
+                      time: <DateText value={user.blockedAt} withTime />,
+                    })
                   : t('admin.user.account.blockedSinceUnknown')
                 : t('admin.user.account.active')
             }
@@ -91,7 +93,7 @@ export function UserDetail({
           />
           <Fact
             label={t('admin.user.account.created')}
-            value={user.createdAt ? formatDateTime(user.createdAt) : NOT_RECORDED}
+            value={user.createdAt ? <DateText value={user.createdAt} withTime /> : NOT_RECORDED}
             testId="admin-user-created"
           />
           <Fact
@@ -106,7 +108,9 @@ export function UserDetail({
         <dl className="facts admindetail" data-testid="admin-user-sign-in">
           <Fact
             label={t('admin.user.signIn.last')}
-            value={user.lastSignInAt ? formatDateTime(user.lastSignInAt) : NOT_RECORDED}
+            value={
+              user.lastSignInAt ? <DateText value={user.lastSignInAt} withTime /> : NOT_RECORDED
+            }
             testId="admin-user-last-login"
           />
           <Fact
@@ -118,7 +122,9 @@ export function UserDetail({
             label={t('admin.user.signIn.lockout')}
             value={
               user.lockedOutUntil
-                ? t('admin.user.signIn.lockedUntil', { time: formatDateTime(user.lockedOutUntil) })
+                ? tx('admin.user.signIn.lockedUntil', {
+                    time: <DateText value={user.lockedOutUntil} withTime />,
+                  })
                 : t('admin.user.signIn.lockoutNone')
             }
             testId="admin-user-lockout"
@@ -131,9 +137,11 @@ export function UserDetail({
           <Fact
             label={t('admin.user.signIn.appsUsed')}
             value={
-              user.appLastUsedAt
-                ? formatDateTime(user.appLastUsedAt)
-                : t('admin.user.signIn.appsNever')
+              user.appLastUsedAt ? (
+                <DateText value={user.appLastUsedAt} withTime />
+              ) : (
+                t('admin.user.signIn.appsNever')
+              )
             }
             testId="admin-user-apps-used"
           />
@@ -157,7 +165,7 @@ export function UserDetail({
                   {tx('admin.history.line', {
                     action: <strong>{t(HISTORY_KEYS[entry.action])}</strong>,
                     actor: entry.actorUsername ?? t('admin.history.removedActor'),
-                    time: <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>,
+                    time: <DateText value={entry.createdAt} withTime />,
                   })}
                 </p>
                 {entry.reason ? (

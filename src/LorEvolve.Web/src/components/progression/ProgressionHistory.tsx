@@ -5,7 +5,6 @@ import { VersionActor } from '../VersionActor'
 import { t, useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
 import { confirmAction } from '../../lib/confirm'
-import { formatDateTime } from '../../lib/dates'
 import { isChangedElsewhere } from '../../lib/editConflict'
 import { RevisionKind } from '../../lore/revisions'
 import {
@@ -20,6 +19,7 @@ import type {
   ProgressionRevisionSummary,
 } from '../../progression/types'
 import { LoadingNote } from '../LoadingNote'
+import { DateText } from '../DateText'
 
 /** The progression's own history: each saved version with when and by whom, readable in place and put back on request. */
 export function ProgressionHistory({
@@ -127,7 +127,8 @@ export function ProgressionHistory({
                   : revision.kind === RevisionKind.Restored
                     ? t('progression.history.kind.restored')
                     : t('progression.history.kind.changed')}{' '}
-                {formatDateTime(revision.createdAt)} <VersionActor name={revision.actorName} />
+                <DateText value={revision.createdAt} withTime />{' '}
+                <VersionActor name={revision.actorName} />
               </p>
               <div className="history__actions">
                 <button

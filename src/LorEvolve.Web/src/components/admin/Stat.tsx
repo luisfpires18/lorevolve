@@ -10,7 +10,7 @@ export function Stat({
 }: {
   label: string
   value: ReactNode | typeof NOT_TRACKED
-  source: string
+  source: ReactNode
   testId: string
 }) {
   const { t } = useI18n()

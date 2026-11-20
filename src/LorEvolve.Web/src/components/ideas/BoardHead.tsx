@@ -2,10 +2,10 @@ import type { ReactNode } from 'react'
 import { Trash2 } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
-import { formatDateTime } from '../../lib/dates'
 import type { useBoardState } from '../../ideas/useBoardState'
 import { useI18n } from '../../i18n'
 import { DocumentHead } from '../DocumentHead'
+import { DateText } from '../DateText'
 
 /** A board editor's head: the way back, the heading with its actions menu, and the lede. */
 export function BoardHead({
@@ -55,7 +55,7 @@ export function BoardHead({
             <>
               {' '}
               {tx('ideas.board.lastSaved', {
-                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
+                time: <DateText value={stored.updatedAt} withTime />,
               })}
             </>
           ) : null}

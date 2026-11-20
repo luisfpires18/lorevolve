@@ -3,7 +3,6 @@ import { History } from 'lucide-react'
 import { LoreArticle } from '../ArticleView'
 import { VersionActor } from '../VersionActor'
 import { ApiError } from '../../lib/api'
-import { formatDateTime } from '../../lib/dates'
 import { isChangedElsewhere } from '../../lib/editConflict'
 import {
   ARTICLE_CHANGED,
@@ -22,6 +21,7 @@ import type { Stored } from '../../lore/useEntityArticle'
 import { Button } from '../Button'
 import { DisclosureButton } from '../DisclosureButton'
 import { QuietNote } from '../QuietNote'
+import { DateText } from '../DateText'
 
 interface ArticleHistoryProps {
   universeId: string
@@ -190,7 +190,7 @@ export function ArticleHistory({
               {revisions.map((revision, index) => (
                 <li className="version" key={revision.id} data-version={revision.number}>
                   <p className="version__when">
-                    <time dateTime={revision.createdAt}>{formatDateTime(revision.createdAt)}</time>
+                    <DateText value={revision.createdAt} withTime />
                   </p>
 
                   <div className="version__body">

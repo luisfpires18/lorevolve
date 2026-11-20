@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { Clock } from 'lucide-react'
-import { formatDate } from '../lib/dates'
 import { useI18n } from '../i18n'
 import { roleLabel } from '../universes/access'
 import { artworkUrl } from '../publishing/api'
 import { UniverseRole, type UniverseSummary } from '../universes/types'
+import { DateText } from './DateText'
 
 /**
  * An entrance into a world: its artwork across the head of the card, a spine in the universe's own colour, the name
@@ -19,7 +19,7 @@ import { UniverseRole, type UniverseSummary } from '../universes/types'
  * never beside the name. One the account owns carries no badge: owning is the ordinary case.
  */
 export function UniverseCard({ universe }: { universe: UniverseSummary }) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const artwork = universe.artwork ? artworkUrl(universe.id, universe.artwork, 'card') : null
 
   return (
@@ -70,7 +70,7 @@ export function UniverseCard({ universe }: { universe: UniverseSummary }) {
               focusable="false"
               strokeWidth={1.75}
             />
-            {t('universe.card.updated', { date: formatDate(universe.updatedAt) })}
+            {tx('universe.card.updated', { date: <DateText value={universe.updatedAt} /> })}
           </span>
           {universe.accessRole !== UniverseRole.Owner || universe.isArchived ? (
             <span className="plate__marks">
