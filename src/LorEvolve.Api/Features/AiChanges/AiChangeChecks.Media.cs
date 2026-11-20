@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 namespace LorEvolve.Api.Features.AiChanges;
 
 /// <summary>
-/// A picture change's check (ADR 0062): the entry live in this universe; for a profile picture, none there yet; for an
+/// A picture change's check (ADR 0062): the entry live in this universe; for a profile picture, one change per entry; for an
 /// appearance, one of the entry's, with room left once every picture change of this proposal for it is counted; and the
 /// file uploaded. Until the person uploads it in LorEvolve, the change waits with <see cref="AiChangeCodes.AwaitingUpload"/>,
 /// which keeps it from being approved.
@@ -28,11 +28,8 @@ internal sealed partial class AiChangeChecker
 
         if (media.AppearanceId is not { } appearanceId)
         {
-            if (await db.EntityImages.AsNoTracking().AnyAsync(image => image.EntityId == media.EntityId, cancellationToken))
-            {
-                work.Problem(AiChangeCodes.Unsupported, "This entry already has a profile picture. An AI change never replaces one, since the old picture would be deleted for good; replace it by hand, or add the picture to an appearance.", "entry");
-            }
-            else if (alongside.Any())
+            // A profile picture already there is replaced on approval (#445), as a manual upload replaces it.
+            if (alongside.Any())
             {
                 work.Problem(AiChangeCodes.Duplicate, "Another change in this proposal already gives this entry its profile picture.", "entry");
             }

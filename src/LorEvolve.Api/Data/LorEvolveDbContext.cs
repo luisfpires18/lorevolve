@@ -127,7 +127,8 @@ public class LorEvolveDbContext(DbContextOptions<LorEvolveDbContext> options)
     public DbSet<EntityFieldImage> EntityFieldImages => Set<EntityFieldImage>();
 
     /// <summary>
-    /// Object keys of field pictures this request's saves stopped naming (Issue #238), for the route to sweep once its commit is
+    /// Object keys of field pictures this request's saves stopped naming (Issue #238), and of a profile picture an approved AI
+    /// change replaced (#445), for the route to sweep once its commit is
     /// done (<see cref="EntityFieldImageEndpoints.SweepDroppedAsync"/>). Not mapped: a list in memory, scoped like the context.
     /// </summary>
     internal List<string> DroppedFieldImageKeys { get; } = [];
