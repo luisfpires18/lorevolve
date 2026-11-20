@@ -59,7 +59,7 @@ export function SeasonItem({
   say: (typeof WORDS)[ProjectStructureWords]
   refresh: () => Promise<void>
   failing: (error: unknown) => void
-  run: (work: Promise<unknown>) => void
+  run: (work: () => Promise<unknown>) => void
   season: ProjectSeason
   index: number
 }) {
@@ -128,7 +128,7 @@ export function SeasonItem({
               up: `project-season-up-${season.id}`,
               down: `project-season-down-${season.id}`,
             }}
-            onMove={(step) => run(moveSeason(projectId, season.id, { place: index + step }))}
+            onMove={(step) => run(() => moveSeason(projectId, season.id, { place: index + step }))}
           />
           <button
             className="actionmenu__item"
@@ -147,7 +147,7 @@ export function SeasonItem({
             type="button"
             disabled={busy}
             data-testid={`project-season-delete-${season.id}`}
-            onClick={() => run(deleteSeason(projectId, season.id))}
+            onClick={() => run(() => deleteSeason(projectId, season.id))}
           >
             <ActionIcon icon={Trash} />
             {say.delete()}

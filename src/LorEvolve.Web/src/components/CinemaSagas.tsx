@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { confirmAction } from '../lib/confirm'
@@ -10,14 +10,13 @@ import {
   savePhase,
   saveSaga,
   type CinemaProduction,
-  type CinemaSagas as Sagas,
 } from '../projects/sagas'
 import { SagaSection } from './projects/SagaSection'
 import { SagasUnassigned } from './projects/SagasUnassigned'
 import { AddDrawer } from './projects/AddDrawer'
 import { GroupDrawer, type Editing } from './projects/GroupDrawer'
 import { NewButton } from './NewButton'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 
@@ -27,39 +26,10 @@ import { LoadingNote } from './LoadingNote'
  */
 export function CinemaSagas({ universeId }: { universeId: string }) {
   useI18n()
-  const [data, setData] = useState<Sagas | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
   const [adding, setAdding] = useState<CinemaProduction | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listSagas(universeId, controller.signal)
-      .then(setData)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(t('projects.sagas.failed'))
-      })
-    return () => controller.abort()
-  }, [universeId])
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(errorText(error, t('projects.sagas.failed')))
-  }
-
-  function refresh() {
-    return listSagas(universeId).then((read) => {
-      setData(read)
-      setBusy(false)
-      setFailed(null)
-    })
-  }
-
-  function run(work: () => Promise<unknown>) {
-    setBusy(true)
-    work().then(refresh).catch(failing)
-  }
+  const read = useCallback((signal?: AbortSignal) => listSagas(universeId, signal), [universeId])
+  const { data, failed, busy, refresh, run } = useLoadedList(read, t('projects.sagas.failed'))
 
   function confirmDelete(title: string, confirmLabel: string, action: () => Promise<unknown>) {
     void confirmAction({
@@ -73,11 +43,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
 
   if (data === null) {
     return failed ? (
-      <LoadError
-        message={failed}
-        onRetry={() => void refresh().catch(failing)}
-        testId="sagas-failed"
-      />
+      <LoadError message={failed} onRetry={() => void refresh()} testId="sagas-failed" />
     ) : (
       <LoadingNote>{t('projects.sagas.loading')}</LoadingNote>
     )

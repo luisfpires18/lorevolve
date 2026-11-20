@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
@@ -14,38 +14,51 @@ import {
 import { nameOf } from './levelWords'
 import { t, tn } from '../i18n'
 import { errorText } from '../lib/errorText'
+import { settleRead } from '../lib/settleRead'
+import { useLoadedList } from '../lib/useLoadedList'
 
 /** The outline's tree and its state, the read, the linked node, and the changes the buttons make. */
 export function useProjectOutline({ projectId }: { projectId: string }) {
-  const [tree, setTree] = useState<ProjectStructureTree | 'none' | null>(null)
   const [hasLegacy, setHasLegacy] = useState(false)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<string | null>(null)
   // A link from a story arc or event (#296), or a Volume on this same page (#297), names the node to open; ignored
   // when unknown.
   const [params, setParams] = useSearchParams()
   const linked = params.get('node')
 
+  // A project with no outline yet answers 404: that is 'none', not a failure.
+  const read = useCallback(
+    (signal?: AbortSignal) =>
+      getStructure(projectId, signal).catch((error: unknown) => {
+        if (error instanceof ApiError && error.status === 404) return 'none' as const
+        throw error
+      }),
+    [projectId],
+  )
+  const {
+    data: tree,
+    failed,
+    setFailed,
+    busy,
+    setBusy,
+    refresh,
+    failing,
+    run,
+  } = useLoadedList<ProjectStructureTree | 'none'>(read, t('projects.structure.failed'))
+
+  // The seasons read before the outline existed, asked for once the outline itself is read.
+  const hasTree = tree !== null && tree !== 'none'
   useEffect(() => {
+    if (!hasTree) return
     const controller = new AbortController()
-    getStructure(projectId, controller.signal)
-      .then((read) => {
-        setTree(read)
-        return listSeasons(projectId, controller.signal).then((seasons) =>
-          setHasLegacy(seasons.length > 0),
-        )
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        if (error instanceof ApiError && error.status === 404) {
-          setTree('none')
-          return
-        }
-        setFailed(errorText(error, t('projects.structure.failed')))
-      })
+    settleRead(
+      listSeasons(projectId, controller.signal),
+      controller.signal,
+      (seasons) => setHasLegacy(seasons.length > 0),
+      (error) => setFailed(errorText(error, t('projects.structure.failed'))),
+    )
     return () => controller.abort()
-  }, [projectId])
+  }, [projectId, hasTree, setFailed])
 
   // Opens the linked node once the tree is read, and again only when the link itself changes.
   const opened = useRef<string | null>(null)
@@ -76,24 +89,6 @@ export function useProjectOutline({ projectId }: { projectId: string }) {
     }
   }
 
-  function refresh() {
-    return getStructure(projectId).then((read) => {
-      setTree(read)
-      setBusy(false)
-      setFailed(null)
-    })
-  }
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(errorText(error, t('projects.structure.failed')))
-  }
-
-  function run(work: Promise<unknown>) {
-    setBusy(true)
-    work.then(refresh).catch(failing)
-  }
-
   function add(level: string, parentId: string | null) {
     setBusy(true)
     createNode(projectId, { level, parentId })
@@ -116,7 +111,7 @@ export function useProjectOutline({ projectId }: { projectId: string }) {
     ) {
       return
     }
-    run(deleteNode(projectId, node.id))
+    run(() => deleteNode(projectId, node.id))
   }
   return {
     tree,

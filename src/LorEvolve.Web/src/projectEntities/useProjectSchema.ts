@@ -1,11 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getProjectTemplate, listProjectTypes } from './api'
 import { buildTypeTree } from '../lore/typeTree'
 import type { ProjectEntityType, ProjectTemplate } from './types'
 import { listTypeTemplates } from '../typeTemplates/api'
 import type { TypeTemplate } from '../typeTemplates/types'
 import { t } from '../i18n'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
+
+interface Schema {
+  types: ProjectEntityType[]
+  template: ProjectTemplate | null
+}
 
 /** A project's types: the read, the open drawers, the type tree, and what happens after a write. */
 export function useProjectSchema({
@@ -19,10 +24,23 @@ export function useProjectSchema({
   universeId?: string
   onChanged?: () => void
 }) {
-  const [types, setTypes] = useState<ProjectEntityType[] | null>(null)
-  const [template, setTemplate] = useState<ProjectTemplate | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const read = useCallback(
+    (signal?: AbortSignal) =>
+      Promise.all([
+        listProjectTypes(projectId, signal),
+        getProjectTemplate(projectId, signal),
+      ]).then(([types, template]): Schema => ({ types, template })),
+    // A new reloadKey reads again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [projectId, reloadKey],
+  )
+  const { data, failed, setFailed, busy, setBusy, settle, failing } = useLoadedList(
+    read,
+    t('projects.schema.failed'),
+    { emptyOnFail: { types: [], template: null } },
+  )
+  const types = data?.types ?? null
+  const template = data?.template ?? null
   // The drawer: a type being edited, or 'new' (from the head, or a row's Add child, which sets `childOf`).
   const [editing, setEditing] = useState<ProjectEntityType | 'new' | null>(null)
   const [childOf, setChildOf] = useState<ProjectEntityType | null>(null)
@@ -31,24 +49,6 @@ export function useProjectSchema({
   const [openTypeId, setOpenTypeId] = useState<string | null>(null)
   const [addingFieldTo, setAddingFieldTo] = useState<string | null>(null)
   const tree = useMemo(() => buildTypeTree(types ?? []), [types])
-
-  useEffect(() => {
-    const controller = new AbortController()
-    Promise.all([
-      listProjectTypes(projectId, controller.signal),
-      getProjectTemplate(projectId, controller.signal),
-    ])
-      .then(([read, offer]) => {
-        setTypes(read)
-        setTemplate(offer)
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setTypes([])
-        setFailed(errorText(error, t('projects.schema.failed')))
-      })
-    return () => controller.abort()
-  }, [projectId, reloadKey])
 
   useEffect(() => {
     if (!universeId) return
@@ -61,31 +61,22 @@ export function useProjectSchema({
   }, [universeId])
 
   function after(read: ProjectEntityType[]) {
-    setTypes(read)
-    setBusy(false)
-    setFailed(null)
+    settle({ types: read, template })
     onChanged?.()
   }
 
   function refresh() {
-    listProjectTypes(projectId)
-      .then(after)
-      .catch((error: unknown) => {
-        setBusy(false)
-        setFailed(errorText(error, t('projects.schema.failed')))
+    read()
+      .then((value) => {
+        settle(value)
+        onChanged?.()
       })
-  }
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(errorText(error, t('projects.schema.failed')))
+      .catch(failing)
   }
 
   return {
     types,
-    setTypes,
     template,
-    setTemplate,
     failed,
     setFailed,
     busy,

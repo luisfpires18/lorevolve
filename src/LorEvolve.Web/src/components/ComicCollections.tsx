@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import {
@@ -8,14 +8,13 @@ import {
   saveComicCollection,
   type ComicCollection,
   type ComicCollectionKind,
-  type ComicCollections as Collections,
 } from '../projects/comicCollections'
 import { WORDS } from '../projects/comicCollectionWords'
 import { ComicCollectionItem } from './projects/ComicCollectionItem'
 import { CollectionDrawer, type Editing } from './projects/CollectionDrawer'
 import { EntryDrawer } from './projects/EntryDrawer'
 import { NewButton } from './NewButton'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 import { PageHeader } from './PageHeader'
@@ -36,47 +35,21 @@ export function ComicCollections({
 }) {
   useI18n()
   const canEdit = useUniverseAccess().editContent
-  const [data, setData] = useState<Collections | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
   const [adding, setAdding] = useState<ComicCollection | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listComicCollections(universeId, controller.signal, projectId)
-      .then(setData)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(t('projects.comics.failed'))
-      })
-    return () => controller.abort()
-  }, [universeId, projectId])
+  const read = useCallback(
+    (signal?: AbortSignal) => listComicCollections(universeId, signal, projectId),
+    [universeId, projectId],
+  )
+  const { data, failed, busy, refresh, run } = useLoadedList(read, t('projects.comics.failed'))
 
   const kinds: ComicCollectionKind[] = projectId ? ['volume'] : ARCS_AND_EVENTS
-
-  function refresh() {
-    return listComicCollections(universeId, undefined, projectId).then((read) => {
-      setData(read)
-      setBusy(false)
-      setFailed(null)
-    })
-  }
-
-  function run(work: () => Promise<unknown>) {
-    setBusy(true)
-    work()
-      .then(refresh)
-      .catch((error: unknown) => {
-        setBusy(false)
-        setFailed(errorText(error, t('projects.comics.failed')))
-      })
-  }
 
   if (data === null) {
     return failed ? (
       <LoadError
         message={failed}
-        onRetry={() => void refresh().catch(() => setFailed(t('projects.comics.failed')))}
+        onRetry={() => void refresh()}
         testId="comic-collections-failed"
       />
     ) : (

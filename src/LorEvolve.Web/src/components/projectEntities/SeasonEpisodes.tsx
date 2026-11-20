@@ -33,7 +33,7 @@ export function SeasonEpisodes({
   setEditing: Dispatch<SetStateAction<string | null>>
   say: (typeof WORDS)[ProjectStructureWords]
   refresh: () => Promise<void>
-  run: (work: Promise<unknown>) => void
+  run: (work: () => Promise<unknown>) => void
   season: ProjectSeason
 }) {
   useI18n()
@@ -80,7 +80,7 @@ export function SeasonEpisodes({
                   down: `project-episode-down-${episode.id}`,
                 }}
                 onMove={(step) =>
-                  run(moveEpisode(projectId, season.id, episode.id, { place: place + step }))
+                  run(() => moveEpisode(projectId, season.id, episode.id, { place: place + step }))
                 }
               />
               {/* Moving between seasons needs no drag: the other seasons are a short list of items. */}
@@ -94,7 +94,7 @@ export function SeasonEpisodes({
                     disabled={busy}
                     data-testid={`project-episode-to-${episode.id}-${other.id}`}
                     onClick={() =>
-                      run(
+                      run(() =>
                         moveEpisode(projectId, season.id, episode.id, {
                           place: other.episodes.length,
                           seasonId: other.id,
@@ -111,7 +111,7 @@ export function SeasonEpisodes({
                 type="button"
                 disabled={busy}
                 data-testid={`project-episode-delete-${episode.id}`}
-                onClick={() => run(deleteEpisode(projectId, season.id, episode.id))}
+                onClick={() => run(() => deleteEpisode(projectId, season.id, episode.id))}
               >
                 <ActionIcon icon={Trash} />
                 {say.deleteEpisode()}
