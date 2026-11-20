@@ -50,64 +50,55 @@ export function TimelineControls({
       />
 
       <div className="controls__filters">
-        <Field id="chron-story" label={t('time.timeline.storyFilter')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={storyId ?? ''}
-              onChange={(event) => update({ story: event.target.value })}
-              data-testid="chron-story"
-            >
-              <option value="">{t('time.timeline.allStories')}</option>
-              {storyId && stories && !story ? (
-                <option value={storyId}>{t('time.timeline.storyUnavailableOption')}</option>
-              ) : null}
-              {(stories ?? []).map((one) => (
-                <option key={one.id} value={one.id}>
-                  {one.title}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          id="chron-story"
+          label={t('time.timeline.storyFilter')}
+          value={storyId ?? ''}
+          onChange={(event) => update({ story: event.target.value })}
+          data-testid="chron-story"
+        >
+          <option value="">{t('time.timeline.allStories')}</option>
+          {storyId && stories && !story ? (
+            <option value={storyId}>{t('time.timeline.storyUnavailableOption')}</option>
+          ) : null}
+          {(stories ?? []).map((one) => (
+            <option key={one.id} value={one.id}>
+              {one.title}
+            </option>
+          ))}
         </Field>
 
-        <Field id="chron-source" label={t('time.timeline.show')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={sourceParam?.value ?? ''}
-              onChange={(event) => update({ source: event.target.value })}
-              data-testid="chron-source"
-            >
-              <option value="">{t('time.timeline.everything')}</option>
-              {SOURCES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label()}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          id="chron-source"
+          label={t('time.timeline.show')}
+          value={sourceParam?.value ?? ''}
+          onChange={(event) => update({ source: event.target.value })}
+          data-testid="chron-source"
+        >
+          <option value="">{t('time.timeline.everything')}</option>
+          {SOURCES.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label()}
+            </option>
+          ))}
         </Field>
 
-        <Field id="chron-canon" label={t('time.timeline.status')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={canonStatus ?? ''}
-              onChange={(event) => update({ status: event.target.value })}
-              data-testid="chron-canon"
-            >
-              <option value="">{t('time.timeline.anyStatus')}</option>
-              {CANON_ORDER.map((status) => (
-                <option key={status} value={status}>
-                  {CANON_LABELS[status]}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          id="chron-canon"
+          label={t('time.timeline.status')}
+          value={canonStatus ?? ''}
+          onChange={(event) => update({ status: event.target.value })}
+          data-testid="chron-canon"
+        >
+          <option value="">{t('time.timeline.anyStatus')}</option>
+          {CANON_ORDER.map((status) => (
+            <option key={status} value={status}>
+              {CANON_LABELS[status]}
+            </option>
+          ))}
         </Field>
 
         <EntityPicker

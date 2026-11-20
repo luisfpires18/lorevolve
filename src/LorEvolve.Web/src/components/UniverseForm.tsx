@@ -113,24 +113,16 @@ export function UniverseForm({
           />
 
           <Field
+            as="textarea"
             label={t('universe.form.description')}
             id="description"
             error={fieldErrors.description}
-          >
-            {(control) => (
-              <textarea
-                id={control.id}
-                name="description"
-                className="field__input field__input--area"
-                rows={3}
-                maxLength={2000}
-                value={description}
-                aria-describedby={control['aria-describedby']}
-                aria-invalid={control['aria-invalid']}
-                onChange={(event) => setDescription(event.target.value)}
-              />
-            )}
-          </Field>
+            name="description"
+            rows={3}
+            maxLength={2000}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
 
           <CheckField
             label={t('universe.form.aiHelp')}

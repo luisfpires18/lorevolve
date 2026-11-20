@@ -83,25 +83,17 @@ export function PublicNameForm() {
         error={error || undefined}
         announce
         errorTestId="public-name-error"
-      >
-        {(control) => (
-          <input
-            id={control.id}
-            className="field__input"
-            dir="auto"
-            maxLength={PUBLIC_NAME_MAX}
-            value={value}
-            disabled={!loaded}
-            aria-describedby={control['aria-describedby']}
-            aria-invalid={control['aria-invalid']}
-            onChange={(event) => {
-              setDone(false)
-              setValue(event.target.value)
-            }}
-            data-testid="public-name"
-          />
-        )}
-      </Field>
+        name={null}
+        dir="auto"
+        maxLength={PUBLIC_NAME_MAX}
+        value={value}
+        disabled={!loaded}
+        onChange={(event) => {
+          setDone(false)
+          setValue(event.target.value)
+        }}
+        data-testid="public-name"
+      />
       <FormActions
         submitLabel={t('account.publicName.save')}
         busy={isSaving}

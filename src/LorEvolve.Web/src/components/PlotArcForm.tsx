@@ -123,57 +123,39 @@ export function PlotArcForm({
         label={t('stories.arcForm.titleLabel')}
         hint={t('stories.arcForm.titleHint')}
         error={fieldErrors.title}
-      >
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            ref={title}
-            type="text"
-            dir="auto"
-            placeholder={t('stories.arcForm.titlePlaceholder')}
-            value={draft.title}
-            onChange={(event) => edit({ title: event.target.value })}
-            data-testid="plot-arc-title-input"
-          />
-        )}
-      </Field>
+        name={null}
+        ref={title}
+        type="text"
+        dir="auto"
+        placeholder={t('stories.arcForm.titlePlaceholder')}
+        value={draft.title}
+        onChange={(event) => edit({ title: event.target.value })}
+        data-testid="plot-arc-title-input"
+      />
 
       <Field
+        as="textarea"
         id="plot-arc-description"
         label={t('stories.arcForm.descriptionLabel')}
         hint={t('stories.arcForm.descriptionHint')}
         error={fieldErrors.description}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={3}
-            value={draft.description}
-            onChange={(event) => edit({ description: event.target.value })}
-            data-testid="plot-arc-description-input"
-          />
-        )}
-      </Field>
+        rows={3}
+        value={draft.description}
+        onChange={(event) => edit({ description: event.target.value })}
+        data-testid="plot-arc-description-input"
+      />
 
       <Field
+        as="textarea"
         id="plot-arc-notes"
         label={t('stories.arcForm.notesLabel')}
         hint={t('stories.arcForm.notesHint')}
         error={fieldErrors.notes}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            value={draft.notes}
-            onChange={(event) => edit({ notes: event.target.value })}
-            data-testid="plot-arc-notes-input"
-          />
-        )}
-      </Field>
+        rows={4}
+        value={draft.notes}
+        onChange={(event) => edit({ notes: event.target.value })}
+        data-testid="plot-arc-notes-input"
+      />
     </Drawer>
   )
 }

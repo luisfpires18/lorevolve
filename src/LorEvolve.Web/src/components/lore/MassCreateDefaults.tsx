@@ -38,26 +38,20 @@ export function MassCreateDefaults({
   return (
     <section className="masscreate__defaults" aria-label={t('lore.massCreate.defaults')}>
       <Field
+        as="select"
         label={t('lore.massCreate.defaultType')}
         id={`${id}-default-type`}
         className="masscreate__default"
+        value={defaultTypeId}
+        onChange={(event) => setChosenTypeId(event.target.value)}
+        disabled={eligible.length === 0}
+        data-testid="mass-default-type"
       >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value={defaultTypeId}
-            onChange={(event) => setChosenTypeId(event.target.value)}
-            disabled={eligible.length === 0}
-            data-testid="mass-default-type"
-          >
-            {choices.map(({ type, label }) => (
-              <option key={type.id} value={type.id} disabled={hasRequiredFields(type)}>
-                {hasRequiredFields(type) ? t('lore.massCreate.hasRequired', { label }) : label}
-              </option>
-            ))}
-          </select>
-        )}
+        {choices.map(({ type, label }) => (
+          <option key={type.id} value={type.id} disabled={hasRequiredFields(type)}>
+            {hasRequiredFields(type) ? t('lore.massCreate.hasRequired', { label }) : label}
+          </option>
+        ))}
       </Field>
 
       <CanonStatusPicker

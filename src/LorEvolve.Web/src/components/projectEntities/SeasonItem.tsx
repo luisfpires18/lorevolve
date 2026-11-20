@@ -103,18 +103,15 @@ export function SeasonItem({
                 .catch(failing)
             }}
           >
-            <Field label={t('projects.seasons.name')} requiredMark>
-              {(control) => (
-                <input
-                  {...control}
-                  className="field__input"
-                  value={renameTo}
-                  onChange={(event) => setRenameTo(event.target.value)}
-                  data-testid="project-season-rename-name"
-                  required
-                />
-              )}
-            </Field>
+            <Field
+              label={t('projects.seasons.name')}
+              requiredMark
+              name={null}
+              value={renameTo}
+              onChange={(event) => setRenameTo(event.target.value)}
+              data-testid="project-season-rename-name"
+              required
+            />
             {/* Without this the only way out of a rename the author thought better of was to save it. */}
             <FormActions
               submitLabel={t('projects.seasons.renameSave')}

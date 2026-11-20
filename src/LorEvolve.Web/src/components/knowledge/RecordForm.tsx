@@ -136,22 +136,18 @@ export function RecordForm({
         errors={errors}
       />
 
-      <Field label={t('ai.knowledge.form.statement')} id={statementId} error={errors.statement}>
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={3}
-            dir="auto"
-            maxLength={KNOWLEDGE_STATEMENT_MAX_LENGTH}
-            value={draft.statement}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, statement: event.target.value }))
-            }
-            data-testid="knowledge-statement"
-          />
-        )}
-      </Field>
+      <Field
+        as="textarea"
+        label={t('ai.knowledge.form.statement')}
+        id={statementId}
+        error={errors.statement}
+        rows={3}
+        dir="auto"
+        maxLength={KNOWLEDGE_STATEMENT_MAX_LENGTH}
+        value={draft.statement}
+        onChange={(event) => setDraft((current) => ({ ...current, statement: event.target.value }))}
+        data-testid="knowledge-statement"
+      />
 
       <CheckField
         id={startId}

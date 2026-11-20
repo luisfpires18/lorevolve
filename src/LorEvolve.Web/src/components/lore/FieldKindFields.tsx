@@ -45,6 +45,7 @@ export function FieldKindFields({
       />
 
       <Field
+        as="select"
         label={t('entityTypes.fields.kind')}
         id="field-kind"
         hint={
@@ -56,23 +57,16 @@ export function FieldKindFields({
             </span>
           ) : undefined
         }
+        value={kind}
+        disabled={kindLocked}
+        onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
+        data-testid="field-kind"
       >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value={kind}
-            disabled={kindLocked}
-            onChange={(event) => chooseKind(Number(event.target.value) as FieldKindValue)}
-            data-testid="field-kind"
-          >
-            {KIND_ORDER.map((each) => (
-              <option key={each} value={each}>
-                {FIELD_KIND_LABELS[each]}
-              </option>
-            ))}
-          </select>
-        )}
+        {KIND_ORDER.map((each) => (
+          <option key={each} value={each}>
+            {FIELD_KIND_LABELS[each]}
+          </option>
+        ))}
       </Field>
 
       {hasOptions ? (

@@ -68,20 +68,12 @@ export function PublicAttributionField({
             id={workId}
             error={fieldErrors.originalwork}
             announce
-          >
-            {(control) => (
-              <input
-                id={control.id}
-                className="field__input"
-                maxLength={ORIGINAL_WORK_MAX}
-                value={attribution.work}
-                aria-describedby={control['aria-describedby']}
-                aria-invalid={control['aria-invalid']}
-                onChange={(event) => attribute({ work: event.target.value })}
-                data-testid="original-work"
-              />
-            )}
-          </Field>
+            name={null}
+            maxLength={ORIGINAL_WORK_MAX}
+            value={attribution.work}
+            onChange={(event) => attribute({ work: event.target.value })}
+            data-testid="original-work"
+          />
         </div>
       ) : null}
     </Field>

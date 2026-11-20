@@ -47,67 +47,53 @@ export function SceneFormFields({
 
   return (
     <>
-      <Field id="scene-title" label={t('stories.sceneForm.titleLabel')} error={fieldErrors.title}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            ref={title}
-            type="text"
-            dir="auto"
-            placeholder={t('stories.sceneForm.titlePlaceholder')}
-            value={draft.title}
-            onChange={(event) => edit({ title: event.target.value })}
-            data-testid="scene-title-input"
-          />
-        )}
-      </Field>
+      <Field
+        id="scene-title"
+        label={t('stories.sceneForm.titleLabel')}
+        error={fieldErrors.title}
+        name={null}
+        ref={title}
+        type="text"
+        dir="auto"
+        placeholder={t('stories.sceneForm.titlePlaceholder')}
+        value={draft.title}
+        onChange={(event) => edit({ title: event.target.value })}
+        data-testid="scene-title-input"
+      />
 
       {chapters.length > 0 ? (
         <Field
+          as="select"
           id="scene-chapter"
           label={t('stories.sceneForm.chapterLabel')}
           hint={
             scene ? t('stories.sceneForm.chapterHintMove') : t('stories.sceneForm.chapterHintNew')
           }
           error={fieldErrors.chapterid}
+          value={draft.chapterId}
+          onChange={(event) => edit({ chapterId: event.target.value })}
+          data-testid="scene-chapter-select"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={draft.chapterId}
-              onChange={(event) => edit({ chapterId: event.target.value })}
-              data-testid="scene-chapter-select"
-            >
-              <option value="">{unchaptered()}</option>
-              {chapterChoices(arcs, chapters).map((choice) => (
-                <option key={choice.id} value={choice.id}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
-          )}
+          <option value="">{unchaptered()}</option>
+          {chapterChoices(arcs, chapters).map((choice) => (
+            <option key={choice.id} value={choice.id}>
+              {choice.label}
+            </option>
+          ))}
         </Field>
       ) : null}
 
       <Field
+        as="textarea"
         id="scene-summary"
         label={t('stories.sceneForm.summaryLabel')}
         hint={t('stories.sceneForm.summaryHint')}
         error={fieldErrors.summary}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={3}
-            value={draft.summary}
-            onChange={(event) => edit({ summary: event.target.value })}
-            data-testid="scene-summary-input"
-          />
-        )}
-      </Field>
+        rows={3}
+        value={draft.summary}
+        onChange={(event) => edit({ summary: event.target.value })}
+        data-testid="scene-summary-input"
+      />
 
       {/* A suggestion never changes a scene's beats: the API takes none from one. */}
       {suggesting ? null : (
@@ -119,22 +105,16 @@ export function SceneFormFields({
       )}
 
       <Field
+        as="textarea"
         id="scene-notes"
         label={t('stories.sceneForm.notesLabel')}
         hint={t('stories.sceneForm.notesHint')}
         error={fieldErrors.notes}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            value={draft.notes}
-            onChange={(event) => edit({ notes: event.target.value })}
-            data-testid="scene-notes-input"
-          />
-        )}
-      </Field>
+        rows={4}
+        value={draft.notes}
+        onChange={(event) => edit({ notes: event.target.value })}
+        data-testid="scene-notes-input"
+      />
 
       <div data-testid="scene-pov-field">
         <EntityPicker

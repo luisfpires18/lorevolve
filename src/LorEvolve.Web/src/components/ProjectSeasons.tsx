@@ -95,18 +95,15 @@ export function ProjectSeasons({
               .catch(failing)
           }}
         >
-          <Field label={t('projects.seasons.name')} requiredMark>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                data-testid="project-season-new-name"
-                required
-              />
-            )}
-          </Field>
+          <Field
+            label={t('projects.seasons.name')}
+            requiredMark
+            name={null}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            data-testid="project-season-new-name"
+            required
+          />
           <FormActions
             submitLabel={say.add()}
             busy={busy}

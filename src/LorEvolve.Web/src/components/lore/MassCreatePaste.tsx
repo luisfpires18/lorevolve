@@ -17,6 +17,7 @@ export function MassCreatePaste({
   return (
     <section className="masscreate__paste">
       <Field
+        as="textarea"
         label={t('lore.massCreate.pasteLabel')}
         id={`${id}-paste`}
         hint={<span className="masscreate__hint">{t('lore.massCreate.pasteHint')}</span>}
@@ -31,27 +32,21 @@ export function MassCreatePaste({
             </span>
           ) : undefined
         }
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area masscreate__pastearea"
-            rows={5}
-            value={draft}
-            onChange={onDraftChange}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-                event.preventDefault()
-                if (draft.trim()) take(draft)
-              }
-            }}
-            aria-keyshortcuts="Control+Enter Meta+Enter"
-            autoComplete="off"
-            spellCheck={false}
-            data-testid="mass-paste"
-          />
-        )}
-      </Field>
+        rows={5}
+        value={draft}
+        onChange={onDraftChange}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+            event.preventDefault()
+            if (draft.trim()) take(draft)
+          }
+        }}
+        aria-keyshortcuts="Control+Enter Meta+Enter"
+        autoComplete="off"
+        spellCheck={false}
+        data-testid="mass-paste"
+        controlClassName="masscreate__pastearea"
+      />
       <div>
         <Button
           tone="secondary"

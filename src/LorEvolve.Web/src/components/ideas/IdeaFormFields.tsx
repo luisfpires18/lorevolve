@@ -44,24 +44,19 @@ export function IdeaFormFields({
             <span data-testid="idea-title-error">{fieldErrors.title}</span>
           ) : undefined
         }
-      >
-        {(control) => (
-          <input
-            {...control}
-            ref={titleInput}
-            className="field__input field__input--title"
-            type="text"
-            dir="auto"
-            value={draft.title}
-            maxLength={IDEA_TITLE_MAX_LENGTH}
-            placeholder={t('ideas.editor.fields.titlePlaceholder')}
-            readOnly={isHeld}
-            onChange={(event) => edit({ title: event.target.value })}
-            aria-required="true"
-            data-testid="idea-title"
-          />
-        )}
-      </Field>
+        name={null}
+        ref={titleInput}
+        controlClassName="field__input--title"
+        type="text"
+        dir="auto"
+        value={draft.title}
+        maxLength={IDEA_TITLE_MAX_LENGTH}
+        placeholder={t('ideas.editor.fields.titlePlaceholder')}
+        readOnly={isHeld}
+        onChange={(event) => edit({ title: event.target.value })}
+        aria-required="true"
+        data-testid="idea-title"
+      />
 
       <Field
         as="textarea"
@@ -93,34 +88,27 @@ export function IdeaFormFields({
       />
 
       <Field
+        as="select"
         id={universeFieldId}
         label={t('ideas.editor.fields.universe')}
         hint={t('ideas.editor.fields.universeHint')}
         error={fieldErrors.universeid}
+        value={draft.universeId ?? ''}
+        disabled={isHeld}
+        onChange={(event) => changeUniverse(event.target.value === '' ? null : event.target.value)}
+        data-testid="idea-universe"
+        controlClassName="idea__universe"
       >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select idea__universe"
-            value={draft.universeId ?? ''}
-            disabled={isHeld}
-            onChange={(event) =>
-              changeUniverse(event.target.value === '' ? null : event.target.value)
-            }
-            data-testid="idea-universe"
-          >
-            {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
-              <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
-            ) : null}
-            {(universes ?? []).map((universe) => (
-              <option key={universe.id} value={universe.id}>
-                {universe.isArchived
-                  ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
-                  : universe.name}
-              </option>
-            ))}
-          </select>
-        )}
+        {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
+          <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
+        ) : null}
+        {(universes ?? []).map((universe) => (
+          <option key={universe.id} value={universe.id}>
+            {universe.isArchived
+              ? t('ideas.editor.fields.archivedUniverse', { name: universe.name })
+              : universe.name}
+          </option>
+        ))}
       </Field>
     </>
   )

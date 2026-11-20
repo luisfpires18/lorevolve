@@ -26,26 +26,19 @@ export function ItemNameFields({
         label={isLook ? t('progression.item.label') : t('progression.item.name')}
         id="item-name"
         error={errorOf('name')}
-      >
-        {(control) => (
-          <input
-            {...control}
-            ref={nameInput}
-            className="field__input"
-            dir="auto"
-            placeholder={
-              isLook
-                ? t('progression.item.labelPlaceholder')
-                : t('progression.item.namePlaceholder')
-            }
-            value={draft.name}
-            onChange={(event) => edit({ name: event.target.value })}
-            data-testid={`${kind}-name-input`}
-          />
-        )}
-      </Field>
+        name={null}
+        ref={nameInput}
+        dir="auto"
+        placeholder={
+          isLook ? t('progression.item.labelPlaceholder') : t('progression.item.namePlaceholder')
+        }
+        value={draft.name}
+        onChange={(event) => edit({ name: event.target.value })}
+        data-testid={`${kind}-name-input`}
+      />
 
       <Field
+        as="textarea"
         label={isLook ? t('progression.item.notes') : t('progression.item.whatItIs')}
         id="item-description"
         hint={
@@ -56,20 +49,13 @@ export function ItemNameFields({
               : t('progression.item.hint.appearance')
         }
         error={errorOf('description')}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            dir="auto"
-            maxLength={DESCRIPTION_MAX}
-            value={draft.description}
-            onChange={(event) => edit({ description: event.target.value })}
-            data-testid={`${kind}-description-input`}
-          />
-        )}
-      </Field>
+        rows={4}
+        dir="auto"
+        maxLength={DESCRIPTION_MAX}
+        value={draft.description}
+        onChange={(event) => edit({ description: event.target.value })}
+        data-testid={`${kind}-description-input`}
+      />
     </>
   )
 }

@@ -42,29 +42,25 @@ export function IdeasControls({
       />
 
       {universe ? null : (
-        <Field id={showId} className="ideas__show" label={t('ideas.browser.show')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={show}
-              onChange={(event) => update({ show: event.target.value })}
-              data-testid="ideas-show"
-            >
-              <option value="">{t('ideas.browser.allIdeas')}</option>
-              <option value={UNASSIGNED}>{t('ideas.browser.noUniverse')}</option>
-              {show !== '' && show !== UNASSIGNED && !universes?.some((one) => one.id === show) ? (
-                <option value={show}>{t('ideas.browser.aUniverse')}</option>
-              ) : null}
-              {(universes ?? []).map((one) => (
-                <option key={one.id} value={one.id}>
-                  {one.isArchived
-                    ? t('ideas.browser.archivedUniverse', { name: one.name })
-                    : one.name}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          id={showId}
+          className="ideas__show"
+          label={t('ideas.browser.show')}
+          value={show}
+          onChange={(event) => update({ show: event.target.value })}
+          data-testid="ideas-show"
+        >
+          <option value="">{t('ideas.browser.allIdeas')}</option>
+          <option value={UNASSIGNED}>{t('ideas.browser.noUniverse')}</option>
+          {show !== '' && show !== UNASSIGNED && !universes?.some((one) => one.id === show) ? (
+            <option value={show}>{t('ideas.browser.aUniverse')}</option>
+          ) : null}
+          {(universes ?? []).map((one) => (
+            <option key={one.id} value={one.id}>
+              {one.isArchived ? t('ideas.browser.archivedUniverse', { name: one.name }) : one.name}
+            </option>
+          ))}
         </Field>
       )}
 

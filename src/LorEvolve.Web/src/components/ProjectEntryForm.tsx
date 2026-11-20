@@ -128,30 +128,23 @@ export function ProjectEntryForm({
           })
       }}
     >
-      <Field label={t('projects.entries.name')} requiredMark>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            data-testid={`${prefix}-name`}
-            required
-          />
-        )}
-      </Field>
+      <Field
+        label={t('projects.entries.name')}
+        requiredMark
+        name={null}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        data-testid={`${prefix}-name`}
+        required
+      />
 
-      <Field label={t('projects.entries.summary')}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={summary}
-            onChange={(event) => setSummary(event.target.value)}
-            data-testid={`${prefix}-summary`}
-          />
-        )}
-      </Field>
+      <Field
+        label={t('projects.entries.summary')}
+        name={null}
+        value={summary}
+        onChange={(event) => setSummary(event.target.value)}
+        data-testid={`${prefix}-summary`}
+      />
 
       {fields.length > 0 ? (
         <h3 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h3>

@@ -71,20 +71,17 @@ export function NameSummaryDrawer({
         />
       )}
     >
-      <Field label={t(`${words}.name`)} requiredMark>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={name}
-            maxLength={200}
-            required
-            placeholder={t(`${words}.namePlaceholder`)}
-            data-testid={`${testId}-name`}
-            onChange={(event) => setName(event.target.value)}
-          />
-        )}
-      </Field>
+      <Field
+        label={t(`${words}.name`)}
+        requiredMark
+        name={null}
+        value={name}
+        maxLength={200}
+        required
+        placeholder={t(`${words}.namePlaceholder`)}
+        data-testid={`${testId}-name`}
+        onChange={(event) => setName(event.target.value)}
+      />
       <Field
         as="textarea"
         label={t(`${words}.summary`)}

@@ -93,24 +93,6 @@
   align-self: flex-start;
 }
 
-/* Entries per page, its word beside the select. */
-.lore__pagesize {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.lore__pagesizelabel {
-  font-size: var(--text-ui);
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.lore__pagesizeselect {
-  width: auto;
-  min-width: 5rem;
-}
-
 /* The Lore grid's own card width: as many columns as the width holds at 16.5rem or more - three on a 1440 laptop, four
    at 1536, five at 1920 - so a wide monitor gets more cards per row rather than stretched ones, and a card never drops
    below about 264px, where its square and two lines of summary still read. The skeleton is cut the same way, so nothing

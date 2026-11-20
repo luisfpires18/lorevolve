@@ -43,17 +43,13 @@ export function PanelForm({
         )
       }}
     >
-      <Field label={t('projects.pages.description')}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            data-testid="project-panel-new-description"
-          />
-        )}
-      </Field>
+      <Field
+        label={t('projects.pages.description')}
+        name={null}
+        value={description}
+        onChange={(event) => setDescription(event.target.value)}
+        data-testid="project-panel-new-description"
+      />
       <Field
         as="textarea"
         label={t('projects.pages.dialogue')}

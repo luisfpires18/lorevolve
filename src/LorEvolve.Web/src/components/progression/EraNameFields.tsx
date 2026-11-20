@@ -20,39 +20,31 @@ export function EraNameFields({
   useI18n()
   return (
     <>
-      <Field id="era-name" label={t('time.eraForm.name')} error={errorOf('name')}>
-        {(control) => (
-          <input
-            {...control}
-            ref={nameInput}
-            className="field__input"
-            dir="auto"
-            placeholder={t('time.eraForm.namePlaceholder')}
-            value={draft.name}
-            onChange={(event) => edit({ name: event.target.value })}
-            data-testid="era-name-input"
-          />
-        )}
-      </Field>
+      <Field
+        id="era-name"
+        label={t('time.eraForm.name')}
+        error={errorOf('name')}
+        name={null}
+        ref={nameInput}
+        dir="auto"
+        placeholder={t('time.eraForm.namePlaceholder')}
+        value={draft.name}
+        onChange={(event) => edit({ name: event.target.value })}
+        data-testid="era-name-input"
+      />
 
       <Field
+        as="textarea"
         id="era-description"
         label={t('time.eraForm.happens')}
         hint={t('time.eraForm.happensHint', { name: entityName })}
         error={errorOf('description')}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            dir="auto"
-            value={draft.description}
-            onChange={(event) => edit({ description: event.target.value })}
-            data-testid="era-description-input"
-          />
-        )}
-      </Field>
+        rows={4}
+        dir="auto"
+        value={draft.description}
+        onChange={(event) => edit({ description: event.target.value })}
+        data-testid="era-description-input"
+      />
     </>
   )
 }

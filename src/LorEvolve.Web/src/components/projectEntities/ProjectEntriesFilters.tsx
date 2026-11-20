@@ -5,6 +5,7 @@ import { t, useI18n } from '../../i18n'
 import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntriesRead'
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
 import { Button } from '../Button'
+import { Field } from '../Field'
 import { SearchField } from '../SearchField'
 
 /** Search, sort, nested and Clear for one type's entries. */
@@ -43,22 +44,19 @@ export function ProjectEntriesFilters({
             onChange={setSearchText}
             testId="project-entries-search"
           />
-          <div className="lore__pagesize">
-            <label className="lore__pagesizelabel" htmlFor="project-entries-sort">
-              {t('lore.page.sortBy')}
-            </label>
-            <select
-              id="project-entries-sort"
-              className="field__input field__input--select lore__pagesizeselect"
-              value={sort}
-              onChange={(event) => setFilter({ sort: event.target.value || null })}
-              data-testid="project-entries-sort"
-            >
-              <option value="">{t('lore.page.sortName')}</option>
-              <option value="updated">{t('lore.page.sortUpdated')}</option>
-              <option value="created">{t('lore.page.sortCreated')}</option>
-            </select>
-          </div>
+          <Field
+            as="select"
+            look="inline"
+            id="project-entries-sort"
+            label={t('lore.page.sortBy')}
+            value={sort}
+            onChange={(event) => setFilter({ sort: event.target.value || null })}
+            data-testid="project-entries-sort"
+          >
+            <option value="">{t('lore.page.sortName')}</option>
+            <option value="updated">{t('lore.page.sortUpdated')}</option>
+            <option value="created">{t('lore.page.sortCreated')}</option>
+          </Field>
           {type && buildTypeTree(types).byId.get(type.id)?.children.length ? (
             <label className="check">
               <input

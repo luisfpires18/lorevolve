@@ -189,40 +189,32 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         />
       ) : null}
 
-      <Field label={t('stories.storyForm.titleLabel')} id="story-title" error={fieldErrors.title}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            ref={title}
-            type="text"
-            dir="auto"
-            placeholder={t('stories.storyForm.titlePlaceholder')}
-            value={draft.title}
-            onChange={(event) => edit({ title: event.target.value })}
-            data-testid="story-title-input"
-          />
-        )}
-      </Field>
+      <Field
+        label={t('stories.storyForm.titleLabel')}
+        id="story-title"
+        error={fieldErrors.title}
+        name={null}
+        ref={title}
+        type="text"
+        dir="auto"
+        placeholder={t('stories.storyForm.titlePlaceholder')}
+        value={draft.title}
+        onChange={(event) => edit({ title: event.target.value })}
+        data-testid="story-title-input"
+      />
 
       <Field
+        as="textarea"
         label={t('stories.storyForm.premiseLabel')}
         id="story-premise"
         hint={t('stories.storyForm.premiseHint')}
         error={fieldErrors.premise}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            placeholder={t('stories.storyForm.premisePlaceholder')}
-            value={draft.premise}
-            onChange={(event) => edit({ premise: event.target.value })}
-            data-testid="story-premise-input"
-          />
-        )}
-      </Field>
+        rows={4}
+        placeholder={t('stories.storyForm.premisePlaceholder')}
+        value={draft.premise}
+        onChange={(event) => edit({ premise: event.target.value })}
+        data-testid="story-premise-input"
+      />
 
       <SegmentedField
         label={t('stories.storyForm.statusLabel')}

@@ -45,6 +45,24 @@
   align-items: inherit;
 }
 
+/* A field with its label beside the control, in one row: a sort or page size select in a toolbar. */
+.field--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field--inline > .field__label {
+  margin-bottom: 0;
+  font-size: var(--text-ui);
+  white-space: nowrap;
+}
+
+.field--inline > .field__input {
+  width: auto;
+  min-width: 5rem;
+}
+
 /* A hidden label is absolute, placed by an ancestor far outside the field; at that ancestor's corner it cannot hang
    below a scrolling drawer and make the drawer itself scroll a few pixels. */
 .field > .field__label.visually-hidden {

@@ -33,59 +33,43 @@ export function FieldMeaningShape({
     <>
       {semanticsFor(kind).length > 0 ? (
         <Field
+          as="select"
           label={t('entityTypes.fields.canonMeaningLabel')}
           id="field-semantic"
           hint={t('entityTypes.fields.semanticHint')}
           error={fieldErrors.semantic}
+          value={semantic ?? ''}
+          onChange={(event) =>
+            setSemantic(
+              event.target.value === '' ? null : (Number(event.target.value) as FieldSemanticValue),
+            )
+          }
+          data-testid="field-semantic"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={semantic ?? ''}
-              onChange={(event) =>
-                setSemantic(
-                  event.target.value === ''
-                    ? null
-                    : (Number(event.target.value) as FieldSemanticValue),
-                )
-              }
-              data-testid="field-semantic"
-            >
-              <option value="">{t('entityTypes.fields.none')}</option>
-              {semanticsFor(kind).map((each) => (
-                <option key={each} value={each}>
-                  {FIELD_SEMANTIC_LABELS[each]}
-                </option>
-              ))}
-            </select>
-          )}
+          <option value="">{t('entityTypes.fields.none')}</option>
+          {semanticsFor(kind).map((each) => (
+            <option key={each} value={each}>
+              {FIELD_SEMANTIC_LABELS[each]}
+            </option>
+          ))}
         </Field>
       ) : null}
 
       {isImage ? (
         <Field
+          as="select"
           label={t('entityTypes.fields.imageShape')}
           id="field-image-shape"
           hint={t('entityTypes.fields.imageShapeHint')}
+          value={imageShape}
+          onChange={(event) => setImageShape(Number(event.target.value) as FieldImageShapeValue)}
+          data-testid="field-image-shape"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={imageShape}
-              onChange={(event) =>
-                setImageShape(Number(event.target.value) as FieldImageShapeValue)
-              }
-              data-testid="field-image-shape"
-            >
-              {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
-                <option key={each} value={each}>
-                  {FIELD_IMAGE_SHAPE_LABELS[each]}
-                </option>
-              ))}
-            </select>
-          )}
+          {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+            <option key={each} value={each}>
+              {FIELD_IMAGE_SHAPE_LABELS[each]}
+            </option>
+          ))}
         </Field>
       ) : null}
     </>
