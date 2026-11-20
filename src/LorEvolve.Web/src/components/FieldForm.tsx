@@ -3,28 +3,15 @@ import { Field } from './Field'
 import {
   FIELD_IMAGE_SHAPE_LABELS,
   FIELD_IMAGE_SHAPE_ORDER,
+  FIELD_KIND_LABELS,
   FieldImageShape,
   type FieldImageShapeValue,
 } from '../lore/fieldKinds'
 import { FieldKind, type FieldKindValue, type ProjectField } from '../projectEntities/types'
+import { PROJECT_FIELD_KINDS } from '../projectEntities/fieldDefinition'
+import { CheckField } from './CheckField'
 import { t, useI18n } from '../i18n'
 import { FormActions } from './FormActions'
-
-/** The kinds an author can choose in this screen. EntityReference is not among them: a link field needs a target. */
-const KINDS: readonly { kind: FieldKindValue; label: () => string }[] = [
-  { kind: FieldKind.ShortText, label: () => t('projects.schema.kind.shortText') },
-  { kind: FieldKind.LongText, label: () => t('projects.schema.kind.longText') },
-  { kind: FieldKind.Number, label: () => t('projects.schema.kind.number') },
-  { kind: FieldKind.Boolean, label: () => t('projects.schema.kind.boolean') },
-  { kind: FieldKind.Date, label: () => t('projects.schema.kind.date') },
-  { kind: FieldKind.Select, label: () => t('projects.schema.kind.select') },
-  { kind: FieldKind.MultiSelect, label: () => t('projects.schema.kind.multiSelect') },
-  { kind: FieldKind.Image, label: () => t('projects.schema.kind.image') },
-]
-
-export function kindLabel(kind: FieldKindValue) {
-  return KINDS.find((each) => each.kind === kind)?.label() ?? ''
-}
 
 /** The form that adds one field. Choices are asked for only by the two kinds that have them. */
 export function FieldForm({
@@ -80,7 +67,7 @@ export function FieldForm({
         })
       }}
     >
-      <Field label={t('projects.schema.fieldName')}>
+      <Field label={t('projects.schema.fieldName')} requiredMark>
         {(control) => (
           <input
             {...control}
@@ -93,70 +80,52 @@ export function FieldForm({
         )}
       </Field>
 
-      <Field label={t('projects.schema.fieldKind')}>
-        {(control) => (
-          <select
-            {...control}
-            className="field__input"
-            value={kind}
-            onChange={(event) => setKind(Number(event.target.value) as FieldKindValue)}
-            data-testid="project-field-new-kind"
-          >
-            {KINDS.map((each) => (
-              <option key={each.kind} value={each.kind}>
-                {each.label()}
-              </option>
-            ))}
-          </select>
-        )}
+      <Field
+        as="select"
+        label={t('projects.schema.fieldKind')}
+        value={kind}
+        onChange={(event) => setKind(Number(event.target.value) as FieldKindValue)}
+        data-testid="project-field-new-kind"
+      >
+        {PROJECT_FIELD_KINDS.map((each) => (
+          <option key={each} value={each}>
+            {FIELD_KIND_LABELS[each]}
+          </option>
+        ))}
       </Field>
 
       {choosing ? (
-        <Field label={t('projects.schema.fieldOptions')}>
-          {(control) => (
-            <textarea
-              {...control}
-              className="field__input"
-              value={options}
-              onChange={(event) => setOptions(event.target.value)}
-              data-testid="project-field-new-options"
-            />
-          )}
-        </Field>
+        <Field
+          as="textarea"
+          label={t('projects.schema.fieldOptions')}
+          value={options}
+          onChange={(event) => setOptions(event.target.value)}
+          data-testid="project-field-new-options"
+        />
       ) : null}
 
       {isImage ? (
-        <Field label={t('projects.schema.imageShape')} hint={t('projects.schema.imageShapeHint')}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input"
-              value={imageShape}
-              onChange={(event) =>
-                setImageShape(Number(event.target.value) as FieldImageShapeValue)
-              }
-              data-testid="project-field-new-image-shape"
-            >
-              {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
-                <option key={each} value={each}>
-                  {FIELD_IMAGE_SHAPE_LABELS[each]}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          label={t('projects.schema.imageShape')}
+          hint={t('projects.schema.imageShapeHint')}
+          value={imageShape}
+          onChange={(event) => setImageShape(Number(event.target.value) as FieldImageShapeValue)}
+          data-testid="project-field-new-image-shape"
+        >
+          {FIELD_IMAGE_SHAPE_ORDER.map((each) => (
+            <option key={each} value={each}>
+              {FIELD_IMAGE_SHAPE_LABELS[each]}
+            </option>
+          ))}
         </Field>
       ) : (
-        <div className="field">
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={required}
-              onChange={(event) => setRequired(event.target.checked)}
-              data-testid="project-field-new-required"
-            />
-            <span>{t('projects.schema.fieldRequired')}</span>
-          </label>
-        </div>
+        <CheckField
+          label={<span>{t('projects.schema.fieldRequired')}</span>}
+          checked={required}
+          onChange={setRequired}
+          testId="project-field-new-required"
+        />
       )}
 
       <FormActions

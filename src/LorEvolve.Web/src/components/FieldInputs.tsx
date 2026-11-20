@@ -69,9 +69,8 @@ export function FieldInput({
 }: FieldInputProps) {
   const { t } = useI18n()
   const id = `field-${definition.id}`
-  const label = definition.isRequired
-    ? t('entityTypes.input.requiredLabel', { name: definition.name })
-    : definition.name
+  const label = definition.name
+  const requiredMark = definition.isRequired
 
   // A link chosen in this form, kept for its name: the value itself is only an id.
   const [chosen, setChosen] = useState<EntityChoice | null>(null)
@@ -132,6 +131,7 @@ export function FieldInput({
     return (
       <EntityPicker
         label={label}
+        requiredMark={requiredMark}
         universeId={universeId}
         value={held}
         onChange={(next) => {
@@ -150,7 +150,7 @@ export function FieldInput({
 
   if (definition.kind === FieldKind.MultiSelect) {
     return (
-      <Field label={label} id={id} group error={error}>
+      <Field label={label} requiredMark={requiredMark} id={id} group error={error}>
         {(control) => (
           <div className="choices" {...control}>
             {definition.options.map((option) => {
@@ -180,7 +180,7 @@ export function FieldInput({
   }
 
   return (
-    <Field label={label} id={id} error={error}>
+    <Field label={label} requiredMark={requiredMark} id={id} error={error}>
       {(control) => (
         <>
           {definition.kind === FieldKind.ShortText ? (

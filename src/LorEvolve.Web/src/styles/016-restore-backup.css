@@ -105,19 +105,3 @@
     margin-bottom: 0.55rem;
   }
 }
-
-.field__input--area {
-  resize: vertical;
-  line-height: 1.6;
-  padding: 0.6rem 0.75rem;
-}
-
-/* Three rows is a paragraph on a desktop and a keyhole on a phone, where the same text
-   wraps to eight or nine lines. The box is given a height worth writing in; it is still
-   resizable. */
-@media (max-width: 640px) {
-  .field__input--area,
-  .entry__summaryinput {
-    min-height: 8rem;
-  }
-}

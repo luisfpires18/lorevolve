@@ -1,4 +1,12 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react'
+import {
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react'
+import { useI18n } from '../i18n'
+import { CharCount, countShows, type CharCountProps } from './CharCount'
 
 interface FieldBase {
   label: ReactNode
@@ -10,20 +18,51 @@ interface FieldBase {
   className?: string
   /** The label stays for screen readers and is not drawn. */
   hideLabel?: boolean
+  /** Draws " (required)" after the label; native `required` is a separate prop. */
+  requiredMark?: boolean
+  /** The error paragraph is read out as it appears. */
+  announce?: boolean
+  /** A test id on the error paragraph. */
+  errorTestId?: string
 }
+
+/** A character count under the control; its id is the field's id plus `-count`. */
+type FieldCount = Omit<CharCountProps, 'id'>
 
 /** Input form: `id` is `name`, everything else goes on the `<input>`. */
 type InputField = FieldBase &
   Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'children'> & {
     name: string
+    as?: undefined
+    count?: FieldCount
     children?: undefined
   }
 
-/** Slot form: any labelable control (select, textarea, a custom control). */
+/** Textarea form: `id` is `name ?? id`, everything else goes on the `<textarea>`. */
+type TextareaField = FieldBase &
+  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className' | 'children'> & {
+    as: 'textarea'
+    controlClassName?: string
+    count?: FieldCount
+    children?: undefined
+  }
+
+/** Select form: `id` is `name ?? id`, `children` are its options. */
+type SelectField = FieldBase &
+  Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> & {
+    as: 'select'
+    controlClassName?: string
+    count?: undefined
+    children: ReactNode
+  }
+
+/** Slot form: any labelable control (a custom control). */
 interface SlotField extends FieldBase {
   id?: string
+  as?: undefined
   'data-testid'?: string
   group?: false
+  count?: FieldCount
   children: (control: {
     id: string
     'aria-describedby'?: string
@@ -34,8 +73,10 @@ interface SlotField extends FieldBase {
 /** Group form: buttons or a set of checkboxes, joined to the label by aria-labelledby. */
 interface GroupField extends FieldBase {
   id?: string
+  as?: undefined
   'data-testid'?: string
   group: true
+  count?: undefined
   children: (control: {
     role: 'group'
     'aria-labelledby': string
@@ -46,70 +87,114 @@ interface GroupField extends FieldBase {
 /** Fieldset form: a set of controls under a native legend; keeps the fieldset's group name and `disabled`. */
 interface FieldsetField extends FieldBase {
   id?: string
+  as?: undefined
   'data-testid'?: string
   group: 'fieldset'
   disabled?: boolean
+  count?: undefined
   children: ReactNode
 }
 
-type FieldProps = InputField | SlotField | GroupField | FieldsetField
+type FieldProps = InputField | TextareaField | SelectField | SlotField | GroupField | FieldsetField
 
-/** A field: label, hint, control, error, in that order. Overloads give each form its own `children` type. */
+/** A field: label, hint, control, count, error, in that order. Overloads give each form its own `children` type. */
 export function Field(props: InputField): ReactNode
+export function Field(props: TextareaField): ReactNode
+export function Field(props: SelectField): ReactNode
 export function Field(props: SlotField): ReactNode
 export function Field(props: GroupField): ReactNode
 export function Field(props: FieldsetField): ReactNode
 export function Field(props: FieldProps) {
   const auto = useId()
-  const { label, hint, error } = props
-  const id = 'name' in props ? props.name : (props.id ?? auto)
+  const { t } = useI18n()
+  const { label, hint, error, count } = props
+  const id =
+    'name' in props && props.name ? props.name : 'id' in props && props.id ? props.id : auto
   const hintId = `${id}-hint`
   const errorId = `${id}-error`
   const labelId = `${id}-label`
+  const countId = `${id}-count`
   const labelClass = props.hideLabel ? 'field__label visually-hidden' : 'field__label'
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ')
+  const showsCount = count ? countShows(count) : false
+  const overCount = count ? count.used > count.max : false
+  const describedBy = [hint ? hintId : null, showsCount ? countId : null, error ? errorId : null]
+    .filter(Boolean)
+    .join(' ')
+  const invalid = error || overCount ? true : undefined
+  const labelText = props.requiredMark ? (
+    <>
+      {label} {t('shell.fields.required')}
+    </>
+  ) : (
+    label
+  )
+  const forLabel = (
+    <label className={labelClass} htmlFor={id}>
+      {labelText}
+    </label>
+  )
 
   let control: ReactNode
   let testId: string | undefined
-  let labelNode: ReactNode
+  let labelNode: ReactNode = forLabel
   let Wrapper: 'div' | 'fieldset' = 'div'
   let disabled: boolean | undefined
-  if ('name' in props) {
+  if (props.as === 'textarea' || props.as === 'select' || 'name' in props) {
     const {
       label: _l,
       hint: _h,
       error: _e,
       className: _c,
-      children: _k,
       hideLabel: _x,
-      ...input
-    } = props
-    labelNode = (
-      <label className={labelClass} htmlFor={id}>
-        {label}
-      </label>
-    )
-    control = (
-      <input
-        {...input}
-        id={id}
-        name={props.name}
-        className="field__input"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy || undefined}
-      />
-    )
+      requiredMark: _r,
+      announce: _a,
+      errorTestId: _t,
+      count: _n,
+      as: kind,
+      controlClassName,
+      ...rest
+    } = props as TextareaField & { controlClassName?: string }
+    const own = (rest as { 'aria-describedby'?: string })['aria-describedby']
+    const shared = {
+      id,
+      'aria-invalid': (rest as { 'aria-invalid'?: boolean })['aria-invalid'] ?? invalid,
+      'aria-describedby': [describedBy, own].filter(Boolean).join(' ') || undefined,
+    }
+    if (kind === 'textarea') {
+      control = (
+        <textarea
+          {...rest}
+          {...shared}
+          className={['field__input field__input--area', controlClassName]
+            .filter(Boolean)
+            .join(' ')}
+        />
+      )
+    } else if (kind === 'select') {
+      control = (
+        <select
+          {...(rest as SelectHTMLAttributes<HTMLSelectElement>)}
+          {...shared}
+          className={['field__input field__input--select', controlClassName]
+            .filter(Boolean)
+            .join(' ')}
+        />
+      )
+    } else {
+      const { children: _k, ...input } = rest as InputField
+      control = <input {...input} {...shared} name={id} className="field__input" />
+    }
   } else if (props.group === 'fieldset') {
     testId = props['data-testid']
     Wrapper = 'fieldset'
     disabled = props.disabled
-    labelNode = <legend className="field__label">{label}</legend>
+    labelNode = <legend className={labelClass}>{labelText}</legend>
     control = props.children
   } else if (props.group) {
     testId = props['data-testid']
     labelNode = (
-      <div className="field__label" id={labelId}>
-        {label}
+      <div className={labelClass} id={labelId}>
+        {labelText}
       </div>
     )
     control = props.children({
@@ -119,15 +204,10 @@ export function Field(props: FieldProps) {
     })
   } else {
     testId = props['data-testid']
-    labelNode = (
-      <label className={labelClass} htmlFor={id}>
-        {label}
-      </label>
-    )
     control = props.children({
       id,
       'aria-describedby': describedBy || undefined,
-      'aria-invalid': error ? true : undefined,
+      'aria-invalid': invalid,
     })
   }
 
@@ -145,8 +225,14 @@ export function Field(props: FieldProps) {
         </p>
       ) : null}
       {control}
+      {count ? <CharCount {...count} id={countId} /> : null}
       {error ? (
-        <p className="field__error" id={errorId}>
+        <p
+          className="field__error"
+          id={errorId}
+          role={props.announce ? 'alert' : undefined}
+          data-testid={props.errorTestId}
+        >
           {error}
         </p>
       ) : null}

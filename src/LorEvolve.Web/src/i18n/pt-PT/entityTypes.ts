@@ -72,7 +72,6 @@ const entityTypes: Dictionary['entityTypes'] = {
     legend: 'Ícone',
   },
   input: {
-    requiredLabel: '{name} (obrigatório)',
     unavailable: 'Indisponível',
     searchEntry: 'Procurar uma entrada',
     datePeriodLabel: '{name}: período de datas',

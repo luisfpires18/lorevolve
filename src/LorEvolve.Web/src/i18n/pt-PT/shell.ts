@@ -17,6 +17,9 @@ const shell: Dictionary['shell'] = {
   crumb: {
     label: 'Caminho de navegação',
   },
+  fields: {
+    required: '(obrigatório)',
+  },
   pager: {
     label: 'Paginação',
     previous: 'Anterior',

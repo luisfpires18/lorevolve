@@ -43,16 +43,6 @@ const projectsSchema: Dictionary['projects']['schema'] = {
   fieldAdding: 'A adicionar…',
   fieldSaving: 'A guardar…',
   deleteField: 'Eliminar campo',
-  kind: {
-    shortText: 'Texto curto',
-    longText: 'Texto longo',
-    number: 'Número',
-    boolean: 'Sim ou não',
-    date: 'Data',
-    select: 'Uma opção',
-    multiSelect: 'Várias opções',
-    image: 'Imagem',
-  },
 }
 
 export default projectsSchema

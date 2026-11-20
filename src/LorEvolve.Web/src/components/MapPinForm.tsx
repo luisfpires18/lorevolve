@@ -5,6 +5,7 @@ import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
+import { PercentField } from './PercentField'
 import { createPin, DUPLICATE_LINK_CODE, updatePin } from '../maps/api'
 import {
   MAP_NAME_MAX_LENGTH,
@@ -222,48 +223,25 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
         )}
       </Field>
 
-      <Field
-        group="fieldset"
-        className="mappinform__position"
+      <PercentField
         label={t('places.pinForm.position')}
         hint={t('places.pinForm.positionHint')}
         error={[fieldErrors.x, fieldErrors.y].filter(Boolean).join(' ') || undefined}
-      >
-        <div className="mappinform__coords">
-          <label className="mappinform__coord">
-            <span>{t('places.pinForm.across')}</span>
-            <input
-              className="field__input"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              max={100}
-              step={0.01}
-              value={draft.xPercent}
-              onChange={(event) => edit({ xPercent: event.target.value })}
-              aria-invalid={fieldErrors.x ? true : undefined}
-              data-testid="map-pin-x-input"
-            />
-            <span aria-hidden="true">%</span>
-          </label>
-          <label className="mappinform__coord">
-            <span>{t('places.pinForm.down')}</span>
-            <input
-              className="field__input"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              max={100}
-              step={0.01}
-              value={draft.yPercent}
-              onChange={(event) => edit({ yPercent: event.target.value })}
-              aria-invalid={fieldErrors.y ? true : undefined}
-              data-testid="map-pin-y-input"
-            />
-            <span aria-hidden="true">%</span>
-          </label>
-        </div>
-      </Field>
+        across={{
+          label: t('places.pinForm.across'),
+          value: draft.xPercent,
+          onChange: (xPercent) => edit({ xPercent }),
+          invalid: Boolean(fieldErrors.x),
+          testId: 'map-pin-x-input',
+        }}
+        down={{
+          label: t('places.pinForm.down'),
+          value: draft.yPercent,
+          onChange: (yPercent) => edit({ yPercent }),
+          invalid: Boolean(fieldErrors.y),
+          testId: 'map-pin-y-input',
+        }}
+      />
     </Drawer>
   )
 }

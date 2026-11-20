@@ -3,7 +3,8 @@ import type { ProjectEntityType } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
-import { FieldForm, kindLabel } from '../FieldForm'
+import { FieldForm } from '../FieldForm'
+import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { NewButton } from '../NewButton'
 import { Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
@@ -57,7 +58,7 @@ export function SchemaTypeFields({
                       >
                         <span className="fieldlist__text">
                           <span className="fieldlist__name">{field.name}</span>
-                          <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
+                          <span className="fieldlist__meta">{FIELD_KIND_LABELS[field.kind]}</span>
                         </span>
                       </li>
                     ))}
@@ -70,7 +71,7 @@ export function SchemaTypeFields({
                   <li key={field.id} className="fieldlist__row">
                     <span className="fieldlist__text">
                       <span className="fieldlist__name">{field.name}</span>
-                      <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
+                      <span className="fieldlist__meta">{FIELD_KIND_LABELS[field.kind]}</span>
                     </span>
                     <div className="fieldlist__actions">
                       <ActionMenu
