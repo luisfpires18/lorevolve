@@ -14,6 +14,7 @@ import { useSceneSave } from '../stories/useSceneSave'
 import { SceneFormFields } from './stories/SceneFormFields'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 interface SceneFormProps {
   universeId: string
@@ -183,9 +184,9 @@ export function SceneForm({
       )}
     >
       {suggesting ? (
-        <p className="callout" data-testid="scene-suggesting">
+        <Callout look="callout" as="p" testId="scene-suggesting">
           {t('stories.sceneForm.suggestingNote')}
-        </p>
+        </Callout>
       ) : null}
 
       {message ? <FormMessage testId="scene-error">{message}</FormMessage> : null}

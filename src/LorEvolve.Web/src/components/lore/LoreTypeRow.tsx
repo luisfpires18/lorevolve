@@ -9,6 +9,7 @@ import { useI18n } from '../../i18n'
 import type { EntityType, EntityTypeGroup } from '../../lore/typeDefinitions'
 import { typePathLabel, type TypeNode, type TypeTree } from '../../lore/typeTree'
 import { formatCount } from '../../i18n/format'
+import { Callout } from '../Callout'
 
 /** One type in the Types list: its grip, icon, name, groups and count, its actions, description, why it cannot go, and its fields. */
 export function LoreTypeRow({
@@ -180,10 +181,12 @@ export function LoreTypeRow({
       {type.description ? <p className="types__description prose">{type.description}</p> : null}
 
       {blocked?.typeId === type.id ? (
-        <div
-          className="callout callout--warning types__blocked"
+        <Callout
+          look="callout"
+          tone="warning"
+          className="types__blocked"
           role="alert"
-          data-testid={`type-blocked-${type.name}`}
+          testId={`type-blocked-${type.name}`}
         >
           <p className="types__blockedtext">{blocked.text}</p>
           <p className="types__blockedlinks">
@@ -198,7 +201,7 @@ export function LoreTypeRow({
               </Link>
             ) : null}
           </p>
-        </div>
+        </Callout>
       ) : null}
 
       {openTypeId === type.id ? (

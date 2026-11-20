@@ -6,6 +6,7 @@ import { PublishConfirm } from './PublishConfirm'
 import { UnpublishConfirm } from './UnpublishConfirm'
 import { Section } from '../Section'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 /** Status: public or private, the address, the checklist, a refusal, what was done, the two confirms and the ready hint. */
 export function PublishStatus({
@@ -87,20 +88,21 @@ export function PublishStatus({
       ) : null}
 
       {problem ? (
-        <div
-          className="callout callout--warning publication__problem"
+        <Callout
+          look="callout"
+          tone="warning"
+          className="publication__problem"
           role="alert"
-          tabIndex={-1}
           ref={problemRef}
-          data-testid="publication-problem"
+          testId="publication-problem"
+          title={t('universe.publish.notYet')}
         >
-          <p className="callout__title">{t('universe.publish.notYet')}</p>
           <ul className="publication__missing">
             {problem.map((line) => (
               <li key={line}>{line}</li>
             ))}
           </ul>
-        </div>
+        </Callout>
       ) : null}
 
       {announcement ? (

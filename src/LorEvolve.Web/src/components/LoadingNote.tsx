@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Callout } from './Callout'
 
 /** A read in progress: one quiet line that screen readers hear. */
 export function LoadingNote({
@@ -11,8 +12,8 @@ export function LoadingNote({
   className?: string
 }) {
   return (
-    <p className={className ? `notice ${className}` : 'notice'} role="status" data-testid={testId}>
+    <Callout look="notice" as="p" className={className} role="status" testId={testId}>
       {children}
-    </p>
+    </Callout>
   )
 }

@@ -4,6 +4,7 @@ import { CanonBlockNotice } from '../CanonBlockNotice'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useTrashState } from '../../trash/useTrashState'
 import { ReadGate } from '../ReadGate'
+import { Callout } from '../Callout'
 
 /** What stands above the list: a refused restore's findings, what a restore did, loading, and a failed read. */
 export function TrashNotices({
@@ -12,8 +13,7 @@ export function TrashNotices({
   state,
   blocked,
   outcome,
-  outcomeRef,
-}: Pick<ReturnType<typeof useTrashState>, 'state' | 'blocked' | 'outcome' | 'outcomeRef'> & {
+}: Pick<ReturnType<typeof useTrashState>, 'state' | 'blocked' | 'outcome'> & {
   universe: WorkspaceContext['universe']
   load: (signal?: AbortSignal) => void
 }) {
@@ -23,8 +23,9 @@ export function TrashNotices({
         <CanonBlockNotice universeId={universe.id} findings={blocked} linkSubjects={false} />
       ) : null}
 
+      {/* The row that was restored leaves the list, taking the focus with it: the focus goes to what happened instead. */}
       {outcome ? (
-        <div className="notice trash__outcome" ref={outcomeRef} tabIndex={-1}>
+        <Callout look="notice" className="trash__outcome" focusOnShow>
           <p role="status" data-testid="trash-message">
             {outcome.text}
           </p>
@@ -33,7 +34,7 @@ export function TrashNotices({
               {outcome.link.label}
             </Link>
           ) : null}
-        </div>
+        </Callout>
       ) : null}
 
       {/* The list itself is drawn below the notices. */}

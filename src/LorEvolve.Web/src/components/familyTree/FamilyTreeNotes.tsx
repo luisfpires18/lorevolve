@@ -2,6 +2,7 @@ import { linkSentence } from '../../familyTree/reading'
 import type { FamilyTree } from '../../familyTree/types'
 import { useI18n } from '../../i18n'
 import type { FamilyTreeNode } from '../../familyTree/types'
+import { Callout } from '../Callout'
 
 export function FamilyTreeNotes({
   tree,
@@ -17,16 +18,21 @@ export function FamilyTreeNotes({
   return (
     <>
       {focal.entityTypeFamilyTreeEligible ? null : (
-        <p className="notice" data-testid="family-type-not-enabled">
+        <Callout look="notice" as="p" testId="family-type-not-enabled">
           {tx('places.familyPage.typeNotEnabled', {
             type: <bdi>{focal.entityTypeName}</bdi>,
           })}
-        </p>
+        </Callout>
       )}
 
       {tree.loops.length > 0 ? (
-        <div className="callout callout--warning family__loopnote" data-testid="family-loop">
-          <p className="callout__title">{t('places.familyPage.loopTitle')}</p>
+        <Callout
+          look="callout"
+          tone="warning"
+          className="family__loopnote"
+          testId="family-loop"
+          title={t('places.familyPage.loopTitle')}
+        >
           <p>{t('places.familyPage.loopBody')}</p>
           <ul className="family__loop">
             {tree.loops.flatMap((loop) =>
@@ -40,7 +46,7 @@ export function FamilyTreeNotes({
               }),
             )}
           </ul>
-        </div>
+        </Callout>
       ) : null}
     </>
   )

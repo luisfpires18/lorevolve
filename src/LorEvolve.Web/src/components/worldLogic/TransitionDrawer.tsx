@@ -165,7 +165,7 @@ export function TransitionDrawer({
             </select>
           )}
         </Field>
-        <div className="actions form__actions">
+        <FormActions inline>
           <NewButton
             tone="secondary"
             size="sm"
@@ -183,7 +183,7 @@ export function TransitionDrawer({
           >
             {t(`${gb}.editGuard`)}
           </Button>
-        </div>
+        </FormActions>
       </Drawer>
       {/* A sibling, not a child: a form inside the transition's form would submit both. */}
       {building ? (

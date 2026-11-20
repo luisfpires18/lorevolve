@@ -6,6 +6,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseAccess } from '../../universes/access'
 import { NewButton } from '../NewButton'
+import { Callout } from '../Callout'
 
 export function FamilySetupNotices({
   universe,
@@ -35,15 +36,15 @@ export function FamilySetupNotices({
   return (
     <>
       {hasEligibleType === false ? (
-        <p className="notice" data-testid="family-no-types">
+        <Callout look="notice" as="p" testId="family-no-types">
           {tx('places.familyPage.noTypes', {
             link: <Link to={typesPath}>{t('places.familyPage.noTypesLink')}</Link>,
           })}
-        </p>
+        </Callout>
       ) : null}
 
       {hasEligibleType && kinds !== null && familyKinds.length === 0 ? (
-        <div className="notice family__nokinds" data-testid="family-no-kinds">
+        <Callout look="notice" className="family__nokinds" testId="family-no-kinds">
           <p>
             {tx('places.familyPage.noKinds', {
               link: <Link to={relationKindsPath}>{t('places.familyPage.noKindsLink')}</Link>,
@@ -58,7 +59,7 @@ export function FamilySetupNotices({
               {t('places.familyPage.newKind')}
             </NewButton>
           ) : null}
-        </div>
+        </Callout>
       ) : null}
 
       {isCreatingKind ? (

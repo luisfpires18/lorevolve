@@ -13,6 +13,7 @@ import { chronologyActions } from '../chronology/chronologyActions'
 import { ChronologyUnplaced } from './chronology/ChronologyUnplaced'
 import { ChronologyEraRow } from './chronology/ChronologyEraRow'
 import { Button } from './Button'
+import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
 import { Announce } from './Announce'
 import { Section } from './Section'
@@ -199,7 +200,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
         {/* Nothing to save and no periods to save: no lone disabled button under the empty state. */}
         {dirty || drafts.length > 0 ? (
-          <div className="actions form__actions eras__actions">
+          <FormActions inline className="eras__actions">
             <SaveAction
               label={t('time.periods.save')}
               isDirty={dirty}
@@ -217,7 +218,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
                 {t('shell.actions.discard')}
               </Button>
             ) : null}
-          </div>
+          </FormActions>
         ) : null}
       </Section>
     </>

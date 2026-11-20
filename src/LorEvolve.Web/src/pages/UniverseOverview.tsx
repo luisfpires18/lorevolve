@@ -19,6 +19,7 @@ import {
 import { UniverseRole } from '../universes/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { DateText } from '../components/DateText'
+import { Callout } from '../components/Callout'
 
 /**
  * A universe's front page, set as a book's contents: its name and opening line, then a doorway into
@@ -113,11 +114,11 @@ export default function UniverseOverview() {
       />
 
       {canWrite && emptyId === universe.id ? (
-        <p className="notice" data-testid="overview-start">
+        <Callout look="notice" as="p" testId="overview-start">
           {tx('workspace.overview.empty', {
             lore: <Link to="lore">{t('workspace.overview.emptyLore')}</Link>,
           })}
-        </p>
+        </Callout>
       ) : null}
 
       {world ? <Contents {...world} /> : null}

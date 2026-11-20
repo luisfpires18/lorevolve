@@ -5,14 +5,12 @@ import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useTrashState } from './useTrashState'
 import { errorText } from '../lib/errorText'
 
-/** Reads the Trash's page, again when asked, and moves the focus to what a restore did. */
+/** Reads the Trash's page, and again when asked. */
 export function useTrashReads({
   universe,
   page,
   setPage,
   setState,
-  outcome,
-  outcomeRef,
 }: ReturnType<typeof useTrashState> & { universe: WorkspaceContext['universe'] }) {
   const load = useCallback(
     (signal?: AbortSignal) => {
@@ -44,11 +42,6 @@ export function useTrashReads({
       controller.abort()
     }
   }, [load])
-
-  // The row that was restored leaves the list, taking the focus with it: the focus goes to what happened instead.
-  useEffect(() => {
-    if (outcome) outcomeRef.current?.focus()
-  }, [outcome])
 
   return { load }
 }

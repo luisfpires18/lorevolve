@@ -12,7 +12,7 @@ import { Pager } from '../components/Pager'
 import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
 import { LinkRow } from '../components/LinkRow'
-import { OutcomeNotice } from '../components/OutcomeNotice'
+import { Callout } from '../components/Callout'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { DateText } from '../components/DateText'
 
@@ -75,12 +75,14 @@ export default function WorldRulesPage() {
       />
 
       {notice ? (
-        <OutcomeNotice className="rules__notice" testId="world-rules-deleted-notice">
-          {tx('canon.rules.deleted', {
-            title: <Quoted text={notice.title} />,
-            restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
-          })}
-        </OutcomeNotice>
+        <Callout look="notice" className="rules__notice" testId="world-rules-deleted-notice">
+          <p role="status">
+            {tx('canon.rules.deleted', {
+              title: <Quoted text={notice.title} />,
+              restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
+            })}
+          </p>
+        </Callout>
       ) : null}
 
       <ReadGate

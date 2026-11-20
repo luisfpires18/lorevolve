@@ -13,6 +13,7 @@ import type { QuickCreateOptions } from '../EntityPicker'
 import { CopyPanel } from './EntryCopyPanel'
 import { EntryFieldInput } from './EntryFieldInput'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 export type EntryFormProps = {
   universe: { id: string }
@@ -92,9 +93,9 @@ export function EntryForm(props: EntryFormProps) {
       ) : null}
 
       {suggesting ? (
-        <p className="callout" data-testid="entry-suggesting">
+        <Callout look="callout" as="p" testId="entry-suggesting">
           {t('entity.page.suggestingNote')}
-        </p>
+        </Callout>
       ) : (
         <section className="entryform__section">
           <EntityImageField

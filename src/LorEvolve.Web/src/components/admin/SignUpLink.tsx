@@ -5,6 +5,7 @@ import { ApiError } from '../../lib/api'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 import { Section } from '../Section'
 import { DateText } from '../DateText'
 import { FormMessage } from '../FormMessage'
@@ -80,7 +81,7 @@ export function SignUpLink() {
           data-testid="admin-signup-email"
         />
         {error ? <FormMessage>{error}</FormMessage> : null}
-        <div className="actions form__actions">
+        <FormActions inline>
           <Button
             busy={sending}
             busyLabel={t('admin.signUp.sending')}
@@ -97,7 +98,7 @@ export function SignUpLink() {
           >
             {t('admin.signUp.makeLink')}
           </Button>
-        </div>
+        </FormActions>
       </form>
       {sent ? (
         <QuietNote spacing="block" role="status" testId="admin-signup-sent">

@@ -13,7 +13,7 @@ import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
-import { OutcomeNotice } from '../components/OutcomeNotice'
+import { Callout } from '../components/Callout'
 import { QuietNote } from '../components/QuietNote'
 
 type MapsTab = 'maps' | 'interactive'
@@ -71,9 +71,11 @@ export default function MapsPage() {
 
       <TabPanel idPrefix="maps" id="maps" tab={tab}>
         {notice ? (
-          <OutcomeNotice className="maps__notice" testId="maps-deleted-notice">
-            {tx('places.maps.deleted', { name: <Quoted text={notice.name} /> })}
-          </OutcomeNotice>
+          <Callout look="notice" className="maps__notice" testId="maps-deleted-notice">
+            <p role="status">
+              {tx('places.maps.deleted', { name: <Quoted text={notice.name} /> })}
+            </p>
+          </Callout>
         ) : null}
 
         <ReadGate

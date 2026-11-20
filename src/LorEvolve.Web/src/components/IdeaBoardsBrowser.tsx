@@ -15,7 +15,7 @@ import { useI18n } from '../i18n'
 import { NewButton } from './NewButton'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
-import { OutcomeNotice } from './OutcomeNotice'
+import { Callout } from './Callout'
 
 /** What a board's editor says it did before handing back to the list. */
 export interface BoardsListNotice {
@@ -43,8 +43,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
   const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
 
   const base = useBoardsState(search)
-  const { typed, setTyped, state, setState, setReads, universes, restoring, outcome, outcomeRef } =
-    base
+  const { typed, setTyped, state, setState, setReads, universes, restoring, outcome } = base
   const notice = location.state as BoardsListNotice | null
 
   const { update } = useBoardsFilters({ ...base, setParams, search })
@@ -76,14 +75,18 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       <IdeasTabs basePath={ideasPath} current="boards" />
 
       {notice?.created && !deleted ? (
-        <OutcomeNotice className="ideas__notice" testId="boards-created-notice">
-          {tx('ideas.boards.created', { title: <Quoted text={notice.created.title} /> })}
-        </OutcomeNotice>
+        <Callout look="notice" className="ideas__notice" testId="boards-created-notice">
+          <p role="status">
+            {tx('ideas.boards.created', { title: <Quoted text={notice.created.title} /> })}
+          </p>
+        </Callout>
       ) : null}
       {notice?.deleted && !deleted ? (
-        <OutcomeNotice className="ideas__notice" testId="boards-deleted-notice">
-          {tx('ideas.boards.deletedNotice', { title: <Quoted text={notice.deleted.title} /> })}
-        </OutcomeNotice>
+        <Callout look="notice" className="ideas__notice" testId="boards-deleted-notice">
+          <p role="status">
+            {tx('ideas.boards.deletedNotice', { title: <Quoted text={notice.deleted.title} /> })}
+          </p>
+        </Callout>
       ) : null}
 
       <BoardsControls
@@ -99,12 +102,12 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       />
 
       {outcome ? (
-        <div className="notice ideas__outcome" ref={outcomeRef} tabIndex={-1}>
+        <Callout look="notice" className="ideas__outcome" focusOnShow>
           <p role="status" data-testid="boards-message">
             {outcome.text}
           </p>
-          {outcome.to ? <Link to={outcome.to}>{t('ideas.boards.openIt')}</Link> : null}
-        </div>
+          {outcome.link ? <Link to={outcome.link.to}>{outcome.link.label}</Link> : null}
+        </Callout>
       ) : null}
 
       {state.kind === 'loading' ? <LoadingNote>{t('ideas.boards.loading')}</LoadingNote> : null}

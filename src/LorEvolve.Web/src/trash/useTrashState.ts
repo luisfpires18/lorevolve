@@ -1,13 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import type { CanonBlockingFinding } from '../canon/types'
 import type { Load } from '../lib/useAsyncRead'
+import type { Outcome } from '../lib/outcome'
+import { useConfirmFocus } from '../lib/useConfirmFocus'
 import type { TrashItem, TrashPage } from './types'
-
-/** What the last restore did, and the way to what it brought back. */
-export interface Outcome {
-  text: ReactNode
-  link: { to: string; label: ReactNode } | null
-}
 
 /** The Trash's states: the page and its read, restoring and its confirm, erasing, selecting and the bulk erase, with their refs and focus. */
 export function useTrashState() {
@@ -16,7 +12,6 @@ export function useTrashState() {
   const [restoring, setRestoring] = useState<string | null>(null)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
-  const outcomeRef = useRef<HTMLDivElement>(null)
   // A restore that would publish again asks first (Task 012); the question sits in the row it is about.
   const [confirming, setConfirming] = useState<TrashItem | null>(null)
   const confirmRef = useRef<HTMLDivElement>(null)
@@ -46,31 +41,19 @@ export function useTrashState() {
   const selectPageRef = useRef<HTMLButtonElement>(null)
   const selectToggleRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    if (bulkConfirming) bulkPanelRef.current?.focus()
-  }, [bulkConfirming])
+  useConfirmFocus(bulkConfirming, bulkPanelRef)
 
   // Cancelling hands the focus back to the button that asked - once it is enabled again, so after the render.
   const returnFocusTo = useRef<string | null>(null)
   const returnEraseFocusTo = useRef<string | null>(null)
+  const askedBy = (asked: { current: string | null }, buttons: Map<string, HTMLButtonElement>) => {
+    const id = asked.current
+    asked.current = null
+    return id ? buttons.get(id) : null
+  }
 
-  useEffect(() => {
-    if (confirming) {
-      confirmRef.current?.focus()
-    } else if (returnFocusTo.current) {
-      restoreButtons.current.get(returnFocusTo.current)?.focus()
-      returnFocusTo.current = null
-    }
-  }, [confirming])
-
-  useEffect(() => {
-    if (erasing) {
-      eraseRef.current?.focus()
-    } else if (returnEraseFocusTo.current) {
-      eraseButtons.current.get(returnEraseFocusTo.current)?.focus()
-      returnEraseFocusTo.current = null
-    }
-  }, [erasing])
+  useConfirmFocus(confirming, confirmRef, () => askedBy(returnFocusTo, restoreButtons.current))
+  useConfirmFocus(erasing, eraseRef, () => askedBy(returnEraseFocusTo, eraseButtons.current))
 
   return {
     page,
@@ -83,7 +66,6 @@ export function useTrashState() {
     setBlocked,
     outcome,
     setOutcome,
-    outcomeRef,
     confirming,
     setConfirming,
     confirmRef,

@@ -10,6 +10,7 @@ import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
 import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 export interface Props {
   universeId: string
@@ -125,11 +126,13 @@ export function QuickCreateDialog({
         />
 
         {shownSimilar.length > 0 ? (
-          <div
-            className="callout callout--warning quickcreate__similar"
-            data-testid="quick-create-similar"
+          <Callout
+            look="callout"
+            tone="warning"
+            className="quickcreate__similar"
+            testId="quick-create-similar"
+            title={t('lore.quickCreate.similarTitle')}
           >
-            <p className="callout__title">{t('lore.quickCreate.similarTitle')}</p>
             <p>{t('lore.quickCreate.similarBody')}</p>
             <ul className="quickcreate__matches">
               {shownSimilar.map((item) => (
@@ -161,7 +164,7 @@ export function QuickCreateDialog({
                 </li>
               ))}
             </ul>
-          </div>
+          </Callout>
         ) : null}
 
         {types.kind === 'loading' ? (

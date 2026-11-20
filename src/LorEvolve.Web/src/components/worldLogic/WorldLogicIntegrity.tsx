@@ -11,6 +11,7 @@ import { Button } from '../Button'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { DateText } from '../DateText'
+import { Callout } from '../Callout'
 
 /** The Integrity tab: the check and what it last said, one row per finding, the empty states and the pager. */
 export function WorldLogicIntegrity({
@@ -53,31 +54,35 @@ export function WorldLogicIntegrity({
       ) : null}
 
       {sweepFailed ? (
-        <p
-          className="notice notice--error"
+        <Callout
+          look="notice"
+          tone="error"
+          as="p"
           role="alert"
-          data-testid="world-logic-integrity-check-error"
+          testId="world-logic-integrity-check-error"
         >
           {t('canon.worldLogic.integrity.checkFailed')}
-        </p>
+        </Callout>
       ) : null}
 
       {sweep ? (
-        <p className="notice" data-testid="world-logic-integrity-checked">
+        <Callout look="notice" as="p" testId="world-logic-integrity-checked">
           {tx('canon.worldLogic.integrity.checked', {
             time: <DateText value={sweep.evaluatedAt} withTime />,
           })}
-        </p>
+        </Callout>
       ) : null}
 
       {sweep?.isTruncated ? (
-        <p
-          className="notice notice--error"
+        <Callout
+          look="notice"
+          tone="error"
+          as="p"
           role="status"
-          data-testid="world-logic-integrity-truncated"
+          testId="world-logic-integrity-truncated"
         >
           {t('canon.worldLogic.integrity.truncated')}
-        </p>
+        </Callout>
       ) : null}
 
       {findings.kind === 'loading' ? (

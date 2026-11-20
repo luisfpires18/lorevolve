@@ -12,6 +12,7 @@ import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
+import { Callout } from './Callout'
 
 /**
  * A type's field sections (Issue #26) in the drawer every LorEvolve form uses: name, order, fold and remove sections, put each
@@ -93,8 +94,12 @@ export function FieldSectionsDialog({
       {message ? <FormMessage testId="sections-dialog-error">{message}</FormMessage> : null}
 
       {stale ? (
-        <div className="callout callout--warning" data-testid="sections-dialog-stale">
-          <p className="callout__title">{t('entityTypes.sections.savedNow')}</p>
+        <Callout
+          look="callout"
+          tone="warning"
+          testId="sections-dialog-stale"
+          title={t('entityTypes.sections.savedNow')}
+        >
           <p className="fieldconflict__saved">
             {type.fieldSections.length === 0
               ? t('entityTypes.sections.noneSaved')
@@ -108,7 +113,7 @@ export function FieldSectionsDialog({
               {t('entityTypes.sections.keepMine')}
             </Button>
           </p>
-        </div>
+        </Callout>
       ) : null}
 
       <QuietNote spacing="hint">{t('entityTypes.sections.hint')}</QuietNote>

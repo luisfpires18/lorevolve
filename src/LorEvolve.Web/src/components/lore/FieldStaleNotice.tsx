@@ -1,6 +1,7 @@
 import { useI18n } from '../../i18n'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
+import { Callout } from '../Callout'
 
 /** A field saved by someone else since the drawer opened: what is saved now, and the choice between it and the draft. */
 export function FieldStaleNotice({
@@ -16,8 +17,12 @@ export function FieldStaleNotice({
 }) {
   const { t, tx } = useI18n()
   return (
-    <div className="callout callout--warning" data-testid="field-dialog-stale">
-      <p className="callout__title">{t('entityTypes.fields.savedNow')}</p>
+    <Callout
+      look="callout"
+      tone="warning"
+      testId="field-dialog-stale"
+      title={t('entityTypes.fields.savedNow')}
+    >
       <p className="fieldconflict__saved">
         {tx(
           latest.archivedAt !== null
@@ -49,6 +54,6 @@ export function FieldStaleNotice({
           </Button>
         ) : null}
       </p>
-    </div>
+    </Callout>
   )
 }

@@ -7,6 +7,7 @@ import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 /** A type's archived fields, folded apart: each with Restore, Delete when it is empty, and the way back as optional. */
 export function ArchivedFields({
@@ -102,10 +103,12 @@ export function ArchivedFields({
               </span>
             ) : null}
             {restoreOffer?.fieldId === field.id ? (
-              <div
-                className="callout callout--warning fieldlist__note"
+              <Callout
+                look="callout"
+                tone="warning"
+                className="fieldlist__note"
                 role="alert"
-                data-testid={`restore-offer-${field.name}`}
+                testId={`restore-offer-${field.name}`}
               >
                 <p className="types__blockedtext">{restoreOffer.text}</p>
                 <p className="types__blockedlinks">
@@ -122,7 +125,7 @@ export function ArchivedFields({
                     {t('entityTypes.fields.restoreShowEntries', { name: type.name })}
                   </Link>
                 </p>
-              </div>
+              </Callout>
             ) : null}
             <FieldBlockedNote
               universeId={universeId}
