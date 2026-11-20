@@ -98,7 +98,7 @@ export function ProjectEntityFields({
           })}
         </dl>
       ) : (
-        <QuietNote testId="game-entity-no-fields">
+        <QuietNote spacing="flush" testId="game-entity-no-fields">
           {t('projects.gameEntities.entity.noFields')}
         </QuietNote>
       )}

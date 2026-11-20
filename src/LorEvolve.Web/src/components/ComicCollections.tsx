@@ -88,7 +88,7 @@ export function ComicCollections({
             />
 
             {ofKind.length === 0 ? (
-              <QuietNote>{t(WORDS[kind].none)}</QuietNote>
+              <QuietNote spacing="flush">{t(WORDS[kind].none)}</QuietNote>
             ) : (
               <ol className="scenes">
                 {ofKind.map((collection, index) => (

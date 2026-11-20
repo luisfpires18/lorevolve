@@ -61,7 +61,7 @@ export function ProjectScript({
     return failed ? (
       <FormMessage testId="project-script-failed">{failed}</FormMessage>
     ) : (
-      <QuietNote>{t('projects.common.loading')}</QuietNote>
+      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
 

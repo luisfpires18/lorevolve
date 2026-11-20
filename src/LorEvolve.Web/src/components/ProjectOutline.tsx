@@ -42,7 +42,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
     return failed ? (
       <FormMessage testId="project-outline-failed">{failed}</FormMessage>
     ) : (
-      <QuietNote>{t('projects.common.loading')}</QuietNote>
+      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
   return (

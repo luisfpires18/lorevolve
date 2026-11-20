@@ -18,7 +18,7 @@ export function KindFormCanon({
   return (
     <fieldset className="reltype__canon" data-testid="reltype-canon">
       <legend className="reltype__legend">{t('relationships.types.canonLegend')}</legend>
-      <QuietNote>{t('relationships.types.canonHint')}</QuietNote>
+      <QuietNote spacing="flush">{t('relationships.types.canonHint')}</QuietNote>
 
       <p className="reltype__direction" data-testid="reltype-direction">
         <span className="reltype__end">{t('relationships.types.source')}</span>
@@ -29,7 +29,9 @@ export function KindFormCanon({
       </p>
 
       {draft.isSymmetric ? (
-        <QuietNote testId="reltype-no-order">{t('relationships.types.noOrder')}</QuietNote>
+        <QuietNote spacing="flush" testId="reltype-no-order">
+          {t('relationships.types.noOrder')}
+        </QuietNote>
       ) : (
         <Field
           label={t('relationships.types.ageOrdering')}

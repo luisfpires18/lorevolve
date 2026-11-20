@@ -23,10 +23,12 @@ export function KindFormFamily({
   return (
     <fieldset className="reltype__canon" data-testid="reltype-family">
       <legend className="reltype__legend">{t('relationships.types.familyLegend')}</legend>
-      <QuietNote>{t('relationships.types.familyHint')}</QuietNote>
+      <QuietNote spacing="flush">{t('relationships.types.familyHint')}</QuietNote>
 
       {draft.isSymmetric ? (
-        <QuietNote testId="reltype-no-family">{t('relationships.types.noFamily')}</QuietNote>
+        <QuietNote spacing="flush" testId="reltype-no-family">
+          {t('relationships.types.noFamily')}
+        </QuietNote>
       ) : null}
 
       <Field
@@ -73,7 +75,7 @@ export function KindFormFamily({
         </p>
       ) : null}
       {draft.familySemantic === FamilySemantic.NonStructuralFamily ? (
-        <QuietNote testId="reltype-family-listed">
+        <QuietNote spacing="flush" testId="reltype-family-listed">
           {t('relationships.types.familyListedHint')}
         </QuietNote>
       ) : null}

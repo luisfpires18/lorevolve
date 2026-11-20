@@ -404,7 +404,7 @@ Repository index. Paths and one-line responsibilities only.
 | `uiContract/lists.test.ts` | #411: keeps a list's pages, Show more, search box and wait for typing on their shared parts: `className="pager"` only in `Pager`, no `onClick` naming `showMore`, `loadMore` or `readMore`, `type="search"` only in `SearchField` and the two header bars, `setTimeout` only in `useDebouncedValue` and eight listed clocks (the allowlists only shrink). |
 | `src/components/LoadError.tsx` | #410: a read that failed, with its retry (`message`, `onRetry`, `retryLabel`, `retryTestId`, `testId`, `className`). Never for an action error or a not-found. |
 | `src/components/LoadingNote.tsx` | #410: a read in progress, `p.notice[role=status]`. |
-| `src/components/QuietNote.tsx` | #410: a quiet line in a panel (`.quietnote` colour and size, `size`, `wrap`, `spacing="block"` or `"hint"`, `size="body"`, `tone="saved"`, `as`); the screen's class keeps only its spacing. Replaces `className="muted"`. |
+| `src/components/QuietNote.tsx` | #410: a quiet line in a panel (`.quietnote` colour and size, `size`, `wrap`, `spacing="block"`, `"hint"` or `"flush"`, `size="body"`, `tone="saved"`, `as`); the screen's class keeps only its spacing. Replaces `className="muted"`. |
 | `src/components/FormMessage.tsx` | #456: the red line under a form, `p.form__message` (`testId`, `id`, `className`, `role`, `tabIndex`, `ref`, `as`); renders nothing when empty. Replaces the hand-written line in every workspace screen. |
 | `src/components/Announce.tsx` | #410: a message for screen readers only, `visually-hidden[role=status]`; `inline` draws a span. |
 | `src/components/OutcomeNotice.tsx` | #410: the confirmation after a create or delete, with an optional link. |

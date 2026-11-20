@@ -37,7 +37,7 @@ export function ProjectCard({
       {head ?? (
         <div className="projectcard__head">
           <Title className={titleClassName}>{title}</Title>
-          {meta ? <QuietNote>{meta}</QuietNote> : null}
+          {meta ? <QuietNote spacing="flush">{meta}</QuietNote> : null}
           {actions ? (
             <div className="actions actions--tight projectcard__actions">{actions}</div>
           ) : null}

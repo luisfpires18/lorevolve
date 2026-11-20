@@ -63,7 +63,7 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
   }
 
   if (templates === null) {
-    return <QuietNote>{t('projects.common.loading')}</QuietNote>
+    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
   }
 
   return (

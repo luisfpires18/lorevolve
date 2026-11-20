@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 /**
  * A quiet line in a panel: nothing yet, a hint, a detail. The colour and size live here; the class passed in keeps
  * only the screen's own spacing. `size` defaults to the small text token. `spacing="block"` is a settings note
- * (the small text, a gap below, a roomy line height); `tone="saved"` is the accent line that says a change was saved. `size="body"` takes the surrounding text size; `spacing="hint"` is a hint with a gap below.
+ * (the small text, a gap below, a roomy line height); `tone="saved"` is the accent line that says a change was saved. `size="body"` takes the surrounding text size; `spacing="hint"` is a hint with a gap below; `spacing="flush"` has no margin.
  */
 export function QuietNote({
   children,
@@ -20,7 +20,7 @@ export function QuietNote({
 }: {
   children: ReactNode
   size?: 'ui' | 'xs' | 'body'
-  spacing?: 'block' | 'hint'
+  spacing?: 'block' | 'hint' | 'flush'
   tone?: 'saved'
   wrap?: boolean
   testId?: string

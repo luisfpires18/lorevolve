@@ -93,7 +93,7 @@ export function SagaSection({
       />
 
       {saga.phases.length === 0 ? (
-        <QuietNote>{t('projects.sagas.noPhases')}</QuietNote>
+        <QuietNote spacing="flush">{t('projects.sagas.noPhases')}</QuietNote>
       ) : (
         <ol className="projectcardlist">
           {saga.phases.map((phase, phaseIndex) => (
@@ -141,7 +141,7 @@ export function SagaSection({
             >
               {phase.summary ? <p className="prose">{phase.summary}</p> : null}
               {phase.members.length === 0 ? (
-                <QuietNote>{t('projects.sagas.noMembers')}</QuietNote>
+                <QuietNote spacing="flush">{t('projects.sagas.noMembers')}</QuietNote>
               ) : (
                 <ol className="fieldlist" data-testid={`phase-members-${phase.id}`}>
                   {phase.members.map((member, memberIndex) => (

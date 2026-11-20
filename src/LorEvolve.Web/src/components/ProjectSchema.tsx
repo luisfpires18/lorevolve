@@ -79,7 +79,7 @@ export function ProjectSchema({
   } = useProjectSchema({ projectId, reloadKey, universeId, onChanged })
 
   if (types === null) {
-    return <QuietNote>{t('projects.common.loading')}</QuietNote>
+    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
   }
 
   const offerStarters = types.length === 0 && template !== null && template.types.length > 0

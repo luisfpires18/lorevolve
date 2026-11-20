@@ -75,7 +75,7 @@ export function PickOneDrawer({
       )}
     >
       {emptyText !== undefined && options.length === 0 ? (
-        <QuietNote>{emptyText}</QuietNote>
+        <QuietNote spacing="flush">{emptyText}</QuietNote>
       ) : (
         <Field
           as="select"

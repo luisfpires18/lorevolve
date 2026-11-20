@@ -23,6 +23,11 @@
   line-height: 1.6;
 }
 
+/* A line with no gap of its own: a card or panel meta line, a hint a container already spaces. */
+.quietnote--flush {
+  margin: 0;
+}
+
 .quietnote--ui {
   font-size: var(--text-ui);
 }

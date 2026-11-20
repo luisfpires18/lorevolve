@@ -38,7 +38,7 @@ export function TemplateFields({
   return (
     <div id={id} className="types__fields" data-testid={`template-fields-panel-${template.id}`}>
       {template.fields.length === 0 ? (
-        <QuietNote>{t('projects.schema.noFields')}</QuietNote>
+        <QuietNote spacing="flush">{t('projects.schema.noFields')}</QuietNote>
       ) : (
         <ul className="fieldlist" data-testid={`template-fields-${template.id}`}>
           {template.fields.map((field) => (

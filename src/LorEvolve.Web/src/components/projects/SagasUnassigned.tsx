@@ -36,7 +36,7 @@ export function SagasUnassigned({
         lede={t('projects.sagas.unassignedHint')}
       />
       {data.unassigned.length === 0 ? (
-        <QuietNote>{t('projects.sagas.noUnassigned')}</QuietNote>
+        <QuietNote spacing="flush">{t('projects.sagas.noUnassigned')}</QuietNote>
       ) : (
         <ul className="fieldlist">
           {data.unassigned.map((production) => (

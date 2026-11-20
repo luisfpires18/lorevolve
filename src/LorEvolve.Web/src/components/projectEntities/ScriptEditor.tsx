@@ -126,7 +126,7 @@ export function ScriptEditor({
        * take back what the author typed in between, which the E2E spec caught doing exactly that.
        */}
       {script === null ? (
-        <QuietNote>{t('projects.common.loading')}</QuietNote>
+        <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
       ) : (
         <Field
           as="textarea"

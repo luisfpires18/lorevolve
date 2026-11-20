@@ -59,7 +59,7 @@ export function MomentDetails({
       </summary>
 
       <div className="moment__detailsbody">
-        <QuietNote>{t('time.momentForm.detailsHint')}</QuietNote>
+        <QuietNote spacing="flush">{t('time.momentForm.detailsHint')}</QuietNote>
 
         {termsFailed ? (
           <FormMessage>

@@ -222,7 +222,7 @@ export function ProjectEntityDetailView({
 
         <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
           {picture ? null : (
-            <QuietNote testId="game-entity-no-image">
+            <QuietNote spacing="flush" testId="game-entity-no-image">
               {t('projects.gameEntities.entity.noImage')}
             </QuietNote>
           )}

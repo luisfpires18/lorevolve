@@ -105,7 +105,9 @@ export function ChapterPages({
         <FormMessage testId={`chapter-pages-failed-${chapterId}`}>{failed}</FormMessage>
       ) : null}
 
-      {pages === null ? <QuietNote>{t('projects.common.loading')}</QuietNote> : null}
+      {pages === null ? (
+        <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
+      ) : null}
 
       {/* The page form opens from the head above, rather than sitting open under every chapter an author expands. */}
       {addingPage ? (
@@ -158,7 +160,7 @@ export function ChapterPages({
       ) : null}
 
       {pages !== null && pages.length === 0 ? (
-        <QuietNote>{t('projects.pages.empty')}</QuietNote>
+        <QuietNote spacing="flush">{t('projects.pages.empty')}</QuietNote>
       ) : null}
 
       <ol className="fieldlist" data-testid={`chapter-page-list-${chapterId}`}>

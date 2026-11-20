@@ -60,7 +60,9 @@ export function WorldRuleCheckSection({
       data-testid="world-rule-check-section"
     >
       <legend className="rule__legend">{t('canon.check.legend')}</legend>
-      <QuietNote id={hintId}>{t('canon.check.hint')}</QuietNote>
+      <QuietNote spacing="flush" id={hintId}>
+        {t('canon.check.hint')}
+      </QuietNote>
 
       <Field
         group

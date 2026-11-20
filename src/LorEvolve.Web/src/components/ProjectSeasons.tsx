@@ -56,7 +56,7 @@ export function ProjectSeasons({
   const { confirmLeave } = useDiscardGuard(adding && name !== '' && !busy, say.leave())
 
   if (seasons === null) {
-    return <QuietNote>{t('projects.common.loading')}</QuietNote>
+    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
   }
 
   return (

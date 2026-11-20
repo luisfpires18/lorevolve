@@ -90,7 +90,7 @@ export function ScriptPart({
         </Button>
       </FormMessage>
     ) : (
-      <QuietNote>{t('projects.common.loading')}</QuietNote>
+      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
 
