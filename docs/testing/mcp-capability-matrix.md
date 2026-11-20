@@ -37,7 +37,7 @@ before proposing against them, which is the only read of them MCP offers.
 | Lore entries | `entities` | `get_lore_entry`, `search_universe` | `LoreEntry` |
 | An entry's article | `entities/article` | `get_lore_entry` | `Article` |
 | An entry's progression | `entities/progression` | `get_lore_entry` | `Progression` |
-| An entry's pictures | `entities/image`, `entities/appearances` | `list_lore_images`, `get_lore_image` | `Media` |
+| An entry's pictures | `entities/image`, `entities/appearances` | `list_lore_images`, `get_lore_image` | `Media`, `propose_entry_image` |
 | An entry's history | `entities/revisions` | `live-only` | `live-only` |
 | An entry's private note | `entities/private-note` | `person-only` | `add_private_note` |
 | An entry's map pins | `entities/map-pins` | `get_map_location` | `read-only-by-design` |
@@ -159,11 +159,12 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `add_private_note` | Adds text to the owner's private note on one entry; never reads, replaces or removes it. | implemented | Owner only, on a connection allowed to write. |
 | `get_change_options` | What the person's role may propose, and the universe's real ids to propose against. | implemented | |
 | `propose_changes` | Stages changes for a person to review in LorEvolve; never applies them. | implemented | |
+| `propose_entry_image` | Stages one picture change for a lore or project entry with the file itself, held on R2 until approved. | implemented | Since #441. Base64, or a ChatGPT file link fetched once from an allowed host over HTTPS. |
 | `get_change_proposal` | Reads back a proposal this connection staged and what became of each change. | implemented | |
 | `propose_changes` `lore_entry` | Create, update or remove (to the Trash) a lore entry. | implemented | |
 | `propose_changes` `article` | Rewrite or add to an entry's article. | implemented | No remove: empty it instead. |
 | `propose_changes` `progression` | Add to or change an entry's eras, forms, abilities and appearances. | implemented | Never removes one. |
-| `propose_changes` `image` | Asks the person for a picture of an entry or an appearance. | implemented | No file over MCP: the person uploads it on the review page. |
+| `propose_changes` `image` | Asks the person for a picture of an entry or an appearance. | implemented | No file in this call: the person uploads it on the review page, or the AI sends it with `propose_entry_image`. |
 | `propose_changes` `relationship` | Create, update or remove a relationship. | implemented | |
 | `propose_changes` `story` | Create, update or remove a story. | implemented | |
 | `propose_changes` `chapter` | Create, update, remove or reorder chapters. | implemented | |
