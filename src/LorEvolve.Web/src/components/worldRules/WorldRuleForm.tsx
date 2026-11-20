@@ -1,4 +1,4 @@
-import { SaveAction } from '../SaveAction'
+import { EditorSaveBar } from '../EditorSaveBar'
 import { Field } from '../Field'
 import { WorldRuleCheckSection } from '../WorldRuleCheckSection'
 import {
@@ -116,24 +116,22 @@ export function WorldRuleForm({
         errors={fieldErrors}
       />
 
-      <div className="manuscript__bar rule__bar">
-        <div className="actions rule__actions">
-          <SaveAction
-            label={isNew ? t('canon.editor.create') : t('canon.editor.save')}
-            isDirty={isDirty}
-            isSaving={isSaving}
-            isBlocked={isTooLong}
-            saves={saves}
-            restingStatus={
-              stored.updatedAt === null ? t('canon.editor.notSaved') : t('canon.editor.saved')
-            }
-            statusId={statusId}
-            statusTestId="world-rule-status"
-            testId="world-rule-save"
-            keyShortcuts="Control+S Meta+S"
-          />
-        </div>
-      </div>
+      <EditorSaveBar
+        record
+        keyShortcuts
+        save={{
+          label: isNew ? t('canon.editor.create') : t('canon.editor.save'),
+          isDirty,
+          isSaving,
+          isBlocked: isTooLong,
+          saves,
+          restingStatus:
+            stored.updatedAt === null ? t('canon.editor.notSaved') : t('canon.editor.saved'),
+          statusId,
+          statusTestId: 'world-rule-status',
+          testId: 'world-rule-save',
+        }}
+      />
     </form>
   )
 }

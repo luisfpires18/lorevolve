@@ -10,7 +10,7 @@ import { MachineNotices } from './MachineNotices'
 import { MachineStates } from './MachineStates'
 import { MachineTransitions } from './MachineTransitions'
 import { MachineBinding } from './MachineBinding'
-import { MachineSaveBar } from './MachineSaveBar'
+import { EditorSaveBar } from '../EditorSaveBar'
 import { MachineDrawers } from './MachineDrawers'
 import { FormMessage } from '../FormMessage'
 
@@ -164,14 +164,20 @@ export function MachinePanelBody({
         />
       ) : null}
 
-      <MachineSaveBar
-        saving={saving}
-        saves={saves}
-        statusId={statusId}
-        save={save}
-        isDirty={isDirty}
-        isEmpty={isEmpty}
-        baseVersion={baseVersion}
+      <EditorSaveBar
+        record
+        save={{
+          label: t(`${m}.saveChanges`),
+          isDirty,
+          isSaving: saving,
+          saves,
+          restingStatus: isEmpty ? t(`${m}.notSavedYet`) : t(`${m}.saved`),
+          statusId,
+          statusTestId: 'machine-status',
+          testId: 'machine-save',
+          type: 'button',
+          onSave: () => void save(baseVersion),
+        }}
       />
 
       <MachineDrawers

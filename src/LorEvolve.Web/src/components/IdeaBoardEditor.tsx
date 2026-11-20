@@ -2,7 +2,6 @@ import { useId, type ReactNode } from 'react'
 import { IdeaBoardPicker } from './IdeaBoardPicker'
 import { BoardFields } from './ideas/BoardFields'
 import { BoardNotices } from './ideas/BoardNotices'
-import { BoardSaveBar } from './ideas/BoardSaveBar'
 import { BoardToolbar } from './ideas/BoardToolbar'
 import { BoardUnavailable } from './ideas/BoardUnavailable'
 import { BoardWork } from './ideas/BoardWork'
@@ -17,6 +16,7 @@ import { useDraftedEditor } from '../lib/useDraftedEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 import { DocumentHead } from './DocumentHead'
+import { EditorSaveBar } from './EditorSaveBar'
 
 interface IdeaBoardEditorProps {
   /** The board being edited, or null for a new one. */
@@ -146,7 +146,29 @@ export function IdeaBoardEditor({
 
       <BoardWork {...view} />
 
-      <BoardSaveBar {...view} />
+      <EditorSaveBar
+        record
+        keyShortcuts
+        warning={
+          view.failed && view.isDirty
+            ? { text: t('ideas.board.recoveryWarning'), testId: 'board-recovery-warning' }
+            : null
+        }
+        save={{
+          label: view.isNew ? t('ideas.board.create') : t('ideas.board.save'),
+          isDirty: view.isDirty,
+          isSaving: view.isSaving,
+          isBlocked: view.isHeld,
+          saves: view.saves,
+          restingStatus:
+            stored.updatedAt === null ? t('ideas.board.notSavedYet') : t('ideas.board.saved'),
+          statusId,
+          statusTestId: 'board-status',
+          testId: 'board-save',
+          type: 'button',
+          onSave: () => void view.save(stored.updatedAt),
+        }}
+      />
 
       {picking ? (
         <IdeaBoardPicker

@@ -4,7 +4,7 @@ import { IdeaFormFields } from './ideas/IdeaFormFields'
 import { IdeaHead } from './ideas/IdeaHead'
 import { IdeaNotices } from './ideas/IdeaNotices'
 import { IdeaReferences } from './ideas/IdeaReferences'
-import { IdeaSaveBar } from './ideas/IdeaSaveBar'
+import { EditorSaveBar } from './EditorSaveBar'
 import { IdeaUnavailable } from './ideas/IdeaUnavailable'
 import { ideaActions } from '../ideas/ideaActions'
 import type { IdeaDetail } from '../ideas/types'
@@ -198,16 +198,26 @@ export function IdeaEditor({
           fieldErrors={fieldErrors}
         />
 
-        <IdeaSaveBar
-          failed={failed}
-          isDirty={isDirty}
-          isNew={isNew}
-          isSaving={isSaving}
-          isTooLong={isTooLong}
-          isHeld={isHeld}
-          saves={saves}
-          stored={stored}
-          statusId={statusId}
+        <EditorSaveBar
+          record
+          keyShortcuts
+          warning={
+            failed && isDirty
+              ? { text: t('ideas.editor.recoveryWarning'), testId: 'idea-recovery-warning' }
+              : null
+          }
+          save={{
+            label: isNew ? t('ideas.editor.create') : t('ideas.editor.save'),
+            isDirty,
+            isSaving,
+            isBlocked: isTooLong || isHeld,
+            saves,
+            restingStatus:
+              stored.updatedAt === null ? t('ideas.editor.notSavedYet') : t('ideas.editor.saved'),
+            statusId,
+            statusTestId: 'idea-status',
+            testId: 'idea-save',
+          }}
         />
       </form>
 

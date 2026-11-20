@@ -110,18 +110,3 @@
 .rule__count {
   margin: 0.45rem 0 0;
 }
-
-/* The save bar holds to the bottom of the screen, as the manuscript's and an idea's do. */
-.rule__bar {
-  background: var(--raised);
-}
-
-.rule__actions {
-  margin-left: auto;
-}
-
-@media (max-width: 640px) {
-  .rule__actions {
-    margin-left: 0;
-  }
-}
