@@ -3,6 +3,9 @@ import type { CanonBlockingFinding } from '../canon/types'
 import { getChronology } from './api'
 import type { Chronology } from './types'
 import { draftsFrom } from './eraDrafts'
+import { blockingFindingsOf } from '../canon/blocked'
+import { t } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 
 /** The date periods editor's state, with the read that refreshes the stored chronology on opening. */
 export function useChronologyEditorState({
@@ -16,10 +19,17 @@ export function useChronologyEditorState({
 }) {
   const [stored, setStored] = useState(chronology)
   const [drafts, setDrafts] = useState(() => draftsFrom(chronology))
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
-  const [saving, setSaving] = useState(false)
+  // A save the canon gate holds back shows its findings instead of a message.
+  const form = useFormSave({
+    needChange: () => t('time.periods.needChange'),
+    failed: () => t('time.periods.saveFailed'),
+    refusal: (error) => {
+      const blocking = blockingFindingsOf(error)
+      if (blocking) setBlocked(blocking)
+      return Boolean(blocking)
+    },
+  })
   const [saves, setSaves] = useState(0)
   // Said aloud after a move, since the list reorders under the focused button.
   const [moved, setMoved] = useState('')
@@ -55,14 +65,14 @@ export function useChronologyEditorState({
     setStored,
     drafts,
     setDrafts,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
     blocked,
     setBlocked,
-    saving,
-    setSaving,
+    saving: form.isSaving,
+    runSave: form.save,
     saves,
     setSaves,
     moved,

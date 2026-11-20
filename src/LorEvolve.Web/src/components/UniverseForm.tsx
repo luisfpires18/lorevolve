@@ -1,9 +1,10 @@
 import { useId, useState, type FormEvent } from 'react'
 import { useI18n } from '../i18n'
+import { CheckField } from './CheckField'
 import { Field } from './Field'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
+import { useFormSave } from '../lib/useFormSave'
 import type { UniverseInput } from '../universes/types'
 import { confirmDiscard } from '../lib/confirm'
 import { HEX, inputOf, normalizeHex } from '../universes/universeFormInput'
@@ -51,9 +52,8 @@ export function UniverseForm({
   const starterTypes = initial ? undefined : starterChoice
   const showColour = fields !== 'details'
   const colourInvalid = colourText.trim() !== '' && !HEX.test(normalizeHex(colourText))
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const form = useFormSave({ needChange: null, failed: t('universe.form.saveFailed') })
+  const { fieldErrors, setFieldErrors, setMessage, message, isSaving } = form
 
   const [isSaved, setIsSaved] = useState(false)
 
@@ -64,7 +64,7 @@ export function UniverseForm({
     payloadKey(inputOf(name, description, accentColor, aiHelp, starterTypes)),
   )
   const isDirty =
-    !isSubmitting &&
+    !isSaving &&
     !isSaved &&
     payloadKey(inputOf(name, description, accentColor, aiHelp, starterTypes)) !== opened
   useLeaveGuard(
@@ -88,24 +88,11 @@ export function UniverseForm({
       setFieldErrors({ accentcolor: t('universe.form.colourInvalidSubmit') })
       return
     }
-    setIsSubmitting(true)
-
-    try {
+    await form.save(async () => {
       await onSubmit(inputOf(name, description, accentColor, aiHelp, starterTypes))
       setIsSaved(true)
       onDone?.()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        if (Object.keys(error.fieldErrors).length === 0) {
-          setMessage(error.message)
-        }
-      } else {
-        setMessage(t('universe.form.saveFailed'))
-      }
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -124,6 +111,7 @@ export function UniverseForm({
             // Opening a new universe starts at its name; Settings opens on the page, not in a field.
             autoFocus={!initial && takesFocus}
             required
+            requiredMark
             maxLength={120}
             dir="auto"
             value={name}
@@ -151,32 +139,22 @@ export function UniverseForm({
             )}
           </Field>
 
-          <div className="field">
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={aiHelpChoice}
-                onChange={(event) => setAiHelp(event.target.checked)}
-                data-testid="universe-ai-help"
-              />
-              {t('universe.form.aiHelp')}
-            </label>
-            <p className="field__hint">{t('universe.form.aiHelpHint')}</p>
-          </div>
+          <CheckField
+            label={t('universe.form.aiHelp')}
+            hint={t('universe.form.aiHelpHint')}
+            checked={aiHelpChoice}
+            onChange={setAiHelp}
+            testId="universe-ai-help"
+          />
 
           {initial ? null : (
-            <div className="field">
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={starterChoice}
-                  onChange={(event) => setStarterTypes(event.target.checked)}
-                  data-testid="universe-starter-types"
-                />
-                {t('universe.form.starterTypes')}
-              </label>
-              <p className="field__hint">{t('universe.form.starterTypesHint')}</p>
-            </div>
+            <CheckField
+              label={t('universe.form.starterTypes')}
+              hint={t('universe.form.starterTypesHint')}
+              checked={starterChoice}
+              onChange={setStarterTypes}
+              testId="universe-starter-types"
+            />
           )}
         </>
       ) : null}
@@ -195,7 +173,7 @@ export function UniverseForm({
 
       <FormActions
         submitLabel={submitLabel}
-        busy={isSubmitting}
+        busy={isSaving}
         busyLabel={busyLabel}
         onCancel={onCancel ? cancel : undefined}
         inline

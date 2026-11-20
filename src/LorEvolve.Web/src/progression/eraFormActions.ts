@@ -1,8 +1,5 @@
-import { t } from '../i18n'
-import { ApiError } from '../lib/api'
-import { isChangedElsewhere } from '../lib/editConflict'
 import type { FieldDefinition } from '../lore/typeDefinitions'
-import { eraInputOf, PROGRESSION_CHANGED, saveProgression } from './api'
+import { eraInputOf, saveProgression } from './api'
 import type { Era, Progression } from './types'
 import { inputOf, type EraDraft, type FieldDraft } from './eraDraft'
 import type { useEraFormState } from './useEraFormState'
@@ -19,9 +16,7 @@ export function eraFormActions({
   base,
   draft,
   setDraft,
-  setFieldErrors,
-  setMessage,
-  setIsSaving,
+  form,
   setConflict,
 }: ReturnType<typeof useEraFormState> & {
   universeId: string
@@ -44,11 +39,6 @@ export function eraFormActions({
   }
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
-
     const shown = new Set(definitions.map((definition) => definition.id))
     const typed = inputOf(draft, era?.id ?? null, reckonsInEras, custom)
     // An override of a field this form does not show - the type's fields could not be read, say - goes back exactly as it
@@ -59,28 +49,14 @@ export function eraFormActions({
     const mine = { ...typed, fields: [...kept, ...typed.fields] }
     const eras = base.eras.map((one) => (one.id === era?.id ? mine : eraInputOf(one)))
 
-    try {
+    await form.save(async () => {
+      setConflict(false)
       const saved = await saveProgression(universeId, entityId, {
         eras: era && eras.some((one) => one.id === era.id) ? eras : [...eras, mine],
         expectedVersion: base.version,
       })
       onSaved(saved)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('time.eraForm.needChange'),
-        )
-      } else {
-        setMessage(t('time.eraForm.saveFailed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return { edit, editField, save }

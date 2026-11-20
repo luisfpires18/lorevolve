@@ -1,14 +1,6 @@
 import { useEffect } from 'react'
-import { createIdeaBoard, IDEA_BOARD_CHANGED, saveIdeaBoard, type IdeaBoardDetail } from './boards'
-import {
-  fieldsOf,
-  inputOf,
-  sameFields,
-  storedFrom,
-  storedMomentOf,
-  type Fields,
-} from './boardDraft'
-import { ApiError } from '../lib/api'
+import { createIdeaBoard, saveIdeaBoard, type IdeaBoardDetail } from './boards'
+import { fieldsOf, inputOf, sameFields, storedFrom, type Fields } from './boardDraft'
 import type { useI18n } from '../i18n'
 import type { useBoardDraft } from './useBoardDraft'
 import type { useBoardState } from './useBoardState'
@@ -21,13 +13,12 @@ export function useBoardSave({
   setDraft,
   fieldErrors,
   setFieldErrors,
-  inFlight,
+  isSaving,
   isDirty,
   isHeld,
   draft,
   titleInput,
-  setIsSaving,
-  setFailure,
+  runSave,
   setConflict,
   stored,
   discard,
@@ -48,7 +39,7 @@ export function useBoardSave({
   }
 
   async function save(expectedUpdatedAt: string | null) {
-    if (inFlight.current || !isDirty || isHeld) return
+    if (isSaving || !isDirty || isHeld) return
     if (draft.title.trim() === '') {
       setFieldErrors({ title: t('ideas.board.titleRequired') })
       titleInput.current?.focus()
@@ -56,13 +47,8 @@ export function useBoardSave({
     }
 
     const sent = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(null)
-
-    try {
+    await runSave(async () => {
+      setConflict(null)
       if (isNew) {
         const created = await createIdeaBoard(inputOf(sent, null))
         discard()
@@ -75,22 +61,7 @@ export function useBoardSave({
       // Anything changed while the save was in flight is still unsaved, and stays.
       setDraft((current) => (sameFields(current, sent) ? fieldsOf(next) : current))
       setSaves((total) => total + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === IDEA_BOARD_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('ideas.board.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        const first = Object.values(error.fieldErrors)[0]
-        setFailure(first ?? error.message)
-      } else {
-        setFailure(t('ideas.board.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-    }
+    })
   }
 
   useEffect(() => {

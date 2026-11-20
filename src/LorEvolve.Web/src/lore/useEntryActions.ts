@@ -17,7 +17,7 @@ export function useEntryActions({
   isEditing,
   setMessage,
   setBlocked,
-  setIsSaving,
+  runSave,
   selectedType,
   universe,
   entityId,
@@ -51,49 +51,48 @@ export function useEntryActions({
 
     if (isNew || isEditing) return
 
-    setMessage(null)
     setBlocked(null)
-    setIsSaving(true)
-    try {
-      const definitions = selectedType?.fields ?? []
-      const saved = await updateEntity(universe.id, entityId, {
-        entityTypeId: updated.entityTypeId,
-        name: updated.name,
-        summary: updated.summary.trim() ? updated.summary.trim() : null,
-        canonStatus: next,
-        aliases: updated.aliases,
-        tags: updated.tags,
-        fields: valuedFields(definitions).map(
-          (definition) => updated.fields[definition.id] ?? emptyValue(definition),
-        ),
-        expectedVersion: detail?.version,
-      })
-      setDetail(saved)
-      setDraft(draftFromDetail(saved))
-      setHistoryKey((key) => key + 1)
-    } catch (error: unknown) {
-      setDraft({ ...updated, canonStatus: previous })
+    // Every refusal is handled inside: the step is rolled back first, then the words are its own.
+    await runSave(async () => {
+      try {
+        const definitions = selectedType?.fields ?? []
+        const saved = await updateEntity(universe.id, entityId, {
+          entityTypeId: updated.entityTypeId,
+          name: updated.name,
+          summary: updated.summary.trim() ? updated.summary.trim() : null,
+          canonStatus: next,
+          aliases: updated.aliases,
+          tags: updated.tags,
+          fields: valuedFields(definitions).map(
+            (definition) => updated.fields[definition.id] ?? emptyValue(definition),
+          ),
+          expectedVersion: detail?.version,
+        })
+        setDetail(saved)
+        setDraft(draftFromDetail(saved))
+        setHistoryKey((key) => key + 1)
+      } catch (error: unknown) {
+        setDraft({ ...updated, canonStatus: previous })
 
-      const blocking = blockingFindingsOf(error)
-      if (blocking) {
-        setBlocked(blocking)
-      } else if (isChangedElsewhere(error, ENTRY_CHANGED) && entityId !== undefined) {
-        // Nothing unsaved is at stake here: the page reads the entry as it now is, and the author chooses again.
-        try {
-          const latest = await getEntity(universe.id, entityId)
-          setDetail(latest)
-          setDraft(draftFromDetail(latest))
-          setHistoryKey((key) => key + 1)
-        } catch {
-          /* The message below still holds; the page shows what it last read. */
+        const blocking = blockingFindingsOf(error)
+        if (blocking) {
+          setBlocked(blocking)
+        } else if (isChangedElsewhere(error, ENTRY_CHANGED) && entityId !== undefined) {
+          // Nothing unsaved is at stake here: the page reads the entry as it now is, and the author chooses again.
+          try {
+            const latest = await getEntity(universe.id, entityId)
+            setDetail(latest)
+            setDraft(draftFromDetail(latest))
+            setHistoryKey((key) => key + 1)
+          } catch {
+            /* The message below still holds; the page shows what it last read. */
+          }
+          setMessage(t('entity.page.canon.changedElsewhere'))
+        } else {
+          setMessage(t('entity.page.canon.failed'))
         }
-        setMessage(t('entity.page.canon.changedElsewhere'))
-      } else {
-        setMessage(t('entity.page.canon.failed'))
       }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   /**

@@ -74,9 +74,6 @@ export function SceneForm({
       ? { ...initial, beats: [...initial.beats, { key: beatKey(), title: '', note: '' }] }
       : initial,
   )
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [conflict, setConflict] = useState(false)
   const saveButton = useRef<HTMLButtonElement>(null)
 
@@ -122,7 +119,7 @@ export function SceneForm({
     setDraft((current) => ({ ...current, point: { ...current.point, [part]: value } }))
   }
 
-  const { save } = useSceneSave({
+  const { save, fieldErrors, message, isSaving } = useSceneSave({
     universeId,
     storyId,
     scene,
@@ -133,10 +130,7 @@ export function SceneForm({
     draft,
     reckonsInEras,
     custom,
-    setMessage,
-    setFieldErrors,
     setConflict,
-    setIsSaving,
     t,
   })
 

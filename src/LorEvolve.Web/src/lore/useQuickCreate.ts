@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
 import { errorText } from '../lib/errorText'
 import type { Load } from '../lib/useAsyncRead'
 import { payloadKey } from '../lib/drawerGuard'
@@ -13,6 +12,7 @@ import { CanonStatus, type EntitySummary, type FieldValueInput } from './types'
 import type { EntityType } from './typeDefinitions'
 import type { Props } from '../components/QuickCreateDialog'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
+import { useFormSave } from '../lib/useFormSave'
 
 const SIMILAR_LIMIT = 5
 
@@ -40,9 +40,10 @@ export function useQuickCreate({
   const [chosenTypeId, setChosenTypeId] = useState<string>('')
   const [values, setValues] = useState<Record<string, FieldValueInput>>({})
   const [similar, setSimilar] = useState<EntitySummary[]>([])
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const { isSaving, message, setMessage, fieldErrors, setFieldErrors, save } = useFormSave({
+    needChange: () => t('lore.quickCreate.detailsNeedChange'),
+    failed: () => t('lore.quickCreate.failed'),
+  })
   // A create on its way. Read synchronously, so a second press, Escape or a press on the backdrop in the same instant as
   // Create is still refused: the request is out and its answer decides what happens next, not the author.
   const sending = useRef(false)
@@ -156,42 +157,28 @@ export function useQuickCreate({
     }
 
     sending.current = true
-    setIsSaving(true)
-    setMessage(null)
-    setFieldErrors({})
-
-    try {
-      const created = await createEntity(universeId, {
-        entityTypeId: chosenType.id,
-        name: name.trim(),
-        summary: null,
-        canonStatus: CanonStatus.Idea,
-        aliases: [],
-        tags: [],
-        // Every active field, as the full form sends them: what was filled in here, the rest at its default.
-        fields: valuedFields(chosenType.fields).map(
-          (definition) => values[definition.id] ?? emptyValue(definition),
-        ),
-      })
-      // Exactly the entry the server made, from its answer. Nothing is chosen for a form that has already gone.
-      if (!gone.current)
-        onCreated({ id: created.id, name: created.name, typeName: created.entityTypeName })
-    } catch (error: unknown) {
-      sending.current = false
-      if (gone.current) return
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('lore.quickCreate.detailsNeedChange'),
-        )
-      } else {
-        setMessage(t('lore.quickCreate.failed'))
+    await save(async () => {
+      try {
+        const created = await createEntity(universeId, {
+          entityTypeId: chosenType.id,
+          name: name.trim(),
+          summary: null,
+          canonStatus: CanonStatus.Idea,
+          aliases: [],
+          tags: [],
+          // Every active field, as the full form sends them: what was filled in here, the rest at its default.
+          fields: valuedFields(chosenType.fields).map(
+            (definition) => values[definition.id] ?? emptyValue(definition),
+          ),
+        })
+        // Exactly the entry the server made, from its answer. Nothing is chosen for a form that has already gone.
+        if (!gone.current)
+          onCreated({ id: created.id, name: created.name, typeName: created.entityTypeName })
+      } catch (error: unknown) {
+        sending.current = false
+        throw error
       }
-    } finally {
-      if (!gone.current) setIsSaving(false)
-    }
+    })
   }
 
   return {

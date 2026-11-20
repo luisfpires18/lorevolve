@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
+import { useFormSave } from '../lib/useFormSave'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
@@ -74,9 +74,11 @@ export function ChapterForm({
     arcId: (chapter ? chapter.plotArcId : plotArcId) ?? '',
   }))
   const [draft, setDraft] = useState<ChapterDraft>(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: t('stories.chapterForm.detailsToSave'),
+    failed: t('stories.chapterForm.failedSave'),
+  })
+  const { fieldErrors, message, isSaving } = form
 
   const isDirty =
     payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial)) || draft.arcId !== initial.arcId
@@ -91,13 +93,9 @@ export function ChapterForm({
   }
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-
     const input = inputOf(draft)
 
-    try {
+    await form.save(async () => {
       const arcId = draft.arcId === '' ? null : draft.arcId
       let saved = chapter
         ? await updateChapter(universeId, storyId, chapter.id, input)
@@ -107,20 +105,7 @@ export function ChapterForm({
         saved = await moveChapterToArc(universeId, storyId, chapter.id, arcId)
       }
       onSaved(saved)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('stories.chapterForm.detailsToSave'),
-        )
-      } else {
-        setMessage(t('stories.chapterForm.failedSave'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return (

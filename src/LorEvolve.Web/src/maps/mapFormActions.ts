@@ -1,4 +1,3 @@
-import { ApiError } from '../lib/api'
 import { formatBytes } from '../lib/bytes'
 import { createMap, MAP_IMAGE_MAX_BYTES, replaceMapImage, updateMapDetails } from './api'
 import type { MapDetail } from './types'
@@ -16,7 +15,7 @@ export function mapFormActions({
   setFile,
   setFieldErrors,
   setMessage,
-  setIsSaving,
+  form,
   setProgress,
   t,
 }: ReturnType<typeof useMapFormState> & {
@@ -60,33 +59,23 @@ export function mapFormActions({
       return
     }
 
-    setIsSaving(true)
-    try {
-      const saved =
-        props.mode === 'new'
-          ? await createMap(universeId, { ...details, file: file! }, setProgress)
-          : props.mode === 'details'
-            ? await updateMapDetails(universeId, props.map.id, {
-                ...details,
-                expectedVersion: props.map.version,
-              })
-            : await replaceMapImage(universeId, props.map.id, file!, pins!, setProgress)
-      onSaved(saved)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.mapForm.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.mapForm.failed'))
+    await form.save(async () => {
+      try {
+        const saved =
+          props.mode === 'new'
+            ? await createMap(universeId, { ...details, file: file! }, setProgress)
+            : props.mode === 'details'
+              ? await updateMapDetails(universeId, props.map.id, {
+                  ...details,
+                  expectedVersion: props.map.version,
+                })
+              : await replaceMapImage(universeId, props.map.id, file!, pins!, setProgress)
+        onSaved(saved)
+      } finally {
+        // Inside the run, so a second save the hook ignores leaves the running upload's progress alone.
+        setProgress(null)
       }
-    } finally {
-      setIsSaving(false)
-      setProgress(null)
-    }
+    })
   }
   return { choose, save }
 }

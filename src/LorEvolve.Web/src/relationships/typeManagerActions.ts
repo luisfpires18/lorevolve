@@ -21,7 +21,7 @@ export function typeManagerActions({
   setDraft,
   setFieldErrors,
   setMessage,
-  setIsSaving,
+  form,
 }: ReturnType<typeof useTypeManagerState> & { universeId: string }) {
   function close() {
     setIsAdding(false)
@@ -53,8 +53,6 @@ export function typeManagerActions({
       return
     }
 
-    setIsSaving(true)
-
     const input = {
       name: draft.name.trim(),
       // A symmetric kind reads the same both ways, so no second wording is sent.
@@ -75,7 +73,7 @@ export function typeManagerActions({
           : draft.familySemantic,
     }
 
-    try {
+    await form.save(async () => {
       if (editingId) {
         await updateRelationshipType(universeId, editingId, input)
       } else {
@@ -83,16 +81,7 @@ export function typeManagerActions({
       }
       close()
       await refresh()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        if (Object.keys(error.fieldErrors).length === 0) setMessage(error.message)
-      } else {
-        setMessage(t('relationships.types.saveFailed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   async function remove(type: RelationshipType) {

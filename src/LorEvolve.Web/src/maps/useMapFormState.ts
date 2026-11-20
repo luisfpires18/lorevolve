@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
+import { t } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
+import { useFormSave } from '../lib/useFormSave'
 import type { UploadProgress } from '../lib/upload'
 import type { MapDetail, ReplacePinsPolicy } from './types'
 import { inputOf, type MapDraft, type MapFormProps } from './mapDraft'
@@ -13,9 +15,10 @@ export function useMapFormState({ props, map }: { props: MapFormProps; map: MapD
   const [draft, setDraft] = useState<MapDraft>(initial)
   const [file, setFile] = useState<File | null>(null)
   const [pins, setPins] = useState<ReplacePinsPolicy | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: () => t('places.mapForm.fieldErrors'),
+    failed: () => t('places.mapForm.failed'),
+  })
   const [progress, setProgress] = useState<UploadProgress | null>(null)
 
   const isDirty =
@@ -30,12 +33,12 @@ export function useMapFormState({ props, map }: { props: MapFormProps; map: MapD
     setFile,
     pins,
     setPins,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
-    isSaving,
-    setIsSaving,
+    form,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
+    isSaving: form.isSaving,
     progress,
     setProgress,
     isDirty,

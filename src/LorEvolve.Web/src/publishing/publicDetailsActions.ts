@@ -1,11 +1,10 @@
 import type { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { savePublication } from './api'
 import type { GenreValue, PublicationDetails, PublicationState } from './types'
 import type { Dispatch, FormEvent, SetStateAction } from 'react'
 import { attributionOf, detailsOf, type Attribution } from './publicDetailsDraft'
-import { errorText } from '../lib/errorText'
+import type { useFormSave } from '../lib/useFormSave'
 
 /** The public details form's handlers: ticking a genre, changing the attribution, and saving. */
 export function publicDetailsActions({
@@ -17,10 +16,8 @@ export function publicDetailsActions({
   setGenres,
   setAttribution,
   setSaved,
-  setIsSaving,
   setSavedMessage,
-  setFieldErrors,
-  setMessage,
+  form,
   onSaved,
 }: {
   universeId: string
@@ -31,10 +28,8 @@ export function publicDetailsActions({
   setGenres: Dispatch<SetStateAction<GenreValue[]>>
   setAttribution: Dispatch<SetStateAction<Attribution>>
   setSaved: Dispatch<SetStateAction<string>>
-  setIsSaving: Dispatch<SetStateAction<boolean>>
   setSavedMessage: Dispatch<SetStateAction<boolean>>
-  setFieldErrors: Dispatch<SetStateAction<Record<string, string>>>
-  setMessage: Dispatch<SetStateAction<string | null>>
+  form: ReturnType<typeof useFormSave>
   onSaved: (next: PublicationState) => void
 }) {
   function toggleGenre(value: GenreValue, chosen: boolean) {
@@ -51,22 +46,20 @@ export function publicDetailsActions({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage(null)
-    setFieldErrors({})
+    form.setMessage(null)
+    form.setFieldErrors({})
     setSavedMessage(false)
 
     // Said here, beside its field, before a request: the server refuses the same.
     if (details.basedOnExternalWork && !details.originalCreator) {
-      setFieldErrors({
+      form.setFieldErrors({
         originalcreator: t('universe.publicDetails.creatorRequired'),
       })
       document.getElementById(creatorId)?.focus()
       return
     }
 
-    setIsSaving(true)
-
-    try {
+    await form.save(async () => {
       const next = await savePublication(universeId, details)
       const nextAttribution = attributionOf(next)
       setSaved(
@@ -83,15 +76,7 @@ export function publicDetailsActions({
       setAttribution(nextAttribution)
       setSavedMessage(true)
       onSaved(next)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
-        setFieldErrors(error.fieldErrors)
-      } else {
-        setMessage(errorText(error, t('universe.publicDetails.saveFailed')))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
   return { toggleGenre, attribute, submit }
 }

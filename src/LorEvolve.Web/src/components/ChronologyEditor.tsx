@@ -154,26 +154,35 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
           </Field>
         ) : null}
 
-        {drafts.length > 0 ? (
-          <ol className="eras" data-testid="eras">
-            {drafts.map((era, index) => (
-              <ChronologyEraRow
-                key={era.key}
-                era={era}
-                index={index}
-                drafts={drafts}
-                fieldErrors={fieldErrors}
-                update={update}
-                move={move}
-                change={change}
-              />
-            ))}
-          </ol>
+        {drafts.length > 0 || fieldErrors.eras ? (
+          <Field group hideLabel label={t('time.periods.heading')} error={fieldErrors.eras}>
+            {(control) =>
+              drafts.length > 0 ? (
+                <ol
+                  className="eras"
+                  aria-labelledby={control['aria-labelledby']}
+                  aria-describedby={control['aria-describedby']}
+                  data-testid="eras"
+                >
+                  {drafts.map((era, index) => (
+                    <ChronologyEraRow
+                      key={era.key}
+                      era={era}
+                      index={index}
+                      drafts={drafts}
+                      fieldErrors={fieldErrors}
+                      update={update}
+                      move={move}
+                      change={change}
+                    />
+                  ))}
+                </ol>
+              ) : null
+            }
+          </Field>
         ) : null}
 
         <Announce testId="era-moved">{moved}</Announce>
-
-        {fieldErrors.eras ? <p className="field__error">{fieldErrors.eras}</p> : null}
 
         {blocked ? (
           <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />

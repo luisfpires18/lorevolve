@@ -1,5 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react'
-import { ApiError } from '../lib/api'
+import type { useFormSave } from '../lib/useFormSave'
 import type { DialogType, TypeDialogValues } from '../components/TypeDialog'
 import type { GroupChoice } from '../components/TypeGroupsField'
 import type { useI18n } from '../i18n'
@@ -16,9 +15,7 @@ export function typeDialogSave({
   familyTreeEligible,
   groupChoices,
   groupsChanged,
-  setFieldErrors,
-  setMessage,
-  setIsSaving,
+  form,
 }: {
   type: DialogType | null
   write: (values: TypeDialogValues) => Promise<unknown>
@@ -29,20 +26,17 @@ export function typeDialogSave({
   familyTreeEligible: boolean
   groupChoices: GroupChoice[]
   groupsChanged: boolean
-  setFieldErrors: Dispatch<SetStateAction<Record<string, string>>>
-  setMessage: Dispatch<SetStateAction<string | null>>
-  setIsSaving: Dispatch<SetStateAction<boolean>>
+  form: ReturnType<typeof useFormSave>
 } & Pick<ReturnType<typeof useI18n>, 't'>) {
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
+    form.setMessage(null)
+    form.setFieldErrors({})
     if (!name.trim()) {
-      setFieldErrors({ name: t('entityTypes.page.dialog.nameRequired') })
+      form.setFieldErrors({ name: t('entityTypes.page.dialog.nameRequired') })
       return
     }
 
-    setIsSaving(true)
-    try {
+    await form.save(async () => {
       await write({
         name: name.trim(),
         icon,
@@ -52,26 +46,7 @@ export function typeDialogSave({
         groups: (type ? groupsChanged : groupChoices.length > 0) ? groupChoices : undefined,
       })
       await onSaved(name.trim(), parentId)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : type
-              ? t('entityTypes.page.dialog.detailsSave')
-              : t('entityTypes.page.dialog.detailsCreate'),
-        )
-      } else {
-        setMessage(
-          type
-            ? t('entityTypes.page.dialog.saveFailed')
-            : t('entityTypes.page.dialog.createFailed'),
-        )
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return { save }

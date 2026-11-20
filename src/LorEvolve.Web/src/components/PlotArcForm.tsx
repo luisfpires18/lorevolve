@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
+import { useFormSave } from '../lib/useFormSave'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
@@ -64,9 +64,11 @@ export function PlotArcForm({
     notes: arc?.notes ?? '',
   }))
   const [draft, setDraft] = useState<PlotArcDraft>(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: t('stories.arcForm.detailsToSave'),
+    failed: t('stories.arcForm.failedSave'),
+  })
+  const { fieldErrors, message, isSaving } = form
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
 
@@ -81,31 +83,14 @@ export function PlotArcForm({
   }
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-
     const input = inputOf(draft)
 
-    try {
+    await form.save(async () => {
       const saved = arc
         ? await updatePlotArc(universeId, storyId, arc.id, input)
         : await createPlotArc(universeId, storyId, input)
       onSaved(saved)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('stories.arcForm.detailsToSave'),
-        )
-      } else {
-        setMessage(t('stories.arcForm.failedSave'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return (

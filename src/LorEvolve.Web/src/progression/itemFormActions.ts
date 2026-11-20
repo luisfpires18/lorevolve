@@ -1,13 +1,4 @@
-import { ApiError } from '../lib/api'
-import { isChangedElsewhere } from '../lib/editConflict'
-import {
-  abilityInputOf,
-  appearanceInputOf,
-  eraInputOf,
-  formInputOf,
-  PROGRESSION_CHANGED,
-  saveProgression,
-} from './api'
+import { abilityInputOf, appearanceInputOf, eraInputOf, formInputOf, saveProgression } from './api'
 import type { AbilityInput, AppearanceInput, FormInput, Progression } from './types'
 import {
   inputOf,
@@ -32,9 +23,7 @@ export function itemFormActions({
   base,
   draft,
   setDraft,
-  setFieldErrors,
-  setMessage,
-  setIsSaving,
+  form: saving,
   setConflict,
 }: ReturnType<typeof useItemFormState> & {
   universeId: string
@@ -61,11 +50,6 @@ export function itemFormActions({
   }
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
-
     const mine = inputOf(draft, item?.id ?? null)
     const forms: FormInput[] = base.forms.map((form) => formInputOf(form))
     const abilities: AbilityInput[] = base.abilities.map((ability) => abilityInputOf(ability))
@@ -95,36 +79,31 @@ export function itemFormActions({
       else abilities[at] = mine
     }
 
-    try {
-      onSaved(
-        await saveProgression(universeId, entityId, {
-          eras: base.eras.map(eraInputOf),
-          expectedVersion: base.version,
-          forms,
-          abilities,
-          appearances,
-        }),
-      )
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, PROGRESSION_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        // A refusal no field below shows - this one removed meanwhile, say - is said here in its own words.
-        const unshown = Object.entries(error.fieldErrors).find(
-          ([name]) => !SHOWN.some((part) => name === `${key}.${partOf(kind, part)}`.toLowerCase()),
+    await saving.save(
+      async () => {
+        setConflict(false)
+        onSaved(
+          await saveProgression(universeId, entityId, {
+            eras: base.eras.map(eraInputOf),
+            expectedVersion: base.version,
+            forms,
+            abilities,
+            appearances,
+          }),
         )
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : (unshown?.[1] ?? words.someDetails),
-        )
-      } else {
-        setMessage(words.saveFailed)
-      }
-    } finally {
-      setIsSaving(false)
-    }
+      },
+      {
+        needChange: (fieldErrors) => {
+          // A refusal no field below shows - this one removed meanwhile, say - is said here in its own words.
+          const unshown = Object.entries(fieldErrors).find(
+            ([name]) =>
+              !SHOWN.some((part) => name === `${key}.${partOf(kind, part)}`.toLowerCase()),
+          )
+          return unshown?.[1] ?? words.someDetails
+        },
+        failed: words.saveFailed,
+      },
+    )
   }
 
   return { edit, toggle, fromUnlockOn, save }

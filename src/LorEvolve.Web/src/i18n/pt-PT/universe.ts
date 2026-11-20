@@ -62,7 +62,8 @@ const universe: Dictionary['universe'] = {
     saveFailed: 'Não foi possível guardar os detalhes públicos.',
     summary: 'Resumo público',
     summaryHint:
-      'Algumas frases para o cartão do mundo e a página pública, até {max} caracteres. A descrição acima nunca é publicada. {length}/{max}',
+      'Algumas frases para o cartão do mundo e a página pública, até {max} caracteres. A descrição acima nunca é publicada.',
+    summaryCount: '{used}/{max}',
     category: 'Categoria',
     categoryChoose: 'Escolher uma categoria',
     genres: 'Géneros',

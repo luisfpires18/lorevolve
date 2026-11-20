@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { ChronologyCalendar } from './types'
 import { draftsFrom, type Mode } from './monthDrafts'
+import { t } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 
 /** The calendar editor's state, with the effects that follow the stored calendar and focus a new month. */
 export function useCalendarEditorState({
@@ -12,9 +14,12 @@ export function useCalendarEditorState({
 }) {
   const [mode, setMode] = useState<Mode>(storedMode)
   const [drafts, setDrafts] = useState(() => draftsFrom(stored))
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
+  // A refused month list shows the API's own words; other refused fields ask for a change.
+  const form = useFormSave({
+    needChange: (fieldErrors, error) =>
+      fieldErrors.months ? error.message : t('time.calendar.monthsNeedChange'),
+    failed: () => t('time.calendar.saveFailed'),
+  })
   const [saves, setSaves] = useState(0)
   const [moved, setMoved] = useState('')
   const headingId = useId()
@@ -42,12 +47,12 @@ export function useCalendarEditorState({
     setMode,
     drafts,
     setDrafts,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
-    saving,
-    setSaving,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
+    saving: form.isSaving,
+    runSave: form.save,
     saves,
     setSaves,
     moved,
