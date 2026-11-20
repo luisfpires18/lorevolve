@@ -82,7 +82,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         Mapped("Lore entries", ["entities"], ["get_lore_entry", "search_universe"], ["LoreEntry"]),
         Mapped("An entry's article", ["entities/article"], ["get_lore_entry"], ["Article"]),
         Mapped("An entry's progression", ["entities/progression"], ["get_lore_entry"], ["Progression"]),
-        Mapped("An entry's pictures", ["entities/image", "entities/appearances"], ["list_lore_images", "get_lore_image"], ["Media"]),
+        Mapped("An entry's pictures", ["entities/image", "entities/appearances"], ["list_lore_images", "get_lore_image"], ["Media", "propose_entry_image"]),
         new("An entry's image field pictures", ["entities/field-images"], ["list_lore_images", "get_lore_image"], "", [], Why.MediaBytes),
         Excepted("An entry's history", ["entities/revisions"], Why.LiveOnly),
         new("An entry's private note", ["entities/private-note"], [], Why.PersonOnly, ["add_private_note"], ""),
@@ -235,7 +235,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
         Nothing("Tools the server offers that the matrix does not map", [.. offered.Except(mapped).Order(StringComparer.Ordinal)]);
         Nothing("Names the matrix maps that the server does not offer", [.. mapped.Except(offered).Order(StringComparer.Ordinal)]);
-        Assert.Equal(37, offered.Count);
+        Assert.Equal(38, offered.Count);
     }
 
     [Fact]
