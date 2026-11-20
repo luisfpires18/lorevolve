@@ -1,7 +1,6 @@
 import { saveChronology } from './api'
 import { EraDirection, EraLabelPosition, type Chronology } from './types'
 import { t } from '../i18n'
-import { confirmDiscard } from '../lib/confirm'
 import { draftsFrom, inputOf, type EraDraft } from './eraDrafts'
 import type { useChronologyEditorState } from './useChronologyEditorState'
 
@@ -22,7 +21,10 @@ export function chronologyActions({
   focusNew,
   touched,
   created,
+  confirmLeave,
 }: ReturnType<typeof useChronologyEditorState> & {
+  /** The editor's discard guard: true when there is nothing to lose or the author lets it go. */
+  confirmLeave: () => Promise<boolean>
   universeId: string
   onSaved: (next: Chronology) => void
 }) {
@@ -73,7 +75,7 @@ export function chronologyActions({
   }
 
   async function discard() {
-    if (!(await confirmDiscard(t('time.periods.discardConfirm')))) return
+    if (!(await confirmLeave())) return
     touched.current = false
     setDrafts(draftsFrom(stored))
     setFieldErrors({})

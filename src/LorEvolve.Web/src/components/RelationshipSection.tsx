@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import type { EraChoice } from './RelationshipPeriodsField'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
@@ -56,7 +56,7 @@ export function RelationshipSection({
   const custom = hasCalendar(chronology)
 
   const isDirty = draft !== null && draftKey(draft) !== opened
-  useLeaveGuard(isDirty ? t('relationships.section.leave') : null)
+  const { confirmLeave } = useDiscardGuard(isDirty, t('relationships.section.leave'))
 
   const at = shownAt ? chronologyOf(shownAt, reckonsInEras, custom) : null
   const whenReady =
@@ -67,7 +67,7 @@ export function RelationshipSection({
     ...state,
     universeId,
     entityId,
-    isDirty,
+    confirmLeave,
     reckonsInEras,
     custom,
     load,

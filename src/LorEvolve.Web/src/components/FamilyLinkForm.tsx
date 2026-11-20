@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { EntityPicker } from './EntityPicker'
 import { FamilyKindDialog } from './FamilyKindDialog'
 import { payloadKey } from '../lib/drawerGuard'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import {
   FAMILY_SEMANTIC_WORDS,
   isParentSemantic,
@@ -76,7 +76,7 @@ export function FamilyLinkForm({
   )
   const isDirty =
     payloadKey({ kindId, focalIsSource, relatedId: related?.id ?? null, canonStatus }) !== initial
-  useLeaveGuard(isDirty ? t('places.linkForm.leave') : null)
+  const { confirmLeave } = useDiscardGuard(isDirty, t('places.linkForm.leave'))
 
   const { cancel, save } = familyLinkActions({
     ...state,
@@ -84,7 +84,7 @@ export function FamilyLinkForm({
     focal,
     kind,
     asSource,
-    isDirty,
+    confirmLeave,
     onSaved,
     onCancel,
     t,
