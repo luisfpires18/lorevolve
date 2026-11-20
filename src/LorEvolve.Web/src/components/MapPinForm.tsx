@@ -15,6 +15,7 @@ import {
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface PinDraft {
   title: string
@@ -146,11 +147,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="map-pin-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="map-pin-error">{message}</FormMessage> : null}
 
       <EntityPicker
         label={t('places.pinForm.lore')}

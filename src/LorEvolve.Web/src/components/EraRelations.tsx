@@ -5,6 +5,7 @@ import { listEntityRelationships } from '../relationships/api'
 import { Validity, type RelationshipView } from '../relationships/types'
 import { LoadingNote } from './LoadingNote'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 /**
  * The relations of one entry that hold in one of its eras (Issues #18, #44), as the relationships list reads them for that era:
@@ -43,11 +44,7 @@ export function EraRelations({
   }
 
   if (views === 'failed') {
-    return (
-      <p className="form__message" role="alert">
-        {t('time.eraRelations.failed')}
-      </p>
-    )
+    return <FormMessage>{t('time.eraRelations.failed')}</FormMessage>
   }
 
   const holding = views.filter((view) => view.validity !== Validity.Unplaced)

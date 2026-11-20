@@ -5,6 +5,7 @@ import { setEntityTypeGroupFamilyTree } from '../lore/typesApi'
 import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { useI18n } from '../i18n'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 interface Props {
   universeId: string
@@ -135,11 +136,7 @@ export function FamilyTreeTypes({
               )}
             </>
           )}
-          {message ? (
-            <p className="form__message" role="alert" data-testid="family-setup-error">
-              {message}
-            </p>
-          ) : null}
+          {message ? <FormMessage testId="family-setup-error">{message}</FormMessage> : null}
         </section>
       </div>
     </details>

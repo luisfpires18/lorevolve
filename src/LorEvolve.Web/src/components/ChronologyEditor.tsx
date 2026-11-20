@@ -16,6 +16,7 @@ import { Button } from './Button'
 import { NewButton } from './NewButton'
 import { Announce } from './Announce'
 import { Section } from './Section'
+import { FormMessage } from './FormMessage'
 
 interface ChronologyEditorProps {
   universeId: string
@@ -193,11 +194,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
           <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
         ) : null}
 
-        {message ? (
-          <p className="form__message" role="alert" data-testid="chronology-error">
-            {message}
-          </p>
-        ) : null}
+        {message ? <FormMessage testId="chronology-error">{message}</FormMessage> : null}
 
         {/* Nothing to save and no periods to save: no lone disabled button under the empty state. */}
         {dirty || drafts.length > 0 ? (

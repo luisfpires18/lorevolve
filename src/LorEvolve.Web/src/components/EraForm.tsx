@@ -16,6 +16,7 @@ import { EraPoint } from './progression/EraPoint'
 import { EraFieldRow } from './progression/EraFieldRow'
 import { EraStories } from './progression/EraStories'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface EraFormProps {
   universeId: string
@@ -122,11 +123,7 @@ export function EraForm({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="era-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="era-error">{message}</FormMessage> : null}
 
       {conflict ? (
         <EraConflict

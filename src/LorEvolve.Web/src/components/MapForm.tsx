@@ -7,6 +7,7 @@ import { MapFormName } from './MapFormName'
 import { MapFormPicture } from './MapFormPicture'
 import { MapFormReplace } from './MapFormReplace'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * Three small forms in the one drawer: a new map (its picture and details in one request), a map's details (saved over
@@ -74,11 +75,7 @@ export function MapForm(props: MapFormProps) {
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="map-form-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="map-form-error">{message}</FormMessage> : null}
 
       {props.mode !== 'replace' ? (
         <MapFormName

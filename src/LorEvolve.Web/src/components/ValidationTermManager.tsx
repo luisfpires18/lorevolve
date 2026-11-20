@@ -8,6 +8,7 @@ import { TermGroup } from './ruleValidation/TermGroup'
 import { NewTermForm } from './ruleValidation/NewTermForm'
 import { LoadingNote } from './LoadingNote'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 /**
  * The universe's event kinds and methods on the Types screen (ADR 0034): renamed here, deleted here once nothing names them, and
@@ -46,11 +47,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
 
       <p className="settings__note">{t('canon.terms.note')}</p>
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="terms-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="terms-error">{message}</FormMessage> : null}
 
       {terms === null && !message ? <LoadingNote>{t('canon.terms.reading')}</LoadingNote> : null}
 

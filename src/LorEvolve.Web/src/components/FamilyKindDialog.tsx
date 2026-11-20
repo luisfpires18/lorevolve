@@ -13,6 +13,7 @@ import {
   type RelationshipType,
 } from '../relationships/types'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 interface Props {
   universeId: string
@@ -99,11 +100,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="family-kind-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="family-kind-error">{message}</FormMessage> : null}
 
       <Field
         label={t('places.kindDialog.name')}

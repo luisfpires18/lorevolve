@@ -5,6 +5,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { PinForm } from '../../maps/useMapPageState'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { FormMessage } from '../FormMessage'
 
 export function MapNotices({
   map,
@@ -60,11 +61,7 @@ export function MapNotices({
         </p>
       ) : null}
 
-      {failure ? (
-        <p className="form__message" role="alert" data-testid="map-failure">
-          {failure}
-        </p>
-      ) : null}
+      {failure ? <FormMessage testId="map-failure">{failure}</FormMessage> : null}
     </>
   )
 }

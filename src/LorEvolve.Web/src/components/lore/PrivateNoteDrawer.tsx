@@ -20,6 +20,7 @@ import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 interface DrawerProps extends PrivateNotesProps {
   onClose: () => void
@@ -173,11 +174,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
             />
           ) : null}
 
-          {failure ? (
-            <p className="form__message" role="alert" data-testid="private-note-error">
-              {failure}
-            </p>
-          ) : null}
+          {failure ? <FormMessage testId="private-note-error">{failure}</FormMessage> : null}
 
           <Field
             as="textarea"

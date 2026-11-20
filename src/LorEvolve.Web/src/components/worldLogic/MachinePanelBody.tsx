@@ -12,6 +12,7 @@ import { MachineTransitions } from './MachineTransitions'
 import { MachineBinding } from './MachineBinding'
 import { MachineSaveBar } from './MachineSaveBar'
 import { MachineDrawers } from './MachineDrawers'
+import { FormMessage } from '../FormMessage'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -73,9 +74,7 @@ export function MachinePanelBody({
   const rowError = (item: string) => {
     const messages = Object.values(errors[item] ?? {})
     return messages.length > 0 ? (
-      <p className="form__message" role="alert" data-testid="machine-row-error">
-        {messages.join(' ')}
-      </p>
+      <FormMessage testId="machine-row-error">{messages.join(' ')}</FormMessage>
     ) : null
   }
   const { subjectType, attribute } = draft.binding

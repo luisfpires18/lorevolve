@@ -9,6 +9,7 @@ import type { useEntityArticle } from '../../lore/useEntityArticle'
 import type { useArticleEditing } from '../../lore/useArticleEditing'
 import { Button } from '../Button'
 import { CharCount } from '../CharCount'
+import { FormMessage } from '../FormMessage'
 
 // The editor and its 125 KB of Tiptap and ProseMirror come only when an author presses Edit; reading needs neither.
 const LoreEditor = lazy(() =>
@@ -89,9 +90,9 @@ export function ArticleEditing({
       ) : null}
 
       {failure ? (
-        <p className="form__message article__failure" role="alert" data-testid="article-error">
+        <FormMessage className="article__failure" testId="article-error">
           {failure}
-        </p>
+        </FormMessage>
       ) : null}
 
       <Suspense fallback={null}>

@@ -12,6 +12,7 @@ import { TypeDialogPlace } from './TypeDialogPlace'
 import { TypeDialogBehaviour } from './TypeDialogBehaviour'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 /** What the drawer reads of the type it edits: a lore type, or a project's own type (#144). */
 export type DialogType = TreeType & { icon: string | null; familyTreeEligible?: boolean }
@@ -185,11 +186,7 @@ export function TypeDialog({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="type-dialog-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="type-dialog-error">{message}</FormMessage> : null}
 
       {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
       <TypeDialogIdentity

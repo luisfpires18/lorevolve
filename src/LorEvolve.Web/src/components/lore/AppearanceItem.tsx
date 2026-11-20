@@ -9,6 +9,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { t, useI18n } from '../../i18n'
 import { useAppearanceImages } from '../../lore/useAppearanceImages'
 import { AppearanceGallery } from './AppearanceGallery'
+import { FormMessage } from '../FormMessage'
 
 export function AppearanceItem({
   canMoveEarlier,
@@ -88,11 +89,7 @@ export function AppearanceItem({
       </div>
       {appearance.notes ? <p className="progitems__description prose">{appearance.notes}</p> : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="appearance-message">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="appearance-message">{message}</FormMessage> : null}
 
       <AppearanceGallery
         universeId={universeId}

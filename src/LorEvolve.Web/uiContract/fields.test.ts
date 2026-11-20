@@ -93,6 +93,7 @@ test('the field guards catch a hand-made field, template-built classes included'
   assert.ok(looseAlerts('error={<span role="alert">{why}</span>}'))
   assert.ok(looseAlerts('<p className={`field__error ${extra}`} role="alert">{x}</p>'))
   assert.ok(!looseAlerts('<p className="form__message" role="alert">{message}</p>'))
+  assert.ok(!looseAlerts('<FormMessage testId="x">{message}</FormMessage>'))
   assert.ok(!looseAlerts('<p className={`notice ${tone}`} role="alert">{x}</p>'))
 
   assert.ok(bareControls('<textarea className="field__input" value={v} />'))
@@ -142,7 +143,7 @@ test('an alert is a Field error with announce, a form__message or a state part',
   check(
     found(tsxFiles, looseAlerts),
     [c('Field'), c('EditConflict'), c('worldLogic/Block')],
-    'pass the error to Field with announce, or use className="form__message"',
+    'pass the error to Field with announce, or use <FormMessage>',
   )
 })
 

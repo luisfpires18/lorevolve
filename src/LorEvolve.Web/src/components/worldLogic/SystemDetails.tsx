@@ -5,6 +5,7 @@ import type { useSystemEditorState } from '../../worldLogic/useSystemEditorState
 import type { systemEditorActions } from '../../worldLogic/systemEditorActions'
 import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
+import { FormMessage } from '../FormMessage'
 
 type State = ReturnType<typeof useSystemEditorState>
 type Actions = ReturnType<typeof systemEditorActions>
@@ -50,11 +51,7 @@ export function SystemDetails({
         />
       ) : null}
 
-      {failure ? (
-        <p className="form__message" role="alert" data-testid="system-editor-error">
-          {failure}
-        </p>
-      ) : null}
+      {failure ? <FormMessage testId="system-editor-error">{failure}</FormMessage> : null}
 
       <form
         noValidate

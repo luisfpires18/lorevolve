@@ -22,6 +22,7 @@ import { Button } from '../Button'
 import { DisclosureButton } from '../DisclosureButton'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
+import { FormMessage } from '../FormMessage'
 
 interface ArticleHistoryProps {
   universeId: string
@@ -167,11 +168,7 @@ export function ArticleHistory({
 
       {isOpen ? (
         <div id={bodyId}>
-          {message ? (
-            <p className="form__message" role="alert" data-testid="article-history-error">
-              {message}
-            </p>
-          ) : null}
+          {message ? <FormMessage testId="article-history-error">{message}</FormMessage> : null}
 
           {failed ? (
             <QuietNote className="history__quiet" size="ui" role="status">

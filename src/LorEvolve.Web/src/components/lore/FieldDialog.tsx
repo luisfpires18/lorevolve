@@ -12,6 +12,7 @@ import { FieldLinkTarget } from './FieldLinkTarget'
 import { FieldMeaningShape } from './FieldMeaningShape'
 import { FieldDefaultRequired } from './FieldDefaultRequired'
 import { FormActions } from '../FormActions'
+import { FormMessage } from '../FormMessage'
 
 /**
  * One field's settings, new or existing, in the drawer every LorEvolve form uses: focus goes in, Escape and Cancel ask before
@@ -134,11 +135,7 @@ export function FieldDialog({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="field-dialog-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="field-dialog-error">{message}</FormMessage> : null}
 
       {stale && latest ? (
         <FieldStaleNotice

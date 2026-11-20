@@ -6,6 +6,7 @@ import { useFormSave } from '../lib/useFormSave'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
 import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 
 /**
  * A game type made from one of the universe's templates (#283). The game gets its own copy: nothing links it back, so
@@ -60,11 +61,7 @@ export function TypeFromTemplateDrawer({
         />
       )}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="type-from-template-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="type-from-template-error">{message}</FormMessage> : null}
 
       <section className="drawer__group" aria-labelledby="type-from-template-source">
         <h3 className="sectionrule sectionrule--accent" id="type-from-template-source">

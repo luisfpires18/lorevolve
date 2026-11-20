@@ -10,6 +10,7 @@ import { EMPTY_FACT, renderFact } from '../../lore/facts'
 import { listEntityRelationships } from '../../relationships/api'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
+import { FormMessage } from '../FormMessage'
 
 const MAX_RELATIONS = 8
 
@@ -85,9 +86,9 @@ export function LorePreview({
         </p>
       ) : null}
       {state.kind === 'error' ? (
-        <p className="form__message" role="alert" id={nameId} data-testid="lore-preview-error">
+        <FormMessage id={nameId} testId="lore-preview-error">
           {t('lore.preview.error')}
-        </p>
+        </FormMessage>
       ) : null}
 
       {state.kind === 'ready' ? (

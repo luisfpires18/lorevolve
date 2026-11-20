@@ -12,6 +12,7 @@ import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
 import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
 import { LoadingNote } from '../LoadingNote'
+import { FormMessage } from '../FormMessage'
 
 /**
  * The guard builder, opened from a transition (Issue #359): a rule definition's title and its condition, built from
@@ -101,17 +102,11 @@ export function GuardBuilderDrawer({
         />
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="guard-builder-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="guard-builder-error">{message}</FormMessage> : null}
 
       {load === 'loading' ? <LoadingNote>{t(`${gb}.loading`)}</LoadingNote> : null}
       {load === 'error' ? (
-        <p className="form__message" role="alert" data-testid="guard-builder-unavailable">
-          {t(`${gb}.loadFailed`)}
-        </p>
+        <FormMessage testId="guard-builder-unavailable">{t(`${gb}.loadFailed`)}</FormMessage>
       ) : null}
 
       {load === 'ready' ? (

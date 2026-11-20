@@ -10,6 +10,7 @@ import { Button } from '../Button'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
+import { FormMessage } from '../FormMessage'
 
 /** Above the spine: the story scope with its clear button, the status, era and error lines, and the reading state. */
 export function TimelineNotices({
@@ -78,11 +79,7 @@ export function TimelineNotices({
         </p>
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="chron-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="chron-error">{message}</FormMessage> : null}
 
       {state.kind === 'loading' ? <LoadingNote>{t('time.timeline.reading')}</LoadingNote> : null}
 

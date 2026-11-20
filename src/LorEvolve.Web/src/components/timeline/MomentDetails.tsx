@@ -7,6 +7,7 @@ import type { TimelineEntry } from '../../timeline/types'
 import type { Dispatch, SetStateAction } from 'react'
 import { DETAIL_ERROR_KEYS, type MomentDraft } from '../../timeline/momentDraft'
 import { Button } from '../Button'
+import { FormMessage } from '../FormMessage'
 
 /** The folded validation details: the kind of event, the method and the one who took part. */
 export function MomentDetails({
@@ -60,12 +61,12 @@ export function MomentDetails({
         <p className="field__hint">{t('time.momentForm.detailsHint')}</p>
 
         {termsFailed ? (
-          <p className="form__message" role="alert">
+          <FormMessage>
             {t('time.momentForm.termsFailed')}{' '}
             <Button tone="secondary" size="sm" onClick={reloadTerms}>
               {t('time.momentForm.tryAgain')}
             </Button>
-          </p>
+          </FormMessage>
         ) : null}
 
         <ValidationTermSelect

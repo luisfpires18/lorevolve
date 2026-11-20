@@ -12,6 +12,7 @@ import { CalibrationFields } from './maps/CalibrationFields'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 /** A point of the picture, as fractions. */
 export interface Fraction {
@@ -174,11 +175,7 @@ export function MapCalibrationForm({
         {t('places.calibration.formTitle')}
       </SectionTitle>
       <p className="mapscale__text">{t('places.calibration.formIntro')}</p>
-      {message ? (
-        <p className="form__message" role="alert" data-testid="map-calibration-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="map-calibration-error">{message}</FormMessage> : null}
 
       <CalibrationFields
         a={a}

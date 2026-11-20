@@ -5,6 +5,7 @@ import { t, useI18n } from '../i18n'
 import { evaluateSystemMachine } from '../worldLogic/api'
 import { markText, type GuardMarkValue } from '../worldLogic/markText'
 import type { SystemMachineTryResult } from '../worldLogic/types'
+import { FormMessage } from './FormMessage'
 
 const m = 'canon.worldLogic.systems.machine'
 
@@ -79,9 +80,7 @@ export function SystemMachineTry({
         onChange={choose}
       />
       {failed ? (
-        <p className="form__message" role="alert" data-testid="machine-try-failed">
-          {t(`${m}.try.failed`)}
-        </p>
+        <FormMessage testId="machine-try-failed">{t(`${m}.try.failed`)}</FormMessage>
       ) : null}
       <p className="field__hint" role="status" data-testid="machine-try-result">
         {entry && result ? (

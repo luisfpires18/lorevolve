@@ -11,6 +11,7 @@ import { TypeRow } from './TypeRow'
 import { NewButton } from './NewButton'
 import { LoadingNote } from './LoadingNote'
 import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
   useI18n() // Re-render when the language changes; the module's `t` reads the new one.
@@ -90,11 +91,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
 
       <p className="settings__note">{t('relationships.types.intro')}</p>
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="reltype-error">
-          {message}
-        </p>
-      ) : null}
+      {message ? <FormMessage testId="reltype-error">{message}</FormMessage> : null}
 
       {isAdding ? form : null}
 
