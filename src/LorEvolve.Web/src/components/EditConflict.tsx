@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { EMPTY_FACT } from '../lore/facts'
 import type { Change } from '../lib/editConflict'
 import { errorText } from '../lib/errorText'
 import { isNotFound, type Load } from '../lib/useAsyncRead'
@@ -191,13 +192,13 @@ export function ChangeList({
           <dd className="changelist__value" data-side="latest">
             <span className="changelist__side">{sides.latest}</span>
             <span dir="auto" data-testid={`${testId}-latest-value`}>
-              {change.latest || '—'}
+              {change.latest || EMPTY_FACT}
             </span>
           </dd>
           <dd className="changelist__value" data-side="mine">
             <span className="changelist__side">{sides.mine}</span>
             <span dir="auto" data-testid={`${testId}-mine-value`}>
-              {change.mine || '—'}
+              {change.mine || EMPTY_FACT}
             </span>
           </dd>
         </div>

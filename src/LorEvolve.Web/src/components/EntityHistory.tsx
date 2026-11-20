@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { EMPTY_FACT } from '../lore/facts'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
 import { VersionActor } from './VersionActor'
@@ -137,7 +138,7 @@ export function EntityHistory({
                         number:
                           revisions.find(
                             (candidate) => candidate.id === revision.restoredFromRevisionId,
-                          )?.number ?? '—',
+                          )?.number ?? EMPTY_FACT,
                       })}
                     </span>
                   ) : null}
