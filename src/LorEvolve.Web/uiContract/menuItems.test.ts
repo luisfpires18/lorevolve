@@ -30,7 +30,6 @@ const HAND_WRITTEN_ROW_MENUS = new Map<string, string>([
   ['src/components/projects/ComicCollectionItem.tsx', 'Edit comes after the move and add items'],
   ['src/components/projects/SagaSection.tsx', 'Edit comes after the move and add items'],
   ['src/components/stories/StoryBar.tsx', 'Timeline and Suggest come before Edit'],
-  ['src/components/typeTemplates/TemplateFields.tsx', 'Remove is disabled while busy, Edit is not'],
 ])
 
 const writesItemClass = (source: string) =>

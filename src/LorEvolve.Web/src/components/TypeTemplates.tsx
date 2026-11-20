@@ -6,10 +6,9 @@ import {
   saveTypeTemplate,
 } from '../typeTemplates/api'
 import type { TypeTemplate } from '../typeTemplates/types'
-import type { ProjectField } from '../projectEntities/types'
 import { buildTypeTree, type TreeType } from '../lore/typeTree'
 import { useLoadedList } from '../lib/useLoadedList'
-import { confirmAction } from '../lib/confirm'
+import { confirmDelete } from '../lib/confirm'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
 import { t, useI18n } from '../i18n'
@@ -29,11 +28,6 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
   useI18n()
   const [editing, setEditing] = useState<TypeTemplate | 'new' | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
-  // A field form is open on a template: new, or an existing field being edited.
-  const [fieldForm, setFieldForm] = useState<{
-    templateId: string
-    field: ProjectField | null
-  } | null>(null)
   const read = useCallback(
     (signal?: AbortSignal) => listTypeTemplates(universeId, signal),
     [universeId],
@@ -51,15 +45,15 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
   })
 
   async function remove(template: TypeTemplate) {
-    const confirmed = await confirmAction({
-      title: t('entityTypes.page.templates.deleteTitle'),
-      message: t('entityTypes.page.templates.deleteMessage'),
-      confirmLabel: t('entityTypes.page.templates.deleteConfirm'),
-      variant: 'destructive',
-    })
-    if (!confirmed) return
-    setBusy(true)
-    deleteTypeTemplate(universeId, template.id).then(refresh).catch(failing)
+    await confirmDelete(
+      {
+        title: t('entityTypes.page.templates.deleteTitle'),
+        message: t('entityTypes.page.templates.deleteMessage'),
+        confirmLabel: t('entityTypes.page.templates.deleteConfirm'),
+      },
+      () => deleteTypeTemplate(universeId, template.id).then(refresh),
+      { setBusy, fail: failing },
+    )
   }
 
   if (templates === null) {
@@ -137,8 +131,6 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
             setEditing={setEditing}
             openId={openId}
             setOpenId={setOpenId}
-            fieldForm={fieldForm}
-            setFieldForm={setFieldForm}
             refresh={refresh}
             failing={failing}
             remove={remove}

@@ -97,3 +97,29 @@ export function confirmDiscard(title?: ReactNode) {
     variant: 'destructive',
   })
 }
+
+/**
+ * Asks before a delete (`destructive` unless the place says otherwise), then runs it the place's way. With `run`, the
+ * list's own runner marks it busy, deletes and refreshes. With `setBusy` and `fail`, `work` refreshes itself. With
+ * neither, the dialog runs `work` and stays open on a failure.
+ */
+export async function confirmDelete(
+  options: Omit<ConfirmOptions, 'action'>,
+  work: () => Promise<unknown>,
+  runner?:
+    | ((work: () => Promise<unknown>) => void)
+    | { setBusy: (busy: boolean) => void; fail: (error: unknown) => void },
+) {
+  const ask: ConfirmOptions = { variant: 'destructive', ...options }
+  if (!runner) {
+    await confirmAction({ ...ask, action: work })
+    return
+  }
+  if (!(await confirmAction(ask))) return
+  if (typeof runner === 'function') {
+    runner(work)
+    return
+  }
+  runner.setBusy(true)
+  await work().catch(runner.fail)
+}

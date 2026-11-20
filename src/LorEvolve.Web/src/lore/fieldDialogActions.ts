@@ -6,6 +6,11 @@ import type { EntityType, FieldDefinition } from './typeDefinitions'
 import type { useFieldDialogState } from './useFieldDialogState'
 import type { useI18n } from '../i18n'
 
+/** What a drawer with its own `save` hands it: the settings a project or template field takes. */
+export type FieldSave = (
+  input: Pick<FieldInput, 'name' | 'kind' | 'isRequired' | 'options' | 'imageShape'>,
+) => Promise<unknown>
+
 /** A field drawer's handlers: choose the kind, take the saved settings or keep the draft, and save. */
 export function fieldDialogActions({
   universeId,
@@ -13,6 +18,7 @@ export function fieldDialogActions({
   field,
   onChanged,
   onSaved,
+  saveTo,
   t,
   base,
   setBase,
@@ -41,11 +47,13 @@ export function fieldDialogActions({
   isText,
   isImage,
 }: ReturnType<typeof useFieldDialogState> & {
-  universeId: string
-  type: EntityType
+  universeId?: string
+  type?: EntityType
   field: FieldDefinition | null
-  onChanged: () => Promise<void>
+  onChanged?: () => Promise<void>
   onSaved: (name: string, wasNew: boolean) => Promise<void>
+  /** Saves somewhere other than a Lore type (a project or template field): no version, so no stale check. */
+  saveTo?: FieldSave
   hasOptions: boolean
   isLink: boolean
   isText: boolean
@@ -63,7 +71,7 @@ export function fieldDialogActions({
 
   /** Puts the saved settings in the drawer, the version with them, and drops the draft. */
   function takeSaved(saved: FieldDefinition) {
-    const next = draftOf(saved)
+    const next = draftOf(saved, !!saveTo)
     setBase({ draft: next, version: saved.version })
     setName(next.name)
     setKind(next.kind)
@@ -91,7 +99,7 @@ export function fieldDialogActions({
     setStale(false)
     const errors: Record<string, string> = {}
     if (!name.trim()) errors.name = t('entityTypes.fields.nameRequired')
-    if (hasOptions && splitOptions(options).length === 0)
+    if (hasOptions && splitOptions(options, !!saveTo).length === 0)
       errors.options = t('entityTypes.fields.optionsRequired')
     if (isLink && target === null) errors.target = t('entityTypes.fields.targetRequired')
     if (Object.keys(errors).length > 0) {
@@ -107,7 +115,7 @@ export function fieldDialogActions({
       // A new field goes last, and an edit keeps its place: the order is the Sections drawer's (Issue #26).
       displayOrder: null,
       defaultValue: isText ? defaultValue.trim() || null : null,
-      options: hasOptions ? splitOptions(options) : null,
+      options: hasOptions ? splitOptions(options, !!saveTo) : null,
       semantic,
       imageShape: isImage ? imageShape : null,
       ...parseTarget(isLink ? target : null),
@@ -116,16 +124,21 @@ export function fieldDialogActions({
 
     setIsSaving(true)
     try {
-      if (field) await updateField(universeId, type.id, field.id, input)
-      else await addField(universeId, type.id, input)
+      if (saveTo) {
+        const { name, kind, isRequired, options, imageShape } = input
+        await saveTo({ name, kind, isRequired, options, imageShape })
+      } else if (universeId && type) {
+        if (field) await updateField(universeId, type.id, field.id, input)
+        else await addField(universeId, type.id, input)
+      }
       await onSaved(input.name, field === null)
     } catch (error: unknown) {
-      if (error instanceof ApiError && error.code === FIELD_CHANGED_CODE) {
+      if (!saveTo && error instanceof ApiError && error.code === FIELD_CHANGED_CODE) {
         // Saved by someone else since this opened: nothing was written, the draft stays, and the latest is read so the
         // author can compare and choose.
         setMessage(t('entityTypes.fields.changedMeanwhile'))
         setStale(true)
-        await onChanged().catch(() => undefined)
+        await onChanged?.().catch(() => undefined)
       } else if (error instanceof ApiError) {
         const mapped: Record<string, string> = {}
         for (const [key, text] of Object.entries(error.fieldErrors)) {
@@ -140,7 +153,7 @@ export function fieldDialogActions({
               : t('entityTypes.fields.detailsAdd'),
         )
         // Changed elsewhere since this opened (archived, say): the list behind should say so too.
-        if (error.status === 409) await onChanged().catch(() => undefined)
+        if (!saveTo && error.status === 409) await onChanged?.().catch(() => undefined)
       } else {
         setMessage(field ? t('entityTypes.fields.saveFailed') : t('entityTypes.fields.addFailed'))
       }
