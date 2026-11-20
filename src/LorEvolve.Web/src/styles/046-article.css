@@ -24,13 +24,6 @@
     box-shadow 700ms ease;
 }
 
-.article[data-arrived] {
-  background: var(--surface);
-  box-shadow:
-    inset 2px 0 0 var(--accent),
-    0 0 0 0.6rem var(--surface);
-}
-
 .article__title:focus {
   outline: none;
 }

@@ -248,3 +248,13 @@
 .showmore__error {
   color: var(--danger);
 }
+
+/* A row reached by a link (useArrivalMark) is marked for a moment: the surface behind it and the accent on its edge, so
+   the eye can tell which row the link meant. The mark fades through each place's own transition, unless motion is
+   reduced there. The row holds the focus by then, and the mark is what shows it. */
+:is(.article, .scene, .plotarc)[data-arrived] {
+  background: var(--surface);
+  box-shadow:
+    inset 2px 0 0 var(--accent),
+    0 0 0 0.6rem var(--surface);
+}
