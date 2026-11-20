@@ -5,6 +5,7 @@ import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 /**
  * Forgot password on the account's behalf (#69): LorEvolve emails the account its own reset link. The Admin sees
@@ -44,9 +45,9 @@ export function PasswordSection({
 
   return (
     <Section title={t('admin.password.heading')} titleId="admin-password" rule={false}>
-      <p className="settings__note">
+      <QuietNote spacing="block">
         {user.isBlocked ? t('admin.password.noteBlocked') : t('admin.password.note')}
-      </p>
+      </QuietNote>
       <div className="actions form__actions">
         <Button
           tone="secondary"
@@ -58,9 +59,9 @@ export function PasswordSection({
         </Button>
       </div>
       {sent ? (
-        <p className="settings__note" role="status" data-testid="admin-password-reset-sent">
+        <QuietNote spacing="block" role="status" testId="admin-password-reset-sent">
           {t('admin.password.sent')}
-        </p>
+        </QuietNote>
       ) : null}
     </Section>
   )

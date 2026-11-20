@@ -62,9 +62,9 @@ export function UsersScreen() {
 
       {result && result.items.length > 0 ? (
         <>
-          <p className="settings__note" role="status" data-testid="admin-user-count">
+          <QuietNote spacing="block" role="status" testId="admin-user-count">
             {tn('admin.users.count', result.totalCount, { n: formatCount(result.totalCount) })}
-          </p>
+          </QuietNote>
           <CardGrid min={15} testId="admin-user-grid">
             {result.items.map((user) => (
               <li key={user.id}>

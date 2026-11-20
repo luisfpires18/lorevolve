@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { SelectedLore } from '../../publishing/types'
+import { QuietNote } from '../QuietNote'
 
 /**
  * The lore entries that become public with the world (Issue #47), by name and type: a private universe's entry pages do
@@ -10,19 +11,19 @@ export function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
   const { totalCount, items } = selected
   if (totalCount === 0) {
     return (
-      <p className="settings__note" data-testid="publish-confirm-no-selected-lore">
+      <QuietNote spacing="block" testId="publish-confirm-no-selected-lore">
         <strong>{t('universe.publish.selected.loreLabel')}</strong>{' '}
         {t('universe.publish.selected.none')}
-      </p>
+      </QuietNote>
     )
   }
 
   return (
     <div className="publication__selected" data-testid="publish-confirm-selected-lore">
-      <p className="settings__note" id="publish-confirm-lore">
+      <QuietNote spacing="block" id="publish-confirm-lore">
         <strong>{t('universe.publish.selected.alsoPublic')}</strong>{' '}
         {tn('universe.publish.selected.some', totalCount, { n: totalCount })}
-      </p>
+      </QuietNote>
       {/* Focusable so a long list scrolls from the keyboard as well. */}
       <ul className="publication__selectedlist" aria-labelledby="publish-confirm-lore" tabIndex={0}>
         {items.map((entry) => (
@@ -35,11 +36,11 @@ export function SelectedLoreReview({ selected }: { selected: SelectedLore }) {
         ))}
       </ul>
       {totalCount > items.length ? (
-        <p className="settings__note" data-testid="publish-confirm-selected-more">
+        <QuietNote spacing="block" testId="publish-confirm-selected-more">
           {t('universe.publish.selected.more', { n: totalCount - items.length })}
-        </p>
+        </QuietNote>
       ) : null}
-      <p className="settings__note">{t('universe.publish.selected.again')}</p>
+      <QuietNote spacing="block">{t('universe.publish.selected.again')}</QuietNote>
     </div>
   )
 }

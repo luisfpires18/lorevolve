@@ -73,7 +73,7 @@ export function ConnectedApps() {
       titleProps={{ ref: headingRef, tabIndex: -1 }}
       testId="connected-apps"
     >
-      <p className="settings__note">{t('data.connectedApps.note')}</p>
+      <QuietNote spacing="block">{t('data.connectedApps.note')}</QuietNote>
 
       {load.kind === 'loading' ? (
         <p className="usage__status" role="status">
@@ -234,7 +234,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
           busy={busy}
           testId="disconnect-app-confirm"
         >
-          <p className="settings__note">{t('data.connectedApps.confirmNote')}</p>
+          <QuietNote spacing="block">{t('data.connectedApps.confirmNote')}</QuietNote>
           <FormActions
             submitLabel={t('data.connectedApps.disconnect')}
             busy={busy}

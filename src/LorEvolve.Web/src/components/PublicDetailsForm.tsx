@@ -20,6 +20,7 @@ import { publicDetailsActions } from '../publishing/publicDetailsActions'
 import { PublicAttributionField } from './publishing/PublicAttributionField'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The public details a universe is published with: its summary, its category and its genres. Its own form and
@@ -213,9 +214,9 @@ export function PublicDetailsForm({
         inline
       >
         {savedMessage && !isDirty ? (
-          <p className="settings__saved" role="status" data-testid="public-details-saved">
+          <QuietNote tone="saved" role="status" testId="public-details-saved">
             {t('universe.publicDetails.saved')}
-          </p>
+          </QuietNote>
         ) : null}
       </FormActions>
     </form>

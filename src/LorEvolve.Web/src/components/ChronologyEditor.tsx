@@ -17,6 +17,7 @@ import { NewButton } from './NewButton'
 import { Announce } from './Announce'
 import { Section } from './Section'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface ChronologyEditorProps {
   universeId: string
@@ -122,9 +123,9 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
             }
           />
         ) : (
-          <p className="settings__note" data-testid="chronology-note">
+          <QuietNote spacing="block" testId="chronology-note">
             {t('time.periods.note')}
-          </p>
+          </QuietNote>
         )}
 
         {drafts.length > 0 && unplacedTotal > 0 ? (

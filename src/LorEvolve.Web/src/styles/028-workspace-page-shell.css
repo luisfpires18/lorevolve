@@ -14,7 +14,7 @@
 
 /* Chronology is a worldbuilding section in the workspace's own frame, full width like World Rules; only its prose keeps
    a reading measure. */
-.chronology > .settings__note,
+.chronology > .quietnote--block,
 .chronology > .settings__caution {
   max-width: 70ch;
 }
@@ -124,19 +124,6 @@
   margin-right: auto;
   color: var(--muted);
   font-size: var(--text-ui);
-}
-
-.settings__note {
-  margin: 0 0 var(--space-4);
-  color: var(--muted);
-  font-size: var(--text-ui);
-  line-height: 1.6;
-}
-
-.settings__saved {
-  margin: 0 0 var(--space-4);
-  font-size: var(--text-ui);
-  color: var(--accent);
 }
 
 /* `Section`: a titled block of a screen - Settings, Publish, Profile, Chronology, Admin. Ruled (the default): a hairline

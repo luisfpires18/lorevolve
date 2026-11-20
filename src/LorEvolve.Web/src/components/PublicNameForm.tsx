@@ -7,6 +7,7 @@ import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The account's public name: the "by …" on its published universes, and the only thing about the account the
@@ -110,9 +111,9 @@ export function PublicNameForm() {
         inline
       >
         {done && !isDirty ? (
-          <p className="settings__saved" role="status" data-testid="public-name-saved">
+          <QuietNote tone="saved" role="status" testId="public-name-saved">
             {t('account.publicName.saved')}
-          </p>
+          </QuietNote>
         ) : null}
       </FormActions>
     </form>

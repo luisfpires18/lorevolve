@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import type { Published, usePublishState } from '../../publishing/usePublishState'
 import { PublishEverything } from './PublishEverything'
 import { Button } from '../Button'
+import { QuietNote } from '../QuietNote'
 
 /** What readers can see inside the universe, with links to its lore and stories, and Publish everything while public. */
 export function PublishContent({
@@ -22,7 +23,7 @@ export function PublishContent({
 
   return (
     <>
-      <p className="settings__note">{t('universe.publish.contentNote')}</p>
+      <QuietNote spacing="block">{t('universe.publish.contentNote')}</QuietNote>
       <ul className="publish__content" data-testid="published-content">
         <li>
           <ActionIcon icon={Library} />

@@ -143,7 +143,7 @@
   margin: 0 0 var(--space-4);
 }
 
-.publication__selected > .settings__note {
+.publication__selected > .quietnote--block {
   margin-block: 0 var(--space-2);
 }
 
@@ -263,7 +263,7 @@
   margin: var(--space-3) 0 0;
 }
 
-.usage .settings__note {
+.usage .quietnote--block {
   margin-top: var(--space-3);
 }
 

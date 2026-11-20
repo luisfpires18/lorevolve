@@ -4,6 +4,7 @@ import { formatBytes } from '../../lib/bytes'
 import { useI18n } from '../../i18n'
 import { Stat } from './Stat'
 import { DateText } from '../DateText'
+import { QuietNote } from '../QuietNote'
 
 const OUTCOME_KEYS = {
   Running: 'admin.backups.outcome.running',
@@ -16,9 +17,9 @@ export function BackupFacts({ status }: { status: DatabaseBackupStatus }) {
 
   if (!status.enabled) {
     return (
-      <p className="settings__note" data-testid="admin-backups-off">
+      <QuietNote spacing="block" testId="admin-backups-off">
         {t('admin.backups.off')}
-      </p>
+      </QuietNote>
     )
   }
 

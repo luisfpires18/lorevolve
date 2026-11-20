@@ -4,6 +4,7 @@ import type { Confirming, usePublishState } from '../../publishing/usePublishSta
 import { SelectedLoreReview } from './SelectedLoreReview'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
+import { QuietNote } from '../QuietNote'
 
 /** The confirm before publishing: exactly what becomes public, read fresh, and the lore that goes with it. */
 export function PublishConfirm({
@@ -28,7 +29,7 @@ export function PublishConfirm({
       busy={busy}
       testId="publish-confirm"
     >
-      <p className="settings__note">{t('universe.publish.confirm.anyone')}</p>
+      <QuietNote spacing="block">{t('universe.publish.confirm.anyone')}</QuietNote>
       <dl className="publication__facts">
         <div>
           <dt>{t('universe.publish.confirm.titleLabel')}</dt>
@@ -84,10 +85,10 @@ export function PublishConfirm({
         )}
       </dl>
       <SelectedLoreReview selected={confirming.selected} />
-      <p className="settings__note">
+      <QuietNote spacing="block">
         <strong>{t('universe.publish.confirm.notPublished')}</strong>{' '}
         {t('universe.publish.confirm.staysPrivate')}
-      </p>
+      </QuietNote>
       <FormActions
         submitLabel={t('universe.publish.confirm.publish')}
         busy={busy}

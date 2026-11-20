@@ -12,6 +12,7 @@ import { InheritedFields } from './lore/InheritedFields'
 import { TypeFieldTools } from './lore/TypeFieldTools'
 import { ArchivedFields } from './lore/ArchivedFields'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface TypeFieldsProps {
   universeId: string
@@ -108,11 +109,11 @@ export function TypeFields({
       <InheritedFields type={type} inherited={inherited} summary={summary} />
 
       {type.fields.length === 0 ? (
-        <p className="settings__note">
+        <QuietNote spacing="block">
           {inherited.length > 0
             ? t('entityTypes.fields.emptyInherited')
             : t('entityTypes.fields.empty')}
-        </p>
+        </QuietNote>
       ) : sections.length === 0 ? (
         <ul
           className="fieldlist"
@@ -154,7 +155,7 @@ export function TypeFields({
               ))}
             </ul>
           ) : (
-            <p className="settings__note">{t('entityTypes.fields.sectionEmpty')}</p>
+            <QuietNote spacing="block">{t('entityTypes.fields.sectionEmpty')}</QuietNote>
           )}
         </div>
       ))}

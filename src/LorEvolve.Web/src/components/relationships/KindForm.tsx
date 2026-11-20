@@ -5,6 +5,7 @@ import type { TypeDraft } from '../../relationships/typeDraft'
 import { KindFormCanon } from './KindFormCanon'
 import { KindFormFamily } from './KindFormFamily'
 import { FormActions } from '../FormActions'
+import { QuietNote } from '../QuietNote'
 
 export function KindForm({
   draft,
@@ -38,11 +39,11 @@ export function KindForm({
       />
 
       {draft.isSymmetric ? (
-        <p className="settings__note">
+        <QuietNote spacing="block">
           {t('relationships.types.bothRead', {
             name: draft.name.trim() || t('relationships.types.thisFallback'),
           })}
-        </p>
+        </QuietNote>
       ) : (
         <Field
           label={t('relationships.types.readsAsOther')}

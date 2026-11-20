@@ -126,7 +126,7 @@ export function MemberRow({
           busy={busy}
           testId="remove-collaborator-confirm"
         >
-          <p className="settings__note">{t('universe.collab.removeNote')}</p>
+          <QuietNote spacing="block">{t('universe.collab.removeNote')}</QuietNote>
           <FormActions
             submitLabel={t('universe.collab.removeConfirmButton')}
             busy={busy}

@@ -13,6 +13,7 @@ import { NewButton } from './NewButton'
 import { Announce } from './Announce'
 import { Section } from './Section'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface CalendarEditorProps {
   universeId: string
@@ -93,14 +94,14 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
       />
 
       {mode === 'simple' ? (
-        <p className="settings__note" data-testid="calendar-note">
+        <QuietNote spacing="block" testId="calendar-note">
           {stored ? t('time.calendar.simpleNoteStored') : t('time.calendar.simpleNote')}
-        </p>
+        </QuietNote>
       ) : (
         <>
-          <p className="settings__note" data-testid="calendar-note">
+          <QuietNote spacing="block" testId="calendar-note">
             {stored ? t('time.calendar.customNoteStored') : t('time.calendar.customNote')}
-          </p>
+          </QuietNote>
 
           <Field group hideLabel label={t('time.calendar.heading')} error={fieldErrors.months}>
             {(control) => (

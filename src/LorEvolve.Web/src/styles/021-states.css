@@ -16,12 +16,26 @@
   font-size: var(--text-sm);
 }
 
+/* A settings note: the small text, a gap below, a roomy line height. Before `--ui` and `--xs`, so a size still wins. */
+.quietnote--block {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-ui);
+  line-height: 1.6;
+}
+
 .quietnote--ui {
   font-size: var(--text-ui);
 }
 
 .quietnote--xs {
   font-size: var(--text-xs);
+}
+
+/* The accent line that says a change was saved. */
+.quietnote--saved {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-ui);
+  color: var(--accent);
 }
 
 .quietnote--wrap {

@@ -46,7 +46,7 @@
   gap: var(--space-1);
 }
 
-.connect__section .settings__note {
+.connect__section .quietnote--block {
   margin-top: var(--space-3);
 }
 
@@ -158,7 +158,7 @@
   font-size: var(--text-ui);
 }
 
-.consent__part--notes .settings__note {
+.consent__part--notes .quietnote--block {
   margin: 0;
 }
 

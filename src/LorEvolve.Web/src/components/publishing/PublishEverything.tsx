@@ -7,6 +7,7 @@ import { PublishEverythingConfirm } from './PublishEverythingConfirm'
 import { Button } from '../Button'
 import { errorText } from '../../lib/errorText'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /**
  * Publish everything: every Canon lore entry and every Complete story, with its scenes and their text, in one action. The
@@ -73,7 +74,7 @@ export function PublishEverything({
 
   return (
     <div className="publish__everything" data-testid="publish-everything">
-      <p className="settings__note">{t('universe.publish.everything.note')}</p>
+      <QuietNote spacing="block">{t('universe.publish.everything.note')}</QuietNote>
       {!preview ? (
         <Button
           tone="secondary"
@@ -88,9 +89,9 @@ export function PublishEverything({
 
       {error ? <FormMessage testId="publish-everything-error">{error}</FormMessage> : null}
       {done ? (
-        <p className="settings__saved" role="status" data-testid="publish-everything-done">
+        <QuietNote tone="saved" role="status" testId="publish-everything-done">
           {done}
-        </p>
+        </QuietNote>
       ) : null}
 
       {preview ? (

@@ -154,9 +154,9 @@ export function UserDetail({
 
       <Section title={t('admin.history.heading')} titleId="admin-history" rule={false}>
         {user.history.length === 0 ? (
-          <p className="settings__note" data-testid="admin-history-empty">
+          <QuietNote spacing="block" testId="admin-history-empty">
             {t('admin.history.empty')}
-          </p>
+          </QuietNote>
         ) : (
           <ol className="adminhistory" data-testid="admin-history">
             {user.history.map((entry) => (

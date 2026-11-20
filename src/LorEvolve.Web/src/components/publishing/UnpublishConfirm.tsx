@@ -3,6 +3,7 @@ import type { PublicationState } from '../../publishing/types'
 import type { usePublishState } from '../../publishing/usePublishState'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
+import { QuietNote } from '../QuietNote'
 
 /** The confirm before making the universe private. */
 export function UnpublishConfirm({
@@ -27,7 +28,7 @@ export function UnpublishConfirm({
       busy={busy}
       testId="unpublish-confirm"
     >
-      <p className="settings__note">{t('universe.publish.unpublish.note')}</p>
+      <QuietNote spacing="block">{t('universe.publish.unpublish.note')}</QuietNote>
       <FormActions
         submitLabel={t('universe.publish.unpublish.confirm')}
         busy={busy}

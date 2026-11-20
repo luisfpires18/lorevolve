@@ -16,6 +16,7 @@ import { universeSettingsActions } from '../universes/universeSettingsActions'
 import { useUniverseSettingsState } from '../universes/useUniverseSettingsState'
 import { Section } from '../components/Section'
 import { FormMessage } from '../components/FormMessage'
+import { QuietNote } from '../components/QuietNote'
 
 const TAB_IDS = ['general', 'appearance', 'collaborators', 'data', 'advanced'] as const
 
@@ -72,9 +73,9 @@ export default function UniverseSettings() {
         <Panel id="general" tab={tab}>
           <Section title={t('universe.settings.details')} narrow>
             {savedDetails ? (
-              <p className="settings__saved" role="status" data-testid="settings-saved">
+              <QuietNote tone="saved" role="status" testId="settings-saved">
                 {t('universe.settings.detailsSaved')}
-              </p>
+              </QuietNote>
             ) : null}
             <UniverseForm
               key={`${universe.name}\u0000${universe.description ?? ''}`}
@@ -102,11 +103,11 @@ export default function UniverseSettings() {
 
         <Panel id="appearance" tab={tab}>
           <Section title={t('universe.settings.colour')} narrow>
-            <p className="settings__note">{t('universe.settings.colourNote')}</p>
+            <QuietNote spacing="block">{t('universe.settings.colourNote')}</QuietNote>
             {savedColour ? (
-              <p className="settings__saved" role="status" data-testid="settings-colour-saved">
+              <QuietNote tone="saved" role="status" testId="settings-colour-saved">
                 {t('universe.settings.colourSaved')}
-              </p>
+              </QuietNote>
             ) : null}
             <UniverseForm
               key={universe.accentColor ?? ''}

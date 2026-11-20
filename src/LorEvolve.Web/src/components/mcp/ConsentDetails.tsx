@@ -2,6 +2,7 @@ import { readable, type ConnectionRequestDetails } from '../../mcp/api'
 import { UniverseRole, type UniverseRoleValue } from '../../universes/types'
 import { useI18n } from '../../i18n'
 import { ProposalChoice } from './ProposalChoice'
+import { QuietNote } from '../QuietNote'
 
 export function ConsentDetails({ details, id }: { details: ConnectionRequestDetails; id: string }) {
   const { t, tx } = useI18n()
@@ -58,8 +59,8 @@ export function ConsentDetails({ details, id }: { details: ConnectionRequestDeta
         className="consent__part consent__part--notes"
         aria-label={t('universe.connect.notesSection')}
       >
-        <p className="settings__note">{t('universe.connect.noteService')}</p>
-        <p className="settings__note">{t('universe.connect.noteStays')}</p>
+        <QuietNote spacing="block">{t('universe.connect.noteService')}</QuietNote>
+        <QuietNote spacing="block">{t('universe.connect.noteStays')}</QuietNote>
       </section>
     </div>
   )

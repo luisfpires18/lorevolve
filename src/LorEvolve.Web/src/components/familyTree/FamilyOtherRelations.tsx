@@ -6,6 +6,7 @@ import { useI18n } from '../../i18n'
 import type { FamilyTreeNode } from '../../familyTree/types'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import { SectionTitle } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 export function FamilyOtherRelations({
   universe,
@@ -27,7 +28,7 @@ export function FamilyOtherRelations({
       data-testid="family-other-relationships"
     >
       <SectionTitle id={`${headingId}-others`}>{t('places.familyPage.othersHeading')}</SectionTitle>
-      <p className="settings__note">
+      <QuietNote spacing="block">
         {tx('places.familyPage.othersNote', {
           name: <bdi>{focal.name}</bdi>,
           link: (
@@ -36,7 +37,7 @@ export function FamilyOtherRelations({
             </Link>
           ),
         })}
-      </p>
+      </QuietNote>
       <ul className="family__otherlist">
         {otherRelations.map((relation) => (
           <li key={relation.id} data-testid="family-other-relationship">

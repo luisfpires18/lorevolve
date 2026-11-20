@@ -7,6 +7,7 @@ import { NOT_TRACKED } from '../../admin/adminConstants'
 import { Stat } from './Stat'
 import { Section } from '../Section'
 import { DateText } from '../DateText'
+import { QuietNote } from '../QuietNote'
 
 // ---------- Main ----------
 
@@ -24,11 +25,11 @@ export function Overview({ overview }: { overview: AdminOverview }) {
   return (
     <>
       <Section title={t('admin.main.measured')} titleId="admin-measured" rule={false}>
-        <p className="settings__note" data-testid="admin-generated">
+        <QuietNote spacing="block" testId="admin-generated">
           {tx('admin.main.counted', {
             time: <DateText value={overview.generatedAt} withTime />,
           })}
-        </p>
+        </QuietNote>
         <CardGrid min={13} testId="admin-stats">
           <Stat
             label={t('admin.main.stats.accounts.label')}
@@ -82,7 +83,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
       </Section>
 
       <Section title={t('admin.main.trend.heading')} titleId="admin-trend" rule={false}>
-        <p className="settings__note">{t('admin.main.trend.note')}</p>
+        <QuietNote spacing="block">{t('admin.main.trend.note')}</QuietNote>
         <ol className="admintrend" data-testid="admin-trend">
           {trend.map((month) => (
             <li className="admintrend__row" key={`${month.year}-${month.month}`}>
@@ -99,7 +100,7 @@ export function Overview({ overview }: { overview: AdminOverview }) {
       </Section>
 
       <Section title={t('admin.untracked.heading')} titleId="admin-untracked" rule={false}>
-        <p className="settings__note">{t('admin.untracked.note')}</p>
+        <QuietNote spacing="block">{t('admin.untracked.note')}</QuietNote>
         <CardGrid min={13} testId="admin-untracked">
           <Stat
             label={t('admin.untracked.newAccounts.label')}
