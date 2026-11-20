@@ -121,6 +121,7 @@ const entityTypes = {
     groupsRow: 'Groups',
   },
   groupsPanel: {
+    groupNamed: 'the group {name}',
     usedByNone: 'No type is in it.',
     usedBy: {
       one: 'Used by {name}.',

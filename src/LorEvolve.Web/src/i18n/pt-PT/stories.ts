@@ -79,6 +79,8 @@ const stories: Dictionary['stories'] = {
   beats: {
     count: { one: '{n} momento', other: '{n} momentos' },
     named: 'o momento {n}',
+    earlier: 'Mais cedo',
+    later: 'Mais tarde',
     legend: 'Momentos da cena',
     hint: 'Os passos desta cena, por ordem. Opcional.',
     titlePlaceholder: 'Insere um momento',

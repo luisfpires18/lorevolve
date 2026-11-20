@@ -103,6 +103,7 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                   <MoveItems
                     look="icon"
                     name={t('stories.beats.named', { n: index + 1 })}
+                    titles={{ up: t('stories.beats.earlier'), down: t('stories.beats.later') }}
                     first={index === 0}
                     last={index === beats.length - 1}
                     testIds={{ up: 'scene-beat-up', down: 'scene-beat-down' }}

@@ -122,6 +122,7 @@ const entityTypes: Dictionary['entityTypes'] = {
     groupsRow: 'Grupos',
   },
   groupsPanel: {
+    groupNamed: 'o grupo {name}',
     usedByNone: 'Nenhum tipo está nele.',
     usedBy: {
       one: 'Usado por {name}.',

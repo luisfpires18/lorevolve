@@ -77,6 +77,8 @@ const stories = {
   beats: {
     count: { one: '{n} beat', other: '{n} beats' },
     named: 'beat {n}',
+    earlier: 'Earlier',
+    later: 'Later',
     legend: 'Beats',
     hint: 'The steps of this scene, in order. Optional.',
     titlePlaceholder: 'Insert a beat',

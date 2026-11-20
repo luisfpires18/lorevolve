@@ -101,7 +101,7 @@ export function TypeGroupRow({
             <span className="typegroups__actions">
               <MoveItems
                 look="icon"
-                name={group.name}
+                name={t('entityTypes.groupsPanel.groupNamed', { name: group.name })}
                 first={index === 0}
                 last={index === groups.length - 1}
                 busy={busy}

@@ -59,6 +59,8 @@ interface ButtonLook extends MoveBase {
   groupClassName?: string
   /** The hover tip at each end, saying why the arrow does nothing. */
   endTitles?: { first: string; last: string }
+  /** The hover tip away from the ends, when the list has its own word for it ("Earlier"). */
+  titles?: { up: string; down: string }
 }
 
 /**
@@ -76,7 +78,7 @@ export function MoveItems(props: MenuLook | ButtonLook) {
   const step = (direction: MoveDirection) => (direction === 'up' ? -1 : 1)
 
   if (props.look === 'icon' || props.look === 'labelled') {
-    const { look, name, buttonRef, groupLabel, groupClassName, endTitles } = props
+    const { look, name, buttonRef, groupLabel, groupClassName, endTitles, titles } = props
     const buttons = directions.map((direction) => {
       const end = atEnd(direction)
       const words = WORDS[wording][direction]
@@ -88,7 +90,8 @@ export function MoveItems(props: MenuLook | ButtonLook) {
         },
         'data-testid': testIds?.[direction],
       }
-      const tip = end && endTitles ? endTitles[direction === 'up' ? 'first' : 'last'] : undefined
+      const tip =
+        end && endTitles ? endTitles[direction === 'up' ? 'first' : 'last'] : titles?.[direction]
       return look === 'icon' ? (
         <IconButton
           key={direction}

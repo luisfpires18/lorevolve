@@ -5,7 +5,8 @@ const TITLE_TAGS = { p: 'p', h2: 'h2', h3: 'h3' } as const
 /**
  * The one inline confirm (#255): a question in place of the button that asked it, with what it
  * does and the way back. `look` names one of the three panel classes (`settings__confirm`,
- * `publication__confirm`, `trash__confirm`). Escape keeps, as Keep does, unless the action runs.
+ * `publication__confirm`, `trash__confirm`). Escape keeps, as Keep does, unless the action runs; it never
+ * reaches an ActionMenu or Drawer around the panel, busy or not.
  * The owner keeps its focus effect: open moves the focus to `panelRef`, close returns it to the
  * button. Catalogue: `docs/design/ui-components.md`.
  */
@@ -35,7 +36,7 @@ export function InlineConfirm({
   panelRef: RefObject<HTMLDivElement | null>
   /** Called on Escape: the same as the Keep button. */
   onKeep: () => void
-  /** The action runs: Escape does nothing. */
+  /** The action runs: Escape is stopped but does not keep. */
   busy?: boolean
   /** Shown in place, after the children, as an alert. */
   error?: ReactNode
@@ -62,9 +63,10 @@ export function InlineConfirm({
       data-testid={testId}
       {...data}
       onKeyDown={(event) => {
-        if (event.key !== 'Escape' || busy) return
+        if (event.key !== 'Escape') return
+        // Stop it even while busy, so an ActionMenu or Drawer around the panel never closes.
         event.stopPropagation()
-        onKeep()
+        if (!busy) onKeep()
       }}
     >
       <Title className={`${look}__confirmtitle`} id={headingId}>
