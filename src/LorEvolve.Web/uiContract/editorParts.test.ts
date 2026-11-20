@@ -23,12 +23,27 @@ const headWithMenu = (source: string) =>
 const writesBar = (source: string) => classStrings(source).some((value) => BAR.test(value))
 const noticesByHand = (source: string) =>
   /<RecoveredDraft\b/.test(source) && /<ConflictBar\b/.test(source)
+const conflictByHand = (source: string) => /<ConflictBar\b/.test(source)
 const unassignedCount = (source: string) => source.match(/export const UNASSIGNED\b/g)?.length ?? 0
 
 // Files that write the bar or warning class by hand, with the reason. EditorSaveBar is the part.
 const HAND_BARS = new Map<string, string>([
   ['src/components/EditorSaveBar.tsx', 'the part'],
   ['src/components/lore/ArticleEditing.tsx', 'the article has no save bar, only the warning'],
+])
+
+// Files that draw a ConflictBar outside EditorNotices, with the reason. Machine, World rule and the script part had
+// ConflictBar with FormMessage by hand and now use EditorNotices; these two were not in the stage 12 list.
+const HAND_CONFLICTS = new Map<string, string>([
+  ['src/components/EditorNotices.tsx', 'the part'],
+  [
+    'src/components/worldLogic/SystemDetails.tsx',
+    'System editor: no recovery copy and no wrapper div, not in the I27 list',
+  ],
+  [
+    'src/components/worldLogic/GuardBuilderDrawer.tsx',
+    'a small conflict inside the guard drawer, with no failure line',
+  ],
 ])
 
 // The twins the Record* parts replaced, by role: their names must not come back.
@@ -56,6 +71,14 @@ const GONE = [
   'src/components/IdeasBrowser.tsx',
   'src/components/IdeaBoardsBrowser.tsx',
   'src/pages/IdeaBoardsPage.tsx',
+  'src/ideas/useIdeasState.ts',
+  'src/ideas/useBoardsState.ts',
+  'src/ideas/useIdeasFilters.ts',
+  'src/ideas/useBoardsFilters.ts',
+  'src/ideas/useIdeasRead.ts',
+  'src/ideas/useBoardsRead.ts',
+  'src/ideas/useIdeasActions.tsx',
+  'src/ideas/useBoardsActions.tsx',
 ]
 
 function onlyAllowed(found: string[], allowed: string[]) {
@@ -84,6 +107,8 @@ test('the guards fail on a bad snippet', () => {
   assert.equal(writesBar('<div className="manuscript__barline">'), false)
   assert.equal(noticesByHand('<RecoveredDraft what={w} />\n<ConflictBar text={t} />'), true)
   assert.equal(noticesByHand('<RecoveredDraft what={w} />'), false)
+  assert.equal(conflictByHand('<FormMessage>{f}</FormMessage>\n<ConflictBar text={t} />'), true)
+  assert.equal(conflictByHand('<EditorNotices conflict={c} />'), false)
   assert.equal(unassignedCount("export const UNASSIGNED = 'unassigned'"), 1)
 })
 
@@ -105,6 +130,13 @@ test('only EditorNotices draws the recovered draft with the conflict', () => {
   onlyAllowed(
     tsxFiles.filter((file) => noticesByHand(read(file))),
     ['src/components/EditorNotices.tsx'],
+  )
+})
+
+test('only EditorNotices draws the conflict bar, apart from the listed files', () => {
+  onlyAllowed(
+    tsxFiles.filter((file) => conflictByHand(read(file))),
+    [...HAND_CONFLICTS.keys()],
   )
 })
 
