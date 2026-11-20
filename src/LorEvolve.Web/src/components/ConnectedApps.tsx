@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
 import { t, tx, useI18n } from '../i18n'
 import { formatDate, formatDateTime } from '../lib/dates'
@@ -12,6 +12,7 @@ import {
 } from '../mcp/api'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
+import { InlineConfirm } from './InlineConfirm'
 import { Section } from './Section'
 import { Announce } from './Announce'
 import { QuietNote } from './QuietNote'
@@ -106,7 +107,6 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
   const [app, setApp] = useState(listed)
   const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
-  const id = useId()
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -219,20 +219,18 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
         </Button>
       </div>
       {confirming ? (
-        <div
-          className="settings__confirm connectedapps__confirm"
-          role="group"
-          aria-labelledby={`${id}-confirm`}
-          tabIndex={-1}
-          ref={confirm}
-          data-testid="disconnect-app-confirm"
+        <InlineConfirm
+          look="settings"
+          className="connectedapps__confirm"
+          title={tx('data.connectedApps.confirmTitle', {
+            client: <bdi>{app.clientName}</bdi>,
+            universe: <bdi>{app.universeName}</bdi>,
+          })}
+          panelRef={confirm}
+          onKeep={() => setConfirming(false)}
+          busy={busy}
+          testId="disconnect-app-confirm"
         >
-          <p className="settings__confirmtitle" id={`${id}-confirm`}>
-            {tx('data.connectedApps.confirmTitle', {
-              client: <bdi>{app.clientName}</bdi>,
-              universe: <bdi>{app.universeName}</bdi>,
-            })}
-          </p>
           <p className="settings__note">{t('data.connectedApps.confirmNote')}</p>
           <FormActions
             submitLabel={t('data.connectedApps.disconnect')}
@@ -246,7 +244,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             lockCancel
             inline
           />
-        </div>
+        </InlineConfirm>
       ) : null}
       {stopped ? (
         <p className="connectedapps__meta" role="status" data-testid="app-proposals-stopped">

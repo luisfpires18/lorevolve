@@ -37,8 +37,6 @@ const entityHistory: Dictionary['entity']['history'] = {
   nowShowing: 'a mostrar',
   version: 'Versão {number}',
   restoredVersion: 'versão {number} restaurada',
-  hide: 'Ocultar',
-  view: 'Ver',
   restoring: 'A restaurar…',
   restore: 'Restaurar',
   opening: 'A abrir…',

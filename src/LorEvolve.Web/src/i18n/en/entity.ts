@@ -174,8 +174,6 @@ const entity = {
     none: 'No saved versions yet.',
     nowShowing: 'now showing',
     version: 'Version {number}',
-    hide: 'Hide',
-    view: 'View',
     restoring: 'Restoring…',
     restore: 'Restore',
     snapshotOpening: 'Opening…',

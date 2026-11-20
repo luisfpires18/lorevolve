@@ -1,6 +1,6 @@
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
-import { CANON_LABELS, CANON_ORDER, CANON_KEYS } from '../../lore/types'
+import { CanonStatusPicker } from '../CanonStatusPicker'
 import type { RefObject } from 'react'
 import type { MomentDraft } from '../../timeline/momentDraft'
 
@@ -55,20 +55,12 @@ export function MomentBasics({
 
       <Field label={t('time.momentForm.status')} group>
         {(control) => (
-          <div className="canon" {...control}>
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="canon__step"
-                aria-pressed={draft.canonStatus === option}
-                onClick={() => edit({ canonStatus: option })}
-                data-testid={`moment-canon-${CANON_KEYS[option]}`}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
+          <CanonStatusPicker
+            {...control}
+            optionTestId="moment-canon-"
+            value={draft.canonStatus}
+            onChange={(canonStatus) => edit({ canonStatus })}
+          />
         )}
       </Field>
     </>

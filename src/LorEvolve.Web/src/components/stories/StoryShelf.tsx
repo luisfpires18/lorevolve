@@ -1,8 +1,9 @@
 import { useUniverseAccess } from '../../universes/access'
-import { ArrowDown, ArrowUp, Image as ImageIcon } from 'lucide-react'
+import { Image as ImageIcon } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { ShelfCard } from '../ShelfCard'
 import { pictureUrl, storyCoverStore } from '../../covers/api'
 import { storyProjectPath } from '../../projects/sections'
@@ -65,28 +66,12 @@ export function StoryShelf({
                   <ActionIcon icon={ImageIcon} />
                   {t(story.cover ? 'projects.common.changePicture' : 'projects.common.addPicture')}
                 </button>
-                {index > 0 ? (
-                  <button
-                    className="actionmenu__item"
-                    type="button"
-                    onClick={() => void move(story, -1)}
-                    data-testid="story-move-up"
-                  >
-                    <ActionIcon icon={ArrowUp} />
-                    {t('stories.browse.moveUp')}
-                  </button>
-                ) : null}
-                {index < stories.length - 1 ? (
-                  <button
-                    className="actionmenu__item"
-                    type="button"
-                    onClick={() => void move(story, 1)}
-                    data-testid="story-move-down"
-                  >
-                    <ActionIcon icon={ArrowDown} />
-                    {t('stories.browse.moveDown')}
-                  </button>
-                ) : null}
+                <MoveItems
+                  first={index === 0}
+                  last={index === stories.length - 1}
+                  testIds={{ up: 'story-move-up', down: 'story-move-down' }}
+                  onMove={(step) => void move(story, step)}
+                />
               </ActionMenu>
             ) : null
           }

@@ -1,11 +1,12 @@
 import { createPanel, deletePage, movePage, type ProjectPage } from '../../projectEntities/pages'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { t, tn, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import { PagePanels } from './PagePanels'
 import { PanelForm } from './PanelForm'
 import { NewButton } from '../NewButton'
-import { ArrowDown, ArrowUp, Trash } from 'lucide-react'
+import { Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 
 /** One page in a chapter: its name, its menu, its panels, and the form to add a panel. */
@@ -57,30 +58,13 @@ export function PageRow({
           label={t('projects.common.more', { name: page.name ?? String(index + 1) })}
           triggerTestId={`project-page-actions-${page.id}`}
         >
-          {index === 0 ? null : (
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy}
-              data-testid={`project-page-up-${page.id}`}
-              onClick={() => run(movePage(projectId, volumeId, chapterId, page.id, index - 1))}
-            >
-              <ActionIcon icon={ArrowUp} />
-              {t('projects.common.moveUp')}
-            </button>
-          )}
-          {index === (pages ?? []).length - 1 ? null : (
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy}
-              data-testid={`project-page-down-${page.id}`}
-              onClick={() => run(movePage(projectId, volumeId, chapterId, page.id, index + 1))}
-            >
-              <ActionIcon icon={ArrowDown} />
-              {t('projects.common.moveDown')}
-            </button>
-          )}
+          <MoveItems
+            first={index === 0}
+            last={index === (pages ?? []).length - 1}
+            busy={busy}
+            testIds={{ up: `project-page-up-${page.id}`, down: `project-page-down-${page.id}` }}
+            onMove={(step) => run(movePage(projectId, volumeId, chapterId, page.id, index + step))}
+          />
           <button
             className="actionmenu__item actionmenu__item--danger"
             type="button"

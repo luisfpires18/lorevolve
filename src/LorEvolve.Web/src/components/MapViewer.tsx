@@ -3,7 +3,7 @@ import type { MapPin } from '../maps/types'
 import { clamp, usePanZoom, type StageSize, type View } from '../lib/usePanZoom'
 import { useI18n } from '../i18n'
 import { mapViewerActions } from '../maps/mapViewerActions'
-import { MapViewerControls } from './maps/MapViewerControls'
+import { ZoomControls } from './ZoomControls'
 import { MapViewerLayer } from './maps/MapViewerLayer'
 
 /** A marker that is not a pin - a calibration point (#53) - drawn the same way, at a fraction of the picture. */
@@ -201,14 +201,17 @@ export function MapViewer({
         />
       </div>
 
-      <MapViewerControls
+      <ZoomControls
         zoomAbout={zoomAbout}
-        setView={setView}
-        fit={fit}
         size={size}
-        placing={placing}
-        hintId={hintId}
+        onFit={() => setView(fit(size.width, size.height))}
+        fitLabel={t('places.viewer.fit')}
+        testId="map"
       />
+
+      <p className="visually-hidden" id={hintId}>
+        {placing ? t('places.viewer.hintPlacing') : t('places.viewer.hint')}
+      </p>
     </div>
   )
 }

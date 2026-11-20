@@ -1,9 +1,10 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
 import { OutlineItem } from './OutlineItem'
 import { arcLabel, arcNumber, chapterCountLabel } from '../stories/format'
@@ -102,28 +103,12 @@ export function ArcSection({
                   <ActionIcon icon={Pencil} />
                   {t('stories.arc.edit')}
                 </button>
-                {index > 0 ? (
-                  <button
-                    className="actionmenu__item"
-                    type="button"
-                    onClick={() => onMove(arc, -1)}
-                    data-testid="arc-move-up"
-                  >
-                    <ActionIcon icon={ArrowUp} />
-                    {t('stories.arc.moveUp')}
-                  </button>
-                ) : null}
-                {index < count - 1 ? (
-                  <button
-                    className="actionmenu__item"
-                    type="button"
-                    onClick={() => onMove(arc, 1)}
-                    data-testid="arc-move-down"
-                  >
-                    <ActionIcon icon={ArrowDown} />
-                    {t('stories.arc.moveDown')}
-                  </button>
-                ) : null}
+                <MoveItems
+                  first={index === 0}
+                  last={index === count - 1}
+                  testIds={{ up: 'arc-move-up', down: 'arc-move-down' }}
+                  onMove={(step) => onMove(arc, step)}
+                />
                 <hr className="actionmenu__divider" />
                 <button
                   className="actionmenu__item actionmenu__item--danger"

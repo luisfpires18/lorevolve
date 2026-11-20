@@ -20,6 +20,8 @@ interface TypeFieldsProps {
   canEdit: boolean
   /** Reads the types again; the panel shows what comes back. */
   onChanged: () => Promise<void>
+  /** The panel's id, which the row's Fields button names in `aria-controls`. */
+  id?: string
 }
 
 /**
@@ -39,6 +41,7 @@ export function TypeFields({
   groups,
   canEdit,
   onChanged,
+  id,
 }: TypeFieldsProps) {
   const { t, tn, tx } = useI18n()
   const [editing, setEditing] = useState<FieldDefinition | 'new' | null>(null)
@@ -98,7 +101,7 @@ export function TypeFields({
   }
 
   return (
-    <div className="types__fields" data-testid={`type-fields-${type.name}`}>
+    <div id={id} className="types__fields" data-testid={`type-fields-${type.name}`}>
       {message ? (
         <p className="form__message" role="alert" data-testid="fields-error">
           {message}

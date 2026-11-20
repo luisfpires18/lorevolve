@@ -1,9 +1,9 @@
-import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
 import { Button } from '../Button'
-import { IconButton } from '../IconButton'
+import { MoveItems } from '../MoveItems'
 import { NewButton } from '../NewButton'
 
 /** The sections drawer's list of sections: name, fold, move and remove each one, and Add section. */
@@ -57,25 +57,13 @@ export function SectionListEditor({
                 <span>{t('entityTypes.sections.startsCollapsed')}</span>
               </label>
               <span className="sectionlist__actions">
-                <IconButton
-                  icon={ArrowUp}
-                  label={t('entityTypes.sections.moveSectionUp', {
-                    name: sectionLabel(section, index),
-                  })}
-                  title={t('entityTypes.sections.moveUp')}
-                  onClick={() => move(index, -1)}
-                  disabled={index === 0}
-                  data-testid={`section-up-${index}`}
-                />
-                <IconButton
-                  icon={ArrowDown}
-                  label={t('entityTypes.sections.moveSectionDown', {
-                    name: sectionLabel(section, index),
-                  })}
-                  title={t('entityTypes.sections.moveDown')}
-                  onClick={() => move(index, 1)}
-                  disabled={index === sections.length - 1}
-                  data-testid={`section-down-${index}`}
+                <MoveItems
+                  look="icon"
+                  name={sectionLabel(section, index)}
+                  first={index === 0}
+                  last={index === sections.length - 1}
+                  testIds={{ up: `section-up-${index}`, down: `section-down-${index}` }}
+                  onMove={(step) => move(index, step)}
                 />
                 <Button
                   tone="danger-quiet"

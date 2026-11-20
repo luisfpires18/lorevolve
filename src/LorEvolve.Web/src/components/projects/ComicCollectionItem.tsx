@@ -64,11 +64,16 @@ export function ComicCollectionItem({
             triggerTestId={`comic-collection-actions-${collection.id}`}
           >
             <MoveItems
-              index={index}
-              count={ofKind.length}
+              first={index === 0}
+              last={index === ofKind.length - 1}
               busy={busy}
-              testId={`comic-collection-${collection.id}`}
-              onMove={(place) => run(() => moveComicCollection(universeId, collection.id, place))}
+              testIds={{
+                up: `comic-collection-${collection.id}-up`,
+                down: `comic-collection-${collection.id}-down`,
+              }}
+              onMove={(step) =>
+                run(() => moveComicCollection(universeId, collection.id, index + step))
+              }
             />
             <button
               className="actionmenu__item"
@@ -152,13 +157,18 @@ export function ComicCollectionItem({
                     >
                       {entry.available ? (
                         <MoveItems
-                          index={entryIndex}
-                          count={collection.entries.length}
+                          first={entryIndex === 0}
+                          last={entryIndex === collection.entries.length - 1}
                           busy={busy}
-                          testId={`comic-entry-${id}`}
-                          onMove={(place) =>
+                          testIds={{ up: `comic-entry-${id}-up`, down: `comic-entry-${id}-down` }}
+                          onMove={(step) =>
                             run(() =>
-                              moveComicEntry(universeId, collection.id, entry.nodeId, place),
+                              moveComicEntry(
+                                universeId,
+                                collection.id,
+                                entry.nodeId,
+                                entryIndex + step,
+                              ),
                             )
                           }
                         />

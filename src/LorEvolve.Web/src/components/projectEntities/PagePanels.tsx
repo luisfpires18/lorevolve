@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { deletePanel, movePanel, savePanel, type ProjectPage } from '../../projectEntities/pages'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
-import { ArrowDown, ArrowUp, Trash } from 'lucide-react'
+import { Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 
 /** A page's panels, each with what it shows, what is said, and its menu. */
@@ -75,42 +76,22 @@ export function PagePanels({
               })}
               triggerTestId={`project-panel-actions-${panel.id}`}
             >
-              {place === 0 ? null : (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  disabled={busy}
-                  data-testid={`project-panel-up-${panel.id}`}
-                  onClick={() =>
-                    run(
-                      movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
-                        place: place - 1,
-                      }),
-                    )
-                  }
-                >
-                  <ActionIcon icon={ArrowUp} />
-                  {t('projects.common.moveUp')}
-                </button>
-              )}
-              {place === page.panels.length - 1 ? null : (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  disabled={busy}
-                  data-testid={`project-panel-down-${panel.id}`}
-                  onClick={() =>
-                    run(
-                      movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
-                        place: place + 1,
-                      }),
-                    )
-                  }
-                >
-                  <ActionIcon icon={ArrowDown} />
-                  {t('projects.common.moveDown')}
-                </button>
-              )}
+              <MoveItems
+                first={place === 0}
+                last={place === page.panels.length - 1}
+                busy={busy}
+                testIds={{
+                  up: `project-panel-up-${panel.id}`,
+                  down: `project-panel-down-${panel.id}`,
+                }}
+                onMove={(step) =>
+                  run(
+                    movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
+                      place: place + step,
+                    }),
+                  )
+                }
+              />
               <button
                 className="actionmenu__item actionmenu__item--danger"
                 type="button"

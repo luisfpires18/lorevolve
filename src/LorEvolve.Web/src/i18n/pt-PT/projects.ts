@@ -35,8 +35,6 @@ const projects = {
   common: {
     loading: 'A ler',
     more: 'Mais ações para {name}',
-    moveUp: 'Mover para cima',
-    moveDown: 'Mover para baixo',
     addPicture: 'Adicionar imagem',
     changePicture: 'Mudar imagem',
   },

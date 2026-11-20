@@ -176,8 +176,6 @@ const entity: Dictionary['entity'] = {
     none: 'Ainda sem versões guardadas.',
     nowShowing: 'a mostrar',
     version: 'Versão {number}',
-    hide: 'Ocultar',
-    view: 'Ver',
     restoring: 'A restaurar…',
     restore: 'Restaurar',
     snapshotOpening: 'A abrir…',

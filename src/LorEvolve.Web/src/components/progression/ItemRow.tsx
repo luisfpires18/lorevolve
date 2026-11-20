@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
-import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { useI18n } from '../../i18n'
 import type { Ability, Appearance, Form } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
@@ -58,28 +59,13 @@ export function ItemRow({
               <ActionIcon icon={Pencil} />
               {words.edit}
             </button>
-            {index > 0 ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                disabled={busy}
-                onClick={() => onMove(item, -1)}
-              >
-                <ActionIcon icon={ArrowUp} />
-                {t('progression.items.moveEarlier')}
-              </button>
-            ) : null}
-            {index < items.length - 1 ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                disabled={busy}
-                onClick={() => onMove(item, 1)}
-              >
-                <ActionIcon icon={ArrowDown} />
-                {t('progression.items.moveLater')}
-              </button>
-            ) : null}
+            <MoveItems
+              first={index === 0}
+              last={index === items.length - 1}
+              busy={busy}
+              wording="earlier-later"
+              onMove={(step) => onMove(item, step)}
+            />
             <button
               className="actionmenu__item actionmenu__item--danger"
               type="button"

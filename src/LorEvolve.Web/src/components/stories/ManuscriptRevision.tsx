@@ -8,6 +8,7 @@ import {
   type ManuscriptRevisionSummary,
 } from '../../stories/types'
 import { Button } from '../Button'
+import { DisclosureButton } from '../DisclosureButton'
 import { QuietNote } from '../QuietNote'
 
 /** What a version was, in a few words. */
@@ -74,20 +75,18 @@ export function ManuscriptRevision({
       </div>
 
       <div className="version__tools">
-        <Button
+        <DisclosureButton
           tone="text"
           size="sm"
-          aria-expanded={isViewing}
-          aria-controls={snapshotId}
+          expanded={isViewing}
+          controls={snapshotId}
           aria-label={t(
             isViewing ? 'manuscript.history.hideVersion' : 'manuscript.history.viewVersion',
             { number: revision.number },
           )}
-          onClick={() => void view(revision.id)}
+          onToggle={() => void view(revision.id)}
           data-testid="manuscript-version-view"
-        >
-          {isViewing ? t('manuscript.history.hide') : t('manuscript.history.view')}
-        </Button>
+        />
         {index > 0 ? (
           <Button
             tone="text"

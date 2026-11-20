@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n'
 import type { PublicationState } from '../../publishing/types'
 import type { usePublishState } from '../../publishing/usePublishState'
 import { FormActions } from '../FormActions'
+import { InlineConfirm } from '../InlineConfirm'
 
 /** The confirm before making the universe private. */
 export function UnpublishConfirm({
@@ -17,17 +18,15 @@ export function UnpublishConfirm({
   const { t, tx } = useI18n()
 
   return (
-    <div
-      className="publication__confirm"
-      role="group"
-      aria-labelledby="unpublish-confirm-title"
-      tabIndex={-1}
-      ref={panel}
-      data-testid="unpublish-confirm"
+    <InlineConfirm
+      look="publication"
+      titleAs="h3"
+      title={tx('universe.publish.unpublish.title', { name: <bdi>{state.name}</bdi> })}
+      panelRef={panel}
+      onKeep={() => setConfirming(null)}
+      busy={busy}
+      testId="unpublish-confirm"
     >
-      <h3 className="publication__confirmtitle" id="unpublish-confirm-title">
-        {tx('universe.publish.unpublish.title', { name: <bdi>{state.name}</bdi> })}
-      </h3>
       <p className="settings__note">{t('universe.publish.unpublish.note')}</p>
       <FormActions
         submitLabel={t('universe.publish.unpublish.confirm')}
@@ -40,6 +39,6 @@ export function UnpublishConfirm({
         lockCancel
         inline
       />
-    </div>
+    </InlineConfirm>
   )
 }

@@ -3,6 +3,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { InlineConfirm } from '../InlineConfirm'
 import { Section } from '../Section'
 
 /** Settings → Advanced: the danger section with its confirm once archived, or the note that deleting needs the archive. */
@@ -44,16 +45,13 @@ export function SettingsDelete({
         {t('universe.settings.deleteIdeasNote')}
       </p>
       {confirmingDelete ? (
-        <div
-          className="settings__confirm"
-          role="group"
-          aria-labelledby="delete-confirm-title"
-          tabIndex={-1}
-          ref={deleteConfirm}
+        <InlineConfirm
+          look="settings"
+          title={tx('universe.settings.deleteConfirm', { name: <bdi>{universe.name}</bdi> })}
+          panelRef={deleteConfirm}
+          onKeep={() => setConfirmingDelete(false)}
+          busy={busy}
         >
-          <p className="settings__confirmtitle" id="delete-confirm-title">
-            {tx('universe.settings.deleteConfirm', { name: <bdi>{universe.name}</bdi> })}
-          </p>
           <FormActions
             submitLabel={t('universe.settings.deleteConfirmButton')}
             disabled={busy}
@@ -64,7 +62,7 @@ export function SettingsDelete({
             cancelLabel={t('universe.settings.deleteKeep')}
             inline
           />
-        </div>
+        </InlineConfirm>
       ) : (
         <Button
           tone="danger-quiet"

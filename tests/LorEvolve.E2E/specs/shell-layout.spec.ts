@@ -241,7 +241,7 @@ async function shape(page: Page): Promise<Shape> {
       entryMedia: box('.entry__media'),
       article: box('.article__body'),
       tools: box('.entry__tools'),
-      canon: box('.entry__kind .canon'),
+      canon: box('.entry__kind .segmented--canon'),
       bar: box('.entry__bar'),
       entryGap: (() => {
         const layout = document.querySelector('.entry__layout')

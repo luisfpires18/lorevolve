@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
 import { VersionActor } from './VersionActor'
@@ -9,6 +10,7 @@ import { useI18n } from '../i18n'
 import { useEntityRevisions } from '../lore/useEntityRevisions'
 import { Snapshot } from './lore/RevisionSnapshot'
 import { Button } from './Button'
+import { DisclosureButton } from './DisclosureButton'
 import { LoadError } from './LoadError'
 import { QuietNote } from './QuietNote'
 
@@ -52,6 +54,7 @@ export function EntityHistory({
   onRestored,
 }: EntityHistoryProps) {
   const { t } = useI18n()
+  const snapshotId = useId()
   const {
     revisions,
     status,
@@ -142,15 +145,14 @@ export function EntityHistory({
               </div>
 
               <div className="version__tools">
-                <Button
+                <DisclosureButton
                   tone="text"
                   size="sm"
-                  aria-expanded={openId === revision.id}
-                  onClick={() => void open(revision.id)}
+                  expanded={openId === revision.id}
+                  controls={`${snapshotId}-${revision.id}`}
+                  onToggle={() => void open(revision.id)}
                   data-testid="version-view"
-                >
-                  {openId === revision.id ? t('entity.history.hide') : t('entity.history.view')}
-                </Button>
+                />
                 {index > 0 ? (
                   <Button
                     tone="text"
@@ -167,7 +169,11 @@ export function EntityHistory({
               </div>
 
               {openId === revision.id ? (
-                <div className="version__snapshot" data-testid="version-snapshot">
+                <div
+                  className="version__snapshot"
+                  id={`${snapshotId}-${revision.id}`}
+                  data-testid="version-snapshot"
+                >
                   {opened === null || opened.id !== openId ? (
                     <QuietNote className="history__quiet" size="ui" role="status">
                       {t('entity.history.opening')}

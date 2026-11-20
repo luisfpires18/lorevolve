@@ -7,6 +7,7 @@ import {
   type ProjectSeason,
 } from '../../projectEntities/seasons'
 import { ActionMenu } from '../ActionMenu'
+import { MoveItems } from '../MoveItems'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
@@ -14,7 +15,7 @@ import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
-import { ArrowDown, ArrowUp, Pencil, Trash } from 'lucide-react'
+import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ProjectCard } from '../ProjectCard'
 
@@ -119,30 +120,16 @@ export function SeasonItem({
           label={t('projects.common.more', { name: season.name })}
           triggerTestId={`project-season-actions-${season.id}`}
         >
-          {index === 0 ? null : (
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy}
-              data-testid={`project-season-up-${season.id}`}
-              onClick={() => run(moveSeason(projectId, season.id, { place: index - 1 }))}
-            >
-              <ActionIcon icon={ArrowUp} />
-              {t('projects.common.moveUp')}
-            </button>
-          )}
-          {index === seasons.length - 1 ? null : (
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={busy}
-              data-testid={`project-season-down-${season.id}`}
-              onClick={() => run(moveSeason(projectId, season.id, { place: index + 1 }))}
-            >
-              <ActionIcon icon={ArrowDown} />
-              {t('projects.common.moveDown')}
-            </button>
-          )}
+          <MoveItems
+            first={index === 0}
+            last={index === seasons.length - 1}
+            busy={busy}
+            testIds={{
+              up: `project-season-up-${season.id}`,
+              down: `project-season-down-${season.id}`,
+            }}
+            onMove={(step) => run(moveSeason(projectId, season.id, { place: index + step }))}
+          />
           <button
             className="actionmenu__item"
             type="button"

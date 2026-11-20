@@ -47,8 +47,6 @@ const manuscript = {
     version: 'Version {number}',
     hideVersion: 'Hide version {number}',
     viewVersion: 'View version {number}',
-    hide: 'Hide',
-    view: 'View',
     restoreVersion: 'Restore version {number}',
     restoring: 'Restoring…',
     restoreButton: 'Restore',

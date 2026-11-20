@@ -2,9 +2,7 @@ import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import {
-  ArrowDown,
   ArrowRightLeft,
-  ArrowUp,
   BookOpen,
   FilePenLine,
   ListPlus,
@@ -14,6 +12,7 @@ import {
 } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { ActionMenu } from './ActionMenu'
+import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
 import { OutlineItem } from './OutlineItem'
 import { ContainerName } from './ContainerName'
@@ -161,27 +160,13 @@ export function SceneCard({
                   {t('stories.scene.suggest')}
                 </button>
               ) : null}
-              {access.editContent && index > 0 ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onMove(scene, -1)}
-                  data-testid="scene-move-up"
-                >
-                  <ActionIcon icon={ArrowUp} />
-                  {t('stories.scene.moveUp')}
-                </button>
-              ) : null}
-              {access.editContent && index < count - 1 ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onMove(scene, 1)}
-                  data-testid="scene-move-down"
-                >
-                  <ActionIcon icon={ArrowDown} />
-                  {t('stories.scene.moveDown')}
-                </button>
+              {access.editContent ? (
+                <MoveItems
+                  first={index === 0}
+                  last={index === count - 1}
+                  testIds={{ up: 'scene-move-up', down: 'scene-move-down' }}
+                  onMove={(step) => onMove(scene, step)}
+                />
               ) : null}
               {(access.editContent ? moveTargets : []).map((target) => (
                 <button

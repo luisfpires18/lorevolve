@@ -1,8 +1,7 @@
 import { useCallback } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { useParams } from 'react-router-dom'
 import { getUser } from '../../admin/api'
-import { ActionIcon } from '../ActionIcon'
+import { Crumb } from '../Crumb'
 import { ApiError } from '../../lib/api'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
@@ -26,12 +25,11 @@ export function UserScreen() {
 
   return (
     <>
-      <p className="adminback">
-        <Link to="/admin/users" data-testid="admin-back-users">
-          <ActionIcon icon={ArrowLeft} />
-          {t('admin.user.all')}
-        </Link>
-      </p>
+      <Crumb
+        back
+        className="adminback"
+        items={[{ to: '/admin/users', label: t('admin.user.all'), testId: 'admin-back-users' }]}
+      />
 
       {state.kind === 'loading' ? <LoadingNote>{t('admin.user.opening')}</LoadingNote> : null}
       {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}

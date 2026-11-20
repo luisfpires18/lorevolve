@@ -20,6 +20,7 @@ import { confirmAction } from '../../lib/confirm'
 import { t, useI18n } from '../../i18n'
 import type { Stored } from '../../lore/useEntityArticle'
 import { Button } from '../Button'
+import { DisclosureButton } from '../DisclosureButton'
 import { QuietNote } from '../QuietNote'
 
 interface ArticleHistoryProps {
@@ -66,6 +67,7 @@ export function ArticleHistory({
 }: ArticleHistoryProps) {
   const { t } = useI18n()
   const bodyId = useId()
+  const snapshotId = useId()
   const [isOpen, setIsOpen] = useState(false)
   const [revisions, setRevisions] = useState<ArticleRevisionSummary[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -151,17 +153,17 @@ export function ArticleHistory({
 
   return (
     <div className="article__history">
-      <Button
+      <DisclosureButton
         tone="secondary"
         icon={History}
         className="article__historytoggle"
-        aria-expanded={isOpen}
-        aria-controls={bodyId}
-        onClick={() => setIsOpen((open) => !open)}
+        expanded={isOpen}
+        controls={bodyId}
+        onToggle={() => setIsOpen((open) => !open)}
         data-testid="article-history-toggle"
       >
         {t('entity.articleHistory.toggle')}
-      </Button>
+      </DisclosureButton>
 
       {isOpen ? (
         <div id={bodyId}>
@@ -207,17 +209,14 @@ export function ArticleHistory({
                   </div>
 
                   <div className="version__tools">
-                    <Button
+                    <DisclosureButton
                       tone="text"
                       size="sm"
-                      aria-expanded={viewing?.id === revision.id}
-                      onClick={() => void view(revision.id)}
+                      expanded={viewing?.id === revision.id}
+                      controls={`${snapshotId}-${revision.id}`}
+                      onToggle={() => void view(revision.id)}
                       data-testid="article-version-view"
-                    >
-                      {viewing?.id === revision.id
-                        ? t('entity.articleHistory.hide')
-                        : t('entity.articleHistory.view')}
-                    </Button>
+                    />
                     {index > 0 ? (
                       <Button
                         tone="text"
@@ -234,7 +233,11 @@ export function ArticleHistory({
                   </div>
 
                   {viewing?.id === revision.id ? (
-                    <div className="version__snapshot" data-testid="article-version-snapshot">
+                    <div
+                      className="version__snapshot"
+                      id={`${snapshotId}-${revision.id}`}
+                      data-testid="article-version-snapshot"
+                    >
                       {viewing.detail === null ? (
                         <QuietNote className="history__quiet" size="ui" role="status">
                           {t('entity.articleHistory.snapshotOpening')}

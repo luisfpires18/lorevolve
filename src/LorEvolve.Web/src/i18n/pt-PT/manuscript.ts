@@ -49,8 +49,6 @@ const manuscript: Dictionary['manuscript'] = {
     version: 'Versão {number}',
     hideVersion: 'Ocultar a versão {number}',
     viewVersion: 'Ver a versão {number}',
-    hide: 'Ocultar',
-    view: 'Ver',
     restoreVersion: 'Restaurar a versão {number}',
     restoring: 'A restaurar…',
     restoreButton: 'Restaurar',

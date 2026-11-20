@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Field } from '../Field'
 import { SearchField } from '../SearchField'
+import { SegmentedControl } from '../SegmentedControl'
 import { UNASSIGNED } from '../../ideas/useBoardsRead'
 import { useI18n } from '../../i18n'
 import type { UniverseSummary } from '../../universes/types'
@@ -64,26 +65,19 @@ export function BoardsControls({
         </Field>
       )}
 
-      <div className="segmented" role="group" aria-label={t('ideas.boards.which')}>
-        <button
-          type="button"
-          className="segmented__option"
-          aria-pressed={!deleted}
-          onClick={() => update({ view: null })}
-          data-testid="boards-view-live"
-        >
-          {t('ideas.boards.viewLive')}
-        </button>
-        <button
-          type="button"
-          className="segmented__option"
-          aria-pressed={deleted}
-          onClick={() => update({ view: 'deleted' })}
-          data-testid="boards-view-deleted"
-        >
-          {t('ideas.boards.viewDeleted')}
-        </button>
-      </div>
+      <SegmentedControl
+        label={t('ideas.boards.which')}
+        options={[
+          { value: 'live', label: t('ideas.boards.viewLive'), testId: 'boards-view-live' },
+          {
+            value: 'deleted',
+            label: t('ideas.boards.viewDeleted'),
+            testId: 'boards-view-deleted',
+          },
+        ]}
+        value={deleted ? 'deleted' : 'live'}
+        onChange={(view) => update({ view: view === 'deleted' ? 'deleted' : null })}
+      />
     </div>
   )
 }

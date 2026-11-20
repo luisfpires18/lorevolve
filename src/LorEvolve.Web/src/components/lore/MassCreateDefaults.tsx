@@ -2,7 +2,8 @@ import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { typeChoices } from '../../lore/typeTree'
 import { hasRequiredFields } from '../../lore/massCreate'
-import { CANON_LABELS, CANON_ORDER, type CanonStatusValue } from '../../lore/types'
+import type { CanonStatusValue } from '../../lore/types'
+import { CanonStatusPicker } from '../CanonStatusPicker'
 import type { EntityType } from '../../lore/typeDefinitions'
 import type { useMassRows } from '../../lore/useMassRows'
 import { Button } from '../Button'
@@ -66,19 +67,12 @@ export function MassCreateDefaults({
         className="masscreate__default"
       >
         {(control) => (
-          <div className="segmented" {...control} data-testid="mass-default-status">
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                className="segmented__option"
-                type="button"
-                aria-pressed={defaultStatus === option}
-                onClick={() => setDefaultStatus(option)}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
+          <CanonStatusPicker
+            {...control}
+            testId="mass-default-status"
+            value={defaultStatus}
+            onChange={setDefaultStatus}
+          />
         )}
       </Field>
 

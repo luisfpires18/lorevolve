@@ -4,6 +4,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useUniverseSettingsState } from '../../universes/useUniverseSettingsState'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
+import { InlineConfirm } from '../InlineConfirm'
 import { Section } from '../Section'
 
 /** Settings → Advanced: archive or restore from the archive, with the confirm a public universe asks for. */
@@ -35,6 +36,11 @@ export function SettingsArchive({
   askToArchive: () => Promise<void>
 }) {
   const { t, tx } = useI18n()
+  // Keep, by its button or by Escape: the archive stays as it was.
+  const keepArchive = () => {
+    archiveCancelled.current = true
+    setConfirmingArchive(false)
+  }
 
   return (
     <Section
@@ -60,22 +66,19 @@ export function SettingsArchive({
         </p>
       ) : null}
       {confirmingArchive ? (
-        <div
-          className="settings__confirm"
-          role="group"
-          aria-labelledby="archive-confirm-title"
-          tabIndex={-1}
-          ref={archiveConfirm}
-          data-testid="archive-public-confirm"
+        <InlineConfirm
+          look="settings"
+          title={tx(
+            isPublic
+              ? 'universe.settings.archiveConfirmPublic'
+              : 'universe.settings.archiveConfirm',
+            { name: <bdi>{universe.name}</bdi> },
+          )}
+          panelRef={archiveConfirm}
+          onKeep={keepArchive}
+          busy={busy}
+          testId="archive-public-confirm"
         >
-          <p className="settings__confirmtitle" id="archive-confirm-title">
-            {tx(
-              isPublic
-                ? 'universe.settings.archiveConfirmPublic'
-                : 'universe.settings.archiveConfirm',
-              { name: <bdi>{universe.name}</bdi> },
-            )}
-          </p>
           <p className="settings__note">
             {isPublic
               ? t('universe.settings.archiveConfirmPublicNote')
@@ -91,10 +94,7 @@ export function SettingsArchive({
             busyLabel={t('universe.settings.archiving')}
             onSubmit={() => void toggleArchived()}
             submitTestId="confirm-archive"
-            onCancel={() => {
-              archiveCancelled.current = true
-              setConfirmingArchive(false)
-            }}
+            onCancel={keepArchive}
             cancelTestId="cancel-archive"
             inline
           >
@@ -102,7 +102,7 @@ export function SettingsArchive({
               {t('universe.settings.makePrivateFirst')}
             </Button>
           </FormActions>
-        </div>
+        </InlineConfirm>
       ) : (
         <Button
           tone="secondary"

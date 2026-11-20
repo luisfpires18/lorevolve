@@ -211,3 +211,40 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* The canon look (`CanonStatusPicker`): how settled something is, each step with its glyph and word, a
+   step smaller than a plain choice. Never the ink fill, which would make the status louder than the name. */
+.segmented--canon {
+  flex-wrap: nowrap;
+}
+
+/* `:where` keeps this at one class, so the touch rule's 2.75rem (080) still wins under a finger. */
+:where(.segmented--canon) .segmented__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  min-height: 1.75rem;
+  font-size: var(--text-sm);
+}
+
+.segmented--canon .segmented__option[data-canon]::before {
+  content: '';
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1.5px solid currentcolor;
+  border-radius: var(--radius-full);
+}
+
+.segmented--canon .segmented__option[data-canon='1']::before {
+  background: linear-gradient(90deg, currentcolor 50%, transparent 50%);
+}
+
+.segmented--canon .segmented__option[data-canon='2']::before {
+  background: currentcolor;
+}
+
+.segmented--canon .segmented__option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

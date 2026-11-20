@@ -9,7 +9,7 @@ import { useDiscoveryReads } from '../familyTree/useDiscoveryReads'
 import { useDiscoverySearch } from '../familyTree/useDiscoverySearch'
 import { useDiscoveryState } from '../familyTree/useDiscoveryState'
 import { DiscoveryFamilies } from './familyTree/DiscoveryFamilies'
-import { Button } from './Button'
+import { DisclosureButton } from './DisclosureButton'
 import { QuietNote } from './QuietNote'
 
 /** What a family summary carries in history, so "Browse families" on its tree can come back to this search and page. */
@@ -96,16 +96,16 @@ export function FamilyDiscovery({
             onChange={setText}
             testId="family-search"
           />
-          <Button
+          <DisclosureButton
             tone="secondary"
             icon={UserSearch}
-            aria-expanded={isFinding}
-            aria-controls={pickerId}
-            onClick={() => setIsFinding((open) => !open)}
+            expanded={isFinding}
+            controls={pickerId}
+            onToggle={() => setIsFinding((open) => !open)}
             data-testid="family-find-character"
           >
             {t('places.discovery.find')}
-          </Button>
+          </DisclosureButton>
         </div>
       )}
 

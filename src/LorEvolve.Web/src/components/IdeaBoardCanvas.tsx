@@ -6,7 +6,7 @@ import { fitView, usePanZoom } from '../lib/usePanZoom'
 import { useI18n } from '../i18n'
 import { BoardCardButton } from './ideas/BoardCardButton'
 import { BoardLines } from './ideas/BoardLines'
-import { BoardZoomControls } from './ideas/BoardZoomControls'
+import { ZoomControls } from './ZoomControls'
 
 interface IdeaBoardCanvasProps {
   title: string
@@ -182,7 +182,14 @@ export function IdeaBoardCanvas({
         </div>
       </div>
 
-      <BoardZoomControls cards={cards} size={size} setView={setView} zoomAbout={zoomAbout} />
+      <ZoomControls
+        look="board"
+        zoomAbout={zoomAbout}
+        size={size}
+        onFit={() => setView(fitView(cards, size))}
+        fitLabel={t('ideas.canvas.fit')}
+        testId="board"
+      />
 
       <p className="visually-hidden" id={hintId}>
         {t('ideas.canvas.hint')}

@@ -19,6 +19,7 @@ export function TemplateFields({
   setFieldForm,
   refresh,
   failing,
+  id,
 }: {
   universeId: string
   canEdit: boolean
@@ -29,9 +30,11 @@ export function TemplateFields({
   setFieldForm: (fieldForm: { templateId: string; field: ProjectField | null } | null) => void
   refresh: () => void
   failing: (error: unknown) => void
+  /** The panel's id, which the row's Fields button names in `aria-controls`. */
+  id?: string
 }) {
   return (
-    <div className="types__fields" data-testid={`template-fields-panel-${template.id}`}>
+    <div id={id} className="types__fields" data-testid={`template-fields-panel-${template.id}`}>
       {template.fields.length === 0 ? (
         <p className="projectcard__meta">{t('projects.schema.noFields')}</p>
       ) : (

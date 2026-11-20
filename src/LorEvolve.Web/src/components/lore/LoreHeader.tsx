@@ -8,6 +8,7 @@ import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
 import type { useLoreLinks } from '../../lore/useLoreLinks'
 import { Button } from '../Button'
+import { DisclosureButton } from '../DisclosureButton'
 import { NewButton } from '../NewButton'
 
 type Entries = ReturnType<typeof useLoreEntries>
@@ -130,20 +131,20 @@ export function LoreHeader({
               groupHref={groupHref}
             />
             {chosenName ? (
-              <Button
+              <DisclosureButton
                 tone="secondary"
                 icon={ListFilter}
                 className="lore__filtertoggle"
-                aria-expanded={filtersOpen}
-                aria-controls={filtersId}
-                onClick={() => setFiltersOpen((open) => !open)}
+                expanded={filtersOpen}
+                controls={filtersId}
+                onToggle={() => setFiltersOpen((open) => !open)}
                 data-testid="lore-filters-toggle"
               >
                 {t('lore.page.filters')}
                 {activeFilters > 0 ? (
                   <span className="lore__filtercount">{activeFilters}</span>
                 ) : null}
-              </Button>
+              </DisclosureButton>
             ) : null}
           </div>
           <GroupSwitcher

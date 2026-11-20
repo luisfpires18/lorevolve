@@ -15,7 +15,7 @@ import { machineCanvasActions } from '../worldLogic/machineCanvasActions'
 import { MachineLines } from './worldLogic/MachineLines'
 import { MachineStateCard } from './worldLogic/MachineStateCard'
 import { MachineLineLabel } from './worldLogic/MachineLineLabel'
-import { MachineZoomControls } from './worldLogic/MachineZoomControls'
+import { ZoomControls } from './ZoomControls'
 
 /** What is chosen on the canvas: one state, one transition, or nothing. */
 export type MachineSelection =
@@ -228,7 +228,14 @@ export function SystemMachineCanvas({
         </div>
       </div>
 
-      <MachineZoomControls zoomAbout={zoomAbout} size={size} setView={setView} items={items} />
+      <ZoomControls
+        look="board"
+        zoomAbout={zoomAbout}
+        size={size}
+        onFit={() => setView(fitView(items, size))}
+        fitLabel={t('canon.worldLogic.systems.machine.fit')}
+        testId="machine"
+      />
 
       <p className="visually-hidden" id={hintId}>
         {t('canon.worldLogic.systems.machine.hint')}

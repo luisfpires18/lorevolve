@@ -5,6 +5,7 @@ import { ProposalStatus, type ProposalState } from '../aiChanges/types'
 import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
+import { SegmentedControl } from '../components/SegmentedControl'
 import { useI18n } from '../i18n'
 import { formatDateTime } from '../lib/dates'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -60,26 +61,19 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
         titleId="aichanges-title"
         lede={inUniverse ? t('review.aiChanges.ledeUniverse') : t('review.aiChanges.ledeAccount')}
       >
-        <div className="segmented" role="group" aria-label={t('review.aiChanges.which')}>
-          <button
-            className="segmented__option"
-            type="button"
-            aria-pressed={state === 'open'}
-            onClick={() => show('open')}
-            data-testid="ai-changes-open"
-          >
-            {t('review.aiChanges.waiting')}
-          </button>
-          <button
-            className="segmented__option"
-            type="button"
-            aria-pressed={state === 'decided'}
-            onClick={() => show('decided')}
-            data-testid="ai-changes-decided"
-          >
-            {t('review.aiChanges.decided')}
-          </button>
-        </div>
+        <SegmentedControl
+          label={t('review.aiChanges.which')}
+          options={[
+            { value: 'open', label: t('review.aiChanges.waiting'), testId: 'ai-changes-open' },
+            {
+              value: 'decided',
+              label: t('review.aiChanges.decided'),
+              testId: 'ai-changes-decided',
+            },
+          ]}
+          value={state}
+          onChange={show}
+        />
       </PageHeader>
 
       {load.kind === 'loading' ? (

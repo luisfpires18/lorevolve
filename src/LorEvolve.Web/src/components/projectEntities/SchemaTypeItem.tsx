@@ -4,7 +4,7 @@ import type { ProjectEntityType } from '../../projectEntities/types'
 import { TypeRow } from '../TypeRow'
 import { TypeRowActions } from '../TypeRowActions'
 import { t, tn, useI18n } from '../../i18n'
-import type { Dispatch, SetStateAction } from 'react'
+import { useId, type Dispatch, type SetStateAction } from 'react'
 import type { buildTypeTree } from '../../lore/typeTree'
 import { SchemaTypeFields } from './SchemaTypeFields'
 
@@ -41,6 +41,7 @@ export function SchemaTypeItem({
   failing: (error: unknown) => void
 }) {
   useI18n()
+  const fieldsId = useId()
 
   const type = node.type
   const parent = node.depth > 0 ? tree.byId.get(node.path[node.path.length - 2]!.id) : null
@@ -77,6 +78,7 @@ export function SchemaTypeItem({
             count: type.fields.length,
             onToggle: () => setOpenTypeId(openTypeId === type.id ? null : type.id),
             testId: `project-type-fields-open-${type.id}`,
+            controls: fieldsId,
           }}
           onDelete={() => {
             setBusy(true)
@@ -91,6 +93,7 @@ export function SchemaTypeItem({
       {type.description ? <p className="types__description prose">{type.description}</p> : null}
 
       <SchemaTypeFields
+        id={fieldsId}
         projectId={projectId}
         busy={busy}
         setBusy={setBusy}

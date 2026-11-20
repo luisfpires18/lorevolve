@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
 import { LoreFieldFilters } from '../LoreFieldFilters'
 import { useI18n } from '../../i18n'
-import { CANON_LABELS, CANON_ORDER, type CanonStatusValue, type EntityPage } from '../../lore/types'
+import type { CanonStatusValue, EntityPage } from '../../lore/types'
+import { CanonStatusPicker } from '../CanonStatusPicker'
 import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { EntityType } from '../../lore/typeDefinitions'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
@@ -85,27 +86,12 @@ export function LoreControls({
         testId="lore-search"
       />
 
-      <div className="segmented" role="group" aria-label={t('lore.page.status')}>
-        <button
-          className="segmented__option"
-          type="button"
-          aria-pressed={canonStatus === null}
-          onClick={() => update({ status: null }, true)}
-        >
-          {t('lore.page.anyStatus')}
-        </button>
-        {CANON_ORDER.map((status) => (
-          <button
-            key={status}
-            className="segmented__option"
-            type="button"
-            aria-pressed={canonStatus === status}
-            onClick={() => update({ status: String(status) }, true)}
-          >
-            {CANON_LABELS[status]}
-          </button>
-        ))}
-      </div>
+      <CanonStatusPicker
+        label={t('lore.page.status')}
+        allLabel={t('lore.page.anyStatus')}
+        value={canonStatus}
+        onChange={(status) => update({ status: status === null ? null : String(status) }, true)}
+      />
 
       {selectedType ? (
         <LoreFieldFilters
