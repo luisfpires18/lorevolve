@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue #286: a game entry opens its own details page - name, type, full description, the stored image or a
@@ -220,6 +221,7 @@ test.describe('Game entity details', () => {
     await page.goto(`${entities}/${entry}`)
     await page.getByTestId('project-entity-edit').click()
     await page.getByTestId('entity-image-remove').click()
+    await acceptConfirm(page)
     await page
       .getByTestId('project-entity-edit-drawer')
       .getByRole('button', { name: 'Cancel' })

@@ -1,5 +1,6 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
 import { PASSWORD, post, unique } from './support/trash'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Refinement 030 (ADR 0041 amendment): invitations and collaborator management, as two or three people at once in their
@@ -164,6 +165,7 @@ test.describe('collaborators', () => {
 
     // Revoked, it is gone from both sides.
     await pending.getByTestId('revoke-invitation').click()
+    await acceptConfirm(owner.page)
     await expect(pending).toHaveCount(0)
     await expect(owner.page.getByTestId('invitations-empty')).toBeVisible()
     await invitee.page.reload()

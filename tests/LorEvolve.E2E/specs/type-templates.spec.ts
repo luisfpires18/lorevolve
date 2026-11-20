@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue #282: the Types screen manages the universe's reusable templates. Creating, editing and deleting one never
@@ -107,6 +108,7 @@ test.describe('Types: Templates', () => {
     await page.getByTestId('project-field-new-save').click()
     await expect(page.getByTestId('type-templates-failed')).toBeVisible()
     await page.getByTestId('project-field-new-cancel').click()
+    await acceptConfirm(page)
 
     // Edit a field.
     await row.locator('[data-testid^="template-field-actions-"]').first().click()
