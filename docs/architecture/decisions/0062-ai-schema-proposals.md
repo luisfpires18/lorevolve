@@ -181,6 +181,19 @@ on `DroppedFieldImageKeys`, and the sweep that already runs after every approval
 or `EntityFieldImages` row still names, so a rolled-back approval keeps the old picture whole. The hold still takes the new
 picture's full size, not only the growth.
 
+## Amendment, 2026-11-20: a new entry and its picture in one approval (#466)
+
+A new entry needed two proposals and two approvals: the entry, then its picture by the new id. Now an `image` change names
+an entry the same proposal creates with `entryRef` (a `lore_entry` or `project_entry` create), and `propose_entry_image`
+sends the file for that change by `proposal` and `change` instead of staging a proposal of its own. The review page's upload
+serves it as any picture change.
+
+Staging gives every change its operation id before it saves, and writes the creating change's id into the picture's
+`MediaValues.EntityId`. An approved entry create now takes its change's operation id as the entry's id, so the held picture's
+keys are under the entry's own prefix before the entry exists, and nothing is copied on approval. The picture depends on the
+entry like any reference: approving it alone is refused, rejecting the entry rejects it, and the sweep clears its file. Only a
+profile picture: an appearance's picture still needs an entry that exists.
+
 ## A friendly MCP address per universe
 
 Each universe gets `{origin}/mcp/u/{alias}`, such as `/mcp/u/the-lord-of-the-rings-7k2f`, beside the canonical

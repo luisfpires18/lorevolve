@@ -13,14 +13,20 @@ namespace LorEvolve.Api.Features.AiChanges;
 
 // ---------- What an AI sends ----------
 
-[Description("A picture for an entry: its profile picture, replacing the current one once approved, or one more picture in one of its appearances. No file goes in propose_changes: the person uploads it on the proposal's review page, or the AI sends it with propose_entry_image.")]
+[Description("A picture for an entry: its profile picture, replacing the current one once approved, or one more picture in one of its appearances. No file goes in propose_changes: the person uploads it on the proposal's review page, or the AI sends it with propose_entry_image (with proposal and change). An entry this proposal creates takes its profile picture in the same approval: name it with entryRef.")]
 public sealed record AiImageInput(
-    [property: Description("The entry's id.")] Guid? Entry = null,
-    [property: Description("An appearance of that entry, by id from get_change_options with loreId. Leave it out for the entry's profile picture.")] Guid? Appearance = null,
-    [property: Description("What picture the person should upload, in a short line, such as \"Bilbo at Bag End\".")] string? Note = null);
+    [property: Description("The entry's id, for an entry that exists. Give this or entryRef.")] Guid? Entry = null,
+    [property: Description("An appearance of that entry, by id from get_change_options with loreId. Leave it out for the entry's profile picture. Not with entryRef.")] Guid? Appearance = null,
+    [property: Description("What picture the person should upload, in a short line, such as \"Bilbo at Bag End\".")] string? Note = null,
+    [property: Description("For an entry this proposal creates: the id of its lore_entry or project_entry create change. The entry and its profile picture are approved together.")] string? EntryRef = null);
 
-/// <summary>Where a staged picture goes once approved: the entry's profile picture, or a picture of one of its appearances.</summary>
-public sealed record MediaValues(Guid EntityId, Guid? AppearanceId, string? Note);
+/// <summary>
+/// Where a staged picture goes once approved: the entry's profile picture, or a picture of one of its appearances.
+/// <paramref name="EntryRef"/> names the create change of an entry this proposal makes (#466); staging then gives
+/// <paramref name="EntityId"/> that change's operation id, which is the id the entry is created with, so the held picture's
+/// keys are under the entry's own prefix before the entry exists.
+/// </summary>
+public sealed record MediaValues(Guid EntityId, Guid? AppearanceId, string? Note, string? EntryRef = null);
 
 /// <summary>
 /// A media change's file, as the review shows it: not uploaded yet, or uploaded - with its preview, read through LorEvolve's own

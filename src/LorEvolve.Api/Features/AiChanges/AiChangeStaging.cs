@@ -204,6 +204,9 @@ internal static partial class AiChangeStaging
             return new AiChangeStaged(null, [.. issues.OrderBy(issue => issue.Index ?? -1)]);
         }
 
+        // Every change's id is given here, so a picture for an entry this proposal creates can name it now: the entry is
+        // created with its change's id on approval (#466).
+        var operationIds = works.ToDictionary(work => work.Key, _ => Guid.NewGuid(), StringComparer.Ordinal);
         var proposal = new AiChangeProposal
         {
             Id = Guid.NewGuid(),
@@ -220,7 +223,7 @@ internal static partial class AiChangeStaging
             [
                 .. works.Select(work => new AiChangeOperation
                 {
-                    Id = Guid.NewGuid(),
+                    Id = operationIds[work.Key],
                     Sequence = work.Sequence,
                     Key = work.Key,
                     Resource = work.Resource,
@@ -228,7 +231,9 @@ internal static partial class AiChangeStaging
                     TargetId = work.TargetId,
                     BaseVersion = work.BaseVersion,
                     Before = work.Before is null ? null : AiChangeJson.Write(work.Before),
-                    Proposed = AiChangeJson.Write(work.Proposed),
+                    Proposed = AiChangeJson.Write(work.Proposed is MediaValues { EntryRef: { } entryKey } media
+                        ? media with { EntityId = operationIds[entryKey] }
+                        : work.Proposed),
                     DependsOn = AiChangeJson.Write(work.DependsOn),
                     Status = AiChangeOperationStatus.Pending,
                 }),
@@ -420,12 +425,20 @@ internal static partial class AiChangeStaging
         /// <summary>
         /// A picture change carries no file: where it goes, and what the person should upload. The entry must be live - a profile
         /// picture already there is replaced on approval (#445) - and an appearance must be the entry's, with room in its gallery.
+        /// Or the entry is one this proposal creates (#466), by its change's id: a profile picture only.
         /// </summary>
         private async Task<AiChangeWork?> MediaAsync(CancellationToken cancellationToken)
         {
-            if (input.Image is not { Entry: { } entityId } image)
+            var entryRef = input.Image?.EntryRef?.Trim();
+            if (input.Image is not { } image || (image.Entry is null) == string.IsNullOrEmpty(entryRef))
             {
-                Fail(AiChangeCodes.Invalid, "Say which entry the picture is for, in image.entry.", "image.entry");
+                Fail(AiChangeCodes.Invalid, "Say which entry the picture is for: image.entry for one that exists, or image.entryRef for one this proposal creates.", "image.entry");
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(entryRef) && image.Appearance is not null)
+            {
+                Fail(AiChangeCodes.Unsupported, "A new entry takes only its profile picture in the same proposal. Propose an appearance's picture once the entry exists.", "image.appearance");
                 return null;
             }
 
@@ -436,8 +449,10 @@ internal static partial class AiChangeStaging
                 return null;
             }
 
-            var work = Work(null, null, new MediaValues(entityId, image.Appearance, string.IsNullOrEmpty(note) ? null : note));
-            if (work is not null)
+            // A new entry's id is its create change's operation id, given when the proposal is saved (#466).
+            var work = Work(null, null, new MediaValues(
+                image.Entry ?? Guid.Empty, image.Appearance, string.IsNullOrEmpty(note) ? null : note, string.IsNullOrEmpty(entryRef) ? null : entryRef));
+            if (work is not null && image.Entry is { } entityId)
             {
                 // Named on the change, so the review links to the entry the picture is for.
                 work.TargetId = entityId;
