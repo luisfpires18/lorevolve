@@ -6,6 +6,7 @@ import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 /** A board editor's toolbar, the hint when the board is full, and the line being drawn. */
 export function BoardToolbar({
@@ -72,14 +73,20 @@ export function BoardToolbar({
         </QuietNote>
       ) : null}
       {connecting ? (
-        <p className="notice board__connecting" role="status" data-testid="board-connecting">
+        <Callout
+          look="notice"
+          as="p"
+          className="board__connecting"
+          role="status"
+          testId="board-connecting"
+        >
           {t('ideas.board.connecting', { name: cardName(cardsById.get(connecting)!) })}{' '}
           <FormActions
             onCancel={() => setConnecting(null)}
             cancelTestId="board-connect-cancel"
             size="sm"
           />
-        </p>
+        </Callout>
       ) : null}
     </>
   )

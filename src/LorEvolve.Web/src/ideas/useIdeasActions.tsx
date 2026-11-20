@@ -1,14 +1,12 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { Quoted } from '../components/NameList'
 import { restoreIdea } from './api'
 import type { IdeaSummary } from './types'
 import type { useI18n } from '../i18n'
 import type { useIdeasState } from './useIdeasState'
 
-/** An ideas list's outcome: focused when it is said; Restore, which says it; and what a capture does to the list. */
+/** An ideas list's Restore, which says what it did, and what a capture does to the list. */
 export function useIdeasActions({
-  outcome,
-  outcomeRef,
   setRestoring,
   setOutcome,
   setReads,
@@ -22,10 +20,6 @@ export function useIdeasActions({
   page: number
   update: (change: Record<string, string | null>) => void
 }) {
-  useEffect(() => {
-    if (outcome) outcomeRef.current?.focus()
-  }, [outcome])
-
   async function restore(idea: IdeaSummary) {
     setRestoring(idea.id)
     setOutcome(null)

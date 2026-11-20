@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Chronology } from '../../chronology/types'
 import { t, tn, useI18n } from '../../i18n'
 import { joinAnd } from '../../chronology/eraDrafts'
+import { Callout } from '../Callout'
 
 /** The line saying how many dates sit outside every period, with a link to the Timeline when moments do. */
 export function ChronologyUnplaced({
@@ -19,7 +20,13 @@ export function ChronologyUnplaced({
 }) {
   useI18n()
   return (
-    <p className="callout callout--warning settings__caution" data-testid="chronology-unplaced">
+    <Callout
+      look="callout"
+      tone="warning"
+      as="p"
+      className="settings__caution"
+      testId="chronology-unplaced"
+    >
       {storedNamesEras ? (
         <>
           <strong>{tn('time.periods.unplaced.lead', unplacedTotal, { n: unplacedTotal })}</strong>{' '}
@@ -39,6 +46,6 @@ export function ChronologyUnplaced({
           </Link>
         </>
       ) : null}
-    </p>
+    </Callout>
   )
 }

@@ -8,32 +8,15 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { classStrings, elements, read, tsxFiles } from './support.ts'
 
-// Files that write `form__actions` by hand, with the reason. FormActions itself is the component.
+// Files that write `form__actions` by hand, with the reason: only FormActions itself, the component.
 const FORM_ACTIONS_ROWS = new Map<string, string>([
   ['src/components/FormActions.tsx', 'the component'],
-  ['src/components/admin/PasswordSection.tsx', 'one secondary action, not a Save row'],
-  ['src/components/admin/SignUpLink.tsx', 'two actions, neither is Save or Cancel'],
-  ['src/components/CalendarEditor.tsx', 'SaveAction owns the save; Discard sits beside it'],
-  ['src/components/ChronologyEditor.tsx', 'SaveAction owns the save; Discard sits beside it'],
-  ['src/components/CinemaSagas.tsx', 'a row of New buttons'],
-  ['src/components/worldLogic/MachineStates.tsx', 'a row of New buttons'],
-  ['src/components/worldLogic/MachineTransitions.tsx', 'a row of New buttons'],
-  ['src/components/worldLogic/TransitionDrawer.tsx', 'a row of New buttons'],
-  ['src/components/projectEntities/OutlineAddButtons.tsx', 'a row of New buttons'],
-  ['src/components/trash/BulkEraseConfirm.tsx', 'aria-disabled keeps focus (#255)'],
-  ['src/components/trash/EraseConfirm.tsx', 'aria-disabled keeps focus (#255)'],
-  ['src/components/trash/RestorePublicConfirm.tsx', 'aria-disabled keeps focus (#255)'],
-  ['src/components/worldLogic/FindingDetail.tsx', 'two decisions with one busy state'],
-  ['src/pages/ConnectAuthorizePage.tsx', 'Approve and Deny both submit a decision'],
 ])
 
 // Files that read the shared Cancel or Close string themselves, because they cannot draw FormActions.
 const SHARED_CANCEL_READERS = new Set([
   'src/components/FormActions.tsx',
   'src/components/CropperActions.tsx', // icons on both buttons, which FormActions cannot draw
-  'src/components/trash/BulkEraseConfirm.tsx',
-  'src/components/trash/EraseConfirm.tsx',
-  'src/components/trash/RestorePublicConfirm.tsx',
   'src/components/lore/EntryFormBar.tsx',
   'src/components/lore/MassCreateBar.tsx',
 ])

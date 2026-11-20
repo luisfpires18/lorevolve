@@ -8,6 +8,8 @@ import { ConsentDetails } from '../components/mcp/ConsentDetails'
 import { ConsentLayout } from '../components/mcp/ConsentLayout'
 import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
 import { Button } from '../components/Button'
+import { FormActions } from '../components/FormActions'
+import { Callout } from '../components/Callout'
 
 /** The field the decision travels in, beside the request's own parameters. Read by `OAuthEndpoints` on the server. */
 const DECISION_FIELD = 'lorevolve_decision'
@@ -67,7 +69,7 @@ export default function ConnectAuthorizePage() {
       ))}
       {token ? <input type="hidden" name={token.fieldName} value={token.token} /> : null}
       {content}
-      <div className="actions form__actions consent__actions">
+      <FormActions inline className="consent__actions">
         {load.kind === 'ready' ? (
           <Button
             type="submit"
@@ -88,17 +90,17 @@ export default function ConnectAuthorizePage() {
         >
           {load.kind === 'ready' ? t('universe.connect.deny') : t('universe.connect.goBack')}
         </Button>
-      </div>
+      </FormActions>
     </form>
   )
 
   // A request to decide on, or one to turn down: either way the decision waits for the antiforgery token.
   const request =
     load.kind === 'no-access' ? (
-      <div className="notice notice--error" role="alert" data-testid="consent-no-access">
+      <Callout look="notice" tone="error" role="alert" testId="consent-no-access">
         <p>{t('universe.connect.noAccount')}</p>
         <p>{t('universe.connect.noAccountNote')}</p>
-      </div>
+      </Callout>
     ) : load.kind === 'ready' ? (
       <ConsentDetails details={load.details} id={detailsId} />
     ) : null
@@ -134,19 +136,19 @@ export default function ConnectAuthorizePage() {
       }
     >
       {load.kind === 'loading' ? (
-        <p className="notice" role="status">
+        <Callout look="notice" as="p" role="status">
           {t('universe.connect.checking')}
-        </p>
+        </Callout>
       ) : load.kind === 'invalid' ? (
         // An app or a return address LorEvolve does not recognise: there is nowhere trusted to send the browser back to.
-        <div className="notice notice--error" role="alert" data-testid="consent-invalid">
+        <Callout look="notice" tone="error" role="alert" testId="consent-invalid">
           <p>{t('universe.connect.invalid')}</p>
           <p>{t('universe.connect.invalidNote')}</p>
-        </div>
+        </Callout>
       ) : load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="consent-error">
+        <Callout look="notice" tone="error" role="alert" testId="consent-error">
           <p>{t('universe.connect.checkFailed')}</p>
-        </div>
+        </Callout>
       ) : token ? (
         decide(request)
       ) : (

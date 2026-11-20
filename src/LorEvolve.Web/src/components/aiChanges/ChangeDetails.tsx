@@ -5,6 +5,7 @@ import { MediaChange } from './MediaChange'
 import { ProseChange } from './ProseChange'
 import { QuietNote } from '../QuietNote'
 import { FormMessage } from '../FormMessage'
+import { Callout } from '../Callout'
 
 /** What a change does: its lines, its prose or picture, what it touches, what it needs or is needed by, and what stops it. */
 export function ChangeDetails({
@@ -96,12 +97,15 @@ export function ChangeDetails({
 
       {pending && change.issues.length > 0 ? (
         change.isConflict ? (
-          <ul
-            className="callout callout--warning aichangeitem__issues"
-            data-testid="ai-change-issues"
+          <Callout
+            look="callout"
+            tone="warning"
+            as="ul"
+            className="aichangeitem__issues"
+            testId="ai-change-issues"
           >
             {issueItems}
-          </ul>
+          </Callout>
         ) : (
           <FormMessage
             as="ul"

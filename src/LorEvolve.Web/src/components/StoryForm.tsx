@@ -22,6 +22,7 @@ import {
 } from '../stories/types'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 interface StoryDraft {
   title: string
@@ -160,9 +161,9 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
       )}
     >
       {suggesting ? (
-        <p className="callout" data-testid="story-suggesting">
+        <Callout look="callout" as="p" testId="story-suggesting">
           {t('stories.storyForm.suggestingNote')}
-        </p>
+        </Callout>
       ) : null}
 
       {message ? <FormMessage testId="story-error">{message}</FormMessage> : null}

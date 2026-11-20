@@ -15,7 +15,7 @@ import { useIdeasState } from '../ideas/useIdeasState'
 import { useI18n } from '../i18n'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
-import { OutcomeNotice } from './OutcomeNotice'
+import { Callout } from './Callout'
 
 /** What an idea's editor says it did before handing back to the list. */
 export interface IdeasListNotice {
@@ -56,8 +56,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
   const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
 
   const base = useIdeasState(search)
-  const { typed, setTyped, state, setState, setReads, universes, restoring, outcome, outcomeRef } =
-    base
+  const { typed, setTyped, state, setState, setReads, universes, restoring, outcome } = base
 
   // A deletion reported by the editor that sent the author here.
   const notice = (location.state as IdeasListNotice | null)?.deleted ?? null
@@ -89,15 +88,19 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       {deleted ? null : <QuickCapture scope={scope} onCaptured={captured} />}
 
       {created && !deleted ? (
-        <OutcomeNotice className="ideas__notice" testId="ideas-created-notice">
-          {tx('ideas.browser.created', { title: <Quoted text={created.title} /> })}
-        </OutcomeNotice>
+        <Callout look="notice" className="ideas__notice" testId="ideas-created-notice">
+          <p role="status">
+            {tx('ideas.browser.created', { title: <Quoted text={created.title} /> })}
+          </p>
+        </Callout>
       ) : null}
 
       {notice && !deleted ? (
-        <OutcomeNotice className="ideas__notice" testId="ideas-deleted-notice">
-          {tx('ideas.browser.deletedNotice', { title: <Quoted text={notice.title} /> })}
-        </OutcomeNotice>
+        <Callout look="notice" className="ideas__notice" testId="ideas-deleted-notice">
+          <p role="status">
+            {tx('ideas.browser.deletedNotice', { title: <Quoted text={notice.title} /> })}
+          </p>
+        </Callout>
       ) : null}
 
       <IdeasControls
@@ -113,7 +116,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       />
 
       {outcome ? (
-        <div className="notice ideas__outcome" ref={outcomeRef} tabIndex={-1}>
+        <Callout look="notice" className="ideas__outcome" focusOnShow={outcome}>
           <p role="status" data-testid="ideas-message">
             {outcome.text}
           </p>
@@ -122,7 +125,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
               {outcome.link.label}
             </Link>
           ) : null}
-        </div>
+        </Callout>
       ) : null}
 
       {state.kind === 'loading' ? <LoadingNote>{t('ideas.browser.loading')}</LoadingNote> : null}

@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n'
 import type { useMassRows } from '../../lore/useMassRows'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
+import { Callout } from '../Callout'
 
 type Rows = ReturnType<typeof useMassRows>
 
@@ -34,9 +35,9 @@ export function MassCreateBar({
       ) : null}
 
       {failure ? (
-        <div className="notice notice--error" role="alert" data-testid="mass-create-failure">
+        <Callout look="notice" tone="error" role="alert" testId="mass-create-failure">
           <p>{failure}</p>
-        </div>
+        </Callout>
       ) : null}
 
       <footer className="actionbar masscreate__bar">

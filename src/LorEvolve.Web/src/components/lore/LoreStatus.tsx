@@ -9,6 +9,7 @@ import type { LoadState } from '../../lore/loreAddress'
 import type { ReactNode } from 'react'
 import { LoadError } from '../LoadError'
 import { CardSkeleton } from '../CardSkeleton'
+import { Callout } from '../Callout'
 type Entries = ReturnType<typeof useLoreEntries>
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -68,13 +69,13 @@ export function LoreStatus({
 
       {/* No types at all leaves nothing to choose: one line to where types are made, not a panel. */}
       {types !== null && types.length === 0 ? (
-        <p className="notice" data-testid="lore-no-types">
+        <Callout look="notice" as="p" testId="lore-no-types">
           {tx('lore.page.noTypes', {
             link: (
               <Link to={`/app/universes/${universe.id}/types`}>{t('lore.page.noTypesLink')}</Link>
             ),
           })}
-        </p>
+        </Callout>
       ) : null}
 
       {view.kind === 'loading' ? (

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError } from '../lib/api'
+import { useConfirmFocus } from '../lib/useConfirmFocus'
 import { t, tx, useI18n } from '../i18n'
 import {
   ConnectedAppStatus,
@@ -112,17 +113,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
   const [error, setError] = useState<string | null>(null)
   const confirm = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
-  const wasConfirming = useRef(false)
-
-  useEffect(() => {
-    if (confirming) {
-      wasConfirming.current = true
-      confirm.current?.focus()
-    } else if (wasConfirming.current) {
-      wasConfirming.current = false
-      button.current?.focus()
-    }
-  }, [confirming])
+  useConfirmFocus(confirming, confirm, button)
 
   async function disconnect() {
     setBusy(true)

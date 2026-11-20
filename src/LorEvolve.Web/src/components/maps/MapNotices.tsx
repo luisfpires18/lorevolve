@@ -6,6 +6,7 @@ import type { PinForm } from '../../maps/useMapPageState'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { FormMessage } from '../FormMessage'
+import { Callout } from '../Callout'
 
 export function MapNotices({
   map,
@@ -29,23 +30,41 @@ export function MapNotices({
   return (
     <>
       {map.pinsAwaitingReview > 0 ? (
-        <p className="callout mapscreen__review" role="status" data-testid="map-review-notice">
+        <Callout
+          look="callout"
+          as="p"
+          className="mapscreen__review"
+          role="status"
+          testId="map-review-notice"
+        >
           {tn(
             canEdit ? 'places.mapPage.reviewEditor' : 'places.mapPage.reviewViewer',
             map.pinsAwaitingReview,
             { n: map.pinsAwaitingReview },
           )}
-        </p>
+        </Callout>
       ) : null}
 
       {calibrating ? (
-        <p className="callout mapscreen__placing" role="status" data-testid="map-calibrating-hint">
+        <Callout
+          look="callout"
+          as="p"
+          className="mapscreen__placing"
+          role="status"
+          testId="map-calibrating-hint"
+        >
           {t('places.mapPage.calibrating')}
-        </p>
+        </Callout>
       ) : null}
 
       {placing ? (
-        <p className="callout mapscreen__placing" role="status" data-testid="map-placing-hint">
+        <Callout
+          look="callout"
+          as="p"
+          className="mapscreen__placing"
+          role="status"
+          testId="map-placing-hint"
+        >
           {tx('places.mapPage.placing', {
             position: (
               <Button
@@ -58,7 +77,7 @@ export function MapNotices({
             ),
           })}{' '}
           <FormActions onCancel={() => setPlacing(false)} />
-        </p>
+        </Callout>
       ) : null}
 
       {failure ? <FormMessage testId="map-failure">{failure}</FormMessage> : null}

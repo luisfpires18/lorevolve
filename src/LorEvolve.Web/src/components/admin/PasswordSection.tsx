@@ -4,6 +4,7 @@ import { ApiError } from '../../lib/api'
 import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 import { Section } from '../Section'
 import { QuietNote } from '../QuietNote'
 
@@ -48,7 +49,7 @@ export function PasswordSection({
       <QuietNote spacing="block">
         {user.isBlocked ? t('admin.password.noteBlocked') : t('admin.password.note')}
       </QuietNote>
-      <div className="actions form__actions">
+      <FormActions inline>
         <Button
           tone="secondary"
           disabled={user.isBlocked}
@@ -57,7 +58,7 @@ export function PasswordSection({
         >
           {t('admin.password.send')}
         </Button>
-      </div>
+      </FormActions>
       {sent ? (
         <QuietNote spacing="block" role="status" testId="admin-password-reset-sent">
           {t('admin.password.sent')}

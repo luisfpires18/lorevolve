@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getPublication } from '../publishing/api'
 import { Visibility } from '../publishing/types'
+import { useConfirmFocus } from '../lib/useConfirmFocus'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 
 /** Settings' saved notes, the busy state, the two confirms with their focus, whether the universe is public, and the export. */
@@ -16,7 +17,6 @@ export function useUniverseSettingsState({ universe }: { universe: WorkspaceCont
   const archiveButton = useRef<HTMLButtonElement>(null)
   const deleteConfirm = useRef<HTMLDivElement>(null)
   const deleteButton = useRef<HTMLButtonElement>(null)
-  const hadDeleteConfirm = useRef(false)
 
   // Whether the universe is public, for the archive's words. Publication itself is on Publish.
   useEffect(() => {
@@ -30,26 +30,14 @@ export function useUniverseSettingsState({ universe }: { universe: WorkspaceCont
   }, [universe.id])
 
   // A confirmation takes the focus when it opens; Cancel hands the focus back to what opened it, which is only mounted
-  // again after the render.
+  // again after the render. The archive's opener gets it back only after a Cancel.
   const archiveCancelled = useRef(false)
-  useEffect(() => {
-    if (confirmingArchive) {
-      archiveConfirm.current?.focus()
-    } else if (archiveCancelled.current) {
-      archiveCancelled.current = false
-      archiveButton.current?.focus()
-    }
-  }, [confirmingArchive])
-
-  useEffect(() => {
-    if (confirmingDelete) {
-      hadDeleteConfirm.current = true
-      deleteConfirm.current?.focus()
-    } else if (hadDeleteConfirm.current) {
-      hadDeleteConfirm.current = false
-      deleteButton.current?.focus()
-    }
-  }, [confirmingDelete])
+  useConfirmFocus(confirmingArchive, archiveConfirm, () => {
+    const cancelled = archiveCancelled.current
+    archiveCancelled.current = false
+    return cancelled ? archiveButton.current : null
+  })
+  useConfirmFocus(confirmingDelete, deleteConfirm, deleteButton)
 
   const [exporting, setExporting] = useState<'backup' | 'readable' | null>(null)
   const [exportedAs, setExportedAs] = useState<string | null>(null)
@@ -74,7 +62,6 @@ export function useUniverseSettingsState({ universe }: { universe: WorkspaceCont
     archiveButton,
     deleteConfirm,
     deleteButton,
-    hadDeleteConfirm,
     archiveCancelled,
     exporting,
     setExporting,

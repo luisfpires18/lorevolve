@@ -9,6 +9,7 @@ import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
 import { LoadingNote } from './LoadingNote'
 import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 /** What a picked idea or entry puts on a card: its id and what the card shows of it. */
 export interface PickedTarget {
@@ -150,7 +151,7 @@ export function IdeaBoardPicker({
         ) : results === null ? (
           <FormMessage>{t('ideas.boardPicker.loadFailed')}</FormMessage>
         ) : results.length === 0 ? (
-          <p className="notice ideapicker__notice" data-testid="board-picker-empty">
+          <Callout look="notice" as="p" className="ideapicker__notice" testId="board-picker-empty">
             {query.trim()
               ? what === 'idea'
                 ? t('ideas.boardPicker.emptyNamedIdea')
@@ -158,7 +159,7 @@ export function IdeaBoardPicker({
               : what === 'idea'
                 ? t('ideas.boardPicker.emptyIdeas')
                 : t('ideas.boardPicker.emptyEntries')}
-          </p>
+          </Callout>
         ) : (
           <ul className="ideapicker__results" data-testid="board-picker-results">
             {results.map((target) => {

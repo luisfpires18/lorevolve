@@ -3,6 +3,7 @@ import { Archive } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { Button } from '../Button'
+import { Callout } from '../Callout'
 
 /** Under a field that cannot be deleted: why, where its entries are, and archiving as the way out. */
 export function FieldBlockedNote({
@@ -21,10 +22,12 @@ export function FieldBlockedNote({
   const { t } = useI18n()
   if (blocked?.fieldId !== field.id) return null
   return (
-    <div
-      className="callout callout--warning fieldlist__note"
+    <Callout
+      look="callout"
+      tone="warning"
+      className="fieldlist__note"
       role="alert"
-      data-testid={`field-blocked-${field.name}`}
+      testId={`field-blocked-${field.name}`}
     >
       <p className="types__blockedtext">{blocked.text}</p>
       <p className="types__blockedlinks">
@@ -48,6 +51,6 @@ export function FieldBlockedNote({
           <Link to={`/app/universes/${universeId}/trash`}>{t('entityTypes.fields.openTrash')}</Link>
         ) : null}
       </p>
-    </div>
+    </Callout>
   )
 }

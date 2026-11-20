@@ -2,7 +2,9 @@ import { t } from '../../i18n'
 import type { WorldLogicFindingDetail, WorldLogicFindingRow } from '../../worldLogic/types'
 import { historyLabel } from '../../worldLogic/findingLabels'
 import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 import { DateText } from '../DateText'
+import { Callout } from '../Callout'
 
 /** An opened finding: the version it was checked at, its evidence, the rationale, its history and the decisions. */
 export function FindingDetail({
@@ -43,9 +45,9 @@ export function FindingDetail({
           ))}
         </ul>
       ) : (
-        <p className="notice" data-testid="world-logic-finding-no-evidence">
+        <Callout look="notice" as="p" testId="world-logic-finding-no-evidence">
           {t('canon.worldLogic.integrity.noEvidence')}
-        </p>
+        </Callout>
       )}
 
       {detail.rationale.length > 0 ? (
@@ -75,9 +77,9 @@ export function FindingDetail({
       </ul>
 
       {decideFailed ? (
-        <p className="notice notice--error" role="alert">
+        <Callout look="notice" tone="error" as="p" role="alert">
           {t('canon.worldLogic.integrity.decideFailed')}
-        </p>
+        </Callout>
       ) : null}
 
       {canDecide && detail.finding.status !== 'resolved' ? (
@@ -93,7 +95,7 @@ export function FindingDetail({
               {t('canon.worldLogic.integrity.undismiss')}
             </Button>
           ) : (
-            <div className="actions form__actions">
+            <FormActions inline>
               <Button
                 tone="secondary"
                 busy={deciding}
@@ -112,7 +114,7 @@ export function FindingDetail({
               >
                 {t('canon.worldLogic.integrity.dismiss')}
               </Button>
-            </div>
+            </FormActions>
           )}
         </div>
       ) : null}

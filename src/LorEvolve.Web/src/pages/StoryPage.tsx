@@ -24,6 +24,7 @@ import { LoadError } from '../components/LoadError'
 import { ReadGate } from '../components/ReadGate'
 import { EmptyState } from '../components/EmptyState'
 import { Announce } from '../components/Announce'
+import { Callout } from '../components/Callout'
 
 /**
  * A story's page, one per story. Moving between its views keeps the page and everything read for it; moving to
@@ -242,9 +243,15 @@ function StoryView({ view }: { view: StoryViewName }) {
       </StoryHeader>
 
       {sent ? (
-        <p className="callout story__sent" role="status" data-testid="suggestion-sent">
+        <Callout
+          look="callout"
+          as="p"
+          className="story__sent"
+          role="status"
+          testId="suggestion-sent"
+        >
           {t('stories.page.sent')}
-        </p>
+        </Callout>
       ) : null}
 
       {stale ? (

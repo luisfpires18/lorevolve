@@ -3,7 +3,7 @@ import { t, tx, useI18n } from '../../i18n'
 import { Quoted } from '../NameList'
 import { TRASH_KIND_LABELS, type TrashItem } from '../../trash/types'
 import { eraseText } from '../../trash/trashText'
-import { Button } from '../Button'
+import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 
 /**
@@ -42,24 +42,18 @@ export function EraseConfirm({
       error={error}
       errorTestId="trash-erase-error"
       actions={
-        <div className="actions form__actions">
-          <Button
-            tone="danger"
-            aria-disabled={busy || undefined}
-            onClick={onErase}
-            data-testid="trash-erase-delete"
-          >
-            {busy ? t('data.trash.erase.deleting') : t('data.trash.erase.delete')}
-          </Button>
-          <Button
-            tone="secondary"
-            aria-disabled={busy || undefined}
-            onClick={onCancel}
-            data-testid="trash-erase-cancel"
-          >
-            {t('shell.actions.cancel')}
-          </Button>
-        </div>
+        <FormActions
+          inline
+          softDisable
+          submitLabel={t('data.trash.erase.delete')}
+          busy={busy}
+          busyLabel={t('data.trash.erase.deleting')}
+          submitTone="danger"
+          onSubmit={onErase}
+          submitTestId="trash-erase-delete"
+          onCancel={onCancel}
+          cancelTestId="trash-erase-cancel"
+        />
       }
       testId="trash-erase-confirm"
     >

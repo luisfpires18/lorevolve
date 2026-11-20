@@ -7,6 +7,7 @@ import { CHANGED_SINCE } from '../../suggestions/suggestionList'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
+import { Callout } from '../Callout'
 
 /** One suggestion: who and when, its changed fields, how it was decided, and Accept and Reject while it is open. */
 export function SuggestionItem<T>({
@@ -52,12 +53,18 @@ export function SuggestionItem<T>({
       </p>
 
       {isOpen && suggestion.targetChanged ? (
-        <p className="callout callout--warning suggestion__note" data-testid="suggestion-changed">
+        <Callout
+          look="callout"
+          tone="warning"
+          as="p"
+          className="suggestion__note"
+          testId="suggestion-changed"
+        >
           {t(CHANGED_SINCE[what])}{' '}
           {access.resolveSuggestions
             ? t('review.suggestions.cantAcceptReject')
             : t('review.suggestions.cantAcceptAgain')}
-        </p>
+        </Callout>
       ) : null}
 
       <ChangeList

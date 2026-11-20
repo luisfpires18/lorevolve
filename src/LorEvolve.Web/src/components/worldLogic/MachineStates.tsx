@@ -6,6 +6,7 @@ import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState
 import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { NewButton } from '../NewButton'
+import { FormActions } from '../FormActions'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -66,7 +67,7 @@ export function MachineStates({
           })}
         </ul>
       ) : null}
-      <div className="actions form__actions">
+      <FormActions inline>
         <NewButton
           tone="secondary"
           disabled={draft.states.length >= MACHINE_MAX_STATES}
@@ -75,7 +76,7 @@ export function MachineStates({
         >
           {t(`${m}.addState`)}
         </NewButton>
-      </div>
+      </FormActions>
     </section>
   )
 }

@@ -13,6 +13,7 @@ import { ShowMore } from './ShowMore'
 import { QuietNote } from './QuietNote'
 import { HeadingCount } from './HeadingCount'
 import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 interface ReviewSuggestionsProps<T> {
   universeId: string
@@ -84,15 +85,15 @@ export function ReviewSuggestions<T>({
             {feedback.text}
           </FormMessage>
         ) : (
-          <p
-            className="callout"
+          <Callout
+            look="callout"
+            as="p"
             role="status"
-            tabIndex={-1}
             ref={feedbackLine}
-            data-testid="suggestions-feedback"
+            testId="suggestions-feedback"
           >
             {feedback.text}
-          </p>
+          </Callout>
         )
       ) : null}
 

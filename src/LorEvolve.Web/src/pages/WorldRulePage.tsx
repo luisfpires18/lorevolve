@@ -11,6 +11,7 @@ import { useAsyncRead } from '../lib/useAsyncRead'
 import { EmptyState } from '../components/EmptyState'
 import { DocumentHead } from '../components/DocumentHead'
 import { DateText } from '../components/DateText'
+import { Callout } from '../components/Callout'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -104,7 +105,9 @@ function WorldRuleReading({
                 {rule.description}
               </p>
             ) : (
-              <p className="notice">{t('canon.rule.noDescription')}</p>
+              <Callout look="notice" as="p">
+                {t('canon.rule.noDescription')}
+              </Callout>
             )}
             <p className="rule__meta">
               {tx('canon.rule.lastChanged', { date: <DateText value={rule.updatedAt} /> })}

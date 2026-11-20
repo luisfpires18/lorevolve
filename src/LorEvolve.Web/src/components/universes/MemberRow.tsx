@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { monogram } from '../../lib/monogram'
 import { ApiError } from '../../lib/api'
@@ -13,6 +13,7 @@ import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 import { errorText } from '../../lib/errorText'
+import { useConfirmFocus } from '../../lib/useConfirmFocus'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
 import { FormMessage } from '../FormMessage'
@@ -37,17 +38,7 @@ export function MemberRow({
   const [error, setError] = useState<string | null>(null)
   const confirm = useRef<HTMLDivElement>(null)
   const removeButton = useRef<HTMLButtonElement>(null)
-  const wasConfirming = useRef(false)
-
-  useEffect(() => {
-    if (confirming) {
-      wasConfirming.current = true
-      confirm.current?.focus()
-    } else if (wasConfirming.current) {
-      wasConfirming.current = false
-      removeButton.current?.focus()
-    }
-  }, [confirming])
+  useConfirmFocus(confirming, confirm, removeButton)
 
   async function changeRole(role: UniverseRoleValue) {
     setBusy(true)
