@@ -43,21 +43,17 @@ export function ScriptField({
   readOnly?: boolean
 }) {
   return (
-    <Field label={t(`projects.structure.panel.${part}`)}>
-      {(control) => (
-        <textarea
-          {...control}
-          className="field__input"
-          rows={SCRIPT_ROWS[part]}
-          maxLength={4000}
-          readOnly={readOnly}
-          value={value}
-          placeholder={t(`projects.structure.panel.${part}Placeholder`)}
-          onChange={(event) => onChange(event.target.value)}
-          data-testid={testId}
-        />
-      )}
-    </Field>
+    <Field
+      as="textarea"
+      label={t(`projects.structure.panel.${part}`)}
+      rows={SCRIPT_ROWS[part]}
+      maxLength={4000}
+      readOnly={readOnly}
+      value={value}
+      placeholder={t(`projects.structure.panel.${part}Placeholder`)}
+      onChange={(event) => onChange(event.target.value)}
+      data-testid={testId}
+    />
   )
 }
 
@@ -229,20 +225,16 @@ function PanelCard({
             image={node.image}
             onChanged={(image) => setNode({ ...node, image })}
           />
-          <Field label={t('projects.structure.panel.visualDescription')}>
-            {(control) => (
-              <textarea
-                {...control}
-                className="field__input"
-                rows={3}
-                readOnly={!canEdit}
-                value={body}
-                placeholder={t('projects.structure.panel.visualPlaceholder')}
-                onChange={(event) => setBody(event.target.value)}
-                data-testid={testId('visual')}
-              />
-            )}
-          </Field>
+          <Field
+            as="textarea"
+            label={t('projects.structure.panel.visualDescription')}
+            rows={3}
+            readOnly={!canEdit}
+            value={body}
+            placeholder={t('projects.structure.panel.visualPlaceholder')}
+            onChange={(event) => setBody(event.target.value)}
+            data-testid={testId('visual')}
+          />
           {PANEL_SCRIPT.map((part) => (
             <ScriptField
               key={part}
@@ -267,7 +259,9 @@ function PanelCard({
           </div>
         </>
       ) : status ? (
-        <p role="alert">{status}</p>
+        <p className="form__message" role="alert">
+          {status}
+        </p>
       ) : null}
     </article>
   )

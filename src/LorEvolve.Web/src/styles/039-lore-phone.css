@@ -144,10 +144,6 @@
   min-width: 9rem;
 }
 
-.field__input--select {
-  padding-inline: 0.5rem;
-}
-
 .check {
   display: inline-flex;
   align-items: center;

@@ -38,7 +38,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
 
   if (tree === null) {
     return failed ? (
-      <p role="alert" data-testid="project-outline-failed">
+      <p className="form__message" role="alert" data-testid="project-outline-failed">
         {failed}
       </p>
     ) : (
@@ -57,7 +57,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
         />
 
         {failed ? (
-          <p role="alert" data-testid="project-outline-failed">
+          <p className="form__message" role="alert" data-testid="project-outline-failed">
             {failed}
           </p>
         ) : null}

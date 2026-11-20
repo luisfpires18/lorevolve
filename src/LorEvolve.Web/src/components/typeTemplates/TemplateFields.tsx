@@ -2,7 +2,8 @@ import { addTemplateField, deleteTemplateField, saveTemplateField } from '../../
 import type { TypeTemplate } from '../../typeTemplates/types'
 import type { ProjectField } from '../../projectEntities/types'
 import { ActionMenu } from '../ActionMenu'
-import { FieldForm, kindLabel } from '../FieldForm'
+import { FieldForm } from '../FieldForm'
+import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { t } from '../../i18n'
 import { NewButton } from '../NewButton'
 import { Pencil, Trash } from 'lucide-react'
@@ -43,7 +44,7 @@ export function TemplateFields({
             <li key={field.id} className="fieldlist__row">
               <span className="fieldlist__text">
                 <span className="fieldlist__name">{field.name}</span>
-                <span className="fieldlist__meta">{kindLabel(field.kind)}</span>
+                <span className="fieldlist__meta">{FIELD_KIND_LABELS[field.kind]}</span>
               </span>
               {canEdit ? (
                 <div className="fieldlist__actions">

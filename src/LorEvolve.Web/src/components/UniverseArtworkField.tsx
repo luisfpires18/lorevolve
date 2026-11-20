@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { IMAGE_ACCEPT, IMAGE_MAX_BYTES, type ImageCrop } from '../lib/imageCrop'
+import { IMAGE_ACCEPT, type ImageCrop } from '../lib/imageCrop'
 import {
   artworkStore,
   pictureUrl,
@@ -16,6 +16,9 @@ import { ActionIcon } from './ActionIcon'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
+import { useImagePick } from '../lib/useImagePick'
+import type { TextKey } from '../i18n/core'
+import type { Dictionary } from '../i18n/en'
 import { QuietNote } from './QuietNote'
 
 type Framing =
@@ -50,9 +53,8 @@ export function UniverseArtworkField({
   const { t } = useI18n()
   const store = given ?? artworkStore(universeId)
   const w = store.words
-  const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { input, error, setError, pick } = useImagePick(`${w}.tooBig` as TextKey<Dictionary>)
   const [framing, setFraming] = useState<Framing | null>(null)
 
   const pickedFile = framing?.kind === 'file' ? framing.file : null
@@ -68,15 +70,9 @@ export function UniverseArtworkField({
     }
   }, [pickedSource])
 
-  function choose(file: File | undefined) {
-    if (input.current) input.current.value = ''
+  function choose(chosen: File | undefined) {
+    const file = pick(chosen)
     if (!file) return
-    setError(null)
-
-    if (file.size > IMAGE_MAX_BYTES) {
-      setError(t(`${w}.tooBig`, { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
-      return
-    }
 
     setFraming({ kind: 'file', file })
   }
@@ -189,7 +185,7 @@ export function UniverseArtworkField({
       <p className="field__hint">{artwork && isPublic ? t(`${w}.hintPublic`) : t(`${w}.hint`)}</p>
 
       {error ? (
-        <p className="field__error" role="alert" data-testid={`${testId}-error`}>
+        <p className="form__message" role="alert" data-testid={`${testId}-error`}>
           {error}
         </p>
       ) : null}

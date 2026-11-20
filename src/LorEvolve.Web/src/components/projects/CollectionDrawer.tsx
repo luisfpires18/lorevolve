@@ -57,7 +57,7 @@ export function CollectionDrawer({
         />
       )}
     >
-      <Field label={t('projects.comics.name')}>
+      <Field label={t('projects.comics.name')} requiredMark>
         {(control) => (
           <input
             {...control}
@@ -71,20 +71,16 @@ export function CollectionDrawer({
           />
         )}
       </Field>
-      <Field label={t('projects.comics.summary')}>
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input"
-            value={summary}
-            maxLength={4000}
-            rows={3}
-            placeholder={t('projects.comics.summaryPlaceholder')}
-            data-testid="comic-collection-drawer-summary"
-            onChange={(event) => setSummary(event.target.value)}
-          />
-        )}
-      </Field>
+      <Field
+        as="textarea"
+        label={t('projects.comics.summary')}
+        value={summary}
+        maxLength={4000}
+        rows={3}
+        placeholder={t('projects.comics.summaryPlaceholder')}
+        data-testid="comic-collection-drawer-summary"
+        onChange={(event) => setSummary(event.target.value)}
+      />
       {error ? (
         <p className="form__message" role="alert">
           {error}

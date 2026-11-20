@@ -21,6 +21,14 @@
   border-top: 1px solid var(--rule);
 }
 
+/* The period's own Field and its group: the refusal and the dates keep the period's spacing. */
+.relperiod__body,
+.relperiod__points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .relperiod__head {
   display: flex;
   flex-wrap: wrap;

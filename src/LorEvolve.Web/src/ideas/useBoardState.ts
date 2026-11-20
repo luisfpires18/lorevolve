@@ -1,6 +1,10 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../auth/useAuth'
-import { fieldsOf, type Fields, type LoadState, type Stored } from './boardDraft'
+import { IDEA_BOARD_CHANGED } from './boards'
+import { fieldsOf, storedMomentOf, type Fields, type LoadState, type Stored } from './boardDraft'
+import { t } from '../i18n'
+import { ApiError } from '../lib/api'
+import { useFormSave } from '../lib/useFormSave'
 import type { BoardSelection } from './boardSelection'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import type { UniverseSummary } from '../universes/types'
@@ -44,17 +48,27 @@ export function useBoardState({
   }))
   const [draft, setDraft] = useState<Fields>(() => fieldsOf(stored))
   const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [saves, setSaves] = useState(0)
-  const [failure, setFailure] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
+  // A board changed elsewhere opens the conflict; a board gone says so; a 400 shows its first field's words.
+  const form = useFormSave({
+    needChange: (fieldErrors) => Object.values(fieldErrors)[0],
+    failed: () => t('ideas.board.saveFailed'),
+    badRequestOnly: true,
+    refusal: (error) => {
+      if (!(error instanceof ApiError)) return false
+      if (error.status === 409 && error.code === IDEA_BOARD_CHANGED) {
+        setConflict({ updatedAt: storedMomentOf(error.problem) })
+        return true
+      }
+      return error.status === 404 ? t('ideas.board.saveGone') : false
+    },
+  })
   const [picking, setPicking] = useState<'idea' | 'entry' | null>(null)
   const [selected, setSelected] = useState<BoardSelection>(null)
   const [connecting, setConnecting] = useState<string | null>(null)
   const [layout, setLayout] = useState<'board' | 'list'>('board')
   const [announcement, setAnnouncement] = useState('')
-  const inFlight = useRef(false)
   const titleInput = useRef<HTMLInputElement>(null)
   const centre = useRef<(() => { x: number; y: number }) | null>(null)
   const shortcut = useRef<() => void>(() => {})
@@ -79,14 +93,14 @@ export function useBoardState({
     setDraft,
     universes,
     setUniverses,
-    isSaving,
-    setIsSaving,
+    isSaving: form.isSaving,
+    runSave: form.save,
     saves,
     setSaves,
-    failure,
-    setFailure,
-    fieldErrors,
-    setFieldErrors,
+    failure: form.message,
+    setFailure: form.setMessage,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
     conflict,
     setConflict,
     picking,
@@ -99,7 +113,6 @@ export function useBoardState({
     setLayout,
     announcement,
     setAnnouncement,
-    inFlight,
     titleInput,
     centre,
     shortcut,

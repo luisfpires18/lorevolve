@@ -1,5 +1,5 @@
 import { Field } from './Field'
-import { SegmentedControl } from './SegmentedControl'
+import { SegmentedField } from './SegmentedField'
 import { SaveAction } from './SaveAction'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
@@ -66,28 +66,25 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
       testId="calendar-settings"
       rule={false}
     >
-      <Field label={t('time.calendar.datesUse')} group className="calendar__mode">
-        {(control) => (
-          <SegmentedControl
-            {...control}
-            testId="calendar-mode"
-            options={[
-              {
-                value: 'simple',
-                label: t('time.calendar.simple'),
-                testId: 'calendar-mode-simple',
-              },
-              {
-                value: 'custom',
-                label: t('time.calendar.custom'),
-                testId: 'calendar-mode-custom',
-              },
-            ]}
-            value={mode}
-            onChange={choose}
-          />
-        )}
-      </Field>
+      <SegmentedField
+        label={t('time.calendar.datesUse')}
+        className="calendar__mode"
+        testId="calendar-mode"
+        options={[
+          {
+            value: 'simple',
+            label: t('time.calendar.simple'),
+            testId: 'calendar-mode-simple',
+          },
+          {
+            value: 'custom',
+            label: t('time.calendar.custom'),
+            testId: 'calendar-mode-custom',
+          },
+        ]}
+        value={mode}
+        onChange={choose}
+      />
 
       {mode === 'simple' ? (
         <p className="settings__note" data-testid="calendar-note">
@@ -99,26 +96,35 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             {stored ? t('time.calendar.customNoteStored') : t('time.calendar.customNote')}
           </p>
 
-          <ol className="months" data-testid="months">
-            {drafts.map((month, index) => (
-              <CalendarMonthRow
-                key={month.key}
-                month={month}
-                index={index}
-                drafts={drafts}
-                fieldErrors={fieldErrors}
-                update={update}
-                move={move}
-                remove={remove}
-              />
-            ))}
-          </ol>
+          <Field group hideLabel label={t('time.calendar.heading')} error={fieldErrors.months}>
+            {(control) => (
+              <>
+                <ol
+                  className="months"
+                  aria-labelledby={control['aria-labelledby']}
+                  aria-describedby={control['aria-describedby']}
+                  data-testid="months"
+                >
+                  {drafts.map((month, index) => (
+                    <CalendarMonthRow
+                      key={month.key}
+                      month={month}
+                      index={index}
+                      drafts={drafts}
+                      fieldErrors={fieldErrors}
+                      update={update}
+                      move={move}
+                      remove={remove}
+                    />
+                  ))}
+                </ol>
 
-          <NewButton tone="secondary" onClick={add} data-testid="add-month">
-            {t('time.calendar.add')}
-          </NewButton>
-
-          {fieldErrors.months ? <p className="field__error">{fieldErrors.months}</p> : null}
+                <NewButton tone="secondary" onClick={add} data-testid="add-month">
+                  {t('time.calendar.add')}
+                </NewButton>
+              </>
+            )}
+          </Field>
         </>
       )}
 

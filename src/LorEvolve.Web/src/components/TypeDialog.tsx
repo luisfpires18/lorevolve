@@ -4,6 +4,7 @@ import { useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useFormSave } from '../lib/useFormSave'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { branchIds, type TreeType, type TypeTree } from '../lore/typeTree'
 import { typeDialogSave } from '../lore/typeDialogSave'
@@ -106,9 +107,15 @@ export function TypeDialog({
     payloadKey(
       groupChoices.map((choice) => ('id' in choice ? choice.id : `new:${choice.name}`)),
     ) !== payloadKey(initial.groupIds)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: type
+      ? t('entityTypes.page.dialog.detailsSave')
+      : t('entityTypes.page.dialog.detailsCreate'),
+    failed: type
+      ? t('entityTypes.page.dialog.saveFailed')
+      : t('entityTypes.page.dialog.createFailed'),
+  })
+  const { fieldErrors, message, isSaving } = form
 
   const isDirty =
     groupsChanged ||
@@ -136,9 +143,7 @@ export function TypeDialog({
     familyTreeEligible,
     groupChoices,
     groupsChanged,
-    setFieldErrors,
-    setMessage,
-    setIsSaving,
+    form,
   })
 
   return (
@@ -213,10 +218,12 @@ export function TypeDialog({
       )}
 
       {groups ? (
-        <>
-          <TypeGroupsField groups={groups} value={groupChoices} onChange={setGroupChoices} />
-          {fieldErrors.groups ? <p className="field__error">{fieldErrors.groups}</p> : null}
-        </>
+        <TypeGroupsField
+          groups={groups}
+          value={groupChoices}
+          onChange={setGroupChoices}
+          error={fieldErrors.groups}
+        />
       ) : null}
 
       {type || !groups ? null : (

@@ -1,7 +1,6 @@
 import { removeCalendar, saveCalendar } from './api'
 import type { Chronology, ChronologyCalendar } from './types'
 import { t } from '../i18n'
-import { ApiError } from '../lib/api'
 import { confirmAction, confirmDiscard } from '../lib/confirm'
 import { draftsFrom, inputOf, type Mode, type MonthDraft } from './monthDrafts'
 import type { useCalendarEditorState } from './useCalendarEditorState'
@@ -18,7 +17,7 @@ export function calendarActions({
   setDrafts,
   setFieldErrors,
   setMessage,
-  setSaving,
+  runSave,
   setSaves,
   setMoved,
   touched,
@@ -119,11 +118,7 @@ export function calendarActions({
       return
     }
 
-    setSaving(true)
-    setMessage(null)
-    setFieldErrors({})
-
-    try {
+    await runSave(async () => {
       const next =
         mode === 'custom'
           ? await saveCalendar(universeId, inputOf(drafts))
@@ -133,20 +128,7 @@ export function calendarActions({
       setDrafts(draftsFrom(next.calendar))
       onSaved(next)
       setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0 || error.fieldErrors.months
-            ? error.message
-            : t('time.calendar.monthsNeedChange'),
-        )
-      } else {
-        setMessage(t('time.calendar.saveFailed'))
-      }
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   return { change, update, newMonth, add, choose, move, remove, discard, save }

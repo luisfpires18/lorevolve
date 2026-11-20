@@ -40,16 +40,6 @@ const projectsSchema = {
   fieldAdding: 'Adding…',
   fieldSaving: 'Saving…',
   deleteField: 'Delete field',
-  kind: {
-    shortText: 'Short text',
-    longText: 'Long text',
-    number: 'Number',
-    boolean: 'Yes or no',
-    date: 'Date',
-    select: 'One choice',
-    multiSelect: 'Several choices',
-    image: 'Image',
-  },
 }
 
 export default projectsSchema

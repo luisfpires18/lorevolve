@@ -1,8 +1,6 @@
-import { blockingFindingsOf } from '../canon/blocked'
 import { saveChronology } from './api'
 import { EraDirection, EraLabelPosition, type Chronology } from './types'
 import { t } from '../i18n'
-import { ApiError } from '../lib/api'
 import { confirmDiscard } from '../lib/confirm'
 import { draftsFrom, inputOf, type EraDraft } from './eraDrafts'
 import type { useChronologyEditorState } from './useChronologyEditorState'
@@ -18,7 +16,7 @@ export function chronologyActions({
   setFieldErrors,
   setMessage,
   setBlocked,
-  setSaving,
+  runSave,
   setSaves,
   setMoved,
   focusNew,
@@ -84,35 +82,15 @@ export function chronologyActions({
   }
 
   async function save() {
-    setSaving(true)
-    setMessage(null)
-    setFieldErrors({})
-    setBlocked(null)
-
-    try {
+    await runSave(async () => {
+      setBlocked(null)
       const next = await saveChronology(universeId, inputOf(drafts))
       touched.current = false
       setStored(next)
       setDrafts(draftsFrom(next))
       onSaved(next)
       setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      const blocking = blockingFindingsOf(error)
-      if (blocking) {
-        setBlocked(blocking)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('time.periods.needChange'),
-        )
-      } else {
-        setMessage(t('time.periods.saveFailed'))
-      }
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   return { change, update, move, add, discard, save }

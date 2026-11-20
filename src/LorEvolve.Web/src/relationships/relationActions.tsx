@@ -1,4 +1,3 @@
-import { ApiError } from '../lib/api'
 import { periodInputs } from './periods'
 import { createRelationship, deleteRelationship, updateRelationship } from './api'
 import type { RelationshipView } from './types'
@@ -25,7 +24,7 @@ export function relationActions({
   setDraft,
   setFieldErrors,
   setMessage,
-  setIsSaving,
+  form,
   setOpened,
 }: ReturnType<typeof useRelationsState> & {
   universeId: string
@@ -89,10 +88,6 @@ export function relationActions({
       return
     }
 
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-
     // The stored row always runs source to target. Which end this entry sits on comes
     // from the wording the author picked, so no source/target vocabulary reaches them.
     const input = {
@@ -106,7 +101,7 @@ export function relationActions({
       periods: periodInputs(draft.periods, reckonsInEras, custom),
     }
 
-    try {
+    await form.save(async () => {
       if (editingId) {
         await updateRelationship(universeId, editingId, input)
       } else {
@@ -114,20 +109,7 @@ export function relationActions({
       }
       close()
       await load()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('relationships.section.detailsNeedChange'),
-        )
-      } else {
-        setMessage(t('relationships.section.saveFailed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   async function remove(view: RelationshipView) {

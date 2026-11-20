@@ -127,7 +127,7 @@ export function MapCalibrationForm({
     message,
     setMessage,
     isSaving,
-    setIsSaving,
+    runSave,
   } = useCalibrationFormState({ map })
 
   const a = points[0] ?? null
@@ -143,7 +143,7 @@ export function MapCalibrationForm({
     message,
     setMessage,
     isSaving,
-    setIsSaving,
+    runSave,
     universeId,
     map,
     points,

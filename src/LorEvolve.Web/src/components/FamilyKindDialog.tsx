@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
+import { CheckField } from './CheckField'
 import { Field } from './Field'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useFormSave } from '../lib/useFormSave'
 import { createRelationshipType } from '../relationships/api'
 import {
   FamilySemantic,
@@ -39,9 +40,11 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
   const [inverseName, setInverseName] = useState('')
   const [isSymmetric, setIsSymmetric] = useState(false)
   const [semantic, setSemantic] = useState<FamilySemanticValue>(FamilySemantic.NonStructuralFamily)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: t('places.kindDialog.fieldErrors'),
+    failed: t('places.kindDialog.failed'),
+  })
+  const { fieldErrors, message, isSaving } = form
 
   const isDirty =
     payloadKey({ name, inverseName, isSymmetric, semantic }) !==
@@ -64,11 +67,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
     isSymmetric && isParentSemantic(semantic) ? FamilySemantic.NonStructuralFamily : semantic
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-
-    try {
+    await form.save(async () => {
       const kind = await createRelationshipType(universeId, {
         name: name.trim(),
         inverseName: isSymmetric ? null : inverseName.trim() || null,
@@ -79,20 +78,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         familySemantic: chosen,
       })
       onCreated(kind)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.kindDialog.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.kindDialog.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   const reads = name.trim() || t('places.kindDialog.readsAs')
@@ -152,15 +138,13 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         />
       )}
 
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={isSymmetric}
-          onChange={(event) => setIsSymmetric(event.target.checked)}
-          data-testid="family-kind-symmetric"
-        />
-        <span>{t('places.kindDialog.symmetric')}</span>
-      </label>
+      <CheckField
+        className="field--flow"
+        label={t('places.kindDialog.symmetric')}
+        checked={isSymmetric}
+        onChange={setIsSymmetric}
+        testId="family-kind-symmetric"
+      />
 
       <Field
         label={t('places.kindDialog.meaning')}

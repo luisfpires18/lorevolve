@@ -1,4 +1,3 @@
-import { ApiError } from '../lib/api'
 import { createRelationship } from './api'
 import type { RelationshipType } from './types'
 import { confirmDiscard } from '../lib/confirm'
@@ -16,8 +15,7 @@ export function familyLinkActions({
   related,
   canonStatus,
   setFieldErrors,
-  setMessage,
-  setIsSaving,
+  form,
   t,
 }: ReturnType<typeof useFamilyLinkState> & {
   universeId: string
@@ -42,11 +40,7 @@ export function familyLinkActions({
       return
     }
 
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-
-    try {
+    await form.save(async () => {
       await createRelationship(universeId, {
         relationshipTypeId: kind.id,
         sourceEntityId: asSource ? focal.id : related.id,
@@ -57,20 +51,7 @@ export function familyLinkActions({
         notes: null,
       })
       onSaved()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.linkForm.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.linkForm.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
   return { cancel, save }
 }

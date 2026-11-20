@@ -73,32 +73,40 @@ export function SceneBeatsField({ beats, onChange, errors }: SceneBeatsFieldProp
                 <span className="scenebeats__number" aria-hidden="true">
                   {index + 1}
                 </span>
-                <div className="scenebeats__fields">
-                  <input
-                    className="field__input"
-                    type="text"
-                    dir="auto"
-                    placeholder={t('stories.beats.titlePlaceholder')}
-                    aria-label={t('stories.beats.titleLabel', { n: index + 1 })}
-                    value={beat.title}
-                    onChange={(event) => update(index, { title: event.target.value })}
-                    aria-invalid={titleError ? true : undefined}
-                    data-testid="scene-beat-title"
-                  />
-                  <input
-                    className="field__input scenebeats__note"
-                    type="text"
-                    dir="auto"
-                    placeholder={t('stories.beats.notePlaceholder')}
-                    aria-label={t('stories.beats.noteLabel', { n: index + 1 })}
-                    value={beat.note}
-                    onChange={(event) => update(index, { note: event.target.value })}
-                    aria-invalid={noteError ? true : undefined}
-                    data-testid="scene-beat-note"
-                  />
-                  {titleError ? <p className="field__error">{titleError}</p> : null}
-                  {noteError ? <p className="field__error">{noteError}</p> : null}
-                </div>
+                <Field
+                  group
+                  hideLabel
+                  className="scenebeats__fields"
+                  label={t('stories.beats.named', { n: index + 1 })}
+                  error={[titleError, noteError].filter(Boolean).join(' ') || undefined}
+                >
+                  {(group) => (
+                    <div className="scenebeats__fields" {...group}>
+                      <input
+                        className="field__input"
+                        type="text"
+                        dir="auto"
+                        placeholder={t('stories.beats.titlePlaceholder')}
+                        aria-label={t('stories.beats.titleLabel', { n: index + 1 })}
+                        value={beat.title}
+                        onChange={(event) => update(index, { title: event.target.value })}
+                        aria-invalid={titleError ? true : undefined}
+                        data-testid="scene-beat-title"
+                      />
+                      <input
+                        className="field__input scenebeats__note"
+                        type="text"
+                        dir="auto"
+                        placeholder={t('stories.beats.notePlaceholder')}
+                        aria-label={t('stories.beats.noteLabel', { n: index + 1 })}
+                        value={beat.note}
+                        onChange={(event) => update(index, { note: event.target.value })}
+                        aria-invalid={noteError ? true : undefined}
+                        data-testid="scene-beat-note"
+                      />
+                    </div>
+                  )}
+                </Field>
                 <div className="scenebeats__tools">
                   <MoveItems
                     look="icon"

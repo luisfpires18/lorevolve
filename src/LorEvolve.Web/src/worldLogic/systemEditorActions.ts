@@ -1,6 +1,5 @@
 import type { useNavigate } from 'react-router-dom'
 import { t } from '../i18n'
-import { ApiError } from '../lib/api'
 import { confirmAction, confirmDiscard } from '../lib/confirm'
 import { createSystem, deleteSystem, saveSystem } from './api'
 import { advanceVersions } from './machine'
@@ -18,7 +17,7 @@ export function systemEditorActions({
   setFieldErrors,
   retry,
   saving,
-  setSaving,
+  runSave,
   name,
   setName,
   summary,
@@ -50,11 +49,6 @@ export function systemEditorActions({
 
   async function save() {
     if (saving) return
-    setSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(false)
-
     const input = {
       name: name.trim(),
       summary,
@@ -62,7 +56,8 @@ export function systemEditorActions({
       expectedVersion: saved ? bases.details : undefined,
     }
 
-    try {
+    await runSave(async () => {
+      setConflict(false)
       if (!systemId) {
         await createSystem(universeId, input)
         void navigate(listPath)
@@ -77,30 +72,7 @@ export function systemEditorActions({
       setName(next.name)
       setSummary(next.summary)
       setAnnouncement(t('canon.worldLogic.systems.editor.saved'))
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === 'system_changed') {
-        setConflict(true)
-      } else if (
-        error instanceof ApiError &&
-        error.status === 409 &&
-        error.code === 'system_name_taken'
-      ) {
-        setFieldErrors({ name: t('canon.worldLogic.systems.editor.nameTaken') })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('canon.worldLogic.systems.editor.gone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        setFailure(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('canon.worldLogic.systems.editor.invalid'),
-        )
-      } else {
-        setFailure(t('canon.worldLogic.systems.editor.saveFailed'))
-      }
-    } finally {
-      setSaving(false)
-    }
+    })
   }
 
   async function remove() {

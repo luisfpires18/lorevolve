@@ -1,5 +1,4 @@
-import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { IMAGE_MAX_BYTES } from './images'
+import type { Dispatch, SetStateAction } from 'react'
 import type { EntityImageCrop, FieldImageRef } from './types'
 import type { FieldImageApi, PendingFieldImage } from '../components/FieldImageInput'
 import { pictureRatio, type Framing } from './fieldImageFraming'
@@ -13,7 +12,7 @@ export function fieldImageActions({
   onPending,
   onChanged,
   t,
-  input,
+  pick,
   setBusy,
   setError,
   framing,
@@ -27,7 +26,7 @@ export function fieldImageActions({
   pending: PendingFieldImage | null
   onPending: (pending: PendingFieldImage | null) => void
   onChanged: (image: FieldImageRef | null) => void
-  input: RefObject<HTMLInputElement | null>
+  pick: (file: File | undefined) => File | null
   setBusy: Dispatch<SetStateAction<boolean>>
   setError: Dispatch<SetStateAction<string | null>>
   framing: Framing | null
@@ -36,16 +35,9 @@ export function fieldImageActions({
   fixedAspect: number | null
   preview: string | null
 } & Pick<ReturnType<typeof useI18n>, 't'>) {
-  async function choose(file: File | undefined) {
-    if (input.current) input.current.value = ''
+  async function choose(chosen: File | undefined) {
+    const file = pick(chosen)
     if (!file) return
-
-    setError(null)
-
-    if (file.size > IMAGE_MAX_BYTES) {
-      setError(t('entity.image.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
-      return
-    }
 
     const source = URL.createObjectURL(file)
     const aspect = fixedAspect ?? (await pictureRatio(source))

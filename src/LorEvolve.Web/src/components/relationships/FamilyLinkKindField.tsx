@@ -35,42 +35,39 @@ export function FamilyLinkKindField({
   }
 
   return (
-    <Field label={t('places.linkForm.connection')} id="family-link-kind">
+    <Field
+      label={t('places.linkForm.connection')}
+      id="family-link-kind"
+      error={fieldErrors.relationshiptypeid}
+      after={
+        <NewButton
+          tone="secondary"
+          size="sm"
+          className="familylink__newkind"
+          onClick={() => setIsCreatingKind(true)}
+          data-testid="new-family-kind"
+        >
+          {t('places.linkForm.newKind')}
+        </NewButton>
+      }
+    >
       {(control) => (
-        <>
-          <select
-            {...control}
-            aria-invalid={fieldErrors.relationshiptypeid ? true : undefined}
-            aria-describedby={fieldErrors.relationshiptypeid ? 'family-link-kind-error' : undefined}
-            className="field__input field__input--select"
-            value={kind?.id ?? ''}
-            onChange={(event) => {
-              setKindId(event.target.value)
-              setFocalIsSource(true)
-            }}
-            data-testid="family-link-kind"
-          >
-            {kinds.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {kindOption(candidate)}
-              </option>
-            ))}
-          </select>
-          {fieldErrors.relationshiptypeid ? (
-            <p className="field__error" id="family-link-kind-error">
-              {fieldErrors.relationshiptypeid}
-            </p>
-          ) : null}
-          <NewButton
-            tone="secondary"
-            size="sm"
-            className="familylink__newkind"
-            onClick={() => setIsCreatingKind(true)}
-            data-testid="new-family-kind"
-          >
-            {t('places.linkForm.newKind')}
-          </NewButton>
-        </>
+        <select
+          {...control}
+          className="field__input field__input--select"
+          value={kind?.id ?? ''}
+          onChange={(event) => {
+            setKindId(event.target.value)
+            setFocalIsSource(true)
+          }}
+          data-testid="family-link-kind"
+        >
+          {kinds.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {kindOption(candidate)}
+            </option>
+          ))}
+        </select>
       )}
     </Field>
   )

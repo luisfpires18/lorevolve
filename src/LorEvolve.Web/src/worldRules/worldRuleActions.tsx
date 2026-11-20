@@ -1,10 +1,10 @@
 import { CHECK_ERROR_KEYS, checkInput, type CheckDraft } from '../ruleValidation/checkDraft'
 import { ApiError } from '../lib/api'
-import { createWorldRule, deleteWorldRule, saveWorldRule, WORLD_RULE_CHANGED } from './api'
+import { createWorldRule, deleteWorldRule, saveWorldRule } from './api'
 import type { WorldRuleDetail } from './types'
 import { confirmAction } from '../lib/confirm'
 import { t, type useI18n } from '../i18n'
-import { fieldsOf, sameFields, storedFrom, storedMomentOf, type Fields } from './ruleDraft'
+import { fieldsOf, sameFields, storedFrom, type Fields } from './ruleDraft'
 import type { useWorldRuleState } from './useWorldRuleState'
 
 /** The world rule editor's handlers: editing the draft, saving it, reading it again, and moving it to the Trash. */
@@ -22,14 +22,14 @@ export function worldRuleActions({
   setDraft,
   setLoad,
   setReads,
-  setIsSaving,
+  isSaving,
+  runSave,
   setSaves,
   setFailure,
   fieldErrors,
   setFieldErrors,
   setConflict,
   setAnnouncement,
-  inFlight,
   titleInput,
 }: ReturnType<typeof useWorldRuleState> & {
   universeId: string
@@ -66,7 +66,7 @@ export function worldRuleActions({
   }
 
   async function save(expectedUpdatedAt: string | null) {
-    if (inFlight.current || !isDirty || isTooLong) return
+    if (isSaving || !isDirty || isTooLong) return
 
     if (draft.title.trim() === '') {
       setFailure(null)
@@ -76,12 +76,6 @@ export function worldRuleActions({
     }
 
     const sent = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(null)
-
     const input = {
       title: sent.title.trim(),
       description: sent.description,
@@ -89,7 +83,8 @@ export function worldRuleActions({
       validation: checkInput(sent.check),
     }
 
-    try {
+    await runSave(async () => {
+      setConflict(null)
       if (isNew) {
         onCreated(await createWorldRule(universeId, input))
         return
@@ -102,25 +97,7 @@ export function worldRuleActions({
       // stays.
       setDraft((current) => (sameFields(current, sent) ? fieldsOf(next) : current))
       setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === WORLD_RULE_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('canon.editor.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        setFailure(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('canon.editor.saveInvalid'),
-        )
-      } else {
-        setFailure(t('canon.editor.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-    }
+    })
   }
 
   function reread() {

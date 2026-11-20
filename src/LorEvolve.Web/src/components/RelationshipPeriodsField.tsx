@@ -56,6 +56,8 @@ export function RelationshipPeriodsField({
       group="fieldset"
       className="relperiods"
       data-testid="relation-periods"
+      error={errors['periods']}
+      errorAbove
       hint={
         value.length === 0
           ? erasFailed
@@ -66,8 +68,6 @@ export function RelationshipPeriodsField({
             : t('relationships.periods.hintDuring')
       }
     >
-      {errors['periods'] ? <p className="field__error">{errors['periods']}</p> : null}
-
       {value.map((period, index) => {
         const key = `periods[${index}]`
         const error = (part: string) => errors[`${key}.${part}`.toLowerCase()]
@@ -115,62 +115,72 @@ export function RelationshipPeriodsField({
                 data-testid={`relation-period-${index}-remove`}
               />
             </div>
-
-            {errors[key] ? <p className="field__error">{errors[key]}</p> : null}
-
-            {period.kind === 'era' ? (
-              <Field
-                label={t('relationships.periods.era')}
-                id={`${period.key}-era`}
-                error={eraError}
-              >
-                {(control) => (
-                  <select
-                    {...control}
-                    className="field__input field__input--select"
-                    value={period.entityEraId}
-                    onChange={(event) => {
-                      const chosen = options.find((era) => era.id === event.target.value)
-                      patch(index, {
-                        entityEraId: event.target.value,
-                        eraLabel: chosen?.label ?? null,
-                      })
-                    }}
-                    data-testid={`relation-period-${index}-era-select`}
-                  >
-                    <option value="">
-                      {erasReading
-                        ? t('relationships.periods.readingStages')
-                        : t('relationships.periods.chooseStage')}
-                    </option>
-                    {options.map((era) => (
-                      <option key={era.id} value={era.id}>
-                        {era.label}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-            ) : (
-              <>
-                <PeriodPoint
-                  bound="start"
-                  prefix={`${period.key}-start`}
-                  chronology={chronology}
-                  value={period.start}
-                  onChange={(start) => patch(index, { start })}
-                  error={(part) => error(`start.${part}`)}
-                />
-                <PeriodPoint
-                  bound="end"
-                  prefix={`${period.key}-end`}
-                  chronology={chronology}
-                  value={period.end}
-                  onChange={(end) => patch(index, { end })}
-                  error={(part) => error(`end.${part}`)}
-                />
-              </>
-            )}
+            <Field
+              group
+              hideLabel
+              label={label}
+              error={errors[key]}
+              errorAbove
+              className="relperiod__body"
+            >
+              {(group) => (
+                <div {...group} className="relperiod__points">
+                  {period.kind === 'era' ? (
+                    <Field
+                      label={t('relationships.periods.era')}
+                      id={`${period.key}-era`}
+                      error={eraError}
+                    >
+                      {(control) => (
+                        <select
+                          {...control}
+                          className="field__input field__input--select"
+                          value={period.entityEraId}
+                          onChange={(event) => {
+                            const chosen = options.find((era) => era.id === event.target.value)
+                            patch(index, {
+                              entityEraId: event.target.value,
+                              eraLabel: chosen?.label ?? null,
+                            })
+                          }}
+                          data-testid={`relation-period-${index}-era-select`}
+                        >
+                          <option value="">
+                            {erasReading
+                              ? t('relationships.periods.readingStages')
+                              : t('relationships.periods.chooseStage')}
+                          </option>
+                          {options.map((era) => (
+                            <option key={era.id} value={era.id}>
+                              {era.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </Field>
+                  ) : (
+                    <>
+                      <PeriodPoint
+                        bound="start"
+                        prefix={`${period.key}-start`}
+                        chronology={chronology}
+                        value={period.start}
+                        onChange={(start) => patch(index, { start })}
+                        error={(part) => error(`start.${part}`)}
+                      />
+                      <PeriodPoint
+                        bound="end"
+                        prefix={`${period.key}-end`}
+                        chronology={chronology}
+                        value={period.end}
+                        onChange={(end) => patch(index, { end })}
+                        error={(part) => error(`end.${part}`)}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </Field>
           </div>
         )
       })}

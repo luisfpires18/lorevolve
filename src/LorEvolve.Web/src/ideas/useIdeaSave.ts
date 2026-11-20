@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
-import { createIdea, IDEA_CHANGED, saveIdea } from './api'
-import { fieldsOf, sameFields, storedFrom, storedMomentOf, type Fields } from './ideaDraft'
+import { createIdea, saveIdea } from './api'
+import { fieldsOf, sameFields, storedFrom, type Fields } from './ideaDraft'
 import type { IdeaDetail } from './types'
-import { ApiError } from '../lib/api'
 import type { useI18n } from '../i18n'
 import type { useIdeaDraft } from './useIdeaDraft'
 import type { useIdeaState } from './useIdeaState'
@@ -15,14 +14,13 @@ export function useIdeaSave({
   setDraft,
   fieldErrors,
   setFieldErrors,
-  inFlight,
+  isSaving,
   isDirty,
   isTooLong,
   isHeld,
   draft,
   titleInput,
-  setIsSaving,
-  setFailure,
+  runSave,
   setConflict,
   stored,
   discard,
@@ -49,7 +47,7 @@ export function useIdeaSave({
   }
 
   async function save(expectedUpdatedAt: string | null) {
-    if (inFlight.current || !isDirty || isTooLong || isHeld) return
+    if (isSaving || !isDirty || isTooLong || isHeld) return
 
     if (draft.title.trim() === '') {
       setFieldErrors({ title: t('ideas.editor.titleRequired') })
@@ -58,12 +56,6 @@ export function useIdeaSave({
     }
 
     const sent = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(null)
-
     const input = {
       title: sent.title.trim(),
       body: sent.body,
@@ -74,7 +66,8 @@ export function useIdeaSave({
       projectId: sent.universeId === stored.universeId ? stored.projectId : null,
     }
 
-    try {
+    await runSave(async () => {
+      setConflict(null)
       if (isNew) {
         const created = await createIdea(input)
         discard()
@@ -89,25 +82,7 @@ export function useIdeaSave({
       // was in flight is still unsaved, and stays.
       setDraft((current) => (sameFields(current, sent) ? fieldsOf(next) : current))
       setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === IDEA_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('ideas.editor.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        setFailure(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('ideas.editor.saveNeedsChange'),
-        )
-      } else {
-        setFailure(t('ideas.editor.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-    }
+    })
   }
 
   useEffect(() => {

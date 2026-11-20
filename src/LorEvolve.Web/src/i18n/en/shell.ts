@@ -14,6 +14,9 @@ const shell = {
   crumb: {
     label: 'Breadcrumb',
   },
+  fields: {
+    required: '(required)',
+  },
   pager: {
     label: 'Pagination',
     previous: 'Previous',

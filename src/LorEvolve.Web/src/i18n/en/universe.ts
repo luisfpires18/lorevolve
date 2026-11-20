@@ -61,7 +61,8 @@ const universe = {
     saveFailed: 'The public details could not be saved.',
     summary: 'Public summary',
     summaryHint:
-      'A few sentences for the world’s card and public page, up to {max} characters. The description above is never published. {length}/{max}',
+      'A few sentences for the world’s card and public page, up to {max} characters. The description above is never published.',
+    summaryCount: '{used}/{max}',
     category: 'Category',
     categoryChoose: 'Choose a category',
     genres: 'Genres',

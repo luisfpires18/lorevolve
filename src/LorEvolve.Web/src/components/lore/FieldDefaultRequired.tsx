@@ -1,3 +1,4 @@
+import { CheckField } from '../CheckField'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
@@ -41,22 +42,17 @@ export function FieldDefaultRequired({
       ) : null}
 
       {isImage ? null : (
-        <div className="field">
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={isRequired}
-              onChange={(event) => setIsRequired(event.target.checked)}
-              data-testid="field-required"
-            />
-            <span>{t('entityTypes.fields.requiredLabel')}</span>
-          </label>
-          {field && isRequired && !field.isRequired ? (
-            <p className="field__hint">
-              {t('entityTypes.fields.requiredHint', { name: type.name })}
-            </p>
-          ) : null}
-        </div>
+        <CheckField
+          label={t('entityTypes.fields.requiredLabel')}
+          hint={
+            field && isRequired && !field.isRequired
+              ? t('entityTypes.fields.requiredHint', { name: type.name })
+              : undefined
+          }
+          checked={isRequired}
+          onChange={setIsRequired}
+          testId="field-required"
+        />
       )}
     </>
   )

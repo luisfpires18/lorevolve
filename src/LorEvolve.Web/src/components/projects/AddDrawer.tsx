@@ -49,23 +49,19 @@ export function AddDrawer({
         />
       )}
     >
-      <Field label={t('projects.sagas.phase')}>
-        {(control) => (
-          <select
-            {...control}
-            className="field__input"
-            value={chosen}
-            data-testid="saga-add-phase"
-            onChange={(event) => setChosen(event.target.value)}
-          >
-            <option value="">{t('projects.sagas.choosePhase')}</option>
-            {choices.map(({ saga, phase }) => (
-              <option key={phase.id} value={phase.id}>
-                {saga.name} / {phase.name}
-              </option>
-            ))}
-          </select>
-        )}
+      <Field
+        as="select"
+        label={t('projects.sagas.phase')}
+        value={chosen}
+        data-testid="saga-add-phase"
+        onChange={(event) => setChosen(event.target.value)}
+      >
+        <option value="">{t('projects.sagas.choosePhase')}</option>
+        {choices.map(({ saga, phase }) => (
+          <option key={phase.id} value={phase.id}>
+            {saga.name} / {phase.name}
+          </option>
+        ))}
       </Field>
       {error ? (
         <p className="form__message" role="alert">

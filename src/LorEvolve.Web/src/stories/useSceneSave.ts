@@ -1,5 +1,5 @@
 import { isChangedElsewhere } from '../lib/editConflict'
-import { ApiError } from '../lib/api'
+import { useFormSave } from '../lib/useFormSave'
 import { createScene, SCENE_CHANGED, updateScene } from './api'
 import { suggestSceneChanges } from '../suggestions/api'
 import { inputOf, type SceneDraft } from './sceneDraft'
@@ -19,10 +19,7 @@ export function useSceneSave({
   draft,
   reckonsInEras,
   custom,
-  setMessage,
-  setFieldErrors,
   setConflict,
-  setIsSaving,
   t,
 }: {
   universeId: string
@@ -35,21 +32,26 @@ export function useSceneSave({
   draft: SceneDraft
   reckonsInEras: boolean
   custom: boolean
-  setMessage: Dispatch<SetStateAction<string | null>>
-  setFieldErrors: Dispatch<SetStateAction<Record<string, string>>>
   setConflict: Dispatch<SetStateAction<boolean>>
-  setIsSaving: Dispatch<SetStateAction<boolean>>
   t: ReturnType<typeof useI18n>['t']
 }) {
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
+  const form = useFormSave({
+    refusal: (error) => {
+      if (!isChangedElsewhere(error, SCENE_CHANGED)) return false
+      setConflict(true)
+      return true
+    },
+    needChange: suggesting
+      ? t('stories.sceneForm.detailsToSend')
+      : t('stories.sceneForm.detailsToSave'),
+    failed: suggesting ? t('stories.sceneForm.failedSend') : t('stories.sceneForm.failedSave'),
+  })
 
+  async function save() {
     const input = inputOf(draft, reckonsInEras, custom)
 
-    try {
+    await form.save(async () => {
+      setConflict(false)
       if (suggesting && scene && onSuggested) {
         await suggestSceneChanges(universeId, storyId, scene.id, {
           ...input,
@@ -65,26 +67,7 @@ export function useSceneSave({
           })
         : await createScene(universeId, storyId, input)
       onSaved(saved)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, SCENE_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : suggesting
-              ? t('stories.sceneForm.detailsToSend')
-              : t('stories.sceneForm.detailsToSave'),
-        )
-      } else {
-        setMessage(
-          suggesting ? t('stories.sceneForm.failedSend') : t('stories.sceneForm.failedSave'),
-        )
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
-  return { save }
+  return { save, fieldErrors: form.fieldErrors, message: form.message, isSaving: form.isSaving }
 }

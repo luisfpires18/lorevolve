@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react'
+import { blockingFindingsOf } from '../canon/blocked'
 import type { CanonBlockingFinding } from '../canon/types'
+import { t } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 import type { TimelineEntry, TimelineStoryLink } from './types'
-import { draftFrom, EMPTY, type MomentDraft } from './momentDraft'
+import { DETAIL_ERROR_KEYS, draftFrom, EMPTY, type MomentDraft } from './momentDraft'
 
 /** The moment drawer's title ref and state, with the draft it opened on. */
 export function useMomentFormState({
@@ -17,25 +20,39 @@ export function useMomentFormState({
     entry ? draftFrom(entry) : { ...EMPTY, stories: initialStories },
   )
   const [draft, setDraft] = useState<MomentDraft>(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(() => entry?.validation != null)
+  const form = useFormSave({
+    // The gate's refusal is its own thing: the draft below is intact and the only
+    // useful thing to say is what disagreed with it.
+    refusal: (error) => {
+      const blocking = blockingFindingsOf(error)
+      if (!blocking) return false
+      setBlocked(blocking)
+      return true
+    },
+    needChange: () => t('time.momentForm.needChange'),
+    failed: () => t('time.momentForm.saveFailed'),
+    onFieldErrors: (fieldErrors) => {
+      if (Object.values(DETAIL_ERROR_KEYS).some((key) => fieldErrors[key])) {
+        setDetailsOpen(true)
+      }
+    },
+  })
 
   return {
     title,
     initial,
     draft,
     setDraft,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
+    form,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
     blocked,
     setBlocked,
-    isSaving,
-    setIsSaving,
+    isSaving: form.isSaving,
     detailsOpen,
     setDetailsOpen,
   }

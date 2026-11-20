@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent } from 'react'
+import { useId, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
@@ -22,11 +22,14 @@ export function TypeGroupsField({
   groups,
   value,
   onChange,
+  error,
 }: {
   /** Every group of the universe, as last read. */
   groups: EntityTypeGroup[]
   value: GroupChoice[]
   onChange: (next: GroupChoice[]) => void
+  /** The save's refusal of the groups, linked to them. */
+  error?: ReactNode
 }) {
   const { t } = useI18n()
   const ids = useId()
@@ -98,123 +101,138 @@ export function TypeGroupsField({
       </h3>
       <p className="field__hint typegroups__lede">{t('entityTypes.groupsField.lede')}</p>
 
-      {value.length > 0 ? (
-        <ul className="typegroups__chosen" aria-label={t('entityTypes.groupsField.chosenLabel')}>
-          {value.map((choice) => {
-            const label = labelOf(choice)
-            const key = 'id' in choice ? choice.id : `new:${choice.name}`
-            return (
-              <li
-                className="token"
-                key={key}
-                data-testid="type-group-chosen"
-                data-group-name={label}
+      <Field
+        label={t('entityTypes.groupsField.heading')}
+        id={`${ids}-groups`}
+        group
+        hideLabel
+        error={error}
+      >
+        {(group) => (
+          <div {...group}>
+            {value.length > 0 ? (
+              <ul
+                className="typegroups__chosen"
+                aria-label={t('entityTypes.groupsField.chosenLabel')}
               >
-                <bdi>{label}</bdi>
-                {'name' in choice ? (
-                  <span className="typegroups__new">{t('entityTypes.groupsField.new')}</span>
-                ) : null}
-                <button
-                  className="token__remove"
-                  type="button"
-                  aria-label={t('entityTypes.groupsField.remove', { name: label })}
-                  onClick={() => onChange(value.filter((other) => other !== choice))}
-                  data-testid={`type-group-remove-${label}`}
-                >
-                  &times;
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      ) : null}
+                {value.map((choice) => {
+                  const label = labelOf(choice)
+                  const key = 'id' in choice ? choice.id : `new:${choice.name}`
+                  return (
+                    <li
+                      className="token"
+                      key={key}
+                      data-testid="type-group-chosen"
+                      data-group-name={label}
+                    >
+                      <bdi>{label}</bdi>
+                      {'name' in choice ? (
+                        <span className="typegroups__new">{t('entityTypes.groupsField.new')}</span>
+                      ) : null}
+                      <button
+                        className="token__remove"
+                        type="button"
+                        aria-label={t('entityTypes.groupsField.remove', { name: label })}
+                        onClick={() => onChange(value.filter((other) => other !== choice))}
+                        data-testid={`type-group-remove-${label}`}
+                      >
+                        &times;
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : null}
 
-      {showPicker && !creating ? (
-        <Field
-          label={
-            value.length === 0
-              ? t('entityTypes.groupsField.group')
-              : t('entityTypes.groupsField.anotherGroup')
-          }
-          id={`${ids}-add`}
-        >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value=""
-              onChange={(event) => choose(event.target.value)}
-              data-testid="type-group-add"
-            >
-              <option value="">
-                {value.length === 0
-                  ? t('entityTypes.groupsField.none')
-                  : t('entityTypes.groupsField.chooseGroup')}
-              </option>
-              {available.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-              <option value={NEW_GROUP}>{t('entityTypes.groupsField.newGroupOption')}</option>
-            </select>
-          )}
-        </Field>
-      ) : null}
+            {showPicker && !creating ? (
+              <Field
+                label={
+                  value.length === 0
+                    ? t('entityTypes.groupsField.group')
+                    : t('entityTypes.groupsField.anotherGroup')
+                }
+                id={`${ids}-add`}
+              >
+                {(control) => (
+                  <select
+                    {...control}
+                    className="field__input field__input--select"
+                    value=""
+                    onChange={(event) => choose(event.target.value)}
+                    data-testid="type-group-add"
+                  >
+                    <option value="">
+                      {value.length === 0
+                        ? t('entityTypes.groupsField.none')
+                        : t('entityTypes.groupsField.chooseGroup')}
+                    </option>
+                    {available.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                    <option value={NEW_GROUP}>{t('entityTypes.groupsField.newGroupOption')}</option>
+                  </select>
+                )}
+              </Field>
+            ) : null}
 
-      {!showPicker && !creating ? (
-        <NewButton
-          tone="secondary"
-          size="sm"
-          onClick={() => setAdding(true)}
-          data-testid="type-group-another"
-        >
-          {t('entityTypes.groupsField.addAnother')}
-        </NewButton>
-      ) : null}
-
-      {creating ? (
-        <Field
-          label={t('entityTypes.groupsField.newName')}
-          id={`${ids}-new`}
-          data-testid="type-group-new"
-          hint={t('entityTypes.groupsField.createdHint')}
-          error={newError}
-        >
-          {(control) => (
-            <div className="typegroups__newrow">
-              <input
-                {...control}
-                className="field__input"
-                dir="auto"
-                value={newName}
-                autoFocus
-                placeholder={t('entityTypes.groupsField.namePlaceholder')}
-                onChange={(event) => setNewName(event.target.value)}
-                onKeyDown={onNewKey}
-                data-testid="type-group-new-name"
-              />
-              <FormActions
-                onCancel={() => {
-                  setCreating(false)
-                  setNewName('')
-                  setNewError(null)
-                }}
+            {!showPicker && !creating ? (
+              <NewButton
+                tone="secondary"
                 size="sm"
+                onClick={() => setAdding(true)}
+                data-testid="type-group-another"
               >
-                <NewButton
-                  tone="secondary"
-                  size="sm"
-                  onClick={addNew}
-                  data-testid="type-group-new-add"
-                >
-                  {t('entityTypes.groupsField.add')}
-                </NewButton>
-              </FormActions>
-            </div>
-          )}
-        </Field>
-      ) : null}
+                {t('entityTypes.groupsField.addAnother')}
+              </NewButton>
+            ) : null}
+
+            {creating ? (
+              <Field
+                label={t('entityTypes.groupsField.newName')}
+                id={`${ids}-new`}
+                data-testid="type-group-new"
+                hint={t('entityTypes.groupsField.createdHint')}
+                error={newError}
+              >
+                {(control) => (
+                  <div className="typegroups__newrow">
+                    <input
+                      {...control}
+                      className="field__input"
+                      dir="auto"
+                      value={newName}
+                      autoFocus
+                      placeholder={t('entityTypes.groupsField.namePlaceholder')}
+                      onChange={(event) => setNewName(event.target.value)}
+                      onKeyDown={onNewKey}
+                      data-testid="type-group-new-name"
+                    />
+                    <FormActions
+                      onCancel={() => {
+                        setCreating(false)
+                        setNewName('')
+                        setNewError(null)
+                      }}
+                      size="sm"
+                    >
+                      <NewButton
+                        tone="secondary"
+                        size="sm"
+                        onClick={addNew}
+                        data-testid="type-group-new-add"
+                      >
+                        {t('entityTypes.groupsField.add')}
+                      </NewButton>
+                    </FormActions>
+                  </div>
+                )}
+              </Field>
+            ) : null}
+          </div>
+        )}
+      </Field>
 
       <p className="field__hint" data-testid="type-groups-elsewhere">
         {t('entityTypes.groupsField.elsewhere')}

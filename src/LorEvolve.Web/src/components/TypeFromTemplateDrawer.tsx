@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useFormSave } from '../lib/useFormSave'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
 import { FormActions } from './FormActions'
@@ -26,32 +26,18 @@ export function TypeFromTemplateDrawer({
   const { t } = useI18n()
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? '')
   const [name, setName] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: t('projects.schema.fromTemplate.detailsCreate'),
+    failed: t('projects.schema.fromTemplate.failed'),
+  })
+  const { fieldErrors, message, isSaving } = form
   useReturnFocus()
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-    try {
+    await form.save(async () => {
       await createProjectTypeFromTemplate(projectId, { templateId, name: name.trim() || null })
       onSaved()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('projects.schema.fromTemplate.detailsCreate'),
-        )
-      } else {
-        setMessage(t('projects.schema.fromTemplate.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return (

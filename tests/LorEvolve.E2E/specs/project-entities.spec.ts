@@ -88,7 +88,7 @@ test.describe('Project entities', () => {
     // A type's fields open from its row, as on the universe's Types screen.
     await types.getByRole('button', { name: 'Fields of Map' }).click()
     await expect(types).toContainText('Supported players')
-    await expect(types).toContainText('Several choices')
+    await expect(types).toContainText('Choose several')
     await expect(page.getByTestId('project-schema-offer')).toHaveCount(0)
     await page.getByTestId('projecttab-entities').click()
 
@@ -103,7 +103,7 @@ test.describe('Project entities', () => {
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltflats')
 
-    const players = page.locator('[data-testid^="project-entry-value-"]').first()
+    const players = page.getByRole('group', { name: /Supported players/ })
     await players.getByText('4', { exact: true }).click()
 
     await page.getByTestId('project-entry-new-save').click()

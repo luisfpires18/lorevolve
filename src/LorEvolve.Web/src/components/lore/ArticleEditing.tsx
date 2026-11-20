@@ -2,12 +2,13 @@ import { lazy, Suspense } from 'react'
 import { Check, X } from 'lucide-react'
 import { EditConflict, LatestText } from '../EditConflict'
 import { LoreArticle } from '../ArticleView'
-import { getEntityArticle } from '../../lore/article'
+import { ARTICLE_MAX_LENGTH, getEntityArticle } from '../../lore/article'
 import { isEmptyDocument } from '../../lore/document'
 import { useI18n } from '../../i18n'
 import type { useEntityArticle } from '../../lore/useEntityArticle'
 import type { useArticleEditing } from '../../lore/useArticleEditing'
 import { Button } from '../Button'
+import { CharCount } from '../CharCount'
 
 // The editor and its 125 KB of Tiptap and ProseMirror come only when an author presses Edit; reading needs neither.
 const LoreEditor = lazy(() =>
@@ -35,6 +36,7 @@ export function ArticleEditing({
   conflict,
   editor,
   isDirty,
+  length,
   isTooLong,
   save,
   finishEditing,
@@ -53,6 +55,7 @@ export function ArticleEditing({
   | 'conflict'
   | 'editor'
   | 'isDirty'
+  | 'length'
   | 'isTooLong'
   | 'save'
 > &
@@ -119,15 +122,15 @@ export function ArticleEditing({
         >
           {status.text}
         </p>
-        {isTooLong ? (
-          <p
-            className="field__error article__toolong"
-            id={tooLongId}
-            data-testid="article-too-long"
-          >
-            {t('entity.article.tooLong')}
-          </p>
-        ) : null}
+        <CharCount
+          id={tooLongId}
+          used={length}
+          max={ARTICLE_MAX_LENGTH}
+          show="over"
+          words={{ tooLong: 'entity.article.tooLong' }}
+          className="article__toolong"
+          testId="article-too-long"
+        />
         {failed && isDirty ? (
           <p className="recovery__warning" role="status" data-testid="article-recovery-warning">
             {t('entity.article.recoveryWarning')}

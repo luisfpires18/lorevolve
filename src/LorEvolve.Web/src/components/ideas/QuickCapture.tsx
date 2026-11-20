@@ -95,13 +95,9 @@ export function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptu
       <Field
         id={inputId}
         label={t('ideas.capture.label')}
-        error={
-          error ? (
-            <span role="alert" data-testid="idea-capture-error">
-              {error}
-            </span>
-          ) : undefined
-        }
+        error={error || undefined}
+        announce
+        errorTestId="idea-capture-error"
       >
         {(control) => (
           <div className="ideacapture__row">

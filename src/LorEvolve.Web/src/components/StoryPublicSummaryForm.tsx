@@ -86,34 +86,25 @@ export function StoryPublicSummaryForm({
       ) : null}
 
       <Field
+        as="textarea"
         id="story-public-summary"
         label={t('stories.summaryForm.label')}
         hint={t('stories.summaryForm.hint')}
-      >
-        {(control) => (
-          <>
-            <textarea
-              {...control}
-              className="field__input field__input--area"
-              ref={field}
-              rows={5}
-              dir="auto"
-              maxLength={PUBLIC_SUMMARY_MAX}
-              aria-describedby={`${control['aria-describedby']} story-public-summary-count`}
-              aria-invalid={error ? true : undefined}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              data-testid="story-public-summary-input"
-            />
-            <p className="field__hint" id="story-public-summary-count">
-              {t('stories.summaryForm.count', {
-                count: draft.trim().length,
-                max: PUBLIC_SUMMARY_MAX,
-              })}
-            </p>
-          </>
-        )}
-      </Field>
+        ref={field}
+        rows={5}
+        dir="auto"
+        maxLength={PUBLIC_SUMMARY_MAX}
+        aria-invalid={error ? true : undefined}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        data-testid="story-public-summary-input"
+        count={{
+          used: draft.trim().length,
+          max: PUBLIC_SUMMARY_MAX,
+          show: 'always',
+          words: { tooLong: 'stories.summaryForm.count' },
+        }}
+      />
     </Drawer>
   )
 }

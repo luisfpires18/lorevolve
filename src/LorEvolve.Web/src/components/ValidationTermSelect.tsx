@@ -177,7 +177,8 @@ export function ValidationTermSelect({
               id={nameId}
               className="termselect__new"
               data-testid={`${testId}-adding`}
-              error={nameError ? <span role="alert">{nameError}</span> : undefined}
+              error={nameError || undefined}
+              announce
             >
               {(nameControl) => (
                 <>

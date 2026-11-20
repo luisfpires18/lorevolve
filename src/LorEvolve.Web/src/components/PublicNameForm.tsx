@@ -65,7 +65,7 @@ export function PublicNameForm() {
 
   if (loadFailed) {
     return (
-      <p className="field__error" role="alert">
+      <p className="form__message" role="alert">
         {t('account.publicName.loadFailed')}
       </p>
     )
@@ -82,13 +82,9 @@ export function PublicNameForm() {
         label={t('account.publicName.label')}
         id={inputId}
         hint={t('account.publicName.hint')}
-        error={
-          error ? (
-            <span role="alert" data-testid="public-name-error">
-              {error}
-            </span>
-          ) : undefined
-        }
+        error={error || undefined}
+        announce
+        errorTestId="public-name-error"
       >
         {(control) => (
           <input

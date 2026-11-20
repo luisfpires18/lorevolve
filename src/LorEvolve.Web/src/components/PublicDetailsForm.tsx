@@ -3,6 +3,8 @@ import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { payloadKey } from '../lib/drawerGuard'
 import { useLeaveGuard } from '../lib/leaveGuard'
+import { errorText } from '../lib/errorText'
+import { useFormSave } from '../lib/useFormSave'
 import {
   CATEGORIES,
   categoryLabel,
@@ -61,10 +63,12 @@ export function PublicDetailsForm({
       ),
     ),
   )
-  const [isSaving, setIsSaving] = useState(false)
   const [savedMessage, setSavedMessage] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
+  const form = useFormSave({
+    needChange: null,
+    failed: (error) => errorText(error, t('universe.publicDetails.saveFailed')),
+  })
+  const { fieldErrors, message, isSaving } = form
 
   const details = detailsOf(summary, category, genres, attribution)
   const isDirty = !isSaving && payloadKey(details) !== saved
@@ -84,10 +88,8 @@ export function PublicDetailsForm({
     setGenres,
     setAttribution,
     setSaved,
-    setIsSaving,
     setSavedMessage,
-    setFieldErrors,
-    setMessage,
+    form,
     onSaved,
   })
 
@@ -109,11 +111,14 @@ export function PublicDetailsForm({
       <Field
         label={t('universe.publicDetails.summary')}
         id={summaryId}
-        error={
-          fieldErrors.publicsummary ? (
-            <span role="alert">{fieldErrors.publicsummary}</span>
-          ) : undefined
-        }
+        error={fieldErrors.publicsummary}
+        announce
+        count={{
+          used: summary.trim().length,
+          max: PUBLIC_SUMMARY_MAX,
+          show: 'always',
+          words: { tooLong: 'universe.publicDetails.summaryCount' },
+        }}
       >
         {(control) => (
           <>
@@ -132,10 +137,7 @@ export function PublicDetailsForm({
               data-testid="public-summary"
             />
             <p className="field__hint" id={summaryHintId}>
-              {t('universe.publicDetails.summaryHint', {
-                max: PUBLIC_SUMMARY_MAX,
-                length: summary.trim().length,
-              })}
+              {t('universe.publicDetails.summaryHint', { max: PUBLIC_SUMMARY_MAX })}
             </p>
           </>
         )}
@@ -144,7 +146,8 @@ export function PublicDetailsForm({
       <Field
         label={t('universe.publicDetails.category')}
         id={categoryId}
-        error={fieldErrors.category ? <span role="alert">{fieldErrors.category}</span> : undefined}
+        error={fieldErrors.category}
+        announce
       >
         {(control) => (
           <select
@@ -175,7 +178,8 @@ export function PublicDetailsForm({
         id={genresHintId}
         className="publication__genres"
         hint={t('universe.publicDetails.genresHint', { max: MAX_GENRES, count: genres.length })}
-        error={fieldErrors.genres ? <span role="alert">{fieldErrors.genres}</span> : undefined}
+        error={fieldErrors.genres}
+        announce
       >
         <div className="publication__genrelist" data-testid="public-genres">
           {GENRES.map((genre) => {

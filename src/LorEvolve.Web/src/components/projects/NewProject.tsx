@@ -106,7 +106,7 @@ export function NewProject() {
             })
         }}
       >
-        <Field label={t('projects.new.name')}>
+        <Field label={t('projects.new.name')} requiredMark>
           {(control) => (
             <input
               {...control}
@@ -165,18 +165,14 @@ export function NewProject() {
           </Field>
         ) : null}
 
-        <Field label={t('projects.new.summary')}>
-          {(control) => (
-            <textarea
-              {...control}
-              className="field__input"
-              value={summary}
-              onChange={(event) => setSummary(event.target.value)}
-              data-testid="project-new-summary"
-              rows={4}
-            />
-          )}
-        </Field>
+        <Field
+          as="textarea"
+          label={t('projects.new.summary')}
+          value={summary}
+          onChange={(event) => setSummary(event.target.value)}
+          data-testid="project-new-summary"
+          rows={4}
+        />
 
         {failed ? (
           <p className="notice notice--error" data-testid="project-new-error">

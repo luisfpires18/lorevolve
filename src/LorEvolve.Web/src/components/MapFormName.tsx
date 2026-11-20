@@ -37,25 +37,19 @@ export function MapFormName({
       </Field>
 
       <Field
+        as="textarea"
         id="map-description"
         label={t('places.mapForm.description')}
         hint={t('places.mapForm.descriptionHint')}
         error={fieldErrors.description}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input"
-            dir="auto"
-            rows={3}
-            value={draft.description}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, description: event.target.value }))
-            }
-            data-testid="map-description-input"
-          />
-        )}
-      </Field>
+        dir="auto"
+        rows={3}
+        value={draft.description}
+        onChange={(event) =>
+          setDraft((current) => ({ ...current, description: event.target.value }))
+        }
+        data-testid="map-description-input"
+      />
     </>
   )
 }

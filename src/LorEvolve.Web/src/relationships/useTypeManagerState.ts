@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { t } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 import type { RelationshipType } from './types'
 import { BLANK, type TypeDraft } from './typeDraft'
 
@@ -7,9 +9,7 @@ export function useTypeManagerState() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [draft, setDraft] = useState<TypeDraft>(BLANK)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({ needChange: null, failed: () => t('relationships.types.saveFailed') })
   return {
     types,
     setTypes,
@@ -19,11 +19,11 @@ export function useTypeManagerState() {
     setIsAdding,
     draft,
     setDraft,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
-    isSaving,
-    setIsSaving,
+    form,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
+    isSaving: form.isSaving,
   }
 }

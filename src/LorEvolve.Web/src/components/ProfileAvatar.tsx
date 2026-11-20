@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import type { ImageCrop } from '../lib/imageCrop'
 import {
   IMAGE_ACCEPT,
-  IMAGE_MAX_BYTES,
   profileImageUrl,
   removeProfileImage,
   setProfileImage,
@@ -17,6 +16,7 @@ import { Avatar } from './Avatar'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
+import { useImagePick } from '../lib/useImagePick'
 
 /**
  * What the cropper is open on. A file just picked is framed before anything is uploaded; a photo
@@ -44,9 +44,8 @@ export function ProfileAvatar({ name }: { name: string }) {
   const { t } = useI18n()
   const { image, changed } = useProfileImage()
 
-  const input = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { input, error, setError, pick } = useImagePick('account.avatar.tooBig')
   const [framing, setFraming] = useState<Framing | null>(null)
 
   // A picked file is shown from the browser's own copy of it, so nothing is uploaded to preview
@@ -66,18 +65,11 @@ export function ProfileAvatar({ name }: { name: string }) {
     }
   }, [pickedSource])
 
-  function choose(file: File | undefined) {
+  function choose(chosen: File | undefined) {
     // The picker is reset either way, so choosing the same file twice after a failure still fires
     // a change event.
-    if (input.current) input.current.value = ''
+    const file = pick(chosen)
     if (!file) return
-
-    setError(null)
-
-    if (file.size > IMAGE_MAX_BYTES) {
-      setError(t('account.avatar.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
-      return
-    }
 
     setFraming({ kind: 'file', file })
   }
@@ -180,7 +172,7 @@ export function ProfileAvatar({ name }: { name: string }) {
       <p className="avatar__hint">{t('account.avatar.hint')}</p>
 
       {error ? (
-        <p className="field__error" role="alert" data-testid="profile-photo-error">
+        <p className="form__message" role="alert" data-testid="profile-photo-error">
           {error}
         </p>
       ) : null}

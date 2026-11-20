@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { Field } from './Field'
-import { SegmentedControl } from './SegmentedControl'
+import { SegmentedField } from './SegmentedField'
 import { ChangeList, EditConflict } from './EditConflict'
-import { ApiError } from '../lib/api'
 import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { suggestStoryChanges } from '../suggestions/api'
 import { useReturnFocus } from '../lib/returnFocus'
+import { useFormSave } from '../lib/useFormSave'
 import { createStory, getStory, STORY_CHANGED, updateStory } from '../stories/api'
 import { storyChanges } from '../stories/changes'
 import { useI18n } from '../i18n'
@@ -70,10 +70,19 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   const [base, setBase] = useState(() => ({ draft: draftOf(story), version: story?.version }))
   const initial = base.draft
   const [draft, setDraft] = useState<StoryDraft>(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
   const [conflict, setConflict] = useState(false)
+  const form = useFormSave({
+    refusal: (error) => {
+      if (!isChangedElsewhere(error, STORY_CHANGED)) return false
+      setConflict(true)
+      return true
+    },
+    needChange: suggesting
+      ? t('stories.storyForm.detailsToSend')
+      : t('stories.storyForm.detailsToSave'),
+    failed: suggesting ? t('stories.storyForm.failedSend') : t('stories.storyForm.failedSave'),
+  })
+  const { fieldErrors, message, isSaving } = form
   const saveButton = useRef<HTMLButtonElement>(null)
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
@@ -88,14 +97,10 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   }
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
-
     const input = inputOf(draft)
 
-    try {
+    await form.save(async () => {
+      setConflict(false)
       if (suggesting && story && onSuggested) {
         await suggestStoryChanges(universeId, story.id, { ...input, expectedVersion: base.version })
         onSuggested()
@@ -107,26 +112,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
       // A new story is a Writing project: the sidebar's Writing follows it (#272).
       if (!story) refreshProjects?.().catch(() => undefined)
       onSaved(saved)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, STORY_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : suggesting
-              ? t('stories.storyForm.detailsToSend')
-              : t('stories.storyForm.detailsToSave'),
-        )
-      } else {
-        setMessage(
-          suggesting ? t('stories.storyForm.failedSend') : t('stories.storyForm.failedSave'),
-        )
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return (
@@ -245,26 +231,19 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         )}
       </Field>
 
-      <Field
+      <SegmentedField
         label={t('stories.storyForm.statusLabel')}
         id="story-status"
-        group
         hint={t('stories.storyForm.statusHint')}
         error={fieldErrors.status}
-      >
-        {(control) => (
-          <SegmentedControl
-            {...control}
-            options={STORY_STATUS_ORDER.map((option) => ({
-              value: option,
-              label: STORY_STATUS_LABELS[option],
-              testId: `story-status-${STORY_STATUS_KEYS[option]}`,
-            }))}
-            value={draft.status}
-            onChange={(status) => edit({ status })}
-          />
-        )}
-      </Field>
+        options={STORY_STATUS_ORDER.map((option) => ({
+          value: option,
+          label: STORY_STATUS_LABELS[option],
+          testId: `story-status-${STORY_STATUS_KEYS[option]}`,
+        }))}
+        value={draft.status}
+        onChange={(status) => edit({ status })}
+      />
     </Drawer>
   )
 }

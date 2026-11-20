@@ -217,7 +217,7 @@ function TypeCards({
       )}
 
       {failed ? (
-        <p role="alert" data-testid="project-entity-types-failed">
+        <p className="form__message" role="alert" data-testid="project-entity-types-failed">
           {failed}
         </p>
       ) : null}

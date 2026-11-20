@@ -75,6 +75,7 @@ export function RestoreReadyForm({
       <Field
         label={t('admin.restore.ready.nameLabel')}
         name="restore-name"
+        requiredMark
         required
         maxLength={120}
         dir="auto"

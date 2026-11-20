@@ -57,7 +57,6 @@ export function WorldRuleEditor({
   const titleId = useId()
   const descriptionId = useId()
   const statusId = useId()
-  const countId = useId()
 
   const isNew = ruleId === null
 
@@ -130,8 +129,6 @@ export function WorldRuleEditor({
     )
   }
 
-  const nearLimit = draft.description.length > WORLD_RULE_DESCRIPTION_MAX_LENGTH * 0.9
-
   return (
     <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
       <WorldRuleHead
@@ -164,13 +161,11 @@ export function WorldRuleEditor({
         titleId={titleId}
         descriptionId={descriptionId}
         statusId={statusId}
-        countId={countId}
         stored={stored}
         draft={draft}
         fieldErrors={fieldErrors}
         isDirty={isDirty}
         isTooLong={isTooLong}
-        nearLimit={nearLimit}
         isSaving={isSaving}
         saves={saves}
         titleInput={titleInput}

@@ -28,6 +28,7 @@ export function EntryFieldInput({
   return (
     <div data-field-id={definition.id}>
       <FieldInput
+        error={fieldErrors[definition.id]}
         definition={definition}
         value={draft.fields[definition.id] ?? emptyValue(definition)}
         universeId={universe.id}
@@ -68,9 +69,6 @@ export function EntryFieldInput({
           disabledHint: typeChanged ? t('entity.fieldImage.saveTypeFirst') : undefined,
         }}
       />
-      {fieldErrors[definition.id] ? (
-        <p className="field__error">{fieldErrors[definition.id]}</p>
-      ) : null}
     </div>
   )
 }

@@ -9,9 +9,11 @@ import {
   type ProjectEntityDetail,
   type ProjectField,
 } from '../projectEntities/types'
-import { FieldImageInput, type PendingFieldImage } from './FieldImageInput'
+import type { PendingFieldImage } from './FieldImageInput'
+import { FieldInput } from './FieldInputs'
+import { emptyValue } from '../lore/document'
+import { asFieldDefinition, NO_ERAS } from '../projectEntities/fieldDefinition'
 import { t, useI18n } from '../i18n'
-import { ValueField } from './projectEntities/ValueField'
 import { FormActions } from './FormActions'
 
 /**
@@ -98,7 +100,7 @@ export function ProjectEntryForm({
           })
       }}
     >
-      <Field label={t('projects.entries.name')}>
+      <Field label={t('projects.entries.name')} requiredMark>
         {(control) => (
           <input
             {...control}
@@ -127,35 +129,32 @@ export function ProjectEntryForm({
         <h3 className="sectionrule sectionrule--accent">{t('projects.entries.values')}</h3>
       ) : null}
 
-      {fields.map((field) =>
-        field.kind === FieldKind.Image ? (
-          <FieldImageInput
+      {fields.map((field) => {
+        const definition = asFieldDefinition(field)
+        return (
+          <FieldInput
             key={field.id}
+            definition={definition}
+            value={values[field.id] ?? emptyValue(definition)}
             universeId={universeId}
-            entityId={entry?.id ?? null}
-            fieldId={field.id}
-            name={field.name}
-            shape={field.imageShape}
-            image={entry?.fieldImages.find((one) => one.fieldId === field.id) ?? null}
-            pending={pendingImages[field.id] ?? null}
-            onPending={(held) =>
-              setPendingImages((current) => {
-                const { [field.id]: _dropped, ...rest } = current
-                return held ? { ...rest, [field.id]: held } : rest
-              })
-            }
-            onChanged={() => undefined}
-            disabled={busy}
-          />
-        ) : (
-          <ValueField
-            key={field.id}
-            field={field}
-            value={values[field.id]}
+            excludeId={entry?.id}
+            chronology={NO_ERAS}
             onChange={(next) => setValues((current) => ({ ...current, [field.id]: next }))}
+            image={{
+              entityId: entry?.id ?? null,
+              stored: entry?.fieldImages.find((one) => one.fieldId === field.id) ?? null,
+              pending: pendingImages[field.id] ?? null,
+              onPending: (held) =>
+                setPendingImages((current) => {
+                  const { [field.id]: _dropped, ...rest } = current
+                  return held ? { ...rest, [field.id]: held } : rest
+                }),
+              onChanged: () => undefined,
+              disabled: busy,
+            }}
           />
-        ),
-      )}
+        )
+      })}
 
       <FormActions
         submitLabel={entry ? t('shell.actions.save') : t('projects.entries.add')}

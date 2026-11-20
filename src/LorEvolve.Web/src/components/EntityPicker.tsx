@@ -30,6 +30,8 @@ export interface QuickCreateOptions {
 
 interface EntityPickerProps {
   label: string
+  /** Draws " (required)" after the field's label; the listbox keeps the plain name. */
+  requiredMark?: boolean
   universeId: string
   /** The entity currently chosen, so the field can show its name rather than an id. */
   value: EntityChoice | null
@@ -54,6 +56,7 @@ interface EntityPickerProps {
 /** One entity, or none. Used for a relation's other end and for the timeline filter. */
 export function EntityPicker({
   label,
+  requiredMark,
   universeId,
   value,
   onChange,
@@ -115,7 +118,7 @@ export function EntityPicker({
   }
 
   return (
-    <Field label={label} id={inputId} className="picker" error={error}>
+    <Field label={label} requiredMark={requiredMark} id={inputId} className="picker" error={error}>
       {(control) => (
         <div ref={wrapper}>
           {value ? (

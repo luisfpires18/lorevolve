@@ -116,7 +116,7 @@ export function ProjectSeasons({
               .catch(failing)
           }}
         >
-          <Field label={t('projects.seasons.name')}>
+          <Field label={t('projects.seasons.name')} requiredMark>
             {(control) => (
               <input
                 {...control}
@@ -141,7 +141,7 @@ export function ProjectSeasons({
       ) : null}
 
       {failed ? (
-        <p role="alert" data-testid="project-seasons-failed">
+        <p className="form__message" role="alert" data-testid="project-seasons-failed">
           {failed}
         </p>
       ) : null}

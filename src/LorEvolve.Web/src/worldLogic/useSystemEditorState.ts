@@ -1,7 +1,9 @@
 import { useCallback, useId, useRef, useState } from 'react'
 import { t } from '../i18n'
+import { ApiError } from '../lib/api'
 import { useQueryTab } from '../lib/queryTab'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { useFormSave } from '../lib/useFormSave'
 import { getSystem } from './api'
 import type { BaseVersions } from './machine'
 import type { SystemDetail } from './types'
@@ -20,10 +22,26 @@ export function useSystemEditorState({
   const [name, setName] = useState('')
   const [summary, setSummary] = useState('')
   const [saved, setSaved] = useState<SystemDetail | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [failure, setFailure] = useState<string | null>(null)
   const [conflict, setConflict] = useState(false)
-  const [saving, setSaving] = useState(false)
+  // A System changed elsewhere opens the conflict, a taken name marks the name, a System gone says so; only a 400 names
+  // fields.
+  const form = useFormSave({
+    needChange: () => t('canon.worldLogic.systems.editor.invalid'),
+    failed: () => t('canon.worldLogic.systems.editor.saveFailed'),
+    badRequestOnly: true,
+    refusal: (error) => {
+      if (!(error instanceof ApiError)) return false
+      if (error.status === 409 && error.code === 'system_changed') {
+        setConflict(true)
+        return true
+      }
+      if (error.status === 409 && error.code === 'system_name_taken') {
+        form.setFieldErrors({ name: t('canon.worldLogic.systems.editor.nameTaken') })
+        return true
+      }
+      return error.status === 404 ? t('canon.worldLogic.systems.editor.gone') : false
+    },
+  })
   const [announcement, setAnnouncement] = useState('')
   const [bases, setBases] = useState<BaseVersions>({ details: 0, machine: 0 })
   const machineDirty = useRef(false)
@@ -65,14 +83,14 @@ export function useSystemEditorState({
     setSummary,
     saved,
     setSaved,
-    fieldErrors,
-    setFieldErrors,
-    failure,
-    setFailure,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    failure: form.message,
+    setFailure: form.setMessage,
     conflict,
     setConflict,
-    saving,
-    setSaving,
+    saving: form.isSaving,
+    runSave: form.save,
     announcement,
     setAnnouncement,
     bases,

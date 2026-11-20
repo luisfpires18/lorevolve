@@ -96,8 +96,7 @@ const entity: Dictionary['entity'] = {
     latestLabel: 'Última nota guardada',
     latestBlank: 'Sem texto na versão mais recente.',
     field: 'Nota',
-    placeholder:
-      'Notas para ti: revelações futuras, para que serve realmente esta entrada, pontas soltas.',
+    placeholder: 'Insira uma nota',
     tooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
     save: 'Guardar',
     nothingSaved: 'Ainda nada guardado',

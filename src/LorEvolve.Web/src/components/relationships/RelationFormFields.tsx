@@ -73,16 +73,12 @@ export function RelationFormFields({
         }
       />
 
-      <Field label={t('relationships.section.status')} group>
-        {(control) => (
-          <CanonStatusPicker
-            {...control}
-            optionTestId="relation-canon-"
-            value={draft.canonStatus}
-            onChange={(canonStatus) => edit({ canonStatus })}
-          />
-        )}
-      </Field>
+      <CanonStatusPicker
+        field={{ label: t('relationships.section.status') }}
+        optionTestId="relation-canon-"
+        value={draft.canonStatus}
+        onChange={(canonStatus) => edit({ canonStatus })}
+      />
     </div>
   )
 }

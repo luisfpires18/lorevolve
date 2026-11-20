@@ -41,11 +41,13 @@ export function TypeDialogIdentity({
         data-testid="type-name"
       />
 
-      <div className="field">
-        <TypeIconPicker value={icon} onChange={setIcon} testId="type-icon" />
-        <p className="field__hint">{iconHint ?? t('entityTypes.page.dialog.iconHint')}</p>
-        {fieldErrors.icon ? <p className="field__error">{fieldErrors.icon}</p> : null}
-      </div>
+      <TypeIconPicker
+        value={icon}
+        onChange={setIcon}
+        testId="type-icon"
+        hint={iconHint ?? t('entityTypes.page.dialog.iconHint')}
+        error={fieldErrors.icon}
+      />
     </section>
   )
 }

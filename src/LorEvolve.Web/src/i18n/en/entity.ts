@@ -95,7 +95,7 @@ const entity = {
     latestLabel: 'Latest saved note',
     latestBlank: 'No text in the latest version.',
     field: 'Note',
-    placeholder: 'Notes for yourself: reveals to come, what this entry is really for, loose ends.',
+    placeholder: 'Insert a note',
     tooLong: 'Too long to save: {used} of {max} characters.',
     save: 'Save',
     nothingSaved: 'Nothing saved yet',

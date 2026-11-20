@@ -71,7 +71,6 @@ const entityTypes = {
     legend: 'Icon',
   },
   input: {
-    requiredLabel: '{name} (required)',
     unavailable: 'Unavailable',
     searchEntry: 'Search for an entry',
     datePeriodLabel: '{name}: date period',

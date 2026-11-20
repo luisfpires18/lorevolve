@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import type { ChronologyPointDraft } from '../components/ChronologyPointFields'
+import { t } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 import type { RelationshipType, RelationshipView } from './types'
 import type { RelationDraft } from './relationDraft'
 
@@ -9,9 +11,10 @@ export function useRelationsState() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [draft, setDraft] = useState<RelationDraft | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: () => t('relationships.section.detailsNeedChange'),
+    failed: () => t('relationships.section.saveFailed'),
+  })
   const [opened, setOpened] = useState<string | null>(null)
   // The eras each end of a relation being edited has, read when the form needs them (Issue #18).
   const [erasOf, setErasOf] = useState<
@@ -37,12 +40,12 @@ export function useRelationsState() {
     setIsAdding,
     draft,
     setDraft,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
-    isSaving,
-    setIsSaving,
+    form,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
+    isSaving: form.isSaving,
     opened,
     setOpened,
     erasOf,

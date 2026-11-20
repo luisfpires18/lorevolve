@@ -1,9 +1,7 @@
+import { CharCount } from '../CharCount'
 import { SaveAction } from '../SaveAction'
 import { t } from '../../i18n'
-import { numberFormat } from '../../i18n/format'
 import { NODE_BODY_MAX_LENGTH, type ProjectNodeDetail } from '../../projectEntities/structure'
-
-const count = (value: number) => numberFormat({}, 'en').format(value)
 
 export function ScriptPartBar({
   isTooLong,
@@ -28,14 +26,15 @@ export function ScriptPartBar({
 }) {
   return (
     <div className="manuscript__bar">
-      {isTooLong ? (
-        <p className="field__error manuscript__toolong" data-testid="project-script-too-long">
-          {t('projects.script.tooLong', {
-            used: count(draft.length),
-            max: count(NODE_BODY_MAX_LENGTH),
-          })}
-        </p>
-      ) : null}
+      <CharCount
+        id="project-script-too-long"
+        used={draft.length}
+        max={NODE_BODY_MAX_LENGTH}
+        show="over"
+        words={{ tooLong: 'projects.script.tooLong' }}
+        className="manuscript__toolong"
+        testId="project-script-too-long"
+      />
       <SaveAction
         label={t('projects.script.save')}
         isDirty={isDirty}

@@ -4,6 +4,11 @@ import type { PendingFieldImage } from '../components/FieldImageInput'
 import type { CanonBlockingFinding } from '../canon/types'
 import type { EntityDetail } from './types'
 import type { CopySource, Draft } from './entryDraft'
+import { ENTRY_CHANGED } from './api'
+import { blockingFindingsOf } from '../canon/blocked'
+import { t } from '../i18n'
+import { isChangedElsewhere } from '../lib/editConflict'
+import { useFormSave } from '../lib/useFormSave'
 
 /** Every state and shared ref of the entry screen, as one object, with the focus a refused save asks for. */
 export function useEntryState({ isNew }: { isNew: boolean }) {
@@ -21,8 +26,6 @@ export function useEntryState({ isNew }: { isNew: boolean }) {
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing' | 'error'>(
     isNew ? 'ready' : 'loading',
   )
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
 
   // Which field sections the reader has opened or folded here (Issue #26), by id; one not in it starts as its type says.
   // Transient on purpose: nothing is stored, so the next visit starts from the author's choice again.
@@ -38,11 +41,30 @@ export function useEntryState({ isNew }: { isNew: boolean }) {
     focusField.current = null
   })
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
 
   // The form's save was refused because the entry was saved somewhere else while it was open (ADR 0043). The form keeps
   // every unsaved change until the author has reviewed the latest and chosen.
   const [conflict, setConflict] = useState(false)
+  const form = useFormSave({
+    // A refusal from the promotion gate is not a save failure to report in one line:
+    // the draft is still on screen and still editable, and the findings say why.
+    refusal: (error) => {
+      const blocking = blockingFindingsOf(error)
+      if (blocking) {
+        setBlocked(blocking)
+        return true
+      }
+      if (isChangedElsewhere(error, ENTRY_CHANGED)) {
+        setConflict(true)
+        return true
+      }
+      return false
+    },
+    needChange: () =>
+      isSuggesting ? t('entity.page.save.fieldsSuggest') : t('entity.page.save.fieldsSave'),
+    failed: () =>
+      isSuggesting ? t('entity.page.save.suggestFailed') : t('entity.page.save.failed'),
+  })
   const [announcement, setAnnouncement] = useState('')
   const saveButton = useRef<HTMLButtonElement>(null)
 
@@ -88,17 +110,17 @@ export function useEntryState({ isNew }: { isNew: boolean }) {
     setReads,
     status,
     setStatus,
-    fieldErrors,
-    setFieldErrors,
-    message,
-    setMessage,
+    fieldErrors: form.fieldErrors,
+    setFieldErrors: form.setFieldErrors,
+    message: form.message,
+    setMessage: form.setMessage,
     sectionOpen,
     setSectionOpen,
     focusField,
     blocked,
     setBlocked,
-    isSaving,
-    setIsSaving,
+    isSaving: form.isSaving,
+    runSave: form.save,
     conflict,
     setConflict,
     announcement,

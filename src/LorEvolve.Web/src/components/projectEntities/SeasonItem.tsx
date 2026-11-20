@@ -88,7 +88,7 @@ export function SeasonItem({
                 .catch(failing)
             }}
           >
-            <Field label={t('projects.seasons.name')}>
+            <Field label={t('projects.seasons.name')} requiredMark>
               {(control) => (
                 <input
                   {...control}

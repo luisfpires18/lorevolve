@@ -1,4 +1,3 @@
-import { ApiError } from '../lib/api'
 import { setMapCalibration } from './api'
 import type { MapCalibration, MapDetail } from './types'
 import { useI18n } from '../i18n'
@@ -17,7 +16,7 @@ export function calibrationActions({
   unit,
   setErrors,
   setMessage,
-  setIsSaving,
+  runSave,
   t,
 }: ReturnType<typeof useCalibrationFormState> & {
   universeId: string
@@ -51,9 +50,7 @@ export function calibrationActions({
       return
     }
 
-    setErrors({})
-    setIsSaving(true)
-    try {
+    await runSave(async () =>
       onSaved(
         await setMapCalibration(universeId, map.id, {
           x1: a!.x,
@@ -63,21 +60,8 @@ export function calibrationActions({
           distance: value,
           unit: unit.trim(),
         }),
-      )
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.calibration.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.calibration.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+      ),
+    )
   }
   return { setPoint, save }
 }

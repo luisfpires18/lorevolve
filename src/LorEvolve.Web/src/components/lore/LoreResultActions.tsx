@@ -47,7 +47,7 @@ export function LoreResultActions({
             </label>
             <select
               id="lore-sort"
-              className="field__input lore__pagesizeselect"
+              className="field__input field__input--select lore__pagesizeselect"
               value={sort ?? ''}
               onChange={(event) => update({ sort: event.target.value || null, page: null }, true)}
               data-testid="lore-sort"
@@ -67,7 +67,7 @@ export function LoreResultActions({
               </label>
               <select
                 id="lore-page-size"
-                className="field__input lore__pagesizeselect"
+                className="field__input field__input--select lore__pagesizeselect"
                 value={pageSize}
                 onChange={(event) => changePageSize(Number(event.target.value))}
                 data-testid="lore-page-size"

@@ -85,19 +85,17 @@ export function RelationForm({
         fieldErrors={fieldErrors}
       />
 
-      <Field label={t('relationships.section.notes')} id="relation-notes" error={fieldErrors.notes}>
-        {(control) => (
-          <textarea
-            {...control}
-            className="entry__summaryinput"
-            rows={2}
-            placeholder={t('relationships.section.notesPlaceholder')}
-            value={draft.notes}
-            onChange={(event) => edit({ notes: event.target.value })}
-            data-testid="relation-notes"
-          />
-        )}
-      </Field>
+      <Field
+        as="textarea"
+        label={t('relationships.section.notes')}
+        id="relation-notes"
+        error={fieldErrors.notes}
+        rows={2}
+        placeholder={t('relationships.section.notesPlaceholder')}
+        value={draft.notes}
+        onChange={(event) => edit({ notes: event.target.value })}
+        data-testid="relation-notes"
+      />
 
       <FormActions
         submitLabel={
