@@ -2,19 +2,14 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { EntityImageCrop, FieldImageRef } from './types'
 import type { FieldImageApi, PendingFieldImage } from '../components/FieldImageInput'
 import { pictureRatio, type Framing } from './fieldImageFraming'
-import type { useI18n } from '../i18n'
-import { confirmAction } from '../lib/confirm'
 
-/** An Image field's handlers: pick a file, reframe the picture, keep a crop, remove the picture. */
+/** An Image field's handlers: reframe the picture, keep a crop. Picking and removing are `usePictureFraming`'s. */
 export function fieldImageActions({
   entityId,
   image,
   pending,
   onPending,
   onChanged,
-  t,
-  pick,
-  setBusy,
   setError,
   framing,
   setFraming,
@@ -27,24 +22,13 @@ export function fieldImageActions({
   pending: PendingFieldImage | null
   onPending: (pending: PendingFieldImage | null) => void
   onChanged: (image: FieldImageRef | null) => void
-  pick: (file: File | undefined) => File | null
-  setBusy: Dispatch<SetStateAction<boolean>>
   setError: Dispatch<SetStateAction<string | null>>
   framing: Framing | null
   setFraming: Dispatch<SetStateAction<Framing | null>>
   api: FieldImageApi
   fixedAspect: number | null
   preview: string | null
-} & Pick<ReturnType<typeof useI18n>, 't'>) {
-  async function choose(chosen: File | undefined) {
-    const file = pick(chosen)
-    if (!file) return
-
-    const source = URL.createObjectURL(file)
-    const aspect = fixedAspect ?? (await pictureRatio(source))
-    setFraming({ kind: 'file', file, source, ownsSource: true, initial: null, aspect })
-  }
-
+}) {
   async function reframe() {
     setError(null)
 
@@ -85,33 +69,5 @@ export function fieldImageActions({
     setFraming(null)
   }
 
-  async function remove() {
-    setError(null)
-
-    if (pending) {
-      onPending(null)
-      return
-    }
-
-    if (!entityId || !image) return
-    const confirmed = await confirmAction({
-      title: t('shell.confirm.removePicture.title'),
-      message: t('shell.confirm.removePicture.message'),
-      confirmLabel: t('shell.confirm.removePicture.confirm'),
-      variant: 'destructive',
-    })
-    if (!confirmed) return
-
-    setBusy(true)
-    try {
-      await api.remove()
-      onChanged(null)
-    } catch {
-      setError(t('entity.image.removeFailed'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return { choose, reframe, keep, remove }
+  return { reframe, keep }
 }

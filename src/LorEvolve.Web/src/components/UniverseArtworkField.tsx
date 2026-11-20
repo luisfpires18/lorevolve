@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { IMAGE_ACCEPT, type ImageCrop } from '../lib/imageCrop'
+import type { ImageCrop } from '../lib/imageCrop'
 import {
   artworkStore,
   pictureUrl,
@@ -12,19 +10,13 @@ import {
   type PictureStore,
 } from '../covers/api'
 import type { UniverseArtworkRef } from '../publishing/types'
-import { ActionIcon } from './ActionIcon'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
-import { Button } from './Button'
-import { buttonClass } from '../lib/buttonClass'
-import { useImagePick } from '../lib/useImagePick'
+import { PictureActions } from './PictureActions'
+import { usePictureFraming } from '../lib/usePictureFraming'
 import type { TextKey } from '../i18n/core'
 import type { Dictionary } from '../i18n/en'
 import { QuietNote } from './QuietNote'
-import { confirmAction } from '../lib/confirm'
 import { FormMessage } from './FormMessage'
-
-type Framing =
-  { kind: 'file'; file: File } | { kind: 'stored'; artwork: UniverseArtworkRef; source: string }
 
 /**
  * A universe's artwork: one wide picture, framed 16:10 for its card in the public portal, shown here as that
@@ -55,36 +47,15 @@ export function UniverseArtworkField({
   const { t } = useI18n()
   const store = given ?? artworkStore(universeId)
   const w = store.words
-  const [busy, setBusy] = useState(false)
-  const { input, error, setError, pick } = useImagePick(`${w}.tooBig` as TextKey<Dictionary>)
-  const [framing, setFraming] = useState<Framing | null>(null)
-
-  const pickedFile = framing?.kind === 'file' ? framing.file : null
-  const pickedSource = useMemo(
-    () => (pickedFile ? URL.createObjectURL(pickedFile) : null),
-    [pickedFile],
-  )
-
-  useEffect(() => {
-    if (!pickedSource) return
-    return () => {
-      URL.revokeObjectURL(pickedSource)
-    }
-  }, [pickedSource])
-
-  function choose(chosen: File | undefined) {
-    const file = pick(chosen)
-    if (!file) return
-
-    setFraming({ kind: 'file', file })
-  }
+  const { input, error, setError, busy, framing, setFraming, choose, remove } =
+    usePictureFraming<UniverseArtworkRef>({ tooBigKey: `${w}.tooBig` as TextKey<Dictionary> })
 
   async function keep(crop: ImageCrop, report: (stage: SaveStage) => void) {
     if (!framing) return
 
     if (framing.kind === 'stored') {
       report({ kind: 'working' })
-      onChanged(await setPictureCard(store, framing.artwork.assetId, crop))
+      onChanged(await setPictureCard(store, framing.image.assetId, crop))
     } else {
       report({ kind: 'sending', ratio: 0 })
       onChanged(
@@ -97,27 +68,6 @@ export function UniverseArtworkField({
     setFraming(null)
   }
 
-  async function remove() {
-    const confirmed = await confirmAction({
-      title: t('shell.confirm.removePicture.title'),
-      message: t('shell.confirm.removePicture.message'),
-      confirmLabel: t('shell.confirm.removePicture.confirm'),
-      variant: 'destructive',
-    })
-    if (!confirmed) return
-    setError(null)
-    setBusy(true)
-    try {
-      await removePicture(store)
-      onChanged(null)
-    } catch (problem: unknown) {
-      setError(problem instanceof ApiError ? problem.message : t(`${w}.removeFailed`))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const source = framing === null ? null : framing.kind === 'file' ? pickedSource : framing.source
   const inputId = `${testId}-input-${store.path}`
 
   return (
@@ -140,55 +90,47 @@ export function UniverseArtworkField({
       </div>
 
       <div className="actions actions--tight artwork__actions">
-        <input
-          ref={input}
-          id={inputId}
-          className="avatar__input"
-          type="file"
-          accept={IMAGE_ACCEPT}
-          disabled={busy}
-          onChange={(event) => choose(event.target.files?.[0])}
-          data-testid={`${testId}-input`}
+        <PictureActions
+          variant="avatar"
+          input={input}
+          inputId={inputId}
+          hasPicture={Boolean(artwork)}
+          busy={busy}
+          onFile={(file) => void choose(file)}
+          onReframe={() => {
+            if (!artwork) return
+            setError(null)
+            setFraming({
+              kind: 'stored',
+              image: artwork,
+              source: pictureUrl(store, artwork, 'original'),
+            })
+          }}
+          onRemove={() =>
+            void remove({
+              stored: true,
+              run: () => removePicture(store),
+              done: () => onChanged(null),
+              failed: (problem) =>
+                problem instanceof ApiError ? problem.message : t(`${w}.removeFailed`),
+            })
+          }
+          canRemove={!isPublic}
+          removeTone="secondary"
+          labels={{
+            add: t(`${w}.upload`),
+            replace: t(`${w}.replace`),
+            reframe: t(`${w}.editFraming`),
+            remove: t(`${w}.remove`),
+            removing: t(`${w}.removing`),
+          }}
+          testIds={{
+            input: `${testId}-input`,
+            pick: `${testId}-pick`,
+            reframe: `${testId}-reframe`,
+            remove: `${testId}-remove`,
+          }}
         />
-        <label
-          className={buttonClass({ tone: 'secondary', className: 'avatar__pick' })}
-          htmlFor={inputId}
-          data-testid={`${testId}-pick`}
-        >
-          <ActionIcon icon={artwork ? ImageUp : ImagePlus} />
-          {artwork ? t(`${w}.replace`) : t(`${w}.upload`)}
-        </label>
-
-        {artwork ? (
-          <Button
-            tone="secondary"
-            icon={Crop}
-            disabled={busy}
-            onClick={() => {
-              setError(null)
-              setFraming({
-                kind: 'stored',
-                artwork,
-                source: pictureUrl(store, artwork, 'original'),
-              })
-            }}
-            data-testid={`${testId}-reframe`}
-          >
-            {t(`${w}.editFraming`)}
-          </Button>
-        ) : null}
-
-        {artwork && !isPublic ? (
-          <Button
-            tone="secondary"
-            icon={ImageMinus}
-            disabled={busy}
-            onClick={() => void remove()}
-            data-testid={`${testId}-remove`}
-          >
-            {busy ? t(`${w}.removing`) : t(`${w}.remove`)}
-          </Button>
-        ) : null}
       </div>
 
       <QuietNote spacing="hint">
@@ -197,12 +139,12 @@ export function UniverseArtworkField({
 
       {error ? <FormMessage testId={`${testId}-error`}>{error}</FormMessage> : null}
 
-      {framing && source ? (
+      {framing ? (
         <ImageCropDialog
-          key={source}
-          source={source}
+          key={framing.source}
+          source={framing.source}
           aspect={store.aspect}
-          initialCrop={framing.kind === 'stored' ? framing.artwork.crop : null}
+          initialCrop={framing.kind === 'stored' ? framing.image.crop : null}
           title={framing.kind === 'stored' ? t(`${w}.editFramingTitle`) : t(`${w}.frameTitle`)}
           confirmLabel={framing.kind === 'stored' ? t(`${w}.saveFraming`) : t(`${w}.confirmUpload`)}
           workingLabel={framing.kind === 'stored' ? t(`${w}.updatingCard`) : t(`${w}.processing`)}

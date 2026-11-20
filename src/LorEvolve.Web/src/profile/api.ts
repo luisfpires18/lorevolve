@@ -5,10 +5,6 @@ import type { AccountStorage, ProfileImageRef } from './types'
 
 const BASE = '/api/profile/image'
 
-// Shared with an entry's picture: the same file dialog filter and the same ceiling, because the
-// same server code decides what is accepted.
-export { IMAGE_ACCEPT, IMAGE_MAX_BYTES } from '../lib/imageCrop'
-
 /**
  * Where one variant of the account's photo is served from.
  *
