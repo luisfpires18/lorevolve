@@ -581,6 +581,790 @@ Repository index. Paths and one-line responsibilities only.
 | Lore address | Where the Lore browser is lives in its URL and nowhere else: `lore?type=<entity type id>&status=<0\|1\|2>&q=<text>&page=<n>`. The type is an id, never a name; one the universe does not have reads as All and the address is corrected in place. Choosing a type or a page pushes a history entry; typing and the status replace the one they are on. A new entry opened at `lore/new?type=<id>` starts in that type if the universe has it, and stays changeable. Mass create, `lore/mass-create?type=<id>` (`MassCreatePage`), starts its default type the same way, passing over a type with required fields; after it, Lore opens unfiltered and says "Created N entries." once. |
 | Authored text direction | Whatever an author titled or named is isolated in a `<bdi>` inside the element that lays it out: it reads in its own direction - Arabic, Hebrew, mixed - and LorEvolve's left-to-right layout around it does not move. `dir="auto"` on the element only for a title or name field, and for an element that cuts its text with an ellipsis. Never a direction on a container, and never `text-align` in its place. A name inside a sentence of LorEvolve's own is a `<bdi>` too (`Quoted`, `ContainerName`), never the sentence given a direction. Prose an author wrote - a summary, description, notes, an excerpt - carries the `prose` class: `unicode-bidi: plaintext`, so each paragraph reads and aligns in its own direction; every `textarea` and the article's paragraphs and headings have it already. Pinned by `text-direction.spec.ts`. |
 | `vite.config.ts` | Dev server port 5173, proxy to the API, build config. |
+| `src/admin/adminConstants.ts` | A cell with nothing to show. |
+| `src/aiChanges/aiChangeActions.ts` | Exports `aiChangeActions`. |
+| `src/aiChanges/changeTraits.ts` | Exports `actionWords`, `isProse`, `approvable`. |
+| `src/aiChanges/itemPath.ts` | Exports `itemPath`. |
+| `src/aiChanges/media.ts` | Exports `mediaPreviewPath`, `uploadChangeMedia`. |
+| `src/aiChanges/types.ts` | Exports `AiChangeSource`, `AiChangeSourceValue`, `ProposalStatus`, `ProposalStatusValue` and more. |
+| `src/aiChanges/useAiChangeReads.ts` | Exports `useAiChangeReads`. |
+| `src/aiChanges/useAiChangeState.ts` | Exports `Feedback`, `useAiChangeState`. |
+| `src/backups/restoreBackupActions.ts` | Exports `restoreBackupActions`. |
+| `src/backups/summaryRows.ts` | Exports `summaryRows`. |
+| `src/backups/useRestoreBackupState.ts` | Exports `Stage`, `useRestoreBackupState`. |
+| `src/canon/canonActions.ts` | Exports `canonActions`. |
+| `src/canon/canonEmptyCopy.ts` | Exports `emptyLine`, `hint`. |
+| `src/canon/useCanonConflicts.ts` | Exports `useCanonConflicts`. |
+| `src/chronology/calendarActions.ts` | Exports `calendarActions`. |
+| `src/chronology/chronologyActions.ts` | Exports `chronologyActions`. |
+| `src/chronology/eraDrafts.ts` | Exports `EraDraft`, `draftsFrom`, `inputOf`, `joinAnd` and more. |
+| `src/chronology/monthDrafts.ts` | Exports `Mode`, `MonthDraft`, `draftsFrom`, `inputOf` and more. |
+| `src/chronology/useCalendarEditorState.ts` | Exports `useCalendarEditorState`. |
+| `src/chronology/useChronologyEditorState.ts` | Exports `useChronologyEditorState`. |
+| `src/chronology/useFocusNewEra.ts` | Exports `useFocusNewEra`. |
+| `src/comments/commentsDrawerActions.ts` | Exports `commentsDrawerActions`. |
+| `src/comments/useCommentsDrawerState.ts` | Exports `ReviewTab`, `useCommentsDrawerState`. |
+| `src/components/CommentNewForm.tsx` | Exports `CommentNewForm`. |
+| `src/components/CommentThreadItem.tsx` | Exports `CommentThreadItem`. |
+| `src/components/CommentsDrawer.tsx` | Exports `CommentsDrawer`. |
+| `src/components/ContentPublicationPanel.tsx` | Exports `ContentPublicationPanel`. |
+| `src/components/CropperActions.tsx` | Exports `CropperActions`. |
+| `src/components/CropperControls.tsx` | Exports `CropperControls`. |
+| `src/components/CropperProgress.tsx` | Exports `CropperProgress`. |
+| `src/components/CropperStage.tsx` | Exports `CropperStage`. |
+| `src/components/EntityMultiPicker.tsx` | Exports `EntityMultiPicker`. |
+| `src/components/FieldForm.tsx` | Exports `FieldForm`. |
+| `src/components/FieldImageRow.tsx` | Exports `FieldImageRow`. |
+| `src/components/MapFormName.tsx` | Exports `MapFormName`. |
+| `src/components/MapFormPicture.tsx` | Exports `MapFormPicture`. |
+| `src/components/MapFormReplace.tsx` | Exports `MapFormReplace`. |
+| `src/components/PickOneDrawer.tsx` | Exports `PickOneDrawer`. |
+| `src/components/ProjectEntryForm.tsx` | Exports `ProjectEntryForm`. |
+| `src/components/TypeDialogBehaviour.tsx` | Exports `TypeDialogBehaviour`. |
+| `src/components/TypeDialogIdentity.tsx` | Exports `TypeDialogIdentity`. |
+| `src/components/TypeDialogPlace.tsx` | Exports `TypeDialogPlace`. |
+| `src/components/UniverseColourField.tsx` | Exports `UniverseColourField`. |
+| `src/components/admin/BackupFacts.tsx` | Exports `BackupFacts`. |
+| `src/components/admin/BlockSection.tsx` | Exports `BlockSection`. |
+| `src/components/admin/DatabaseBackups.tsx` | Exports `DatabaseBackups`. |
+| `src/components/admin/Fact.tsx` | Exports `Fact`. |
+| `src/components/admin/FeedbackScreen.tsx` | Exports `FeedbackScreen`. |
+| `src/components/admin/MainScreen.tsx` | Exports `MainScreen`. |
+| `src/components/admin/Overview.tsx` | Exports `Overview`. |
+| `src/components/admin/PasswordSection.tsx` | Exports `PasswordSection`. |
+| `src/components/admin/SignUpLink.tsx` | Exports `SignUpLink`. |
+| `src/components/admin/Stat.tsx` | Exports `Stat`. |
+| `src/components/admin/TracingScreen.tsx` | Exports `TracingScreen`. |
+| `src/components/admin/UserDetail.tsx` | Exports `UserDetail`. |
+| `src/components/admin/UserScreen.tsx` | Exports `UserScreen`. |
+| `src/components/admin/UsersScreen.tsx` | Exports `UsersScreen`. |
+| `src/components/aiChanges/AiChangeDecision.tsx` | Exports `AiChangeDecision`. |
+| `src/components/aiChanges/AiChangeHeader.tsx` | Exports `AiChangeHeader`. |
+| `src/components/aiChanges/AiChangeNotices.tsx` | Exports `AiChangeNotices`. |
+| `src/components/aiChanges/ChangeDetails.tsx` | Exports `ChangeDetails`. |
+| `src/components/aiChanges/ChangeItem.tsx` | Exports `ChangeItem`. |
+| `src/components/aiChanges/EditChange.tsx` | Exports `EditChange`. |
+| `src/components/aiChanges/MediaChange.tsx` | Exports `MediaChange`. |
+| `src/components/aiChanges/ProseChange.tsx` | Exports `ProseChange`. |
+| `src/components/backups/RestoreChooseForm.tsx` | Exports `RestoreChooseForm`. |
+| `src/components/backups/RestoreReadyForm.tsx` | Exports `RestoreReadyForm`. |
+| `src/components/backups/Restoring.tsx` | Exports `Restoring`. |
+| `src/components/canon/CanonControls.tsx` | Exports `CanonControls`. |
+| `src/components/canon/CanonResults.tsx` | Exports `CanonResults`. |
+| `src/components/chronology/CalendarMonthRow.tsx` | Exports `CalendarMonthRow`. |
+| `src/components/chronology/ChronologyEraRow.tsx` | Exports `ChronologyEraRow`. |
+| `src/components/chronology/ChronologyEraStyle.tsx` | Exports `ChronologyEraStyle`. |
+| `src/components/chronology/ChronologyUnplaced.tsx` | Exports `ChronologyUnplaced`. |
+| `src/components/chronology/ExampleYear.tsx` | Exports `ExampleYear`. |
+| `src/components/cropDialogActions.ts` | Exports `cropDialogActions`. |
+| `src/components/cropMath.ts` | Exports `MIN_ZOOM`, `MAX_ZOOM`, `KEYBOARD_STEP`, `fractionsOf`. |
+| `src/components/entityPickerList.ts` | Exports `useCloseOnOutside`, `useKeepListInView`, `ListKeyOptions`, `listKeyDown`. |
+| `src/components/familyTree/DiscoveryFamilies.tsx` | Exports `DiscoveryFamilies`. |
+| `src/components/familyTree/FamilyAddLink.tsx` | Exports `FamilyAddLink`. |
+| `src/components/familyTree/FamilyEntityBar.tsx` | Exports `FamilyEntityBar`. |
+| `src/components/familyTree/FamilyLoadStates.tsx` | Exports `FamilyLoadStates`. |
+| `src/components/familyTree/FamilyNode.tsx` | Exports `FamilyNode`. |
+| `src/components/familyTree/FamilyOtherRelations.tsx` | Exports `FamilyOtherRelations`. |
+| `src/components/familyTree/FamilySetupNotices.tsx` | Exports `FamilySetupNotices`. |
+| `src/components/familyTree/FamilyStart.tsx` | Exports `FamilyStart`. |
+| `src/components/familyTree/FamilyTreeLegend.tsx` | Exports `FamilyTreeLegend`. |
+| `src/components/familyTree/FamilyTreeNotes.tsx` | Exports `FamilyTreeNotes`. |
+| `src/components/familyTree/FamilyTreeRows.tsx` | Exports `FamilyTreeRows`. |
+| `src/components/ideas/BoardCardButton.tsx` | Exports `BoardCardButton`. |
+| `src/components/ideas/BoardCardInspector.tsx` | Exports `BoardCardInspector`. |
+| `src/components/ideas/BoardFields.tsx` | Exports `BoardFields`. |
+| `src/components/ideas/BoardHead.tsx` | Exports `BoardHead`. |
+| `src/components/ideas/BoardInspector.tsx` | Exports `BoardInspector`. |
+| `src/components/ideas/BoardLineInspector.tsx` | Exports `BoardLineInspector`. |
+| `src/components/ideas/BoardLines.tsx` | Exports `BoardLines`. |
+| `src/components/ideas/BoardListView.tsx` | Exports `BoardListView`. |
+| `src/components/ideas/BoardNotices.tsx` | Exports `BoardNotices`. |
+| `src/components/ideas/BoardSaveBar.tsx` | Exports `BoardSaveBar`. |
+| `src/components/ideas/BoardToolbar.tsx` | Exports `BoardToolbar`. |
+| `src/components/ideas/BoardUnavailable.tsx` | Exports `BoardUnavailable`. |
+| `src/components/ideas/BoardWork.tsx` | Exports `BoardWork`. |
+| `src/components/ideas/BoardsControls.tsx` | Exports `BoardsControls`. |
+| `src/components/ideas/BoardsEmpty.tsx` | Exports `BoardsEmpty`. |
+| `src/components/ideas/BoardsListRows.tsx` | Exports `BoardsListRows`. |
+| `src/components/ideas/IdeaFormFields.tsx` | Exports `IdeaFormFields`. |
+| `src/components/ideas/IdeaHead.tsx` | Exports `IdeaHead`. |
+| `src/components/ideas/IdeaNotices.tsx` | Exports `IdeaNotices`. |
+| `src/components/ideas/IdeaReferences.tsx` | Exports `IdeaReferences`. |
+| `src/components/ideas/IdeaRow.tsx` | Exports `IdeaRow`. |
+| `src/components/ideas/IdeaSaveBar.tsx` | Exports `IdeaSaveBar`. |
+| `src/components/ideas/IdeaUnavailable.tsx` | Exports `IdeaUnavailable`. |
+| `src/components/ideas/IdeasControls.tsx` | Exports `IdeasControls`. |
+| `src/components/ideas/IdeasEmpty.tsx` | Exports `IdeasEmpty`. |
+| `src/components/ideas/IdeasHeader.tsx` | Exports `IdeasHeader`. |
+| `src/components/ideas/QuickCapture.tsx` | Exports `QuickCapture`. |
+| `src/components/knowledge/RecordForm.tsx` | Exports `RecordForm`. |
+| `src/components/knowledge/RecordList.tsx` | Exports `RecordList`. |
+| `src/components/knowledge/RecordOtherField.tsx` | Exports `RecordOtherField`. |
+| `src/components/knowledge/RecordSceneFields.tsx` | Exports `RecordSceneFields`. |
+| `src/components/lore/ArchivedFields.tsx` | Exports `ArchivedFields`. |
+| `src/components/lore/ArticleEditing.tsx` | Exports `ArticleEditing`. |
+| `src/components/lore/ArticleHistory.tsx` | Exports `ArticleHistory`. |
+| `src/components/lore/EntityPickerCreate.tsx` | Exports `EntityPickerCreate`. |
+| `src/components/lore/EntryArticleView.tsx` | Exports `EntryArticleView`. |
+| `src/components/lore/EntryCopyPanel.tsx` | Exports `CopyPanel`. |
+| `src/components/lore/EntryFieldInput.tsx` | Exports `EntryFieldInput`. |
+| `src/components/lore/EntryForm.tsx` | Exports `EntryFormProps`, `EntryForm`. |
+| `src/components/lore/EntryFormBar.tsx` | Exports `EntryFormBar`. |
+| `src/components/lore/EntryHeader.tsx` | Exports `EntryHeader`. |
+| `src/components/lore/EntryNotices.tsx` | Exports `EntryNotices`. |
+| `src/components/lore/EntryPicture.tsx` | Exports `EntryPicture`. |
+| `src/components/lore/EntryTools.tsx` | Exports `EntryTools`. |
+| `src/components/lore/EntryUnavailable.tsx` | Exports `EntryUnavailable`. |
+| `src/components/lore/EntryViewPanel.tsx` | Exports `EntryView`, `EntryViewPanel`. |
+| `src/components/lore/EntryViewsNav.tsx` | Exports `EntryViewsNav`. |
+| `src/components/lore/FieldBlockedNote.tsx` | Exports `FieldBlockedNote`. |
+| `src/components/lore/FieldDefaultRequired.tsx` | Exports `FieldDefaultRequired`. |
+| `src/components/lore/FieldDialog.tsx` | Exports `FieldDialog`. |
+| `src/components/lore/FieldKindFields.tsx` | Exports `FieldKindFields`. |
+| `src/components/lore/FieldLinkTarget.tsx` | Exports `FieldLinkTarget`. |
+| `src/components/lore/FieldMeaningShape.tsx` | Exports `FieldMeaningShape`. |
+| `src/components/lore/FieldStaleNotice.tsx` | Exports `FieldStaleNotice`. |
+| `src/components/lore/InheritedFields.tsx` | Exports `InheritedFields`. |
+| `src/components/lore/LoreContextDrawer.tsx` | Exports `LoreContextDrawer`. |
+| `src/components/lore/LoreContextMentioned.tsx` | Exports `LoreContextMentioned`. |
+| `src/components/lore/LoreContextRow.tsx` | Exports `LoreRow`, `LoreContextRow`. |
+| `src/components/lore/LoreControls.tsx` | Exports `LoreControls`. |
+| `src/components/lore/LoreHeader.tsx` | Exports `LoreHeader`. |
+| `src/components/lore/LorePreview.tsx` | Exports `LorePreview`. |
+| `src/components/lore/LoreResultActions.tsx` | Exports `LoreResultActions`. |
+| `src/components/lore/LoreResults.tsx` | Exports `LoreResults`. |
+| `src/components/lore/LoreSelectBar.tsx` | Exports `LoreSelectBar`. |
+| `src/components/lore/LoreStatus.tsx` | Exports `LoreStatus`. |
+| `src/components/lore/LoreTypeCard.tsx` | Exports `CatalogType`, `listedEntries`, `TypeCard`. |
+| `src/components/lore/LoreTypeRow.tsx` | Exports `LoreTypeRow`. |
+| `src/components/lore/MassCreateBar.tsx` | Exports `MassCreateBar`. |
+| `src/components/lore/MassCreateDefaults.tsx` | Exports `MassCreateDefaults`. |
+| `src/components/lore/MassCreatePaste.tsx` | Exports `MassCreatePaste`. |
+| `src/components/lore/MassCreateReview.tsx` | Exports `MassCreateReview`. |
+| `src/components/lore/MassCreateRow.tsx` | Exports `MassCreateRow`. |
+| `src/components/lore/PrivateNoteConflict.tsx` | Exports `PrivateNoteConflict`. |
+| `src/components/lore/PrivateNoteDrawer.tsx` | Exports `PrivateNoteDrawer`. |
+| `src/components/lore/RevisionSnapshot.tsx` | Exports `Snapshot`. |
+| `src/components/lore/SectionFieldPlacer.tsx` | Exports `SectionFieldPlacer`. |
+| `src/components/lore/SectionListEditor.tsx` | Exports `SectionListEditor`. |
+| `src/components/lore/TypeEditorDialog.tsx` | Exports `TypeEditorDialog`. |
+| `src/components/lore/TypeFieldRow.tsx` | Exports `TypeFieldRow`. |
+| `src/components/lore/TypeFieldTools.tsx` | Exports `TypeFieldTools`. |
+| `src/components/lore/TypeGroupRow.tsx` | Exports `TypeGroupRow`. |
+| `src/components/lore/TypeLevelMenus.tsx` | Exports `TypeLevelMenus`. |
+| `src/components/lore/TypeListDnd.tsx` | Exports `TypeListDnd`. |
+| `src/components/lore/TypesHeader.tsx` | Exports `TypesHeader`. |
+| `src/components/lore/TypesNotices.tsx` | Exports `TypesNotices`. |
+| `src/components/maps/CalibrationFields.tsx` | Exports `CalibrationFields`. |
+| `src/components/maps/MapDialogs.tsx` | Exports `MapDialogs`. |
+| `src/components/maps/MapHeader.tsx` | Exports `MapHeader`. |
+| `src/components/maps/MapNotices.tsx` | Exports `MapNotices`. |
+| `src/components/maps/MapPanelActions.tsx` | Exports `MapPanelActions`. |
+| `src/components/maps/MapPanelDetail.tsx` | Exports `MapPanelDetail`. |
+| `src/components/maps/MapPinList.tsx` | Exports `MapPinList`. |
+| `src/components/maps/MapStage.tsx` | Exports `MapStage`. |
+| `src/components/maps/MapViewerLayer.tsx` | Exports `MapViewerLayer`. |
+| `src/components/mcp/ConsentDetails.tsx` | Exports `ConsentDetails`. |
+| `src/components/mcp/ConsentLayout.tsx` | Exports `ConsentLayout`. |
+| `src/components/mcp/ProposalChoice.tsx` | Exports `ProposalChoice`. |
+| `src/components/portal/LoreCard.tsx` | Exports `LoreCard`. |
+| `src/components/portal/PublicStory.tsx` | Exports `Story`. |
+| `src/components/portal/StoryCard.tsx` | Exports `StoryCard`. |
+| `src/components/portal/World.tsx` | Exports `World`. |
+| `src/components/progression/EraConflict.tsx` | Exports `EraConflict`. |
+| `src/components/progression/EraFieldRow.tsx` | Exports `EraFieldRow`. |
+| `src/components/progression/EraItems.tsx` | Exports `EraItems`. |
+| `src/components/progression/EraList.tsx` | Exports `EraList`. |
+| `src/components/progression/EraLooks.tsx` | Exports `EraLooks`. |
+| `src/components/progression/EraNameFields.tsx` | Exports `EraNameFields`. |
+| `src/components/progression/EraNav.tsx` | Exports `EraNav`. |
+| `src/components/progression/EraPanel.tsx` | Exports `EraPanel`. |
+| `src/components/progression/EraPanelHead.tsx` | Exports `EraPanelHead`. |
+| `src/components/progression/EraPoint.tsx` | Exports `EraPoint`. |
+| `src/components/progression/EraSteps.tsx` | Exports `EraSteps`. |
+| `src/components/progression/EraStories.tsx` | Exports `EraStories`. |
+| `src/components/progression/ItemConflict.tsx` | Exports `ItemConflict`. |
+| `src/components/progression/ItemList.tsx` | Exports `ItemList`. |
+| `src/components/progression/ItemNameFields.tsx` | Exports `ItemNameFields`. |
+| `src/components/progression/ItemRow.tsx` | Exports `ItemRow`. |
+| `src/components/progression/ItemUnlockField.tsx` | Exports `ItemUnlockField`. |
+| `src/components/progression/Overview.tsx` | Exports `Overview`. |
+| `src/components/progression/ProgressionHead.tsx` | Exports `ProgressionHead`. |
+| `src/components/progression/ProgressionHistory.tsx` | Exports `ProgressionHistory`. |
+| `src/components/progression/ProgressionItems.tsx` | Exports `ProgressionItems`. |
+| `src/components/projectEntities/EntryPictures.tsx` | Exports `EntryPictures`. |
+| `src/components/projectEntities/EpisodeForm.tsx` | Exports `EpisodeForm`. |
+| `src/components/projectEntities/NodeEditor.tsx` | Exports `NodeEditor`. |
+| `src/components/projectEntities/OutlineAddButtons.tsx` | Exports `OutlineAddButtons`. |
+| `src/components/projectEntities/OutlineBranch.tsx` | Exports `OutlineBranch`. |
+| `src/components/projectEntities/PagePanels.tsx` | Exports `PagePanels`. |
+| `src/components/projectEntities/PageRow.tsx` | Exports `PageRow`. |
+| `src/components/projectEntities/PanelForm.tsx` | Exports `PanelForm`. |
+| `src/components/projectEntities/PanelLore.tsx` | Exports `PanelLore`. |
+| `src/components/projectEntities/ProjectEntriesFilters.tsx` | Exports `ProjectEntriesFilters`. |
+| `src/components/projectEntities/ProjectEntriesHead.tsx` | Exports `ProjectEntriesHead`. |
+| `src/components/projectEntities/ProjectEntryList.tsx` | Exports `ProjectEntryList`. |
+| `src/components/projectEntities/SchemaHead.tsx` | Exports `SchemaHead`. |
+| `src/components/projectEntities/SchemaTypeFields.tsx` | Exports `SchemaTypeFields`. |
+| `src/components/projectEntities/SchemaTypeItem.tsx` | Exports `SchemaTypeItem`. |
+| `src/components/projectEntities/ScriptEditor.tsx` | Exports `ScriptEditor`. |
+| `src/components/projectEntities/ScriptPart.tsx` | Exports `ScriptPart`. |
+| `src/components/projectEntities/ScriptPartBar.tsx` | Exports `ScriptPartBar`. |
+| `src/components/projectEntities/ScriptPartFields.tsx` | Exports `ScriptPartFields`. |
+| `src/components/projectEntities/ScriptPartHead.tsx` | Exports `ScriptPartHead`. |
+| `src/components/projectEntities/ScriptPartNotices.tsx` | Exports `ScriptPartNotices`. |
+| `src/components/projectEntities/SeasonEpisodes.tsx` | Exports `SeasonEpisodes`. |
+| `src/components/projectEntities/SeasonItem.tsx` | Exports `SeasonItem`. |
+| `src/components/projects/ComicCollectionItem.tsx` | Exports `ComicCollectionItem`. |
+| `src/components/projects/NewProject.tsx` | Exports `NewProject`. |
+| `src/components/projects/Production.tsx` | Exports `Production`. |
+| `src/components/projects/ProjectBody.tsx` | Exports `ProjectBody`. |
+| `src/components/projects/SagaSection.tsx` | Exports `SagaSection`. |
+| `src/components/projects/SagasUnassigned.tsx` | Exports `SagasUnassigned`. |
+| `src/components/projects/ShelfCards.tsx` | Exports `ShelfCards`. |
+| `src/components/projects/ShelfViewNav.tsx` | Exports `ShelfViewNav`. |
+| `src/components/publishing/PublicAttributionField.tsx` | Exports `PublicAttributionField`. |
+| `src/components/publishing/PublishAuthor.tsx` | Exports `PublishAuthor`. |
+| `src/components/publishing/PublishConfirm.tsx` | Exports `PublishConfirm`. |
+| `src/components/publishing/PublishContent.tsx` | Exports `PublishContent`. |
+| `src/components/publishing/PublishEverything.tsx` | Exports `PublishEverything`. |
+| `src/components/publishing/PublishEverythingConfirm.tsx` | Exports `PublishEverythingConfirm`. |
+| `src/components/publishing/PublishHeaderActions.tsx` | Exports `PublishHeaderActions`. |
+| `src/components/publishing/PublishStatus.tsx` | Exports `PublishStatus`. |
+| `src/components/publishing/SelectedLoreReview.tsx` | Exports `SelectedLoreReview`. |
+| `src/components/publishing/UnpublishConfirm.tsx` | Exports `UnpublishConfirm`. |
+| `src/components/relationships/FamilyLinkKindField.tsx` | Exports `FamilyLinkKindField`. |
+| `src/components/relationships/FamilyLinkPreview.tsx` | Exports `FamilyLinkPreview`. |
+| `src/components/relationships/FamilyLinkSide.tsx` | Exports `FamilyLinkSide`. |
+| `src/components/relationships/FamilyLinkStatus.tsx` | Exports `FamilyLinkStatus`. |
+| `src/components/relationships/KindForm.tsx` | Exports `KindForm`. |
+| `src/components/relationships/KindFormCanon.tsx` | Exports `KindFormCanon`. |
+| `src/components/relationships/KindFormFamily.tsx` | Exports `KindFormFamily`. |
+| `src/components/relationships/KindRow.tsx` | Exports `KindRow`. |
+| `src/components/relationships/RelationForm.tsx` | Exports `RelationForm`. |
+| `src/components/relationships/RelationFormFields.tsx` | Exports `RelationFormFields`. |
+| `src/components/relationships/RelationFormPeriods.tsx` | Exports `RelationFormPeriods`. |
+| `src/components/relationships/RelationRow.tsx` | Exports `RelationRow`. |
+| `src/components/relationships/RelationsHead.tsx` | Exports `RelationsHead`. |
+| `src/components/relationships/RelationsList.tsx` | Exports `RelationsList`. |
+| `src/components/relationships/RelationsNotice.tsx` | Exports `RelationsNotice`. |
+| `src/components/relationships/RelationsWhen.tsx` | Exports `RelationsWhen`. |
+| `src/components/ruleValidation/NewTermForm.tsx` | Exports `NewTermForm`. |
+| `src/components/ruleValidation/TermGroup.tsx` | Exports `TermGroup`. |
+| `src/components/search/UniverseSearchList.tsx` | Exports `UniverseSearchList`. |
+| `src/components/stories/ManuscriptBody.tsx` | Exports `ManuscriptBody`. |
+| `src/components/stories/ManuscriptHead.tsx` | Exports `ManuscriptHead`. |
+| `src/components/stories/ManuscriptNotices.tsx` | Exports `ManuscriptNotices`. |
+| `src/components/stories/ManuscriptRevision.tsx` | Exports `ManuscriptRevision`. |
+| `src/components/stories/ManuscriptSaveBar.tsx` | Exports `ManuscriptSaveBar`. |
+| `src/components/stories/ManuscriptTools.tsx` | Exports `ManuscriptToolsProps`, `ManuscriptTools`. |
+| `src/components/stories/SceneFormFields.tsx` | Exports `SceneFormFields`. |
+| `src/components/stories/StoryBar.tsx` | Exports `StoryBar`. |
+| `src/components/stories/StoryChapterSections.tsx` | Exports `StoryChapterSectionsProps`, `StoryChapterSections`. |
+| `src/components/stories/StoryForms.tsx` | Exports `StoryForms`. |
+| `src/components/stories/StoryHeader.tsx` | Exports `StoryHeader`. |
+| `src/components/stories/StoryManuscript.tsx` | Exports `StoryManuscript`. |
+| `src/components/stories/StorySceneCards.tsx` | Exports `StorySceneCardsProps`, `StorySceneCards`. |
+| `src/components/stories/StoryScenes.tsx` | Exports `StoryScenes`. |
+| `src/components/stories/StoryShelf.tsx` | Exports `StoryShelf`. |
+| `src/components/stories/StoryUnavailable.tsx` | Exports `StoryUnavailable`. |
+| `src/components/stories/WritingProjectShelf.tsx` | Exports `WritingProjectShelf`. |
+| `src/components/suggestions/SuggestionItem.tsx` | Exports `SuggestionItem`. |
+| `src/components/timeline/FactBody.tsx` | Exports `FactBody`. |
+| `src/components/timeline/MomentBasics.tsx` | Exports `MomentBasics`. |
+| `src/components/timeline/MomentBody.tsx` | Exports `MomentBody`. |
+| `src/components/timeline/MomentDating.tsx` | Exports `MomentDating`. |
+| `src/components/timeline/MomentDetails.tsx` | Exports `MomentDetails`. |
+| `src/components/timeline/MomentMenu.tsx` | Exports `MomentMenu`. |
+| `src/components/timeline/SceneBody.tsx` | Exports `SceneBody`. |
+| `src/components/timeline/StoryLinks.tsx` | Exports `StoryLinks`. |
+| `src/components/timeline/TimelineControls.tsx` | Exports `TimelineControls`. |
+| `src/components/timeline/TimelineEmpty.tsx` | Exports `TimelineEmpty`. |
+| `src/components/timeline/TimelineHeader.tsx` | Exports `TimelineHeader`. |
+| `src/components/timeline/TimelineNotices.tsx` | Exports `TimelineNotices`. |
+| `src/components/timeline/TimelineRow.tsx` | Exports `TimelineRow`. |
+| `src/components/timeline/TimelineStream.tsx` | Exports `TimelineStream`. |
+| `src/components/trash/BulkEraseConfirm.tsx` | Exports `BulkEraseConfirm`. |
+| `src/components/trash/EraseConfirm.tsx` | Exports `EraseConfirm`. |
+| `src/components/trash/KindTile.tsx` | Exports `KindTile`. |
+| `src/components/trash/RestorePublicConfirm.tsx` | Exports `RestorePublicConfirm`. |
+| `src/components/trash/TrashHeader.tsx` | Exports `TrashHeader`. |
+| `src/components/trash/TrashNotices.tsx` | Exports `TrashNotices`. |
+| `src/components/trash/TrashRow.tsx` | Exports `TrashRow`. |
+| `src/components/trash/TrashSelectBar.tsx` | Exports `TrashSelectBar`. |
+| `src/components/typeTemplates/TemplateFields.tsx` | Exports `TemplateFields`. |
+| `src/components/typeTemplates/TemplateRow.tsx` | Exports `TemplateRow`. |
+| `src/components/universes/CollaboratorInvitations.tsx` | Exports `CollaboratorInvitations`. |
+| `src/components/universes/CollaboratorMembers.tsx` | Exports `CollaboratorMembers`. |
+| `src/components/universes/CopyLink.tsx` | Exports `CopyLink`. |
+| `src/components/universes/InvitationRow.tsx` | Exports `InvitationRow`. |
+| `src/components/universes/InviteForm.tsx` | Exports `InviteForm`. |
+| `src/components/universes/MemberRow.tsx` | Exports `MemberRow`. |
+| `src/components/universes/RoleSelect.tsx` | Exports `RoleSelect`. |
+| `src/components/universes/SettingsArchive.tsx` | Exports `SettingsArchive`. |
+| `src/components/universes/SettingsData.tsx` | Exports `SettingsData`. |
+| `src/components/universes/SettingsDelete.tsx` | Exports `SettingsDelete`. |
+| `src/components/universes/WorkspaceLoadError.tsx` | Exports `WorkspaceLoadError`. |
+| `src/components/universes/WorkspaceMissing.tsx` | Exports `WorkspaceMissing`. |
+| `src/components/universes/WorkspaceRail.tsx` | Exports `WorkspaceRail`. |
+| `src/components/universes/WorkspaceSidebar.tsx` | Exports `WorkspaceSidebar`. |
+| `src/components/worldLogic/BindingDrawer.tsx` | Exports `BindingDrawer`. |
+| `src/components/worldLogic/Block.tsx` | Exports `Block`, `Group`. |
+| `src/components/worldLogic/Compare.tsx` | Exports `Compare`. |
+| `src/components/worldLogic/FindingDetail.tsx` | Exports `FindingDetail`. |
+| `src/components/worldLogic/FindingRow.tsx` | Exports `FindingRow`. |
+| `src/components/worldLogic/GuardBuilderDrawer.tsx` | Exports `GuardBuilderDrawer`. |
+| `src/components/worldLogic/MachineBinding.tsx` | Exports `MachineBinding`. |
+| `src/components/worldLogic/MachineDrawers.tsx` | Exports `MachineDrawers`. |
+| `src/components/worldLogic/MachineLineLabel.tsx` | Exports `MachineLineLabel`. |
+| `src/components/worldLogic/MachineLines.tsx` | Exports `MachineLines`. |
+| `src/components/worldLogic/MachineNotices.tsx` | Exports `MachineNotices`. |
+| `src/components/worldLogic/MachinePanelBody.tsx` | Exports `MachinePanelBody`. |
+| `src/components/worldLogic/MachineSaveBar.tsx` | Exports `MachineSaveBar`. |
+| `src/components/worldLogic/MachineStateCard.tsx` | Exports `MachineStateCard`. |
+| `src/components/worldLogic/MachineStates.tsx` | Exports `MachineStates`. |
+| `src/components/worldLogic/MachineTransitions.tsx` | Exports `MachineTransitions`. |
+| `src/components/worldLogic/NumberInput.tsx` | Exports `NumberInput`. |
+| `src/components/worldLogic/Operand.tsx` | Exports `Operand`. |
+| `src/components/worldLogic/Query.tsx` | Exports `Query`. |
+| `src/components/worldLogic/Related.tsx` | Exports `Related`. |
+| `src/components/worldLogic/StateDrawer.tsx` | Exports `StateDrawer`. |
+| `src/components/worldLogic/SystemDetails.tsx` | Exports `SystemDetails`. |
+| `src/components/worldLogic/SystemRow.tsx` | Exports `SystemRow`. |
+| `src/components/worldLogic/TransitionDrawer.tsx` | Exports `TransitionDrawer`. |
+| `src/components/worldLogic/TypedValue.tsx` | Exports `TypedValue`. |
+| `src/components/worldLogic/WorldLogicHeader.tsx` | Exports `WorldLogicHeader`. |
+| `src/components/worldLogic/WorldLogicIntegrity.tsx` | Exports `WorldLogicIntegrity`. |
+| `src/components/worldLogic/WorldLogicRules.tsx` | Exports `WorldLogicRules`. |
+| `src/components/worldLogic/WorldLogicSystems.tsx` | Exports `WorldLogicSystems`. |
+| `src/components/worldRules/WorldRuleForm.tsx` | Exports `WorldRuleForm`. |
+| `src/components/worldRules/WorldRuleHead.tsx` | Exports `WorldRuleHead`. |
+| `src/familyTree/drawEdges.ts` | Exports `Edge`, `CONNECTION`, `drawEdges`. |
+| `src/familyTree/useDiscoveryReads.ts` | Exports `useDiscoveryReads`. |
+| `src/familyTree/useDiscoverySearch.ts` | Exports `useDiscoverySearch`. |
+| `src/familyTree/useDiscoveryState.ts` | Exports `useDiscoveryState`. |
+| `src/familyTree/useFamilyTreeLines.ts` | Exports `useFamilyTreeLines`. |
+| `src/familyTree/useFamilyTreeReads.ts` | Exports `useFamilyTreeReads`. |
+| `src/familyTree/useFamilyTreeState.ts` | Exports `Setup`, `FamilyView`, `useFamilyTreeState`. |
+| `src/familyTree/useFamilyTreeViewState.ts` | Exports `ROWS`, `useFamilyTreeViewState`. |
+| `src/i18n/en/admin/main.ts` | Locale strings: `en/admin/main`. |
+| `src/i18n/en/admin/restore.ts` | Locale strings: `en/admin/restore`. |
+| `src/i18n/en/admin/user.ts` | Locale strings: `en/admin/user`. |
+| `src/i18n/en/canon/editor.ts` | Locale strings: `en/canon/editor`. |
+| `src/i18n/en/canon/worldLogic.ts` | Locale strings: `en/canon/worldLogic`. |
+| `src/i18n/en/canon/worldLogicGuardBuilder.ts` | Locale strings: `en/canon/worldLogicGuardBuilder`. |
+| `src/i18n/en/canon/worldLogicMachine.ts` | Locale strings: `en/canon/worldLogicMachine`. |
+| `src/i18n/en/canon/worldLogicSystems.ts` | Locale strings: `en/canon/worldLogicSystems`. |
+| `src/i18n/en/entity/article.ts` | Locale strings: `en/entity/article`. |
+| `src/i18n/en/entity/history.ts` | Locale strings: `en/entity/history`. |
+| `src/i18n/en/entity/page.ts` | Locale strings: `en/entity/page`. |
+| `src/i18n/en/entityTypes/fields.ts` | Locale strings: `en/entityTypes/fields`. |
+| `src/i18n/en/entityTypes/page.ts` | Locale strings: `en/entityTypes/page`. |
+| `src/i18n/en/ideas/board.ts` | Locale strings: `en/ideas/board`. |
+| `src/i18n/en/ideas/editor.ts` | Locale strings: `en/ideas/editor`. |
+| `src/i18n/en/lore/massCreate.ts` | Locale strings: `en/lore/massCreate`. |
+| `src/i18n/en/lore/page.ts` | Locale strings: `en/lore/page`. |
+| `src/i18n/en/lore/search.ts` | Locale strings: `en/lore/search`. |
+| `src/i18n/en/places/calibration.ts` | Locale strings: `en/places/calibration`. |
+| `src/i18n/en/places/discovery.ts` | Locale strings: `en/places/discovery`. |
+| `src/i18n/en/places/familyPage.ts` | Locale strings: `en/places/familyPage`. |
+| `src/i18n/en/places/mapForm.ts` | Locale strings: `en/places/mapForm`. |
+| `src/i18n/en/places/mapPage.ts` | Locale strings: `en/places/mapPage`. |
+| `src/i18n/en/places/positions.ts` | Locale strings: `en/places/positions`. |
+| `src/i18n/en/projects/comics.ts` | Locale strings: `en/projects/comics`. |
+| `src/i18n/en/projects/entries.ts` | Locale strings: `en/projects/entries`. |
+| `src/i18n/en/projects/pages.ts` | Locale strings: `en/projects/pages`. |
+| `src/i18n/en/projects/sagas.ts` | Locale strings: `en/projects/sagas`. |
+| `src/i18n/en/projects/schema.ts` | Locale strings: `en/projects/schema`. |
+| `src/i18n/en/projects/script.ts` | Locale strings: `en/projects/script`. |
+| `src/i18n/en/projects/seasons.ts` | Locale strings: `en/projects/seasons`. |
+| `src/i18n/en/projects/structure.ts` | Locale strings: `en/projects/structure`. |
+| `src/i18n/en/stories/page.ts` | Locale strings: `en/stories/page`. |
+| `src/i18n/en/stories/publication.ts` | Locale strings: `en/stories/publication`. |
+| `src/i18n/en/stories/sceneForm.ts` | Locale strings: `en/stories/sceneForm`. |
+| `src/i18n/en/stories/storyForm.ts` | Locale strings: `en/stories/storyForm`. |
+| `src/i18n/en/time/momentForm.ts` | Locale strings: `en/time/momentForm`. |
+| `src/i18n/en/time/periods.ts` | Locale strings: `en/time/periods`. |
+| `src/i18n/en/time/timeline.ts` | Locale strings: `en/time/timeline`. |
+| `src/i18n/en/universe/connect.ts` | Locale strings: `en/universe/connect`. |
+| `src/i18n/en/universe/publish.ts` | Locale strings: `en/universe/publish`. |
+| `src/i18n/en/universe/settings.ts` | Locale strings: `en/universe/settings`. |
+| `src/i18n/pt-PT/admin/main.ts` | Locale strings: `pt-PT/admin/main`. |
+| `src/i18n/pt-PT/admin/restore.ts` | Locale strings: `pt-PT/admin/restore`. |
+| `src/i18n/pt-PT/admin/user.ts` | Locale strings: `pt-PT/admin/user`. |
+| `src/i18n/pt-PT/canon/editor.ts` | Locale strings: `pt-PT/canon/editor`. |
+| `src/i18n/pt-PT/canon/worldLogic.ts` | Locale strings: `pt-PT/canon/worldLogic`. |
+| `src/i18n/pt-PT/canon/worldLogicGuardBuilder.ts` | Locale strings: `pt-PT/canon/worldLogicGuardBuilder`. |
+| `src/i18n/pt-PT/canon/worldLogicMachine.ts` | Locale strings: `pt-PT/canon/worldLogicMachine`. |
+| `src/i18n/pt-PT/canon/worldLogicSystems.ts` | Locale strings: `pt-PT/canon/worldLogicSystems`. |
+| `src/i18n/pt-PT/entity/article.ts` | Locale strings: `pt-PT/entity/article`. |
+| `src/i18n/pt-PT/entity/history.ts` | Locale strings: `pt-PT/entity/history`. |
+| `src/i18n/pt-PT/entity/page.ts` | Locale strings: `pt-PT/entity/page`. |
+| `src/i18n/pt-PT/entityTypes/fields.ts` | Locale strings: `pt-PT/entityTypes/fields`. |
+| `src/i18n/pt-PT/entityTypes/page.ts` | Locale strings: `pt-PT/entityTypes/page`. |
+| `src/i18n/pt-PT/ideas/board.ts` | Locale strings: `pt-PT/ideas/board`. |
+| `src/i18n/pt-PT/ideas/editor.ts` | Locale strings: `pt-PT/ideas/editor`. |
+| `src/i18n/pt-PT/lore/massCreate.ts` | Locale strings: `pt-PT/lore/massCreate`. |
+| `src/i18n/pt-PT/lore/page.ts` | Locale strings: `pt-PT/lore/page`. |
+| `src/i18n/pt-PT/lore/search.ts` | Locale strings: `pt-PT/lore/search`. |
+| `src/i18n/pt-PT/places/calibration.ts` | Locale strings: `pt-PT/places/calibration`. |
+| `src/i18n/pt-PT/places/discovery.ts` | Locale strings: `pt-PT/places/discovery`. |
+| `src/i18n/pt-PT/places/familyPage.ts` | Locale strings: `pt-PT/places/familyPage`. |
+| `src/i18n/pt-PT/places/mapForm.ts` | Locale strings: `pt-PT/places/mapForm`. |
+| `src/i18n/pt-PT/places/mapPage.ts` | Locale strings: `pt-PT/places/mapPage`. |
+| `src/i18n/pt-PT/places/positions.ts` | Locale strings: `pt-PT/places/positions`. |
+| `src/i18n/pt-PT/projects/comics.ts` | Locale strings: `pt-PT/projects/comics`. |
+| `src/i18n/pt-PT/projects/entries.ts` | Locale strings: `pt-PT/projects/entries`. |
+| `src/i18n/pt-PT/projects/pages.ts` | Locale strings: `pt-PT/projects/pages`. |
+| `src/i18n/pt-PT/projects/sagas.ts` | Locale strings: `pt-PT/projects/sagas`. |
+| `src/i18n/pt-PT/projects/schema.ts` | Locale strings: `pt-PT/projects/schema`. |
+| `src/i18n/pt-PT/projects/script.ts` | Locale strings: `pt-PT/projects/script`. |
+| `src/i18n/pt-PT/projects/seasons.ts` | Locale strings: `pt-PT/projects/seasons`. |
+| `src/i18n/pt-PT/projects/structure.ts` | Locale strings: `pt-PT/projects/structure`. |
+| `src/i18n/pt-PT/stories/page.ts` | Locale strings: `pt-PT/stories/page`. |
+| `src/i18n/pt-PT/stories/publication.ts` | Locale strings: `pt-PT/stories/publication`. |
+| `src/i18n/pt-PT/stories/sceneForm.ts` | Locale strings: `pt-PT/stories/sceneForm`. |
+| `src/i18n/pt-PT/stories/storyForm.ts` | Locale strings: `pt-PT/stories/storyForm`. |
+| `src/i18n/pt-PT/time/momentForm.ts` | Locale strings: `pt-PT/time/momentForm`. |
+| `src/i18n/pt-PT/time/periods.ts` | Locale strings: `pt-PT/time/periods`. |
+| `src/i18n/pt-PT/time/timeline.ts` | Locale strings: `pt-PT/time/timeline`. |
+| `src/i18n/pt-PT/universe/connect.ts` | Locale strings: `pt-PT/universe/connect`. |
+| `src/i18n/pt-PT/universe/publish.ts` | Locale strings: `pt-PT/universe/publish`. |
+| `src/i18n/pt-PT/universe/settings.ts` | Locale strings: `pt-PT/universe/settings`. |
+| `src/ideas/boardCanvasKeys.ts` | Exports `cardKeyDown`, `stageKeyDown`. |
+| `src/ideas/boardCardActions.ts` | Exports `boardCardActions`. |
+| `src/ideas/boardDraft.ts` | Exports `LoadState`, `Fields`, `Stored`, `inputOf` and more. |
+| `src/ideas/boardDraftActions.tsx` | Exports `boardDraftActions`. |
+| `src/ideas/boardPlacement.ts` | Exports `NOTE_SIZE`, `LINKED_SIZE`, `freeSpot`. |
+| `src/ideas/boardSelection.ts` | What is chosen on a board: one card, one line, or nothing. |
+| `src/ideas/ideaActions.tsx` | Exports `ideaActions`. |
+| `src/ideas/ideaDraft.ts` | Exports `LoadState`, `Fields`, `Stored`, `referenceKey` and more. |
+| `src/ideas/useBoardRead.ts` | Exports `useBoardRead`. |
+| `src/ideas/useBoardSave.ts` | Exports `useBoardSave`. |
+| `src/ideas/useBoardState.ts` | Exports `useBoardState`. |
+| `src/ideas/useBoardsActions.tsx` | Exports `useBoardsActions`. |
+| `src/ideas/useBoardsFilters.ts` | Exports `useBoardsFilters`. |
+| `src/ideas/useBoardsRead.ts` | Exports `UNASSIGNED`, `useBoardsRead`. |
+| `src/ideas/useBoardsState.ts` | Exports `useBoardsState`. |
+| `src/ideas/useIdeaDraft.ts` | Exports `useIdeaDraft`. |
+| `src/ideas/useIdeaRead.ts` | Exports `useIdeaRead`. |
+| `src/ideas/useIdeaSave.ts` | Exports `useIdeaSave`. |
+| `src/ideas/useIdeaState.ts` | Exports `useIdeaState`. |
+| `src/ideas/useIdeasActions.tsx` | Exports `useIdeasActions`. |
+| `src/ideas/useIdeasFilters.ts` | Exports `useIdeasFilters`. |
+| `src/ideas/useIdeasRead.ts` | Exports `UNASSIGNED`, `useIdeasRead`. |
+| `src/ideas/useIdeasState.ts` | Exports `useIdeasState`. |
+| `src/knowledge/recordDraft.ts` | Exports `Side`, `Draft`, `draftOf`, `draftKey`. |
+| `src/knowledge/recordFormSave.ts` | Exports `recordFormSave`. |
+| `src/knowledge/useRecordFormState.ts` | Exports `useRecordFormState`. |
+| `src/knowledge/useRecordStories.ts` | Exports `useRecordStories`. |
+| `src/lib/settleRead.ts` | Hands a read's outcome to `onValue` or `onError`, unless `signal` was aborted first: a read that ignores the signal (a composed one that swallows its errors)... |
+| `src/lore/entryChanges.ts` | Exports `heldReference`, `factText`, `entryChanges`, `emptyFact`. |
+| `src/lore/entryDraft.ts` | Exports `Draft`, `EntryFields`, `draftFromDetail`, `CopySource` and more. |
+| `src/lore/fieldDialogActions.ts` | Exports `fieldDialogActions`. |
+| `src/lore/fieldDraft.ts` | Exports `KIND_ORDER`, `TargetChoice`, `targetChoice`, `parseTarget` and more. |
+| `src/lore/fieldImageActions.ts` | Exports `fieldImageActions`. |
+| `src/lore/fieldImageFraming.ts` | Exports `Framing`, `pictureRatio`. |
+| `src/lore/fieldInUse.ts` | Exports `entries`, `fieldInUseDetail`. |
+| `src/lore/fieldKinds.ts` | Exports `FieldKind`, `FieldKindValue`, `FIELD_KIND_LABELS`, `FieldImageShape` and more. |
+| `src/lore/fieldsApi.ts` | Exports `FieldInput`, `addField`, `updateField`, `deleteField` and more. |
+| `src/lore/loreAddress.ts` | Exports `LoadState`, `readStatus`, `readSort`, `readPage` and more. |
+| `src/lore/typeActions.tsx` | Exports `typeActions`. |
+| `src/lore/typeDefinitions.ts` | Exports `FieldOption`, `FieldDefinition`, `FieldSection`, `EntityTypeGroup` and more. |
+| `src/lore/typeDeleteDetail.ts` | Exports `targetedDetail`, `inUseDetail`. |
+| `src/lore/typeDialogSave.ts` | Exports `typeDialogSave`. |
+| `src/lore/typeFieldActions.tsx` | Exports `typeFieldActions`. |
+| `src/lore/typeFieldLabels.ts` | Exports `typeFieldLabels`. |
+| `src/lore/typeReorder.ts` | Exports `typeReorder`. |
+| `src/lore/typeSiblings.ts` | Exports `typeSiblings`. |
+| `src/lore/typesApi.ts` | Exports `listEntityTypes`, `EntityTypeInput`, `listEntityTypeGroups`, `renameEntityTypeGroup` and more. |
+| `src/lore/useArticleEditing.ts` | Exports `useArticleEditing`. |
+| `src/lore/useEntityArticle.ts` | Exports `Stored`, `storedOf`, `comparable`, `useEntityArticle`. |
+| `src/lore/useEntityRevisions.ts` | Exports `useEntityRevisions`. |
+| `src/lore/useEntitySearch.ts` | Exports `useEntitySearch`. |
+| `src/lore/useEntryActions.ts` | Exports `useEntryActions`. |
+| `src/lore/useEntryForm.ts` | Exports `useEntryForm`. |
+| `src/lore/useEntryLoad.ts` | Exports `useEntryLoad`. |
+| `src/lore/useEntryPicture.ts` | Exports `useEntryPicture`. |
+| `src/lore/useEntrySave.ts` | Exports `useEntrySave`. |
+| `src/lore/useEntryState.ts` | Exports `useEntryState`. |
+| `src/lore/useFieldDialogState.ts` | Exports `useFieldDialogState`. |
+| `src/lore/useFieldImagePreview.ts` | Exports `useFieldImagePreview`. |
+| `src/lore/useLoreContextLinks.ts` | Exports `useLoreContextLinks`. |
+| `src/lore/useLoreEntries.ts` | Exports `useLoreEntries`. |
+| `src/lore/useLoreLinks.ts` | Exports `useLoreLinks`. |
+| `src/lore/useLoreSelection.tsx` | Exports `useLoreSelection`. |
+| `src/lore/useMassCreate.ts` | Exports `useMassCreate`. |
+| `src/lore/useMassRows.ts` | Exports `ServerProblem`, `useMassRows`. |
+| `src/lore/usePickerQuickCreate.ts` | Exports `usePickerQuickCreate`. |
+| `src/lore/useQuickCreate.ts` | Exports `useQuickCreate`. |
+| `src/lore/useTypesGames.ts` | Exports `useTypesGames`. |
+| `src/lore/useTypesState.ts` | Exports `useTypesState`. |
+| `src/maps/calibrationActions.ts` | Exports `calibrationActions`. |
+| `src/maps/calibrationFractions.ts` | Exports `percent`, `fraction`. |
+| `src/maps/mapDraft.ts` | Exports `MapDraft`, `MapFormProps`, `inputOf`. |
+| `src/maps/mapFormActions.ts` | Exports `mapFormActions`. |
+| `src/maps/mapPageActions.tsx` | Exports `mapPageActions`. |
+| `src/maps/mapViewerActions.ts` | Exports `PAN_STEP`, `mapViewerActions`. |
+| `src/maps/useCalibrationFormState.ts` | Exports `useCalibrationFormState`. |
+| `src/maps/useMapFormState.ts` | Exports `useMapFormState`. |
+| `src/maps/useMapPageReads.ts` | Exports `useMapPageReads`. |
+| `src/maps/useMapPageState.ts` | Exports `LoadState`, `PinForm`, `MapDialog`, `useMapPageState`. |
+| `src/mcp/useConnectionRequest.ts` | Exports `Load`, `useConnectionRequest`. |
+| `src/portal/storyParagraphs.tsx` | Exports `paragraphs`. |
+| `src/progression/eraDraft.ts` | Exports `Mode`, `FieldDraft`, `EraDraft`, `text` and more. |
+| `src/progression/eraFormActions.ts` | Exports `eraFormActions`. |
+| `src/progression/eraSearch.ts` | Exports `withEra`, `withoutEra`. |
+| `src/progression/itemDraft.ts` | Exports `Kind`, `Item`, `nameOf`, `listOf` and more. |
+| `src/progression/itemFormActions.ts` | Exports `itemFormActions`. |
+| `src/progression/progressionActions.ts` | Exports `progressionActions`. |
+| `src/progression/progressionItemActions.ts` | Exports `progressionItemActions`. |
+| `src/progression/unlockParts.ts` | Exports `unlockParts`. |
+| `src/progression/useEraFormState.ts` | Exports `useEraFormState`. |
+| `src/progression/useEraStoryChoices.ts` | Exports `useEraStoryChoices`. |
+| `src/progression/useItemFormState.ts` | Exports `useItemFormState`. |
+| `src/progression/useProgressionState.ts` | Exports `useProgressionState`. |
+| `src/projectEntities/scriptPartActions.ts` | Exports `scriptPartActions`. |
+| `src/projectEntities/scriptParts.tsx` | Exports `scriptParts`. |
+| `src/projectEntities/seasonWords.ts` | Exports `WORDS`, `ProjectStructureWords`. |
+| `src/projectEntities/useProjectEntriesRead.ts` | Exports `ENTRY_PAGE_SIZE`, `useProjectEntriesRead`. |
+| `src/projectEntities/useProjectEntriesState.ts` | Exports `useProjectEntriesState`. |
+| `src/projectEntities/useProjectOutline.ts` | Exports `useProjectOutline`. |
+| `src/projectEntities/useProjectSchema.ts` | Exports `useProjectSchema`. |
+| `src/projectEntities/useScriptPartLoad.ts` | Exports `useScriptPartLoad`. |
+| `src/projectEntities/useScriptPartState.ts` | Exports `NO_SCRIPT`, `useScriptPartState`. |
+| `src/projects/shelfActions.ts` | Exports `shelfActions`. |
+| `src/projects/shelfViews.ts` | Exports `VIEWS`. |
+| `src/projects/useShelfRead.ts` | Exports `useShelfRead`. |
+| `src/projects/useShelfState.ts` | Exports `useShelfState`. |
+| `src/publishing/contentPublicationChange.ts` | Exports `contentPublicationChange`. |
+| `src/publishing/contentPublicationWords.ts` | Exports `wordsOf`, `Shown`, `lacksSummary`, `shownOf`. |
+| `src/publishing/publicDetailsActions.ts` | Exports `publicDetailsActions`. |
+| `src/publishing/publicDetailsDraft.ts` | Exports `Attribution`, `attributionOf`, `detailsOf`. |
+| `src/publishing/publishActions.ts` | Exports `publishActions`. |
+| `src/publishing/usePublishReads.ts` | Exports `usePublishReads`. |
+| `src/publishing/usePublishState.ts` | Exports `Confirming`, `Published`, `usePublishState`. |
+| `src/relationships/familyLinkActions.ts` | Exports `familyLinkActions`. |
+| `src/relationships/relationActions.tsx` | Exports `relationActions`. |
+| `src/relationships/relationDraft.ts` | Exports `RelationDraft`, `draftKey`, `choiceKey`, `labelFor` and more. |
+| `src/relationships/typeDraft.ts` | Exports `TypeDraft`, `BLANK`, `ORDER_KEY`, `MIN_KEY` and more. |
+| `src/relationships/typeManagerActions.ts` | Exports `typeManagerActions`. |
+| `src/relationships/typeSummaries.tsx` | Exports `familySummary`, `reading`, `years`, `constraintSummary`. |
+| `src/relationships/useFamilyLinkState.ts` | Exports `useFamilyLinkState`. |
+| `src/relationships/useRelationsRead.ts` | Exports `useRelationsRead`. |
+| `src/relationships/useRelationsState.ts` | Exports `useRelationsState`. |
+| `src/relationships/useTypeManagerState.ts` | Exports `useTypeManagerState`. |
+| `src/routes/AppCrashed.tsx` | Exports `AppCrashed`. |
+| `src/routes/Root.tsx` | Exports `Root`. |
+| `src/routes/accountRoutes.tsx` | Exports `accountRoutes`. |
+| `src/routes/publicRoutes.tsx` | Exports `publicRoutes`. |
+| `src/routes/redirects.tsx` | Exports `ExploreRedirect`, `StoriesToWriting`. |
+| `src/routes/screenHolds.tsx` | Exports `asScreen`, `asSection`. |
+| `src/routes/universeIdeaRoutes.tsx` | Exports `universeIdeaRoutes`. |
+| `src/routes/universeLoreRoutes.tsx` | Exports `universeLoreRoutes`. |
+| `src/routes/universeProjectRoutes.tsx` | Exports `universeProjectRoutes`. |
+| `src/routes/universeToolRoutes.tsx` | Exports `universeToolRoutes`. |
+| `src/routes/universeWorldRoutes.tsx` | Exports `universeWorldRoutes`. |
+| `src/ruleValidation/termManagerActions.tsx` | Exports `termManagerActions`. |
+| `src/ruleValidation/termUsage.ts` | Exports `usage`. |
+| `src/ruleValidation/useTermManagerState.ts` | Exports `useTermManagerState`. |
+| `src/search/universeSearchActions.ts` | Exports `universeSearchActions`. |
+| `src/search/useUniverseSearchFetch.ts` | Exports `useUniverseSearchFetch`. |
+| `src/search/useUniverseSearchState.ts` | Exports `Settled`, `useUniverseSearchState`. |
+| `src/stories/manuscriptExtensions.ts` | Exports `extensions`, `asDoc`. |
+| `src/stories/storyChapterMoves.ts` | Exports `storyChapterMoves`. |
+| `src/stories/storyPatches.ts` | Exports `storyPatches`. |
+| `src/stories/storyRemovals.tsx` | Exports `storyRemovals`. |
+| `src/stories/storySceneMoves.ts` | Exports `storySceneMoves`. |
+| `src/stories/useManuscriptActions.ts` | Exports `useManuscriptActions`. |
+| `src/stories/useManuscriptLoad.ts` | Exports `useManuscriptLoad`. |
+| `src/stories/useManuscriptRecovery.ts` | Exports `useManuscriptRecovery`. |
+| `src/stories/useManuscriptSave.ts` | Exports `useManuscriptSave`. |
+| `src/stories/useManuscriptState.ts` | Exports `Stored`, `storedOf`, `useManuscriptState`. |
+| `src/stories/useMentionTyping.ts` | Exports `Mention`, `useMentionTyping`. |
+| `src/stories/useSceneSave.ts` | Exports `useSceneSave`. |
+| `src/stories/useStoryArrival.ts` | Exports `useStoryArrival`. |
+| `src/stories/useStoryLoad.ts` | Exports `useStoryLoad`. |
+| `src/stories/useStoryState.ts` | Exports `SceneFormState`, `ChapterFormState`, `ArcFormState`, `StoryViewName` and more. |
+| `src/styles/001-foundation.css` | LorEvolve visual foundation. |
+| `src/styles/002-foundation-2.css` | Mark and wordmark as one lockup in the paper bars - My workspace's and the sign-in plate's - so they move together. |
+| `src/styles/003-session-hold.css` | Session hold |
+| `src/styles/004-auth-canvas.css` | Web source file `004-auth-canvas.css`; see its imports. |
+| `src/styles/005-forms.css` | Forms One field: a label, an optional hint, a boxed control, an error under it. |
+| `src/styles/006-buttons.css` | Buttons One family, drawn by `components/Button.tsx` and `components/IconButton.tsx`; a `<label>` for a file input and `ActionMenu`'s trigger take `buttonCla... |
+| `src/styles/007-universe-home.css` | Universe home |
+| `src/styles/008-profile.css` | Web source file `008-profile.css`; see its imports. |
+| `src/styles/009-progress.css` | Web source file `009-progress.css`; see its imports. |
+| `src/styles/010-avatar.css` | The avatar, and what can be done to it |
+| `src/styles/011-account-menu.css` | The account menu |
+| `src/styles/012-action-menu.css` | Action menu `ActionMenu`: a trigger (an ellipsis `.iconbutton` unless a screen passes its own) and a raised panel of ordinary links and buttons. |
+| `src/styles/013-page-header.css` | Page header `PageHeader`: crumb, the screen's h1, a lede, the actions at the far end, then local navigation or a toolbar. |
+| `src/styles/014-status-badge.css` | Status badge `StatusBadge`: a drawn glyph and the word, in the metadata voice. |
+| `src/styles/015-create-composer.css` | Create composer |
+| `src/styles/016-restore-backup.css` | Restore a backup |
+| `src/styles/017-universe-colour.css` | A universe's colour (014) The author's own colour: the platform's picker beside the value it holds, in hex, and a way back to none. |
+| `src/styles/018-controls.css` | Web source file `018-controls.css`; see its imports. |
+| `src/styles/019-universe-plates.css` | Universe plates |
+| `src/styles/020-collaborators.css` | Collaborators (Settings, 030) |
+| `src/styles/021-states.css` | Web source file `021-states.css`; see its imports. |
+| `src/styles/022-shared-surfaces.css` | Shared surfaces Patterns, not components: a class a screen puts on its own markup. |
+| `src/styles/023-atmosphere.css` | Atmosphere A world's artwork as its environment, not its decoration: the universe's own card, laid behind the head of the screen and fading into the working... |
+| `src/styles/024-universe-workspace.css` | Universe workspace |
+| `src/styles/025-universe-search-bar.css` | The universe's search bar A band at the head of the column, in the canvas's own side padding, so the box lines up with the screen beneath it. |
+| `src/styles/026-overview.css` | Overview A universe's contents page: its name at the document step, its opening line, then a doorway into each part, grouped as the sidebar groups them. |
+| `src/styles/027-settings.css` | Web source file `027-settings.css`; see its imports. |
+| `src/styles/028-workspace-page-shell.css` | One workspace page shell (014, refined) Every workspace page - worldbuilding or configuration - starts at the same edge with the same PageHeader: there is on... |
+| `src/styles/029-chronology-date-periods.css` | Chronology: date periods One card per date period (stored as an era), in the order the periods run, its place in that order as a quiet numeral in the gutter. |
+| `src/styles/030-calendar.css` | Calendar Below the date periods, under its own heading and rule: the mode as a two-way segmented choice, then - only for a custom calendar - the months. |
+| `src/styles/031-lore-browser.css` | Lore browser Where the author is comes first and stays small: the type as the page title, the types beside each other as local navigation, one filter field a... |
+| `src/styles/032-lore-browser-2.css` | One line on a wide screen: the field's name, how, the value, Apply. |
+| `src/styles/033-mass-create.css` | Mass create A workbench, not a wizard: the defaults on one line, a paste target, the rows to review, one Create in the sticky bar. |
+| `src/styles/034-lore-types-navigation.css` | Lore types: the local navigation The hierarchy's own shape (Product refinement 028): the top-level categories on one row, and under a category that holds oth... |
+| `src/styles/035-lore-cards.css` | Lore cards What the entry looks like, its name, its kind and how settled it is, then two lines of summary. |
+| `src/styles/036-entity-tile.css` | Entity tile An entry's square. |
+| `src/styles/037-lore-front-page.css` | Lore's front page: the categories (Issue #60) With nothing chosen, Lore is a directory of the universe's own types: a card each, in the hierarchy's order, an... |
+| `src/styles/038-lore-front-page-2.css` | One type: its icon on a tinted well, its name in the display face, where it sits, what it is and how many entries its list holds. |
+| `src/styles/039-lore-phone.css` | Lore on a phone |
+| `src/styles/040-entry-lore-article.css` | Entry: the lore article A page in the author's reference book. |
+| `src/styles/041-entry-page.css` | The entry's page: article, picture, facts Desktop: the article at its reading measure on the left; on the right, the picture and then the facts, as an infobox. |
+| `src/styles/042-entry-form.css` | The entry's form One column at a form's measure, in the order an author thinks of an entry: the name and summary in the header as they will be read, then the... |
+| `src/styles/043-picture-whole.css` | The picture, whole `ImageViewer`: the original on a dark neutral ground in either scheme, so light and dark artwork both keep their edges, fitted inside the... |
+| `src/styles/044-thumbnail-cropper.css` | Thumbnail cropper |
+| `src/styles/045-tiptap.css` | Web source file `045-tiptap.css`; see its imports. |
+| `src/styles/046-article.css` | The article: reading, writing, its history |
+| `src/styles/047-recovered-drafts.css` | Recovered drafts A recovery copy is offered, never applied: a rule beside it in the accent, like a note in a margin, rather than a warning. |
+| `src/styles/048-tokens.css` | Web source file `048-tokens.css`; see its imports. |
+| `src/styles/049-types.css` | Web source file `049-types.css`; see its imports. |
+| `src/styles/050-types-2.css` | The type's picture in a medallion, gold-ringed like a doorway's; a nested type's a step smaller. |
+| `src/styles/051-type-icon-picker.css` | Type icon picker Every choice shows its picture and says what it is, in a grid that wraps to the width it has - never a row of unexplained circles. |
+| `src/styles/052-type-icon-picker-2.css` | The sections drawer: each section a row of its name, its fold and its moves, then every field with its section. |
+| `src/styles/053-relations.css` | Relations A relation is a sentence about the entry you are reading. |
+| `src/styles/054-relation-form.css` | Relation form |
+| `src/styles/055-entry-history.css` | Entry history |
+| `src/styles/056-history-narrow.css` | History on a narrow screen Three columns leave the middle one about 11rem wide on a phone, and the middle one is the row: what happened, who it was, which ve... |
+| `src/styles/057-entity-picker.css` | Entity picker |
+| `src/styles/058-relation-kinds.css` | Relation kinds |
+| `src/styles/059-narrow-screens.css` | Narrow screens |
+| `src/styles/060-narrow-screens.css` | Narrow screens |
+| `src/styles/061-workspace-narrow.css` | The workspace on a narrow screen The desktop shell is a permanent 19rem of chrome down the left edge. |
+| `src/styles/062-chronology.css` | Chronology A timeline is read down a spine, not across a table. |
+| `src/styles/063-unified-timeline.css` | The unified timeline (038) One spine for everything dated in the world. |
+| `src/styles/064-moment-stories.css` | A moment's stories |
+| `src/styles/065-confirmation.css` | Confirmation (Issue #50) |
+| `src/styles/066-moment-drawer.css` | Moment drawer |
+| `src/styles/067-stories.css` | Stories A story is narrative, not lore, so it borrows the timeline's typography without its spine: a ruled list, read top to bottom in the order the author t... |
+| `src/styles/068-stories-2.css` | A scene or beat reached by a link is marked for a moment - the surface behind it and the accent on its edge - so the eye can tell which row the link meant. |
+| `src/styles/069-stories-3.css` | A chapter is a heading and a rule, not a box: the scenes under it keep the rows they always had, so grouping adds one level of hierarchy and no card around c... |
+| `src/styles/070-view-switcher.css` | View switcher `.views`: the routed views of one object - Scenes / Plot / Manuscript, Article / Relations / History. |
+| `src/styles/071-view-switcher-2.css` | The beats in the scene drawer: one row per beat - its number, its title and note, and its tools at the end. |
+| `src/styles/072-story-manuscript.css` | A story's manuscript |
+| `src/styles/073-story-manuscript-2.css` | A Lore mention in read prose: the name, linked to its entry, set off by the accent rather than a button's chrome. |
+| `src/styles/074-story-manuscript-3.css` | Web source file `074-story-manuscript-3.css`; see its imports. |
+| `src/styles/075-chronology-narrow.css` | Chronology on a narrow screen |
+| `src/styles/076-canon-integrity.css` | Canon integrity A finding is an editorial objection, so it is set as marginalia rather than as a row. |
+| `src/styles/077-refused-write.css` | A refused write Not a failure banner. |
+| `src/styles/078-canon-integrity-narrow.css` | Canon integrity on a narrow screen |
+| `src/styles/079-trash.css` | Trash A list, not a gallery. |
+| `src/styles/080-touch.css` | Touch LorEvolve leans on quiet controls: an Edit that is text on paper, a remove that is a small cross inside a token, an editor toolbar of one-word buttons. |
+| `src/styles/081-ideas.css` | Ideas Possibilities, not lore. |
+| `src/styles/082-ideas-2.css` | What a reference is, in a word before its name: never a colour alone. |
+| `src/styles/083-world-rules.css` | World Rules A rule book, not a board. |
+| `src/styles/084-world-rule-checks.css` | World rule checks Secondary to what a rule says, so quieter and below it, as a relation kind's Canon constraints are. |
+| `src/styles/085-family-tree.css` | Family tree A family, drawn as generations rather than as a graph: grandparents and parents above, the entry in focus and its siblings in the middle, childre... |
+| `src/styles/086-family-tree-2.css` | A couple, or a chain of them: one item, so a phone never wraps between them, and a little closer than strangers. |
+| `src/styles/087-family-member.css` | A family member: a portrait in a circle, the name beneath, an eye for the details (Issue #37) The circle is the size the window allows - about 7.5rem on a co... |
+| `src/styles/088-member-details.css` | A member's details: a popover held against the node, a sheet on a phone (Issue #37) LorEvolve's modal dialog, as every drawer is: the page behind is inert, E... |
+| `src/styles/089-family-tree-types.css` | Which types the Family Tree is offered for (Issue #37) A folded section at the foot of the page: the types enabled one by one, and the groups an author may e... |
+| `src/styles/090-publishing-settings.css` | Publishing: Settings' Public portal section (ADR 0036) Workspace chrome, not the portal's: the same settings section, fields and callouts as the rest of the... |
+| `src/styles/091-publishing-settings-2.css` | The tab row is the rule above a tab's first section, and above the account's facts. |
+| `src/styles/092-publishing-one-item.css` | Publishing one entry or story (Task 010) `ContentPublication`: the item's state as a pill - Private, Public, or Selected while its universe is private - draw... |
+| `src/styles/093-public-portal.css` | The public portal (ADR 0036) A second visual world beside the workspace, in the same application. |
+| `src/styles/094-bar.css` | The bar Brand, the one destination the portal has, the search, and the way in - or back to the workspace. |
+| `src/styles/095-bar-2.css` | The narrower phones: brand and the two ways in still share one row, with air between them - measured from 360px to 430px, touch-sized controls included, and... |
+| `src/styles/096-explore-head.css` | Explore: the head The title, one line of support and the category row, on the page's own ground with a hairline beneath: no picture (ADR 0068). |
+| `src/styles/097-explore-discovery.css` | Explore: discovery |
+| `src/styles/098-explore-worlds.css` | Explore: the worlds |
+| `src/styles/099-explore-worlds-2.css` | Loading: the grid's own shape, so the worlds arrive without the page jumping. |
+| `src/styles/100-public-reading.css` | Public reading (Task 011) The pages behind an Explore card, in the portal's own dark frame: a universe, one of its entries, one of its stories, and an author. |
+| `src/styles/101-universe-hero.css` | The universe: hero The public 16:10 card twice: crisp, at no more than its own 960 pixels, beside the title; and blurred to fill the band behind it, where th... |
+| `src/styles/102-universe-published.css` | The universe: what is published inside it |
+| `src/styles/103-reading-pages.css` | An entry and a story: reading pages |
+| `src/styles/104-story-published-content.css` | A story's published content (ADR 0039) A reader, not the workspace: the manuscript in a serif reading column, the outline and the plot as quiet ordered lists. |
+| `src/styles/105-author.css` | Web source file `105-author.css`; see its imports. |
+| `src/styles/106-site-footer.css` | Site footer (ADR 0069) Where else there is to go, and nothing invented: the wordmark and its line, the real ways on, and under a hairline the year and the ru... |
+| `src/styles/107-review-comments.css` | Review comments (043) A quiet button beside a subject's views or tools, and the threads in the moment drawer. |
+| `src/styles/108-entry-knowledge.css` | Entry: knowledge (issue 15) What an entry knows, in the stories' order, as rows under "Known from the start" and each story's title; the readings the list ca... |
+| `src/styles/109-suggested-changes.css` | Suggested changes (045) Comments and suggestions share the review drawer as two tabs; each tab's panel lays its parts out as the drawer's body does. |
+| `src/styles/110-lore-context.css` | Lore Context (task 048) The manuscript's Lore drawer: the moment drawer's frame, so a side sheet over the writing on a wide screen and the whole width on a p... |
+| `src/styles/111-workspace-search-row.css` | The search row above a workspace The search keeps the row's width; anything beside it sits after it. |
+| `src/styles/112-connect-to-ai.css` | Connect to AI, the consent screen and Connected apps (ADR 0046) Connect to AI is a button beside the search, folding to its icon on a phone, with the moment... |
+| `src/styles/113-pending-ai-changes.css` | Pending AI Changes (ADR 0047) |
+| `src/styles/114-pending-ai-changes-2.css` | The access level: a plain group, not the browser's boxed fieldset. |
+| `src/styles/115-entry-eras.css` | Entry: eras (Issue #41) One entry read in its own periods. |
+| `src/styles/116-entry-forms-and-abilities.css` | Entry: forms and abilities (Issue #42) Under the eras on the main profile, each form or ability is a ruled row: its name in the display face with its menu at... |
+| `src/styles/117-entry-appearances.css` | Entry: appearances (Issue #43) An appearance is a ruled row like a form, with its gallery beneath its notes: square thumbnails in the author's order, each a... |
+| `src/styles/118-entry-progression-profile.css` | Entry: the progression profile (Issue #44) The main profile opens on the entry's own summary and a quiet line of what its progression holds, with the way bac... |
+| `src/styles/119-relations-when.css` | Relations: when a relation holds (Issue #18) Periods sit in the relation form under its status, each a quiet row of its own - Dates or An era, then the From/... |
+| `src/styles/120-lorevolve-admin.css` | LorEvolve Admin (#40) The service's own workspace, in My workspace's frame. |
+| `src/styles/121-maps.css` | Maps (issue #52, ADR 0060) A picture of the world, panned and zoomed, with pins on it. |
+| `src/styles/122-maps-2.css` | A pointer's hover, the keyboard's focus and the chosen pin all say the name; a coarse pointer always does. |
+| `src/styles/123-maps-3.css` | The scale (issue #53): a dashed line between the two calibration points, and the panel's words about it. |
+| `src/styles/124-idea-boards.css` | Idea boards (ADR 0066) |
+| `src/styles/125-idea-boards-2.css` | A System's machine (#358) draws on the board's canvas: states are .boardcard, transitions .boardline. |
+| `src/styles/126-idea-boards-3.css` | Folding a story's arcs, chapters and scenes: a chevron before the heading, turned down while open. |
+| `src/styles/127-projects.css` | Projects (#139) |
+| `src/styles/128-projects-2.css` | The ⋯ rests on the picture, on a frosted chip so it reads on any picture, light or dark. |
+| `src/styles/129-projects-3.css` | The strip of film: a frame of dark celluloid with a row of sprocket holes along each rail, the picture exposed in the frame between them. |
+| `src/suggestions/reviewSuggestionsActions.ts` | Exports `reviewSuggestionsActions`. |
+| `src/suggestions/suggestionList.ts` | Exports `Feedback`, `Loaded`, `STATES`, `CHANGED_SINCE` and more. |
+| `src/suggestions/useReviewSuggestionsState.ts` | Exports `useReviewSuggestionsState`. |
+| `src/suggestions/useSuggestionReads.ts` | Exports `useSuggestionReads`. |
+| `src/timeline/momentDraft.ts` | Exports `MomentDraft`, `ComponentKey`, `EraKey`, `DETAIL_ERROR_KEYS` and more. |
+| `src/timeline/momentFormActions.ts` | Exports `momentFormActions`. |
+| `src/timeline/timelineActions.tsx` | Exports `timelineActions`. |
+| `src/timeline/timelineSources.ts` | Exports `SOURCES`, `SOURCE_LABELS`. |
+| `src/timeline/useMomentFormState.ts` | Exports `useMomentFormState`. |
+| `src/timeline/useTimelineReads.ts` | Exports `useTimelineReads`. |
+| `src/timeline/useTimelineSearch.ts` | Exports `useTimelineSearch`. |
+| `src/timeline/useTimelineState.ts` | Exports `FormState`, `useTimelineState`. |
+| `src/trash/trashActions.tsx` | Exports `trashActions`. |
+| `src/trash/trashSelectionActions.ts` | Exports `trashSelectionActions`. |
+| `src/trash/trashText.tsx` | Exports `keyOf`, `whereItWas`, `blockedText`, `backText` and more. |
+| `src/trash/useTrashReads.ts` | Exports `useTrashReads`. |
+| `src/trash/useTrashState.ts` | Exports `Outcome`, `useTrashState`. |
+| `src/universes/universeFormInput.ts` | Exports `HEX`, `PICKER_IDLE`, `normalizeHex`, `inputOf`. |
+| `src/universes/universeSettingsActions.ts` | Exports `universeSettingsActions`. |
+| `src/universes/useUniverseSettingsState.ts` | Exports `useUniverseSettingsState`. |
+| `src/universes/useWorkspaceNav.ts` | Exports `useWorkspaceNav`. |
+| `src/universes/useWorkspaceReads.ts` | Exports `useWorkspaceReads`. |
+| `src/universes/useWorkspaceSetters.ts` | Exports `useWorkspaceSetters`. |
+| `src/universes/useWorkspaceState.ts` | Exports `Workspace`, `useWorkspaceState`. |
+| `src/universes/workspaceSections.ts` | Exports `currentSection`. |
+| `src/worldLogic/findingLabels.ts` | Exports `outcomeLabel`, `findingTitle`, `outcomeHint`, `statusLabel` and more. |
+| `src/worldLogic/guardBlocks.ts` | Exports `newLiteral`, `newOperand`, `newQuery`, `newClause` and more. |
+| `src/worldLogic/guardChecks.ts` | Exports `Measure`, `measure`, `checkComplete`. |
+| `src/worldLogic/guardClassify.ts` | Exports `classifyOperand`, `fieldType`, `isEditableQuery`, `classifyNode`. |
+| `src/worldLogic/guardDrawerActions.ts` | Exports `guardDrawerActions`. |
+| `src/worldLogic/guardPaths.ts` | Exports `blockPaths`, `pathKey`, `blockFor`, `pathOf`. |
+| `src/worldLogic/guardRequests.ts` | Exports `toUpdateRequest`, `toCreateRequest`. |
+| `src/worldLogic/guardSummary.ts` | Exports `summarize`, `sameCondition`. |
+| `src/worldLogic/machineCanvasActions.ts` | Exports `machineCanvasActions`. |
+| `src/worldLogic/machineDrawerFields.tsx` | Exports `errorOf`, `textInput`. |
+| `src/worldLogic/machinePanelActions.ts` | Exports `machinePanelActions`. |
+| `src/worldLogic/machinePanelTypes.ts` | Exports `SYSTEM_CHANGED`, `SYSTEM_RULE_CHANGED`, `Open`, `Errors` and more. |
+| `src/worldLogic/ruleSummary.ts` | Exports `summaryOf`. |
+| `src/worldLogic/systemEditorActions.ts` | Exports `systemEditorActions`. |
+| `src/worldLogic/useGuardDrawerEffects.ts` | Exports `useGuardDrawerEffects`. |
+| `src/worldLogic/useGuardDrawerState.ts` | Exports `useGuardDrawerState`. |
+| `src/worldLogic/useMachinePanelState.ts` | Exports `useMachinePanelState`. |
+| `src/worldLogic/useSystemEditorState.ts` | Exports `useSystemEditorState`. |
+| `src/worldLogic/useWorldLogicReads.ts` | Exports `useWorldLogicReads`. |
+| `src/worldLogic/useWorldLogicState.ts` | Exports `useWorldLogicState`. |
+| `src/worldLogic/worldLogicActions.ts` | Exports `worldLogicActions`. |
+| `src/worldRules/ruleDraft.ts` | Exports `LoadState`, `Fields`, `Stored`, `EMPTY_STORED` and more. |
+| `src/worldRules/useWorldRuleReads.ts` | Exports `useWorldRuleReads`. |
+| `src/worldRules/useWorldRuleState.ts` | Exports `useWorldRuleState`. |
+| `src/worldRules/worldRuleActions.tsx` | Exports `worldRuleActions`. |
 
 ## `tests`
 

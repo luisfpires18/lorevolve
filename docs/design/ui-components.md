@@ -5,6 +5,13 @@ The design contract is `LOREVOLVE_VISUAL_REFACTOR.md` section 5. This page lists
 
 Paths are under `src/LorEvolve.Web/src/`. A class names the file and line of its first rule under `styles/`.
 
+## Rules
+
+- Screens live in `pages/`. Shared pieces live in `components/`. Saving and loading live in each feature's `api.ts`. Pure helpers live in the feature folder or `lib/`.
+- One job per file. No web source file goes over 300 lines (`lineLimit.test.ts`, CI job "Line limit", no exceptions). Split a file along its jobs.
+- One component per repeated element. Differences are props, not copies.
+- Before you write a part, search this page and extend the row that fits. Add a row only when none fits.
+
 ## Need, use this
 
 | Need | Use |
