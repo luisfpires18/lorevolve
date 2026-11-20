@@ -1,14 +1,13 @@
 import { Link } from 'react-router-dom'
 import { deletePanel, movePanel, savePanel, type ProjectPage } from '../../projectEntities/pages'
-import { ActionMenu, ActionMenuItem } from '../ActionMenu'
-import { MoveItems } from '../MoveItems'
+import { TypeRow } from '../TypeRow'
+import { TypeRowActions } from '../TypeRowActions'
 import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
-import { Trash } from 'lucide-react'
 import { confirmDelete } from '../../lib/confirm'
 import { QuietNote } from '../QuietNote'
 
-/** A page's panels, each with what it shows, what is said, and its menu. */
+/** A page's panels, each a row with what it shows, what is said, and its menu. */
 export function PagePanels({
   projectId,
   universeId,
@@ -28,11 +27,53 @@ export function PagePanels({
 }) {
   useI18n()
 
+  if (page.panels.length === 0) return null
+
   return (
-    <ol className="projectcard__inner" data-testid={`project-panels-${page.id}`}>
+    <ol className="types__list" data-testid={`project-panels-${page.id}`}>
       {page.panels.map((panel, place) => (
-        <li key={panel.id} data-testid={`project-panel-${panel.id}`}>
-          <span>{panel.description ?? ''}</span>
+        <TypeRow
+          key={panel.id}
+          testId={`project-panel-${panel.id}`}
+          name={panel.description ?? ''}
+          actions={
+            <TypeRowActions
+              name={panel.description ?? String(place + 1)}
+              move={{
+                isFirst: place === 0,
+                isLast: place === page.panels.length - 1,
+                busy,
+                onMove: (direction) =>
+                  run(() =>
+                    movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
+                      place: place + (direction === 'up' ? -1 : 1),
+                    }),
+                  ),
+              }}
+              moveTestIds={{
+                up: `project-panel-up-${panel.id}`,
+                down: `project-panel-down-${panel.id}`,
+              }}
+              onDelete={() =>
+                void confirmDelete(
+                  {
+                    title: t('projects.pages.deletePanelTitle', {
+                      name: panel.description ?? String(place + 1),
+                    }),
+                    message: t('projects.structure.deleteEmpty'),
+                    confirmLabel: t('projects.pages.deletePanel'),
+                  },
+                  () => deletePanel(projectId, volumeId, chapterId, page.id, panel.id),
+                  run,
+                )
+              }
+              deleteLabel={t('projects.pages.deletePanel')}
+              deleteDisabled={busy}
+              deleteTestId={`project-panel-delete-${panel.id}`}
+              menuTestId={`project-panel-actions-${panel.id}`}
+            />
+          }
+        >
           {panel.dialogue ? <blockquote>{panel.dialogue}</blockquote> : null}
           <QuietNote as="span">
             {t('projects.pages.shows')}:{' '}
@@ -69,54 +110,7 @@ export function PagePanels({
               )
             }
           />
-
-          <div className="actions actions--tight projectcard__actions">
-            <ActionMenu
-              label={t('projects.common.more', {
-                name: panel.description ?? String(place + 1),
-              })}
-              triggerTestId={`project-panel-actions-${panel.id}`}
-            >
-              <MoveItems
-                first={place === 0}
-                last={place === page.panels.length - 1}
-                busy={busy}
-                testIds={{
-                  up: `project-panel-up-${panel.id}`,
-                  down: `project-panel-down-${panel.id}`,
-                }}
-                onMove={(step) =>
-                  run(() =>
-                    movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
-                      place: place + step,
-                    }),
-                  )
-                }
-              />
-              <ActionMenuItem
-                icon={Trash}
-                tone="danger"
-                disabled={busy}
-                testId={`project-panel-delete-${panel.id}`}
-                onClick={() =>
-                  void confirmDelete(
-                    {
-                      title: t('projects.pages.deletePanelTitle', {
-                        name: panel.description ?? String(place + 1),
-                      }),
-                      message: t('projects.structure.deleteEmpty'),
-                      confirmLabel: t('projects.pages.deletePanel'),
-                    },
-                    () => deletePanel(projectId, volumeId, chapterId, page.id, panel.id),
-                    run,
-                  )
-                }
-              >
-                {t('projects.pages.deletePanel')}
-              </ActionMenuItem>
-            </ActionMenu>
-          </div>
-        </li>
+        </TypeRow>
       ))}
     </ol>
   )

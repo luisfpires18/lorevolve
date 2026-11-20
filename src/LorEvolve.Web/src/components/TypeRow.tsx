@@ -1,12 +1,17 @@
-import type { LiHTMLAttributes, ReactNode } from 'react'
+import type { LiHTMLAttributes, ReactNode, Ref } from 'react'
+import { Link } from 'react-router-dom'
 import { TypeIcon } from './TypeIcon'
 
 /**
  * One row of a types list: the head (lead, icon, name with its hidden path, badges, count, then the
- * actions) and the row's body as children. `head` replaces the head, as an inline rename does.
+ * actions) and the row's body as children. `head` replaces the head, as an inline rename does. `to` makes the name a
+ * link, as a film in a saga opens its project.
  */
 export function TypeRow({
   name,
+  to,
+  linkTestId,
+  ref,
   icon,
   iconTestId,
   hiddenPath,
@@ -23,6 +28,10 @@ export function TypeRow({
   ...li
 }: Omit<LiHTMLAttributes<HTMLLIElement>, 'children'> & {
   name: string
+  to?: string
+  linkTestId?: string
+  /** The row itself, for a caller that reads or reveals it. */
+  ref?: Ref<HTMLLIElement>
   /** The type's icon key; leave it out for a row with no icon. */
   icon?: string | null
   iconTestId?: string
@@ -41,6 +50,7 @@ export function TypeRow({
 }) {
   return (
     <li
+      ref={ref}
       className="types__row"
       data-testid={testId}
       data-depth={depth}
@@ -56,7 +66,13 @@ export function TypeRow({
             </span>
           ) : null}
           <span className="types__name">
-            <bdi>{name}</bdi>
+            {to ? (
+              <Link to={to} data-testid={linkTestId}>
+                <bdi>{name}</bdi>
+              </Link>
+            ) : (
+              <bdi>{name}</bdi>
+            )}
             {hiddenPath ? <span className="visually-hidden">{hiddenPath}</span> : null}
           </span>
           {badges}

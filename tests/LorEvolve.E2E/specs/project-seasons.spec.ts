@@ -224,8 +224,8 @@ test.describe('Project seasons', () => {
     await expect(volume).toContainText('No pages yet.')
 
     await volume.getByRole('button', { name: 'Add page' }).click()
-    await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
-    await page.locator('[data-testid^="project-page-new-save-"]').first().click()
+    await page.getByTestId('project-page-new-name').fill('1')
+    await page.getByTestId('project-page-new-save').click()
 
     const pageRow = volume.locator('[data-testid^="project-page-"]').first()
     await expect(pageRow).toContainText('No panels yet.')
@@ -286,8 +286,8 @@ test.describe('Project seasons', () => {
 
     await volume.getByRole('button', { name: 'Open pages' }).click()
     await volume.getByRole('button', { name: 'Add page' }).click()
-    await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
-    await page.locator('[data-testid^="project-page-new-save-"]').first().click()
+    await page.getByTestId('project-page-new-name').fill('1')
+    await page.getByTestId('project-page-new-save').click()
 
     const pageRow = volume.locator('[data-testid^="project-page-"]').first()
 
@@ -332,7 +332,7 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-episode-new-save').click()
     await expect(season).toContainText('Pilot')
 
-    const seasonHead = season.locator('.projectcard__head').first()
+    const seasonHead = season.locator('.types__head').first()
     await seasonHead.getByRole('button', { name: /More actions/ }).click()
     await seasonHead.getByRole('button', { name: 'Delete season' }).click()
     await acceptConfirm(page)
@@ -351,7 +351,7 @@ test.describe('Project seasons', () => {
       .getByTestId('project-season-list')
       .locator('> li')
       .first()
-      .locator('.projectcard__head')
+      .locator('.types__head')
       .first()
     await head.getByRole('button', { name: /More actions/ }).click()
     await head.getByRole('button', { name: 'Delete season' }).click()

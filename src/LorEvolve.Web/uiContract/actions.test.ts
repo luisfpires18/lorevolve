@@ -29,7 +29,6 @@ const PLUS_IMPORTERS = new Set([
   'src/components/ProjectEntitiesView.tsx',
   'src/components/worldLogic/MachineStateCard.tsx',
   'src/components/projects/ComicCollectionItem.tsx',
-  'src/components/projects/SagaSection.tsx',
 ])
 
 const writesFormActions = (source: string) =>
@@ -55,7 +54,7 @@ const deleteButtonWithWrongTone = (source: string) =>
 const PLAIN_NEW_BUTTONS = new Map<string, string>([
   ['src/components/lore/LoreContextMentioned.tsx', 'Add links an existing entry, nothing is made'],
   ['src/components/lore/MassCreatePaste.tsx', 'adds typed text to a list before anything is saved'],
-  ['src/components/projects/SagasUnassigned.tsx', 'puts an existing production in a phase'],
+  ['src/components/CinemaSagas.tsx', 'puts an existing production in a phase'],
 ])
 
 const filesWhere = (check: (source: string) => boolean) =>

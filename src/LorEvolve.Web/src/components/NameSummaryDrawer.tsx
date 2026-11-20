@@ -9,26 +9,55 @@ import { FormMessage } from './FormMessage'
 /** The words a name and summary drawer reads: `${words}.save`, `.saving`, `.name` and the rest. */
 type NameSummaryWords = 'projects.sagas' | 'projects.comics'
 
+/** The drawer's words given one by one. With no `summary` the drawer asks for the name alone. */
+export interface NameSummaryText {
+  save: string
+  /** Absent: the busy label `FormActions` gives. */
+  saving?: string
+  name: string
+  namePlaceholder?: string
+  summary?: string
+  summaryPlaceholder?: string
+  leave: string
+  failed: string
+}
+
 interface NameSummaryDrawerProps {
-  /** The dialog's id; `-heading`, `-save`, `-name` and `-summary` are derived from it. */
+  /** The dialog's id; `-heading`, `-save`, `-cancel`, `-name` and `-summary` are derived from it. */
   testId: string
   eyebrow: ReactNode
   title: ReactNode
   /** What is being edited, or null for a new one. */
   initial: { name: string; summary: string | null } | null
-  words: NameSummaryWords
+  words: NameSummaryWords | NameSummaryText
+  /** The name may be left empty, as a comic page's may. */
+  nameOptional?: boolean
   onClose: () => void
   /** A rejection keeps the drawer open with its message. */
   onSave: (input: { name: string; summary: string | null }) => Promise<unknown>
 }
 
-/** A drawer that names something and sums it up: a saga or a phase, a comic collection. */
+function textOf(words: NameSummaryWords): NameSummaryText {
+  return {
+    save: t(`${words}.save`),
+    saving: t(words === 'projects.sagas' ? 'projects.sagas.saving' : 'projects.comics.saving'),
+    name: t(`${words}.name`),
+    namePlaceholder: t(`${words}.namePlaceholder`),
+    summary: t(`${words}.summary`),
+    summaryPlaceholder: t(`${words}.summaryPlaceholder`),
+    leave: t(`${words}.leave`),
+    failed: t(`${words}.failed`),
+  }
+}
+
+/** A drawer that names something and sums it up: a saga or a phase, a comic collection, a season, a comic page. */
 export function NameSummaryDrawer({
   testId,
   eyebrow,
   title,
   initial,
   words,
+  nameOptional = false,
   onClose,
   onSave,
 }: NameSummaryDrawerProps) {
@@ -37,13 +66,14 @@ export function NameSummaryDrawer({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isDirty = name !== (initial?.name ?? '') || summary !== (initial?.summary ?? '')
+  const text = typeof words === 'string' ? textOf(words) : words
 
   function save() {
     setSaving(true)
     setError(null)
     onSave({ name: name.trim(), summary: summary.trim() || null }).catch((failure: unknown) => {
       setSaving(false)
-      setError(errorText(failure, t(`${words}.failed`)))
+      setError(errorText(failure, text.failed))
     })
   }
 
@@ -54,44 +84,45 @@ export function NameSummaryDrawer({
       eyebrow={eyebrow}
       title={title}
       isDirty={isDirty}
-      leaveMessage={t(`${words}.leave`)}
+      leaveMessage={text.leave}
       onClose={onClose}
       onSubmit={save}
       busy={saving}
       actions={(close) => (
         <FormActions
-          submitLabel={t(`${words}.save`)}
+          submitLabel={text.save}
           busy={saving}
-          busyLabel={t(
-            words === 'projects.sagas' ? 'projects.sagas.saving' : 'projects.comics.saving',
-          )}
-          disabled={name.trim() === ''}
+          busyLabel={text.saving}
+          disabled={!nameOptional && name.trim() === ''}
           submitTestId={`${testId}-save`}
           onCancel={close}
+          cancelTestId={`${testId}-cancel`}
         />
       )}
     >
       <Field
-        label={t(`${words}.name`)}
-        requiredMark
+        label={text.name}
+        requiredMark={!nameOptional}
         name={null}
         value={name}
         maxLength={200}
-        required
-        placeholder={t(`${words}.namePlaceholder`)}
+        required={!nameOptional}
+        placeholder={text.namePlaceholder}
         data-testid={`${testId}-name`}
         onChange={(event) => setName(event.target.value)}
       />
-      <Field
-        as="textarea"
-        label={t(`${words}.summary`)}
-        value={summary}
-        maxLength={4000}
-        rows={3}
-        placeholder={t(`${words}.summaryPlaceholder`)}
-        data-testid={`${testId}-summary`}
-        onChange={(event) => setSummary(event.target.value)}
-      />
+      {text.summary ? (
+        <Field
+          as="textarea"
+          label={text.summary}
+          value={summary}
+          maxLength={4000}
+          rows={3}
+          placeholder={text.summaryPlaceholder}
+          data-testid={`${testId}-summary`}
+          onChange={(event) => setSummary(event.target.value)}
+        />
+      ) : null}
       {error ? <FormMessage>{error}</FormMessage> : null}
     </Drawer>
   )

@@ -1,6 +1,7 @@
 import { deleteEpisode, moveEpisode, type ProjectSeason } from '../../projectEntities/seasons'
-import { ActionMenu, ActionMenuItem } from '../ActionMenu'
-import { MoveItems } from '../MoveItems'
+import { ActionMenuItem } from '../ActionMenu'
+import { TypeRow } from '../TypeRow'
+import { TypeRowActions } from '../TypeRowActions'
 import { ChapterPages } from '../ChapterPages'
 import { t, useI18n } from '../../i18n'
 import { useState, type Dispatch, type SetStateAction } from 'react'
@@ -9,9 +10,9 @@ import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { ScriptEditor } from './ScriptEditor'
 import { Button } from '../Button'
-import { FolderInput, Trash } from 'lucide-react'
+import { FolderInput } from 'lucide-react'
 
-/** A season's episodes, each with its menu, and with its pages or its script when opened. */
+/** A season's episodes, each a row with its menu, and with its pages or its script when opened. */
 export function SeasonEpisodes({
   projectId,
   universeId,
@@ -60,83 +61,81 @@ export function SeasonEpisodes({
     )
   }
 
+  if (season.episodes.length === 0) return null
+
   return (
-    <ol className="fieldlist" data-testid={`project-episodes-${season.id}`}>
+    <ol className="types__list" data-testid={`project-episodes-${season.id}`}>
       {season.episodes.map((episode, place) => (
-        <li
+        <TypeRow
           key={episode.id}
-          className="fieldlist__row"
-          data-testid={`project-episode-${episode.id}`}
-        >
-          <span className="fieldlist__text">
-            <span className="fieldlist__name">{episode.title}</span>
-            <span className="fieldlist__meta">
-              {episode.hasScript
-                ? t('projects.seasons.hasScript', { count: String(episode.scriptLength) })
-                : t('projects.seasons.noScript')}
-            </span>
-          </span>
-          {/* The script is what an author opens an episode for, so it stays on the row. Order, moving to
-                      another season and deleting are the row's secondary verbs and go in its menu. */}
-          <div className="actions actions--compact fieldlist__actions">
-            <Button
-              tone="secondary"
-              size="sm"
-              data-testid={`project-episode-open-${episode.id}`}
-              onClick={() => void toggle(episode.id)}
-            >
-              {editing === episode.id
-                ? t('projects.seasons.closeScript')
-                : t('projects.seasons.openScript')}
-            </Button>
-            <ActionMenu
-              label={t('projects.common.more', { name: episode.title })}
-              triggerTestId={`project-episode-actions-${episode.id}`}
-            >
-              <MoveItems
-                first={place === 0}
-                last={place === season.episodes.length - 1}
-                busy={busy}
-                testIds={{
+          testId={`project-episode-${episode.id}`}
+          name={episode.title}
+          count={
+            episode.hasScript
+              ? t('projects.seasons.hasScript', { count: String(episode.scriptLength) })
+              : t('projects.seasons.noScript')
+          }
+          actions={
+            <>
+              {/* The script is what an author opens an episode for, so it stays on the row. Order, moving to
+                  another season and deleting are the row's secondary verbs and go in its menu. */}
+              <Button
+                tone="secondary"
+                size="sm"
+                data-testid={`project-episode-open-${episode.id}`}
+                onClick={() => void toggle(episode.id)}
+              >
+                {editing === episode.id
+                  ? t('projects.seasons.closeScript')
+                  : t('projects.seasons.openScript')}
+              </Button>
+              <TypeRowActions
+                name={episode.title}
+                move={{
+                  isFirst: place === 0,
+                  isLast: place === season.episodes.length - 1,
+                  busy,
+                  onMove: (direction) =>
+                    run(() =>
+                      moveEpisode(projectId, season.id, episode.id, {
+                        place: place + (direction === 'up' ? -1 : 1),
+                      }),
+                    ),
+                }}
+                moveTestIds={{
                   up: `project-episode-up-${episode.id}`,
                   down: `project-episode-down-${episode.id}`,
                 }}
-                onMove={(step) =>
-                  run(() => moveEpisode(projectId, season.id, episode.id, { place: place + step }))
-                }
+                // Moving between seasons needs no drag: the other seasons are a short list of items.
+                menuItems={seasons
+                  .filter((other) => other.id !== season.id)
+                  .map((other) => (
+                    <ActionMenuItem
+                      icon={FolderInput}
+                      key={other.id}
+                      disabled={busy}
+                      testId={`project-episode-to-${episode.id}-${other.id}`}
+                      onClick={() =>
+                        run(() =>
+                          moveEpisode(projectId, season.id, episode.id, {
+                            place: other.episodes.length,
+                            seasonId: other.id,
+                          }),
+                        )
+                      }
+                    >
+                      {say.moveToSeason()} {other.name}
+                    </ActionMenuItem>
+                  ))}
+                onDelete={() => void remove(episode.id, episode.title)}
+                deleteLabel={say.deleteEpisode()}
+                deleteDisabled={busy}
+                deleteTestId={`project-episode-delete-${episode.id}`}
+                menuTestId={`project-episode-actions-${episode.id}`}
               />
-              {/* Moving between seasons needs no drag: the other seasons are a short list of items. */}
-              {seasons
-                .filter((other) => other.id !== season.id)
-                .map((other) => (
-                  <ActionMenuItem
-                    icon={FolderInput}
-                    key={other.id}
-                    disabled={busy}
-                    testId={`project-episode-to-${episode.id}-${other.id}`}
-                    onClick={() =>
-                      run(() =>
-                        moveEpisode(projectId, season.id, episode.id, {
-                          place: other.episodes.length,
-                          seasonId: other.id,
-                        }),
-                      )
-                    }
-                  >
-                    {say.moveToSeason()} {other.name}
-                  </ActionMenuItem>
-                ))}
-              <ActionMenuItem
-                icon={Trash}
-                tone="danger"
-                disabled={busy}
-                testId={`project-episode-delete-${episode.id}`}
-                onClick={() => void remove(episode.id, episode.title)}
-              >
-                {say.deleteEpisode()}
-              </ActionMenuItem>
-            </ActionMenu>
-          </div>
+            </>
+          }
+        >
           {/* Only a comic has a level below the chapter (#147). */}
           {pages ? (
             <ChapterPages
@@ -159,7 +158,7 @@ export function SeasonEpisodes({
               }}
             />
           ) : null}
-        </li>
+        </TypeRow>
       ))}
     </ol>
   )

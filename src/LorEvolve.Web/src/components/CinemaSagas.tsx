@@ -7,13 +7,17 @@ import {
   createPhase,
   createSaga,
   listSagas,
+  productionRow,
   savePhase,
   saveSaga,
   type CinemaProduction,
   type Editing,
 } from '../projects/sagas'
 import { SagaSection } from './projects/SagaSection'
-import { SagasUnassigned } from './projects/SagasUnassigned'
+import { TypeRow } from './TypeRow'
+import { Button } from './Button'
+import { PageHeader } from './PageHeader'
+import { QuietNote } from './QuietNote'
 import { NameSummaryDrawer } from './NameSummaryDrawer'
 import { PickOneDrawer } from './PickOneDrawer'
 import { NewButton } from './NewButton'
@@ -74,27 +78,57 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
         />
       ) : null}
 
-      {data.sagas.map((saga, sagaIndex) => (
-        <SagaSection
-          key={saga.id}
-          universeId={universeId}
-          data={data}
-          busy={busy}
-          setEditing={setEditing}
-          run={run}
-          confirmDelete={askDelete}
-          saga={saga}
-          sagaIndex={sagaIndex}
-        />
-      ))}
+      {data.sagas.length > 0 ? (
+        <ol className="types__list">
+          {data.sagas.map((saga, sagaIndex) => (
+            <SagaSection
+              key={saga.id}
+              universeId={universeId}
+              data={data}
+              busy={busy}
+              setEditing={setEditing}
+              run={run}
+              confirmDelete={askDelete}
+              saga={saga}
+              sagaIndex={sagaIndex}
+            />
+          ))}
+        </ol>
+      ) : null}
 
-      <SagasUnassigned
-        universeId={universeId}
-        data={data}
-        busy={busy}
-        setAdding={setAdding}
-        phaseChoices={phaseChoices}
-      />
+      <section className="projects" data-testid="sagas-unassigned">
+        <PageHeader
+          level={2}
+          size="panel"
+          title={t('projects.sagas.unassigned')}
+          lede={t('projects.sagas.unassignedHint')}
+        />
+        {data.unassigned.length === 0 ? (
+          <QuietNote spacing="flush">{t('projects.sagas.noUnassigned')}</QuietNote>
+        ) : (
+          <ul className="types__list">
+            {data.unassigned.map((production) => (
+              <TypeRow
+                key={production.projectId}
+                {...productionRow(universeId, production)}
+                testId={`unassigned-${production.projectId}`}
+                actions={
+                  <Button
+                    tone="secondary"
+                    size="sm"
+                    disabled={busy || phaseChoices.length === 0}
+                    title={phaseChoices.length === 0 ? t('projects.sagas.needsPhase') : undefined}
+                    data-testid={`unassigned-add-${production.projectId}`}
+                    onClick={() => setAdding(production)}
+                  >
+                    {t('projects.sagas.addToPhase')}
+                  </Button>
+                }
+              />
+            ))}
+          </ul>
+        )}
+      </section>
 
       {editing ? (
         <NameSummaryDrawer

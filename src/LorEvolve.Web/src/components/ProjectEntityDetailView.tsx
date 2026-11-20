@@ -157,12 +157,9 @@ export function ProjectEntityDetailView({
                   {entity.summary}
                 </p>
               ) : (
-                <p
-                  className="entry__summary projectcard__meta"
-                  data-testid="game-entity-no-description"
-                >
+                <QuietNote spacing="flush" testId="game-entity-no-description">
                   {t('projects.gameEntities.entity.noDescription')}
-                </p>
+                </QuietNote>
               )}
             </EntryHead>
 

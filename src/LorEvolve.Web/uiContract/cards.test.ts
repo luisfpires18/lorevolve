@@ -1,7 +1,7 @@
 // Run with `node --test uiContract/cards.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps card grids, cards, item rows and outline nodes on their shared parts (#413): CardGrid, CardSkeleton,
-// EntityCard, CatalogCard, EntityRow, LinkRow, TypeRow, TypeRowActions, ProjectCard and OutlineItem, and the raised
+// EntityCard, CatalogCard, EntityRow, LinkRow, TypeRow, TypeRowActions and OutlineItem, and the raised
 // surface's lift and the card grid's columns in one CSS rule each. Each list below only shrinks, and a stale entry
 // fails. Catalogue: docs/design/ui-components.md.
 
@@ -62,12 +62,6 @@ const ROW_LINK = (token: string) =>
     family(['storyrow', 'idearow', 'rulerow'])(token))
 const TYPE_ROW = named(['types__row', 'types__head'])
 const TYPE_ROW_PARTS = named(['types__actions', 'types__move', 'types__fieldcount'])
-const PROJECT_CARD = named([
-  'projectcard',
-  'projectcard__head',
-  'projectcard__title',
-  'projectcard__actions',
-])
 // OutlineItem builds the arc and chapter parts as `${block}__head`, so only a hand-written literal matches here.
 const OUTLINE = named([
   'scene__number',
@@ -98,8 +92,6 @@ test('the card guards catch a hand-made card, grid, row or lift', () => {
   assert.ok(!hasToken('<span className="idearow__universe idearow__universe--none">', ROW_LINK))
   assert.ok(hasToken('<li className="types__row">', TYPE_ROW))
   assert.ok(hasToken('<span className="types__actions">', TYPE_ROW_PARTS))
-  assert.ok(hasToken('<li className="projectcard">', PROJECT_CARD))
-  assert.ok(!hasToken('<p className="projectcard__meta">', PROJECT_CARD))
   assert.ok(hasToken('<header className="plotarc__head">', OUTLINE))
   assert.ok(hasToken('<span className="chapter__number">', OUTLINE))
   assert.ok(hasToken('<span className="plotarc__dash">', OUTLINE))
@@ -183,20 +175,6 @@ test('a types list row is TypeRow, its verbs TypeRowActions', () => {
       ['src/components/TypeRowActions.tsx', 'the shared verbs'],
     ]),
     'use TypeRow and TypeRowActions',
-  )
-})
-
-test('a boxed project card with a head is ProjectCard', () => {
-  check(
-    withToken(PROJECT_CARD),
-    new Map([
-      ['src/components/ProjectCard.tsx', 'the shared part'],
-      [
-        'src/components/projectEntities/PagePanels.tsx',
-        "a sub-list row's menu inside projectcard__inner",
-      ],
-    ]),
-    'use ProjectCard',
   )
 })
 

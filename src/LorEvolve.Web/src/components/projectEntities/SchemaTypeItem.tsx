@@ -106,7 +106,7 @@ export function SchemaTypeItem({
           }}
           onEdit={() => setEditing(type)}
           editTestId={`project-type-edit-${type.id}`}
-          fields={{
+          fold={{
             open: openTypeId === type.id,
             count: type.fields.length,
             onToggle: () => setOpenTypeId(openTypeId === type.id ? null : type.id),

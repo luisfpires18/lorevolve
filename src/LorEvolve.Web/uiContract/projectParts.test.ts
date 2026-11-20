@@ -86,7 +86,8 @@ function projectComponents(): string[] {
 }
 
 // The project components today. A new one is refused (extend a Lore, Types or shared part instead); a deleted one is
-// taken off. Stage 10a took off TemplateFields, SchemaTypeFields and FieldForm.
+// taken off. Stage 10a took off TemplateFields, SchemaTypeFields and FieldForm; stage 10b ProjectCard, Production and
+// SagasUnassigned.
 const PROJECT_COMPONENTS: string[] = [
   'src/components/ArcSection.tsx',
   'src/components/ChapterForm.tsx',
@@ -113,7 +114,6 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/OutlineItem.tsx',
   'src/components/PickOneDrawer.tsx',
   'src/components/PlotArcForm.tsx',
-  'src/components/ProjectCard.tsx',
   'src/components/ProjectEntitiesView.tsx',
   'src/components/ProjectEntityDetailView.tsx',
   'src/components/ProjectEntityFields.tsx',
@@ -155,10 +155,8 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/projectEntities/SeasonItem.tsx',
   'src/components/projects/ComicCollectionItem.tsx',
   'src/components/projects/NewProject.tsx',
-  'src/components/projects/Production.tsx',
   'src/components/projects/ProjectBody.tsx',
   'src/components/projects/SagaSection.tsx',
-  'src/components/projects/SagasUnassigned.tsx',
   'src/components/projects/ShelfCards.tsx',
   'src/components/projects/ShelfViewNav.tsx',
   'src/components/stories/ManuscriptBody.tsx',
@@ -207,30 +205,33 @@ const tokens = (source: string) =>
 const writesFieldRow = (source: string) =>
   tokens(source).some((token) => token === 'fieldlist__row' || token === 'fieldlist__inherited')
 
-// Named rows (episodes, pages, sagas) that still borrow the field row's look until they move onto TypeRow (#456 P2).
-const FIELD_ROW_STAYS: string[] = [
-  'src/components/projectEntities/PageRow.tsx',
-  'src/components/projectEntities/SeasonEpisodes.tsx',
-  'src/components/projects/SagaSection.tsx',
-  'src/components/projects/SagasUnassigned.tsx',
-]
-
 test('project field rows are Lore’s TypeFieldRow and InheritedFields', () => {
   assert.ok(writesFieldRow('<li className="fieldlist__row">'))
   assert.ok(writesFieldRow('<li className={`fieldlist__row ${extra}`}>'))
   assert.ok(writesFieldRow("<div className={open ? 'fieldlist__inherited' : ''}>"))
   assert.ok(!writesFieldRow('<ul className="fieldlist">'))
   assert.ok(!writesFieldRow('<li className="fieldlist__rows">'))
-  const found = projectFiles().filter((file) => writesFieldRow(read(file)))
   assert.deepEqual(
-    found.filter((file) => !FIELD_ROW_STAYS.includes(file)),
+    projectFiles().filter((file) => writesFieldRow(read(file))),
     [],
-    'list a field with TypeFieldRow, inherited ones with InheritedFields',
+    'list a field with TypeFieldRow, inherited ones with InheritedFields, a named row with TypeRow',
   )
+})
+
+const writesProjectCard = (source: string) =>
+  tokens(source).some((token) => token.startsWith('projectcard') || token === 'projectform--inline')
+
+// The project card is gone (#456 P2): no file draws one again. That only TypeRow writes `types__row` is cards.test.ts's.
+test('project rows are Lore’s TypeRow, not a project card', () => {
+  assert.ok(writesProjectCard('<li className="projectcard">'))
+  assert.ok(writesProjectCard('<ol className="projectcardlist">'))
+  assert.ok(writesProjectCard('<div className={`projectcard__${part}`}>'))
+  assert.ok(writesProjectCard("<form className={busy ? 'form projectform--inline' : 'form'}>"))
+  assert.ok(!writesProjectCard('<li className="types__row">'))
   assert.deepEqual(
-    FIELD_ROW_STAYS.filter((file) => !found.includes(file)),
+    srcFiles.filter((file) => writesProjectCard(read(file))),
     [],
-    'stale entry: remove it',
+    'draw a project row with TypeRow and TypeRowActions',
   )
 })
 
