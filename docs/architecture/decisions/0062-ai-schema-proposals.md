@@ -154,6 +154,24 @@ Types screen's own words, and the catalog lists each kind's current `familyMeani
 approves, as for every change, so the meaning is still the author's decision; only the typing moves. Canon age rules stay
 hand-only. No migration: the meaning rides in the stored kind values, which already carried it.
 
+## Amendment, 2026-11-20: the AI may hand the picture over itself (#441)
+
+The owner asked for a picture an AI generated, such as a ChatGPT PNG for a game's "Wolf" unit, to land on the entry without
+a manual upload. `propose_entry_image` stages one `image` change and holds its file in the same quarantine, through the
+review upload's own step (`AiChangeMediaEndpoints.HoldAsync`): the same decoders and bounds, the same keys on the media store
+(R2), the same 64 MB per account. Approval is unchanged, and still the person's. This reverses only "the AI sends no file".
+
+- **Two ways in, nothing else.** Base64, for a client that can read the file, capped at the upload limit before decoding. Or
+  a ChatGPT file link (`openai/fileParams`), fetched once: HTTPS, a host on `Mcp:ImageDownloadHosts` (default
+  `oaiusercontent.com` and its subdomains), no redirect, a public address only (the client metadata fetch's own guard), the
+  upload limit while reading, a 20 second timeout. The link is never stored; only R2 keys are.
+- **Named after the entry.** "Grey Wolf" gives `grey-wolf.png`; a name with no ASCII letter gives `picture.png`.
+- **Project entries too.** A picture change now reaches a project's entry (the lore query filter lifted, by universe, in the
+  check and the review's names). Approval already attached through `IgnoreQueryFilters`.
+- **A refused hold keeps the proposal.** Out of room or storage down: the change stays `awaiting_upload` and the tool says
+  to upload on the review page.
+- The proposal tools' gate covers it: a connection that may not propose never sees it.
+
 ## A friendly MCP address per universe
 
 Each universe gets `{origin}/mcp/u/{alias}`, such as `/mcp/u/the-lord-of-the-rings-7k2f`, beside the canonical

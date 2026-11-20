@@ -273,6 +273,22 @@ public static class McpSetup
                 ConnectCallback = ClientMetadataDocuments.ConnectToPublicAddressAsync,
             });
         services.AddSingleton<ClientMetadataFetchLimits>();
+
+        // A picture an AI hands over as a file link (#441): fetched once from an allowed host, over HTTPS, never following a
+        // redirect and only to a public address - the client metadata fetch's own guard.
+        services.AddHttpClient(LorEvolveMcpEntryImageTools.HttpClientName, client =>
+            {
+                client.Timeout = LorEvolveMcpEntryImageTools.DownloadTimeout;
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("LorEvolve-MCP/1.0");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                UseCookies = false,
+                UseProxy = false,
+                ConnectTimeout = LorEvolveMcpEntryImageTools.DownloadTimeout,
+                ConnectCallback = ClientMetadataDocuments.ConnectToPublicAddressAsync,
+            });
         services.AddScoped<ClientMetadataDocuments>();
 
         services.AddMcpServer(options =>
@@ -289,6 +305,7 @@ public static class McpSetup
             .WithTools<LorEvolveMcpProposalTools>()
             .WithTools<LorEvolveMcpWorldLogicTools>()
             .WithTools<LorEvolveMcpPrivateNoteTools>()
+            .WithTools<LorEvolveMcpEntryImageTools>()
             .WithRequestFilters(LorEvolveMcpProposalTools.Filters);
 
         services.AddHostedService<McpMaintenance>();
