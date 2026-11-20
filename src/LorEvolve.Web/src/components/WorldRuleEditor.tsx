@@ -8,7 +8,7 @@ import { t, useI18n } from '../i18n'
 import { useWorldRuleState } from '../worldRules/useWorldRuleState'
 import { useWorldRuleReads } from '../worldRules/useWorldRuleReads'
 import { worldRuleActions } from '../worldRules/worldRuleActions'
-import { useWorldRuleShortcut } from '../worldRules/useWorldRuleShortcut'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
 import { sameFields } from '../worldRules/ruleDraft'
 import { WorldRuleHead } from './worldRules/WorldRuleHead'
 import { WorldRuleConflict } from './worldRules/WorldRuleConflict'
@@ -72,7 +72,6 @@ export function WorldRuleEditor({
     conflict,
     announcement,
     titleInput,
-    shortcut,
   } = state
   useWorldRuleReads({ ...state, universeId, ruleId })
 
@@ -99,7 +98,8 @@ export function WorldRuleEditor({
     isDirty,
     isTooLong,
   })
-  useWorldRuleShortcut({ shortcut, save, stored })
+  // Ctrl+S and Cmd+S save the rule.
+  useSaveShortcut(() => void save(stored.updatedAt))
 
   if (load.kind === 'loading') {
     return <LoadingNote testId="world-rule-loading">{t('canon.editor.opening')}</LoadingNote>

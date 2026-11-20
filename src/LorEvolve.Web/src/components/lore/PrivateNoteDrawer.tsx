@@ -1,5 +1,5 @@
 import { QuietNote } from '../QuietNote'
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { SaveAction } from '../SaveAction'
 import { ApiError } from '../../lib/api'
 import { formatDateTime } from '../../lib/dates'
@@ -19,6 +19,7 @@ import { PrivateNoteConflict } from './PrivateNoteConflict'
 import { FormActions } from '../FormActions'
 import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
+import { useSaveShortcut } from '../../lib/useSaveShortcut'
 
 interface DrawerProps extends PrivateNotesProps {
   onClose: () => void
@@ -29,6 +30,7 @@ type LoadState = 'loading' | 'ready' | 'error'
 export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: DrawerProps) {
   const { t } = useI18n()
   const editor = useRef<HTMLTextAreaElement>(null)
+  const form = useRef<HTMLFormElement>(null)
   const headingId = useId()
   const textId = useId()
   const hintId = useId()
@@ -110,12 +112,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
   }
 
   /** Ctrl+S / Cmd+S saves from anywhere in the drawer, and never opens the browser's "Save page". */
-  function onKeyDown(event: KeyboardEvent<HTMLFormElement>) {
-    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-      event.preventDefault()
-      void save()
-    }
-  }
+  useSaveShortcut(() => void save(), { scope: form })
 
   /** The owner has seen the latest note and keeps their own: still unsaved, now measured against the latest. */
   function keepMine(latest: PrivateNote) {
@@ -165,7 +162,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
             event.preventDefault()
             void save()
           }}
-          onKeyDown={onKeyDown}
+          ref={form}
         >
           {conflict ? (
             <PrivateNoteConflict

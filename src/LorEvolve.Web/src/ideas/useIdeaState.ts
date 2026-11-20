@@ -69,7 +69,6 @@ export function useIdeaState({
   const [announcement, setAnnouncement] = useState('')
   const titleInput = useRef<HTMLInputElement>(null)
   const addButton = useRef<HTMLButtonElement>(null)
-  const shortcut = useRef<() => void>(() => {})
   const contextUniverseId = contextUniverse?.id ?? null
 
   return {
@@ -107,7 +106,6 @@ export function useIdeaState({
     setAnnouncement,
     titleInput,
     addButton,
-    shortcut,
     contextUniverseId,
   }
 }

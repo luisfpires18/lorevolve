@@ -18,6 +18,7 @@ import {
 import { isEmptyDocument } from './document'
 import { useI18n } from '../i18n'
 import type { EntityArticleSectionProps } from '../components/EntityArticle'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
 
 /** The article as the API last confirmed it: what the next save names, and what reading mode shows. */
 export interface Stored {
@@ -71,7 +72,6 @@ export function useEntityArticle({
   const section = useRef<HTMLElement>(null)
   const startButton = useRef<HTMLButtonElement>(null)
   const editor = useRef<Editor | null>(null)
-  const shortcut = useRef<() => void>(() => {})
 
   useEffect(() => {
     const controller = new AbortController()
@@ -190,31 +190,7 @@ export function useEntityArticle({
   // bar - or nowhere at all, and then never opens the browser's "Save page". Anywhere else on the page, and whenever the
   // article is only being read, the shortcut is the browser's. The listener reads the latest save through a ref, so it
   // is added once per editing session rather than on every keystroke.
-  useEffect(() => {
-    shortcut.current = () => void save(stored.version)
-  })
-
-  useEffect(() => {
-    if (!isEditing) return
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 's')
-        return
-
-      const active = document.activeElement
-      const inArticle =
-        active === null || active === document.body || (section.current?.contains(active) ?? false)
-      if (!inArticle) return
-
-      event.preventDefault()
-      shortcut.current()
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [isEditing])
+  useSaveShortcut(() => void save(stored.version), { enabled: isEditing, scope: section })
 
   return {
     access,
