@@ -307,6 +307,12 @@ internal static class AiChangeCommit
             (await AiChangeViews.ReadAsync(db, universeId, proposalId, approverId, approver, cancellationToken))!));
     }
 
+    /// <summary>
+    /// A new entry is created with its change's operation id (#466): a picture staged for it in the same proposal is held under
+    /// that id, and attached right after it in the same approval.
+    /// </summary>
+    private static Guid? NewEntryId(AiChangeWork work) => work.OperationId == Guid.Empty ? null : work.OperationId;
+
     /// <summary>The selected changes in an order that puts every one after what it needs; otherwise as the AI listed them.</summary>
     private static List<AiChangeWork> Ordered(List<AiChangeWork> picked, HashSet<string> keys)
     {
@@ -425,7 +431,8 @@ internal static class AiChangeCommit
                         proposed.CanonEntryId,
                         projectValues,
                         approverId,
-                        cancellationToken);
+                        cancellationToken,
+                        NewEntryId(work));
 
                     return created.Problem is not null
                         ? Done(created.Problem, null)
@@ -704,7 +711,8 @@ internal static class AiChangeCommit
                     work.BaseVersion);
                 if (work.Action == AiChangeAction.Create)
                 {
-                    var (entity, refused) = await EntityEndpoints.CreateEntryAsync(db, universeId, entry, approverId, cancellationToken);
+                    var (entity, refused) = await EntityEndpoints.CreateEntryAsync(
+                        db, universeId, entry, approverId, cancellationToken, entityId: NewEntryId(work));
                     return (entity?.Id, refused);
                 }
 

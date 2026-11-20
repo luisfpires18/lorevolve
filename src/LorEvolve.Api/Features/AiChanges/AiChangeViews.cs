@@ -427,7 +427,7 @@ internal static class AiChangeViews
                     lines.Add(new AiChangeLine("Picture of", null, note));
                 }
 
-                var entry = names.Entry(AiRef.To(media.EntityId));
+                var entry = names.Entry(media.EntryRef is { } entryRef ? new AiRef(null, entryRef) : AiRef.To(media.EntityId));
                 return (media.AppearanceId is { } look
                     ? $"Add a picture to {entry}'s appearance {names.Appearance(look)}"
                     : $"Add a profile picture to {entry}", lines);
@@ -891,7 +891,8 @@ internal static class AiChangeViews
 
         public string RelationshipType(Guid id) => _relationshipTypes.GetValueOrDefault(id) ?? "(unknown kind)";
 
-        public string Entry(AiRef reference) => Named(reference, _entries, work => (work.Proposed as LoreValues)?.Name);
+        public string Entry(AiRef reference) =>
+            Named(reference, _entries, work => (work.Proposed as LoreValues)?.Name ?? (work.Proposed as ProjectEntryValues)?.Name);
 
         public string Story(AiRef reference) => Named(reference, _stories, work => (work.Proposed as StoryValues)?.Title);
 
