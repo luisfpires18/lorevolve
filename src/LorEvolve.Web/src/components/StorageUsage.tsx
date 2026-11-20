@@ -3,6 +3,7 @@ import { formatBytes } from '../lib/bytes'
 import { getAccountStorage } from '../profile/api'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { UsageItem, UsageMeter } from './UsageItem'
+import { QuietNote } from './QuietNote'
 
 /**
  * Storage in the Profile's Usage section: how much of the account's allowance its pictures use (ADR 0042).
@@ -39,7 +40,7 @@ export function StorageUsage() {
               </p>
             ) : null}
 
-            <p className="settings__note">{t('account.storage.note')}</p>
+            <QuietNote spacing="block">{t('account.storage.note')}</QuietNote>
           </>
         )
       }}

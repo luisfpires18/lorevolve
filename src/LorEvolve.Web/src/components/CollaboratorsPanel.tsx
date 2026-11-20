@@ -14,6 +14,7 @@ import { Announce } from './Announce'
 import { LoadingNote } from './LoadingNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { Section } from './Section'
+import { QuietNote } from './QuietNote'
 
 /**
  * Settings → Collaborators (ADR 0041 amendment): invite someone by email, and manage who works here. The owner's alone -
@@ -53,7 +54,7 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
       <Announce testId="collaborators-announcer">{announcement}</Announce>
 
       <Section title={t('universe.collab.inviteHeading')} titleId="collab-invite-heading" narrow>
-        <p className="settings__note">{t('universe.collab.inviteNote')}</p>
+        <QuietNote spacing="block">{t('universe.collab.inviteNote')}</QuietNote>
         <InviteForm
           universeId={universeId}
           onCreated={(invitation) => {
@@ -72,11 +73,11 @@ export function CollaboratorsPanel({ universeId }: { universeId: string }) {
             <p className="collab__createdtitle" role="status">
               {t('universe.collab.created')}
             </p>
-            <p className="settings__note">
+            <QuietNote spacing="block">
               {tx('universe.collab.createdNote', {
                 email: <bdi className="collab__email">{created.email}</bdi>,
               })}
-            </p>
+            </QuietNote>
             <CopyLink
               claimToken={created.claimToken}
               label={t('universe.collab.copyCreated')}

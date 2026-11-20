@@ -9,6 +9,7 @@ import { Announce } from './Announce'
 import { CheckField } from './CheckField'
 import { SectionTitle } from './Section'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The Profile's view of the account's public author page (ADR 0037): where it is, whether anyone can see it, and the
@@ -66,7 +67,7 @@ export function PublicAuthorSection() {
     <div className="profile__author" data-testid="public-author-settings">
       <SectionTitle level={3}>{t('portal.authorSection.title')}</SectionTitle>
       {settings.authorSlug && settings.hasPublicWorld ? (
-        <p className="settings__note">
+        <QuietNote spacing="block">
           {tx('portal.authorSection.readersFind', {
             link: (
               <Link to={authorPath(settings.authorSlug)} data-testid="view-author-page">
@@ -74,13 +75,13 @@ export function PublicAuthorSection() {
               </Link>
             ),
           })}
-        </p>
+        </QuietNote>
       ) : (
-        <p className="settings__note" data-testid="author-page-hidden">
+        <QuietNote spacing="block" testId="author-page-hidden">
           {settings.authorSlug
             ? t('portal.authorSection.hiddenAgain')
             : t('portal.authorSection.hiddenFirst')}
-        </p>
+        </QuietNote>
       )}
 
       <CheckField

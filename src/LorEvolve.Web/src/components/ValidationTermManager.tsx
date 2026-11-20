@@ -9,6 +9,7 @@ import { NewTermForm } from './ruleValidation/NewTermForm'
 import { LoadingNote } from './LoadingNote'
 import { SectionTitle } from './Section'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The universe's event kinds and methods on the Types screen (ADR 0034): renamed here, deleted here once nothing names them, and
@@ -45,7 +46,7 @@ export function ValidationTermManager({ universeId }: { universeId: string }) {
         <SectionTitle id={headingId}>{t('canon.terms.heading')}</SectionTitle>
       </div>
 
-      <p className="settings__note">{t('canon.terms.note')}</p>
+      <QuietNote spacing="block">{t('canon.terms.note')}</QuietNote>
 
       {message ? <FormMessage testId="terms-error">{message}</FormMessage> : null}
 

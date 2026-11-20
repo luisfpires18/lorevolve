@@ -5,6 +5,7 @@ import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 /** Settings → Advanced: the danger section with its confirm once archived, or the note that deleting needs the archive. */
 export function SettingsDelete({
@@ -38,12 +39,12 @@ export function SettingsDelete({
       narrow
       tone="danger"
     >
-      <p className="settings__note">
+      <QuietNote spacing="block">
         {isPublic ? t('universe.settings.deleteNotePublic') : t('universe.settings.deleteNote')}
-      </p>
-      <p className="settings__note" data-testid="delete-ideas-note">
+      </QuietNote>
+      <QuietNote spacing="block" testId="delete-ideas-note">
         {t('universe.settings.deleteIdeasNote')}
-      </p>
+      </QuietNote>
       {confirmingDelete ? (
         <InlineConfirm
           look="settings"
@@ -75,8 +76,8 @@ export function SettingsDelete({
       )}
     </Section>
   ) : (
-    <p className="settings__note" data-testid="delete-needs-archive">
+    <QuietNote spacing="block" testId="delete-needs-archive">
       {t('universe.settings.deleteNeedsArchive')}
-    </p>
+    </QuietNote>
   )
 }

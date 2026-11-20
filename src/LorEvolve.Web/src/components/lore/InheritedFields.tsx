@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
+import { QuietNote } from '../QuietNote'
 
 /** The fields a nested type inherits, under each type above it, read-only. */
 export function InheritedFields({
@@ -20,13 +21,13 @@ export function InheritedFields({
           key={owner.id}
           data-testid={`inherited-fields-${owner.name}`}
         >
-          <p className="settings__note">
+          <QuietNote spacing="block">
             {tx('entityTypes.fields.inheritedNote', {
               owner: <bdi>{owner.name}</bdi>,
               type: type.name,
               again: <bdi>{owner.name}</bdi>,
             })}
-          </p>
+          </QuietNote>
           <ul
             className="fieldlist"
             aria-label={t('entityTypes.fields.inheritedLabel', {

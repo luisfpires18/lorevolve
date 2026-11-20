@@ -3,6 +3,7 @@ import { roleLabel } from '../../universes/access'
 import type { Collaborators, PendingInvitation } from '../../universes/collaborators'
 import { InvitationRow } from './InvitationRow'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 /** The invitations nobody has claimed yet, each with a role to change, its link and Revoke. */
 export function CollaboratorInvitations({
@@ -31,9 +32,9 @@ export function CollaboratorInvitations({
       titleId="collab-pending-heading"
     >
       {data.invitations.length === 0 ? (
-        <p className="settings__note" data-testid="invitations-empty">
+        <QuietNote spacing="block" testId="invitations-empty">
           {t('universe.collab.pendingEmpty')}
-        </p>
+        </QuietNote>
       ) : (
         <ul className="collab__list" data-testid="pending-invitation-list">
           {data.invitations.map((invitation) => (

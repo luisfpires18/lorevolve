@@ -3,6 +3,7 @@ import { roleLabel } from '../../universes/access'
 import type { Collaborators } from '../../universes/collaborators'
 import { MemberRow } from './MemberRow'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 /** The people who work here, each with a role to change and a way to remove them. */
 export function CollaboratorMembers({
@@ -25,9 +26,9 @@ export function CollaboratorMembers({
       titleId="collab-people-heading"
     >
       {data.members.length === 0 ? (
-        <p className="settings__note" data-testid="collaborators-empty">
+        <QuietNote spacing="block" testId="collaborators-empty">
           {t('universe.collab.peopleEmpty')}
-        </p>
+        </QuietNote>
       ) : (
         <ul className="collab__list" data-testid="collaborator-list">
           {data.members.map((member) => (

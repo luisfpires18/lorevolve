@@ -6,6 +6,7 @@ import { confirmAction } from '../../lib/confirm'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 export function BlockSection({
   user,
@@ -26,9 +27,9 @@ export function BlockSection({
   if (user.role === 'Admin') {
     return (
       <Section title={t('admin.block.access')} titleId="admin-access" rule={false}>
-        <p className="settings__note" data-testid="admin-block-unavailable">
+        <QuietNote spacing="block" testId="admin-block-unavailable">
           {t(isSelf ? 'admin.block.unavailableSelf' : 'admin.block.unavailable')}
-        </p>
+        </QuietNote>
       </Section>
     )
   }
@@ -71,9 +72,9 @@ export function BlockSection({
       rule={false}
       tone={block ? 'danger' : 'default'}
     >
-      <p className="settings__note">
+      <QuietNote spacing="block">
         {t(block ? 'admin.block.block.note' : 'admin.block.unblock.note')}
-      </p>
+      </QuietNote>
       <form
         className="adminblock"
         onSubmit={(event) => {

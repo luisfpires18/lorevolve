@@ -5,6 +5,7 @@ import type { DraftSection } from '../../lore/sectionLayout'
 import { Button } from '../Button'
 import { MoveItems } from '../MoveItems'
 import { NewButton } from '../NewButton'
+import { QuietNote } from '../QuietNote'
 
 /** The sections drawer's list of sections: name, fold, move and remove each one, and Add section. */
 export function SectionListEditor({
@@ -31,7 +32,7 @@ export function SectionListEditor({
         {t('entityTypes.sections.heading')}
       </h3>
       {sections.length === 0 ? (
-        <p className="settings__note">{t('entityTypes.sections.empty')}</p>
+        <QuietNote spacing="block">{t('entityTypes.sections.empty')}</QuietNote>
       ) : (
         <ol className="sectionlist">
           {sections.map((section, index) => (

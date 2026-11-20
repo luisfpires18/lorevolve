@@ -3,6 +3,7 @@ import type { useUniverseSettingsState } from '../../universes/useUniverseSettin
 import { Button } from '../Button'
 import { Section } from '../Section'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /** Settings → Data: the backup and readable downloads, and the way to restore a backup. */
 export function SettingsData({
@@ -18,7 +19,7 @@ export function SettingsData({
   return (
     <>
       <Section title={t('universe.settings.backup')} narrow>
-        <p className="settings__note">{t('universe.settings.backupNote')}</p>
+        <QuietNote spacing="block">{t('universe.settings.backupNote')}</QuietNote>
         <Button
           tone="secondary"
           onClick={() => void exportFile('backup')}
@@ -29,7 +30,7 @@ export function SettingsData({
             ? t('universe.settings.backupPreparing')
             : t('universe.settings.backupDownload')}
         </Button>
-        <p className="settings__note">{t('universe.settings.readableNote')}</p>
+        <QuietNote spacing="block">{t('universe.settings.readableNote')}</QuietNote>
         <Button
           tone="secondary"
           onClick={() => void exportFile('readable')}
@@ -41,15 +42,15 @@ export function SettingsData({
             : t('universe.settings.readableDownload')}
         </Button>
         {exportedAs ? (
-          <p className="settings__saved" role="status" data-testid="export-done">
+          <QuietNote tone="saved" role="status" testId="export-done">
             {t('universe.settings.exportSaved', { name: exportedAs })}
-          </p>
+          </QuietNote>
         ) : null}
         {exportError ? <FormMessage testId="export-error">{exportError}</FormMessage> : null}
       </Section>
 
       <Section title={t('universe.settings.restore')} narrow>
-        <p className="settings__note">{t('universe.settings.restoreNote')}</p>
+        <QuietNote spacing="block">{t('universe.settings.restoreNote')}</QuietNote>
         <Button tone="secondary" to="/app?restore" data-testid="settings-restore-link">
           {t('universe.settings.restoreLink')}
         </Button>

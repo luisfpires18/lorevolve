@@ -8,6 +8,7 @@ import { EraDirection, EraLabelPosition, type Chronology } from '../chronology/t
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { Section } from '../components/Section'
+import { QuietNote } from '../components/QuietNote'
 
 /**
  * A universe's chronology as a workspace section of its own, beside World Rules: the eras its dates are written and
@@ -111,9 +112,9 @@ function ChronologyReading({ chronology }: { chronology: Chronology }) {
             ))}
           </ol>
         ) : (
-          <p className="settings__note" data-testid="calendar-note">
+          <QuietNote spacing="block" testId="calendar-note">
             {t('time.chronology.reading.simple')}
-          </p>
+          </QuietNote>
         )}
       </Section>
     </>

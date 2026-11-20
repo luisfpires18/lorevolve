@@ -13,6 +13,7 @@ import { LanguageSwitch } from '../components/LanguageSwitch'
 import { useI18n } from '../i18n'
 import { useQueryTab } from '../lib/queryTab'
 import { listUniverses } from '../universes/api'
+import { QuietNote } from '../components/QuietNote'
 
 /**
  * The signed-in account, and only what LorEvolve genuinely knows about it.
@@ -101,7 +102,7 @@ export default function ProfilePage() {
         </Section>
 
         <Section title={t('account.profile.appearance')} titleId="profile-appearance-heading">
-          <p className="settings__note">{t('account.profile.themeNote')}</p>
+          <QuietNote spacing="block">{t('account.profile.themeNote')}</QuietNote>
           <ThemeSwitch />
           <LanguageSwitch />
         </Section>

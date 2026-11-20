@@ -8,6 +8,7 @@ import { Button } from '../Button'
 import { Section } from '../Section'
 import { DateText } from '../DateText'
 import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
 
 /**
  * A sign-up link for someone with no universe to be invited into. While registration is invitation-only it lets that one
@@ -67,7 +68,7 @@ export function SignUpLink() {
 
   return (
     <Section title={t('admin.signUp.heading')} titleId="admin-signup-link" rule={false}>
-      <p className="settings__note">{t('admin.signUp.note')}</p>
+      <QuietNote spacing="block">{t('admin.signUp.note')}</QuietNote>
       <form className="form" onSubmit={submit} noValidate>
         <Field
           label={t('admin.signUp.emailLabel')}
@@ -99,20 +100,20 @@ export function SignUpLink() {
         </div>
       </form>
       {sent ? (
-        <p className="settings__note" role="status" data-testid="admin-signup-sent">
+        <QuietNote spacing="block" role="status" testId="admin-signup-sent">
           {tx('admin.signUp.sent', {
             to: <bdi>{sent.to}</bdi>,
             time: <DateText value={sent.expiresAt} withTime />,
           })}
-        </p>
+        </QuietNote>
       ) : null}
       {link ? (
-        <p className="settings__note" role="status">
+        <QuietNote spacing="block" role="status">
           {tx('admin.signUp.link', {
             time: <DateText value={link.expiresAt} withTime />,
             url: <code data-testid="admin-signup-url">{link.url}</code>,
           })}
-        </p>
+        </QuietNote>
       ) : null}
     </Section>
   )

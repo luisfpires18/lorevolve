@@ -6,6 +6,7 @@ import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 /** Settings → Advanced: archive or restore from the archive, with the confirm a public universe asks for. */
 export function SettingsArchive({
@@ -52,18 +53,18 @@ export function SettingsArchive({
       testId="archive-section"
       narrow
     >
-      <p className="settings__note">
+      <QuietNote spacing="block">
         {universe.isArchived
           ? t('universe.settings.archivedNote')
           : t('universe.settings.archiveNote')}
-      </p>
+      </QuietNote>
       {universe.isArchived && isPublic ? (
-        <p className="settings__note" data-testid="archived-still-public">
+        <QuietNote spacing="block" testId="archived-still-public">
           {tx('universe.settings.stillPublic', {
             still: <strong>{t('universe.settings.stillPublicLead')}</strong>,
             link: <Link to={publishPath}>{t('universe.settings.stillPublicLink')}</Link>,
           })}
-        </p>
+        </QuietNote>
       ) : null}
       {confirmingArchive ? (
         <InlineConfirm
@@ -79,11 +80,11 @@ export function SettingsArchive({
           busy={busy}
           testId="archive-public-confirm"
         >
-          <p className="settings__note">
+          <QuietNote spacing="block">
             {isPublic
               ? t('universe.settings.archiveConfirmPublicNote')
               : t('universe.settings.archiveConfirmUnknownNote')}
-          </p>
+          </QuietNote>
           <FormActions
             submitLabel={
               isPublic

@@ -6,6 +6,7 @@ import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { useI18n } from '../i18n'
 import { SectionTitle } from './Section'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 interface Props {
   universeId: string
@@ -69,7 +70,7 @@ export function FamilyTreeTypes({
       <summary id={headingId}>{t('places.familyTypes.summary')}</summary>
 
       <div className="family__setupbody">
-        <p className="settings__note">{t('places.familyTypes.intro')}</p>
+        <QuietNote spacing="block">{t('places.familyTypes.intro')}</QuietNote>
 
         <section aria-labelledby={`${headingId}-types`}>
           <SectionTitle level={3} tone="label" size="xs" id={`${headingId}-types`}>
@@ -77,11 +78,11 @@ export function FamilyTreeTypes({
           </SectionTitle>
           <p data-testid="family-setup-types">
             {ownTypes.length > 0 ? ownTypes.join(', ') : t('places.familyTypes.none')}{' '}
-            <span className="settings__note">
+            <QuietNote spacing="block" as="span">
               {tx('places.familyTypes.chooseWhere', {
                 link: <Link to={typesPath}>{t('places.familyTypes.chooseWhereLink')}</Link>,
               })}
-            </span>
+            </QuietNote>
           </p>
         </section>
 
@@ -90,14 +91,14 @@ export function FamilyTreeTypes({
             {t('places.familyTypes.groups')}
           </SectionTitle>
           {groups.length === 0 ? (
-            <p className="settings__note">
+            <QuietNote spacing="block">
               {tx('places.familyTypes.noGroups', {
                 link: <Link to={typesPath}>{t('places.familyTypes.noGroupsLink')}</Link>,
               })}
-            </p>
+            </QuietNote>
           ) : (
             <>
-              <p className="settings__note">{t('places.familyTypes.groupHelp')}</p>
+              <QuietNote spacing="block">{t('places.familyTypes.groupHelp')}</QuietNote>
               <ul className="family__grouplist">
                 {groups.map((group) => {
                   const covers = group.typeIds
@@ -132,7 +133,7 @@ export function FamilyTreeTypes({
                 })}
               </ul>
               {canEdit ? null : (
-                <p className="settings__note">{t('places.familyTypes.ownersOnly')}</p>
+                <QuietNote spacing="block">{t('places.familyTypes.ownersOnly')}</QuietNote>
               )}
             </>
           )}

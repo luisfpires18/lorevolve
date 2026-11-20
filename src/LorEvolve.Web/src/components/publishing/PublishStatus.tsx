@@ -5,6 +5,7 @@ import type { usePublishState } from '../../publishing/usePublishState'
 import { PublishConfirm } from './PublishConfirm'
 import { UnpublishConfirm } from './UnpublishConfirm'
 import { Section } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 /** Status: public or private, the address, the checklist, a refusal, what was done, the two confirms and the ready hint. */
 export function PublishStatus({
@@ -103,9 +104,9 @@ export function PublishStatus({
       ) : null}
 
       {announcement ? (
-        <p className="settings__saved" role="status" data-testid="publication-announcement">
+        <QuietNote tone="saved" role="status" testId="publication-announcement">
           {announcement}
-        </p>
+        </QuietNote>
       ) : null}
 
       {confirming?.kind === 'publish' ? (

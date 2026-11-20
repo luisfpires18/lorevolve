@@ -201,8 +201,8 @@ function ConnectSteps({
             <li key={item}>{item}</li>
           ))}
         </ul>
-        <p className="settings__note">{t('ai.connect.readsNote')}</p>
-        <p className="settings__note">{t('ai.connect.privacyNote')}</p>
+        <QuietNote spacing="block">{t('ai.connect.readsNote')}</QuietNote>
+        <QuietNote spacing="block">{t('ai.connect.privacyNote')}</QuietNote>
       </section>
 
       <QuietNote className="connect__manage" size="ui" wrap>

@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import type { PublishEverythingPreview } from '../../publishing/types'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
+import { QuietNote } from '../QuietNote'
 
 /** The confirm before Publish everything: each entry and story it would publish, and the stories it would skip. */
 export function PublishEverythingConfirm({
@@ -37,19 +38,19 @@ export function PublishEverythingConfirm({
       testId="publish-everything-confirm"
     >
       {nothing ? (
-        <p className="settings__note">{t('universe.publish.everything.allPublic')}</p>
+        <QuietNote spacing="block">{t('universe.publish.everything.allPublic')}</QuietNote>
       ) : (
         <>
-          <p className="settings__note">{t('universe.publish.everything.anyone')}</p>
+          <QuietNote spacing="block">{t('universe.publish.everything.anyone')}</QuietNote>
           {preview.lore.length > 0 ? (
             <div className="publication__selected">
-              <p className="settings__note" id="publish-everything-lore">
+              <QuietNote spacing="block" id="publish-everything-lore">
                 <strong>
                   {tn('universe.publish.everything.loreHeading', preview.lore.length, {
                     n: preview.lore.length,
                   })}
                 </strong>
-              </p>
+              </QuietNote>
               <ul
                 className="publication__selectedlist"
                 aria-labelledby="publish-everything-lore"
@@ -68,13 +69,13 @@ export function PublishEverythingConfirm({
           ) : null}
           {preview.stories.length > 0 ? (
             <div className="publication__selected">
-              <p className="settings__note" id="publish-everything-stories">
+              <QuietNote spacing="block" id="publish-everything-stories">
                 <strong>
                   {tn('universe.publish.everything.storiesHeading', preview.stories.length, {
                     n: preview.stories.length,
                   })}
                 </strong>
-              </p>
+              </QuietNote>
               <ul
                 className="publication__selectedlist"
                 aria-labelledby="publish-everything-stories"
@@ -98,10 +99,10 @@ export function PublishEverythingConfirm({
       )}
       {preview.skippedStories.length > 0 ? (
         <div className="publication__selected" data-testid="publish-everything-skipped">
-          <p className="settings__note" id="publish-everything-skipped">
+          <QuietNote spacing="block" id="publish-everything-skipped">
             <strong>{t('universe.publish.everything.skipped')}</strong>{' '}
             {t('universe.publish.everything.skippedNote')}
-          </p>
+          </QuietNote>
           <ul
             className="publication__selectedlist"
             aria-labelledby="publish-everything-skipped"
@@ -127,7 +128,9 @@ export function PublishEverythingConfirm({
         lockCancel
         inline
       />
-      {nothing ? null : <p className="settings__note">{t('universe.publish.everything.again')}</p>}
+      {nothing ? null : (
+        <QuietNote spacing="block">{t('universe.publish.everything.again')}</QuietNote>
+      )}
     </InlineConfirm>
   )
 }

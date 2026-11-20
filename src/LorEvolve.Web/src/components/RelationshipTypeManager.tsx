@@ -12,6 +12,7 @@ import { NewButton } from './NewButton'
 import { LoadingNote } from './LoadingNote'
 import { SectionTitle } from './Section'
 import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
   useI18n() // Re-render when the language changes; the module's `t` reads the new one.
@@ -89,7 +90,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
         ) : null}
       </div>
 
-      <p className="settings__note">{t('relationships.types.intro')}</p>
+      <QuietNote spacing="block">{t('relationships.types.intro')}</QuietNote>
 
       {message ? <FormMessage testId="reltype-error">{message}</FormMessage> : null}
 
