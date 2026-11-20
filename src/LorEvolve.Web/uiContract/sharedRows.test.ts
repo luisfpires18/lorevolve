@@ -27,7 +27,13 @@ const words = (source: string) =>
     value.replaceAll('\u0001', ' \u0001 ').split(/\s+/).filter(Boolean),
   )
 
-type Rule = { why: string; writes: (word: string) => boolean; allowed: string[] }
+// `tsxOnly`: the plain word ("facts" in a sentence, a reset `token`) is text in the .ts dictionaries, never a class.
+type Rule = {
+  why: string
+  writes: (word: string) => boolean
+  allowed: string[]
+  tsxOnly?: boolean
+}
 
 const RULES: Rule[] = [
   {
@@ -39,6 +45,18 @@ const RULES: Rule[] = [
     why: 'a list of facts is FactList with a look, never a screen of its own (`*__facts`)',
     writes: (word) => word.endsWith('__facts') || /__fact$/.test(word),
     allowed: [],
+  },
+  {
+    why: 'FactList draws the list of facts (`facts`, `facts--*`)',
+    writes: (word) => word === 'facts' || word.startsWith('facts--'),
+    allowed: ['src/components/FactList.tsx'],
+    tsxOnly: true,
+  },
+  {
+    why: 'PanelHead draws the panel head (`panelhead`, `panelhead--*`, `panelhead__*`)',
+    writes: (word) => word === 'panelhead' || /^panelhead(--|__)/.test(word),
+    allowed: ['src/components/PanelHead.tsx'],
+    tsxOnly: true,
   },
   {
     why: 'a bar across the foot is ActionBar (components/ActionBar)',
@@ -92,6 +110,17 @@ test('the shared rows guard catches a hand copy, template-built classes included
   assert.ok(offends('<dl className="restore__facts">', list))
   assert.ok(offends('<div className={`profile__fact ${x}`}>', list))
   assert.ok(!offends('<div className="facts__sections">', list))
+  const factList = rule('FactList draws')
+  assert.ok(offends('<dl className="facts">', factList))
+  assert.ok(offends('<dl className={`facts facts--${look}`}>', factList))
+  assert.ok(offends("<dl className={ok ? 'facts--ruled' : ''}>", factList))
+  assert.ok(!offends('<FactList look="ruled">', factList))
+  assert.ok(!offends('<div className="facts__sections">', factList))
+  const panel = rule('PanelHead draws')
+  assert.ok(offends('<div className="panelhead">', panel))
+  assert.ok(offends('<h2 className={`panelhead__title ${x}`}>', panel))
+  assert.ok(offends("<div className={start ? 'panelhead--start' : ''}>", panel))
+  assert.ok(!offends('<PanelHead look="display" className="history__head" />', panel))
   const bar = rule('a bar across')
   assert.ok(offends('<footer className={`actionbar ${where}`}>', bar))
   assert.ok(offends('<div className="actions actionbar__actions">', bar))
@@ -119,7 +148,9 @@ test('the shared rows guard catches a hand copy, template-built classes included
 
 test('each small shared row is drawn by its part and the listed files only', () => {
   for (const one of RULES) {
-    const found = codeFiles.filter((file) => offends(read(file), one))
+    const found = codeFiles
+      .filter((file) => !one.tsxOnly || file.endsWith('.tsx'))
+      .filter((file) => offends(read(file), one))
     assert.deepEqual(
       found.filter((file) => !one.allowed.includes(file)),
       [],

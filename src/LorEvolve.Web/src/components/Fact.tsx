@@ -10,7 +10,6 @@ type DataAttributes = { [key: `data-${string}`]: string | undefined }
 export function Fact({
   name,
   children,
-  className,
   valueClassName,
   testId,
   valueTestId,
@@ -18,17 +17,12 @@ export function Fact({
 }: {
   name: ReactNode
   children?: ReactNode
-  className?: string
   valueClassName?: string
   testId?: string
   valueTestId?: string
 } & DataAttributes) {
   return (
-    <div
-      className={['facts__row', className].filter(Boolean).join(' ')}
-      data-testid={testId}
-      {...data}
-    >
+    <div className="facts__row" data-testid={testId} {...data}>
       <dt className="facts__key">{name}</dt>
       <dd
         className={['facts__value', valueClassName].filter(Boolean).join(' ')}

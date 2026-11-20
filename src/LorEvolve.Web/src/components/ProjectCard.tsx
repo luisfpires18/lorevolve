@@ -10,7 +10,6 @@ import { SectionTitle } from './Section'
 export function ProjectCard({
   title,
   level = 3,
-  titleClassName = 'projectcard__title',
   titleTone,
   meta,
   actions,
@@ -22,8 +21,6 @@ export function ProjectCard({
 }: {
   title: ReactNode
   level?: 3 | 4
-  /** The title's class, replacing the card's own. */
-  titleClassName?: string
   /** The title as a SectionTitle rule (a block's heading inside another card), in place of the class. */
   titleTone?: 'rule-accent'
   meta?: ReactNode
@@ -45,7 +42,7 @@ export function ProjectCard({
               {title}
             </SectionTitle>
           ) : (
-            <Title className={titleClassName}>{title}</Title>
+            <Title className="projectcard__title">{title}</Title>
           )}
           {meta ? <QuietNote spacing="flush">{meta}</QuietNote> : null}
           {actions ? (
