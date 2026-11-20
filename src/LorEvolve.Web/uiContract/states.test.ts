@@ -43,7 +43,7 @@ const STATUS_NOTICES = new Map<string, string>([
   ['src/pages/ConnectAuthorizePage.tsx', 'auth and consent pages are out of #410 scope'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
   [
-    'src/components/worldLogic/MachineNotices.tsx',
+    'src/components/worldLogic/MachinePanelBody.tsx',
     'a connect prompt with Cancel, not a loading line',
   ],
   [

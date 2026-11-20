@@ -8,14 +8,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { read, tsxFiles } from './support.ts'
 
-// Reads that keep old content during a reload wait for I44; the Ideas and Boards screens go in I28.
+// Reads that keep old content during a reload wait for I44 (the Ideas and Boards lists among them).
 const HAND_LADDERS = new Set([
-  'src/components/IdeaBoardsBrowser.tsx',
-  'src/components/IdeasBrowser.tsx',
   'src/components/familyTree/DiscoveryFamilies.tsx',
   'src/components/familyTree/FamilyLoadStates.tsx',
-  'src/components/ideas/BoardUnavailable.tsx',
-  'src/components/ideas/IdeaUnavailable.tsx',
+  'src/components/ideas/RecordListPage.tsx',
   'src/components/lore/EntryUnavailable.tsx',
   'src/components/timeline/TimelineNotices.tsx',
   'src/components/worldLogic/WorldLogicIntegrity.tsx',
