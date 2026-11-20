@@ -10,8 +10,7 @@ import type { canonActions } from '../../canon/canonActions'
 import { emptyLine, hint } from '../../canon/canonEmptyCopy'
 import { Button } from '../Button'
 import { Pager } from '../Pager'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 import { FormMessage } from '../FormMessage'
 
 /** The Canon page's results: the last run, the error, loading and failed lines, the ledger, the empty state and the pager. */
@@ -62,11 +61,14 @@ export function CanonResults({
 
       {message ? <FormMessage testId="canon-error">{message}</FormMessage> : null}
 
-      {state.kind === 'loading' ? <LoadingNote>{t('canon.page.loading')}</LoadingNote> : null}
-
-      {state.kind === 'error' ? (
-        <LoadError message={state.message} onRetry={reload} retryLabel={t('canon.page.retry')} />
-      ) : null}
+      {/* The ledger draws from `result`, so the gate draws only the loading and failed lines. */}
+      <ReadGate
+        load={state}
+        loading={{ text: t('canon.page.loading') }}
+        error={{ onRetry: reload, retryLabel: t('canon.page.retry') }}
+      >
+        {() => null}
+      </ReadGate>
 
       {result && result.items.length > 0 ? (
         <h2 className="visually-hidden">

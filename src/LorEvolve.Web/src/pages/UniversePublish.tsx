@@ -14,8 +14,7 @@ import { PublishStatus } from '../components/publishing/PublishStatus'
 import { publishActions } from '../publishing/publishActions'
 import { usePublishReads } from '../publishing/usePublishReads'
 import { usePublishState } from '../publishing/usePublishState'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 
 /**
  * Publish (UI refinement 014): a universe's public presentation, in the workspace, on a page of its own rather than a
@@ -50,24 +49,17 @@ export default function UniversePublish() {
   )
   const header = pageHeader(null)
 
-  if (loadError) {
+  if (loadError || !state) {
     return (
       <article className="publish" data-testid="public-portal">
         {header}
-        <LoadError
-          message={loadError}
-          onRetry={() => void load()}
-          retryLabel={t('universe.publish.retry')}
-        />
-      </article>
-    )
-  }
-
-  if (!state) {
-    return (
-      <article className="publish" data-testid="public-portal">
-        {header}
-        <LoadingNote>{t('universe.publish.loading')}</LoadingNote>
+        <ReadGate
+          load={loadError ? { kind: 'error', message: loadError } : { kind: 'loading' }}
+          loading={{ text: t('universe.publish.loading') }}
+          error={{ onRetry: () => void load(), retryLabel: t('universe.publish.retry') }}
+        >
+          {() => null}
+        </ReadGate>
       </article>
     )
   }

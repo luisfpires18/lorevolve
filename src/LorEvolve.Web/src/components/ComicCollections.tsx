@@ -17,8 +17,7 @@ import { PickOneDrawer } from './PickOneDrawer'
 import { levelWord, nameOf } from '../projectEntities/levelWords'
 import { NewButton } from './NewButton'
 import { useLoadedList } from '../lib/useLoadedList'
-import { LoadError } from './LoadError'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { PageHeader } from './PageHeader'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
@@ -50,14 +49,14 @@ export function ComicCollections({
   const kinds: ComicCollectionKind[] = projectId ? ['volume'] : ARCS_AND_EVENTS
 
   if (data === null) {
-    return failed ? (
-      <LoadError
-        message={failed}
-        onRetry={() => void refresh()}
-        testId="comic-collections-failed"
-      />
-    ) : (
-      <LoadingNote>{t('projects.comics.loading')}</LoadingNote>
+    return (
+      <ReadGate
+        load={failed ? { kind: 'error', message: failed } : { kind: 'loading' }}
+        loading={{ text: t('projects.comics.loading') }}
+        error={{ onRetry: () => void refresh(), testId: 'comic-collections-failed' }}
+      >
+        {() => null}
+      </ReadGate>
     )
   }
 

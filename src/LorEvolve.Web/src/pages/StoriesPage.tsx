@@ -18,9 +18,8 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { StoryShelf } from '../components/stories/StoryShelf'
 import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
 import { NewButton } from '../components/NewButton'
-import { LoadError } from '../components/LoadError'
 import { Announce } from '../components/Announce'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { FormMessage } from '../components/FormMessage'
 
@@ -112,16 +111,19 @@ export default function StoriesPage() {
         }
       />
 
-      {state.kind === 'loading' ? <LoadingNote>{t('stories.browse.reading')}</LoadingNote> : null}
-
-      {state.kind === 'error' ? (
-        <LoadError
-          message={t('stories.browse.loadError')}
-          onRetry={retry}
-          retryLabel={t('stories.browse.retry')}
-          testId="stories-load-error"
-        />
-      ) : null}
+      {/* The shelves sit below the notices, so the gate draws only the loading and failed lines here. */}
+      <ReadGate
+        load={state}
+        loading={{ text: t('stories.browse.reading') }}
+        error={{
+          message: t('stories.browse.loadError'),
+          onRetry: retry,
+          retryLabel: t('stories.browse.retry'),
+          testId: 'stories-load-error',
+        }}
+      >
+        {() => null}
+      </ReadGate>
 
       <Announce testId="stories-announcement">{announcement}</Announce>
       {moveError ? <FormMessage testId="stories-move-error">{moveError}</FormMessage> : null}

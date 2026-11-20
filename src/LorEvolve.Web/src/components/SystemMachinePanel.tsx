@@ -6,8 +6,7 @@ import { m } from '../worldLogic/machinePanelTypes'
 import { useMachinePanelState } from '../worldLogic/useMachinePanelState'
 import { machinePanelActions } from '../worldLogic/machinePanelActions'
 import { MachinePanelBody } from './worldLogic/MachinePanelBody'
-import { LoadError } from './LoadError'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 
 /**
  * A System's machine on the System editor's Machine tab (ADR 0073): the canvas, the same states and transitions as
@@ -51,34 +50,39 @@ export function SystemMachinePanel({
 
   const actions = machinePanelActions({ ...state, universeId, systemId, onSaved })
 
-  if (load === 'loading') {
-    return <LoadingNote>{t(`${m}.loading`)}</LoadingNote>
-  }
-
-  if (load === 'error') {
-    return (
-      <LoadError
-        message={t(`${m}.readFailed`)}
-        onRetry={() => {
+  return (
+    <ReadGate
+      // The panel's read state is a word; the message is the panel's own, not the read's.
+      load={
+        load === 'ready'
+          ? { kind: 'ready', value: null }
+          : load === 'error'
+            ? { kind: 'error', message: '' }
+            : { kind: 'loading' }
+      }
+      loading={{ text: t(`${m}.loading`) }}
+      error={{
+        message: t(`${m}.readFailed`),
+        onRetry: () => {
           setLoad('loading')
           setReads((count) => count + 1)
-        }}
-        retryLabel={t('canon.rules.retry')}
-        testId="machine-unavailable"
-      />
-    )
-  }
-
-  return (
-    <MachinePanelBody
-      {...state}
-      {...actions}
-      universeId={universeId}
-      systemId={systemId}
-      systemName={systemName}
-      projectId={projectId}
-      baseVersion={baseVersion}
-      isDirty={isDirty}
-    />
+        },
+        retryLabel: t('canon.rules.retry'),
+        testId: 'machine-unavailable',
+      }}
+    >
+      {() => (
+        <MachinePanelBody
+          {...state}
+          {...actions}
+          universeId={universeId}
+          systemId={systemId}
+          systemName={systemName}
+          projectId={projectId}
+          baseVersion={baseVersion}
+          isDirty={isDirty}
+        />
+      )}
+    </ReadGate>
   )
 }

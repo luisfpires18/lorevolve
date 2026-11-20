@@ -3,10 +3,9 @@ import { EmptyState } from '../EmptyState'
 import { FeedbackKind, listFeedback } from '../../feedback/api'
 import { useI18n } from '../../i18n'
 import { useAsyncRead } from '../../lib/useAsyncRead'
-import { LoadError } from '../LoadError'
 import { PageHeader } from '../PageHeader'
 import { Pager } from '../Pager'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
 
@@ -20,46 +19,55 @@ export function FeedbackScreen() {
   return (
     <>
       <PageHeader title={t('admin.feedback.title')} lede={t('admin.feedback.lede')} />
-      {state.kind === 'loading' ? <LoadingNote>{t('admin.feedback.reading')}</LoadingNote> : null}
-      {state.kind === 'error' ? <LoadError message={state.message} onRetry={retry} /> : null}
-      {state.kind === 'ready' && state.value.items.length === 0 ? (
-        <EmptyState testId="admin-feedback-empty" title={t('admin.feedback.empty')} />
-      ) : null}
-      {state.kind === 'ready' && state.value.items.length > 0 ? (
-        <>
-          <ul className="feedbackreports" data-testid="admin-feedback">
-            {state.value.items.map((report) => (
-              <li className="feedbackreport" key={report.id} data-testid="admin-feedback-report">
-                <QuietNote className="feedbackreport__meta">
-                  <strong>
-                    {report.kind === FeedbackKind.Bug
-                      ? t('admin.feedback.bug')
-                      : t('admin.feedback.featureRequest')}
-                  </strong>
-                  {' · '}
-                  <bdi>{report.userName ?? t('admin.feedback.removedAccount')}</bdi>
-                  {' · '}
-                  <DateText value={report.createdAt} withTime />
-                  {report.page ? (
-                    <>
+      <ReadGate
+        load={state}
+        loading={{ text: t('admin.feedback.reading') }}
+        error={{ onRetry: retry }}
+      >
+        {(feedback) =>
+          feedback.items.length === 0 ? (
+            <EmptyState testId="admin-feedback-empty" title={t('admin.feedback.empty')} />
+          ) : (
+            <>
+              <ul className="feedbackreports" data-testid="admin-feedback">
+                {feedback.items.map((report) => (
+                  <li
+                    className="feedbackreport"
+                    key={report.id}
+                    data-testid="admin-feedback-report"
+                  >
+                    <QuietNote className="feedbackreport__meta">
+                      <strong>
+                        {report.kind === FeedbackKind.Bug
+                          ? t('admin.feedback.bug')
+                          : t('admin.feedback.featureRequest')}
+                      </strong>
                       {' · '}
-                      <code>{report.page}</code>
-                    </>
-                  ) : null}
-                </QuietNote>
-                <p className="feedbackreport__text" dir="auto">
-                  {report.text}
-                </p>
-              </li>
-            ))}
-          </ul>
-          <Pager
-            page={page}
-            totalPages={Math.ceil(state.value.totalCount / state.value.pageSize)}
-            onPage={setPage}
-          />
-        </>
-      ) : null}
+                      <bdi>{report.userName ?? t('admin.feedback.removedAccount')}</bdi>
+                      {' · '}
+                      <DateText value={report.createdAt} withTime />
+                      {report.page ? (
+                        <>
+                          {' · '}
+                          <code>{report.page}</code>
+                        </>
+                      ) : null}
+                    </QuietNote>
+                    <p className="feedbackreport__text" dir="auto">
+                      {report.text}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <Pager
+                page={page}
+                totalPages={Math.ceil(feedback.totalCount / feedback.pageSize)}
+                onPage={setPage}
+              />
+            </>
+          )
+        }
+      </ReadGate>
     </>
   )
 }

@@ -8,8 +8,9 @@ import { useGameProject } from '../projects/useGameProject'
 import { useTitleDetail } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { LoadingNote } from '../components/LoadingNote'
-import { LoadError } from '../components/LoadError'
+import { ReadGate } from '../components/ReadGate'
+import type { Load } from '../lib/useAsyncRead'
+import type { ProjectDetail } from '../projects/types'
 
 /**
  * One game's directory inside Game Entities (#284): its own categories, counts and entries, read by the game's id, so
@@ -32,45 +33,51 @@ export default function GameEntitiesPage() {
     testId: 'game-entities-back',
   }
 
-  if (loading) return <LoadingNote>{t('projects.list.loading')}</LoadingNote>
-
-  if (failed)
-    return (
-      <LoadError message={t('projects.one.failed')} onRetry={retry} testId="game-project-failed" />
-    )
-
-  // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
-  if (project === null) {
-    return (
-      <EmptyState
-        title={t('projects.gameEntities.notFound')}
-        hint={t('projects.gameEntities.notFoundHint')}
-        action={
-          <Link to={back.to} data-testid={back.testId}>
-            {back.label}
-          </Link>
-        }
-        testId="game-entities-missing"
-      />
-    )
-  }
+  // useGameProject answers in flags; the gate reads them as one state. A null game (403 too, G9) is drawn below.
+  const load: Load<ProjectDetail | null> = loading
+    ? { kind: 'loading' }
+    : failed
+      ? { kind: 'error', message: t('projects.one.failed') }
+      : { kind: 'ready', value: project }
 
   return (
-    <section className="projects" data-testid="game-entities-page">
-      <PageHeader
-        crumb={<Crumb items={[back]} />}
-        title={<bdi>{project.name}</bdi>}
-        titleTestId="game-entities-title"
-        lede={t('projects.gameEntities.lede')}
-      />
-      <ProjectEntitiesView
-        key={project.id}
-        projectId={project.id}
-        universeId={project.universe.id}
-        reloadKey={schemaVersion}
-        entryHref={(entry) => `${pathname}/${entry.id}`}
-        onChanged={() => setSchemaVersion((version) => version + 1)}
-      />
-    </section>
+    <ReadGate
+      load={load}
+      loading={{ text: t('projects.list.loading') }}
+      error={{ onRetry: retry, testId: 'game-project-failed' }}
+    >
+      {(project) =>
+        // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
+        project === null ? (
+          <EmptyState
+            title={t('projects.gameEntities.notFound')}
+            hint={t('projects.gameEntities.notFoundHint')}
+            action={
+              <Link to={back.to} data-testid={back.testId}>
+                {back.label}
+              </Link>
+            }
+            testId="game-entities-missing"
+          />
+        ) : (
+          <section className="projects" data-testid="game-entities-page">
+            <PageHeader
+              crumb={<Crumb items={[back]} />}
+              title={<bdi>{project.name}</bdi>}
+              titleTestId="game-entities-title"
+              lede={t('projects.gameEntities.lede')}
+            />
+            <ProjectEntitiesView
+              key={project.id}
+              projectId={project.id}
+              universeId={project.universe.id}
+              reloadKey={schemaVersion}
+              entryHref={(entry) => `${pathname}/${entry.id}`}
+              onChanged={() => setSchemaVersion((version) => version + 1)}
+            />
+          </section>
+        )
+      }
+    </ReadGate>
   )
 }

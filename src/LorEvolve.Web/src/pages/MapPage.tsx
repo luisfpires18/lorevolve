@@ -15,8 +15,7 @@ import { MapPanelActions } from '../components/maps/MapPanelActions'
 import { MapPanelDetail } from '../components/maps/MapPanelDetail'
 import { MapPinList } from '../components/maps/MapPinList'
 import { MapStage } from '../components/maps/MapStage'
-import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 
 /**
  * One map (issue #52, ADR 0060): the picture panned and zoomed, its pins on it and beside it, and - for an Editor or the
@@ -68,30 +67,30 @@ export default function MapPage() {
     tx,
   })
 
-  if (state.kind === 'loading') {
-    return <LoadingNote>{t('places.mapPage.loading')}</LoadingNote>
-  }
-
-  if (state.kind === 'missing') {
+  // The gate draws loading, missing and failed; the ready page below needs the map outside it.
+  if (state.kind !== 'ready') {
     return (
-      <EmptyState
-        testId="map-missing"
-        title={t('places.mapPage.missingTitle')}
-        hint={tx('places.mapPage.missingHint', {
-          link: <Link to={mapsPath(universe.id)}>{t('places.mapPage.missingLink')}</Link>,
-        })}
-      />
-    )
-  }
-
-  if (state.kind === 'error') {
-    return (
-      <LoadError
-        message={t('places.mapPage.error')}
-        onRetry={retry}
-        retryLabel={t('places.mapPage.retry')}
-        testId="map-load-error"
-      />
+      <ReadGate
+        load={state}
+        loading={{ text: t('places.mapPage.loading') }}
+        error={{
+          message: t('places.mapPage.error'),
+          onRetry: retry,
+          retryLabel: t('places.mapPage.retry'),
+          testId: 'map-load-error',
+        }}
+        missing={
+          <EmptyState
+            testId="map-missing"
+            title={t('places.mapPage.missingTitle')}
+            hint={tx('places.mapPage.missingHint', {
+              link: <Link to={mapsPath(universe.id)}>{t('places.mapPage.missingLink')}</Link>,
+            })}
+          />
+        }
+      >
+        {() => null}
+      </ReadGate>
     )
   }
 

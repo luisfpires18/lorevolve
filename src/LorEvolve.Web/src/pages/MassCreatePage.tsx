@@ -14,9 +14,8 @@ import { MassCreateDefaults } from '../components/lore/MassCreateDefaults'
 import { MassCreatePaste } from '../components/lore/MassCreatePaste'
 import { MassCreateReview } from '../components/lore/MassCreateReview'
 import { MassCreateBar } from '../components/lore/MassCreateBar'
-import { LoadError } from '../components/LoadError'
 import { Announce } from '../components/Announce'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 import type { Load } from '../lib/useAsyncRead'
 
 /** What Lore is told after a mass create, so it can say how many entries arrived. */
@@ -87,55 +86,55 @@ export default function MassCreatePage() {
         lede={t('lore.massCreate.lede')}
       />
 
-      {load.kind === 'loading' ? (
-        <LoadingNote>{t('lore.massCreate.readingTypes')}</LoadingNote>
-      ) : null}
-
-      {load.kind === 'error' ? (
-        <LoadError
-          message={t('lore.massCreate.typesFailed')}
-          onRetry={() => {
+      <ReadGate
+        load={load}
+        loading={{ text: t('lore.massCreate.readingTypes') }}
+        error={{
+          message: t('lore.massCreate.typesFailed'),
+          onRetry: () => {
             refreshTypes().catch(() => undefined)
-          }}
-          retryLabel={t('lore.massCreate.retry')}
-        />
-      ) : null}
+          },
+          retryLabel: t('lore.massCreate.retry'),
+        }}
+      >
+        {() => (
+          <>
+            {eligible.length === 0 ? (
+              <p className="callout callout--warning" data-testid="mass-create-no-types">
+                {types.length === 0
+                  ? t('lore.massCreate.noTypes')
+                  : t('lore.massCreate.allRequired')}
+              </p>
+            ) : null}
 
-      {load.kind === 'ready' && eligible.length === 0 ? (
-        <p className="callout callout--warning" data-testid="mass-create-no-types">
-          {types.length === 0 ? t('lore.massCreate.noTypes') : t('lore.massCreate.allRequired')}
-        </p>
-      ) : null}
+            <MassCreateDefaults
+              {...massRows}
+              id={id}
+              choices={choices}
+              eligible={eligible}
+              startingType={startingType}
+              startingBlocked={startingBlocked}
+              setChosenTypeId={setChosenTypeId}
+              defaultTypeId={defaultTypeId}
+              defaultStatus={defaultStatus}
+              setDefaultStatus={setDefaultStatus}
+            />
 
-      {load.kind === 'ready' ? (
-        <>
-          <MassCreateDefaults
-            {...massRows}
-            id={id}
-            choices={choices}
-            eligible={eligible}
-            startingType={startingType}
-            startingBlocked={startingBlocked}
-            setChosenTypeId={setChosenTypeId}
-            defaultTypeId={defaultTypeId}
-            defaultStatus={defaultStatus}
-            setDefaultStatus={setDefaultStatus}
-          />
+            <MassCreatePaste {...massRows} id={id} />
 
-          <MassCreatePaste {...massRows} id={id} />
+            <MassCreateReview {...massRows} id={id} choices={choices} />
 
-          <MassCreateReview {...massRows} id={id} choices={choices} />
-
-          <MassCreateBar
-            {...massRows}
-            universe={universe}
-            backTo={backTo}
-            create={create}
-            unavailable={unavailable}
-            status={status}
-          />
-        </>
-      ) : null}
+            <MassCreateBar
+              {...massRows}
+              universe={universe}
+              backTo={backTo}
+              create={create}
+              unavailable={unavailable}
+              status={status}
+            />
+          </>
+        )}
+      </ReadGate>
 
       <Announce testId="mass-announcement">{announcement}</Announce>
     </article>

@@ -18,8 +18,7 @@ import { NameSummaryDrawer } from './NameSummaryDrawer'
 import { PickOneDrawer } from './PickOneDrawer'
 import { NewButton } from './NewButton'
 import { useLoadedList } from '../lib/useLoadedList'
-import { LoadError } from './LoadError'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { FormMessage } from './FormMessage'
 
 /**
@@ -40,10 +39,14 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
   }
 
   if (data === null) {
-    return failed ? (
-      <LoadError message={failed} onRetry={() => void refresh()} testId="sagas-failed" />
-    ) : (
-      <LoadingNote>{t('projects.sagas.loading')}</LoadingNote>
+    return (
+      <ReadGate
+        load={failed ? { kind: 'error', message: failed } : { kind: 'loading' }}
+        loading={{ text: t('projects.sagas.loading') }}
+        error={{ onRetry: () => void refresh(), testId: 'sagas-failed' }}
+      >
+        {() => null}
+      </ReadGate>
     )
   }
 

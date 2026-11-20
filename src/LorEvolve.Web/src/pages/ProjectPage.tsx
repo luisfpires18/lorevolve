@@ -19,7 +19,7 @@ import { useProjectRead } from '../projects/useProjectRead'
 import { NewProject } from '../components/projects/NewProject'
 import { ProjectBody } from '../components/projects/ProjectBody'
 import { LoadError } from '../components/LoadError'
-import { LoadingNote } from '../components/LoadingNote'
+import { ReadGate } from '../components/ReadGate'
 
 /** One project: its own page, or the form that makes one. */
 export default function ProjectPage({
@@ -70,23 +70,30 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       : documentTitle(read?.kind === 'ready' ? read.project.name : t('projects.one.title')),
   )
 
-  if (read === null) {
-    return <LoadingNote>{t('projects.one.loading')}</LoadingNote>
-  }
-
-  if (read.kind === 'missing') {
+  if (read === null || read.kind === 'missing' || read.kind === 'failed') {
     return (
-      <EmptyState
-        title={t('projects.one.missing')}
-        hint={t('projects.one.missingHint')}
-        action={<Link to="/app/projects">{t('projects.nav.all')}</Link>}
-        testId="project-missing"
-      />
+      <ReadGate
+        load={
+          read === null
+            ? { kind: 'loading' }
+            : read.kind === 'failed'
+              ? { kind: 'error', message: t('projects.one.failed') }
+              : read
+        }
+        loading={{ text: t('projects.one.loading') }}
+        error={{ onRetry: retry, testId: 'project-failed' }}
+        missing={
+          <EmptyState
+            title={t('projects.one.missing')}
+            hint={t('projects.one.missingHint')}
+            action={<Link to="/app/projects">{t('projects.nav.all')}</Link>}
+            testId="project-missing"
+          />
+        }
+      >
+        {() => null}
+      </ReadGate>
     )
-  }
-
-  if (read.kind === 'failed') {
-    return <LoadError message={t('projects.one.failed')} onRetry={retry} testId="project-failed" />
   }
 
   if (read.kind === 'elsewhere') {

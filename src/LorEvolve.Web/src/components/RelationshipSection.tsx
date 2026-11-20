@@ -13,8 +13,8 @@ import { useRelationsState } from '../relationships/useRelationsState'
 import { RelationForm } from './relationships/RelationForm'
 import { RelationsHead } from './relationships/RelationsHead'
 import { RelationsList } from './relationships/RelationsList'
-import { RelationsNotice } from './relationships/RelationsNotice'
 import { RelationsWhen } from './relationships/RelationsWhen'
+import { LoadError } from './LoadError'
 
 interface RelationshipSectionProps {
   universeId: string
@@ -131,7 +131,12 @@ export function RelationshipSection({
       />
 
       {(message ?? readError) ? (
-        <RelationsNotice message={message} readError={readError} load={load} />
+        <LoadError
+          message={message ?? readError}
+          onRetry={readError && !message ? () => void load() : undefined}
+          retryLabel={t('relationships.section.retry')}
+          testId="relationship-error"
+        />
       ) : null}
 
       <RelationsWhen
