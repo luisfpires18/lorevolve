@@ -285,6 +285,17 @@ None. Two differences go beyond the words of the plan and are listed for the own
 
 Every real failure, on both sides, is the same `cinema-sagas.spec.ts:46` assertion: the phase members still in the old order after a move (`phase-members-* li`, 5 s). It fails as often on dev as on the branch, so the branch does not make it worse. The implement step's after run was 15 of 15.
 
+## After the review fixes
+
+Four fixes after review, none of which changes a pixel in the shots above, so nothing was recaptured and the counts stand:
+
+- `InlineConfirm` now stops every Escape, busy or not, so a busy panel never closes the `ActionMenu` or `Drawer` around it; it keeps only when not busy.
+- The type group arrows are named "Move the group {name} up" again ("Mover o grupo {name} para cima"), as on dev.
+- The scene beat arrows have their dev tips back, "Earlier" and "Later" ("Mais cedo", "Mais tarde"), through a `titles` prop on `MoveItems`. Their names already matched dev in both languages.
+- Settings delete: `workspace-settings.spec.ts` now presses Keep it and Escape in turn; both close the panel and return the focus to Delete universe. The script above missed Keep only because of the button's name ("Keep it").
+
+Every other caller of the four shared parts was compared with dev for names, tips and group labels; no other one got less specific. The calendar month tips now read "Move earlier" and "Move later" where dev said "Earlier" and "Later", which says more, and the Types page arrows lost their Up and Down words to icons, which the shots above already show.
+
 ## Not reachable
 
 Nothing planned was out of reach. Some controls show at one width only, and the shot on the other width is the page without them, on both sides alike: the Types inline arrows and the lore Filters and manuscript details toggles on a phone only, the type row menu Move items on desktop only.
