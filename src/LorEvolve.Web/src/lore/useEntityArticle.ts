@@ -112,7 +112,8 @@ export function useEntityArticle({
   const saved = useMemo(() => comparable(baseline ?? stored.content), [baseline, stored.content])
   const outgoing = comparable(draft)
   const isDirty = isReady && isEditing && draft !== null && outgoing !== saved
-  const isTooLong = outgoing.length > ARTICLE_MAX_LENGTH
+  const length = outgoing.length
+  const isTooLong = length > ARTICLE_MAX_LENGTH
 
   // A recovery copy that differs from what is saved is offered. Writing waits for the author's choice - and, for the
   // moment it takes, for the copy to be looked for - so nothing typed can overwrite a copy nobody has seen yet.
@@ -251,6 +252,7 @@ export function useEntityArticle({
     hasArticle,
     saved,
     isDirty,
+    length,
     isTooLong,
     offer,
     isHeld,

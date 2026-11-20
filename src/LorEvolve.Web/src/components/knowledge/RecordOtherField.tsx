@@ -26,6 +26,7 @@ export function RecordOtherField({
     <Field
       group
       hideLabel
+      className="field--flow"
       label={
         side === 'knows'
           ? t('ai.knowledge.form.whoKnowsFixed')
@@ -35,7 +36,7 @@ export function RecordOtherField({
       errorTestId="knowledge-other-error"
     >
       {(group) => (
-        <div {...group}>
+        <div {...group} className="field__stack">
           {side === 'knows' ? (
             <>
               <p className="knowledge__fixedlabel">{t('ai.knowledge.form.whoKnowsFixed')}</p>

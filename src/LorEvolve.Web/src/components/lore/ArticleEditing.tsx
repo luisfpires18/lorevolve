@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Check, X } from 'lucide-react'
 import { EditConflict, LatestText } from '../EditConflict'
 import { LoreArticle } from '../ArticleView'
-import { getEntityArticle } from '../../lore/article'
+import { ARTICLE_MAX_LENGTH, getEntityArticle } from '../../lore/article'
 import { isEmptyDocument } from '../../lore/document'
 import { useI18n } from '../../i18n'
 import type { useEntityArticle } from '../../lore/useEntityArticle'
@@ -36,6 +36,7 @@ export function ArticleEditing({
   conflict,
   editor,
   isDirty,
+  length,
   isTooLong,
   save,
   finishEditing,
@@ -54,6 +55,7 @@ export function ArticleEditing({
   | 'conflict'
   | 'editor'
   | 'isDirty'
+  | 'length'
   | 'isTooLong'
   | 'save'
 > &
@@ -120,11 +122,10 @@ export function ArticleEditing({
         >
           {status.text}
         </p>
-        {/* The limit is on the serialised text, not a count of its own: 1 against 0 shows it only when too long. */}
         <CharCount
           id={tooLongId}
-          used={isTooLong ? 1 : 0}
-          max={0}
+          used={length}
+          max={ARTICLE_MAX_LENGTH}
           show="over"
           words={{ tooLong: 'entity.article.tooLong' }}
           className="article__toolong"

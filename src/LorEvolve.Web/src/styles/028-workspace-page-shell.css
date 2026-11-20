@@ -32,6 +32,9 @@
   margin: var(--space-2) 0 0;
   border-bottom: 1px solid var(--rule);
   overflow-x: auto;
+  /* The chosen tab's underline sits 1px over the hairline; without this the row scrolls 1px up and down and takes
+     the page's wheel. */
+  overflow-y: hidden;
   scrollbar-width: none;
 }
 

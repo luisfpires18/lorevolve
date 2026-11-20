@@ -98,31 +98,33 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
 
           <Field group hideLabel label={t('time.calendar.heading')} error={fieldErrors.months}>
             {(control) => (
-              <ol
-                className="months"
-                aria-labelledby={control['aria-labelledby']}
-                aria-describedby={control['aria-describedby']}
-                data-testid="months"
-              >
-                {drafts.map((month, index) => (
-                  <CalendarMonthRow
-                    key={month.key}
-                    month={month}
-                    index={index}
-                    drafts={drafts}
-                    fieldErrors={fieldErrors}
-                    update={update}
-                    move={move}
-                    remove={remove}
-                  />
-                ))}
-              </ol>
+              <>
+                <ol
+                  className="months"
+                  aria-labelledby={control['aria-labelledby']}
+                  aria-describedby={control['aria-describedby']}
+                  data-testid="months"
+                >
+                  {drafts.map((month, index) => (
+                    <CalendarMonthRow
+                      key={month.key}
+                      month={month}
+                      index={index}
+                      drafts={drafts}
+                      fieldErrors={fieldErrors}
+                      update={update}
+                      move={move}
+                      remove={remove}
+                    />
+                  ))}
+                </ol>
+
+                <NewButton tone="secondary" onClick={add} data-testid="add-month">
+                  {t('time.calendar.add')}
+                </NewButton>
+              </>
             )}
           </Field>
-
-          <NewButton tone="secondary" onClick={add} data-testid="add-month">
-            {t('time.calendar.add')}
-          </NewButton>
         </>
       )}
 

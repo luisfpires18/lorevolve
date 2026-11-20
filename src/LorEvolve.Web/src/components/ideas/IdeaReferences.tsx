@@ -47,12 +47,13 @@ export function IdeaReferences({
       <Field
         group
         hideLabel
+        className="field--flow"
         label={t('ideas.editor.references.heading')}
         error={fieldErrors.references}
         errorTestId="idea-references-error"
       >
         {(group) => (
-          <div {...group}>
+          <div {...group} className="field__stack">
             {draft.universeId === null ? (
               <QuietNote className="idea__noreferences" testId="idea-references-need-universe">
                 {t('ideas.editor.references.needUniverse')}

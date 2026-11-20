@@ -211,9 +211,14 @@ test('field__label appears only in Field.tsx', () => {
 test('Field renders label, hint, control, error in that order', () => {
   const source = readFileSync(join(webRoot, 'src/components/Field.tsx'), 'utf8')
   const render = source.slice(source.lastIndexOf('return ('))
-  const at = ['{labelNode}', 'field__hint', '{control}', 'field__error'].map((part) =>
-    render.indexOf(part),
-  )
+  // The error is drawn after the control unless `errorAbove` asks for it before.
+  assert.ok(source.includes('className="field__error"'), 'Field.tsx must draw the error')
+  const at = [
+    '{labelNode}',
+    'field__hint',
+    '{control}',
+    '{props.errorAbove ? null : errorNode}',
+  ].map((part) => render.indexOf(part))
   assert.ok(
     at.every((index) => index >= 0),
     'Field.tsx must render all four parts in one return',

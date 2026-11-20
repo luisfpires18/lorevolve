@@ -63,7 +63,13 @@ export function WorldRuleCheckSection({
         {t('canon.check.hint')}
       </p>
 
-      <Field group hideLabel label={t('canon.check.legend')} error={errors[CHECK_ERROR_KEYS.kind]}>
+      <Field
+        group
+        hideLabel
+        className="field--flow"
+        label={t('canon.check.legend')}
+        error={errors[CHECK_ERROR_KEYS.kind]}
+      >
         {(group) => (
           <div className="rule__choices" {...group}>
             <label className="check">

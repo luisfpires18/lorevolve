@@ -15,6 +15,10 @@ interface FieldBase {
   hint?: ReactNode
   /** Drawn under the control and named by it. */
   error?: ReactNode
+  /** The error is drawn above the control, after the hint: for words that point at what follows ("below"). */
+  errorAbove?: boolean
+  /** Drawn after the error, inside the field: a tool that belongs to the field but not between the control and its refusal. */
+  after?: ReactNode
   /** Extra classes on the `.field` wrapper. */
   className?: string
   /** The label stays for screen readers and is not drawn. */
@@ -147,6 +151,8 @@ export function Field(props: FieldProps) {
       label: _l,
       hint: _h,
       error: _e,
+      errorAbove: _b,
+      after: _f,
       className: _c,
       hideLabel: _x,
       requiredMark: _r,
@@ -214,6 +220,17 @@ export function Field(props: FieldProps) {
     })
   }
 
+  const errorNode = error ? (
+    <p
+      className="field__error"
+      id={errorId}
+      role={props.announce ? 'alert' : undefined}
+      data-testid={props.errorTestId}
+    >
+      {error}
+    </p>
+  ) : null
+
   return (
     <Wrapper
       className={props.className ? `field ${props.className}` : 'field'}
@@ -227,18 +244,11 @@ export function Field(props: FieldProps) {
           {hint}
         </p>
       ) : null}
+      {props.errorAbove ? errorNode : null}
       {control}
       {count ? <CharCount {...count} id={countId} /> : null}
-      {error ? (
-        <p
-          className="field__error"
-          id={errorId}
-          role={props.announce ? 'alert' : undefined}
-          data-testid={props.errorTestId}
-        >
-          {error}
-        </p>
-      ) : null}
+      {props.errorAbove ? null : errorNode}
+      {props.after}
     </Wrapper>
   )
 }

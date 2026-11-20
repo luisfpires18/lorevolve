@@ -30,6 +30,35 @@
   margin-bottom: 0.4rem;
 }
 
+/* A field that keeps its parent's stack: its parts sit in the parent's flow and spacing, as they did before they
+   were one field. Its group, `.field__stack`, stacks with the same gap. */
+.field--flow {
+  display: contents;
+  gap: inherit;
+  align-items: inherit;
+}
+
+.field__stack {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  align-items: inherit;
+}
+
+/* A CheckField's box and label as a block of its own width: no line box round it, so the field is as tall as
+   the label. */
+.field > .check {
+  display: flex;
+  width: fit-content;
+}
+
+/* A hidden label is absolute, placed by an ancestor far outside the field; at that ancestor's corner it cannot hang
+   below a scrolling drawer and make the drawer itself scroll a few pixels. */
+.field > .field__label.visually-hidden {
+  top: 0;
+  left: 0;
+}
+
 .field__input {
   width: 100%;
   min-height: var(--control-md);
