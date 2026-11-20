@@ -161,4 +161,5 @@
 /* An entry's tags, on its page and in its history (the Lore card no longer shows them). */
 .dossier__tags {
   margin: 0.5rem 0 0;
+  gap: 0.35rem;
 }

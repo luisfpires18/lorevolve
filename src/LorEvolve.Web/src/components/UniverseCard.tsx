@@ -70,7 +70,10 @@ export function UniverseCard({ universe }: { universe: UniverseSummary }) {
               focusable="false"
               strokeWidth={1.75}
             />
-            {tx('universe.card.updated', { date: <DateText value={universe.updatedAt} /> })}
+            {/* One flex item, so the row's gap stays between the clock and the words, not inside the sentence. */}
+            <span>
+              {tx('universe.card.updated', { date: <DateText value={universe.updatedAt} /> })}
+            </span>
           </span>
           {universe.accessRole !== UniverseRole.Owner || universe.isArchived ? (
             <span className="plate__marks">
