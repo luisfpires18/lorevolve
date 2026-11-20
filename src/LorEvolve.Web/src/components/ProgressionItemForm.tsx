@@ -1,8 +1,6 @@
-import { useEffect } from 'react'
 import { ScenePicks } from './ScenePicks'
 import { useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import type { Progression } from '../progression/types'
@@ -72,11 +70,6 @@ export function ProgressionItemForm({
   } = state
 
   const isDirty = payloadKey(inputOf(draft, null)) !== payloadKey(inputOf(initial, null))
-  useReturnFocus()
-
-  useEffect(() => {
-    nameInput.current?.focus()
-  }, [])
 
   const list = listOf(base, kind)
   const index = item ? list.findIndex((one) => one.id === item.id) : -1
@@ -100,6 +93,7 @@ export function ProgressionItemForm({
 
   return (
     <Drawer
+      initialFocus={nameInput}
       testId={`${kind}-form`}
       titleId="item-heading"
       eyebrow={item ? words.eyebrow(entityName) : words.eyebrowNew(entityName)}
@@ -108,6 +102,7 @@ export function ProgressionItemForm({
       leaveMessage={
         item ? t('progression.item.unsavedExisting', { name: nameOf(item) }) : words.unsaved
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

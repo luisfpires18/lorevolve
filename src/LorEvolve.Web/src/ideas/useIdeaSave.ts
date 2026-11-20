@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
 import { createIdea, saveIdea } from './api'
 import { fieldsOf, sameFields, storedFrom, type Fields } from './ideaDraft'
 import type { IdeaDetail } from './types'
 import type { useI18n } from '../i18n'
 import type { useIdeaDraft } from './useIdeaDraft'
 import type { useIdeaState } from './useIdeaState'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
 
 /** An idea editor's edits and saves, Save and Ctrl+S / Cmd+S alike. */
 export function useIdeaSave({
@@ -26,7 +26,6 @@ export function useIdeaSave({
   discard,
   setStored,
   setSaves,
-  shortcut,
 }: ReturnType<typeof useIdeaState> &
   ReturnType<typeof useIdeaDraft> & {
     ideaId: string | null
@@ -85,23 +84,7 @@ export function useIdeaSave({
     })
   }
 
-  useEffect(() => {
-    shortcut.current = () => void save(stored.updatedAt)
-  })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
+  useSaveShortcut(() => void save(stored.updatedAt))
 
   return { edit, save }
 }

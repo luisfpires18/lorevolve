@@ -1,7 +1,5 @@
-import { useEffect } from 'react'
 import { useI18n } from '../../i18n'
 import { payloadKey } from '../../lib/drawerGuard'
-import { useReturnFocus } from '../../lib/returnFocus'
 import { Drawer } from '../Drawer'
 import { FieldKind } from '../../lore/fieldKinds'
 import type { EntityType, EntityTypeGroup, FieldDefinition } from '../../lore/typeDefinitions'
@@ -91,11 +89,6 @@ export function FieldDialog({
     target,
   }
   const isDirty = payloadKey(draft) !== payloadKey({ ...initial, name: initial.name.trim() })
-  useReturnFocus()
-
-  useEffect(() => {
-    document.getElementById('field-name')?.focus()
-  }, [])
 
   const { chooseKind, takeSaved, keepMine, save } = fieldDialogActions({
     ...state,
@@ -113,6 +106,7 @@ export function FieldDialog({
 
   return (
     <Drawer
+      initialFocus="#field-name"
       testId="field-dialog"
       titleId="field-heading"
       eyebrow={tx('entityTypes.fields.dialogEyebrow', { name: <bdi>{type.name}</bdi> })}
@@ -123,6 +117,7 @@ export function FieldDialog({
           ? t('entityTypes.fields.leaveEdit', { name: field.name })
           : t('entityTypes.fields.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       noValidate
       onSubmit={() => void save()}

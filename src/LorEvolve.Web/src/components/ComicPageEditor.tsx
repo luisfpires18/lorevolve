@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ImageOff } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
@@ -128,10 +128,26 @@ export function ComicArt({
 export function ComicPageEditor({
   projectId,
   panels,
+  onDirtyChange,
+  onSavingChange,
 }: {
   projectId: string
   panels: ProjectNodeSummary[]
+  /** Any card unsaved, or saving: the drawer guards and locks for them. */
+  onDirtyChange: (dirty: boolean) => void
+  onSavingChange: (saving: boolean) => void
 }) {
+  const [states, setStates] = useState<Record<string, { dirty: boolean; saving: boolean }>>({})
+  const report = useCallback((id: string, dirty: boolean, saving: boolean) => {
+    setStates((current) => ({ ...current, [id]: { dirty, saving } }))
+  }, [])
+  const live = panels.map((panel) => states[panel.id])
+  const [anyDirty, anySaving] = [live.some((one) => one?.dirty), live.some((one) => one?.saving)]
+  useEffect(() => {
+    onDirtyChange(anyDirty)
+    onSavingChange(anySaving)
+  }, [anyDirty, anySaving, onDirtyChange, onSavingChange])
+
   return (
     <section className="comicpage" data-testid="comic-page-editor">
       <h3 className="sectionrule">{t('projects.structure.panel.panels')}</h3>
@@ -139,7 +155,13 @@ export function ComicPageEditor({
         <p className="projects__lede">{t('projects.structure.panel.none')}</p>
       ) : (
         panels.map((panel, index) => (
-          <PanelCard key={panel.id} projectId={projectId} panelId={panel.id} number={index + 1} />
+          <PanelCard
+            key={panel.id}
+            projectId={projectId}
+            panelId={panel.id}
+            number={index + 1}
+            report={report}
+          />
         ))
       )}
     </section>
@@ -150,10 +172,12 @@ function PanelCard({
   projectId,
   panelId,
   number,
+  report,
 }: {
   projectId: string
   panelId: string
   number: number
+  report: (id: string, dirty: boolean, saving: boolean) => void
 }) {
   const [node, setNode] = useState<ProjectNodeDetail | null>(null)
   const [body, setBody] = useState('')
@@ -182,6 +206,13 @@ function PanelCard({
   }, [projectId, panelId])
 
   const testId = (part: string) => `comic-panel-${panelId}-${part}`
+  const isDirty =
+    node !== null &&
+    !saving &&
+    (body !== (node.body ?? '') || JSON.stringify(script) !== JSON.stringify(scriptOf(node)))
+  useEffect(() => {
+    report(panelId, isDirty, saving)
+  }, [report, panelId, isDirty, saving])
 
   function save() {
     if (!node || saving || !canEdit) return

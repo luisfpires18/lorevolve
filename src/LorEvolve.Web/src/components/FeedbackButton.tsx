@@ -1,11 +1,10 @@
-import { useEffect, useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { MessageSquareWarning } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
-import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
 import { FormActions } from './FormActions'
 import { SegmentedField } from './SegmentedField'
@@ -57,15 +56,12 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   const headingId = useId()
   const textId = useId()
   const { pathname } = useLocation()
-  useReturnFocus()
   const [kind, setKind] = useState<FeedbackKindValue>(FeedbackKind.Bug)
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
 
-  useEffect(() => {
-    document.getElementById(textId)?.focus()
-  }, [textId])
+  const textArea = useRef<HTMLTextAreaElement>(null)
 
   async function send() {
     if (text.trim() === '') {
@@ -89,6 +85,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
 
   return (
     <Drawer
+      initialFocus={textArea}
       testId="feedback-dialog"
       titleId={headingId}
       className="feedbackdialog"
@@ -144,6 +141,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
         {() => (
           <>
             <textarea
+              ref={textArea}
               id={textId}
               className="field__input field__input--area"
               rows={6}

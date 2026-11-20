@@ -1,6 +1,5 @@
 import { createRelationship } from './api'
 import type { RelationshipType } from './types'
-import { confirmDiscard } from '../lib/confirm'
 import { useI18n } from '../i18n'
 import type { useFamilyLinkState } from './useFamilyLinkState'
 
@@ -9,7 +8,7 @@ export function familyLinkActions({
   focal,
   kind,
   asSource,
-  isDirty,
+  confirmLeave,
   onSaved,
   onCancel,
   related,
@@ -22,13 +21,14 @@ export function familyLinkActions({
   focal: { id: string; name: string }
   kind: RelationshipType | undefined
   asSource: boolean
-  isDirty: boolean
+  /** The form's discard guard: true when there is nothing to lose or the author lets it go. */
+  confirmLeave: () => Promise<boolean>
   onSaved: () => void
   onCancel: () => void
   t: ReturnType<typeof useI18n>['t']
 }) {
   async function cancel() {
-    if (isDirty && !(await confirmDiscard())) return
+    if (!(await confirmLeave())) return
     onCancel()
   }
 

@@ -8,6 +8,7 @@ import { t } from '../../i18n'
 import { NewButton } from '../NewButton'
 import { Pencil, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
+import { confirmAction } from '../../lib/confirm'
 
 /** A template's open fields panel: each field with Edit and Delete, the field form, and Add field. */
 export function TemplateFields({
@@ -66,7 +67,14 @@ export function TemplateFields({
                       type="button"
                       disabled={busy}
                       data-testid={`template-field-delete-${field.id}`}
-                      onClick={() => {
+                      onClick={async () => {
+                        const confirmed = await confirmAction({
+                          title: t('entityTypes.fields.deleteTitle', { name: field.name }),
+                          message: t('entityTypes.fields.deleteMessage'),
+                          confirmLabel: t('entityTypes.fields.deleteConfirm'),
+                          variant: 'destructive',
+                        })
+                        if (!confirmed) return
                         setBusy(true)
                         deleteTemplateField(universeId, template.id, field.id)
                           .then(refresh)

@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import { ApiError } from '../lib/api'
+import { confirmAction } from '../lib/confirm'
 import {
   createRelationshipType,
   deleteRelationshipType,
@@ -85,6 +86,13 @@ export function typeManagerActions({
   }
 
   async function remove(type: RelationshipType) {
+    const confirmed = await confirmAction({
+      title: t('relationships.types.deleteTitle', { name: type.name }),
+      message: t('relationships.types.deleteMessage'),
+      confirmLabel: t('relationships.types.deleteConfirm'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     setMessage(null)
     try {
       await deleteRelationshipType(universeId, type.id)

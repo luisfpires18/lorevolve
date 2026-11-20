@@ -112,7 +112,7 @@ test('a part changed elsewhere after it was opened is not overwritten', async ({
   expect(changed.ok()).toBe(true)
 
   await page.getByTestId('project-script-save').click()
-  await expect(page.getByTestId('project-script-changed')).toBeVisible()
+  await expect(page.getByTestId('project-script-conflict')).toBeVisible()
   await expect(editor(page)).toContainText('Mine.')
   expect((await read(page, film, scene)).body).toBe('Theirs.')
 })

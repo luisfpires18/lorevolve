@@ -2,7 +2,6 @@ import { Drawer } from '../Drawer'
 import { CheckField } from '../CheckField'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
-import { useReturnFocus } from '../../lib/returnFocus'
 import { KNOWLEDGE_STATEMENT_MAX_LENGTH, type KnowledgeRecord } from '../../knowledge/api'
 import { unchaptered } from '../../stories/format'
 import { readingOrder } from '../../stories/structure'
@@ -60,7 +59,6 @@ export function RecordForm({
   } = state
 
   const isDirty = draftKey(draft) !== draftKey(initial)
-  useReturnFocus()
 
   useRecordStories({ ...state, universeId })
 
@@ -109,6 +107,7 @@ export function RecordForm({
       }
       isDirty={isDirty}
       leaveMessage={t('ai.knowledge.form.discard')}
+      busy={isSaving}
       onClose={onClose}
       submitFrom="body"
       onSubmit={() => void save()}

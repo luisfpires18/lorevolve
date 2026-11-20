@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { Field } from './Field'
 import { SegmentedField } from './SegmentedField'
@@ -7,7 +7,6 @@ import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { suggestStoryChanges } from '../suggestions/api'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useFormSave } from '../lib/useFormSave'
 import { createStory, getStory, STORY_CHANGED, updateStory } from '../stories/api'
 import { storyChanges } from '../stories/changes'
@@ -86,11 +85,6 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   const saveButton = useRef<HTMLButtonElement>(null)
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
-  useReturnFocus()
-
-  useEffect(() => {
-    title.current?.focus()
-  }, [])
 
   function edit(change: Partial<StoryDraft>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -117,6 +111,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
 
   return (
     <Drawer
+      initialFocus={title}
       testId="story-form"
       titleId="story-heading"
       eyebrow={
@@ -135,6 +130,7 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
             ? t('stories.storyForm.leaveUnsaved', { title: story.title })
             : t('stories.storyForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

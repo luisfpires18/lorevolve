@@ -98,6 +98,9 @@ const relationships = {
     remove: 'Delete relation',
   },
   types: {
+    deleteConfirm: 'Delete relation kind',
+    deleteMessage: 'No relation uses it. This cannot be undone.',
+    deleteTitle: 'Delete the relation kind “{name}”?',
     familyParent: 'Family: {word} parent → child',
     familyListed: 'Family: listed on the Family Tree, defines no ancestry',
     bothWays: '{name}, both ways',

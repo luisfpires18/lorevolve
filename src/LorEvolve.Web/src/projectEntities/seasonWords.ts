@@ -19,6 +19,8 @@ export const WORDS = {
     episodeCount: (count: number) => tn('projects.seasons.episodeCount', count),
     addEpisode: () => t('projects.seasons.addEpisode'),
     deleteEpisode: () => t('projects.seasons.deleteEpisode'),
+    leave: () => t('projects.seasons.leave'),
+    leaveEpisode: () => t('projects.seasons.leaveEpisode'),
     moveToSeason: () => t('projects.seasons.moveToSeason'),
   },
   volumes: {
@@ -32,6 +34,8 @@ export const WORDS = {
     episodeCount: (count: number) => tn('projects.volumes.episodeCount', count),
     addEpisode: () => t('projects.volumes.addEpisode'),
     deleteEpisode: () => t('projects.volumes.deleteEpisode'),
+    leave: () => t('projects.volumes.leave'),
+    leaveEpisode: () => t('projects.volumes.leaveEpisode'),
     moveToSeason: () => t('projects.volumes.moveToSeason'),
   },
   sequences: {
@@ -45,6 +49,8 @@ export const WORDS = {
     episodeCount: (count: number) => tn('projects.sequences.episodeCount', count),
     addEpisode: () => t('projects.sequences.addEpisode'),
     deleteEpisode: () => t('projects.sequences.deleteEpisode'),
+    leave: () => t('projects.sequences.leave'),
+    leaveEpisode: () => t('projects.sequences.leaveEpisode'),
     moveToSeason: () => t('projects.sequences.moveToSeason'),
   },
 } as const

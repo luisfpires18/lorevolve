@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { TypeGroupsField, type GroupChoice } from './TypeGroupsField'
 import { useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useFormSave } from '../lib/useFormSave'
 import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { branchIds, type TreeType, type TypeTree } from '../lore/typeTree'
@@ -126,11 +125,6 @@ export function TypeDialog({
         familyTreeEligible: initial.familyTreeEligible,
         parentId: initial.parentId,
       })
-  useReturnFocus()
-
-  useEffect(() => {
-    document.getElementById('type-name')?.focus()
-  }, [])
 
   const { save } = typeDialogSave({
     type,
@@ -148,6 +142,7 @@ export function TypeDialog({
 
   return (
     <Drawer
+      initialFocus="#type-name"
       testId={type ? 'edit-type-dialog' : 'new-type-dialog'}
       titleId="type-heading"
       eyebrow={eyebrow ?? t('entityTypes.page.dialog.eyebrow')}
@@ -172,6 +167,7 @@ export function TypeDialog({
           ? t('entityTypes.page.dialog.leaveEdit', { name: type.name })
           : t('entityTypes.page.dialog.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

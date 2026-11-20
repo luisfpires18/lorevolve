@@ -4,7 +4,7 @@ import { SaveAction } from './SaveAction'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import type { Chronology } from '../chronology/types'
 import { t, tn, useI18n } from '../i18n'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { PageHeader } from './PageHeader'
 import { draftsFrom, inputOf } from '../chronology/eraDrafts'
 import { useChronologyEditorState } from '../chronology/useChronologyEditorState'
@@ -58,7 +58,11 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
 
   const dirty = JSON.stringify(inputOf(drafts)) !== JSON.stringify(inputOf(draftsFrom(stored)))
   // Periods put back as they were read clean; a failed save leaves the draft, and the question, standing.
-  useLeaveGuard(dirty ? t('time.periods.leaveGuard') : null)
+  const { confirmLeave } = useDiscardGuard(
+    dirty,
+    t('time.periods.leaveGuard'),
+    t('time.periods.discardConfirm'),
+  )
 
   useFocusNewEra({ focusNew: state.focusNew, drafts })
 
@@ -66,6 +70,7 @@ export function ChronologyEditor({ universeId, chronology, onSaved }: Chronology
     ...state,
     universeId,
     onSaved,
+    confirmLeave,
   })
 
   const unplacedParts = [

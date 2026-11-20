@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { ApiError } from '../lib/api'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { getPublicName, setPublicName } from '../profile/api'
 import { PUBLIC_NAME_MAX } from '../publishing/types'
 import { useI18n } from '../i18n'
@@ -40,7 +40,7 @@ export function PublicNameForm() {
   }, [])
 
   const isDirty = loaded && !isSaving && value.trim() !== (saved ?? '')
-  useLeaveGuard(isDirty ? t('account.publicName.unsaved') : null)
+  useDiscardGuard(isDirty, t('account.publicName.unsaved'))
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

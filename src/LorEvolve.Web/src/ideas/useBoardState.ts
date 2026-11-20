@@ -71,7 +71,6 @@ export function useBoardState({
   const [announcement, setAnnouncement] = useState('')
   const titleInput = useRef<HTMLInputElement>(null)
   const centre = useRef<(() => { x: number; y: number }) | null>(null)
-  const shortcut = useRef<() => void>(() => {})
   const contextUniverseId = contextUniverse?.id ?? null
 
   return {
@@ -115,7 +114,6 @@ export function useBoardState({
     setAnnouncement,
     titleInput,
     centre,
-    shortcut,
     contextUniverseId,
   }
 }

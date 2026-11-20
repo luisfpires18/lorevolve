@@ -17,6 +17,13 @@ const projectsEntries = {
   summary: 'Summary',
   saving: 'Saving…',
   delete: 'Move to Trash',
+  trash: {
+    title: 'Move “{name}” to the Trash?',
+    message:
+      'Nothing is erased. It leaves this list, and you can restore it from the Trash at any time.',
+  },
+  leaveEdited: 'This entry has unsaved changes. Leave without saving them?',
+  leaveNew: 'This entry has not been created. Leave without creating it?',
   canon: 'In the lore: {name}',
   values: 'Fields',
 }

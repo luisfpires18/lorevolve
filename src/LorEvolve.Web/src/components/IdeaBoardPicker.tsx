@@ -5,7 +5,6 @@ import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { Quoted } from './NameList'
 import { listIdeas, listReferenceTargets } from '../ideas/api'
 import { IdeaReferenceKind } from '../ideas/types'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { FormActions } from './FormActions'
 import { LoadingNote } from './LoadingNote'
@@ -57,12 +56,6 @@ export function IdeaBoardPicker({
   const settled = useDebouncedValue(query)
   const [answer, setAnswer] = useState<Answer | null>(null)
   const universeId = universe?.id ?? null
-
-  useReturnFocus()
-
-  useEffect(() => {
-    search.current?.focus()
-  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -119,6 +112,7 @@ export function IdeaBoardPicker({
 
   return (
     <Drawer
+      initialFocus={search}
       testId="board-picker"
       titleId={headingId}
       className="ideapicker"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { confirmAction } from '../lib/confirm'
@@ -10,14 +10,14 @@ import {
   savePhase,
   saveSaga,
   type CinemaProduction,
-  type CinemaSagas as Sagas,
+  type Editing,
 } from '../projects/sagas'
 import { SagaSection } from './projects/SagaSection'
 import { SagasUnassigned } from './projects/SagasUnassigned'
-import { AddDrawer } from './projects/AddDrawer'
-import { GroupDrawer, type Editing } from './projects/GroupDrawer'
+import { NameSummaryDrawer } from './NameSummaryDrawer'
+import { PickOneDrawer } from './PickOneDrawer'
 import { NewButton } from './NewButton'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 
@@ -27,39 +27,10 @@ import { LoadingNote } from './LoadingNote'
  */
 export function CinemaSagas({ universeId }: { universeId: string }) {
   useI18n()
-  const [data, setData] = useState<Sagas | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
   const [adding, setAdding] = useState<CinemaProduction | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listSagas(universeId, controller.signal)
-      .then(setData)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(t('projects.sagas.failed'))
-      })
-    return () => controller.abort()
-  }, [universeId])
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(errorText(error, t('projects.sagas.failed')))
-  }
-
-  function refresh() {
-    return listSagas(universeId).then((read) => {
-      setData(read)
-      setBusy(false)
-      setFailed(null)
-    })
-  }
-
-  function run(work: () => Promise<unknown>) {
-    setBusy(true)
-    work().then(refresh).catch(failing)
-  }
+  const read = useCallback((signal?: AbortSignal) => listSagas(universeId, signal), [universeId])
+  const { data, failed, busy, refresh, run } = useLoadedList(read, t('projects.sagas.failed'))
 
   function confirmDelete(title: string, confirmLabel: string, action: () => Promise<unknown>) {
     void confirmAction({
@@ -73,11 +44,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
 
   if (data === null) {
     return failed ? (
-      <LoadError
-        message={failed}
-        onRetry={() => void refresh().catch(failing)}
-        testId="sagas-failed"
-      />
+      <LoadError message={failed} onRetry={() => void refresh()} testId="sagas-failed" />
     ) : (
       <LoadingNote>{t('projects.sagas.loading')}</LoadingNote>
     )
@@ -133,8 +100,20 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
       />
 
       {editing ? (
-        <GroupDrawer
-          editing={editing}
+        <NameSummaryDrawer
+          testId="saga-drawer"
+          eyebrow={
+            editing.forPhase && editing.saga
+              ? t('projects.sagas.phaseEyebrow', { saga: editing.saga.name })
+              : t('projects.sagas.sagaEyebrow')
+          }
+          title={
+            editing.forPhase
+              ? t(editing.phase ? 'projects.sagas.editPhase' : 'projects.sagas.newPhase')
+              : t(editing.saga ? 'projects.sagas.editSaga' : 'projects.sagas.newSaga')
+          }
+          initial={editing.forPhase ? editing.phase : editing.saga}
+          words="projects.sagas"
           onClose={() => setEditing(null)}
           onSave={(input) => {
             const { saga, phase, forPhase } = editing
@@ -154,15 +133,27 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
       ) : null}
 
       {adding ? (
-        <AddDrawer
-          production={adding}
-          choices={phaseChoices}
+        <PickOneDrawer
+          testId="saga-add-drawer"
+          titleId="saga-add-heading"
+          title={t('projects.sagas.addTitle', { name: adding.name })}
+          label={t('projects.sagas.phase')}
+          choose={t('projects.sagas.choosePhase')}
+          options={phaseChoices.map(({ saga, phase }) => ({
+            value: phase.id,
+            label: `${saga.name} / ${phase.name}`,
+          }))}
+          submitLabel={t('projects.sagas.add')}
+          failed={t('projects.sagas.failed')}
+          selectTestId="saga-add-phase"
+          submitTestId="saga-add-save"
           onClose={() => setAdding(null)}
-          onAdd={(saga, phase) =>
-            addMember(universeId, saga, phase, adding.projectId)
+          onAdd={(phaseId) => {
+            const choice = phaseChoices.find(({ phase }) => phase.id === phaseId)!
+            return addMember(universeId, choice.saga.id, phaseId, adding.projectId)
               .then(refresh)
               .then(() => setAdding(null))
-          }
+          }}
         />
       ) : null}
     </div>

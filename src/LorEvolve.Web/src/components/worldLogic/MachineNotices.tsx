@@ -2,7 +2,7 @@ import { t } from '../../i18n'
 import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState'
 import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
-import { Button } from '../Button'
+import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
 
 type State = ReturnType<typeof useMachinePanelState>
@@ -25,27 +25,15 @@ export function MachineNotices({
   return (
     <>
       {conflict ? (
-        <div className="manuscript__conflict" role="alert" data-testid="machine-conflict">
-          <p className="manuscript__conflicttext">{t(`${m}.conflict`)}</p>
-          <div className="manuscript__conflictactions">
-            <Button
-              tone="secondary"
-              disabled={saving}
-              onClick={() => void keepMine()}
-              data-testid="machine-keep-mine"
-            >
-              {t(`${m}.keepMine`)}
-            </Button>
-            <Button
-              tone="secondary"
-              disabled={saving}
-              onClick={() => void loadSaved()}
-              data-testid="machine-load-saved"
-            >
-              {t(`${m}.loadSaved`)}
-            </Button>
-          </div>
-        </div>
+        <ConflictBar
+          text={t(`${m}.conflict`)}
+          onKeepMine={() => void keepMine()}
+          keepLabel={t(`${m}.keepMine`)}
+          onLoadSaved={() => void loadSaved()}
+          loadLabel={t(`${m}.loadSaved`)}
+          busy={saving}
+          testId="machine"
+        />
       ) : null}
 
       {failure ? (

@@ -8,6 +8,10 @@ const projectsPages = {
   name: 'Page',
   namePlaceholder: 'Insert a page number or name',
   delete: 'Delete page',
+  deletePanelTitle: 'Delete panel {name}?',
+  deleteTitle: 'Delete page {name}?',
+  leavePanel: 'This panel has not been added. Leave without adding it?',
+  leave: 'This page has not been added. Leave without adding it?',
   panelCount: {
     one: '1 panel',
     other: '{count} panels',

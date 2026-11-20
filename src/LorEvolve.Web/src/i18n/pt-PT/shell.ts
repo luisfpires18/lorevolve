@@ -83,6 +83,11 @@ const shell: Dictionary['shell'] = {
     out: 'Reduzir',
   },
   confirm: {
+    removePicture: {
+      title: 'Remover esta imagem?',
+      message: 'É apagada de vez. Podes adicionar outra quando quiseres.',
+      confirm: 'Remover imagem',
+    },
     cancel: 'Cancelar',
     failed: 'Não foi possível fazer isso. Tenta de novo.',
     discard: {

@@ -1,11 +1,10 @@
-import { useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { MachineDoc } from '../../worldLogic/machine'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { textInput } from '../../worldLogic/machineDrawerFields'
-import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
 import { FormActions } from '../FormActions'
 import { QuietNote } from '../QuietNote'
 
@@ -20,13 +19,12 @@ export function BindingDrawer({
   onApply: (binding: MachineDoc['binding']) => void
   onClose: () => void
 }) {
-  const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const [form, setForm] = useState(binding)
-  useDrawerFocus(dialog)
 
   return (
     <Drawer
+      initialFocus="input, select"
       testId="machine-binding-drawer"
       titleId={titleId}
       title={t(`${m}.binding`)}
@@ -35,7 +33,6 @@ export function BindingDrawer({
           {t(`${m}.fields.bindingHint`)}
         </QuietNote>
       }
-      dialogRef={dialog}
       isDirty={JSON.stringify(form) !== JSON.stringify(binding)}
       leaveMessage={t(`${m}.leaveGuard`)}
       onClose={onClose}

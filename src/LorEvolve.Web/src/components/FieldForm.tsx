@@ -12,6 +12,7 @@ import { PROJECT_FIELD_KINDS } from '../projectEntities/fieldDefinition'
 import { CheckField } from './CheckField'
 import { t, useI18n } from '../i18n'
 import { FormActions } from './FormActions'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 
 /** The form that adds one field. Choices are asked for only by the two kinds that have them. */
 export function FieldForm({
@@ -39,6 +40,11 @@ export function FieldForm({
     initial?.options.map((each) => each.value).join('\n') ?? '',
   )
   const [required, setRequired] = useState(initial?.isRequired ?? false)
+  const [start] = useState(() => ({ name, kind, options }))
+  const { confirmLeave } = useDiscardGuard(
+    !busy && (name !== start.name || kind !== start.kind || options !== start.options),
+    t(initial ? 'entityTypes.fields.leaveEdited' : 'entityTypes.fields.leaveNew'),
+  )
   const [imageShape, setImageShape] = useState<FieldImageShapeValue>(
     initial?.imageShape ?? FieldImageShape.Free,
   )
@@ -133,7 +139,7 @@ export function FieldForm({
         busy={busy}
         busyLabel={initial ? t('projects.schema.fieldSaving') : t('projects.schema.fieldAdding')}
         submitTestId="project-field-new-save"
-        onCancel={onCancel}
+        onCancel={() => void confirmLeave().then((ok) => ok && onCancel())}
         cancelTestId="project-field-new-cancel"
         inline
       />

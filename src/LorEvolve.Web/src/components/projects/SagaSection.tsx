@@ -9,11 +9,11 @@ import {
   removeMember,
   type CinemaSaga,
   type CinemaSagas as Sagas,
+  type Editing,
 } from '../../projects/sagas'
 import type { Dispatch, SetStateAction } from 'react'
 import { MoveItems } from '../MoveItems'
 import { Production } from './Production'
-import type { Editing } from './GroupDrawer'
 import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
 import { ProjectCard } from '../ProjectCard'

@@ -5,7 +5,6 @@ import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { getMcpConnectInfo, readable } from '../mcp/api'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
@@ -72,8 +71,6 @@ function ConnectDrawer({
     [universeId],
   )
   const { load } = useAsyncRead(read)
-
-  useReturnFocus()
 
   return (
     <Drawer

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   createTypeTemplate,
   deleteTypeTemplate,
@@ -8,7 +8,7 @@ import {
 import type { TypeTemplate } from '../typeTemplates/types'
 import type { ProjectField } from '../projectEntities/types'
 import { buildTypeTree, type TreeType } from '../lore/typeTree'
-import { ApiError } from '../lib/api'
+import { useLoadedList } from '../lib/useLoadedList'
 import { confirmAction } from '../lib/confirm'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
@@ -26,9 +26,6 @@ const NO_TYPES = buildTypeTree<TreeType>([])
  */
 export function TypeTemplates({ universeId, canEdit }: { universeId: string; canEdit: boolean }) {
   useI18n()
-  const [templates, setTemplates] = useState<TypeTemplate[] | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<TypeTemplate | 'new' | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
   // A field form is open on a template: new, or an existing field being edited.
@@ -36,35 +33,21 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
     templateId: string
     field: ProjectField | null
   } | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listTypeTemplates(universeId, controller.signal)
-      .then(setTemplates)
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setTemplates([])
-        setFailed(t('entityTypes.page.templates.loadFailed'))
-      })
-    return () => controller.abort()
-  }, [universeId])
-
-  function refresh() {
-    listTypeTemplates(universeId)
-      .then((read) => {
-        setTemplates(read)
-        setFailed(null)
-      })
-      .catch(() => setFailed(t('entityTypes.page.templates.loadFailed')))
-      .finally(() => setBusy(false))
-  }
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(
-      error instanceof ApiError ? error.message : t('entityTypes.page.templates.actionFailed'),
-    )
-  }
+  const read = useCallback(
+    (signal?: AbortSignal) => listTypeTemplates(universeId, signal),
+    [universeId],
+  )
+  const {
+    data: templates,
+    failed,
+    busy,
+    setBusy,
+    refresh,
+    failing,
+  } = useLoadedList(read, t('entityTypes.page.templates.loadFailed'), {
+    emptyOnFail: [],
+    actionFailed: t('entityTypes.page.templates.actionFailed'),
+  })
 
   async function remove(template: TypeTemplate) {
     const confirmed = await confirmAction({

@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Field } from './Field'
-import { createSeason, listSeasons, type ProjectSeason } from '../projectEntities/seasons'
+import { createSeason, listSeasons } from '../projectEntities/seasons'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { WORDS, type ProjectStructureWords } from '../projectEntities/seasonWords'
 import { SeasonItem } from './projectEntities/SeasonItem'
 import { NewButton } from './NewButton'
 import { FormActions } from './FormActions'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { PageHeader } from './PageHeader'
 
 /**
@@ -33,9 +34,6 @@ export function ProjectSeasons({
   pages?: boolean
 }) {
   useI18n()
-  const [seasons, setSeasons] = useState<ProjectSeason[] | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
   const [adding, setAdding] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -43,38 +41,17 @@ export function ProjectSeasons({
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const say = WORDS[words]
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listSeasons(projectId, controller.signal)
-      .then(setSeasons)
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setSeasons([])
-        setFailed(errorText(error, t('projects.seasons.failed')))
-      })
-    return () => controller.abort()
-  }, [projectId])
-
-  function refresh() {
-    return listSeasons(projectId)
-      .then((read) => {
-        setSeasons(read)
-        setBusy(false)
-        setFailed(null)
-      })
-      .catch(failing)
-  }
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(errorText(error, t('projects.seasons.failed')))
-  }
-
-  function run(work: Promise<unknown>) {
-    setBusy(true)
-    work.then(refresh).catch(failing)
-  }
+  const read = useCallback((signal?: AbortSignal) => listSeasons(projectId, signal), [projectId])
+  const {
+    data: seasons,
+    busy,
+    setBusy,
+    failed,
+    refresh,
+    failing,
+    run,
+  } = useLoadedList(read, t('projects.seasons.failed'), { emptyOnFail: [] })
+  const { confirmLeave } = useDiscardGuard(adding && name !== '' && !busy, say.leave())
 
   if (seasons === null) {
     return <p className="projectcard__meta">{t('projects.common.loading')}</p>
@@ -133,7 +110,13 @@ export function ProjectSeasons({
             busy={busy}
             busyLabel={t('projects.seasons.saving')}
             submitTestId="project-season-new-save"
-            onCancel={() => setAdding(false)}
+            onCancel={() =>
+              void confirmLeave().then((ok) => {
+                if (!ok) return
+                setName('')
+                setAdding(false)
+              })
+            }
             cancelTestId="project-season-new-cancel"
             inline
           />

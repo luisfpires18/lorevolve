@@ -2,7 +2,7 @@ import { periodInputs } from './periods'
 import { createRelationship, deleteRelationship, updateRelationship } from './api'
 import type { RelationshipView } from './types'
 import { CanonStatus } from '../lore/types'
-import { confirmAction, confirmDiscard } from '../lib/confirm'
+import { confirmAction } from '../lib/confirm'
 import type { useI18n } from '../i18n'
 import { draftFromView, draftKey, type RelationDraft } from './relationDraft'
 import type { useRelationsState } from './useRelationsState'
@@ -10,7 +10,7 @@ import type { useRelationsState } from './useRelationsState'
 export function relationActions({
   universeId,
   entityId,
-  isDirty,
+  confirmLeave,
   reckonsInEras,
   custom,
   load,
@@ -29,7 +29,8 @@ export function relationActions({
 }: ReturnType<typeof useRelationsState> & {
   universeId: string
   entityId: string
-  isDirty: boolean
+  /** The section's discard guard: true when there is nothing to lose or the author lets it go. */
+  confirmLeave: () => Promise<boolean>
   reckonsInEras: boolean
   custom: boolean
   load: () => Promise<void>
@@ -44,9 +45,7 @@ export function relationActions({
   }
 
   /** Cancel, or opening another relation over this one: asks once, only when there is something to lose. */
-  async function mayDiscard() {
-    return !isDirty || (await confirmDiscard())
-  }
+  const mayDiscard = confirmLeave
 
   function begin(next: RelationDraft) {
     setDraft(next)

@@ -7,15 +7,15 @@ import { useEffect, useState } from 'react'
  * the focus on the document's body - so someone on a keyboard or a screen reader who pressed "Edit scene" was sent back
  * to the top of the page. The opener is read during the first render, before the dialog takes the focus, and focused
  * again when the dialog unmounts, if it is still on the page. When it is not - a scene redrawn in another chapter - the
- * focus stays wherever the browser puts it.
+ * focus stays wherever the browser puts it. `enabled` false leaves the focus to the caller.
  */
-export function useReturnFocus() {
+export function useReturnFocus(enabled = true) {
   const [opener] = useState(() => document.activeElement)
 
   useEffect(
     () => () => {
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus()
+      if (enabled && opener instanceof HTMLElement && opener.isConnected) opener.focus()
     },
-    [opener],
+    [opener, enabled],
   )
 }

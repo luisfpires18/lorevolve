@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useFormSave } from '../lib/useFormSave'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
@@ -31,7 +30,6 @@ export function TypeFromTemplateDrawer({
     failed: t('projects.schema.fromTemplate.failed'),
   })
   const { fieldErrors, message, isSaving } = form
-  useReturnFocus()
 
   async function save() {
     await form.save(async () => {
@@ -48,6 +46,7 @@ export function TypeFromTemplateDrawer({
       title={t('projects.schema.fromTemplate.title')}
       isDirty={name.trim() !== ''}
       leaveMessage={t('entityTypes.page.dialog.leaveNew')}
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

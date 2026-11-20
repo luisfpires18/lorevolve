@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import {
@@ -8,14 +8,15 @@ import {
   saveComicCollection,
   type ComicCollection,
   type ComicCollectionKind,
-  type ComicCollections as Collections,
+  type Editing,
 } from '../projects/comicCollections'
 import { WORDS } from '../projects/comicCollectionWords'
 import { ComicCollectionItem } from './projects/ComicCollectionItem'
-import { CollectionDrawer, type Editing } from './projects/CollectionDrawer'
-import { EntryDrawer } from './projects/EntryDrawer'
+import { NameSummaryDrawer } from './NameSummaryDrawer'
+import { PickOneDrawer } from './PickOneDrawer'
+import { levelWord, nameOf } from '../projectEntities/levelWords'
 import { NewButton } from './NewButton'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
 import { LoadError } from './LoadError'
 import { LoadingNote } from './LoadingNote'
 import { PageHeader } from './PageHeader'
@@ -36,47 +37,21 @@ export function ComicCollections({
 }) {
   useI18n()
   const canEdit = useUniverseAccess().editContent
-  const [data, setData] = useState<Collections | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState<Editing | null>(null)
   const [adding, setAdding] = useState<ComicCollection | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listComicCollections(universeId, controller.signal, projectId)
-      .then(setData)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(t('projects.comics.failed'))
-      })
-    return () => controller.abort()
-  }, [universeId, projectId])
+  const read = useCallback(
+    (signal?: AbortSignal) => listComicCollections(universeId, signal, projectId),
+    [universeId, projectId],
+  )
+  const { data, failed, busy, refresh, run } = useLoadedList(read, t('projects.comics.failed'))
 
   const kinds: ComicCollectionKind[] = projectId ? ['volume'] : ARCS_AND_EVENTS
-
-  function refresh() {
-    return listComicCollections(universeId, undefined, projectId).then((read) => {
-      setData(read)
-      setBusy(false)
-      setFailed(null)
-    })
-  }
-
-  function run(work: () => Promise<unknown>) {
-    setBusy(true)
-    work()
-      .then(refresh)
-      .catch((error: unknown) => {
-        setBusy(false)
-        setFailed(errorText(error, t('projects.comics.failed')))
-      })
-  }
 
   if (data === null) {
     return failed ? (
       <LoadError
         message={failed}
-        onRetry={() => void refresh().catch(() => setFailed(t('projects.comics.failed')))}
+        onRetry={() => void refresh()}
         testId="comic-collections-failed"
       />
     ) : (
@@ -141,8 +116,12 @@ export function ComicCollections({
       })}
 
       {editing ? (
-        <CollectionDrawer
-          editing={editing}
+        <NameSummaryDrawer
+          testId="comic-collection-drawer"
+          eyebrow={t(WORDS[editing.kind].eyebrow)}
+          title={editing.collection ? t('projects.comics.edit') : t(WORDS[editing.kind].add)}
+          initial={editing.collection}
+          words="projects.comics"
           onClose={() => setEditing(null)}
           onSave={(input) => {
             const { kind, collection } = editing
@@ -158,11 +137,23 @@ export function ComicCollections({
       ) : null}
 
       {adding ? (
-        <EntryDrawer
-          collection={adding}
-          candidates={data.candidates.filter(
-            (node) => !adding.entries.some((entry) => entry.nodeId === node.nodeId),
-          )}
+        <PickOneDrawer
+          testId="comic-entry-drawer"
+          titleId="comic-entry-drawer-heading"
+          title={t('projects.comics.addTitle', { name: adding.name })}
+          label={t('projects.comics.part')}
+          choose={t('projects.comics.choosePart')}
+          options={data.candidates
+            .filter((node) => !adding.entries.some((entry) => entry.nodeId === node.nodeId))
+            .map((node) => ({
+              value: node.nodeId,
+              label: `${node.projectName} - ${levelWord(node.level)} ${nameOf(node)}`,
+            }))}
+          emptyText={t('projects.comics.noCandidates')}
+          submitLabel={t('projects.comics.add')}
+          failed={t('projects.comics.failed')}
+          selectTestId="comic-entry-drawer-node"
+          submitTestId="comic-entry-drawer-save"
           onClose={() => setAdding(null)}
           onAdd={(nodeId) =>
             addComicEntry(universeId, adding.id, nodeId)

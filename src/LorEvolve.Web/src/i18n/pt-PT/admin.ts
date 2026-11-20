@@ -114,6 +114,7 @@ const admin: Dictionary['admin'] = {
     passwordResetSent: 'Enviou uma ligação de reposição da palavra-passe',
   },
   signUp: {
+    leave: 'Esta ligação de registo ainda não foi criada. Sair sem a criar?',
     heading: 'Ligação de registo',
     note: 'Para quem queira entrar no LorEvolve enquanto o registo é só por convite. A ligação permite a esse endereço de email, e apenas a esse, criar uma conta. Enviar por email envia-a a partir de noreply@lorevolve.com; Criar ligação mostra-a para a enviares tu.',
     emailLabel: 'O endereço de email da pessoa',

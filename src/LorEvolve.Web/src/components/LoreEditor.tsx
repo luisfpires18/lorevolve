@@ -50,10 +50,6 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
   )
   const [error, setError] = useState<string | undefined>()
 
-  useEffect(() => {
-    input.current?.focus()
-  }, [])
-
   useEffect(
     () => () => {
       editor.commands.focus()
@@ -77,6 +73,9 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
 
   return (
     <Drawer
+      initialFocus={input}
+      // The editor takes the focus back itself when the drawer closes.
+      returnFocus={false}
       testId="lore-link"
       titleId="lore-link-title"
       title={t('lore.editor.link')}

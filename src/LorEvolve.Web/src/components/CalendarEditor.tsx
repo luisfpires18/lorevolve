@@ -3,7 +3,7 @@ import { SegmentedField } from './SegmentedField'
 import { SaveAction } from './SaveAction'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { draftsFrom, inputOf, type Mode } from '../chronology/monthDrafts'
 import { useCalendarEditorState } from '../chronology/useCalendarEditorState'
 import { calendarActions } from '../chronology/calendarActions'
@@ -41,7 +41,11 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     mode !== storedMode ||
     (mode === 'custom' &&
       JSON.stringify(inputOf(drafts)) !== JSON.stringify(inputOf(draftsFrom(stored))))
-  useLeaveGuard(dirty ? t('time.calendar.leaveGuard') : null)
+  const { confirmLeave } = useDiscardGuard(
+    dirty,
+    t('time.calendar.leaveGuard'),
+    t('time.calendar.discardConfirm'),
+  )
 
   const { update, add, choose, move, remove, discard, save } = calendarActions({
     ...state,
@@ -49,6 +53,7 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
     onSaved,
     stored,
     storedMode,
+    confirmLeave,
   })
 
   const label =

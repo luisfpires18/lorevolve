@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
-import type { KeyboardEvent, MouseEvent, ReactNode, RefObject, SyntheticEvent } from 'react'
-import { useDrawerGuard } from '../lib/drawerGuard'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactNode, RefObject, SyntheticEvent } from 'react'
+import { DrawerLockContext, useDrawerGuard } from '../lib/drawerGuard'
+import { useReturnFocus } from '../lib/returnFocus'
 import { QuietNote } from './QuietNote'
 
 type DrawerProps = {
@@ -21,13 +22,18 @@ type DrawerProps = {
   isDirty?: boolean
   /** The guard's question when `isDirty`. */
   leaveMessage?: string
-  /** Read at event time: true swallows Escape, cancel and a backdrop press. */
+  /** Read at event time: true locks the drawer as `busy` does, for a flag React has not rendered yet. */
   isLocked?: () => boolean
+  /** Focused right after the dialog opens: a ref, or a selector inside the dialog. Absent: the browser's choice. */
+  initialFocus?: RefObject<HTMLElement | null> | string
+  /** False: the caller puts the focus back itself. Default: the opener gets it back on close. */
+  returnFocus?: boolean
   /** Present: the panel is a form. Drawer prevents the default and stops the event first. */
   onSubmit?: () => void
   noValidate?: boolean
   /** `body` makes `.drawer__body` the form and draws the footer inside it. */
   submitFrom?: 'panel' | 'body'
+  /** A save in flight: `aria-busy`, and Escape, the backdrop and Cancel do nothing until it ends. */
   busy?: boolean
   /** For callers that read the dialog. */
   dialogRef?: RefObject<HTMLDialogElement | null>
@@ -37,8 +43,9 @@ type DrawerProps = {
 }
 
 /**
- * The drawer shell: the modal `dialog`, its head, body and actions, and the guarded Escape and backdrop. A caller keeps
- * its own focus effect and `useReturnFocus`; React runs this effect first, so the dialog is open by the time it focuses.
+ * The drawer shell: the modal `dialog`, its head, body and actions, the guarded Escape and backdrop, the lock while a
+ * save is in flight, and the focus: `initialFocus` on open, the opener again on close. React runs this effect before a
+ * caller's, so a caller's own later focus move still wins.
  */
 export function Drawer({
   testId,
@@ -52,6 +59,8 @@ export function Drawer({
   isDirty = false,
   leaveMessage = '',
   isLocked,
+  initialFocus,
+  returnFocus = true,
   onSubmit,
   noValidate,
   submitFrom = 'panel',
@@ -62,25 +71,19 @@ export function Drawer({
 }: DrawerProps) {
   const ownRef = useRef<HTMLDialogElement>(null)
   const dialog = dialogRef ?? ownRef
-  const { close, dialogProps } = useDrawerGuard(isDirty, leaveMessage, onClose)
+  const locked = () => Boolean(busy) || Boolean(isLocked?.())
+  const { close, dialogProps } = useDrawerGuard(isDirty, leaveMessage, onClose, locked)
+  useReturnFocus(returnFocus)
+  const [firstFocus] = useState(() => initialFocus)
 
   useEffect(() => {
     dialog.current?.showModal()
-  }, [dialog])
-
-  const guardedProps = {
-    onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
-      if (isLocked?.() && event.key === 'Escape') event.preventDefault()
-      else dialogProps.onKeyDown(event)
-    },
-    onCancel(event: SyntheticEvent<HTMLDialogElement>) {
-      if (isLocked?.()) event.preventDefault()
-      else dialogProps.onCancel(event)
-    },
-    onClick(event: MouseEvent<HTMLDialogElement>) {
-      if (!isLocked?.()) dialogProps.onClick(event)
-    },
-  }
+    const target =
+      typeof firstFocus === 'string'
+        ? dialog.current?.querySelector<HTMLElement>(firstFocus)
+        : firstFocus?.current
+    target?.focus()
+  }, [dialog, firstFocus])
 
   function submit(event: SyntheticEvent) {
     event.preventDefault()
@@ -139,10 +142,10 @@ export function Drawer({
       className={className ? `drawer ${className}` : 'drawer'}
       ref={dialog}
       aria-labelledby={titleId}
-      {...guardedProps}
+      {...dialogProps}
       data-testid={testId}
     >
-      {panel}
+      <DrawerLockContext.Provider value={Boolean(busy)}>{panel}</DrawerLockContext.Provider>
     </dialog>
   )
 }

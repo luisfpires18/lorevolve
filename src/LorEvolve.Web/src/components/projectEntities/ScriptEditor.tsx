@@ -14,11 +14,14 @@ export function ScriptEditor({
   seasonId,
   episode,
   onSaved,
+  onDirtyChange,
 }: {
   projectId: string
   seasonId: string
   episode: ProjectEpisodeSummary
   onSaved: () => void
+  /** Told whenever the title, synopsis or script starts or stops differing from the read. */
+  onDirtyChange: (dirty: boolean) => void
 }) {
   useI18n()
   const [script, setScript] = useState<string | null>(null)
@@ -27,6 +30,16 @@ export function ScriptEditor({
   const [version, setVersion] = useState(episode.version)
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
+  const [opened, setOpened] = useState<{ title: string; synopsis: string; script: string } | null>(
+    null,
+  )
+  // Still dirty while a save runs: a save that fails keeps the draft, so closing before it ends must still ask.
+  const isDirty =
+    opened !== null &&
+    (title !== opened.title || synopsis !== opened.synopsis || script !== opened.script)
+  useEffect(() => {
+    onDirtyChange(isDirty)
+  }, [isDirty, onDirtyChange])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -36,6 +49,7 @@ export function ScriptEditor({
         setTitle(read.title)
         setSynopsis(read.synopsis ?? '')
         setVersion(read.version)
+        setOpened({ title: read.title, synopsis: read.synopsis ?? '', script: read.script ?? '' })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
@@ -91,6 +105,8 @@ export function ScriptEditor({
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             data-testid={`project-script-title-${episode.id}`}
+            // Typing waits for the read, which would otherwise overwrite what was typed.
+            disabled={script === null}
             required
           />
         )}
@@ -104,6 +120,7 @@ export function ScriptEditor({
             value={synopsis}
             onChange={(event) => setSynopsis(event.target.value)}
             data-testid={`project-script-synopsis-${episode.id}`}
+            disabled={script === null}
           />
         )}
       </Field>

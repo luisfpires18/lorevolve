@@ -17,6 +17,7 @@ import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
 import { Button } from './Button'
 import { buttonClass } from '../lib/buttonClass'
 import { useImagePick } from '../lib/useImagePick'
+import { confirmAction } from '../lib/confirm'
 
 /**
  * What the cropper is open on. A file just picked is framed before anything is uploaded; a photo
@@ -103,6 +104,13 @@ export function ProfileAvatar({ name }: { name: string }) {
   }
 
   async function remove() {
+    const confirmed = await confirmAction({
+      title: t('shell.confirm.removePicture.title'),
+      message: t('shell.confirm.removePicture.message'),
+      confirmLabel: t('shell.confirm.removePicture.confirm'),
+      variant: 'destructive',
+    })
+    if (!confirmed) return
     setError(null)
     setBusy(true)
     try {

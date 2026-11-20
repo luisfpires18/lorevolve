@@ -8,7 +8,6 @@ import type { Point } from '../../worldLogic/machine'
 import type { SystemMachineState } from '../../worldLogic/types'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { errorOf, textInput } from '../../worldLogic/machineDrawerFields'
-import { useDrawerFocus } from '../../worldLogic/useDrawerFocus'
 import { FormActions } from '../FormActions'
 
 export function StateDrawer({
@@ -39,7 +38,6 @@ export function StateDrawer({
   }))
   const [form, setForm] = useState(initial)
   const [local, setLocal] = useState<Record<string, string>>({})
-  useDrawerFocus(dialog)
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(initial)
   const number = (text: string) => (Number.isFinite(Number(text)) ? Number(text) : 0)
@@ -75,6 +73,7 @@ export function StateDrawer({
 
   return (
     <Drawer
+      initialFocus="input, select"
       testId="machine-state-drawer"
       titleId={titleId}
       title={state ? state.name : t(`${m}.newState`)}

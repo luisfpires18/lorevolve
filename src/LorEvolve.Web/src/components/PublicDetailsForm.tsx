@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { payloadKey } from '../lib/drawerGuard'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { errorText } from '../lib/errorText'
 import { useFormSave } from '../lib/useFormSave'
 import {
@@ -73,7 +73,7 @@ export function PublicDetailsForm({
   const details = detailsOf(summary, category, genres, attribution)
   const isDirty = !isSaving && payloadKey(details) !== saved
 
-  useLeaveGuard(isDirty ? t('universe.publicDetails.leave') : null)
+  useDiscardGuard(isDirty, t('universe.publicDetails.leave'))
 
   useEffect(() => {
     onDirtyChange(isDirty)

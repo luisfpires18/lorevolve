@@ -2,7 +2,6 @@ import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { GuardBuilder } from '../GuardBuilder'
 import { t } from '../../i18n'
-import { useReturnFocus } from '../../lib/returnFocus'
 import { sameCondition } from '../../worldLogic/guardSummary'
 import type { SystemRuleSummary } from '../../worldLogic/types'
 import { m, gb } from '../../worldLogic/machinePanelTypes'
@@ -10,7 +9,7 @@ import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useGuardDrawerState } from '../../worldLogic/useGuardDrawerState'
 import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
-import { Button } from '../Button'
+import { ConflictBar } from '../ConflictBar'
 import { FormActions } from '../FormActions'
 import { LoadingNote } from '../LoadingNote'
 
@@ -55,7 +54,6 @@ export function GuardBuilderDrawer({
     conflict,
     saving,
   } = state
-  useReturnFocus()
 
   const titleOf = (id: string) => rules.find((rule) => rule.id === id)?.title
   const isDirty = title !== initial.title || !sameCondition(condition, initial.condition)
@@ -91,29 +89,16 @@ export function GuardBuilderDrawer({
       )}
     >
       {conflict ? (
-        <div className="callout callout--warning" role="alert" data-testid="guard-conflict">
-          <p className="callout__title">{t(`${gb}.conflict`)}</p>
-          <div className="manuscript__conflictactions">
-            <Button
-              tone="secondary"
-              size="sm"
-              disabled={saving}
-              onClick={() => void keepMine()}
-              data-testid="guard-keep-mine"
-            >
-              {t(`${m}.keepMine`)}
-            </Button>
-            <Button
-              tone="secondary"
-              size="sm"
-              disabled={saving}
-              onClick={() => void loadSaved()}
-              data-testid="guard-load-saved"
-            >
-              {t(`${m}.loadSaved`)}
-            </Button>
-          </div>
-        </div>
+        <ConflictBar
+          text={t(`${gb}.conflict`)}
+          onKeepMine={() => void keepMine()}
+          keepLabel={t(`${m}.keepMine`)}
+          onLoadSaved={() => void loadSaved()}
+          loadLabel={t(`${m}.loadSaved`)}
+          busy={saving}
+          size="sm"
+          testId="guard"
+        />
       ) : null}
 
       {message ? (

@@ -20,6 +20,8 @@ const projectsSeasons = {
   episodeTitle: 'Title',
   synopsis: 'Synopsis',
   deleteEpisode: 'Delete episode',
+  leaveEpisode: 'This episode has unsaved changes. Leave without saving them?',
+  leave: 'This season has unsaved changes. Leave without saving them?',
   hasScript: 'Script, {count} characters',
   noScript: 'No script yet',
   openScript: 'Open script',

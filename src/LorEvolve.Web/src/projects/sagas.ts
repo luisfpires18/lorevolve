@@ -91,3 +91,6 @@ export const moveMember = (
   projectId: string,
   place: number,
 ) => post(`${phases(universeId, sagaId)}/${phaseId}/members/${projectId}/move`, { place })
+
+/** What the edit drawer is for: a new or existing saga, or a new or existing phase of one saga. */
+export type Editing = { saga: CinemaSaga | null; phase: CinemaPhase | null; forPhase: boolean }

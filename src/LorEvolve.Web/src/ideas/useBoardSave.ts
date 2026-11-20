@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
 import { createIdeaBoard, saveIdeaBoard, type IdeaBoardDetail } from './boards'
 import { fieldsOf, inputOf, sameFields, storedFrom, type Fields } from './boardDraft'
 import type { useI18n } from '../i18n'
-import type { useBoardDraft } from './useBoardDraft'
+import type { useDraftedEditor } from '../lib/useDraftedEditor'
 import type { useBoardState } from './useBoardState'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
 
 /** A board editor's edits to its fields and its saves, Save and Ctrl+S / Cmd+S alike. */
 export function useBoardSave({
@@ -24,9 +24,8 @@ export function useBoardSave({
   discard,
   setStored,
   setSaves,
-  shortcut,
 }: ReturnType<typeof useBoardState> &
-  ReturnType<typeof useBoardDraft> & {
+  ReturnType<typeof useDraftedEditor<Fields>> & {
     boardId: string | null
     onCreated: (board: IdeaBoardDetail) => void
     t: ReturnType<typeof useI18n>['t']
@@ -64,20 +63,7 @@ export function useBoardSave({
     })
   }
 
-  useEffect(() => {
-    shortcut.current = () => void save(stored.updatedAt)
-  })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [])
+  useSaveShortcut(() => void save(stored.updatedAt))
 
   return { edit, save }
 }

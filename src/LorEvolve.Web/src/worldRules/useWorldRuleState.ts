@@ -44,7 +44,6 @@ export function useWorldRuleState({
   })
   const [announcement, setAnnouncement] = useState(announceOnOpen ?? '')
   const titleInput = useRef<HTMLInputElement>(null)
-  const shortcut = useRef<() => void>(() => {})
 
   return {
     load,
@@ -68,6 +67,5 @@ export function useWorldRuleState({
     announcement,
     setAnnouncement,
     titleInput,
-    shortcut,
   }
 }

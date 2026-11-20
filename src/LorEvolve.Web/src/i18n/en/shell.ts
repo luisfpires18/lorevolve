@@ -80,6 +80,11 @@ const shell = {
     out: 'Zoom out',
   },
   confirm: {
+    removePicture: {
+      title: 'Remove this picture?',
+      message: 'It is deleted for good. You can add another one at any time.',
+      confirm: 'Remove picture',
+    },
     cancel: 'Cancel',
     failed: 'That could not be done. Try again.',
     discard: {

@@ -6,6 +6,7 @@ import { t, useI18n } from '../../i18n'
 import { PanelLore } from './PanelLore'
 import { Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
+import { confirmAction } from '../../lib/confirm'
 
 /** A page's panels, each with what it shows, what is said, and its menu. */
 export function PagePanels({
@@ -23,7 +24,7 @@ export function PagePanels({
   chapterId: string
   page: ProjectPage
   busy: boolean
-  run: (work: Promise<unknown>) => void
+  run: (work: () => Promise<unknown>) => void
 }) {
   useI18n()
 
@@ -59,7 +60,7 @@ export function PagePanels({
             }
             busy={busy}
             onChange={(choice) =>
-              run(
+              run(() =>
                 savePanel(projectId, volumeId, chapterId, page.id, panel.id, {
                   description: panel.description,
                   dialogue: panel.dialogue,
@@ -85,7 +86,7 @@ export function PagePanels({
                   down: `project-panel-down-${panel.id}`,
                 }}
                 onMove={(step) =>
-                  run(
+                  run(() =>
                     movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
                       place: place + step,
                     }),
@@ -97,7 +98,19 @@ export function PagePanels({
                 type="button"
                 disabled={busy}
                 data-testid={`project-panel-delete-${panel.id}`}
-                onClick={() => run(deletePanel(projectId, volumeId, chapterId, page.id, panel.id))}
+                onClick={async () => {
+                  const confirmed = await confirmAction({
+                    title: t('projects.pages.deletePanelTitle', {
+                      name: panel.description ?? String(place + 1),
+                    }),
+                    message: t('projects.structure.deleteEmpty'),
+                    confirmLabel: t('projects.pages.deletePanel'),
+                    variant: 'destructive',
+                  })
+                  if (confirmed) {
+                    run(() => deletePanel(projectId, volumeId, chapterId, page.id, panel.id))
+                  }
+                }}
               >
                 <ActionIcon icon={Trash} />
                 {t('projects.pages.deletePanel')}

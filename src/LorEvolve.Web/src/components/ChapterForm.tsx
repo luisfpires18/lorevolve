@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useFormSave } from '../lib/useFormSave'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
@@ -82,11 +81,6 @@ export function ChapterForm({
 
   const isDirty =
     payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial)) || draft.arcId !== initial.arcId
-  useReturnFocus()
-
-  useEffect(() => {
-    title.current?.focus()
-  }, [])
 
   function edit(change: Partial<ChapterDraft>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -110,6 +104,7 @@ export function ChapterForm({
 
   return (
     <Drawer
+      initialFocus={title}
       testId="chapter-form"
       titleId="chapter-heading"
       eyebrow={
@@ -124,6 +119,7 @@ export function ChapterForm({
           ? t('stories.chapterForm.leaveUnsaved', { title: chapter.title })
           : t('stories.chapterForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

@@ -1,9 +1,9 @@
 import { BoardCardKind, deleteIdeaBoard } from './boards'
-import { withoutEntries } from './boardDraft'
+import { withoutEntries, type Fields } from './boardDraft'
 import { ApiError } from '../lib/api'
 import { confirmAction } from '../lib/confirm'
 import type { useI18n } from '../i18n'
-import type { useBoardDraft } from './useBoardDraft'
+import type { useDraftedEditor } from '../lib/useDraftedEditor'
 import type { useBoardSave } from './useBoardSave'
 import type { useBoardState } from './useBoardState'
 
@@ -33,7 +33,7 @@ export function boardDraftActions({
   stored,
   isDirty,
 }: ReturnType<typeof useBoardState> &
-  ReturnType<typeof useBoardDraft> &
+  ReturnType<typeof useDraftedEditor<Fields>> &
   ReturnType<typeof useBoardSave> & {
     boardId: string | null
     onDeleted: (board: { id: string; title: string }) => void

@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
 import { t } from '../i18n'
 import { ApiError } from '../lib/api'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { MANUSCRIPT_CHANGED, saveSceneManuscript } from './api'
 import { storedOf, type useManuscriptState } from './useManuscriptState'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
 
 /** Saves the text, and wires Ctrl+S / Cmd+S to the latest save. */
 export function useManuscriptSave({
@@ -19,7 +19,6 @@ export function useManuscriptSave({
   setConflict,
   setHistoryKey,
   inFlight,
-  shortcut,
   focusEditor,
   isDirty,
   isTooLong,
@@ -73,22 +72,6 @@ export function useManuscriptSave({
   // Ctrl+S / Cmd+S saves from anywhere while a scene is open - the outline, the tools, or after Save has let go of the
   // focus - and never opens the browser's "Save page". The listener reads the latest save through a ref, so it is
   // added once rather than on every keystroke.
-  useEffect(() => {
-    shortcut.current = () => void save(stored.version)
-  })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
+  useSaveShortcut(() => void save(stored.version))
   return { save }
 }

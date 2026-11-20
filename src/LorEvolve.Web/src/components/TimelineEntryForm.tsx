@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { EntityMultiPicker } from './EntityMultiPicker'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { hasCalendar, namesEras } from '../chronology/format'
@@ -77,11 +76,6 @@ export function TimelineEntryForm({
   const isDirty =
     payloadKey(inputOf(draft, reckonsInEras, custom)) !==
     payloadKey(inputOf(initial, reckonsInEras, custom))
-  useEffect(() => {
-    // Left alone, the browser hands the focus to the scrolling body, which then wears a
-    // focus ring across the whole panel. The title is where the writing starts anyway.
-    title.current?.focus()
-  }, [])
 
   const { edit, setComponent, chooseKind, save } = momentFormActions({
     ...state,
@@ -98,6 +92,9 @@ export function TimelineEntryForm({
 
   return (
     <Drawer
+      // Left alone, the browser hands the focus to the scrolling body, which then wears a
+      // focus ring across the whole panel. The title is where the writing starts anyway.
+      initialFocus={title}
       testId="moment-form"
       titleId="moment-heading"
       // A new moment's title already says so; the eyebrow names only what is being edited.
@@ -109,6 +106,7 @@ export function TimelineEntryForm({
           ? t('time.momentForm.leaveGuardEdit', { title: entry.title })
           : t('time.momentForm.leaveGuardNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

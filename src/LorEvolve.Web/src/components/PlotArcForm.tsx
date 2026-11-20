@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useFormSave } from '../lib/useFormSave'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
@@ -72,12 +71,6 @@ export function PlotArcForm({
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
 
-  useReturnFocus()
-
-  useEffect(() => {
-    title.current?.focus()
-  }, [])
-
   function edit(change: Partial<PlotArcDraft>) {
     setDraft((current) => ({ ...current, ...change }))
   }
@@ -95,6 +88,7 @@ export function PlotArcForm({
 
   return (
     <Drawer
+      initialFocus={title}
       testId="plot-arc-form"
       titleId="plot-arc-heading"
       eyebrow={
@@ -107,6 +101,7 @@ export function PlotArcForm({
           ? t('stories.arcForm.leaveUnsaved', { title: arc.title })
           : t('stories.arcForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

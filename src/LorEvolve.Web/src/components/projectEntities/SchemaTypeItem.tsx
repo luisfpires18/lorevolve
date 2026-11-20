@@ -1,4 +1,5 @@
 import { deleteProjectType } from '../../projectEntities/api'
+import { confirmAction } from '../../lib/confirm'
 import { typePathLabel } from '../../lore/typeTree'
 import type { ProjectEntityType } from '../../projectEntities/types'
 import { TypeRow } from '../TypeRow'
@@ -80,7 +81,17 @@ export function SchemaTypeItem({
             testId: `project-type-fields-open-${type.id}`,
             controls: fieldsId,
           }}
-          onDelete={() => {
+          onDelete={async () => {
+            // A type entries still use is refused by the API; ask only when the delete can go through.
+            const confirmed =
+              type.entryCount > 0 ||
+              (await confirmAction({
+                title: t('entityTypes.page.deleteTitle', { name: type.name }),
+                message: t('entityTypes.page.deleteMessage'),
+                confirmLabel: t('entityTypes.page.deleteConfirm'),
+                variant: 'destructive',
+              }))
+            if (!confirmed) return
             setBusy(true)
             deleteProjectType(projectId, type.id).then(refresh).catch(failing)
           }}

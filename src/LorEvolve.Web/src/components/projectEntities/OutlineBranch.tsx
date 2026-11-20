@@ -25,7 +25,7 @@ type OutlineBranchProps = {
   tree: ProjectStructureTree
   busy: boolean
   setEditing: Dispatch<SetStateAction<string | null>>
-  run: (work: Promise<unknown>) => void
+  run: (work: () => Promise<unknown>) => void
   add: (level: string, parentId: string | null) => void
   remove: (current: ProjectStructureTree, node: ProjectNodeSummary) => Promise<void>
 }
@@ -79,7 +79,7 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                       down: `project-node-down-${node.id}`,
                     }}
                     onMove={(step) =>
-                      run(moveNode(projectId, node.id, { place: index + step, parentId }))
+                      run(() => moveNode(projectId, node.id, { place: index + step, parentId }))
                     }
                   />
                   {moveTargets(current, node).map((target) => (
@@ -91,7 +91,7 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
                       data-testid={`project-node-move-${node.id}-${target?.id ?? 'root'}`}
                       onClick={() =>
                         // Moved to the end of its new list; the server clamps the place.
-                        run(
+                        run(() =>
                           moveNode(projectId, node.id, {
                             place: Number.MAX_SAFE_INTEGER,
                             parentId: target?.id ?? null,

@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Field } from './Field'
-import { createPage, listPages, type ProjectPage } from '../projectEntities/pages'
+import { createPage, listPages } from '../projectEntities/pages'
 import { t, useI18n } from '../i18n'
 import { PageRow } from './projectEntities/PageRow'
 import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
 import { ProjectCard } from './ProjectCard'
-import { errorText } from '../lib/errorText'
+import { useLoadedList } from '../lib/useLoadedList'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 
 /**
  * The pages of one comic chapter and the panels on them (#147).
@@ -34,46 +35,26 @@ export function ChapterPages({
 }) {
   useI18n()
   const [open, setOpen] = useState(false)
-  const [pages, setPages] = useState<ProjectPage[] | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
   const [addingPage, setAddingPage] = useState(false)
   const [addingTo, setAddingTo] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-
-    const controller = new AbortController()
-    listPages(projectId, volumeId, chapterId, controller.signal)
-      .then(setPages)
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setPages([])
-        setFailed(errorText(error, t('projects.pages.failed')))
-      })
-    return () => controller.abort()
-  }, [open, projectId, volumeId, chapterId])
-
-  function refresh() {
-    return listPages(projectId, volumeId, chapterId)
-      .then((read) => {
-        setPages(read)
-        setBusy(false)
-        setFailed(null)
-      })
-      .catch(failing)
-  }
-
-  function failing(error: unknown) {
-    setBusy(false)
-    setFailed(errorText(error, t('projects.pages.failed')))
-  }
-
-  function run(work: Promise<unknown>) {
-    setBusy(true)
-    work.then(refresh).catch(failing)
-  }
+  const read = useCallback(
+    (signal?: AbortSignal) => listPages(projectId, volumeId, chapterId, signal),
+    [projectId, volumeId, chapterId],
+  )
+  const {
+    data: pages,
+    failed,
+    busy,
+    setBusy,
+    refresh,
+    failing,
+    run,
+  } = useLoadedList(read, t('projects.pages.failed'), { enabled: open, emptyOnFail: [] })
+  const { confirmLeave } = useDiscardGuard(
+    open && addingPage && name !== '' && !busy,
+    t('projects.pages.leave'),
+  )
 
   if (!open) {
     return (
@@ -163,7 +144,13 @@ export function ChapterPages({
             submitLabel={t('projects.pages.add')}
             disabled={busy}
             submitTestId={`project-page-new-save-${chapterId}`}
-            onCancel={() => setAddingPage(false)}
+            onCancel={() =>
+              void confirmLeave().then((ok) => {
+                if (!ok) return
+                setName('')
+                setAddingPage(false)
+              })
+            }
             cancelTestId={`project-page-new-cancel-${chapterId}`}
             inline
           />

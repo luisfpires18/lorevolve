@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { createSignUpLink, emailSignUpLink } from '../../admin/api'
 import { Field } from '../Field'
 import { ApiError } from '../../lib/api'
+import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import { formatDateTime } from '../../lib/dates'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
@@ -18,6 +19,11 @@ export function SignUpLink() {
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null)
   const [sent, setSent] = useState<{ to: string; expiresAt: string } | null>(null)
   const [sending, setSending] = useState(false)
+  // An address typed and not yet sent or made into a link.
+  useDiscardGuard(
+    email.trim() !== '' && !sending && link === null && sent === null,
+    t('admin.signUp.leave'),
+  )
 
   async function sendEmail() {
     setError(null)

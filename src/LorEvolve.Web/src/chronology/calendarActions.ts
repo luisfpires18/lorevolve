@@ -1,7 +1,7 @@
 import { removeCalendar, saveCalendar } from './api'
 import type { Chronology, ChronologyCalendar } from './types'
 import { t } from '../i18n'
-import { confirmAction, confirmDiscard } from '../lib/confirm'
+import { confirmAction } from '../lib/confirm'
 import { draftsFrom, inputOf, type Mode, type MonthDraft } from './monthDrafts'
 import type { useCalendarEditorState } from './useCalendarEditorState'
 
@@ -23,7 +23,10 @@ export function calendarActions({
   touched,
   created,
   focusNew,
+  confirmLeave,
 }: ReturnType<typeof useCalendarEditorState> & {
+  /** The editor's discard guard: true when there is nothing to lose or the author lets it go. */
+  confirmLeave: () => Promise<boolean>
   universeId: string
   onSaved: (next: Chronology) => void
   stored: ChronologyCalendar | null
@@ -97,7 +100,7 @@ export function calendarActions({
   }
 
   async function discard() {
-    if (!(await confirmDiscard(t('time.calendar.discardConfirm')))) return
+    if (!(await confirmLeave())) return
     touched.current = false
     setMode(storedMode)
     setDrafts(draftsFrom(stored))

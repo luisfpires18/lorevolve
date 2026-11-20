@@ -53,7 +53,6 @@ export function useManuscriptState({ universeId, scene }: { universeId: string; 
   const [announcement, setAnnouncement] = useState('')
   const inFlight = useRef(false)
   const editor = useRef<Editor | null>(null)
-  const shortcut = useRef<() => void>(() => {})
   const focusEditor = () => editor.current?.commands.focus(null, { scrollIntoView: false })
   return {
     sceneId,
@@ -99,7 +98,6 @@ export function useManuscriptState({ universeId, scene }: { universeId: string; 
     setAnnouncement,
     inFlight,
     editor,
-    shortcut,
     focusEditor,
   }
 }

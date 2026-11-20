@@ -1,7 +1,6 @@
 import { QuietNote } from './QuietNote'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useFormSave } from '../lib/useFormSave'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
@@ -84,11 +83,6 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
   const { fieldErrors, setFieldErrors, setMessage, message, isSaving } = form
 
   const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
-  useReturnFocus()
-
-  useEffect(() => {
-    titleInput.current?.focus()
-  }, [])
 
   function edit(change: Partial<PinDraft>) {
     setDraft((current) => ({ ...current, ...change }))
@@ -122,6 +116,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
 
   return (
     <Drawer
+      initialFocus={titleInput}
       testId="map-pin-form"
       titleId="map-pin-heading"
       eyebrow={pin ? t('places.pinForm.eyebrowEdit') : t('places.pinForm.eyebrowNew')}
@@ -137,6 +132,7 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
       leaveMessage={
         pin ? t('places.pinForm.leaveChanges', { title: pin.title }) : t('places.pinForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
       actions={(close) => (

@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { Area } from 'react-easy-crop'
 import type { ImageCrop } from '../lib/imageCrop'
+import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
 import { CropperActions } from './CropperActions'
@@ -137,6 +138,8 @@ export function ImageCropDialog({
     onCancel,
     t,
   })
+  // No backdrop close: a crop drag that ends outside the panel would close it.
+  const { dialogProps } = useDrawerGuard(false, '', cancel, () => saving)
 
   const percent =
     stage?.kind === 'sending' && stage.ratio !== null ? Math.round(stage.ratio * 100) : null
@@ -156,10 +159,8 @@ export function ImageCropDialog({
       ref={dialog}
       aria-labelledby={headingId}
       aria-describedby={hintId}
-      onCancel={(event) => {
-        event.preventDefault()
-        cancel()
-      }}
+      onKeyDown={dialogProps.onKeyDown}
+      onCancel={dialogProps.onCancel}
       data-testid="image-crop-dialog"
     >
       <div className="cropper__panel">

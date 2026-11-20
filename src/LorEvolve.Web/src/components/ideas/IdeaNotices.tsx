@@ -2,7 +2,7 @@ import { RecoveredDraft } from '../RecoveredDraft'
 import type { Fields, Stored } from '../../ideas/ideaDraft'
 import type { useIdeaDraft } from '../../ideas/useIdeaDraft'
 import { useI18n } from '../../i18n'
-import { Button } from '../Button'
+import { ConflictBar } from '../ConflictBar'
 
 /** An idea editor's notices: the recovery copy offered, the stale-save choice, and why a save failed. */
 export function IdeaNotices({
@@ -64,27 +64,15 @@ export function IdeaNotices({
       ) : null}
 
       {conflict ? (
-        <div className="manuscript__conflict" role="alert" data-testid="idea-conflict">
-          <p className="manuscript__conflicttext">{t('ideas.editor.conflict.text')}</p>
-          <div className="manuscript__conflictactions">
-            <Button
-              tone="secondary"
-              disabled={isSaving}
-              onClick={() => void save(conflict.updatedAt)}
-              data-testid="idea-keep-mine"
-            >
-              {t('ideas.editor.conflict.keepMine')}
-            </Button>
-            <Button
-              tone="secondary"
-              disabled={isSaving}
-              onClick={loadSavedVersion}
-              data-testid="idea-load-saved"
-            >
-              {t('ideas.editor.conflict.loadSaved')}
-            </Button>
-          </div>
-        </div>
+        <ConflictBar
+          text={t('ideas.editor.conflict.text')}
+          onKeepMine={() => void save(conflict.updatedAt)}
+          keepLabel={t('ideas.editor.conflict.keepMine')}
+          onLoadSaved={loadSavedVersion}
+          loadLabel={t('ideas.editor.conflict.loadSaved')}
+          busy={isSaving}
+          testId="idea"
+        />
       ) : null}
 
       {failure ? (

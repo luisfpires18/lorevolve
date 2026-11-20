@@ -1,7 +1,6 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import { Drawer } from '../Drawer'
 import { useI18n } from '../../i18n'
-import { useReturnFocus } from '../../lib/returnFocus'
 import { useUniverseAccess } from '../../universes/access'
 import type { LoreContextProps } from '../LoreContext'
 import { useLoreContextLinks } from '../../lore/useLoreContextLinks'
@@ -38,12 +37,6 @@ export function LoreContextDrawer({
   const resultsId = useId()
 
   const [preview, setPreview] = useState<{ id: string; from: string } | null>(null)
-
-  useReturnFocus()
-
-  useEffect(() => {
-    search.current?.focus()
-  }, [])
 
   const {
     query,
@@ -103,6 +96,7 @@ export function LoreContextDrawer({
 
   return (
     <Drawer
+      initialFocus={search}
       testId="lore-context"
       titleId={headingId}
       className="lorecontext"
@@ -112,6 +106,7 @@ export function LoreContextDrawer({
       // In the head, which never scrolls: an absolutely placed span in the body could stretch the dialog.
       context={<Announce testId="lore-context-announcer">{announcement}</Announce>}
       // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
+      busy={busy !== null}
       onClose={onClose}
       actions={(close) => (
         <FormActions onCancel={close} dismiss="close" cancelTestId="lore-context-close" />

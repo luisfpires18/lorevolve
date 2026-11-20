@@ -18,7 +18,13 @@ const projectsEntries: Dictionary['projects']['entries'] = {
   name: 'Nome',
   summary: 'Descrição',
   saving: 'A guardar…',
-  delete: 'Mover para o Lixo',
+  delete: 'Mover para a Reciclagem',
+  trash: {
+    title: 'Mover “{name}” para a Reciclagem?',
+    message: 'Nada é apagado. Sai desta lista, e podes restaurá-la da Reciclagem quando quiseres.',
+  },
+  leaveEdited: 'Esta entrada tem alterações por guardar. Sair sem as guardar?',
+  leaveNew: 'Esta entrada ainda não foi criada. Sair sem a criar?',
   canon: 'No Lore: {name}',
   values: 'Campos',
 }

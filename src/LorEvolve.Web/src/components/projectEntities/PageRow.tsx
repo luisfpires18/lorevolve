@@ -8,6 +8,7 @@ import { PanelForm } from './PanelForm'
 import { NewButton } from '../NewButton'
 import { Trash } from 'lucide-react'
 import { ActionIcon } from '../ActionIcon'
+import { confirmAction } from '../../lib/confirm'
 
 /** One page in a chapter: its name, its menu, its panels, and the form to add a panel. */
 export function PageRow({
@@ -35,7 +36,7 @@ export function PageRow({
   index: number
   busy: boolean
   setBusy: Dispatch<SetStateAction<boolean>>
-  run: (work: Promise<unknown>) => void
+  run: (work: () => Promise<unknown>) => void
   refresh: () => Promise<void>
   failing: (error: unknown) => void
   addingTo: string | null
@@ -63,14 +64,24 @@ export function PageRow({
             last={index === (pages ?? []).length - 1}
             busy={busy}
             testIds={{ up: `project-page-up-${page.id}`, down: `project-page-down-${page.id}` }}
-            onMove={(step) => run(movePage(projectId, volumeId, chapterId, page.id, index + step))}
+            onMove={(step) =>
+              run(() => movePage(projectId, volumeId, chapterId, page.id, index + step))
+            }
           />
           <button
             className="actionmenu__item actionmenu__item--danger"
             type="button"
             disabled={busy}
             data-testid={`project-page-delete-${page.id}`}
-            onClick={() => run(deletePage(projectId, volumeId, chapterId, page.id))}
+            onClick={async () => {
+              const confirmed = await confirmAction({
+                title: t('projects.pages.deleteTitle', { name: page.name ?? String(index + 1) }),
+                message: t('projects.structure.deleteEmpty'),
+                confirmLabel: t('projects.pages.delete'),
+                variant: 'destructive',
+              })
+              if (confirmed) run(() => deletePage(projectId, volumeId, chapterId, page.id))
+            }}
           >
             <ActionIcon icon={Trash} />
             {t('projects.pages.delete')}

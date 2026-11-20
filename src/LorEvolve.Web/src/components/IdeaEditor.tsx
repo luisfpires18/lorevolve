@@ -12,7 +12,6 @@ import { useIdeaDraft } from '../ideas/useIdeaDraft'
 import { useIdeaRead } from '../ideas/useIdeaRead'
 import { useIdeaSave } from '../ideas/useIdeaSave'
 import { useIdeaState } from '../ideas/useIdeaState'
-import { useLeaveGuard } from '../lib/leaveGuard'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 
@@ -74,7 +73,6 @@ export function IdeaEditor({
   const {
     isNew,
     failed,
-    discard,
     load,
     stored,
     draft,
@@ -91,11 +89,9 @@ export function IdeaEditor({
     addButton,
   } = base
   useIdeaRead({ ...base, ideaId, t })
-  const drafting = useIdeaDraft(base)
-  const { isDirty, isTooLong, copy, offer, isHeld } = drafting
-
   const name = draft.title.trim() || stored.title || t('ideas.editor.thisIdea')
-  useLeaveGuard(isDirty ? t('ideas.editor.leaveGuard', { name }) : null, discard)
+  const drafting = useIdeaDraft(base, t('ideas.editor.leaveGuard', { name }))
+  const { isDirty, isTooLong, copy, offer, isHeld } = drafting
 
   const saving = useIdeaSave({ ...base, ...drafting, ideaId, onCreated, t })
   const { edit, save } = saving

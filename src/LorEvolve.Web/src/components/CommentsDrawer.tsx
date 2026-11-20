@@ -5,7 +5,6 @@ import { listComments, type CommentSubject } from '../comments/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import type { Change } from '../lib/editConflict'
-import { useReturnFocus } from '../lib/returnFocus'
 import { useUniverseAccess } from '../universes/access'
 import { useCommentsDrawerState } from '../comments/useCommentsDrawerState'
 import { commentsDrawerActions } from '../comments/commentsDrawerActions'
@@ -70,7 +69,6 @@ export function CommentsDrawer<T>({
   } = state
 
   const isDirty = draft.trim() !== '' || (replyTo !== null && reply.trim() !== '')
-  useReturnFocus()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -111,6 +109,7 @@ export function CommentsDrawer<T>({
       }
       isDirty={isDirty}
       leaveMessage={t('review.comments.leave.title')}
+      busy={busy !== null}
       onClose={onClose}
       actions={(close) => (
         <FormActions onCancel={close} dismiss="close" cancelTestId="comments-close" />

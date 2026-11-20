@@ -8,10 +8,10 @@ import { t, useI18n } from '../i18n'
 import { useWorldRuleState } from '../worldRules/useWorldRuleState'
 import { useWorldRuleReads } from '../worldRules/useWorldRuleReads'
 import { worldRuleActions } from '../worldRules/worldRuleActions'
-import { useWorldRuleShortcut } from '../worldRules/useWorldRuleShortcut'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
 import { sameFields } from '../worldRules/ruleDraft'
 import { WorldRuleHead } from './worldRules/WorldRuleHead'
-import { WorldRuleConflict } from './worldRules/WorldRuleConflict'
+import { ConflictBar } from './ConflictBar'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
 import { LoadError } from './LoadError'
 import { Announce } from './Announce'
@@ -72,7 +72,6 @@ export function WorldRuleEditor({
     conflict,
     announcement,
     titleInput,
-    shortcut,
   } = state
   useWorldRuleReads({ ...state, universeId, ruleId })
 
@@ -99,7 +98,8 @@ export function WorldRuleEditor({
     isDirty,
     isTooLong,
   })
-  useWorldRuleShortcut({ shortcut, save, stored })
+  // Ctrl+S and Cmd+S save the rule.
+  useSaveShortcut(() => void save(stored.updatedAt))
 
   if (load.kind === 'loading') {
     return <LoadingNote testId="world-rule-loading">{t('canon.editor.opening')}</LoadingNote>
@@ -141,11 +141,14 @@ export function WorldRuleEditor({
       />
 
       {conflict ? (
-        <WorldRuleConflict
-          conflict={conflict}
-          isSaving={isSaving}
-          save={save}
-          loadSavedVersion={loadSavedVersion}
+        <ConflictBar
+          text={t('canon.editor.conflict')}
+          onKeepMine={() => void save(conflict.updatedAt)}
+          keepLabel={t('canon.editor.keepMine')}
+          onLoadSaved={() => void loadSavedVersion()}
+          loadLabel={t('canon.editor.loadSaved')}
+          busy={isSaving}
+          testId="world-rule"
         />
       ) : null}
 

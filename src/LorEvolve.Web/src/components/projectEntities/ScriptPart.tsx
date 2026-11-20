@@ -7,7 +7,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { scriptPartActions } from '../../projectEntities/scriptPartActions'
 import { NO_SCRIPT, useScriptPartState } from '../../projectEntities/useScriptPartState'
 import { useScriptPartLoad } from '../../projectEntities/useScriptPartLoad'
-import { useScriptShortcut } from '../../projectEntities/useScriptShortcut'
+import { useSaveShortcut } from '../../lib/useSaveShortcut'
 import { ScriptPartBar } from './ScriptPartBar'
 import { ScriptPartFields } from './ScriptPartFields'
 import { ScriptPartHead } from './ScriptPartHead'
@@ -69,7 +69,8 @@ export function ScriptPart({
     isTooLong,
   })
 
-  useScriptShortcut({ save })
+  // Ctrl+S or Cmd+S saves the open part, as the Manuscript does.
+  useSaveShortcut(() => void save())
 
   if (!node) {
     return failure ? (

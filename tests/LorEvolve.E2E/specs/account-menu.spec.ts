@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import { expectedVersionLabel, makeTestPassword, openAccountMenu } from './support/account'
 import { png } from './support/png'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * The account, and where it is reached from.
@@ -141,6 +142,7 @@ test.describe('the account menu', () => {
     // Taking it away puts every one of them back to the monogram, again without a reload.
     await page.goto('/app/profile')
     await page.getByTestId('profile-photo-remove').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('profile-avatar')).toHaveAttribute('data-avatar', 'monogram')
     await expect(avatarIn(page)).toHaveAttribute('data-avatar', 'monogram')
 

@@ -3,10 +3,9 @@ import { useI18n } from '../i18n'
 import { CheckField } from './CheckField'
 import { Field } from './Field'
 import { payloadKey } from '../lib/drawerGuard'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { useFormSave } from '../lib/useFormSave'
 import type { UniverseInput } from '../universes/types'
-import { confirmDiscard } from '../lib/confirm'
 import { HEX, inputOf, normalizeHex } from '../universes/universeFormInput'
 import { UniverseColourField } from './UniverseColourField'
 import { FormActions } from './FormActions'
@@ -67,16 +66,13 @@ export function UniverseForm({
     !isSaving &&
     !isSaved &&
     payloadKey(inputOf(name, description, accentColor, aiHelp, starterTypes)) !== opened
-  useLeaveGuard(
-    isDirty
-      ? initial
-        ? t('universe.form.leaveEdited', { name: initial.name })
-        : t('universe.form.leaveNew')
-      : null,
+  const { confirmLeave } = useDiscardGuard(
+    isDirty,
+    initial ? t('universe.form.leaveEdited', { name: initial.name }) : t('universe.form.leaveNew'),
   )
 
   async function cancel() {
-    if (isDirty && !(await confirmDiscard())) return
+    if (!(await confirmLeave())) return
     onCancel?.()
   }
 

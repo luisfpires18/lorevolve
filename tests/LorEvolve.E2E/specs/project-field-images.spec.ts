@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue #238: an entry type can have Image fields, each holding one picture cropped to the field's own shape.
@@ -130,6 +131,7 @@ test.describe('Image fields on project entries', () => {
 
     // One goes; the other stays.
     await row.getByTestId(`field-image-${banner}-remove`).click()
+    await acceptConfirm(page)
     await expect(row.getByTestId(`field-image-${banner}-preview`)).toHaveCount(0)
     await expect(row.getByTestId(`field-image-${cover}-preview`)).toBeVisible()
 
