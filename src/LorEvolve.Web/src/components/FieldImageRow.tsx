@@ -2,7 +2,7 @@ import type { ReactNode, RefObject } from 'react'
 import { ImageMinus, ImagePlus, ImageUp, Crop } from 'lucide-react'
 import { IMAGE_ACCEPT } from '../lore/images'
 import type { FieldImageRef } from '../lore/types'
-import { showsArt } from '../projectEntities/structureTree'
+import { PictureWithFallback } from './PictureWithFallback'
 import { ActionIcon } from './ActionIcon'
 import { CroppedPicture } from './ImageCropDialog'
 import type { FieldImageApi, PendingFieldImage } from './FieldImageInput'
@@ -21,8 +21,6 @@ export function FieldImageRow({
   placeholder,
   input,
   busy,
-  brokenCrop,
-  setBrokenCrop,
   api,
   preview,
   hasPicture,
@@ -41,8 +39,6 @@ export function FieldImageRow({
   placeholder?: ReactNode
   input: RefObject<HTMLInputElement | null>
   busy: boolean
-  brokenCrop: string | null
-  setBrokenCrop: (cropId: string | null) => void
   api: FieldImageApi
   preview: string | null
   hasPicture: boolean
@@ -66,15 +62,15 @@ export function FieldImageRow({
           crop={pending.crop}
           testId={testId('preview')}
         />
-      ) : image && entityId && showsArt(image, brokenCrop) ? (
-        <img
+      ) : image && entityId ? (
+        <PictureWithFallback
           className="imagefield__preview imagefield__preview--field"
           src={api.url(image, 'crop')}
           alt={name}
           width={image.width}
           height={image.height}
-          onError={() => setBrokenCrop(image.cropId)}
-          data-testid={testId('preview')}
+          fallback={placeholder ?? null}
+          testId={testId('preview')}
         />
       ) : (
         (placeholder ?? null)

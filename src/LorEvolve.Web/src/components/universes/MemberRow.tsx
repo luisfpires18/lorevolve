@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
+import { monogram } from '../../lib/monogram'
 import { ApiError } from '../../lib/api'
 import {
   changeCollaboratorRole,
@@ -82,7 +83,7 @@ export function MemberRow({
       <span
         className="collab__mark"
         aria-hidden="true"
-        data-initial={Array.from(member.username)[0]?.toUpperCase() ?? ''}
+        data-initial={monogram(member.username, '')}
       />
       <div className="collab__who">
         <p className="collab__name">

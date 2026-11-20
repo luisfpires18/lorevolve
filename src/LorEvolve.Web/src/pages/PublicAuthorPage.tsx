@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PortalError, PortalMissing } from '../components/PortalMissing'
+import { Avatar } from '../components/Avatar'
 import { WorldCard } from '../components/WorldCard'
 import { ShowMore } from '../components/ShowMore'
 import {
@@ -80,27 +81,17 @@ function Author({ author }: { author: PublicAuthor }) {
     [author.slug],
   )
   const worlds = usePublicPages<PublicUniverse>(author.slug, fetchWorlds)
-  const [photoFailed, setPhotoFailed] = useState(false)
 
   return (
     <div className="pauthor" data-testid="public-author">
       <header className="pauthor__head">
         <span className="pauthor__avatar" aria-hidden="true">
-          {author.avatarUrl && !photoFailed ? (
-            <img
-              src={author.avatarUrl}
-              alt=""
-              width={320}
-              height={320}
-              decoding="async"
-              onError={() => setPhotoFailed(true)}
-              data-testid="public-author-avatar"
-            />
-          ) : (
-            <span className="pauthor__initial" data-testid="public-author-placeholder">
-              {Array.from(author.displayName.trim())[0]?.toLocaleUpperCase() ?? '·'}
-            </span>
-          )}
+          <Avatar
+            src={author.avatarUrl}
+            name={author.displayName}
+            className="pauthor__photo"
+            testId="public-author-avatar"
+          />
         </span>
         <div className="pauthor__text">
           <p className="pread__eyebrow">{t('portal.author.eyebrow')}</p>

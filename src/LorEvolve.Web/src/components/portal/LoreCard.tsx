@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { monogram } from '../../lib/monogram'
 import { lorePath, type PublicLoreEntry } from '../../portal/api'
 
 export function LoreCard({ world, entry }: { world: string; entry: PublicLoreEntry }) {
@@ -16,7 +17,7 @@ export function LoreCard({ world, entry }: { world: string; entry: PublicLoreEnt
               decoding="async"
             />
           ) : (
-            <span className="plorecard__initial">{initial(entry.name)}</span>
+            <span className="plorecard__initial">{monogram(entry.name, '·')}</span>
           )}
         </span>
         <span className="plorecard__text">
@@ -33,9 +34,4 @@ export function LoreCard({ world, entry }: { world: string; entry: PublicLoreEnt
       </Link>
     </li>
   )
-}
-
-/** The first letter of a name, for an entry with no picture: a mark, never a made-up image. */
-function initial(name: string) {
-  return Array.from(name.trim())[0]?.toLocaleUpperCase() ?? '·'
 }

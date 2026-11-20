@@ -45,7 +45,7 @@
   object-fit: cover;
 }
 
-.pauthor__initial {
+.pauthor__photo--blank {
   color: rgb(var(--portal-ink-rgb) / 0.78);
   font-family: var(--display);
   font-size: clamp(2.25rem, 5vw, 3.25rem);
