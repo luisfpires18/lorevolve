@@ -11,6 +11,7 @@ import type { Chronology } from '../../chronology/types'
 import type { SectionGroup } from '../../lore/fieldSections'
 import { SectionTitle } from '../Section'
 import { DateText } from '../DateText'
+import { TagList } from '../TagList'
 
 /** The Article view beside the picture: the article itself, and the rail of facts, pictures, tags, maps and dates. */
 export function EntryArticleView({
@@ -110,13 +111,7 @@ export function EntryArticleView({
             <SectionTitle level={2} tone="label">
               {t('entity.page.rail.tags')}
             </SectionTitle>
-            <p className="dossier__tags" data-testid="entry-tags">
-              {detail!.tags.map((tag) => (
-                <span className="chip" key={tag}>
-                  {tag}
-                </span>
-              ))}
-            </p>
+            <TagList tags={detail!.tags} className="dossier__tags" testId="entry-tags" />
           </div>
         ) : null}
 

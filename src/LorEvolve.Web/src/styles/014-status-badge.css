@@ -41,3 +41,30 @@
 .statusbadge[data-step='2']::before {
   background: currentcolor;
 }
+
+/* Tags as small chips (TagList): wrapped in a row, a square tag by default. `--round` is a status-like pill, `--danger`
+   marks the blocked kind. A screen places the row with its own margin. */
+.taglist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: 0.0625rem var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.chip--round {
+  border-color: var(--rule-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+}
+
+.chip--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}

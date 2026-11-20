@@ -16,6 +16,7 @@ import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
 import { formatCount } from '../../i18n/format'
+import { TagList } from '../TagList'
 
 // ---------- Users ----------
 
@@ -82,14 +83,16 @@ export function UsersScreen() {
                         {user.publicDisplayName}
                       </QuietNote>
                     ) : null}
-                    <p className="adminuser__tags">
-                      <span className="admintag">{t(ROLE_KEYS[user.role])}</span>
-                      {user.isBlocked ? (
-                        <span className="admintag admintag--blocked">
-                          {t('admin.users.blocked')}
-                        </span>
-                      ) : null}
-                    </p>
+                    <TagList
+                      look="round"
+                      className="adminuser__tags"
+                      tags={[
+                        t(ROLE_KEYS[user.role]),
+                        ...(user.isBlocked
+                          ? [{ text: t('admin.users.blocked'), tone: 'danger' as const }]
+                          : []),
+                      ]}
+                    />
                   </div>
                   <Button
                     tone="secondary"

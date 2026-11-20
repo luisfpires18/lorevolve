@@ -12,9 +12,10 @@ import {
 } from '../../portal/api'
 import { usePublicPages } from '../../portal/usePublicPages'
 import { useWorkspaceLink } from '../../portal/useWorkspaceLink'
-import { categoryLabel, genreKey, genreLabel } from '../../publishing/types'
+import { categoryLabel } from '../../publishing/types'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { useI18n } from '../../i18n'
+import { GenreChips } from './GenreChips'
 import { LoreCard } from './LoreCard'
 import { ShowMore } from '../ShowMore'
 import { StoryCard } from './StoryCard'
@@ -57,16 +58,11 @@ export function World({ world }: { world: PublicUniverse }) {
               <bdi>{world.name}</bdi>
             </h1>
             <WorldAttribution world={world} className="pworld-hero__byline" testId="public-world" />
-            <ul
-              className="worldcard__genres pworld-hero__genres"
-              aria-label={t('portal.world.genres')}
-            >
-              {world.genres.map((genre) => (
-                <li className="genrechip" data-genre={genreKey(genre)} key={genre}>
-                  {genreLabel(genre)}
-                </li>
-              ))}
-            </ul>
+            <GenreChips
+              genres={world.genres}
+              label={t('portal.world.genres')}
+              className="pworld-hero__genres"
+            />
             <p className="pworld-hero__summary" dir="auto" data-testid="public-world-summary">
               {world.publicSummary}
             </p>

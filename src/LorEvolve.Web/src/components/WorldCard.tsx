@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BrandMark } from './BrandMark'
+import { GenreChips } from './portal/GenreChips'
 import { authorPath, worldPath, type PublicUniverse } from '../portal/api'
-import { categoryLabel, genreKey, genreLabel } from '../publishing/types'
+import { categoryLabel } from '../publishing/types'
 import { useI18n } from '../i18n'
 
 /**
@@ -59,13 +60,7 @@ export function WorldCard({
               <bdi>{world.name}</bdi>
             </Link>
           </h3>
-          <ul className="worldcard__genres" aria-label={t('portal.card.genres')}>
-            {world.genres.map((genre) => (
-              <li className="genrechip" data-genre={genreKey(genre)} key={genre}>
-                {genreLabel(genre)}
-              </li>
-            ))}
-          </ul>
+          <GenreChips genres={world.genres} label={t('portal.card.genres')} />
           {world.originalCreator ? (
             <p
               className="worldcard__original"

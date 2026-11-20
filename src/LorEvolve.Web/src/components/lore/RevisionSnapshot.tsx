@@ -7,14 +7,15 @@ import {
   withEraLabel,
 } from '../../chronology/format'
 import { EraLabelPosition, type Chronology } from '../../chronology/types'
-import { formatDate } from '../../lib/dates'
 import { isEmptyDocument } from '../../lore/document'
+import { formatDate } from '../../lib/dates'
 import { EMPTY_FACT } from '../../lore/facts'
 import type { EntityRevisionDetail, RevisionFieldValue } from '../../lore/revisions'
 import { CANON_LABELS } from '../../lore/types'
 import { FieldKind } from '../../lore/fieldKinds'
 import { t, useI18n } from '../../i18n'
 import { QuietNote } from '../QuietNote'
+import { TagList } from '../TagList'
 
 /** One version read whole, in the same shapes the dossier uses for the live entry. */
 export function Snapshot({
@@ -62,15 +63,7 @@ export function Snapshot({
         </dl>
       ) : null}
 
-      {revision.tags.length > 0 ? (
-        <p className="dossier__tags">
-          {revision.tags.map((tag) => (
-            <span className="chip" key={tag}>
-              {tag}
-            </span>
-          ))}
-        </p>
-      ) : null}
+      {revision.tags.length > 0 ? <TagList tags={revision.tags} className="dossier__tags" /> : null}
     </>
   )
 }
