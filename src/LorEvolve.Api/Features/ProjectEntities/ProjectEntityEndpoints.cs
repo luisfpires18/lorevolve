@@ -448,7 +448,8 @@ public static class ProjectEntityEndpoints
         Guid? canonEntityId,
         IReadOnlyList<FieldValueInput> fields,
         string actorUserId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? entityId = null)
     {
         var (entity, problem) = await EntityEndpoints.CreateEntryAsync(
             db,
@@ -457,7 +458,8 @@ public static class ProjectEntityEndpoints
             actorUserId,
             cancellationToken,
             projectId,
-            canonEntityId);
+            canonEntityId,
+            entityId);
 
         return problem is not null ? (null, problem) : (entity!.Id, null);
     }

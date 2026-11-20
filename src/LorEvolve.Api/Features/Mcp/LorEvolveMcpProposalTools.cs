@@ -87,7 +87,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
         + "Nothing changes until they approve it in LorEvolve's Pending AI Changes; this tool cannot approve or apply anything. "
         + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
         + "add to or change an entry's progression - its eras, forms, abilities and appearances, for the same entry - "
-        + "ask for a picture for an entry or one of its appearances (image: no file is sent here; the person uploads it on the review page - to send the file itself, use propose_entry_image), "
+        + "ask for a picture for an entry or one of its appearances (image: no file is sent here; the person uploads it on the review page - to send the file itself, use propose_entry_image; for an entry created here, set image.entryRef to its change's id and send the file with propose_entry_image's proposal and change, so one approval applies both), "
         + "timeline moments, world rules, entries of one of the universe's projects (project_entry: a game's unit, a series' "
         + "character, a comic's prop, with the project and a type of that project from get_project_schema), "
         + "World Logic rule definitions (system_rule: a title, a description, an optional condition tree and the rules it depends on) "
