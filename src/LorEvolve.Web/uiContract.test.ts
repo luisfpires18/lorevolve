@@ -291,10 +291,7 @@ const BUTTON_CLASS_CALLERS = new Map<string, string>([
   ['src/components/LoreFieldFilters.tsx', 'an ActionMenu trigger styled as a button'],
   ['src/components/ProjectEntitiesView.tsx', 'an ActionMenu trigger styled as a button'],
   ['src/components/lore/TypeLevelMenus.tsx', 'an ActionMenu trigger styled as a button'],
-  ['src/components/EntityImageField.tsx', 'a label that opens the file input'],
-  ['src/components/FieldImageRow.tsx', 'a label that opens the file input'],
-  ['src/components/ProfileAvatar.tsx', 'a label that opens the file input'],
-  ['src/components/UniverseArtworkField.tsx', 'a label that opens the file input'],
+  ['src/components/PictureActions.tsx', 'a label that opens the file input'],
   ['src/components/lore/AppearanceGallery.tsx', 'a label that opens the file input'],
 ])
 
