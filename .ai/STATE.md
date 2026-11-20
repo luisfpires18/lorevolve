@@ -45,7 +45,7 @@ example and Literata. Still open there: the step 4 screenshot shows an empty sce
 deferred.
 
 ## In flight
-- #380 Web App Readable Structure tracker: done. Children #390 to #417 merged (PRs #404 to #444). Owner's DEV checklist: to be posted on #380 by the owner. Close-out #403 in its own PR.
+- #380 Web App Readable Structure tracker: done. Children #390 to #417 merged (PRs #404 to #444). Owner's DEV checklist is on #380. Close-out #403 (PR #448).
 - #363 World Systems State Machines tracker: all seven children merged on 2026-11-17 (#356 to #362, PRs #364, #366, #367, #368, #370, #381 and the close-out PR). A System can carry one state machine (ADR 0073, spec `docs/architecture/world-logic-state-machine-spec.md`): drawn on the Machine tab, guards built from blocks, illegal states found by the sweep, read and proposed over MCP. Backup format 59. Closing #363 is the owner's, after the checklist posted on it. Follow-ups are Issues linked from #363. Local focused runs on this machine need `--workers=2` and `xUnit.MaxParallelThreads=2`.
 - #300 M3 Types tracker: all children merged (#279 to #283, PRs #330 to #345). Backup format 55. CI and E2E brought green in PR #351. Owner checks: Lore Types unaffected; individual Game types available; universe templates can be managed; Game types copied from templates are independent; existing entity values intact.
 - #301 M4 GameEntity tracker: all children merged (#284 to #287, PRs #346 to #349). Backup format 55. CI and E2E brought green in PR #351. Owner checks: game selection scopes the entity catalogue; Lore-style category cards; unit lists still usable; description, image and dynamic fields display; edit reachable; Lore Systems stay separate from Game Systems.
