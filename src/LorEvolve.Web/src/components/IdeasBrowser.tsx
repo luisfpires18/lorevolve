@@ -116,7 +116,7 @@ export function IdeasBrowser({ scope }: { scope: IdeasScope }) {
       />
 
       {outcome ? (
-        <Callout look="notice" className="ideas__outcome" focusOnShow>
+        <Callout look="notice" className="ideas__outcome" focusOnShow={outcome}>
           <p role="status" data-testid="ideas-message">
             {outcome.text}
           </p>

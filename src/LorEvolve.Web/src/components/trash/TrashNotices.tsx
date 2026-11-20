@@ -25,7 +25,7 @@ export function TrashNotices({
 
       {/* The row that was restored leaves the list, taking the focus with it: the focus goes to what happened instead. */}
       {outcome ? (
-        <Callout look="notice" className="trash__outcome" focusOnShow>
+        <Callout look="notice" className="trash__outcome" focusOnShow={outcome}>
           <p role="status" data-testid="trash-message">
             {outcome.text}
           </p>

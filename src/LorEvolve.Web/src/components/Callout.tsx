@@ -17,8 +17,9 @@ interface CalloutProps {
   testId?: string
   /** Placement classes kept from the screen. */
   className?: string
-  /** Takes the focus when it appears, for what replaced the row the author acted on. */
-  focusOnShow?: boolean
+  /** Takes the focus while truthy, again each time the value changes (pass the outcome), for what replaced the row the
+   * author acted on. */
+  focusOnShow?: unknown
   /** Given (or with `focusOnShow`): the box is focusable (`tabIndex={-1}`) for its caller to focus. */
   ref?: Ref<HTMLElement>
   children?: ReactNode
@@ -53,7 +54,7 @@ export function Callout({
       ref={own as Ref<never>}
       className={classes.filter(Boolean).join(' ')}
       role={role}
-      tabIndex={focusOnShow || ref ? -1 : undefined}
+      tabIndex={focusOnShow !== undefined || ref ? -1 : undefined}
       aria-labelledby={labelledBy}
       data-testid={testId}
     >

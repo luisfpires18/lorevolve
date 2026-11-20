@@ -102,7 +102,7 @@ export function IdeaBoardsBrowser({ universe }: { universe: { id: string; name: 
       />
 
       {outcome ? (
-        <Callout look="notice" className="ideas__outcome" focusOnShow>
+        <Callout look="notice" className="ideas__outcome" focusOnShow={outcome}>
           <p role="status" data-testid="boards-message">
             {outcome.text}
           </p>
