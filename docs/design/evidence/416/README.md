@@ -230,8 +230,8 @@ Every differing pair was opened before next to after, at full size or as a 4x cr
 
 ### X, new delete confirm (14 states, 56 pairs)
 
-- `x01-type`: after: the confirm, destructive (X3 warning, "Move to Trash"); before: dev deleted at once, the aborted write then showed its failure message (desktop light 1295998 px, desktop dark 1295998 px, phone light 318942 px, phone dark 318997 px).
-- `x02-field`: after: the confirm, destructive (X3 warning, "Move to Trash"); before: dev deleted at once, the aborted write then showed its failure message (desktop light 1295998 px, desktop dark 1295998 px, phone light 329119 px, phone dark 329145 px).
+- `x01-type`: after: the confirm, destructive, "Delete the type “Item”?" with "No entry uses it. This cannot be undone." and a "Delete type" button (Item has no entries, so the confirm shows; a type with entries skips it and the API refuses); before: dev deleted at once, the aborted write then showed its failure message (desktop light 1295998 px, desktop dark 1295998 px, phone light 318942 px, phone dark 318997 px).
+- `x02-field`: after: the confirm, destructive, "Delete the field “Title line” for good?" with "This cannot be undone." and a "Delete field" button; before: dev deleted at once, the aborted write then showed its failure message (desktop light 1295998 px, desktop dark 1295998 px, phone light 329115 px, phone dark 329136 px).
 - `x03-move-to-trash`: after: the confirm, destructive (X3 warning, "Move to Trash"); before: dev deleted at once, the aborted write then showed its failure message (desktop light 1272698 px, desktop dark 1270196 px, phone light 316191 px, phone dark 315782 px).
 - `x04-season`: after: the confirm, destructive (X3 warning, "Move to Trash"); before: dev deleted at once, the aborted write then showed its failure message (desktop light 1295935 px, desktop dark 1295972 px, phone light 320822 px, phone dark 319337 px).
 - `x05-episode`: after: the confirm, destructive (X3 warning, "Move to Trash"); before: dev deleted at once, the aborted write then showed its failure message (desktop light 1295913 px, desktop dark 1295976 px, phone light 320822 px, phone dark 319338 px).
