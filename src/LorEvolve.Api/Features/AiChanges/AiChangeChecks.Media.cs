@@ -14,7 +14,8 @@ internal sealed partial class AiChangeChecker
     private async Task CheckMediaAsync(AiChangeWork work, IReadOnlyList<AiChangeWork> works, CancellationToken cancellationToken)
     {
         var media = (MediaValues)work.Proposed;
-        var live = await db.Entities.AsNoTracking()
+        // A game's unit or a series' character takes a picture too (#441): its own universe only, still.
+        var live = await db.Entities.IgnoreQueryFilters().AsNoTracking()
             .AnyAsync(entity => entity.Id == media.EntityId && entity.UniverseId == universeId && entity.DeletedAt == null, cancellationToken);
         if (!live)
         {
@@ -54,7 +55,7 @@ internal sealed partial class AiChangeChecker
 
         if (work.OperationId == Guid.Empty || !await db.AiChangeMedia.AsNoTracking().AnyAsync(row => row.OperationId == work.OperationId, cancellationToken))
         {
-            work.Problem(AiChangeCodes.AwaitingUpload, "Waiting for the picture: upload it here, in LorEvolve, before approving. No file comes from the AI.", "file");
+            work.Problem(AiChangeCodes.AwaitingUpload, "Waiting for the picture: upload it here, in LorEvolve, before approving.", "file");
         }
     }
 }

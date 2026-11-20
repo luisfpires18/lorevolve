@@ -33,7 +33,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
     /// to the server and quietly left ungated.
     /// </summary>
     private static readonly HashSet<string> Names =
-        [OptionsTool, ProposeTool, ReadTool, .. LorEvolveMcpWorldLogicTools.ProposeGated, .. LorEvolveMcpPrivateNoteTools.ProposeGated];
+        [OptionsTool, ProposeTool, ReadTool, .. LorEvolveMcpWorldLogicTools.ProposeGated, .. LorEvolveMcpPrivateNoteTools.ProposeGated, .. LorEvolveMcpEntryImageTools.ProposeGated];
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -87,7 +87,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
         + "Nothing changes until they approve it in LorEvolve's Pending AI Changes; this tool cannot approve or apply anything. "
         + "Send up to 100 changes: create, update or remove (to the Trash) lore entries, relationships, stories, chapters, scenes, plot arcs, "
         + "add to or change an entry's progression - its eras, forms, abilities and appearances, for the same entry - "
-        + "ask for a picture for an entry or one of its appearances (image: no file is sent; the person uploads it on the review page), "
+        + "ask for a picture for an entry or one of its appearances (image: no file is sent here; the person uploads it on the review page - to send the file itself, use propose_entry_image), "
         + "timeline moments, world rules, entries of one of the universe's projects (project_entry: a game's unit, a series' "
         + "character, a comic's prop, with the project and a type of that project from get_project_schema), "
         + "World Logic rule definitions (system_rule: a title, a description, an optional condition tree and the rules it depends on) "
@@ -146,7 +146,7 @@ public sealed class LorEvolveMcpProposalTools(LorEvolveDbContext db, McpCaller c
             status = "waiting_for_review",
             reviewUrl = ReviewUrl(proposal.Id),
             message = proposal.Operations.Any(operation => operation.Resource == AiChangeResource.Media)
-                ? "Staged for review. Nothing in the universe has changed. This proposal asks for pictures: no file came through this connection, so tell the person to open the review page, upload each picture there, and approve or reject it. Don't say the picture was added."
+                ? "Staged for review. Nothing in the universe has changed. This proposal asks for pictures: no file came with it, so tell the person to open the review page, upload each picture there, and approve or reject it. Don't say the picture was added."
                 : "Staged for review. Nothing in the universe has changed: tell the person their changes are waiting in LorEvolve's Pending AI Changes, where they can approve or reject each one.",
             changes = proposal.Operations.OrderBy(operation => operation.Sequence).Select(operation => new { id = operation.Key, action = operation.Action, resource = operation.Resource }),
         }, Json);
