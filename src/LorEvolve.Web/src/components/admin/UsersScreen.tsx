@@ -15,6 +15,7 @@ import { SignUpLink } from './SignUpLink'
 import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
+import { formatCount } from '../../i18n/format'
 
 // ---------- Users ----------
 
@@ -61,7 +62,7 @@ export function UsersScreen() {
       {result && result.items.length > 0 ? (
         <>
           <p className="settings__note" role="status" data-testid="admin-user-count">
-            {tn('admin.users.count', result.totalCount, { n: result.totalCount })}
+            {tn('admin.users.count', result.totalCount, { n: formatCount(result.totalCount) })}
           </p>
           <CardGrid min={15} testId="admin-user-grid">
             {result.items.map((user) => (

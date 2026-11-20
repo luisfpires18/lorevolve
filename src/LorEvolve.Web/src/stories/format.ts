@@ -1,6 +1,7 @@
 import { formatChronologyPoint, isPlaced } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { t, tn } from '../i18n'
+import { formatCount } from '../i18n/format'
 
 /**
  * Where a scene happens in the world, written by the shared chronology formatter - or null when the
@@ -25,11 +26,11 @@ export function sceneWhen(chronology: Chronology, value: ChronologyValue | null)
 }
 
 export function sceneCountLabel(count: number) {
-  return tn('stories.scene.count', count, { n: count })
+  return tn('stories.scene.count', count, { n: formatCount(count) })
 }
 
 export function chapterCountLabel(count: number) {
-  return tn('stories.chapter.count', count, { n: count })
+  return tn('stories.chapter.count', count, { n: formatCount(count) })
 }
 
 /** What a scene that belongs to no chapter is said to be in. A place on screen, not a chapter. */
@@ -71,11 +72,11 @@ export function arcLabel(index: number, title: string) {
 }
 
 export function beatCountLabel(count: number) {
-  return tn('stories.beats.count', count, { n: count })
+  return tn('stories.beats.count', count, { n: formatCount(count) })
 }
 
 export function arcCountLabel(count: number) {
-  return tn('stories.arc.countLabel', count, { n: count })
+  return tn('stories.arc.countLabel', count, { n: formatCount(count) })
 }
 
 /** The container a scene is in, named the way the page names it. */

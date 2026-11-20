@@ -12,6 +12,7 @@ import {
 import { usePublicPages } from '../portal/usePublicPages'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { useI18n } from '../i18n'
+import { formatCount } from '../i18n/format'
 
 type LoadState =
   | { slug: string; kind: 'ready'; author: PublicAuthor }
@@ -108,7 +109,7 @@ function Author({ author }: { author: PublicAuthor }) {
           </h1>
           {worlds.status === 'ready' ? (
             <p className="pauthor__count" data-testid="public-author-count">
-              {tn('portal.author.count', worlds.totalCount, { n: worlds.totalCount })}
+              {tn('portal.author.count', worlds.totalCount, { n: formatCount(worlds.totalCount) })}
             </p>
           ) : null}
         </div>

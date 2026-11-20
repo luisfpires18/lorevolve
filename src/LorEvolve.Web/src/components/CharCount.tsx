@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n'
 import type { TextKey } from '../i18n/core'
-import { numberFormat } from '../i18n/format'
+import { formatCount } from '../i18n/format'
 import type { Dictionary } from '../i18n/en'
 
 type Key = TextKey<Dictionary>
@@ -19,8 +19,6 @@ export interface CharCountProps {
 }
 
 const NEAR = 0.9
-
-const format = (value: number) => numberFormat({}, 'en').format(value)
 
 /** Whether a count with these numbers is drawn at all. */
 export function countShows({ used, max, show }: Pick<CharCountProps, 'used' | 'max' | 'show'>) {
@@ -41,7 +39,7 @@ export function CharCount({ id, used, max, show, words, className, testId }: Cha
       id={id}
       data-testid={testId}
     >
-      {t(key, { used: format(used), max: format(max) })}
+      {t(key, { used: formatCount(used), max: formatCount(max) })}
     </p>
   )
 }

@@ -1,5 +1,6 @@
 import type { BackupPreviewCounts } from './api'
 import type { useI18n } from '../i18n'
+import { formatCount } from '../i18n/format'
 
 /** What the backup holds, a line per part of a world, leaving out what it has none of. */
 export function summaryRows(
@@ -7,9 +8,9 @@ export function summaryRows(
   { t, tn }: ReturnType<typeof useI18n>,
 ): [string, string][] {
   const rows: [string, string][] = []
-  // The count is its own placeholder, grouped by the browser as it always was, not by the language.
+  // The count is its own placeholder, grouped the way the app's language groups it.
   const plural = (key: Parameters<typeof tn>[0], count: number) =>
-    tn(key, count, { n: count.toLocaleString() })
+    tn(key, count, { n: formatCount(count) })
 
   const lore = [
     plural('admin.restore.counts.entry', counts.entries),
@@ -57,7 +58,7 @@ export function summaryRows(
         plural('admin.restore.counts.idea', counts.ideas),
         counts.ideasDeleted > 0
           ? t('admin.restore.summary.recentlyDeleted', {
-              n: counts.ideasDeleted.toLocaleString(),
+              n: formatCount(counts.ideasDeleted),
             })
           : null,
       ]

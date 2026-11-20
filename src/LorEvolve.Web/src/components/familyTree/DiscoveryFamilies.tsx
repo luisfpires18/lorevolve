@@ -10,6 +10,7 @@ import { LoadError } from '../LoadError'
 import { LoadingNote } from '../LoadingNote'
 import { QuietNote } from '../QuietNote'
 import { SectionTitle } from '../Section'
+import { formatCount } from '../../i18n/format'
 
 export function DiscoveryFamilies({
   universeId,
@@ -44,10 +45,10 @@ export function DiscoveryFamilies({
               ? t('places.discovery.noMatch')
               : q
                 ? tn('places.discovery.matches', result.totalCount, {
-                    n: result.totalCount,
+                    n: formatCount(result.totalCount),
                     q,
                   })
-                : tn('places.discovery.count', result.totalCount, { n: result.totalCount })}
+                : tn('places.discovery.count', result.totalCount, { n: formatCount(result.totalCount) })}
           </QuietNote>
         ) : null}
       </div>
