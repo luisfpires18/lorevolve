@@ -206,36 +206,16 @@
   margin: var(--space-3) 0 0;
 }
 
-.connectedapps__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
-  padding: var(--space-4) 0;
-  border-top: 1px solid var(--rule);
-}
-
 .connectedapps__who {
   flex: 1 1 14rem;
   min-width: 0;
 }
 
-.connectedapps__name {
-  margin: 0;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.connectedapps__meta,
+/* The meta lines are `QuietNote`s (`.managerow__meta`); the status line is in the ink, and amber when off. */
 .connectedapps__status {
   margin: var(--space-1) 0 0;
-  color: var(--muted);
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
-}
-
-.connectedapps__status {
   color: var(--ink);
 }
 

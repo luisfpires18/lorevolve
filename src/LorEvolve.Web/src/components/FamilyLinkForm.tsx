@@ -12,9 +12,9 @@ import { useI18n } from '../i18n'
 import { familyLinkActions } from '../relationships/familyLinkActions'
 import { useFamilyLinkState } from '../relationships/useFamilyLinkState'
 import { FamilyLinkKindField } from './relationships/FamilyLinkKindField'
-import { FamilyLinkPreview } from './relationships/FamilyLinkPreview'
 import { FamilyLinkSide } from './relationships/FamilyLinkSide'
-import { FamilyLinkStatus } from './relationships/FamilyLinkStatus'
+import { RelationPreview } from './relationships/RelationPreview'
+import { CanonStatusPicker } from './CanonStatusPicker'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
@@ -109,7 +109,7 @@ export function FamilyLinkForm({
 
   return (
     <div className="relform familylink" data-testid="family-link-form">
-      {preview ? <FamilyLinkPreview preview={preview} /> : null}
+      {preview ? <RelationPreview {...preview} testId="family-link-preview" isolate /> : null}
       {kind ? (
         <QuietNote spacing="hint">
           {isParentKind
@@ -153,7 +153,12 @@ export function FamilyLinkForm({
           error={fieldErrors.targetentityid ?? fieldErrors.sourceentityid}
         />
 
-        <FamilyLinkStatus canonStatus={canonStatus} setCanonStatus={setCanonStatus} />
+        <CanonStatusPicker
+          field={{ label: t('places.linkForm.status') }}
+          optionTestId="family-link-canon-"
+          value={canonStatus}
+          onChange={setCanonStatus}
+        />
       </div>
 
       {message ? <FormMessage testId="family-link-error">{message}</FormMessage> : null}

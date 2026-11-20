@@ -12,6 +12,7 @@ import { Field } from '../Field'
 import { RoleSelect } from './RoleSelect'
 import { FormActions } from '../FormActions'
 import { errorText } from '../../lib/errorText'
+import { useFormSave } from '../../lib/useFormSave'
 import { FormMessage } from '../FormMessage'
 
 // ---------- Inviting ----------
@@ -28,41 +29,47 @@ export function InviteForm({
   const { t } = useI18n()
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<UniverseRoleValue>(UniverseRole.Editor)
-  const [busy, setBusy] = useState(false)
-  const [errors, setErrors] = useState<{ email?: string; role?: string; form?: string }>({})
   const emailInput = useRef<HTMLInputElement>(null)
+  // The refusal shows every answer itself: the field errors it reads are only `email` and `role`.
+  const {
+    isSaving: busy,
+    message: formError,
+    setMessage,
+    fieldErrors: errors,
+    setFieldErrors,
+    save,
+  } = useFormSave({
+    needChange: null,
+    failed: '',
+    refusal: (problem) => {
+      let shown: true | string = true
+      if (problem instanceof ApiError && problem.code === INVITATION_PENDING) {
+        const invitationId = (problem.problem as { invitationId?: string } | null)?.invitationId
+        setFieldErrors({ email: t('universe.collab.alreadyPending') })
+        if (invitationId) onPending(invitationId)
+      } else if (problem instanceof ApiError && Object.keys(problem.fieldErrors).length > 0) {
+        setFieldErrors(problem.fieldErrors)
+      } else {
+        shown = errorText(problem, t('universe.collab.createFailed'))
+      }
+      emailInput.current?.focus()
+      return shown
+    },
+  })
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!email.trim()) {
-      setErrors({ email: t('universe.collab.emailRequired') })
+      setMessage(null)
+      setFieldErrors({ email: t('universe.collab.emailRequired') })
       emailInput.current?.focus()
       return
     }
-    setBusy(true)
-    setErrors({})
-    try {
+    await save(async () => {
       const invitation = await inviteCollaborator(universeId, email.trim(), role)
       setEmail('')
       onCreated(invitation)
-    } catch (problem: unknown) {
-      if (problem instanceof ApiError && problem.code === INVITATION_PENDING) {
-        const invitationId = (problem.problem as { invitationId?: string } | null)?.invitationId
-        setErrors({
-          email: t('universe.collab.alreadyPending'),
-        })
-        if (invitationId) onPending(invitationId)
-      } else if (problem instanceof ApiError && Object.keys(problem.fieldErrors).length > 0) {
-        setErrors({ email: problem.fieldErrors.email, role: problem.fieldErrors.role })
-      } else {
-        setErrors({
-          form: errorText(problem, t('universe.collab.createFailed')),
-        })
-      }
-      emailInput.current?.focus()
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   return (
@@ -116,7 +123,7 @@ export function InviteForm({
           </>
         )}
       </Field>
-      {errors.form ? <FormMessage>{errors.form}</FormMessage> : null}
+      {formError ? <FormMessage>{formError}</FormMessage> : null}
       <FormActions
         submitLabel={t('universe.collab.create')}
         busy={busy}

@@ -1,7 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { monogram } from '../../lib/monogram'
-import { ApiError } from '../../lib/api'
 import {
   changeCollaboratorRole,
   removeCollaborator,
@@ -10,13 +9,12 @@ import {
 import type { UniverseRoleValue } from '../../universes/types'
 import { RoleSelect } from './RoleSelect'
 import { Button } from '../Button'
-import { FormActions } from '../FormActions'
-import { InlineConfirm } from '../InlineConfirm'
-import { errorText } from '../../lib/errorText'
+import { ManageRow } from '../ManageRow'
+import { errorText, quietlyGone } from '../../lib/errorText'
 import { useConfirmFocus } from '../../lib/useConfirmFocus'
+import { useFormSave } from '../../lib/useFormSave'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
-import { FormMessage } from '../FormMessage'
 
 // ---------- People ----------
 
@@ -33,106 +31,99 @@ export function MemberRow({
 }) {
   const { t, tx } = useI18n()
   const id = useId()
-  const [busy, setBusy] = useState(false)
+  // Every refusal shows the error's own message, or the action's fallback (`run`).
+  const { isSaving: busy, message: error, save } = useFormSave({ needChange: null, failed: '' })
   const [confirming, setConfirming] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const confirm = useRef<HTMLDivElement>(null)
   const removeButton = useRef<HTMLButtonElement>(null)
   useConfirmFocus(confirming, confirm, removeButton)
 
-  async function changeRole(role: UniverseRoleValue) {
-    setBusy(true)
-    setError(null)
-    try {
-      onChanged(await changeCollaboratorRole(universeId, member.userId, role))
-    } catch (problem: unknown) {
-      setError(errorText(problem, t('universe.collab.memberRoleFailed')))
-    } finally {
-      setBusy(false)
-    }
+  const run = (work: () => Promise<unknown>, fallback: string) =>
+    save(work, { refusal: (problem) => errorText(problem, fallback) })
+
+  function changeRole(role: UniverseRoleValue) {
+    return run(
+      async () => onChanged(await changeCollaboratorRole(universeId, member.userId, role)),
+      t('universe.collab.memberRoleFailed'),
+    )
   }
 
-  async function remove() {
-    setBusy(true)
-    setError(null)
-    try {
-      await removeCollaborator(universeId, member.userId)
-      onRemoved()
-    } catch (problem: unknown) {
-      // Already gone - removed in another tab - is what was asked for.
-      if (problem instanceof ApiError && problem.status === 404) {
-        onRemoved()
-        return
+  function remove() {
+    return run(async () => {
+      try {
+        await removeCollaborator(universeId, member.userId)
+      } catch (problem: unknown) {
+        // Already gone - removed in another tab - is what was asked for.
+        if (!quietlyGone(problem)) throw problem
       }
-      setError(errorText(problem, t('universe.collab.removeFailed')))
-      setBusy(false)
-    }
+      onRemoved()
+    }, t('universe.collab.removeFailed'))
   }
 
   return (
-    <li className="collab__row" data-testid="collaborator-row" data-username={member.username}>
-      {/* A monogram for the eye to find a person by; drawn from the attribute, so it is never part of the row's text. */}
-      <span
-        className="collab__mark"
-        aria-hidden="true"
-        data-initial={monogram(member.username, '')}
-      />
-      <div className="collab__who">
-        <p className="collab__name">
-          <bdi>{member.username}</bdi>
-        </p>
-        <QuietNote className="collab__meta">
+    <ManageRow
+      testId="collaborator-row"
+      data={{ 'data-username': member.username }}
+      mark={
+        // A monogram for the eye to find a person by; drawn from the attribute, so it is never part of the row's text.
+        <span
+          className="collab__mark"
+          aria-hidden="true"
+          data-initial={monogram(member.username, '')}
+        />
+      }
+      whoClassName="collab__who"
+      name={member.username}
+      meta={
+        <QuietNote className="managerow__meta">
           {tx('universe.collab.joined', { date: <DateText value={member.joinedAt} /> })}
         </QuietNote>
-      </div>
-      <div className="collab__controls">
-        <label className="visually-hidden" htmlFor={`${id}-role`}>
-          {t('universe.collab.memberRole', { name: member.username })}
-        </label>
-        <RoleSelect
-          id={`${id}-role`}
-          value={member.role}
-          onChange={(role) => void changeRole(role)}
-          disabled={busy}
-          testId="collaborator-role"
-        />
-        <Button
-          tone="danger-quiet"
-          ref={removeButton}
-          onClick={() => setConfirming(true)}
-          disabled={busy || confirming}
-          aria-label={t('universe.collab.removeLabel', { name: member.username })}
-          data-testid="remove-collaborator"
-        >
-          {t('universe.collab.remove')}
-        </Button>
-      </div>
-      {confirming ? (
-        <InlineConfirm
-          look="settings"
-          className="collab__confirm"
-          title={tx('universe.collab.removeConfirm', { name: <bdi>{member.username}</bdi> })}
-          panelRef={confirm}
-          onKeep={() => setConfirming(false)}
-          busy={busy}
-          testId="remove-collaborator-confirm"
-        >
-          <QuietNote spacing="block">{t('universe.collab.removeNote')}</QuietNote>
-          <FormActions
-            submitLabel={t('universe.collab.removeConfirmButton')}
-            busy={busy}
-            busyLabel={t('universe.collab.removing')}
-            submitTone="danger"
-            onSubmit={() => void remove()}
-            submitTestId="confirm-remove-collaborator"
-            onCancel={() => setConfirming(false)}
-            cancelLabel={t('universe.collab.keep')}
-            lockCancel
-            inline
+      }
+      controlsClassName="collab__controls"
+      controls={
+        <>
+          <label className="visually-hidden" htmlFor={`${id}-role`}>
+            {t('universe.collab.memberRole', { name: member.username })}
+          </label>
+          <RoleSelect
+            id={`${id}-role`}
+            value={member.role}
+            onChange={(role) => void changeRole(role)}
+            disabled={busy}
+            testId="collaborator-role"
           />
-        </InlineConfirm>
-      ) : null}
-      {error ? <FormMessage className="collab__error">{error}</FormMessage> : null}
-    </li>
+          <Button
+            tone="danger-quiet"
+            ref={removeButton}
+            onClick={() => setConfirming(true)}
+            disabled={busy || confirming}
+            aria-label={t('universe.collab.removeLabel', { name: member.username })}
+            data-testid="remove-collaborator"
+          >
+            {t('universe.collab.remove')}
+          </Button>
+        </>
+      }
+      remove={
+        confirming
+          ? {
+              className: 'collab__confirm',
+              title: tx('universe.collab.removeConfirm', { name: <bdi>{member.username}</bdi> }),
+              note: t('universe.collab.removeNote'),
+              submitLabel: t('universe.collab.removeConfirmButton'),
+              busyLabel: t('universe.collab.removing'),
+              keepLabel: t('universe.collab.keep'),
+              busy,
+              onConfirm: () => void remove(),
+              onKeep: () => setConfirming(false),
+              panelRef: confirm,
+              testId: 'remove-collaborator-confirm',
+              submitTestId: 'confirm-remove-collaborator',
+            }
+          : null
+      }
+      error={error}
+      errorClassName="collab__error"
+    />
   )
 }

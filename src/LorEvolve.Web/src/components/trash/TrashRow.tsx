@@ -1,17 +1,44 @@
 import { t, tx } from '../../i18n'
 import type { useUniverseAccess } from '../../universes/access'
-import { ArchiveRestore } from 'lucide-react'
-import { TRASH_KIND_KEYS, TRASH_KIND_LABELS, TrashKind, type TrashItem } from '../../trash/types'
+import {
+  ArchiveRestore,
+  BookOpen,
+  Feather,
+  FileText,
+  Hourglass,
+  Network,
+  Scale,
+  Spline,
+  type LucideIcon,
+} from 'lucide-react'
+import {
+  TRASH_KIND_KEYS,
+  TRASH_KIND_LABELS,
+  TrashKind,
+  type TrashItem,
+  type TrashKindValue,
+} from '../../trash/types'
 import { EntityTile } from '../EntityTile'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useTrashState } from '../../trash/useTrashState'
 import { blockedText, keyOf, whereItWas } from '../../trash/trashText'
 import { EraseConfirm } from './EraseConfirm'
-import { KindTile } from './KindTile'
 import { RestorePublicConfirm } from './RestorePublicConfirm'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
+
+/** A story part's or a rule's square: its kind's icon (an entry shows its type's). */
+const KIND_ICONS: Record<TrashKindValue, LucideIcon> = {
+  [TrashKind.Entry]: FileText,
+  [TrashKind.Story]: Feather,
+  [TrashKind.Chapter]: BookOpen,
+  [TrashKind.Scene]: FileText,
+  [TrashKind.PlotArc]: Spline,
+  [TrashKind.WorldRule]: Scale,
+  [TrashKind.Relationship]: Network,
+  [TrashKind.TimelineEvent]: Hourglass,
+}
 
 /** One row of the Trash: what it was and where, and Restore and Delete permanently with their questions; or its checkbox while selecting. */
 export function TrashRow({
@@ -85,7 +112,7 @@ export function TrashRow({
           typeAccent={item.entityTypeAccentColor}
         />
       ) : (
-        <KindTile kind={item.kind} />
+        <EntityTile icon={KIND_ICONS[item.kind]} className="trash__tile" />
       )}
       <div className="trash__what">
         <p className="trash__name">

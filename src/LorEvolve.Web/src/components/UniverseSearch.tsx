@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Search } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useUniverseSearchState } from '../search/useUniverseSearchState'
@@ -6,6 +5,7 @@ import { useUniverseSearchFetch } from '../search/useUniverseSearchFetch'
 import { universeSearchActions } from '../search/universeSearchActions'
 import { UniverseSearchList } from './search/UniverseSearchList'
 import { Announce } from './Announce'
+import { useKeepListInView } from './entityPickerList'
 
 /**
  * The persistent search bar of a universe (ADR 0031): a combobox whose popup lists what the universe's recorded content
@@ -29,7 +29,6 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
   const { t, tn } = useI18n()
   const state = useUniverseSearchState()
   const {
-    baseId,
     inputId,
     listId,
     hintId,
@@ -67,10 +66,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
     active !== null && active.query === query && active.index < results.length ? active.index : -1
 
   // The highlighted option is kept in view as the arrows walk past the edge of the list.
-  useEffect(() => {
-    if (activeIndex < 0) return
-    document.getElementById(`${baseId}option${activeIndex}`)?.scrollIntoView({ block: 'nearest' })
-  }, [activeIndex, baseId])
+  useKeepListInView(optionId(activeIndex), activeIndex >= 0, activeIndex)
 
   const announcement = !isOpen
     ? opened
