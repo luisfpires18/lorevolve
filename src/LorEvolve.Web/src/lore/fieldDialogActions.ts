@@ -71,7 +71,7 @@ export function fieldDialogActions({
 
   /** Puts the saved settings in the drawer, the version with them, and drops the draft. */
   function takeSaved(saved: FieldDefinition) {
-    const next = draftOf(saved)
+    const next = draftOf(saved, !!saveTo)
     setBase({ draft: next, version: saved.version })
     setName(next.name)
     setKind(next.kind)
@@ -99,7 +99,7 @@ export function fieldDialogActions({
     setStale(false)
     const errors: Record<string, string> = {}
     if (!name.trim()) errors.name = t('entityTypes.fields.nameRequired')
-    if (hasOptions && splitOptions(options).length === 0)
+    if (hasOptions && splitOptions(options, !!saveTo).length === 0)
       errors.options = t('entityTypes.fields.optionsRequired')
     if (isLink && target === null) errors.target = t('entityTypes.fields.targetRequired')
     if (Object.keys(errors).length > 0) {
@@ -115,7 +115,7 @@ export function fieldDialogActions({
       // A new field goes last, and an edit keeps its place: the order is the Sections drawer's (Issue #26).
       displayOrder: null,
       defaultValue: isText ? defaultValue.trim() || null : null,
-      options: hasOptions ? splitOptions(options) : null,
+      options: hasOptions ? splitOptions(options, !!saveTo) : null,
       semantic,
       imageShape: isImage ? imageShape : null,
       ...parseTarget(isLink ? target : null),

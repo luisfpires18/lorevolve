@@ -30,6 +30,7 @@ const projectsSchema = {
   noEntries: 'No entries yet',
   fields: 'Fields',
   noFields: 'No fields yet.',
+  fieldOptions: 'Choices, one per line',
   addField: 'Add field',
 }
 

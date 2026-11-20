@@ -4,10 +4,20 @@ import type { FieldImageShapeValue, FieldKindValue, FieldSemanticValue } from '.
 import type { FieldDefinition } from './typeDefinitions'
 
 /** Every state of a field's drawer: what it opened over, the draft's settings, errors and saving. */
-export function useFieldDialogState({ field }: { field: FieldDefinition | null }) {
+export function useFieldDialogState({
+  field,
+  lines = false,
+}: {
+  field: FieldDefinition | null
+  /** Options one per line rather than comma-separated (a project field). */
+  lines?: boolean
+}) {
   // What this drawer was opened over: the settings an unsaved change is measured against, and the version an edit names.
   // A refused stale save moves it on only when the author chooses (ADR 0043).
-  const [base, setBase] = useState(() => ({ draft: draftOf(field), version: field?.version ?? 0 }))
+  const [base, setBase] = useState(() => ({
+    draft: draftOf(field, lines),
+    version: field?.version ?? 0,
+  }))
   const initial = base.draft
   // Someone else saved this field after the drawer opened; the draft is kept until the author decides.
   const [stale, setStale] = useState(false)

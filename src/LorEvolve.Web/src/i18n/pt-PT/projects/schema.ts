@@ -33,6 +33,7 @@ const projectsSchema: Dictionary['projects']['schema'] = {
   noEntries: 'Ainda não há registos',
   fields: 'Campos',
   noFields: 'Ainda não há campos.',
+  fieldOptions: 'Opções, uma por linha',
   addField: 'Adicionar campo',
 }
 

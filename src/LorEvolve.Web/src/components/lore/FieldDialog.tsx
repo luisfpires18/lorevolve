@@ -62,7 +62,8 @@ export function FieldDialog({
   save?: FieldSave
 }) {
   const { t, tx } = useI18n()
-  const state = useFieldDialogState({ field })
+  // A project field's options are one per line, as its old form had them, so an option may hold a comma.
+  const state = useFieldDialogState({ field, lines: !!saveTo })
   const {
     initial,
     stale,
@@ -171,6 +172,7 @@ export function FieldDialog({
         setOptions={setOptions}
         fieldErrors={fieldErrors}
         kinds={kinds}
+        lines={!!saveTo}
       />
 
       {tree && groups ? (

@@ -99,7 +99,8 @@ test.describe('Types: Templates', () => {
     await add.click()
     await dialog.getByTestId('field-name').fill('Tier')
     await dialog.getByTestId('field-kind').selectOption({ label: 'Choose one' })
-    await dialog.getByTestId('field-options').fill('Low, High')
+    // One choice per line, so a choice may hold a comma.
+    await dialog.getByTestId('field-options').fill('Low\nHigh, dark')
     await dialog.getByTestId('save-field').click()
     await expect(row.getByTestId('field-row-Tier')).toBeVisible()
 
@@ -126,6 +127,17 @@ test.describe('Types: Templates', () => {
     await dialog.getByTestId('field-name').fill('Caption')
     await dialog.getByTestId('save-field').click()
     await expect(row.getByTestId('field-row-Caption')).toBeVisible()
+
+    // Renaming a choice field keeps a choice that holds a comma whole.
+    await row.getByTestId('edit-field-Tier').click()
+    await expect(dialog.getByTestId('field-options')).toHaveValue('Low\nHigh, dark')
+    await dialog.getByTestId('field-name').fill('Grade')
+    await dialog.getByTestId('save-field').click()
+    await expect(row.getByTestId('field-row-Grade')).toBeVisible()
+    await row.getByTestId('edit-field-Grade').click()
+    await expect(dialog.getByTestId('field-options')).toHaveValue('Low\nHigh, dark')
+    await dialog.getByTestId('cancel-field').click()
+    await expect(dialog).toHaveCount(0)
 
     // Edit the template and reload.
     const renamed = `${name}2`
