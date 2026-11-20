@@ -41,12 +41,12 @@ a.idearef__name {
   flex: none;
 }
 
-/* The save bar holds to the bottom of the screen, as the manuscript's does, on the ground both idea screens have. */
-.idea__bar {
+/* A saved record's save bar (EditorSaveBar `record`) holds to the bottom of the screen, as the manuscript's does. */
+.editorbar {
   background: var(--raised);
 }
 
-.idea__actions {
+.editorbar__actions {
   margin-left: auto;
 }
 
@@ -142,7 +142,7 @@ a.idearef__name {
     padding: 0.35rem;
   }
 
-  .idea__actions {
+  .editorbar__actions {
     margin-left: 0;
   }
 

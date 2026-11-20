@@ -8,10 +8,10 @@ import { scriptPartActions } from '../../projectEntities/scriptPartActions'
 import { NO_SCRIPT, useScriptPartState } from '../../projectEntities/useScriptPartState'
 import { useScriptPartLoad } from '../../projectEntities/useScriptPartLoad'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
-import { ScriptPartBar } from './ScriptPartBar'
+import { EditorSaveBar } from '../EditorSaveBar'
+import { ManuscriptHead } from '../stories/ManuscriptHead'
 import { ScriptPartFields } from './ScriptPartFields'
-import { ScriptPartHead } from './ScriptPartHead'
-import { ScriptPartNotices } from './ScriptPartNotices'
+import { EditorNotices } from '../EditorNotices'
 import { Button } from '../Button'
 import { FormMessage } from '../FormMessage'
 import { QuietNote } from '../QuietNote'
@@ -101,7 +101,13 @@ export function ScriptPart({
       data-testid="project-script-part"
       data-node={node.id}
     >
-      <ScriptPartHead where={where} titleId={titleId} name={name} />
+      <ManuscriptHead
+        where={{ position: where }}
+        titleId={titleId}
+        title={name}
+        whereTestId="project-script-where"
+        titleTestId="project-script-title"
+      />
 
       <ScriptPartFields
         universeId={universeId}
@@ -116,19 +122,47 @@ export function ScriptPart({
         setScript={setScript}
       />
 
-      <ScriptPartNotices changed={changed} failure={failure} load={load} />
+      <EditorNotices
+        testId="project-script"
+        conflict={
+          changed
+            ? {
+                text: t('projects.structure.changed'),
+                onLoadSaved: () => void load(),
+                loadLabel: t('projects.script.reload'),
+              }
+            : null
+        }
+        failure={failure}
+        failureTestId="project-script-save-failed"
+      />
 
       {canEdit ? (
-        <ScriptPartBar
-          isTooLong={isTooLong}
-          draft={draft}
-          isDirty={isDirty}
-          isSaving={isSaving}
-          saves={saves}
-          node={node}
-          isPanel={isPanel}
-          statusId={statusId}
-          save={save}
+        <EditorSaveBar
+          keyShortcuts
+          count={{
+            id: 'project-script-too-long',
+            used: draft.length,
+            max: NODE_BODY_MAX_LENGTH,
+            show: 'over',
+            words: { tooLong: 'projects.script.tooLong' },
+            className: 'manuscript__toolong',
+            testId: 'project-script-too-long',
+          }}
+          save={{
+            label: t('projects.script.save'),
+            isDirty,
+            isSaving,
+            isBlocked: isTooLong,
+            saves,
+            restingStatus:
+              node.body || isPanel ? t('projects.script.saved') : t('projects.script.nothingSaved'),
+            statusId,
+            statusTestId: 'project-script-status',
+            testId: 'project-script-save',
+            type: 'button',
+            onSave: () => void save(),
+          }}
         />
       ) : null}
     </section>

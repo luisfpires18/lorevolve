@@ -1,5 +1,5 @@
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
-import type { BoardsListNotice } from '../components/IdeaBoardsBrowser'
+import type { RecordListNotice } from '../components/ideas/RecordListPage'
 import { IdeaBoardEditor } from '../components/IdeaBoardEditor'
 import { Quoted } from '../components/NameList'
 import { useI18n } from '../i18n'
@@ -43,7 +43,7 @@ export default function IdeaBoardPage({
         )
       }
       onDeleted={(board) =>
-        void navigate(listPath, { state: { deleted: board } satisfies BoardsListNotice })
+        void navigate(listPath, { state: { deleted: board } satisfies RecordListNotice })
       }
     />
   )

@@ -58,7 +58,7 @@ type TextareaField = FieldBase &
   }
 
 /** Select form: `id` is `name ?? id`, `children` are its options. */
-type SelectField = FieldBase &
+export type SelectField = FieldBase &
   Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> & {
     as: 'select'
     ref?: Ref<HTMLSelectElement>

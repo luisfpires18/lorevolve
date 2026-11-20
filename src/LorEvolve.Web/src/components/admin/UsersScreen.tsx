@@ -1,11 +1,11 @@
 import { CardGrid } from '../CardGrid'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { listUsers } from '../../admin/api'
 import { Avatar } from '../Avatar'
 import { EmptyState } from '../EmptyState'
 import { SearchField } from '../SearchField'
 import { Pager } from '../Pager'
-import { useDebouncedValue } from '../../lib/useDebouncedValue'
+import { useSearchedPage } from '../../lib/useSearchedPage'
 import { useI18n } from '../../i18n'
 import { ROLE_KEYS } from '../../admin/adminConstants'
 import { useAsyncRead } from '../../lib/useAsyncRead'
@@ -21,15 +21,7 @@ import { TagList } from '../TagList'
 
 export function UsersScreen() {
   const { t, tn } = useI18n()
-  const [search, setSearch] = useState('')
-  const searched = useDebouncedValue(search)
-  const [pageFor, setPageFor] = useState(searched)
-  const [page, setPage] = useState(1)
-  // A new search starts at page 1 in the same render, so one request goes out.
-  if (pageFor !== searched) {
-    setPageFor(searched)
-    setPage(1)
-  }
+  const { search, setSearch, searched, page, setPage } = useSearchedPage()
 
   const load = useCallback(
     (signal: AbortSignal) => listUsers({ search: searched, page }, signal),

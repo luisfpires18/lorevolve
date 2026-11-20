@@ -1,6 +1,6 @@
 import { Route } from 'react-router-dom'
 import { RoleGate } from '../components/RoleGate'
-import { IdeaBoardPage, IdeaBoardsPage, IdeaPage, IdeasPage } from '../screens'
+import { IdeaBoardPage, IdeaPage, IdeasPage } from '../screens'
 import { asSection } from './screenHolds'
 
 export function universeIdeaRoutes() {
@@ -38,7 +38,7 @@ export function universeIdeaRoutes() {
         element={asSection(
           'ideas',
           <RoleGate need="keepIdeas">
-            <IdeaBoardsPage inUniverse />
+            <IdeasPage inUniverse boards />
           </RoleGate>,
         )}
       />
