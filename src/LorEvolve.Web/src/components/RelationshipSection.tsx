@@ -11,7 +11,8 @@ import { relationActions } from '../relationships/relationActions'
 import { useRelationsRead } from '../relationships/useRelationsRead'
 import { useRelationsState } from '../relationships/useRelationsState'
 import { RelationForm } from './relationships/RelationForm'
-import { RelationsHead } from './relationships/RelationsHead'
+import { NewButton } from './NewButton'
+import { PanelHead } from './PanelHead'
 import { RelationsList } from './relationships/RelationsList'
 import { RelationsWhen } from './relationships/RelationsWhen'
 import { LoadError } from './LoadError'
@@ -122,12 +123,17 @@ export function RelationshipSection({
 
   return (
     <section className="relations" aria-labelledby="relations-heading">
-      <RelationsHead
-        access={access}
-        types={types}
-        isAdding={isAdding}
-        editingId={editingId}
-        openAdd={openAdd}
+      <PanelHead
+        look="display"
+        titleId="relations-heading"
+        title={t('relationships.section.heading')}
+        action={
+          access.editContent && types.length > 0 && !isAdding && !editingId ? (
+            <NewButton tone="secondary" onClick={openAdd} data-testid="add-relationship">
+              {t('relationships.section.add')}
+            </NewButton>
+          ) : null
+        }
       />
 
       {(message ?? readError) ? (

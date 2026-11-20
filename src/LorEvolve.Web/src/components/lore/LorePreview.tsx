@@ -11,6 +11,8 @@ import { listEntityRelationships } from '../../relationships/api'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
 import { FormMessage } from '../FormMessage'
+import { Fact } from '../Fact'
+import { FactList } from '../FactList'
 
 const MAX_RELATIONS = 8
 
@@ -121,25 +123,23 @@ export function LorePreview({
           ) : null}
 
           {state.value.entity.aliases.length > 0 || facts.length > 0 ? (
-            <dl className="facts" data-testid="lore-preview-facts">
+            <FactList testId="lore-preview-facts">
               {state.value.entity.aliases.length > 0 ? (
-                <div className="facts__row">
-                  <dt className="facts__key">{t('lore.preview.aliases')}</dt>
-                  <dd className="facts__value prose">{state.value.entity.aliases.join(', ')}</dd>
-                </div>
+                <Fact name={t('lore.preview.aliases')} valueClassName="prose">
+                  {state.value.entity.aliases.join(', ')}
+                </Fact>
               ) : null}
               {facts.map((fact) => (
-                <div className="facts__row" key={fact.name}>
-                  <dt className="facts__key">{fact.name}</dt>
-                  <dd className="facts__value prose">{fact.text}</dd>
-                </div>
+                <Fact name={fact.name} key={fact.name} valueClassName="prose">
+                  {fact.text}
+                </Fact>
               ))}
-            </dl>
+            </FactList>
           ) : null}
 
           {state.value.relations && state.value.relations.length > 0 ? (
             <div className="lorepreview__relations">
-              <p className="facts__key">{t('lore.preview.connections')}</p>
+              <QuietNote>{t('lore.preview.connections')}</QuietNote>
               <ul className="lorepreview__list" data-testid="lore-preview-relations">
                 {state.value.relations.slice(0, MAX_RELATIONS).map((relation) => (
                   <li key={relation.id}>

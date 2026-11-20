@@ -14,6 +14,7 @@ import { CopyPanel } from './EntryCopyPanel'
 import { EntryFieldInput } from './EntryFieldInput'
 import { QuietNote } from '../QuietNote'
 import { Callout } from '../Callout'
+import { SectionTitle } from '../Section'
 
 export type EntryFormProps = {
   universe: { id: string }
@@ -116,9 +117,9 @@ export function EntryForm(props: EntryFormProps) {
       )}
 
       <section className="entryform__section">
-        <h2 className="entryform__heading sectionrule sectionrule--accent">
+        <SectionTitle tone="rule-accent" className="entryform__heading">
           {t('entity.page.form.namesAndTags')}
-        </h2>
+        </SectionTitle>
         <TokenInput
           label={t('entity.page.form.aliases')}
           name="aliases"
@@ -137,9 +138,9 @@ export function EntryForm(props: EntryFormProps) {
 
       {(selectedType?.fields.length ?? 0) > 0 ? (
         <section className="entryform__section">
-          <h2 className="entryform__heading sectionrule sectionrule--accent">
+          <SectionTitle tone="rule-accent" className="entryform__heading">
             {tx('entity.page.form.records', { type: <bdi>{selectedType?.name}</bdi> })}
-          </h2>
+          </SectionTitle>
           {formSections.ungrouped.length > 0 ? (
             <div className="entryform__fields">{formSections.ungrouped.map(fieldInput)}</div>
           ) : null}

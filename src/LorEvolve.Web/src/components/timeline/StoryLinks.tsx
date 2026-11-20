@@ -4,6 +4,7 @@ import { t, useI18n } from '../../i18n'
 import { listStories } from '../../stories/api'
 import type { StorySummary } from '../../stories/types'
 import type { TimelineStoryLink } from '../../timeline/types'
+import { Token } from '../Token'
 
 /**
  * The stories a moment matters to: each linked one as a token with Remove, and a choice of the universe's other live stories to
@@ -56,21 +57,17 @@ export function StoryLinks({
           {value.length > 0 ? (
             <ul className="storylinks__list">
               {value.map((story) => (
-                <li className="token" key={story.storyId} data-testid="moment-story">
+                <Token
+                  as="li"
+                  key={story.storyId}
+                  testId="moment-story"
+                  note={story.isTrashed ? t('time.momentForm.storyInTrash') : undefined}
+                  removeLabel={t('time.momentForm.unlink', { title: story.title })}
+                  onRemove={() => onChange(value.filter((one) => one.storyId !== story.storyId))}
+                  removeTestId={`moment-story-remove-${story.title}`}
+                >
                   <bdi>{story.title}</bdi>
-                  {story.isTrashed ? (
-                    <span className="token__note"> {t('time.momentForm.storyInTrash')}</span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="token__remove"
-                    aria-label={t('time.momentForm.unlink', { title: story.title })}
-                    onClick={() => onChange(value.filter((one) => one.storyId !== story.storyId))}
-                    data-testid={`moment-story-remove-${story.title}`}
-                  >
-                    &times;
-                  </button>
-                </li>
+                </Token>
               ))}
             </ul>
           ) : null}

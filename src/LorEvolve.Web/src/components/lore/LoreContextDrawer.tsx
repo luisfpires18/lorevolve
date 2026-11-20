@@ -12,6 +12,7 @@ import { Announce } from '../Announce'
 import { SearchField } from '../SearchField'
 import { FormMessage } from '../FormMessage'
 import { QuietNote } from '../QuietNote'
+import { SectionTitle } from '../Section'
 
 /**
  * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
@@ -130,14 +131,15 @@ export function LoreContextDrawer({
       ) : (
         <>
           <section className="lorecontext__group" aria-labelledby={`${headingId}-linked`}>
-            <h3
-              className="sectionrule sectionrule--accent"
+            <SectionTitle
+              level={3}
+              tone="rule-accent"
               id={`${headingId}-linked`}
               ref={linkedHeading}
               tabIndex={-1}
             >
               {t('lore.context.inScenePick')}
-            </h3>
+            </SectionTitle>
             {linked.length === 0 ? (
               <QuietNote size="body" testId="lore-context-none">
                 {access.editContent ? t('lore.context.noneEditable') : t('lore.context.none')}
@@ -175,9 +177,9 @@ export function LoreContextDrawer({
           />
 
           <section className="lorecontext__group" aria-labelledby={`${headingId}-find`}>
-            <h3 className="sectionrule sectionrule--accent" id={`${headingId}-find`}>
+            <SectionTitle level={3} tone="rule-accent" id={`${headingId}-find`}>
               {t('lore.context.find')}
-            </h3>
+            </SectionTitle>
             <SearchField
               hideLabel
               id={searchId}

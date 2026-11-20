@@ -14,20 +14,12 @@
   margin-top: 1.5rem;
 }
 
-.progression__head,
 .erapanel__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3) var(--space-4);
   flex-wrap: wrap;
-}
-
-.progression__title {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: var(--text-section);
 }
 
 .eranav__list {

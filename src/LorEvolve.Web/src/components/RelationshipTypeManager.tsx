@@ -10,7 +10,7 @@ import { KindRow } from './relationships/KindRow'
 import { TypeRow } from './TypeRow'
 import { NewButton } from './NewButton'
 import { LoadingNote } from './LoadingNote'
-import { SectionTitle } from './Section'
+import { PanelHead } from './PanelHead'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -71,24 +71,28 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
 
   return (
     <section className="reltypes" aria-labelledby="reltypes-heading">
-      <div className="relations__head">
-        <SectionTitle id="reltypes-heading">{t('relationships.types.heading')}</SectionTitle>
-        {access.editContent && !isAdding && !editingId ? (
-          <NewButton
-            tone="secondary"
-            onClick={() => {
-              setMessage(null)
-              setFieldErrors({})
-              setEditingId(null)
-              setDraft(BLANK)
-              setIsAdding(true)
-            }}
-            data-testid="add-relationship-type"
-          >
-            {t('relationships.types.addKind')}
-          </NewButton>
-        ) : null}
-      </div>
+      <PanelHead
+        look="section"
+        titleId="reltypes-heading"
+        title={t('relationships.types.heading')}
+        action={
+          access.editContent && !isAdding && !editingId ? (
+            <NewButton
+              tone="secondary"
+              onClick={() => {
+                setMessage(null)
+                setFieldErrors({})
+                setEditingId(null)
+                setDraft(BLANK)
+                setIsAdding(true)
+              }}
+              data-testid="add-relationship-type"
+            >
+              {t('relationships.types.addKind')}
+            </NewButton>
+          ) : null
+        }
+      />
 
       <QuietNote spacing="block">{t('relationships.types.intro')}</QuietNote>
 
@@ -97,9 +101,9 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       {isAdding ? form : null}
 
       {types.length === 0 && !isAdding ? (
-        <p className="relations__quiet" data-testid="reltypes-empty">
+        <QuietNote size="body" className="relations__quiet" testId="reltypes-empty">
           {t('relationships.types.empty')}
-        </p>
+        </QuietNote>
       ) : (
         <ul className="types__list" data-testid="relationship-type-list">
           {types.map((type) => {

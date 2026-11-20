@@ -13,24 +13,9 @@
   max-width: 52rem;
 }
 
-.relations__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
-  flex-wrap: wrap;
-}
-
-.relations__title {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: var(--text-section);
-}
-
+/* A QuietNote at the body size: its gap under the head and its measure. */
 .relations__quiet {
   margin: var(--space-4) 0 0;
-  color: var(--muted);
   max-width: 52ch;
 }
 

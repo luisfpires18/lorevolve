@@ -3,8 +3,8 @@ import { CanonBlockNotice } from '../CanonBlockNotice'
 import { useI18n } from '../../i18n'
 import type { useMassRows } from '../../lore/useMassRows'
 import { Button } from '../Button'
-import { QuietNote } from '../QuietNote'
 import { Callout } from '../Callout'
+import { ActionBar } from '../ActionBar'
 
 type Rows = ReturnType<typeof useMassRows>
 
@@ -40,30 +40,25 @@ export function MassCreateBar({
         </Callout>
       ) : null}
 
-      <footer className="actionbar masscreate__bar">
-        <QuietNote className="actionbar__status" testId="mass-create-status" role="status">
-          {status}
-        </QuietNote>
-        <div className="actions actions--tight actionbar__actions">
-          <Button
-            icon={Check}
-            className="saveaction"
-            onClick={() => void create()}
-            aria-disabled={unavailable || undefined}
-            aria-busy={isCreating || undefined}
-            data-testid="mass-create-submit"
-          >
-            {isCreating
-              ? tn('lore.massCreate.creating', rows.length, { n: rows.length })
-              : readyCount > 0
-                ? tn('lore.massCreate.create', readyCount, { n: readyCount })
-                : t('lore.massCreate.createNone')}
-          </Button>
-          <Button tone="secondary" to={backTo}>
-            {t('shell.actions.cancel')}
-          </Button>
-        </div>
-      </footer>
+      <ActionBar className="masscreate__bar" statusTestId="mass-create-status" status={status}>
+        <Button
+          icon={Check}
+          className="saveaction"
+          onClick={() => void create()}
+          aria-disabled={unavailable || undefined}
+          aria-busy={isCreating || undefined}
+          data-testid="mass-create-submit"
+        >
+          {isCreating
+            ? tn('lore.massCreate.creating', rows.length, { n: rows.length })
+            : readyCount > 0
+              ? tn('lore.massCreate.create', readyCount, { n: readyCount })
+              : t('lore.massCreate.createNone')}
+        </Button>
+        <Button tone="secondary" to={backTo}>
+          {t('shell.actions.cancel')}
+        </Button>
+      </ActionBar>
     </>
   )
 }

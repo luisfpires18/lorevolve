@@ -7,6 +7,7 @@ import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
+import { SectionTitle } from './Section'
 
 /**
  * A game type made from one of the universe's templates (#283). The game gets its own copy: nothing links it back, so
@@ -64,9 +65,9 @@ export function TypeFromTemplateDrawer({
       {message ? <FormMessage testId="type-from-template-error">{message}</FormMessage> : null}
 
       <section className="drawer__group" aria-labelledby="type-from-template-source">
-        <h3 className="sectionrule sectionrule--accent" id="type-from-template-source">
+        <SectionTitle level={3} tone="rule-accent" id="type-from-template-source">
           {t('projects.schema.fromTemplate.source')}
-        </h3>
+        </SectionTitle>
         <Field
           label={t('projects.schema.fromTemplate.template')}
           id="type-from-template-select"

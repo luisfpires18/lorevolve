@@ -6,7 +6,7 @@ import type { useUniverseAccess } from '../../universes/access'
 import { CHANGED_SINCE } from '../../suggestions/suggestionList'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
-import { DateText } from '../DateText'
+import { VersionActor } from '../VersionActor'
 import { Callout } from '../Callout'
 
 /** One suggestion: who and when, its changed fields, how it was decided, and Accept and Reject while it is open. */
@@ -25,7 +25,7 @@ export function SuggestionItem<T>({
   busy: string | null
   decide: (suggestion: Suggestion<T>, decision: 'accept' | 'reject') => Promise<void>
 }) {
-  const { t, tx } = useI18n()
+  const { t } = useI18n()
   const isOpen = suggestion.status === SuggestionStatus.Open
   const state =
     suggestion.status === SuggestionStatus.Accepted
@@ -42,14 +42,12 @@ export function SuggestionItem<T>({
       data-resolved={isOpen ? 'false' : 'true'}
     >
       <p className="reviewcomment__meta">
-        <span className="reviewcomment__author" data-testid="suggestion-author">
-          {suggestion.proposedByName === null ? (
-            t('review.suggestions.unknownAuthor')
-          ) : (
-            <bdi>{suggestion.proposedByName}</bdi>
-          )}
-        </span>
-        <DateText value={suggestion.createdAt} withTime />
+        <VersionActor
+          name={suggestion.proposedByName}
+          unknown={t('review.suggestions.unknownAuthor')}
+          at={suggestion.createdAt}
+          testId="suggestion-author"
+        />
       </p>
 
       {isOpen && suggestion.targetChanged ? (
@@ -79,25 +77,16 @@ export function SuggestionItem<T>({
 
       {isOpen ? null : (
         <QuietNote className="reviewthread__resolved" testId="suggestion-resolution">
-          {tx(
-            state === 'accepted'
-              ? 'review.suggestions.acceptedBy'
-              : 'review.suggestions.rejectedBy',
-            {
-              name:
-                suggestion.resolvedByName === null ? (
-                  t('review.suggestions.unknownResolver')
-                ) : (
-                  <bdi>{suggestion.resolvedByName}</bdi>
-                ),
-            },
-          )}
-          {suggestion.resolvedAt ? (
-            <>
-              {' · '}
-              <DateText value={suggestion.resolvedAt} withTime />
-            </>
-          ) : null}
+          <VersionActor
+            name={suggestion.resolvedByName}
+            unknown={t('review.suggestions.unknownResolver')}
+            lead={
+              state === 'accepted'
+                ? 'review.suggestions.acceptedBy'
+                : 'review.suggestions.rejectedBy'
+            }
+            at={suggestion.resolvedAt}
+          />
         </QuietNote>
       )}
 

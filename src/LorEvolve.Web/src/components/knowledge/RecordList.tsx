@@ -4,6 +4,7 @@ import { t, useI18n } from '../../i18n'
 import { describeScene, type KnowledgeIssue, type KnowledgeRecord } from '../../knowledge/api'
 import type { Side } from '../../knowledge/recordDraft'
 import { SectionTitle } from '../Section'
+import { QuietNote } from '../QuietNote'
 
 // ---------- The list ----------
 
@@ -49,9 +50,9 @@ export function RecordList({
 
   if (records.length === 0) {
     return (
-      <p className="relations__quiet" data-testid={`${testId}-empty`}>
+      <QuietNote size="body" className="relations__quiet" testId={`${testId}-empty`}>
         {emptyText}
-      </p>
+      </QuietNote>
     )
   }
 

@@ -15,6 +15,7 @@ import { LoadError } from './LoadError'
 import { QuietNote } from './QuietNote'
 import { DateText } from './DateText'
 import { FormMessage } from './FormMessage'
+import { PanelHead } from './PanelHead'
 
 export interface EntityHistoryProps {
   universeId: string
@@ -74,11 +75,12 @@ export function EntityHistory({
 
   return (
     <section className="history" aria-labelledby="history-heading">
-      <div className="history__head">
-        <h2 className="history__title" id="history-heading">
-          {t('entity.history.title')}
-        </h2>
-      </div>
+      <PanelHead
+        look="display"
+        className="history__head"
+        titleId="history-heading"
+        title={t('entity.history.title')}
+      />
 
       <QuietNote className="history__quiet" size="ui" testId="history-article-note">
         {t('entity.history.articleNote')}

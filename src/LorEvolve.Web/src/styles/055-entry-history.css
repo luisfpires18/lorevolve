@@ -8,18 +8,8 @@
   border-top: 1px solid var(--rule);
 }
 
-.history__head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.history__title {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
+/* The PanelHead's title a shade under the section size, as the history has always set it. */
+.history__head .panelhead__title {
   font-size: 1.35rem;
 }
 

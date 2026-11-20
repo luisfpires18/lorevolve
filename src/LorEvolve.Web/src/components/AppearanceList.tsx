@@ -5,7 +5,7 @@ import { t, useI18n } from '../i18n'
 import { AppearanceItem } from './lore/AppearanceItem'
 import { NewButton } from './NewButton'
 import { QuietNote } from './QuietNote'
-import { SectionTitle } from './Section'
+import { PanelHead } from './PanelHead'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -44,23 +44,27 @@ export function AppearanceList({
       aria-labelledby="appearance-list-heading"
       data-testid="appearance-list"
     >
-      <div className="progression__head">
-        <SectionTitle level={3} tone="label" id="appearance-list-heading">
-          {t('progression.appearanceList.heading')}
-        </SectionTitle>
-        {access.editContent ? (
-          <NewButton
-            tone="secondary"
-            size="sm"
-            icon={ImagePlus}
-            onClick={onAdd}
-            disabled={busy}
-            data-testid="add-appearance"
-          >
-            {t('progression.appearanceList.add')}
-          </NewButton>
-        ) : null}
-      </div>
+      <PanelHead
+        look="label"
+        level={3}
+        align="start"
+        titleId="appearance-list-heading"
+        title={t('progression.appearanceList.heading')}
+        action={
+          access.editContent ? (
+            <NewButton
+              tone="secondary"
+              size="sm"
+              icon={ImagePlus}
+              onClick={onAdd}
+              disabled={busy}
+              data-testid="add-appearance"
+            >
+              {t('progression.appearanceList.add')}
+            </NewButton>
+          ) : null
+        }
+      />
       {appearances.length === 0 ? (
         <QuietNote>{t('progression.appearanceList.empty')}</QuietNote>
       ) : (

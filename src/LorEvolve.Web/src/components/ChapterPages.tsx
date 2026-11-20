@@ -76,7 +76,7 @@ export function ChapterPages({
       as="section"
       plain
       level={4}
-      titleClassName="sectionrule sectionrule--accent"
+      titleTone="rule-accent"
       testId={`chapter-pages-${chapterId}`}
       title={t('projects.pages.title')}
       actions={

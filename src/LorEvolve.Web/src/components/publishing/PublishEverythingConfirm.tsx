@@ -4,6 +4,7 @@ import type { PublishEverythingPreview } from '../../publishing/types'
 import { FormActions } from '../FormActions'
 import { InlineConfirm } from '../InlineConfirm'
 import { QuietNote } from '../QuietNote'
+import { NameListBlock } from './NameListBlock'
 
 /** The confirm before Publish everything: each entry and story it would publish, and the stories it would skip. */
 export function PublishEverythingConfirm({
@@ -43,78 +44,45 @@ export function PublishEverythingConfirm({
         <>
           <QuietNote spacing="block">{t('universe.publish.everything.anyone')}</QuietNote>
           {preview.lore.length > 0 ? (
-            <div className="publication__selected">
-              <QuietNote spacing="block" id="publish-everything-lore">
-                <strong>
-                  {tn('universe.publish.everything.loreHeading', preview.lore.length, {
-                    n: preview.lore.length,
-                  })}
-                </strong>
-              </QuietNote>
-              <ul
-                className="publication__selectedlist"
-                aria-labelledby="publish-everything-lore"
-                tabIndex={0}
-              >
-                {preview.lore.map((entry) => (
-                  <li key={entry.id} data-testid="publish-everything-entry">
-                    <bdi>{entry.name}</bdi>{' '}
-                    <span className="publication__selectedtype">
-                      · <bdi>{entry.typeName}</bdi>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <NameListBlock
+              id="publish-everything-lore"
+              label={tn('universe.publish.everything.loreHeading', preview.lore.length, {
+                n: preview.lore.length,
+              })}
+              items={preview.lore.map((entry) => ({
+                id: entry.id,
+                name: entry.name,
+                aside: <bdi>{entry.typeName}</bdi>,
+                testId: 'publish-everything-entry',
+              }))}
+            />
           ) : null}
           {preview.stories.length > 0 ? (
-            <div className="publication__selected">
-              <QuietNote spacing="block" id="publish-everything-stories">
-                <strong>
-                  {tn('universe.publish.everything.storiesHeading', preview.stories.length, {
-                    n: preview.stories.length,
-                  })}
-                </strong>
-              </QuietNote>
-              <ul
-                className="publication__selectedlist"
-                aria-labelledby="publish-everything-stories"
-                tabIndex={0}
-              >
-                {preview.stories.map((story) => (
-                  <li key={story.id} data-testid="publish-everything-story">
-                    <bdi>{story.title}</bdi>{' '}
-                    <span className="publication__selectedtype">
-                      ·{' '}
-                      {tn('universe.publish.everything.storyScenes', story.scenes, {
-                        n: story.scenes,
-                      })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <NameListBlock
+              id="publish-everything-stories"
+              label={tn('universe.publish.everything.storiesHeading', preview.stories.length, {
+                n: preview.stories.length,
+              })}
+              items={preview.stories.map((story) => ({
+                id: story.id,
+                name: story.title,
+                aside: tn('universe.publish.everything.storyScenes', story.scenes, {
+                  n: story.scenes,
+                }),
+                testId: 'publish-everything-story',
+              }))}
+            />
           ) : null}
         </>
       )}
       {preview.skippedStories.length > 0 ? (
-        <div className="publication__selected" data-testid="publish-everything-skipped">
-          <QuietNote spacing="block" id="publish-everything-skipped">
-            <strong>{t('universe.publish.everything.skipped')}</strong>{' '}
-            {t('universe.publish.everything.skippedNote')}
-          </QuietNote>
-          <ul
-            className="publication__selectedlist"
-            aria-labelledby="publish-everything-skipped"
-            tabIndex={0}
-          >
-            {preview.skippedStories.map((story) => (
-              <li key={story.id}>
-                <bdi>{story.title}</bdi>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <NameListBlock
+          id="publish-everything-skipped"
+          testId="publish-everything-skipped"
+          label={t('universe.publish.everything.skipped')}
+          note={t('universe.publish.everything.skippedNote')}
+          items={preview.skippedStories.map((story) => ({ id: story.id, name: story.title }))}
+        />
       ) : null}
       <FormActions
         submitLabel={nothing ? undefined : t('universe.publish.everything.confirm')}

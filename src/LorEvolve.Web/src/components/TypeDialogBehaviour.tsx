@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n'
 import { CheckField } from './CheckField'
+import { SectionTitle } from './Section'
 
 /** The type drawer's behaviour section for a new type: whether its entries take part in the Family Tree. */
 export function TypeDialogBehaviour({
@@ -12,9 +13,9 @@ export function TypeDialogBehaviour({
   const { t } = useI18n()
   return (
     <section className="drawer__group" aria-labelledby="type-behaviour">
-      <h3 className="sectionrule sectionrule--accent" id="type-behaviour">
+      <SectionTitle level={3} tone="rule-accent" id="type-behaviour">
         {t('entityTypes.page.dialog.behaviour')}
-      </h3>
+      </SectionTitle>
       <CheckField
         label={
           <span>

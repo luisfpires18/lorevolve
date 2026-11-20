@@ -1,6 +1,7 @@
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { typePathLabel, type TreeType, type TypeNode } from '../lore/typeTree'
+import { SectionTitle } from './Section'
 
 /** The type drawer's hierarchy section: where the type sits, at the top or inside another type. */
 export function TypeDialogPlace({
@@ -19,9 +20,9 @@ export function TypeDialogPlace({
   const { t } = useI18n()
   return (
     <section className="drawer__group" aria-labelledby="type-hierarchy">
-      <h3 className="sectionrule sectionrule--accent" id="type-hierarchy">
+      <SectionTitle level={3} tone="rule-accent" id="type-hierarchy">
         {t('entityTypes.page.dialog.hierarchy')}
-      </h3>
+      </SectionTitle>
       <Field
         label={t('entityTypes.page.dialog.parent')}
         id="type-parent"
