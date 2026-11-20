@@ -136,6 +136,67 @@ public sealed class AiChangeMediaTests(LorEvolveApiFactory factory) : IClassFixt
     }
 
     [Fact]
+    public async Task A_new_entry_and_its_profile_picture_are_approved_together()
+    {
+        // #466: one proposal, one upload, one approval, where a new entry needed two of each before.
+        var (owner, ownerId, u, bilbo, cloak) = await World("medianew");
+        var character = await TypeId(owner, u, "Character");
+        var proposalId = await Staged(_factory, u, ownerId,
+            NewLore("frodo", character, "Frodo Baggins"),
+            new AiChangeOperationInput("frodo-face", "create", "image", Image: new AiImageInput(Note: "Frodo at Bag End", EntryRef: "frodo")));
+        var review = await Read(owner, u, proposalId);
+        var picture = review.Operations.Single(operation => operation.Key == "frodo-face");
+        Assert.Equal(AiChangeCodes.AwaitingUpload, Assert.Single(picture.Issues).Code);
+        Assert.Contains("Frodo Baggins", picture.Title, StringComparison.Ordinal);
+        await CollaborationTestClient.Ok(owner.PutAsync(Media(u, proposalId, picture.Id), CollaborationTestClient.PngForm()));
+
+        // Rejecting the entry would leave the picture nothing to go on; approving the picture alone is refused.
+        Assert.Equal(AiChangeCodes.MissingDependency, await Code(await Approve(owner, u, await Read(owner, u, proposalId), ["frodo-face"])));
+
+        await ApproveAll(owner, u, proposalId);
+        var frodo = Op(review, "frodo");
+        var entry = (await owner.GetFromJsonAsync<EntityDetail>($"/api/universes/{u}/entities/{frodo}"))!;
+        Assert.Equal("Frodo Baggins", entry.Name);
+        Assert.NotNull(entry.Image);
+        var image = await Profile(frodo);
+        Assert.Contains($"/entities/{frodo:D}/", image.OriginalKey, StringComparison.Ordinal);
+        Assert.True(_factory.Media.Contains(image.OriginalKey));
+
+        // What staging refuses: both entry and entryRef, neither, an appearance for a new entry, a ref to no entry create.
+        Assert.Equal(AiChangeCodes.Invalid, Assert.Single((await Stage(_factory, u, ownerId,
+            NewLore("sam", character, "Samwise"), new AiChangeOperationInput("p", "create", "image", Image: new AiImageInput(bilbo, EntryRef: "sam")))).Issues).Code);
+        Assert.Equal(AiChangeCodes.Invalid, Assert.Single((await Stage(_factory, u, ownerId,
+            new AiChangeOperationInput("p", "create", "image", Image: new AiImageInput()))).Issues).Code);
+        Assert.Equal(AiChangeCodes.Unsupported, Assert.Single((await Stage(_factory, u, ownerId,
+            NewLore("sam", character, "Samwise"), new AiChangeOperationInput("p", "create", "image", Image: new AiImageInput(Appearance: cloak, EntryRef: "sam")))).Issues).Code);
+        Assert.Equal(AiChangeCodes.UnknownRef, Assert.Single((await Stage(_factory, u, ownerId,
+            new AiChangeOperationInput("p", "create", "image", Image: new AiImageInput(EntryRef: "nobody")))).Issues).Code);
+        Assert.Equal(AiChangeCodes.WrongRef, Assert.Single((await Stage(_factory, u, ownerId,
+            EditLore("rename", bilbo, new AiLoreInput(Name: "Bilbo")), new AiChangeOperationInput("p", "create", "image", Image: new AiImageInput(EntryRef: "rename")))).Issues).Code);
+    }
+
+    [Fact]
+    public async Task A_rejected_new_entry_takes_its_picture_down_with_it()
+    {
+        var (owner, ownerId, u, _, _) = await World("medianewreject");
+        var proposalId = await Staged(_factory, u, ownerId,
+            NewLore("frodo", await TypeId(owner, u, "Character"), "Frodo Baggins"),
+            new AiChangeOperationInput("frodo-face", "create", "image", Image: new AiImageInput(EntryRef: "frodo")));
+        var review = await Read(owner, u, proposalId);
+        await CollaborationTestClient.Ok(owner.PutAsync(Media(u, proposalId, Op(review, "frodo-face")), CollaborationTestClient.PngForm()));
+        await CollaborationTestClient.Ok(Reject(owner, u, proposalId, [Op(review, "frodo")]));
+
+        // The picture needs the entry, so it is rejected with it, and its held file is swept: nothing is attached anywhere.
+        var picture = (await Read(owner, u, proposalId)).Operations.Single(operation => operation.Key == "frodo-face");
+        Assert.Equal(AiChangeOperationStatus.Rejected, picture.Status);
+        var held = await Held(picture.Id);
+        Assert.True(await Sweep() >= 1);
+        Assert.False(_factory.Media.Contains(held.OriginalKey));
+        Assert.False(_factory.Media.Contains(held.ThumbnailKey));
+        await WithDb(_factory, async db => Assert.False(await db.EntityImages.AnyAsync(image => image.EntityId == Op(review, "frodo"))));
+    }
+
+    [Fact]
     public async Task A_replacement_rolled_back_keeps_the_old_picture_and_its_objects_and_the_staged_one_for_a_retry()
     {
         var (owner, ownerId, u, bilbo, _) = await World("mediarollback");

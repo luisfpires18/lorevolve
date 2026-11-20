@@ -120,6 +120,8 @@ internal static class AiChangeCatalog
         + "content. A project's own types and fields are not lore: read them with get_project_schema, and create or update them "
         + "as project_type and project_field beside the project's entries. An image change sends no file: it says which entry, or which of its appearances, a picture is for, and the person "
         + "uploads the picture on the proposal's review page in LorEvolve, then approves it; an approved profile picture replaces the entry's current one. "
+        + "A new entry takes its profile picture in the same proposal: an image change with entryRef set to the entry's create change, then "
+        + "propose_entry_image with the proposal and that image change's id sends the file, and one approval applies both. "
         + "remove moves an item to LorEvolve's Trash (an idea to its owner's deleted ideas), "
         + "from where it can be restored; nothing is ever deleted for good. An article is written as blocks (paragraph, heading, bullet_list, "
         + "numbered_list, quote) of plain text, apart from the entry's fields. reorder takes the whole order of a container. Ideas are the "

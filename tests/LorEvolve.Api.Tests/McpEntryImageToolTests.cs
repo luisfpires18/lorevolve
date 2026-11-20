@@ -52,6 +52,55 @@ public sealed class McpEntryImageToolTests(McpProjectEntityFixture fixture) : IC
     }
 
     [Fact]
+    public async Task A_new_unit_and_its_picture_are_staged_together_and_one_approval_creates_both()
+    {
+        // #466: the unit and its picture in one proposal, the file sent for the picture's change, one approval.
+        var staged = Body(await CallAsync(_f.Proposer, new
+        {
+            summary = "A dune strider with its picture",
+            operations = new object[]
+            {
+                new { id = "strider", action = "create", resource = "project_entry", projectEntry = new { projectId = _f.Project, typeId = _f.UnitType, name = "Dune Strider" } },
+                new { id = "strider-face", action = "create", resource = "image", image = new { entryRef = "strider", note = "Strider, side view" } },
+            },
+        }, LorEvolveMcpProposalTools.ProposeTool));
+        var proposalId = staged.GetProperty("proposalId").GetGuid();
+        var picture = Convert.ToBase64String(PublishingTestClient.Png(640, 480));
+
+        // Only a pending image change of that proposal takes a file.
+        Assert.Equal("not_found", Error(await CallAsync(_f.Proposer, new { proposal = proposalId.ToString(), change = "strider", image_base64 = picture })));
+        Assert.Equal("not_found", Error(await CallAsync(_f.Proposer, new { proposal = Guid.NewGuid().ToString(), change = "strider-face", image_base64 = picture })));
+        Assert.Equal("invalid_input", Error(await CallAsync(_f.Proposer, new { proposal = proposalId.ToString(), image_base64 = picture })));
+
+        var held = Body(await CallAsync(_f.Proposer, new { proposal = proposalId.ToString(), change = "strider-face", image_base64 = picture }));
+        Assert.True(held.GetProperty("uploaded").GetBoolean(), held.ToString());
+        Assert.Equal(proposalId, held.GetProperty("proposalId").GetGuid());
+
+        var review = await Read(_f.World.Owner, _f.World.U, proposalId);
+        var change = review.Operations.Single(operation => operation.Key == "strider-face");
+        Assert.True(change.Media!.Uploaded);
+        Assert.Equal("dune-strider.png", change.Media.FileName);
+        Assert.Empty(change.Issues);
+
+        // The picture alone can't be approved without the unit it is for.
+        Assert.Equal(AiChangeCodes.MissingDependency, await Code(await Approve(_f.World.Owner, _f.World.U, review, ["strider-face"])));
+
+        await ApproveAll(_f.World.Owner, _f.World.U, proposalId);
+        var strider = Op(review, "strider");
+        await WithDb(_f.Api, async db =>
+        {
+            var unit = await db.Entities.IgnoreQueryFilters().AsNoTracking().SingleAsync(entity => entity.Id == strider);
+            Assert.Equal("Dune Strider", unit.Name);
+            Assert.Equal(_f.Project, unit.ProjectId);
+            var image = await db.EntityImages.AsNoTracking().SingleAsync(candidate => candidate.EntityId == strider);
+            Assert.Equal("dune-strider.png", image.FileName);
+            Assert.Contains($"/entities/{strider:D}/", image.OriginalKey, StringComparison.Ordinal);
+            Assert.True(_f.Api.Media.Contains(image.OriginalKey));
+            Assert.False(await db.AiChangeMedia.AnyAsync(row => row.OperationId == change.Id));
+        });
+    }
+
+    [Fact]
     public async Task A_file_that_is_not_a_picture_or_a_link_LorEvolve_may_not_fetch_stages_nothing()
     {
         var entry = _f.Shoreward.ToString();
@@ -83,14 +132,14 @@ public sealed class McpEntryImageToolTests(McpProjectEntityFixture fixture) : IC
         return count;
     }
 
-    private async Task<JsonElement> CallAsync(Connection connection, object arguments)
+    private async Task<JsonElement> CallAsync(Connection connection, object arguments, string tool = LorEvolveMcpEntryImageTools.ProposeImageTool)
     {
         var response = await Post(_f.Api.CreateClient(), connection.UniverseId, connection.AccessToken, new
         {
             jsonrpc = "2.0",
             id = 3,
             method = "tools/call",
-            @params = new { name = LorEvolveMcpEntryImageTools.ProposeImageTool, arguments },
+            @params = new { name = tool, arguments },
         });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (await Message(response)).GetProperty("result");
