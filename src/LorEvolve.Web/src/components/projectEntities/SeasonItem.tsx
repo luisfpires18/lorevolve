@@ -75,14 +75,11 @@ export function SeasonItem({
       actions={
         <TypeRowActions
           name={season.name}
-          move={{
-            isFirst: index === 0,
-            isLast: index === seasons.length - 1,
+          sibling={{
+            index,
+            count: seasons.length,
             busy,
-            onMove: (direction) =>
-              run(() =>
-                moveSeason(projectId, season.id, { place: index + (direction === 'up' ? -1 : 1) }),
-              ),
+            to: (next) => run(() => moveSeason(projectId, season.id, { place: next })),
           }}
           moveTestIds={{
             up: `project-season-up-${season.id}`,

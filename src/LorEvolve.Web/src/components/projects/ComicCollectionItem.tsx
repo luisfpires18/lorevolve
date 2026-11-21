@@ -61,20 +61,13 @@ export function ComicCollectionItem({
       actions={
         <TypeRowActions
           name={collection.name}
-          move={
+          sibling={
             canEdit
               ? {
-                  isFirst: index === 0,
-                  isLast: index === ofKind.length - 1,
+                  index,
+                  count: ofKind.length,
                   busy,
-                  onMove: (direction) =>
-                    run(() =>
-                      moveComicCollection(
-                        universeId,
-                        collection.id,
-                        index + (direction === 'up' ? -1 : 1),
-                      ),
-                    ),
+                  to: (next) => run(() => moveComicCollection(universeId, collection.id, next)),
                 }
               : undefined
           }
@@ -161,20 +154,15 @@ export function ComicCollectionItem({
                     canEdit ? (
                       <TypeRowActions
                         name={nameOf(entry)}
-                        move={
+                        sibling={
                           entry.available
                             ? {
-                                isFirst: entryIndex === 0,
-                                isLast: entryIndex === collection.entries.length - 1,
+                                index: entryIndex,
+                                count: collection.entries.length,
                                 busy,
-                                onMove: (direction) =>
+                                to: (next) =>
                                   run(() =>
-                                    moveComicEntry(
-                                      universeId,
-                                      collection.id,
-                                      entry.nodeId,
-                                      entryIndex + (direction === 'up' ? -1 : 1),
-                                    ),
+                                    moveComicEntry(universeId, collection.id, entry.nodeId, next),
                                   ),
                               }
                             : undefined

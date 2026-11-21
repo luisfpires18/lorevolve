@@ -6,8 +6,7 @@ import { Button } from './Button'
 import { DisclosureButton } from './DisclosureButton'
 import { MoveItems } from './MoveItems'
 import { NewButton } from './NewButton'
-
-type Direction = 'up' | 'down'
+import { siblingMove, type MoveDirection, type Sibling } from '../lib/siblingMove'
 
 /**
  * A type row's verbs in the Types order: Up and Down, Add child, Edit, Fields, and the menu with Add
@@ -16,11 +15,12 @@ type Direction = 'up' | 'down'
  * then the button's whole name, unless `addChildLabel` or `editLabel` gives it a longer one that holds the row's name.
  * `words.first` and `words.last` are the hover tips at the ends of Up and Down, in place of the Types ones, and
  * `words.more` names the menu. A fold with a `label` folds a row's body rather than a type's fields: it reads Expand or
- * Collapse and is named with the label, as a story's arcs, chapters and scenes fold.
+ * Collapse and is named with the label, as a story's arcs, chapters and scenes fold. `sibling` is the row's place in its
+ * list and what a move does (`lib/siblingMove.ts`): the first and last row and the direction are worked out here.
  */
 export function TypeRowActions({
   name,
-  move,
+  sibling,
   moveTestIds,
   addChild,
   onEdit,
@@ -35,14 +35,7 @@ export function TypeRowActions({
   menuTestId,
 }: {
   name: string
-  move?: {
-    isFirst: boolean
-    isLast: boolean
-    busy: boolean
-    onMove: (direction: Direction) => void
-    /** Keeps each Up and Down button, so the focus can come back to it after a move. */
-    buttonRef?: (direction: Direction, element: HTMLButtonElement | null) => void
-  }
+  sibling?: Sibling
   /** The menu's Up and Down ids, in place of the type ones; the row's own Up and Down then carry none. */
   moveTestIds?: { up: string; down: string }
   /** `itemTestId` also names the menu item by the type, as the Types page does. */
@@ -78,9 +71,10 @@ export function TypeRowActions({
   menuTestId: string
 }) {
   const { t } = useI18n()
+  const move = sibling ? siblingMove(sibling) : undefined
   // The pressed button keeps the focus once the move is saved: the row moves and the button may be disabled meanwhile.
-  const buttons = useRef(new Map<Direction, HTMLButtonElement>())
-  const refocus = useRef<Direction | null>(null)
+  const buttons = useRef(new Map<MoveDirection, HTMLButtonElement>())
+  const refocus = useRef<MoveDirection | null>(null)
   const busy = move?.busy
   useEffect(() => {
     if (busy || !refocus.current) return

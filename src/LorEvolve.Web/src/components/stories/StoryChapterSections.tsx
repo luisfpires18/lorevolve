@@ -211,14 +211,9 @@ export function StoryGroupRow({
           ) : null}
           <TypeRowActions
             name={title}
-            move={
+            sibling={
               access.editContent
-                ? {
-                    isFirst: index === 0,
-                    isLast: index === count - 1,
-                    busy: false,
-                    onMove: (direction) => onMove(direction === 'up' ? -1 : 1),
-                  }
+                ? { index, count, busy: false, to: (next) => onMove(next < index ? -1 : 1) }
                 : undefined
             }
             moveTestIds={{ up: `${noun}-move-up`, down: `${noun}-move-down` }}

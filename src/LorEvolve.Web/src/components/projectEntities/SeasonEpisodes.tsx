@@ -91,16 +91,12 @@ export function SeasonEpisodes({
               </Button>
               <TypeRowActions
                 name={episode.title}
-                move={{
-                  isFirst: place === 0,
-                  isLast: place === season.episodes.length - 1,
+                sibling={{
+                  index: place,
+                  count: season.episodes.length,
                   busy,
-                  onMove: (direction) =>
-                    run(() =>
-                      moveEpisode(projectId, season.id, episode.id, {
-                        place: place + (direction === 'up' ? -1 : 1),
-                      }),
-                    ),
+                  to: (next) =>
+                    run(() => moveEpisode(projectId, season.id, episode.id, { place: next })),
                 }}
                 moveTestIds={{
                   up: `project-episode-up-${episode.id}`,

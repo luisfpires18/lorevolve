@@ -87,17 +87,11 @@ function OutlineNode({
           ))}
           <TypeRowActions
             name={name}
-            move={{
-              isFirst: index === 0,
-              isLast: index === count - 1,
+            sibling={{
+              index,
+              count,
               busy,
-              onMove: (direction) =>
-                run(() =>
-                  moveNode(projectId, node.id, {
-                    place: index + (direction === 'up' ? -1 : 1),
-                    parentId,
-                  }),
-                ),
+              to: (next) => run(() => moveNode(projectId, node.id, { place: next, parentId })),
             }}
             moveTestIds={{ up: `project-node-up-${node.id}`, down: `project-node-down-${node.id}` }}
             onEdit={() => setEditing(node.id)}

@@ -47,12 +47,11 @@ export function SagaSection({
       actions={
         <TypeRowActions
           name={saga.name}
-          move={{
-            isFirst: sagaIndex === 0,
-            isLast: sagaIndex === data.sagas.length - 1,
+          sibling={{
+            index: sagaIndex,
+            count: data.sagas.length,
             busy,
-            onMove: (direction) =>
-              run(() => moveSaga(universeId, saga.id, sagaIndex + (direction === 'up' ? -1 : 1))),
+            to: (next) => run(() => moveSaga(universeId, saga.id, next)),
           }}
           moveTestIds={{ up: `saga-${saga.id}-up`, down: `saga-${saga.id}-down` }}
           addChild={{
@@ -95,19 +94,11 @@ export function SagaSection({
               actions={
                 <TypeRowActions
                   name={phase.name}
-                  move={{
-                    isFirst: phaseIndex === 0,
-                    isLast: phaseIndex === saga.phases.length - 1,
+                  sibling={{
+                    index: phaseIndex,
+                    count: saga.phases.length,
                     busy,
-                    onMove: (direction) =>
-                      run(() =>
-                        movePhase(
-                          universeId,
-                          saga.id,
-                          phase.id,
-                          phaseIndex + (direction === 'up' ? -1 : 1),
-                        ),
-                      ),
+                    to: (next) => run(() => movePhase(universeId, saga.id, phase.id, next)),
                   }}
                   moveTestIds={{ up: `phase-${phase.id}-up`, down: `phase-${phase.id}-down` }}
                   onEdit={() => setEditing({ saga, phase, forPhase: true })}
@@ -144,19 +135,13 @@ export function SagaSection({
                       actions={
                         <TypeRowActions
                           name={member.name}
-                          move={{
-                            isFirst: memberIndex === 0,
-                            isLast: memberIndex === phase.members.length - 1,
+                          sibling={{
+                            index: memberIndex,
+                            count: phase.members.length,
                             busy,
-                            onMove: (direction) =>
+                            to: (next) =>
                               run(() =>
-                                moveMember(
-                                  universeId,
-                                  saga.id,
-                                  phase.id,
-                                  member.projectId,
-                                  memberIndex + (direction === 'up' ? -1 : 1),
-                                ),
+                                moveMember(universeId, saga.id, phase.id, member.projectId, next),
                               ),
                           }}
                           moveTestIds={{
