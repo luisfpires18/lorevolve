@@ -173,10 +173,10 @@
 
 /*
  * A panel's head (`size="panel"`): the panel's name on the section rule with its lede under it, and its own action
- * opposite them on the same line, dropping under them on a phone (#184). No room below: the panel's own gap does that.
+ * opposite them on the same line, dropping under them on a phone (#184). The room below is the section rule's (`space-4`).
  */
 .pageheader--panel {
-  margin-bottom: 0;
+  margin-bottom: var(--space-4);
 }
 
 .pageheader--panel .pageheader__main {

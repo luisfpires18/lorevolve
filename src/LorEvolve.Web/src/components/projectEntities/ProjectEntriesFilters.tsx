@@ -33,7 +33,11 @@ export function ProjectEntriesFilters({
   return (
     <>
       {typeId !== null ? (
-        <div className="lore__filters" role="group" aria-label={t('lore.page.filtersGroup')}>
+        <div
+          className="lore__controls lore__filters"
+          role="group"
+          aria-label={t('lore.page.filtersGroup')}
+        >
           <SearchField
             hideLabel
             className="lore__search"
