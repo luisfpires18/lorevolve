@@ -1,8 +1,6 @@
 import { Link, NavLink } from 'react-router-dom'
-import { useI18n } from '../i18n'
 import { AccountMenu } from './AccountMenu'
-import { BrandMark } from './BrandMark'
-import { Wordmark } from './Wordmark'
+import { BrandLink } from './BrandLink'
 
 export type WorkspaceBarLink = {
   /** The tail of the tab's test id, after `testIdPrefix`. */
@@ -35,18 +33,9 @@ export function WorkspaceBar({
   testIdPrefix: string
   brandTestId?: string
 }) {
-  const { t } = useI18n()
   return (
     <header className="workspacebar">
-      <Link
-        className="home__brand workspacebar__brand"
-        to="/"
-        aria-label={t('shell.brand.homeLabel')}
-        data-testid={brandTestId}
-      >
-        <BrandMark />
-        <Wordmark />
-      </Link>
+      <BrandLink className="home__brand workspacebar__brand" testId={brandTestId} />
 
       <nav className="workspacebar__nav" aria-label={navLabel}>
         <span className="workspacebar__context" aria-hidden="true">

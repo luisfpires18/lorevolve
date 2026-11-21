@@ -42,7 +42,6 @@ const ERROR_BLOCKS = new Map<string, string>([
 // a `Callout` holding a `<p role="status">`.
 const STATUS_NOTICES = new Map<string, string>([
   ['src/components/LoadingNote.tsx', 'the part'],
-  ['src/pages/ConnectAuthorizePage.tsx', 'auth and consent pages are out of #410 scope'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
   [
     'src/components/worldLogic/MachinePanelBody.tsx',

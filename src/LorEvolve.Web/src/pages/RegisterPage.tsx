@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
+import { FormMessage } from '../components/FormMessage'
 import { returnPath } from '../auth/returnPath'
 import { useAuth } from '../auth/useAuth'
 import { ApiError, apiFetch } from '../lib/api'
@@ -94,11 +95,7 @@ export default function RegisterPage() {
         </p>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
-          {message ? (
-            <p className="form__message" role="alert" data-testid="auth-error">
-              {message}
-            </p>
-          ) : null}
+          <FormMessage testId="auth-error">{message}</FormMessage>
 
           <Field
             label={t('auth.register.username')}

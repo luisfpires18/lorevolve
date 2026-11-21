@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { monogram } from '../../lib/monogram'
 import {
@@ -6,14 +6,11 @@ import {
   removeCollaborator,
   type Collaborator,
 } from '../../universes/collaborators'
-import type { UniverseRoleValue } from '../../universes/types'
-import { RoleSelect } from './RoleSelect'
+import { CollabRow } from './CollabRow'
+import { useRoleChange } from './useRoleChange'
 import { Button } from '../Button'
-import { ManageRow } from '../ManageRow'
-import { errorText, quietlyGone } from '../../lib/errorText'
+import { quietlyGone } from '../../lib/errorText'
 import { useConfirmFocus } from '../../lib/useConfirmFocus'
-import { useFormSave } from '../../lib/useFormSave'
-import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
 
 // ---------- People ----------
@@ -30,23 +27,15 @@ export function MemberRow({
   onRemoved: () => void
 }) {
   const { t, tx } = useI18n()
-  const id = useId()
-  // Every refusal shows the error's own message, or the action's fallback (`run`).
-  const { isSaving: busy, message: error, save } = useFormSave({ needChange: null, failed: '' })
+  const { busy, error, run, changeRole } = useRoleChange(
+    (role) => changeCollaboratorRole(universeId, member.userId, role),
+    onChanged,
+    t('universe.collab.memberRoleFailed'),
+  )
   const [confirming, setConfirming] = useState(false)
   const confirm = useRef<HTMLDivElement>(null)
   const removeButton = useRef<HTMLButtonElement>(null)
   useConfirmFocus(confirming, confirm, removeButton)
-
-  const run = (work: () => Promise<unknown>, fallback: string) =>
-    save(work, { refusal: (problem) => errorText(problem, fallback) })
-
-  function changeRole(role: UniverseRoleValue) {
-    return run(
-      async () => onChanged(await changeCollaboratorRole(universeId, member.userId, role)),
-      t('universe.collab.memberRoleFailed'),
-    )
-  }
 
   function remove() {
     return run(async () => {
@@ -61,7 +50,7 @@ export function MemberRow({
   }
 
   return (
-    <ManageRow
+    <CollabRow
       testId="collaborator-row"
       data={{ 'data-username': member.username }}
       mark={
@@ -72,37 +61,24 @@ export function MemberRow({
           data-initial={monogram(member.username, '')}
         />
       }
-      whoClassName="collab__who"
       name={member.username}
-      meta={
-        <QuietNote className="managerow__meta">
-          {tx('universe.collab.joined', { date: <DateText value={member.joinedAt} /> })}
-        </QuietNote>
-      }
-      controlsClassName="collab__controls"
-      controls={
-        <>
-          <label className="visually-hidden" htmlFor={`${id}-role`}>
-            {t('universe.collab.memberRole', { name: member.username })}
-          </label>
-          <RoleSelect
-            id={`${id}-role`}
-            value={member.role}
-            onChange={(role) => void changeRole(role)}
-            disabled={busy}
-            testId="collaborator-role"
-          />
-          <Button
-            tone="danger-quiet"
-            ref={removeButton}
-            onClick={() => setConfirming(true)}
-            disabled={busy || confirming}
-            aria-label={t('universe.collab.removeLabel', { name: member.username })}
-            data-testid="remove-collaborator"
-          >
-            {t('universe.collab.remove')}
-          </Button>
-        </>
+      meta={tx('universe.collab.joined', { date: <DateText value={member.joinedAt} /> })}
+      roleLabel={t('universe.collab.memberRole', { name: member.username })}
+      role={member.role}
+      onRole={(role) => void changeRole(role)}
+      roleTestId="collaborator-role"
+      busy={busy}
+      actions={
+        <Button
+          tone="danger-quiet"
+          ref={removeButton}
+          onClick={() => setConfirming(true)}
+          disabled={busy || confirming}
+          aria-label={t('universe.collab.removeLabel', { name: member.username })}
+          data-testid="remove-collaborator"
+        >
+          {t('universe.collab.remove')}
+        </Button>
       }
       remove={
         confirming
@@ -123,7 +99,6 @@ export function MemberRow({
           : null
       }
       error={error}
-      errorClassName="collab__error"
     />
   )
 }
