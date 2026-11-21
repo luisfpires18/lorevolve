@@ -9,6 +9,7 @@ import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
 import { PageHeader } from '../PageHeader'
+import { Section } from '../Section'
 import { errorText } from '../../lib/errorText'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import { Callout } from '../Callout'
@@ -68,7 +69,7 @@ export function NewProject() {
   // universe, it says so and points at the universes rather than offering a form whose save can only be refused.
   if (!universeId) {
     return (
-      <section className="projects">
+      <Section>
         <PageHeader title={t('projects.new.title')} />
         <EmptyState
           title={t('projects.new.needsUniverse')}
@@ -76,12 +77,12 @@ export function NewProject() {
           action={<Link to="/app">{t('projects.new.chooseUniverse')}</Link>}
           testId="project-new-needs-universe"
         />
-      </section>
+      </Section>
     )
   }
 
   return (
-    <section className="projects" data-testid="project-new">
+    <Section testId="project-new">
       <PageHeader title={t('projects.new.title')} />
 
       <form
@@ -180,6 +181,6 @@ export function NewProject() {
           inline
         />
       </form>
-    </section>
+    </Section>
   )
 }

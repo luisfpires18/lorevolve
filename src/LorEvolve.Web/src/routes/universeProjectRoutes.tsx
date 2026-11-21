@@ -1,6 +1,5 @@
 import { Route } from 'react-router-dom'
-import { ProjectKind } from '../projects/types'
-import { CINEMA, COMIC, GAME_ENTITIES, GAMING } from '../universes/sections'
+import { CATEGORY_KINDS, CINEMA, COMIC, GAME_ENTITIES, GAMING } from '../universes/sections'
 import { StoryRedirect } from '../components/StoryRedirect'
 import {
   GameEntitiesPage,
@@ -13,11 +12,6 @@ import {
 } from '../screens'
 import { asSection } from './screenHolds'
 import { StoriesToWriting } from './redirects'
-
-/** The kinds on each Creation shelf, kept stable so the shelf reads its projects once. */
-const GAMING_KINDS = [ProjectKind.Game]
-const CINEMA_KINDS = [ProjectKind.Film, ProjectKind.Series]
-const COMIC_KINDS = [ProjectKind.Comic]
 
 export function universeProjectRoutes() {
   return (
@@ -32,7 +26,7 @@ export function universeProjectRoutes() {
           <CategoryShelfPage
             key="gaming"
             section={GAMING}
-            kinds={GAMING_KINDS}
+            kinds={CATEGORY_KINDS[GAMING.segment]}
             frame="console"
             empty="projects.list.emptyGame"
           />,
@@ -45,7 +39,7 @@ export function universeProjectRoutes() {
           <CategoryShelfPage
             key="cinema"
             section={CINEMA}
-            kinds={CINEMA_KINDS}
+            kinds={CATEGORY_KINDS[CINEMA.segment]}
             frame="film"
             empty="projects.list.emptyCinema"
             view="sagas"
@@ -59,7 +53,7 @@ export function universeProjectRoutes() {
           <CategoryShelfPage
             key="comic"
             section={COMIC}
-            kinds={COMIC_KINDS}
+            kinds={CATEGORY_KINDS[COMIC.segment]}
             frame="comic"
             empty="projects.list.emptyComic"
             view="arcs"
@@ -73,7 +67,7 @@ export function universeProjectRoutes() {
           <ProjectsPage
             inUniverse
             section={GAME_ENTITIES}
-            kinds={[ProjectKind.Game]}
+            kinds={CATEGORY_KINDS[GAMING.segment]}
             rowPath={(project) =>
               `/app/universes/${project.universe.id}/game-entities/${project.id}`
             }

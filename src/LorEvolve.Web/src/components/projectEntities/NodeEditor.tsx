@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Drawer } from '../Drawer'
 import { Field } from '../Field'
-import { ComicArt, ComicPageEditor, ScriptField } from '../ComicPageEditor'
+import { ComicArt, ComicPageEditor } from '../ComicPageEditor'
+import { ScriptField } from './ScriptPartFields'
 import { ApiError } from '../../lib/api'
 import {
   ART_LEVELS,

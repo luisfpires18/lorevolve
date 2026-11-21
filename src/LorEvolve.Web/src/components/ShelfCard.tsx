@@ -4,6 +4,7 @@ import {
   BookOpen,
   Clapperboard,
   Gamepad2,
+  Image as ImageIcon,
   ImagePlus,
   type LucideIcon,
 } from 'lucide-react'
@@ -11,6 +12,9 @@ import { Link } from 'react-router-dom'
 import { t, useI18n } from '../i18n'
 import { StatusBadge } from './StatusBadge'
 import { NewButton } from './NewButton'
+import { ActionMenuItem } from './ActionMenu'
+import { MoveItems } from './MoveItems'
+import { RowMenu } from './RowMenu'
 
 /**
  * One thing an author is making, on its shelf: a game on a widescreen handheld, its picture on the screen; a film or
@@ -42,8 +46,10 @@ export function ShelfCard({
   statusLabel,
   meta,
   cover,
-  menu,
-  onAddPicture,
+  menuLabel,
+  testPrefix = 'shelf',
+  onCover,
+  move,
   attrs,
   openTestId,
 }: {
@@ -57,9 +63,15 @@ export function ShelfCard({
   meta?: ReactNode
   /** The card crop's address, or null for the object's own empty screen or plain cover. */
   cover: string | null
-  menu?: ReactNode
-  /** Offered only to those who may edit, and only while there is no picture: it opens the picture drawer. */
-  onAddPicture?: () => void
+  /**
+   * The menu, drawn only for those who may edit: its accessible name (say whose), then `onCover` (Add or Change picture,
+   * and the Add picture button on an empty screen) and `move` (Move up and down). `testPrefix` names its ids:
+   * `<prefix>-actions`, `-cover`, `-move-up` and `-move-down`.
+   */
+  menuLabel?: string
+  testPrefix?: 'shelf' | 'story'
+  onCover?: () => void
+  move?: { first: boolean; last: boolean; onMove: (step: -1 | 1) => void }
   /** The item's own test ids and data attributes, which each page already selects its rows by. */
   attrs: Record<string, string>
   openTestId?: string
@@ -71,13 +83,13 @@ export function ShelfCard({
   ) : (
     <div className="shelfcard__empty">
       <EmptyIcon className="shelfcard__emptyicon" aria-hidden="true" strokeWidth={1.25} />
-      {onAddPicture ? (
+      {onCover ? (
         <NewButton
           tone="secondary"
           size="sm"
           icon={ImagePlus}
           className="shelfcard__add"
-          onClick={onAddPicture}
+          onClick={onCover}
           data-testid="shelf-add-picture"
         >
           {t('projects.common.addPicture')}
@@ -130,7 +142,25 @@ export function ShelfCard({
         </div>
         {description ? <p className="shelfcard__description">{description}</p> : null}
       </div>
-      {menu ? <div className="shelfcard__menu">{menu}</div> : null}
+      {menuLabel ? (
+        <div className="shelfcard__menu">
+          <RowMenu label={menuLabel} triggerTestId={`${testPrefix}-actions`}>
+            {onCover ? (
+              <ActionMenuItem icon={ImageIcon} onClick={onCover} testId={`${testPrefix}-cover`}>
+                {t(cover ? 'projects.common.changePicture' : 'projects.common.addPicture')}
+              </ActionMenuItem>
+            ) : null}
+            {move ? (
+              <MoveItems
+                first={move.first}
+                last={move.last}
+                testIds={{ up: `${testPrefix}-move-up`, down: `${testPrefix}-move-down` }}
+                onMove={move.onMove}
+              />
+            ) : null}
+          </RowMenu>
+        </div>
+      ) : null}
     </li>
   )
 }

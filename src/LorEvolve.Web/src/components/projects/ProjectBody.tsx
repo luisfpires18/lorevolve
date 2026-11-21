@@ -35,7 +35,7 @@ export function ProjectBody({
   useI18n()
 
   return entryId ? (
-    <div className="projectbody">
+    <div>
       <ProjectEntityDetailView
         key={entryId}
         projectId={project.id}
@@ -46,7 +46,7 @@ export function ProjectBody({
       />
     </div>
   ) : (
-    <div className="projectbody">
+    <div>
       {/*
        * One panel per view (#193). Entities holds the type cards and a type's entries (#196), Types the type editor,
        * Structure the structure and Script the text of its parts (#377). A view with no panel of its own yet says so rather than borrowing one.

@@ -17,6 +17,7 @@ import { SagaSection } from './projects/SagaSection'
 import { TypeRow } from './TypeRow'
 import { Button } from './Button'
 import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { QuietNote } from './QuietNote'
 import { NameSummaryDrawer } from './NameSummaryDrawer'
 import { PickOneDrawer } from './PickOneDrawer'
@@ -96,7 +97,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
         </ol>
       ) : null}
 
-      <section className="projects" data-testid="sagas-unassigned">
+      <Section testId="sagas-unassigned">
         <PageHeader
           level={2}
           size="panel"
@@ -128,7 +129,7 @@ export function CinemaSagas({ universeId }: { universeId: string }) {
             ))}
           </ul>
         )}
-      </section>
+      </Section>
 
       {editing ? (
         <NameSummaryDrawer

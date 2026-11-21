@@ -18,13 +18,6 @@
   border: 0;
 }
 
-.storylist {
-  list-style: none;
-  margin: 2rem 0 0;
-  padding: 0;
-  border-top: 1px solid var(--rule);
-}
-
 /* A story is a work, so its title leads in the display face and the facts follow it quietly. The whole row opens
    the story through `.rowlink`: the title is the one link, stretched over the row, so the link's name stays the title. */
 .storyrow {

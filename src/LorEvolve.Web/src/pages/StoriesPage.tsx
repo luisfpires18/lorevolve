@@ -3,20 +3,22 @@ import { useUniverseAccess } from '../universes/access'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { CoverDrawer } from '../components/CoverDrawer'
-import { storyCoverStore } from '../covers/api'
+import { pictureUrl, projectCoverStore, storyCoverStore } from '../covers/api'
 import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
 import { listAllProjects } from '../projects/api'
-import { storyProjectPath } from '../projects/sections'
+import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
+import { focusCardMenu, withCover } from '../projects/shelfActions'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
 import { listStories, reorderStories } from '../stories/api'
-import type { StorySummary } from '../stories/types'
+import { sceneCountLabel } from '../stories/format'
+import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { StoryShelf } from '../components/stories/StoryShelf'
-import { WritingProjectShelf } from '../components/stories/WritingProjectShelf'
+import { CardGrid } from '../components/CardGrid'
+import { ShelfCard, shelfStep } from '../components/ShelfCard'
 import { NewButton } from '../components/NewButton'
 import { Announce } from '../components/Announce'
 import { ReadGate } from '../components/ReadGate'
@@ -75,11 +77,7 @@ export default function StoriesPage() {
     isMoving.current = true
     setMoveError(null)
     setState({ kind: 'ready', value: { stories: after, others: state.value.others } })
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLElement>(`[data-story-id="${story.id}"] [data-testid="story-actions"]`)
-        ?.focus(),
-    )
+    focusCardMenu('data-story-id', story.id, 'story')
     try {
       const saved = await reorderStories(
         universe.id,
@@ -129,13 +127,45 @@ export default function StoriesPage() {
       {moveError ? <FormMessage testId="stories-move-error">{moveError}</FormMessage> : null}
 
       {state.kind === 'ready' && state.value.stories.length > 0 ? (
-        <StoryShelf
-          stories={state.value.stories}
-          access={access}
-          universe={universe}
-          move={move}
-          setCovering={setCovering}
-        />
+        // Each story as a book on its shelf (owner, 2026-11-17); the Gaming page draws its games the same way.
+        <CardGrid min={15} gap={5} testId="story-list">
+          {state.value.stories.map((story, index, stories) => (
+            <ShelfCard
+              key={story.id}
+              frame="book"
+              href={storyProjectPath(universe.id, story.id)}
+              title={story.title}
+              description={story.premise}
+              step={story.status}
+              statusLabel={STORY_STATUS_LABELS[story.status]}
+              meta={
+                <span data-testid="story-scene-count">{sceneCountLabel(story.sceneCount)}</span>
+              }
+              cover={
+                story.cover
+                  ? pictureUrl(storyCoverStore(universe.id, story.id), story.cover, 'card')
+                  : null
+              }
+              attrs={{
+                'data-testid': 'story-row',
+                'data-title': story.title,
+                'data-story-id': story.id,
+              }}
+              testPrefix="story"
+              menuLabel={
+                access.editContent
+                  ? t('stories.browse.moreActions', { title: story.title })
+                  : undefined
+              }
+              onCover={access.editContent ? () => setCovering(story) : undefined}
+              move={{
+                first: index === 0,
+                last: index === stories.length - 1,
+                onMove: (step) => void move(story, step),
+              }}
+            />
+          ))}
+        </CardGrid>
       ) : null}
 
       {covering ? (
@@ -152,9 +182,7 @@ export default function StoriesPage() {
                     kind: 'ready',
                     value: {
                       ...current.value,
-                      stories: current.value.stories.map((one) =>
-                        one.id === covering.id ? { ...one, cover } : one,
-                      ),
+                      stories: withCover(current.value.stories, covering.id, cover),
                     },
                   }
                 : current,
@@ -165,7 +193,25 @@ export default function StoriesPage() {
       ) : null}
 
       {state.kind === 'ready' && state.value.others.length > 0 ? (
-        <WritingProjectShelf projects={state.value.others} />
+        <CardGrid min={15} gap={5} testId="writing-project-list">
+          {state.value.others.map((project) => (
+            <ShelfCard
+              key={project.id}
+              frame="book"
+              href={projectRowPath(project)}
+              title={project.name}
+              description={project.summary}
+              step={shelfStep(project.lifecycle)}
+              statusLabel={lifecycleLabel(project.lifecycle)}
+              cover={
+                project.cover
+                  ? pictureUrl(projectCoverStore(project.id), project.cover, 'card')
+                  : null
+              }
+              attrs={{ 'data-testid': 'writing-project-row' }}
+            />
+          ))}
+        </CardGrid>
       ) : null}
 
       {state.kind === 'ready' &&

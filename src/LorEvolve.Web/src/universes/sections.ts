@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import type { UniverseCapabilities } from './access'
+import { ProjectKind, type ProjectKindValue } from '../projects/types'
 import {
   BadgeCheck,
   BookImage,
@@ -117,6 +118,17 @@ export const COMIC: Section = {
   icon: BookImage,
   needs: 'comic',
 }
+/**
+ * The project kinds each Creation category lists, by its segment: the Directory's counts, each shelf's list and its New
+ * project default (the first kind) read this one table. Stable arrays, so a shelf reads its projects once.
+ */
+export const CATEGORY_KINDS: Readonly<Record<string, readonly ProjectKindValue[]>> = {
+  [WRITING_PROJECTS.segment]: [ProjectKind.Writing],
+  [GAMING.segment]: [ProjectKind.Game],
+  [CINEMA.segment]: [ProjectKind.Film, ProjectKind.Series],
+  [COMIC.segment]: [ProjectKind.Comic],
+}
+
 // A game's Entities directory lives under its own address but is still part of Projects, so the shell names it (and the tab) so.
 const PROJECTS: Section = {
   segment: 'projects',

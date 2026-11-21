@@ -1,32 +1,17 @@
 import { useEffect, useState } from 'react'
+import { Section } from '../components/Section'
 import { useOutletContext } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
-import { ProjectKind, type ProjectKindValue } from '../projects/types'
+import { newProjectPath } from '../projects/sections'
 import { t, tn, useI18n } from '../i18n'
-import {
-  CINEMA,
-  COMIC,
-  CREATION,
-  GAMING,
-  WRITING_PROJECTS,
-  sectionLabel,
-  sectionPurpose,
-} from '../universes/sections'
+import { CATEGORY_KINDS, CREATION, sectionLabel, sectionPurpose } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { LoadError } from '../components/LoadError'
 import { CardGrid } from '../components/CardGrid'
 import { CatalogCard } from '../components/CatalogCard'
 import { formatCount } from '../i18n/format'
-
-/** The kinds each category lists: the same sets the routes in `App.tsx` give `ProjectsPage`, so a count equals its list. */
-const KINDS_BY_SECTION = new Map<string, readonly ProjectKindValue[]>([
-  [WRITING_PROJECTS.segment, [ProjectKind.Writing]],
-  [GAMING.segment, [ProjectKind.Game]],
-  [CINEMA.segment, [ProjectKind.Film, ProjectKind.Series]],
-  [COMIC.segment, [ProjectKind.Comic]],
-])
 
 type LoadState =
   { kind: 'ready'; for: string; counts: Map<string, number> } | { kind: 'failed'; for: string }
@@ -50,7 +35,7 @@ export default function ProjectsDirectory() {
     listAllProjects({ universeId }, controller.signal)
       .then((projects) => {
         const counts = new Map<string, number>()
-        for (const [segment, kinds] of KINDS_BY_SECTION) {
+        for (const [segment, kinds] of Object.entries(CATEGORY_KINDS)) {
           counts.set(segment, projects.filter((project) => kinds.includes(project.kind)).length)
         }
         setState({ kind: 'ready', for: universeId, counts })
@@ -64,16 +49,13 @@ export default function ProjectsDirectory() {
   const current = state !== null && state.for === universeId ? state : null
 
   return (
-    <section className="projects" data-testid="projects-directory">
+    <Section testId="projects-directory">
       <PageHeader
         title={heading}
         lede={t('projects.directory.lede')}
         actions={
           universeId ? (
-            <NewButton
-              to={`/app/projects/new?universeId=${universeId}`}
-              data-testid="projects-page-new"
-            >
+            <NewButton to={newProjectPath(universeId)} data-testid="projects-page-new">
               {t('projects.nav.new')}
             </NewButton>
           ) : null
@@ -116,6 +98,6 @@ export default function ProjectsDirectory() {
           )
         })}
       </CardGrid>
-    </section>
+    </Section>
   )
 }

@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Link, Navigate, useLocation, useOutletContext, useParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { useUniverseAccess } from '../universes/access'
@@ -122,7 +123,6 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         projectName={read.title}
         universe={workspace.universe}
         sections={storySections}
-        story
       >
         <StoryPage view={view === 'manuscript' ? 'manuscript' : 'scenes'} />
       </ProjectShell>
@@ -159,16 +159,29 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
    * are the same kind of thing and now read as one stack, separated by a rule, at every width (#184).
    */
   const entitiesPath = projectPath(project.id, 'entities', project.universe.id)
+  // The facts, one dot between each, joined here: a separator is not a message anyone translates.
+  const facts = [
+    <span key="kind">{kindLabel(project.kind)}</span>,
+    project.format ? (
+      <span key="format" data-testid="project-format">
+        {formatLabel(project.format)}
+      </span>
+    ) : formatsFor(project.kind).length > 0 ? (
+      <span key="format" data-testid="project-format">
+        {t('projects.format.unset')}
+      </span>
+    ) : null,
+    <span key="lifecycle">{lifecycleLabel(project.lifecycle)}</span>,
+    project.subtype ? <span key="subtype">{project.subtype}</span> : null,
+  ].filter(Boolean)
   const meta = (
-    <span className="projectmeta" data-testid="project-meta">
-      <span>{kindLabel(project.kind)}</span>
-      {project.format ? (
-        <span data-testid="project-format">{formatLabel(project.format)}</span>
-      ) : formatsFor(project.kind).length > 0 ? (
-        <span data-testid="project-format">{t('projects.format.unset')}</span>
-      ) : null}
-      <span>{lifecycleLabel(project.lifecycle)}</span>
-      {project.subtype ? <span>{project.subtype}</span> : null}
+    <span data-testid="project-meta">
+      {facts.map((fact, index) => (
+        <Fragment key={index}>
+          {index === 0 ? null : ' · '}
+          {fact}
+        </Fragment>
+      ))}
     </span>
   )
   const typesPath = sections.some((candidate) => candidate.segment === 'types')

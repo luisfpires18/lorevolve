@@ -2,19 +2,26 @@ import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { CoverDrawer } from '../components/CoverDrawer'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
-import type { ShelfFrame } from '../components/ShelfCard'
-import { projectCoverStore } from '../covers/api'
+import { ShelfCard, shelfStep, type ShelfFrame } from '../components/ShelfCard'
+import { pictureUrl, projectCoverStore } from '../covers/api'
+import {
+  formatLabel,
+  kindLabel,
+  lifecycleLabel,
+  newProjectPath,
+  projectRowPath,
+} from '../projects/sections'
 import { t, useI18n } from '../i18n'
 import type { ProjectKindValue } from '../projects/types'
 import { useUniverseAccess } from '../universes/access'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { shelfActions } from '../projects/shelfActions'
+import { shelfActions, withCover } from '../projects/shelfActions'
 import { VIEWS } from '../projects/shelfViews'
 import { useShelfRead } from '../projects/useShelfRead'
 import { useShelfState } from '../projects/useShelfState'
-import { ShelfCards } from '../components/projects/ShelfCards'
-import { ShelfViewNav } from '../components/projects/ShelfViewNav'
+import { CardGrid } from '../components/CardGrid'
+import { ViewLinks } from '../components/ViewLinks'
 import { NewButton } from '../components/NewButton'
 import { Announce } from '../components/Announce'
 import { ReadGate } from '../components/ReadGate'
@@ -58,10 +65,7 @@ export default function CategoryShelfPage({
   const { neighbour, move } = shelfActions({ ...shelf, universe, kinds })
 
   const newProject = (
-    <NewButton
-      to={`/app/projects/new?universeId=${universe.id}&kind=${kinds[0]}`}
-      data-testid="projects-page-new"
-    >
+    <NewButton to={newProjectPath(universe.id, kinds[0])} data-testid="projects-page-new">
       {t('projects.nav.new')}
     </NewButton>
   )
@@ -74,7 +78,26 @@ export default function CategoryShelfPage({
         actions={access.editContent ? newProject : null}
       />
 
-      {views ? <ShelfViewNav views={views} view={view} showView={showView} /> : null}
+      {views ? (
+        <ViewLinks
+          label={t(`projects.${views.words}.viewsLabel`)}
+          testId={`${views.testId}-views`}
+          items={[
+            {
+              to: '?',
+              label: t(`projects.${views.words}.projectsView`),
+              current: !showView,
+              testId: `${views.testId}-view-projects`,
+            },
+            {
+              to: `?view=${view}`,
+              label: t(`projects.${views.words}.${views.second}` as 'projects.sagas.sagasView'),
+              current: showView,
+              testId: views.secondTestId,
+            },
+          ]}
+        />
+      ) : null}
 
       {views && showView ? <views.Body universeId={universe.id} /> : null}
 
@@ -97,15 +120,53 @@ export default function CategoryShelfPage({
       {moveError ? <FormMessage testId="shelf-move-error">{moveError}</FormMessage> : null}
 
       {!showView && state.kind === 'ready' && state.value.length > 0 ? (
-        <ShelfCards
-          frame={frame}
-          kinds={kinds}
-          state={state}
-          access={access}
-          setCovering={setCovering}
-          neighbour={neighbour}
-          move={move}
-        />
+        // A handheld and a strip of film lie on their side, so their grid has wider places.
+        <CardGrid
+          min={frame === 'console' || frame === 'film' ? 17 : 15}
+          gap={5}
+          testId="projects-list"
+        >
+          {state.value.map((project, index, projects) => (
+            <ShelfCard
+              key={project.id}
+              frame={frame}
+              href={projectRowPath(project)}
+              title={project.name}
+              description={project.summary}
+              step={shelfStep(project.lifecycle)}
+              statusLabel={lifecycleLabel(project.lifecycle)}
+              meta={
+                // A shelf of two kinds names each card's kind: a film and a series may share a name.
+                [
+                  kinds.length > 1 ? kindLabel(project.kind) : null,
+                  project.format ? formatLabel(project.format) : project.subtype,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || undefined
+              }
+              cover={
+                project.cover
+                  ? pictureUrl(projectCoverStore(project.id, project.kind), project.cover, 'card')
+                  : null
+              }
+              openTestId={`projects-row-${project.id}`}
+              attrs={{
+                'data-testid': 'projects-item',
+                'data-project-id': project.id,
+                'data-kind': String(project.kind),
+              }}
+              menuLabel={
+                access.editContent ? t('projects.common.more', { name: project.name }) : undefined
+              }
+              onCover={access.editContent ? () => setCovering(project) : undefined}
+              move={{
+                first: neighbour(projects, index, -1) < 0,
+                last: neighbour(projects, index, 1) < 0,
+                onMove: (step) => void move(project, step),
+              }}
+            />
+          ))}
+        </CardGrid>
       ) : null}
 
       {!showView && state.kind === 'ready' && state.value.length === 0 ? (
@@ -127,12 +188,7 @@ export default function CategoryShelfPage({
             setCovering({ ...covering, cover })
             setState((current) =>
               current.kind === 'ready'
-                ? {
-                    kind: 'ready',
-                    value: current.value.map((one) =>
-                      one.id === covering.id ? { ...one, cover } : one,
-                    ),
-                  }
+                ? { kind: 'ready', value: withCover(current.value, covering.id, cover) }
                 : current,
             )
           }}

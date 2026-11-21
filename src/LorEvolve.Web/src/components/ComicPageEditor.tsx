@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ImageOff } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
+import { ScriptField } from './projectEntities/ScriptPartFields'
 import { FieldImageInput } from './FieldImageInput'
 import { PictureWithFallback } from './PictureWithFallback'
 import { ApiError } from '../lib/api'
@@ -22,43 +23,8 @@ import { useUniverseAccess } from '../universes/access'
 import { Button } from './Button'
 import { errorText } from '../lib/errorText'
 import { FormMessage } from './FormMessage'
-import { SectionTitle } from './Section'
-const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
-  dialogue: 4,
-  caption: 2,
-  sfx: 2,
-  notes: 3,
-}
-
-/** One textarea of a panel's script, labelled and with its placeholder. */
-export function ScriptField({
-  part,
-  value,
-  onChange,
-  testId,
-  readOnly = false,
-}: {
-  part: (typeof PANEL_SCRIPT)[number]
-  value: string
-  onChange: (value: string) => void
-  testId: string
-  readOnly?: boolean
-}) {
-  return (
-    <Field
-      as="textarea"
-      label={t(`projects.structure.panel.${part}`)}
-      rows={SCRIPT_ROWS[part]}
-      maxLength={4000}
-      readOnly={readOnly}
-      value={value}
-      placeholder={t(`projects.structure.panel.${part}Placeholder`)}
-      onChange={(event) => onChange(event.target.value)}
-      data-testid={testId}
-    />
-  )
-}
-
+import { QuietNote } from './QuietNote'
+import { Section } from './Section'
 /**
  * A page's or panel's picture (#295), on the image field control: free crop, replace, recrop, remove. With no picture,
  * or one that fails to load, a placeholder holds its place; the script never depends on it.
@@ -79,7 +45,7 @@ export function ComicArt({
   const canEdit = useUniverseAccess().editContent
   const placeholder = (
     <span
-      className="imagefield__preview imagefield__preview--blank comicart__placeholder"
+      className="imagefield__preview imagefield__preview--blank"
       data-testid={`comic-art-placeholder-${nodeId}`}
     >
       <ActionIcon icon={ImageOff} />
@@ -150,12 +116,14 @@ export function ComicPageEditor({
   }, [anyDirty, anySaving, onDirtyChange, onSavingChange])
 
   return (
-    <section className="comicpage" data-testid="comic-page-editor">
-      <SectionTitle level={3} tone="rule">
-        {t('projects.structure.panel.panels')}
-      </SectionTitle>
+    <Section
+      level={3}
+      title={t('projects.structure.panel.panels')}
+      titleProps={{ tone: 'rule' }}
+      testId="comic-page-editor"
+    >
       {panels.length === 0 ? (
-        <p className="projects__lede">{t('projects.structure.panel.none')}</p>
+        <QuietNote spacing="flush">{t('projects.structure.panel.none')}</QuietNote>
       ) : (
         panels.map((panel, index) => (
           <PanelCard
@@ -167,7 +135,7 @@ export function ComicPageEditor({
           />
         ))
       )}
-    </section>
+    </Section>
   )
 }
 
@@ -246,10 +214,11 @@ function PanelCard({
   }
 
   return (
-    <article className="comicpage__panel" data-testid={`comic-panel-${panelId}`}>
-      <h4 className="comicpage__title">
-        {node?.title ?? `${t('projects.structure.levels.panel')} ${number}`}
-      </h4>
+    <Section
+      level={4}
+      title={node?.title ?? `${t('projects.structure.levels.panel')} ${number}`}
+      testId={`comic-panel-${panelId}`}
+    >
       {node ? (
         <>
           <ComicArt
@@ -295,6 +264,6 @@ function PanelCard({
       ) : status ? (
         <FormMessage>{status}</FormMessage>
       ) : null}
-    </article>
+    </Section>
   )
 }

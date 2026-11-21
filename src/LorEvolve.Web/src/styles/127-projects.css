@@ -10,79 +10,6 @@
   text-transform: uppercase;
 }
 
-/* The Projects screens: the list of projects, and one project. */
-.projects {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.projects__filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.projects__lede {
-  margin: 0;
-  color: var(--muted);
-}
-
-.projects__filters {
-  margin: 0;
-}
-
-/*
- * One project's panels: the head, then its types, its entries and its structure, one under the next and each the full
- * width of the column. They are the same kind of thing, so they share one rhythm and a rule between them rather than
- * being dealt into columns of unequal weight by the shell's grid (#184).
- */
-.projectbody {
-  display: grid;
-  gap: var(--space-6);
-  min-width: 0;
-}
-
-.projectbody > .projects + .projects {
-  padding-block-start: var(--space-6);
-  border-block-start: 1px solid var(--rule);
-}
-
-/*
- * One project's frame (#192): its head and chips over the same destinations as its sidebar expansion (#377).
- */
-.projectframe {
-  display: grid;
-  gap: var(--space-5);
-  min-width: 0;
-}
-
-/* Every project heads its own page, Lore's way: its name, facts and summary, then its views as chips (#377). */
-.projectframe__hero {
-  display: grid;
-  gap: var(--space-4);
-  min-width: 0;
-}
-
-.projectframe__hero > .prose {
-  margin: 0;
-}
-
-.projectframe__hero .lorecatalog__group {
-  text-decoration: none;
-}
-
-/*
- * The dot between a project's facts. Presentation, so it lives here rather than in the markup or the dictionary: a
- * separator is not a message anyone translates, and as a CSS escape it keeps every source file ASCII.
- */
-.projectmeta > span + span::before {
-  content: '\00b7';
-  margin: 0 var(--space-2);
-  color: var(--muted);
-}
-
 /* Types: the Lore / Gaming switch and the game picker sit on one row above the tabs. */
 .types__context {
   display: flex;
@@ -96,25 +23,11 @@
 }
 
 /*
- * Shelves (owner, 2026-11-17): the Creation pages draw what an author is making as the thing it will be, a game on a
- * widescreen handheld, a film or series on a strip of film, a comic as an issue and a story as a book, in one grid that
- * every page shares. The object carries the picture and is
- * the one bold thing here; the title and status under it stay the app's quiet type, as a book's label would.
+ * Shelf cards (owner, 2026-11-17): the Creation pages draw what an author is making as the thing it will be, a game on a
+ * widescreen handheld, a film or series on a strip of film, a comic as an issue and a story as a book, in the shared
+ * `CardGrid`. The object carries the picture and is the one bold thing here; the title and status under it stay the
+ * app's quiet type, as a book's label would.
  */
-.shelf {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
-  gap: var(--space-7) var(--space-6);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* A handheld and a strip of film lie on their side, so their shelf has wider places. */
-.shelf--wide {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-}
-
 .shelfcard {
   position: relative;
   display: grid;
