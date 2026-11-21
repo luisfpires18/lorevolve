@@ -1,8 +1,7 @@
 import { useCallback, useId, type ReactNode } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Callout } from '../Callout'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 import { Quoted } from '../NameList'
 import { Pager } from '../Pager'
 import { RecordListControls } from './RecordListControls'
@@ -111,7 +110,7 @@ export function RecordListPage<
     restored,
     words: w,
   })
-  const { state, universes, restoring, outcome, setOutcome, setReads, restore } = list
+  const { state, universes, restoring, outcome, setOutcome, reread, restore } = list
   const { update } = useListFilters({
     ...list,
     setParams,
@@ -124,8 +123,8 @@ export function RecordListPage<
   const captured = useCallback(() => {
     setOutcome(null)
     if (page !== 1) update({ page: null })
-    setReads((current) => current + 1)
-  }, [page, update, setOutcome, setReads])
+    reread()
+  }, [page, update, setOutcome, reread])
 
   const notice = location.state as RecordListNotice | null
   const result = state.kind === 'ready' ? state.value : null
@@ -182,16 +181,19 @@ export function RecordListPage<
         </Callout>
       ) : null}
 
-      {state.kind === 'loading' ? <LoadingNote>{t(`${w}.loading`)}</LoadingNote> : null}
-
-      {state.kind === 'error' ? (
-        <LoadError
-          message={state.message}
-          onRetry={list.retry}
-          retryLabel={t(`${w}.retry`)}
-          testId={`${testId}-load-error`}
-        />
-      ) : null}
+      {/* The rows are drawn below, from the page kept while the next one is read. */}
+      <ReadGate
+        load={state}
+        loading={{ text: t(`${w}.loading`) }}
+        error={{
+          message: t(`${w}.loadFailed`),
+          onRetry: list.retry,
+          retryLabel: t(`${w}.retry`),
+          testId: `${testId}-load-error`,
+        }}
+      >
+        {() => null}
+      </ReadGate>
 
       {result && result.items.length > 0 ? (
         <ul className="idealist" data-testid={listTestId}>

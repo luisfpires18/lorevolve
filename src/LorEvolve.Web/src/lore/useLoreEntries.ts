@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { listEntities, readLorePageSize } from './api'
 import type { CanonStatusValue, EntitySort } from './types'
 import type { EntityTypeGroup } from './typeDefinitions'
@@ -13,9 +13,8 @@ import {
 import { buildTypeTree } from './typeTree'
 import { useWorkspaceTypes } from '../pages/useWorkspaceTypes'
 import type { SetURLSearchParams } from 'react-router-dom'
-import { errorText } from '../lib/errorText'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
-import type { LoadState } from './loreAddress'
 import { changed } from '../lib/queryParams'
 
 /** Groups that could not be read: none to offer, one stable list. */
@@ -58,8 +57,6 @@ export function useLoreEntries({
   const typesFailed = typesRead === 'failed'
   // Groups are a second way in, not a requirement: if they cannot be read, Lore is browsed by type alone.
   const groups = groupsRead === 'failed' ? EMPTY_GROUPS : groupsRead
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(false)
   // Entries per page: the author's own preference in this browser, never in the address - a link someone shares opens at
   // their reader's size, not the sender's.
@@ -134,57 +131,54 @@ export function useLoreEntries({
   // out at once with it.
   const settledSearch = useDebouncedValue(search)
 
-  useEffect(() => {
-    if (entityTypeId === null && entityTypeGroupId === null) return
-    const controller = new AbortController()
-    listEntities(
-      universe.id,
-      {
-        search: settledSearch,
-        entityTypeId,
-        entityTypeGroupId,
-        includeDescendants: true,
-        canonStatus,
-        tag: null,
-        page,
-        pageSize,
-        fieldFilters,
+  // A new type, page, sort, filter or search keeps the page shown until it lands; a read again that fails says so.
+  const entriesRead = useAsyncRead(
+    useCallback(
+      (signal: AbortSignal) =>
+        entityTypeId === null && entityTypeGroupId === null
+          ? undefined
+          : listEntities(
+              universe.id,
+              {
+                search: settledSearch,
+                entityTypeId,
+                entityTypeGroupId,
+                includeDescendants: true,
+                canonStatus,
+                tag: null,
+                page,
+                pageSize,
+                fieldFilters,
+                exact,
+                sort,
+              },
+              signal,
+            ),
+      // fieldFilters is read through its key: a fresh array of the same filters is not a new list.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [
+        universe.id,
+        settledSearch,
         exact,
         sort,
-      },
-      controller.signal,
-    )
-      .then((result) => setState({ kind: 'ready', value: result }))
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) setState({ kind: 'error', message: errorText(error, '') })
-      })
-
-    return () => {
-      controller.abort()
-    }
-    // fieldFilters is read through its key: a fresh array of the same filters is not a new list.
-  }, [
-    universe.id,
-    settledSearch,
-    exact,
-    sort,
-    entityTypeId,
-    entityTypeGroupId,
-    canonStatus,
-    page,
-    pageSize,
-    reads,
-    fieldFiltersKey,
-  ])
+        entityTypeId,
+        entityTypeGroupId,
+        canonStatus,
+        page,
+        pageSize,
+        fieldFiltersKey,
+      ],
+    ),
+    { keep: true, keepOnFailure: false },
+  )
 
   return {
     types,
     typesFailed,
     groups,
-    state,
-    setState,
-    reads,
-    setReads,
+    state: entriesRead.load,
+    retry: entriesRead.retry,
+    reread: entriesRead.refresh,
     filtersOpen,
     setFiltersOpen,
     pageSize,

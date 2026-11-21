@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { t } from '../i18n'
 import { listValidationTerms } from './api'
 import { ValidationTermKind, type ValidationTerm, type ValidationTermKindValue } from './types'
@@ -17,17 +18,17 @@ export function useTermManagerState({ universeId }: { universeId: string }) {
   const [newName, setNewName] = useState('')
   const [newError, setNewError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    listValidationTerms(universeId, controller.signal)
-      .then(setTerms)
-      .catch(() => {
-        if (!controller.signal.aborted) setMessage(t('canon.terms.readFailed'))
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId])
+  // The list is edited in place and a failure shares the manager's message line, so the read writes into this state.
+  useAsyncRead(
+    useCallback(
+      (signal: AbortSignal) =>
+        listValidationTerms(universeId, signal).then(setTerms, () => {
+          if (!signal.aborted) setMessage(t('canon.terms.readFailed'))
+        }),
+      [universeId],
+    ),
+    { keep: true },
+  )
 
   return {
     terms,

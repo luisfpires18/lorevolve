@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ImageViewer } from '../components/ImageViewer'
 import { NO_TYPES } from '../lore/typeDefinitions'
 import { useUniverseAccess } from '../universes/access'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
-import { EntryUnavailable } from '../components/lore/EntryUnavailable'
+import { EmptyState } from '../components/EmptyState'
+import { Button } from '../components/Button'
+import { ReadGate } from '../components/ReadGate'
+import { useI18n } from '../i18n'
 import { EntryHeader } from '../components/lore/EntryHeader'
 import { EntryViewsNav } from '../components/lore/EntryViewsNav'
 import { EntryTools } from '../components/lore/EntryTools'
@@ -55,6 +58,7 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
 }
 
 function EntityScreen({ view }: { view: EntryView }) {
+  const { t, tx } = useI18n()
   const { universe, chronology, entryTypes: typesFound } = useWorkspaceTypes()
   const access = useUniverseAccess()
   const { entityId } = useParams<{ entityId: string }>()
@@ -121,24 +125,70 @@ function EntityScreen({ view }: { view: EntryView }) {
   // Order matters here. A load that failed leaves the draft null, so a loading guard placed
   // first would answer "Opening…" forever instead of saying what happened - which is now an
   // ordinary thing to hit, because a link to an entry since moved to the Trash answers 404.
-  const unavailable = { universe, access, setStatus, setReads }
-  if (status === 'missing') {
-    return <EntryUnavailable reason="missing" {...unavailable} />
-  }
-
   // Types are the author's, and a world may have none left. A new entry has to be one of them, so say so rather than
   // waiting for a type that will not come.
-  if (isNew && typesRead && types.length === 0) {
-    return <EntryUnavailable reason="noTypes" {...unavailable} />
+  if (status !== 'missing' && isNew && typesRead && types.length === 0) {
+    return (
+      <EmptyState
+        testId="entity-no-types"
+        title={t('entity.page.noTypes.title')}
+        hint={t('entity.page.noTypes.hint')}
+        action={
+          <Button to={`/app/universes/${universe.id}/types`}>
+            {t('entity.page.noTypes.action')}
+          </Button>
+        }
+      />
+    )
   }
 
-  // Before the loading guard: a failed read leaves the draft null, and the guard would otherwise say "Opening…" for good.
-  if (status === 'error') {
-    return <EntryUnavailable reason="error" {...unavailable} />
-  }
-
-  if (status === 'loading' || !draft) {
-    return <EntryUnavailable reason="loading" {...unavailable} />
+  // A failed read leaves the draft null, so the failure is said before the draft is waited for.
+  if (status !== 'ready' || !draft) {
+    return (
+      <ReadGate
+        // `missing` is the entry read's 404 (useEntryLoad); any other failure is `error`.
+        load={
+          status === 'missing'
+            ? { kind: 'missing' }
+            : status === 'error'
+              ? { kind: 'error', message: '' }
+              : { kind: 'loading' }
+        }
+        loading={{ text: t('entity.page.opening') }}
+        error={{
+          message: t('entity.page.openFailed'),
+          onRetry: () => {
+            setStatus('loading')
+            setReads((count) => count + 1)
+          },
+          retryLabel: t('entity.page.retry'),
+        }}
+        missing={
+          <EmptyState
+            testId="entity-missing"
+            title={t('entity.page.missing.title')}
+            hint={
+              <>
+                {access.manageTrash
+                  ? tx('entity.page.missing.withTrash', {
+                      link: (
+                        <Link to={`/app/universes/${universe.id}/trash`}>
+                          {t('entity.page.missing.trashLink')}
+                        </Link>
+                      ),
+                    })
+                  : t('entity.page.missing.withoutTrash')}{' '}
+                <Link to={`/app/universes/${universe.id}/lore`}>
+                  {t('entity.page.missing.back')}
+                </Link>
+              </>
+            }
+          />
+        }
+      >
+        {() => null}
+      </ReadGate>
+    )
   }
 
   const accent = selectedType?.accentColor ?? undefined

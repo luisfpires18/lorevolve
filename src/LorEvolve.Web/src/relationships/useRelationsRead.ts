@@ -1,4 +1,5 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { getProgression } from '../progression/api'
 import { listEntityRelationships, listRelationshipTypes } from './api'
 import type { chronologyOf } from '../stories/sceneDraft'
@@ -46,41 +47,44 @@ export function useRelationsRead({
     [universeId, entityId, JSON.stringify(at)],
   )
 
-  // The eras of this entry and of the entry the relation connects to, read once each.
+  // The eras of this entry and of the entry the relation connects to, read once each. Each lands in `erasOf`, so the
+  // read's own state is never drawn.
   const relatedId = draft?.related?.id ?? null
-  useEffect(() => {
-    if (!draft) return
-    const controller = new AbortController()
-    for (const id of [entityId, relatedId]) {
-      if (!id || erasOf[id]?.status === 'loaded' || erasOf[id]?.status === 'loading') continue
-      setErasOf((current) => ({ ...current, [id]: { status: 'loading', eras: [] } }))
-      getProgression(universeId, id, controller.signal)
-        .then((progression) =>
-          setErasOf((current) => ({
-            ...current,
-            [id]: {
-              status: 'loaded',
-              eras: progression.eras.map((era) => ({ id: era.id, name: era.name })),
-            },
-          })),
+  const readEras = useCallback(
+    (signal: AbortSignal) => {
+      if (!draft) return undefined
+      const reads: Promise<void>[] = []
+      for (const id of [entityId, relatedId]) {
+        if (!id || erasOf[id]?.status === 'loaded' || erasOf[id]?.status === 'loading') continue
+        setErasOf((current) => ({ ...current, [id]: { status: 'loading', eras: [] } }))
+        reads.push(
+          getProgression(universeId, id, signal)
+            .then((progression) =>
+              setErasOf((current) => ({
+                ...current,
+                [id]: {
+                  status: 'loaded',
+                  eras: progression.eras.map((era) => ({ id: era.id, name: era.name })),
+                },
+              })),
+            )
+            .catch(() => {
+              if (!signal.aborted)
+                setErasOf((current) => ({ ...current, [id]: { status: 'failed', eras: [] } }))
+            }),
         )
-        .catch(() => {
-          if (!controller.signal.aborted)
-            setErasOf((current) => ({ ...current, [id]: { status: 'failed', eras: [] } }))
-        })
-    }
-    return () => controller.abort()
+      }
+      return Promise.all(reads)
+    },
     // Read again only for an entry not read yet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [universeId, entityId, relatedId, draft !== null])
+    [universeId, entityId, relatedId, draft !== null],
+  )
+  useAsyncRead(readEras, { keep: true })
 
-  useEffect(() => {
-    const controller = new AbortController()
-    void load(controller.signal)
-    return () => {
-      controller.abort()
-    }
-  }, [load])
+  // The relations stay on screen beside a failed read's line (`readError`), which one read state cannot say, so the
+  // read writes into the section's state and its own state is never drawn.
+  useAsyncRead(load, { keep: true })
 
   return { load, relatedId }
 }

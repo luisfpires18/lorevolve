@@ -99,7 +99,7 @@ export default function LorePage() {
     typesFailed,
     groups,
     state,
-    setReads,
+    reread,
     pageSize,
     setPageSize,
     tree,
@@ -120,7 +120,7 @@ export default function LorePage() {
     entityTypeId === null && entityTypeGroupId === null ? { kind: 'idle' } : state
   const result = view.kind === 'ready' ? view.value : null
 
-  const entrySelection = useLoreSelection({ location, pageSize, result, universe, setReads })
+  const entrySelection = useLoreSelection({ location, pageSize, result, universe, reread })
   const { isSelecting } = entrySelection
 
   // A page past the last one - a hand-edited address, or entries gone since - lands on the last page there is, in place.

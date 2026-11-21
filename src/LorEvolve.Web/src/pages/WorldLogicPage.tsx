@@ -54,11 +54,11 @@ export default function WorldLogicPage() {
   const [tab, choose] = useQueryTab<View>(tabs)
 
   const state = useWorldLogicState()
-  const { rules, systems, findings, sweep, sweeping, sweepFailed } = state
+  const { sweep, sweeping, sweepFailed } = state
 
   const base = `/app/universes/${universe.id}`
-  useWorldLogicReads({ ...state, universe })
-  const { goTo, retry, check, reread } = worldLogicActions({ ...state, universe })
+  const reads = useWorldLogicReads({ ...state, universe })
+  const { goTo, retry, check, reread } = worldLogicActions({ ...state, ...reads, universe })
 
   return (
     <section className="rules" aria-labelledby={headingId} data-testid="world-logic">
@@ -74,7 +74,7 @@ export default function WorldLogicPage() {
 
       <WorldLogicRules
         tab={tab}
-        rules={rules}
+        rules={reads.rules.load}
         base={base}
         access={access}
         retry={retry}
@@ -83,7 +83,7 @@ export default function WorldLogicPage() {
 
       <WorldLogicSystems
         tab={tab}
-        systems={systems}
+        systems={reads.systems.load}
         universe={universe}
         retry={retry}
         goTo={goTo}
@@ -91,7 +91,7 @@ export default function WorldLogicPage() {
 
       <WorldLogicIntegrity
         tab={tab}
-        findings={findings}
+        findings={reads.findings.load}
         sweep={sweep}
         sweeping={sweeping}
         sweepFailed={sweepFailed}

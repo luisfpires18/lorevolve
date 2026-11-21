@@ -6,8 +6,8 @@ import { useI18n } from '../../i18n'
 import { Pager } from '../Pager'
 import type { useDiscoveryState } from '../../familyTree/useDiscoveryState'
 import type { FamiliesReturn } from '../FamilyDiscovery'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
+import type { Load } from '../../lib/useAsyncRead'
 import { QuietNote } from '../QuietNote'
 import { SectionTitle } from '../Section'
 import { formatCount } from '../../i18n/format'
@@ -20,11 +20,13 @@ export function DiscoveryFamilies({
   state,
   result,
   isCurrent,
-  setReads,
+  retry,
   returnTo,
   goToPage,
-}: Pick<ReturnType<typeof useDiscoveryState>, 'headingId' | 'headingRef' | 'state' | 'setReads'> & {
+}: Pick<ReturnType<typeof useDiscoveryState>, 'headingId' | 'headingRef'> & {
   universeId: string
+  state: Load<FamilyDiscoveryPage>
+  retry: () => void
   q: string
   result: FamilyDiscoveryPage | null
   isCurrent: boolean
@@ -55,17 +57,20 @@ export function DiscoveryFamilies({
         ) : null}
       </div>
 
-      {state.kind === 'loading' && !result ? (
-        <LoadingNote>{t('places.discovery.finding')}</LoadingNote>
-      ) : null}
-
-      {state.kind === 'error' && isCurrent ? (
-        <LoadError
-          message={t('places.discovery.error')}
-          onRetry={() => setReads((current) => current + 1)}
-          retryLabel={t('places.discovery.retry')}
-          testId="family-discovery-error"
-        />
+      {/* A failure for a search or page already left behind is not said; the list is drawn below. */}
+      {state.kind !== 'error' || isCurrent ? (
+        <ReadGate
+          load={state}
+          loading={{ text: t('places.discovery.finding') }}
+          error={{
+            message: t('places.discovery.error'),
+            onRetry: retry,
+            retryLabel: t('places.discovery.retry'),
+            testId: 'family-discovery-error',
+          }}
+        >
+          {() => null}
+        </ReadGate>
       ) : null}
 
       {result && result.items.length > 0 ? (

@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Quoted } from '../components/NameList'
 import { listAllUniverses } from './api'
 import type { IdeaQuery } from './types'
-import { t, tx } from '../i18n'
-import type { Load } from '../lib/useAsyncRead'
+import { tx } from '../i18n'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import type { Outcome } from '../lib/outcome'
-import type { UniverseSummary } from '../universes/types'
 
 /** The value of the Show filter that means records in no universe. Never a universe id. */
 export const UNASSIGNED = 'unassigned'
@@ -46,43 +45,39 @@ export function useRecordList<P, R extends { id: string; title: string }>({
   words: RecordWords
 }) {
   const [typed, setTyped] = useState(search)
-  const [state, setState] = useState<Load<P>>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-  const [universes, setUniverses] = useState<UniverseSummary[] | null>(null)
   const [restoring, setRestoring] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
 
-  useEffect(() => {
-    if (universe) return
-    const controller = new AbortController()
-    listAllUniverses(controller.signal)
-      .then(setUniverses)
-      .catch(() => {
-        if (!controller.signal.aborted) setUniverses(null)
-      })
-    return () => controller.abort()
-  }, [universe])
+  // The Show filter's universes, read only outside a universe; a list that cannot be read offers none.
+  const universesRead = useAsyncRead(
+    useCallback(
+      (signal: AbortSignal) => (universe ? undefined : listAllUniverses(signal).catch(() => null)),
+      [universe],
+    ),
+    { keep: true },
+  )
+  const universes = universesRead.load.kind === 'ready' ? universesRead.load.value : null
 
-  useEffect(() => {
-    const controller = new AbortController()
-    read(
-      {
-        universeId: show !== '' && show !== UNASSIGNED ? show : null,
-        storyId,
-        projectId,
-        unassigned: show === UNASSIGNED,
-        deleted,
-        search,
-        page,
-      },
-      controller.signal,
-    )
-      .then((result) => setState({ kind: 'ready', value: result }))
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'error', message: t(`${w}.loadFailed`) })
-      })
-    return () => controller.abort()
-  }, [show, storyId, projectId, deleted, search, page, reads, read, w])
+  // A new filter, search or page keeps the list shown until it lands; a read again that fails says so.
+  const list = useAsyncRead(
+    useCallback(
+      (signal: AbortSignal) =>
+        read(
+          {
+            universeId: show !== '' && show !== UNASSIGNED ? show : null,
+            storyId,
+            projectId,
+            unassigned: show === UNASSIGNED,
+            deleted,
+            search,
+            page,
+          },
+          signal,
+        ),
+      [show, storyId, projectId, deleted, search, page, read],
+    ),
+    { keep: true, keepOnFailure: false },
+  )
 
   async function restore(record: { id: string; title: string }) {
     setRestoring(record.id)
@@ -96,25 +91,20 @@ export function useRecordList<P, R extends { id: string; title: string }>({
       })
     } finally {
       setRestoring(null)
-      setReads((current) => current + 1)
+      list.refresh()
     }
-  }
-
-  function retry() {
-    setState({ kind: 'loading' })
-    setReads((current) => current + 1)
   }
 
   return {
     typed,
     setTyped,
-    state,
-    setReads,
+    state: list.load,
+    reread: list.refresh,
     universes,
     restoring,
     outcome,
     setOutcome,
     restore,
-    retry,
+    retry: list.retry,
   }
 }

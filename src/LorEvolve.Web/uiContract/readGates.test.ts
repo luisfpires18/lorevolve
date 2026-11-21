@@ -1,24 +1,12 @@
 // Run with `node --test uiContract/readGates.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps a read's loading and failed lines on ReadGate (#456): a file that imports both LoadingNote and LoadError
-// draws the ladder between them by hand. The list below only shrinks, and a stale entry fails.
+// draws the ladder between them by hand. No file does (I44 moved the last ones), and none may.
 // Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { read, tsxFiles } from './support.ts'
-
-// Reads that keep old content during a reload wait for I44 (the Ideas and Boards lists among them).
-const HAND_LADDERS = new Set([
-  'src/components/familyTree/DiscoveryFamilies.tsx',
-  'src/components/familyTree/FamilyLoadStates.tsx',
-  'src/components/ideas/RecordListPage.tsx',
-  'src/components/lore/EntryUnavailable.tsx',
-  'src/components/timeline/TimelineNotices.tsx',
-  'src/components/worldLogic/WorldLogicIntegrity.tsx',
-  'src/components/worldLogic/WorldLogicRules.tsx',
-  'src/components/worldLogic/WorldLogicSystems.tsx',
-])
 
 // The names one file imports, from every `import ... from` statement, renames and line breaks included.
 const imported = (source: string) =>
@@ -66,17 +54,9 @@ test('the read gate guard catches a file importing both parts, however the impor
 })
 
 test('a read with loading and failed states is drawn by ReadGate', () => {
-  const found = tsxFiles.filter(
-    (file) => file !== 'src/components/ReadGate.tsx' && handLadder(read(file)),
-  )
   assert.deepEqual(
-    found.filter((file) => !HAND_LADDERS.has(file)),
+    tsxFiles.filter((file) => file !== 'src/components/ReadGate.tsx' && handLadder(read(file))),
     [],
     'use <ReadGate> from components/ReadGate',
-  )
-  assert.deepEqual(
-    [...HAND_LADDERS].filter((file) => !found.includes(file)),
-    [],
-    'stale allowlist entry: remove it',
   )
 })

@@ -3,12 +3,10 @@ import { t, useI18n } from '../../i18n'
 import type { CanonStatusValue } from '../../lore/types'
 import type { StorySummary } from '../../stories/types'
 import { TimelineSource, type TimelineItemPage } from '../../timeline/types'
-import type { Dispatch, SetStateAction } from 'react'
 import type { Load } from '../../lib/useAsyncRead'
 import type { SOURCES } from '../../timeline/timelineSources'
 import { Button } from '../Button'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
 import { QuietNote } from '../QuietNote'
 import { FormMessage } from '../FormMessage'
 
@@ -24,8 +22,7 @@ export function TimelineNotices({
   mixedEras,
   message,
   state,
-  setState,
-  reload,
+  retry,
 }: {
   storyId: string | null
   story: StorySummary | null
@@ -37,8 +34,7 @@ export function TimelineNotices({
   mixedEras: boolean
   message: string | null
   state: Load<TimelineItemPage>
-  setState: Dispatch<SetStateAction<Load<TimelineItemPage>>>
-  reload: () => void
+  retry: () => void
 }) {
   const { tx } = useI18n()
   return (
@@ -81,18 +77,14 @@ export function TimelineNotices({
 
       {message ? <FormMessage testId="chron-error">{message}</FormMessage> : null}
 
-      {state.kind === 'loading' ? <LoadingNote>{t('time.timeline.reading')}</LoadingNote> : null}
-
-      {state.kind === 'error' ? (
-        <LoadError
-          message={state.message}
-          onRetry={() => {
-            setState({ kind: 'loading' })
-            reload()
-          }}
-          retryLabel={t('time.timeline.tryAgain')}
-        />
-      ) : null}
+      {/* The list itself is drawn below the notices, by the page. */}
+      <ReadGate
+        load={state}
+        loading={{ text: t('time.timeline.reading') }}
+        error={{ onRetry: retry, retryLabel: t('time.timeline.tryAgain') }}
+      >
+        {() => null}
+      </ReadGate>
     </>
   )
 }
