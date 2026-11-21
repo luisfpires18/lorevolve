@@ -102,6 +102,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         edit={(change) => setNames((current) => ({ ...current, ...change }))}
         fieldErrors={fieldErrors}
         idPrefix="family-kind"
+        fieldTestIds
         words={{
           name: t('places.kindDialog.name'),
           namePlaceholder: t('places.kindDialog.namePlaceholder'),

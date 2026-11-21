@@ -13,8 +13,8 @@ export interface KindNames {
 /**
  * The naming fields of a relation kind: how it reads, how it reads from the other side, and the both-ways check. A
  * symmetric kind swaps the other side's field for `bothWays`, a note saying it reads the same either way. `idPrefix`
- * names the fields and their test ids (`<idPrefix>-name`, `-inverse`, `-both-ways`, `-symmetric`); `words` are the
- * screen's own labels. Used by the Family Tree's kind dialog and the Types screen's kind form. Catalogue:
+ * names the fields and the check's test id (`<idPrefix>-symmetric`); `fieldTestIds` also marks `-name`, `-inverse` and
+ * `-both-ways`. `words` are the screen's own labels. Used by the Family Tree's kind dialog and the Types screen's kind form. Catalogue:
  * docs/design/ui-components.md.
  */
 export function KindFields({
@@ -25,6 +25,7 @@ export function KindFields({
   words,
   bothWays,
   bothWaysSpacing,
+  fieldTestIds = false,
 }: {
   draft: KindNames
   edit: (change: Partial<KindNames>) => void
@@ -39,7 +40,9 @@ export function KindFields({
   }
   bothWays: ReactNode
   bothWaysSpacing: 'block' | 'hint'
+  fieldTestIds?: boolean
 }) {
+  const testId = (part: string) => (fieldTestIds ? `${idPrefix}-${part}` : undefined)
   return (
     <>
       <Field
@@ -50,11 +53,11 @@ export function KindFields({
         value={draft.name}
         onChange={(event) => edit({ name: event.target.value })}
         error={fieldErrors.name}
-        data-testid={`${idPrefix}-name`}
+        data-testid={testId('name')}
       />
 
       {draft.isSymmetric ? (
-        <QuietNote spacing={bothWaysSpacing} testId={`${idPrefix}-both-ways`}>
+        <QuietNote spacing={bothWaysSpacing} testId={testId('both-ways')}>
           {bothWays}
         </QuietNote>
       ) : (
@@ -66,7 +69,7 @@ export function KindFields({
           value={draft.inverseName}
           onChange={(event) => edit({ inverseName: event.target.value })}
           error={fieldErrors.inversename}
-          data-testid={`${idPrefix}-inverse`}
+          data-testid={testId('inverse')}
         />
       )}
 
