@@ -35,9 +35,7 @@ export function Entry({ world, entry }: { world: PublicUniverse; entry: PublicLo
           </p>
         ) : null}
         <PublicEditLink
-          to={
-            owner?.entityId ? `/app/universes/${owner.universeId}/lore/${owner.entityId}` : null
-          }
+          to={owner?.entityId ? `/app/universes/${owner.universeId}/lore/${owner.entityId}` : null}
           label={t('portal.lore.edit')}
         />
       </header>

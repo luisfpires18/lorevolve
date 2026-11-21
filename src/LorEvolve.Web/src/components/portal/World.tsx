@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, BookOpen, ScrollText } from 'lucide-react'
 import { BrandMark } from '../BrandMark'
+import { LoadingNote } from '../LoadingNote'
 import { WorldAttribution } from '../WorldAttribution'
 import {
   listPublicLore,
@@ -106,9 +107,7 @@ export function World({ world }: { world: PublicUniverse }) {
         ) : null}
 
         {lore.status === 'loading' || stories.status === 'loading' ? (
-          <p className="pworld__status" role="status">
-            {t('portal.world.loading')}
-          </p>
+          <LoadingNote className="pworld__status">{t('portal.world.loading')}</LoadingNote>
         ) : null}
 
         {hasLore ? (

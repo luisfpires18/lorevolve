@@ -4,7 +4,7 @@ import { PortalError, PortalMissing } from '../PortalMissing'
 
 /** Each public page's placeholder while it opens: its frame, then the bone inside it. */
 const SKELETONS = {
-  hero: ['pworld','pworld-hero pskeleton pskeleton--hero'],
+  hero: ['pworld', 'pworld-hero pskeleton pskeleton--hero'],
   author: ['pauthor', 'pauthor__head pskeleton pskeleton--author'],
   page: ['pread', 'pskeleton pskeleton--page'],
 } as const
@@ -32,7 +32,8 @@ export function PublicReadGate<T>({
 }) {
   const { load, retry } = useAsyncRead(read, { key: readKey, missing: true })
 
-  if (load.kind === 'missing') return <PortalMissing title={missing.title} testId={missing.testId} />
+  if (load.kind === 'missing')
+    return <PortalMissing title={missing.title} testId={missing.testId} />
   if (load.kind === 'error') return <PortalError onRetry={retry} />
   if (load.kind === 'loading') {
     const [frame, bone] = SKELETONS[skeleton]

@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { Avatar } from '../Avatar'
+import { LoadingNote } from '../LoadingNote'
 import { ShowMore } from '../ShowMore'
 import { listPublicUniverses, type PublicAuthor, type PublicUniverse } from '../../portal/api'
 import { usePublicPages } from '../../portal/usePublicPages'
@@ -55,9 +56,7 @@ export function Author({ author }: { author: PublicAuthor }) {
             </button>
           </div>
         ) : worlds.status === 'loading' ? (
-          <p className="pworld__status" role="status">
-            {t('portal.author.loading')}
-          </p>
+          <LoadingNote className="pworld__status">{t('portal.author.loading')}</LoadingNote>
         ) : (
           <WorldGrid worlds={worlds.items} linkAuthor={false} testId="public-author-worlds" />
         )}

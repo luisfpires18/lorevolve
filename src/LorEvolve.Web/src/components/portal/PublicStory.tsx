@@ -50,9 +50,7 @@ export function Story({ world, story }: { world: PublicUniverse; story: PublicSt
           {story.publicSummary}
         </p>
         <PublicEditLink
-          to={
-            owner?.storyId ? `/app/universes/${owner.universeId}/stories/${owner.storyId}` : null
-          }
+          to={owner?.storyId ? `/app/universes/${owner.universeId}/stories/${owner.storyId}` : null}
           label={t('portal.story.edit')}
         />
         {sections.length > 1 ? (
