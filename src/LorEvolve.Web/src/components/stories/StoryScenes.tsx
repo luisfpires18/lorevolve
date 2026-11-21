@@ -1,16 +1,25 @@
 import { BookPlus, Layers } from 'lucide-react'
 import { useI18n } from '../../i18n'
-import { ArcSection } from '../ArcSection'
 import { EmptyState } from '../EmptyState'
 import { StoryPartPublication } from '../StoryPartPublication'
-import { sceneCountLabel, unchaptered as unchapteredLabel } from '../../stories/format'
+import {
+  arcLabel,
+  arcNumber,
+  chapterCountLabel,
+  sceneCountLabel,
+  unchaptered as unchapteredLabel,
+} from '../../stories/format'
 import type { Scene } from '../../stories/types'
 import type { storyPatches } from '../../stories/storyPatches'
 import type { storyChapterMoves } from '../../stories/storyChapterMoves'
 import type { storyRemovals } from '../../stories/storyRemovals'
 import type { useStoryState } from '../../stories/useStoryState'
 import { StorySceneCards } from './StorySceneCards'
-import { StoryChapterSections, type StoryChapterSectionsProps } from './StoryChapterSections'
+import {
+  StoryChapterSections,
+  StoryGroupRow,
+  type StoryChapterSectionsProps,
+} from './StoryChapterSections'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
 import { SectionTitle } from '../Section'
@@ -127,9 +136,9 @@ export function StoryScenes(
       ) : null}
 
       {!hasStructure && scenes.length > 0 ? (
-        <ol className="scenes" data-testid="scene-list">
+        <ul className="types__list" data-testid="scene-list">
           <StorySceneCards {...props} container={scenes} titleLevel={3} />
-        </ol>
+        </ul>
       ) : null}
 
       {hasStructure && unchaptered.length > 0 ? (
@@ -148,44 +157,63 @@ export function StoryScenes(
               })}
             </QuietNote>
           </header>
-          <ol className="scenes" data-testid="unchaptered-scenes">
+          <ul className="types__list" data-testid="unchaptered-scenes">
             <StorySceneCards {...props} container={unchaptered} titleLevel={4} />
-          </ol>
+          </ul>
         </section>
       ) : null}
 
-      <StoryChapterSections {...props} group={groups.unarced} titleLevel={3} />
-
-      {groups.arcs.map(({ arc, chapters: inArc }, index) => (
-        <ArcSection
-          key={arc.id}
-          arc={arc}
-          index={index}
-          count={groups.arcs.length}
-          chapterCount={inArc.length}
-          onMove={(target, by) => void moveArc(target, by)}
-          onAddChapter={(target) => setChapterForm({ mode: 'new', arcId: target.id })}
-          onEdit={(target, at) => setArcForm({ mode: 'edit', arc: target, index: at })}
-          onDelete={(target, at) => void removeArc(target, at)}
-          startsOpen={index === 0}
-          publication={
-            access.publish ? (
-              <StoryPartPublication
-                universeId={universe.id}
-                storyId={story.id}
-                kind="arc"
-                id={arc.id}
-                name={arc.title}
-                visibility={arc.visibility}
-                storyIsPublic={storyIsPublic}
-                onChange={(visibility) => patchArc(arc.id, visibility)}
-              />
-            ) : null
-          }
-        >
-          <StoryChapterSections {...props} group={inArc} titleLevel={4} />
-        </ArcSection>
-      ))}
+      {groups.unarced.length > 0 || groups.arcs.length > 0 ? (
+        <ul className="types__list">
+          <StoryChapterSections {...props} group={groups.unarced} titleLevel={3} />
+          {groups.arcs.map(({ arc, chapters: inArc }, index) => (
+            <StoryGroupRow
+              key={arc.id}
+              noun="arc"
+              id={arc.id}
+              title={arc.title}
+              index={index}
+              count={groups.arcs.length}
+              titleLevel={3}
+              number={arcNumber(index)}
+              label={arcLabel(index, arc.title)}
+              countLabel={inArc.length > 0 ? chapterCountLabel(inArc.length) : undefined}
+              summary={arc.description}
+              empty={inArc.length > 0 ? undefined : t('stories.arc.empty')}
+              words={{
+                add: t('stories.arc.addChapter'),
+                edit: t('stories.arc.edit'),
+                editLabel: t('stories.arc.editLabel', { label: arcLabel(index, arc.title) }),
+                more: t('stories.arc.moreActions', { label: arcLabel(index, arc.title) }),
+                delete: t('stories.arc.delete'),
+              }}
+              onMove={(by) => void moveArc(arc, by)}
+              onAdd={() => setChapterForm({ mode: 'new', arcId: arc.id })}
+              onEdit={() => setArcForm({ mode: 'edit', arc, index })}
+              onDelete={() => void removeArc(arc, index)}
+              startsOpen={index === 0}
+              publication={
+                access.publish ? (
+                  <StoryPartPublication
+                    universeId={universe.id}
+                    storyId={story.id}
+                    kind="arc"
+                    id={arc.id}
+                    name={arc.title}
+                    visibility={arc.visibility}
+                    storyIsPublic={storyIsPublic}
+                    onChange={(visibility) => patchArc(arc.id, visibility)}
+                  />
+                ) : null
+              }
+            >
+              <ul className="types__list">
+                <StoryChapterSections {...props} group={inArc} titleLevel={4} />
+              </ul>
+            </StoryGroupRow>
+          ))}
+        </ul>
+      ) : null}
     </section>
   )
 }

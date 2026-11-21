@@ -14,7 +14,9 @@ type Direction = 'up' | 'down'
  * child, the moves, `menuItems` and Delete. Pass only what the row may do; the menu shows when it holds something.
  * `words` names Add child and Edit for a row that is not a type (a season adds an episode, and is renamed): the word is
  * then the button's whole name, unless `addChildLabel` or `editLabel` gives it a longer one that holds the row's name.
- * `words.first` and `words.last` are the hover tips at the ends of Up and Down, in place of the Types ones.
+ * `words.first` and `words.last` are the hover tips at the ends of Up and Down, in place of the Types ones, and
+ * `words.more` names the menu. A fold with a `label` folds a row's body rather than a type's fields: it reads Expand or
+ * Collapse and is named with the label, as a story's arcs, chapters and scenes fold.
  */
 export function TypeRowActions({
   name,
@@ -55,6 +57,8 @@ export function TypeRowActions({
     testId: string
     /** The id of the fields region the button shows and hides. */
     controls: string
+    /** What the fold shows and hides, in words, for a fold that is not a type's fields. */
+    label?: string
   }
   words?: {
     addChild?: string
@@ -63,6 +67,7 @@ export function TypeRowActions({
     editLabel?: string
     first?: string
     last?: string
+    more?: string
   }
   /** More menu items, before Delete. */
   menuItems?: ReactNode
@@ -145,21 +150,44 @@ export function TypeRowActions({
         </Button>
       ) : null}
       {fold ? (
-        <DisclosureButton
-          tone="secondary"
-          size="sm"
-          expanded={fold.open}
-          controls={fold.controls}
-          aria-label={t('entityTypes.page.fieldsLabel', { name })}
-          onToggle={fold.onToggle}
-          data-testid={fold.testId}
-        >
-          {t('entityTypes.page.fields')}
-          {fold.count > 0 ? <span className="types__fieldcount">{fold.count}</span> : null}
-        </DisclosureButton>
+        fold.label !== undefined ? (
+          <DisclosureButton
+            tone="secondary"
+            size="sm"
+            expanded={fold.open}
+            controls={fold.controls}
+            aria-label={
+              fold.open
+                ? t('stories.page.fold.collapseLabel', { label: fold.label })
+                : t('stories.page.fold.expandLabel', { label: fold.label })
+            }
+            title={fold.open ? t('stories.page.fold.collapse') : t('stories.page.fold.expand')}
+            onToggle={fold.onToggle}
+            expandedLabel={t('stories.page.fold.collapse')}
+            data-testid={fold.testId}
+          >
+            {t('stories.page.fold.expand')}
+          </DisclosureButton>
+        ) : (
+          <DisclosureButton
+            tone="secondary"
+            size="sm"
+            expanded={fold.open}
+            controls={fold.controls}
+            aria-label={t('entityTypes.page.fieldsLabel', { name })}
+            onToggle={fold.onToggle}
+            data-testid={fold.testId}
+          >
+            {t('entityTypes.page.fields')}
+            {fold.count > 0 ? <span className="types__fieldcount">{fold.count}</span> : null}
+          </DisclosureButton>
+        )
       ) : null}
       {addChild || move || menuItems || onDelete ? (
-        <ActionMenu label={t('entityTypes.page.moreActions', { name })} triggerTestId={menuTestId}>
+        <ActionMenu
+          label={words?.more ?? t('entityTypes.page.moreActions', { name })}
+          triggerTestId={menuTestId}
+        >
           {addChild ? (
             <ActionMenuItem
               icon={ListTree}

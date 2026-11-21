@@ -3,14 +3,14 @@ import { useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { ArrowRightLeft, BookOpen, FilePenLine, ListPlus, PenLine, Pencil } from 'lucide-react'
 import { ActionMenuItem } from './ActionMenu'
-import { RowMenu } from './RowMenu'
-import { MoveItems } from './MoveItems'
 import { useFold } from './fold'
-import { OutlineItem } from './OutlineItem'
+import { TypeRow } from './TypeRow'
+import { TypeRowActions } from './TypeRowActions'
+import { FactList } from './FactList'
 import { ContainerName } from './ContainerName'
 import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import type { Chronology } from '../chronology/types'
-import { chapterLabel, unchaptered } from '../stories/format'
+import { chapterLabel, hasStamp, unchaptered } from '../stories/format'
 import type { Scene } from '../stories/types'
 import { storyProjectPath } from '../projects/sections'
 import { Button } from './Button'
@@ -87,32 +87,29 @@ export function SceneCard({
   const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const titleId = useId()
-  const fold = useFold<HTMLElement>()
+  const { open, setOpen, ref, bodyId } = useFold<HTMLLIElement>()
   // Only a scene with something under its title folds.
   const foldable = Boolean(scene.summary) || scene.entities.length > 0 || scene.beats.length > 0
+  const hasMenu = access.editContent || access.suggestChanges
 
   return (
-    <OutlineItem
-      variant="card"
-      fold={fold}
-      foldable={foldable}
-      anchorId={`scene-${scene.id}`}
-      dataTitle={scene.title}
-      titleId={titleId}
-      titleLevel={titleLevel}
+    <TypeRow
+      ref={ref}
+      id={`scene-${scene.id}`}
+      tabIndex={-1}
+      data-title={scene.title}
+      testId="scene"
+      name={scene.title}
       // The number is read, not drawn. It is the heading's accessible name, as one message rather than a
       // prefix glued to the title, so a translation may put the two in its own order; the title itself is
       // drawn once and keeps its own direction.
-      titleLabel={t('stories.scene.heading', { n: index + 1, title: scene.title })}
-      testId="scene"
-      number={index + 1}
-      name={scene.title}
-      summary={scene.summary}
-      foldLabel={t('stories.scene.foldLabel', { n: index + 1, title: scene.title })}
-      lead={
-        <SceneStamp universeId={universeId} chronology={chronology} scene={scene} testId="scene" />
-      }
-      tools={
+      heading={{
+        level: titleLevel,
+        id: titleId,
+        label: t('stories.scene.heading', { n: index + 1, title: scene.title }),
+      }}
+      lead={<span aria-hidden="true">{index + 1}</span>}
+      actions={
         <>
           {publication}
           {access.editContent ? (
@@ -135,83 +132,119 @@ export function SceneCard({
           >
             {access.editContent ? t('stories.scene.write') : t('stories.scene.read')}
           </Button>
-          {access.editContent || access.suggestChanges ? (
-            <RowMenu
-              label={t('stories.scene.moreActions', { title: scene.title })}
-              triggerTestId="scene-actions"
-              panelClassName="actionmenu__panel--wide"
-              divided
-              onRemove={access.editContent ? () => onDelete(scene) : undefined}
-              removeLabel={t('stories.scene.delete')}
-              removeTestId="scene-delete"
-            >
-              {access.suggestChanges && !access.editContent ? (
-                <ActionMenuItem
-                  icon={FilePenLine}
-                  onClick={() => onSuggest(scene)}
-                  testId="scene-suggest"
-                >
-                  {t('stories.scene.suggest')}
-                </ActionMenuItem>
-              ) : null}
-              {access.editContent ? (
-                <MoveItems
-                  first={index === 0}
-                  last={index === count - 1}
-                  testIds={{ up: 'scene-move-up', down: 'scene-move-down' }}
-                  onMove={(step) => onMove(scene, step)}
-                />
-              ) : null}
-              {(access.editContent ? moveTargets : []).map((target) => (
-                <ActionMenuItem
-                  icon={ArrowRightLeft}
-                  key={target.chapterId ?? 'unchaptered'}
-                  onClick={() => onMoveTo(scene, target.chapterId)}
-                  testId="scene-move-to-option"
-                  data-target={
-                    (target.arc ? `${target.arc}, ` : '') +
-                    (target.chapter
-                      ? chapterLabel(target.chapter.index, target.chapter.title)
-                      : unchaptered())
+          <TypeRowActions
+            name={scene.title}
+            move={
+              access.editContent
+                ? {
+                    isFirst: index === 0,
+                    isLast: index === count - 1,
+                    busy: false,
+                    onMove: (direction) => onMove(scene, direction === 'up' ? -1 : 1),
                   }
-                >
-                  <span className="actionmenu__text">
-                    {tx('stories.scene.moveTo', {
-                      target: (
-                        <>
-                          {target.arc ? `${target.arc}, ` : null}
-                          <ContainerName chapter={target.chapter} />
-                        </>
-                      ),
-                    })}
-                  </span>
-                </ActionMenuItem>
-              ))}
-              {access.editContent ? (
-                <ActionMenuItem
-                  icon={ListPlus}
-                  onClick={() => onAddBeat(scene)}
-                  testId="scene-add-beat"
-                >
-                  {t('stories.scene.addBeat')}
-                </ActionMenuItem>
-              ) : null}
-            </RowMenu>
-          ) : null}
+                : undefined
+            }
+            moveTestIds={{ up: 'scene-move-up', down: 'scene-move-down' }}
+            fold={
+              foldable
+                ? {
+                    open: open,
+                    count: 0,
+                    onToggle: () => setOpen(!open),
+                    testId: 'scene-toggle',
+                    controls: bodyId,
+                    label: t('stories.scene.foldLabel', { n: index + 1, title: scene.title }),
+                  }
+                : undefined
+            }
+            words={{ more: t('stories.scene.moreActions', { title: scene.title }) }}
+            menuItems={
+              hasMenu ? (
+                <>
+                  {access.suggestChanges && !access.editContent ? (
+                    <ActionMenuItem
+                      icon={FilePenLine}
+                      onClick={() => onSuggest(scene)}
+                      testId="scene-suggest"
+                    >
+                      {t('stories.scene.suggest')}
+                    </ActionMenuItem>
+                  ) : null}
+                  {(access.editContent ? moveTargets : []).map((target) => (
+                    <ActionMenuItem
+                      icon={ArrowRightLeft}
+                      key={target.chapterId ?? 'unchaptered'}
+                      onClick={() => onMoveTo(scene, target.chapterId)}
+                      testId="scene-move-to-option"
+                      data-target={
+                        (target.arc ? `${target.arc}, ` : '') +
+                        (target.chapter
+                          ? chapterLabel(target.chapter.index, target.chapter.title)
+                          : unchaptered())
+                      }
+                    >
+                      {tx('stories.scene.moveTo', {
+                        target: (
+                          <>
+                            {target.arc ? `${target.arc}, ` : null}
+                            <ContainerName chapter={target.chapter} />
+                          </>
+                        ),
+                      })}
+                    </ActionMenuItem>
+                  ))}
+                  {access.editContent ? (
+                    <ActionMenuItem
+                      icon={ListPlus}
+                      onClick={() => onAddBeat(scene)}
+                      testId="scene-add-beat"
+                    >
+                      {t('stories.scene.addBeat')}
+                    </ActionMenuItem>
+                  ) : null}
+                </>
+              ) : undefined
+            }
+            onDelete={access.editContent ? () => onDelete(scene) : undefined}
+            deleteLabel={t('stories.scene.delete')}
+            deleteTestId="scene-delete"
+            menuTestId="scene-actions"
+          />
         </>
       }
     >
-      <SceneLore
-        universeId={universeId}
-        scene={scene}
-        testId="scene"
-        onReorder={
-          onReorderLore && access.editContent
-            ? (entityIds) => onReorderLore(scene, entityIds)
-            : undefined
-        }
-      />
-      <SceneBeatList beats={scene.beats} testId="scene" />
-    </OutlineItem>
+      {hasStamp(chronology, scene) ? (
+        <FactList look="inline">
+          <SceneStamp
+            universeId={universeId}
+            chronology={chronology}
+            scene={scene}
+            testId="scene"
+          />
+        </FactList>
+      ) : null}
+      <div id={bodyId} hidden={foldable && !open} data-fold={bodyId}>
+        {scene.summary ? (
+          <p className="types__description prose" data-testid="scene-summary">
+            {scene.summary}
+          </p>
+        ) : null}
+        {scene.entities.length > 0 || scene.beats.length > 0 ? (
+          <FactList look="inline">
+            <SceneLore
+              universeId={universeId}
+              scene={scene}
+              testId="scene"
+              onReorder={
+                onReorderLore && access.editContent
+                  ? (entityIds) => onReorderLore(scene, entityIds)
+                  : undefined
+              }
+            />
+            <SceneBeatList beats={scene.beats} testId="scene" />
+          </FactList>
+        ) : null}
+      </div>
+    </TypeRow>
   )
 }

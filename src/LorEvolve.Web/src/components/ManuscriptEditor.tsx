@@ -17,6 +17,7 @@ import { ManuscriptNotices } from './stories/ManuscriptNotices'
 import { ManuscriptBody } from './stories/ManuscriptBody'
 import { ManuscriptTools } from './stories/ManuscriptTools'
 import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
+import { FactList } from './FactList'
 import { EditorSaveBar } from './EditorSaveBar'
 import { Announce } from './Announce'
 import { ReadGate } from './ReadGate'
@@ -179,14 +180,16 @@ export function ManuscriptEditor({
               id={state.contextId}
               data-open={state.isContextOpen ? 'true' : 'false'}
             >
-              <SceneStamp
-                universeId={universeId}
-                chronology={chronology}
-                scene={scene}
-                testId="manuscript"
-              />
-              <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
-              <SceneBeatList beats={scene.beats} testId="manuscript" />
+              <FactList look="inline">
+                <SceneStamp
+                  universeId={universeId}
+                  chronology={chronology}
+                  scene={scene}
+                  testId="manuscript"
+                />
+                <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
+                <SceneBeatList beats={scene.beats} testId="manuscript" />
+              </FactList>
             </div>
           ) : null
         }

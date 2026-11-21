@@ -20,6 +20,7 @@ const projectsComics: Dictionary['projects']['comics'] = {
   noVolumes: 'Ainda não há volumes.',
   noEntries: 'Ainda não tem nada.',
   edit: 'Editar',
+  editLabel: 'Editar {name}',
   name: 'Nome',
   namePlaceholder: 'Insira um nome',
   summary: 'Resumo',
@@ -32,6 +33,7 @@ const projectsComics: Dictionary['projects']['comics'] = {
   deleteMessage:
     'Só a lista e a sua ordem desaparecem. Cada número e capítulo fica na sua banda desenhada.',
   addEntry: 'Adicionar número ou capítulo',
+  addEntryLabel: 'Adicionar um número ou capítulo a {name}',
   addTitle: 'Adicionar a {name}',
   part: 'Número ou capítulo',
   choosePart: 'Escolha um',

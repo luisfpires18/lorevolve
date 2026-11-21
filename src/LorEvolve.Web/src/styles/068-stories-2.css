@@ -1,21 +1,25 @@
 /*
  * A scene or beat reached by a link is marked for a moment - the surface behind it and the accent on its edge - so the
  * eye can tell which row the link meant. The mark fades rather than vanishing, unless motion is reduced. The row holds
- * the focus by then, and the mark is what shows it.
+ * the focus by then, and the mark is what shows it. Its parts - the head, the date and point of view, and the folded
+ * summary, lore and beats - stand a small step apart, as a scene's lines always did.
  */
-.scene {
+.types__row[id^='scene-'],
+.types__row[id^='scene-'] > [data-fold]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   transition:
     background-color 700ms ease,
     box-shadow 700ms ease;
 }
 
-.scene:focus,
-.plotarc:focus {
+.types__row:is([id^='scene-'], [id^='arc-']):focus {
   outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene {
+  .types__row[id^='scene-'] {
     transition: none;
   }
 }
@@ -36,106 +40,6 @@
   line-height: 1.65;
   white-space: pre-line;
   overflow-wrap: anywhere;
-}
-
-.scenes {
-  list-style: none;
-  margin: 1.25rem 0 0;
-  padding: 0;
-}
-
-.scene {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-  column-gap: 1rem;
-  padding: 1.1rem 0;
-  border-top: 1px solid var(--rule);
-}
-
-.scene:last-child {
-  border-bottom: 1px solid var(--rule);
-}
-
-.scene__number {
-  font-family: var(--display);
-  font-size: 1.5rem;
-  line-height: 1.15;
-  color: var(--muted);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.scene__body {
-  min-width: 0;
-}
-
-.scene__tools {
-  align-self: start;
-}
-
-.scene__stamp {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-4);
-  margin: 0 0 var(--space-1);
-  font-size: var(--text-sm);
-  color: var(--muted);
-}
-
-.scene__when {
-  font-family: var(--display);
-  font-size: 0.95rem;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
-}
-
-.scene__unplaced {
-  font-family: var(--ui);
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-.scene__pov {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.5rem;
-  min-width: 0;
-}
-
-.scene__label {
-  font-size: var(--text-xs);
-}
-
-.scene__title {
-  margin: 0.1rem 0 0.3rem;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-  overflow-wrap: anywhere;
-}
-
-.scene__summary {
-  margin: 0 0 0.6rem;
-  max-width: 62ch;
-  font-size: 0.95rem;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-.scene__lore {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 0.5rem;
-  margin: 0;
-  padding: 0;
-}
-
-.scene__lore li {
-  max-width: 100%;
 }
 
 /* A lore reference: the type's icon and the entry's name, a real link to its page. One chip wherever a story or the
@@ -187,38 +91,6 @@ a.lorechip:focus-visible {
   flex: none;
 }
 
-/* The point of view is a person-sized reference: its square tile, small, and its name, unboxed. */
-.lorechip--pov {
-  gap: var(--space-2);
-  padding: 0;
-  border: 0;
-  background: none;
-  font-size: var(--text-ui);
-  color: var(--ink);
-}
-
-a.lorechip--pov:hover .lorechip__name,
-a.lorechip--pov:focus-visible .lorechip__name {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
-.lorechip__tile {
-  width: 1.5rem;
-  border-radius: var(--radius-xs);
-}
-
-/* A pictured chip: the entry's thumbnail at the chip's start, where the type icon sits on the others. */
-.lorechip--pictured {
-  padding-inline-start: 0.125rem;
-}
-
-.lorechip__thumb {
-  flex: none;
-  width: 1.15rem;
-  border-radius: calc(var(--radius-sm) - 0.125rem);
-}
-
 :root[data-theme='dark'] .lorechip {
   --type-ink: color-mix(in srgb, var(--type-accent, var(--muted)) 50%, var(--ink));
 }
@@ -247,14 +119,4 @@ a.lorechip--pov:focus-visible .lorechip__name {
     width: var(--control-touch);
     height: var(--control-touch);
   }
-}
-
-/* "Move to Chapter 2: …": the chapter's title may be long, and wraps inside the menu item - in a panel wide enough
-   that a long title takes two lines, not six. */
-.actionmenu__text {
-  min-width: 0;
-}
-
-.actionmenu__panel--wide {
-  width: min(22rem, calc(100vw - 2 * var(--gutter)));
 }

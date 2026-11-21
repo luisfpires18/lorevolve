@@ -1,7 +1,7 @@
 // Run with `node --test uiContract/cards.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps card grids, cards, item rows and outline nodes on their shared parts (#413): CardGrid, CardSkeleton,
-// EntityCard, CatalogCard, EntityRow, LinkRow, TypeRow, TypeRowActions and OutlineItem, and the raised
+// EntityCard, CatalogCard, EntityRow, LinkRow, TypeRow and TypeRowActions (a story's arcs, chapters and scenes too), and the raised
 // surface's lift and the card grid's columns in one CSS rule each. Each list below only shrinks, and a stale entry
 // fails. Catalogue: docs/design/ui-components.md.
 
@@ -62,7 +62,7 @@ const ROW_LINK = (token: string) =>
     family(['storyrow', 'idearow', 'rulerow'])(token))
 const TYPE_ROW = named(['types__row', 'types__head'])
 const TYPE_ROW_PARTS = named(['types__actions', 'types__move', 'types__fieldcount'])
-// OutlineItem builds the arc and chapter parts as `${block}__head`, so only a hand-written literal matches here.
+// The old outline parts (#456 P7): a story's arcs, chapters and scenes and a project's outline are TypeRows now.
 const OUTLINE = named([
   'scene__number',
   'scene__titlerow',
@@ -144,7 +144,6 @@ test("a row's who-is-this part is EntityRow", () => {
     new Map([
       ['src/components/EntityCard.tsx', 'the shared card'],
       ['src/components/EntityRow.tsx', 'the shared row part'],
-      ['src/components/LoreReference.tsx', 'a chip, not a row'],
       ['src/components/familyTree/FamilyNode.tsx', 'a node on a pan-and-zoom canvas'],
       ['src/components/trash/TrashRow.tsx', 'a Trash row (audit class d), left'],
     ]),
@@ -170,8 +169,8 @@ test('a types list row is TypeRow, its verbs TypeRowActions', () => {
   )
 })
 
-test('an arc, chapter or scene is OutlineItem', () => {
-  check(withToken(OUTLINE), only('src/components/OutlineItem.tsx'), 'use OutlineItem')
+test('an arc, chapter or scene is a TypeRow', () => {
+  check(withToken(OUTLINE), new Map(), 'use TypeRow and TypeRowActions')
 })
 
 test('the lift is one CSS rule', () => {

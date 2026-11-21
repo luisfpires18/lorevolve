@@ -120,12 +120,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* What a type is for, under its name: aligned with the name, past the grip and the medallion. */
+/* What a type is for, under its name: aligned with the name, past the grip and the medallion. An author's own line
+   breaks stay, and a long unbroken word wraps rather than widening the row. */
 .types__description {
   margin: var(--space-1) 0 0;
   padding-inline-start: calc(2.25rem + var(--space-3));
   font-size: var(--text-ui);
   color: var(--muted);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .types__head:has(.types__handle) ~ .types__description {

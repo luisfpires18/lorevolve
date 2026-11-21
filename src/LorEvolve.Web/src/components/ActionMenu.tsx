@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -79,6 +80,15 @@ export function ActionMenu({
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
+  const [fromStart, setFromStart] = useState(false)
+
+  // A row's tools wrap on a phone, so a menu may sit far from the row's end. When the panel pinned to the trigger's end
+  // would leave the screen, it opens from the trigger's start instead (`--start`), before it is painted. Only the
+  // trigger opens the menu, and it puts the side back first.
+  useLayoutEffect(() => {
+    const left = open ? panel.current?.getBoundingClientRect().left : undefined
+    if (left !== undefined && left < 0) setFromStart(true)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -157,7 +167,10 @@ export function ActionMenu({
         title={label}
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => setOpen((wasOpen) => !wasOpen)}
+        onClick={() => {
+          setFromStart(false)
+          setOpen((wasOpen) => !wasOpen)
+        }}
         data-testid={triggerTestId}
       >
         {trigger ?? <Ellipsis aria-hidden="true" focusable="false" strokeWidth={1.75} />}
@@ -165,7 +178,9 @@ export function ActionMenu({
 
       {open ? (
         <div
-          className={['actionmenu__panel', panelClassName].filter(Boolean).join(' ')}
+          className={['actionmenu__panel', fromStart && 'actionmenu__panel--start', panelClassName]
+            .filter(Boolean)
+            .join(' ')}
           id={panelId}
           ref={panel}
           onKeyDown={moveFocus}

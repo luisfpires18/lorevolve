@@ -3,6 +3,7 @@ import type { Chronology, ChronologyValue } from '../chronology/types'
 import { t, tn } from '../i18n'
 import { formatCount } from '../i18n/format'
 import { Visibility, type ContentPublicationState } from '../publishing/types'
+import type { Scene } from './types'
 
 /**
  * Where a scene happens in the world, written by the shared chronology formatter - or null when the
@@ -97,4 +98,9 @@ export function isStoryPublic(state: ContentPublicationState | null | undefined)
         state.universeIsPublic &&
         state.publicSummary !== null
     : null
+}
+
+/** Whether the scene has a date or a point of view, so its card knows SceneStamp draws something. */
+export function hasStamp(chronology: Chronology, scene: Scene) {
+  return Boolean(sceneWhen(chronology, scene.chronology) || scene.pov)
 }

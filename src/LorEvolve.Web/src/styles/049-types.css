@@ -171,7 +171,8 @@
 }
 
 @media (max-width: 640px) {
-  .types__handle {
+  /* Only a type's grip: a scene's lore keeps its grip, having no Up and Down to fall back on. */
+  .types__head .types__handle {
     display: none;
   }
 

@@ -34,6 +34,7 @@ const stories = {
     addChapter: 'Add chapter',
     moreActions: 'More actions for {label}',
     edit: 'Edit arc',
+    editLabel: 'Edit {label}',
     delete: 'Delete arc',
     empty:
       'No chapters in this arc yet. Add one with New chapter, or move one here: Edit chapter, then choose this arc, or Move to from the chapter’s ⋯ menu.',
@@ -48,6 +49,7 @@ const stories = {
     addScene: 'Add scene',
     moreActions: 'More actions for {label}',
     edit: 'Edit chapter',
+    editLabel: 'Edit {label}',
     moveOutOfArc: 'Move out of its arc',
     moveToArc: 'Move to {label}',
     delete: 'Delete chapter',
@@ -66,6 +68,7 @@ const stories = {
     moveTo: 'Move to {target}',
     addBeat: 'Add beat',
     delete: 'Delete scene',
+    when: 'When in the world',
     timelineLink: '{when}, on the story’s timeline',
     noPeriod: ' · no date period yet',
     pov: 'Point of view',

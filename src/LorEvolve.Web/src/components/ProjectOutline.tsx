@@ -13,10 +13,9 @@ import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
 /**
- * A project's outline, shaped by the rules its format has (#290): nested ordered lists, an Add button per level the
- * rules allow, order moved one place at a time like the seasons list, and one node edited at a time in a drawer. It is
- * drawn in the Stories look (#377): top nodes as arcs, nested groups as chapters, and a level with nothing under it as
- * scene cards.
+ * A project's outline, shaped by the rules its format has (#290): nested types lists, an Add button per level the
+ * rules allow, order moved one place at a time like the seasons list, and one node edited at a time in a drawer. Each
+ * node is a TypeRow (#456), as a story's arcs, chapters and scenes are; a node that holds others folds them.
  *
  * A project whose format has no rules gets a 404 from the tree read, and `legacy` is drawn instead, unchanged. A
  * formatted project that still has legacy rows shows them below, under "Earlier structure".

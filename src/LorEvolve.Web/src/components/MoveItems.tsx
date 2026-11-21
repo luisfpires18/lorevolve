@@ -65,7 +65,7 @@ interface ButtonLook extends MoveBase {
 
 /**
  * Move one item of an ordered list one place: Move up and Move down (or earlier and later) as
- * menu items, or as a pair of buttons beside the item. Drag handles stay `LoreReorderHandle` and
+ * menu items, or as a pair of buttons beside the item. Drag handles stay
  * `TypeReorderHandle`. Catalogue: `docs/design/ui-components.md`.
  */
 export function MoveItems(props: MenuLook | ButtonLook) {

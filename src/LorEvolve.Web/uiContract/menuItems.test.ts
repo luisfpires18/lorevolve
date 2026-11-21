@@ -26,7 +26,6 @@ const HAND_WRITTEN_ROW_MENUS = new Map<string, string>([
     'src/components/maps/MapHeader.tsx',
     'its panel carries panelTestId (map-actions-panel), which RowMenu does not take',
   ],
-  ['src/components/projects/ComicCollectionItem.tsx', 'Edit comes after the move and add items'],
   ['src/components/stories/StoryBar.tsx', 'Timeline and Suggest come before Edit'],
 ])
 

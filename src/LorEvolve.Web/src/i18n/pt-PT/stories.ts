@@ -36,6 +36,7 @@ const stories: Dictionary['stories'] = {
     addChapter: 'Adicionar capítulo',
     moreActions: 'Mais ações para {label}',
     edit: 'Editar arco',
+    editLabel: 'Editar {label}',
     delete: 'Eliminar arco',
     empty:
       'Ainda sem capítulos neste arco. Adiciona um com Novo capítulo, ou move um para aqui: Editar capítulo e depois escolhe este arco, ou Mover para no menu ⋯ do capítulo.',
@@ -50,6 +51,7 @@ const stories: Dictionary['stories'] = {
     addScene: 'Adicionar cena',
     moreActions: 'Mais ações para {label}',
     edit: 'Editar capítulo',
+    editLabel: 'Editar {label}',
     moveOutOfArc: 'Tirar do arco',
     moveToArc: 'Mover para {label}',
     delete: 'Eliminar capítulo',
@@ -68,6 +70,7 @@ const stories: Dictionary['stories'] = {
     moveTo: 'Mover para {target}',
     addBeat: 'Adicionar momento',
     delete: 'Eliminar cena',
+    when: 'Quando no universo',
     timelineLink: '{when}, na linha do tempo da história',
     noPeriod: ' · ainda sem período de datas',
     pov: 'Ponto de vista',

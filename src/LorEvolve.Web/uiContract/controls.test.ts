@@ -144,7 +144,7 @@ test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
       ...list('a strip of pictures', ['lore/EntryPicture']),
       ...list('the rich-text toolbar', ['LoreEditor']),
       ...list('the account menu', ['ThemeSwitch', 'LanguageSwitch']),
-      ...list('a drag handle', ['LoreReorderHandle', 'TypeReorderHandle']),
+      ...list('a drag handle', ['TypeReorderHandle']),
     ]),
     'use SegmentedControl, or ViewChips with button items',
   )
@@ -186,7 +186,6 @@ test('show and hide is DisclosureButton; the listed others own their aria-expand
       ]),
       ...list('a New button opening a form', ['ProjectEntries']),
       ...list('the outline switcher', ['ManuscriptParts']),
-      ...list('the shared fold', ['FoldToggle']),
       ...list('a tree branch', ['LoreCatalog']),
       ...list('a canvas node', ['familyTree/FamilyNode']),
       ...list("the rail's menu", ['universes/WorkspaceRail']),

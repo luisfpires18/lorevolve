@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom'
-import { ActionMenu, ActionMenuItem } from '../ActionMenu'
-import { MoveItems } from '../MoveItems'
-import { OutlineItem } from '../OutlineItem'
+import { ActionMenuItem } from '../ActionMenu'
+import { QuietNote } from '../QuietNote'
+import { TypeRow } from '../TypeRow'
+import { TypeRowActions } from '../TypeRowActions'
+import { useFold } from '../fold'
 import { t, useI18n } from '../../i18n'
 import { confirmDelete } from '../../lib/confirm'
 import { levelWord, nameOf } from '../../projectEntities/levelWords'
@@ -17,7 +18,7 @@ import {
 } from '../../projects/comicCollections'
 import type { Dispatch, SetStateAction } from 'react'
 import { WORDS } from '../../projects/comicCollectionWords'
-import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
+import { FolderInput } from 'lucide-react'
 
 /** One collection: its head and menu, and the entries in it with the way to move them. */
 export function ComicCollectionItem({
@@ -46,144 +47,165 @@ export function ComicCollectionItem({
   index: number
 }) {
   useI18n()
+  const { open, setOpen, ref, bodyId } = useFold<HTMLLIElement>(true)
+  const ends = { first: t('projects.common.alreadyFirst'), last: t('projects.common.alreadyLast') }
 
   return (
-    <OutlineItem
-      variant="group"
-      number={index + 1}
-      name={collection.name}
-      meta={t(WORDS[kind].eyebrow)}
-      summary={collection.summary}
+    <TypeRow
+      ref={ref}
       testId={`comic-collection-${collection.id}`}
-      foldLabel={collection.name}
-      tools={
-        canEdit ? (
-          <ActionMenu
-            label={t('projects.common.more', { name: collection.name })}
-            triggerTestId={`comic-collection-actions-${collection.id}`}
-          >
-            <MoveItems
-              first={index === 0}
-              last={index === ofKind.length - 1}
-              busy={busy}
-              testIds={{
-                up: `comic-collection-${collection.id}-up`,
-                down: `comic-collection-${collection.id}-down`,
-              }}
-              onMove={(step) =>
-                run(() => moveComicCollection(universeId, collection.id, index + step))
-              }
-            />
-            <ActionMenuItem
-              icon={Plus}
-              testId={`comic-collection-entry-new-${collection.id}`}
-              onClick={() => setAdding(collection)}
-            >
-              {t('projects.comics.addEntry')}
-            </ActionMenuItem>
-            <ActionMenuItem
-              icon={Pencil}
-              testId={`comic-collection-edit-${collection.id}`}
-              onClick={() => setEditing({ kind, collection })}
-            >
-              {t('projects.comics.edit')}
-            </ActionMenuItem>
-            <ActionMenuItem
-              icon={Trash}
-              tone="danger"
-              testId={`comic-collection-delete-${collection.id}`}
-              onClick={() =>
-                void confirmDelete(
-                  {
-                    title: t('projects.comics.deleteTitle', { name: collection.name }),
-                    message: t('projects.comics.deleteMessage'),
-                    confirmLabel: t('projects.comics.delete'),
-                  },
-                  () => deleteComicCollection(universeId, collection.id).then(refresh),
-                )
-              }
-            >
-              {t('projects.comics.delete')}
-            </ActionMenuItem>
-          </ActionMenu>
-        ) : null
+      name={collection.name}
+      // The heading reads as it always did, its number first: "1: Volume One".
+      heading={{ level: 3, prefix: index + 1 }}
+      count={t(WORDS[kind].eyebrow)}
+      actions={
+        <TypeRowActions
+          name={collection.name}
+          move={
+            canEdit
+              ? {
+                  isFirst: index === 0,
+                  isLast: index === ofKind.length - 1,
+                  busy,
+                  onMove: (direction) =>
+                    run(() =>
+                      moveComicCollection(
+                        universeId,
+                        collection.id,
+                        index + (direction === 'up' ? -1 : 1),
+                      ),
+                    ),
+                }
+              : undefined
+          }
+          moveTestIds={{
+            up: `comic-collection-${collection.id}-up`,
+            down: `comic-collection-${collection.id}-down`,
+          }}
+          addChild={
+            canEdit
+              ? {
+                  onAdd: () => setAdding(collection),
+                  testId: `comic-collection-entry-new-${collection.id}`,
+                }
+              : undefined
+          }
+          onEdit={canEdit ? () => setEditing({ kind, collection }) : undefined}
+          editTestId={`comic-collection-edit-${collection.id}`}
+          fold={{
+            open: open,
+            count: 0,
+            onToggle: () => setOpen(!open),
+            testId: `comic-collection-${collection.id}-toggle`,
+            controls: bodyId,
+            label: collection.name,
+          }}
+          words={{
+            addChild: t('projects.comics.addEntry'),
+            edit: t('projects.comics.edit'),
+            addChildLabel: t('projects.comics.addEntryLabel', { name: collection.name }),
+            editLabel: t('projects.comics.editLabel', { name: collection.name }),
+            more: t('projects.common.more', { name: collection.name }),
+            ...ends,
+          }}
+          onDelete={
+            canEdit
+              ? () =>
+                  void confirmDelete(
+                    {
+                      title: t('projects.comics.deleteTitle', { name: collection.name }),
+                      message: t('projects.comics.deleteMessage'),
+                      confirmLabel: t('projects.comics.delete'),
+                    },
+                    () => deleteComicCollection(universeId, collection.id).then(refresh),
+                  )
+              : undefined
+          }
+          deleteLabel={t('projects.comics.delete')}
+          deleteTestId={`comic-collection-delete-${collection.id}`}
+          menuTestId={`comic-collection-actions-${collection.id}`}
+        />
       }
     >
-      {collection.entries.length === 0 ? (
-        <p className="chapter__empty">{t('projects.comics.noEntries')}</p>
-      ) : (
-        <ol className="scenes">
-          {collection.entries.map((entry, entryIndex) => {
-            const id = `${collection.id}-${entry.nodeId}`
-            return (
-              <OutlineItem
-                key={entry.nodeId}
-                variant="card"
-                number={entryIndex + 1}
-                titleLevel={4}
-                name={
-                  entry.available ? (
-                    <Link
-                      to={`${projectPath(entry.projectId, 'structure', universeId)}?node=${entry.nodeId}`}
-                      data-testid={`comic-entry-link-${id}`}
-                    >
-                      {nameOf(entry)}
-                    </Link>
-                  ) : (
-                    t('projects.comics.unavailable')
-                  )
-                }
-                meta={
-                  entry.available ? (
-                    <>
-                      <bdi>{entry.projectName}</bdi> · {levelWord(entry.level)}
-                    </>
-                  ) : null
-                }
-                testId={`comic-entry-${id}`}
-                foldLabel={nameOf(entry)}
-                tools={
-                  canEdit ? (
-                    <ActionMenu
-                      label={t('projects.common.more', { name: nameOf(entry) })}
-                      triggerTestId={`comic-entry-actions-${id}`}
-                    >
-                      {entry.available ? (
-                        <MoveItems
-                          first={entryIndex === 0}
-                          last={entryIndex === collection.entries.length - 1}
-                          busy={busy}
-                          testIds={{ up: `comic-entry-${id}-up`, down: `comic-entry-${id}-down` }}
-                          onMove={(step) =>
-                            run(() =>
-                              moveComicEntry(
-                                universeId,
-                                collection.id,
-                                entry.nodeId,
-                                entryIndex + step,
-                              ),
-                            )
-                          }
-                        />
-                      ) : null}
-                      <ActionMenuItem
-                        icon={FolderInput}
-                        disabled={busy}
-                        testId={`comic-entry-remove-${id}`}
-                        onClick={() =>
-                          run(() => removeComicEntry(universeId, collection.id, entry.nodeId))
+      <div id={bodyId} hidden={!open} data-fold={bodyId}>
+        {collection.summary ? (
+          <p className="types__description prose">{collection.summary}</p>
+        ) : null}
+        {collection.entries.length === 0 ? (
+          <QuietNote spacing="flush">{t('projects.comics.noEntries')}</QuietNote>
+        ) : (
+          <ul className="types__list">
+            {collection.entries.map((entry, entryIndex) => {
+              const id = `${collection.id}-${entry.nodeId}`
+              return (
+                <TypeRow
+                  key={entry.nodeId}
+                  testId={`comic-entry-${id}`}
+                  name={entry.available ? nameOf(entry) : t('projects.comics.unavailable')}
+                  to={
+                    entry.available
+                      ? `${projectPath(entry.projectId, 'structure', universeId)}?node=${entry.nodeId}`
+                      : undefined
+                  }
+                  linkTestId={`comic-entry-link-${id}`}
+                  heading={{ level: 4 }}
+                  lead={<span aria-hidden="true">{entryIndex + 1}</span>}
+                  count={
+                    entry.available ? (
+                      <>
+                        <bdi>{entry.projectName}</bdi> · {levelWord(entry.level)}
+                      </>
+                    ) : undefined
+                  }
+                  actions={
+                    canEdit ? (
+                      <TypeRowActions
+                        name={nameOf(entry)}
+                        move={
+                          entry.available
+                            ? {
+                                isFirst: entryIndex === 0,
+                                isLast: entryIndex === collection.entries.length - 1,
+                                busy,
+                                onMove: (direction) =>
+                                  run(() =>
+                                    moveComicEntry(
+                                      universeId,
+                                      collection.id,
+                                      entry.nodeId,
+                                      entryIndex + (direction === 'up' ? -1 : 1),
+                                    ),
+                                  ),
+                              }
+                            : undefined
                         }
-                      >
-                        {t('projects.comics.remove')}
-                      </ActionMenuItem>
-                    </ActionMenu>
-                  ) : null
-                }
-              />
-            )
-          })}
-        </ol>
-      )}
-    </OutlineItem>
+                        moveTestIds={{ up: `comic-entry-${id}-up`, down: `comic-entry-${id}-down` }}
+                        words={{
+                          more: t('projects.common.more', { name: nameOf(entry) }),
+                          ...ends,
+                        }}
+                        menuItems={
+                          <ActionMenuItem
+                            icon={FolderInput}
+                            disabled={busy}
+                            testId={`comic-entry-remove-${id}`}
+                            onClick={() =>
+                              run(() => removeComicEntry(universeId, collection.id, entry.nodeId))
+                            }
+                          >
+                            {t('projects.comics.remove')}
+                          </ActionMenuItem>
+                        }
+                        menuTestId={`comic-entry-actions-${id}`}
+                      />
+                    ) : undefined
+                  }
+                />
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </TypeRow>
   )
 }

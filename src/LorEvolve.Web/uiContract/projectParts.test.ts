@@ -87,21 +87,16 @@ function projectComponents(): string[] {
 
 // The project components today. A new one is refused (extend a Lore, Types or shared part instead); a deleted one is
 // taken off. Stage 10a took off TemplateFields, SchemaTypeFields and FieldForm; stage 10b ProjectCard, Production and
-// SagasUnassigned.
+// SagasUnassigned; stage 11a OutlineItem, ArcSection, ChapterSection, FoldToggle, LoreReference and LoreReorderHandle.
 const PROJECT_COMPONENTS: string[] = [
-  'src/components/ArcSection.tsx',
   'src/components/ChapterForm.tsx',
   'src/components/ChapterPages.tsx',
-  'src/components/ChapterSection.tsx',
   'src/components/CinemaSagas.tsx',
   'src/components/ComicCollections.tsx',
   'src/components/ComicPageEditor.tsx',
   'src/components/ContainerName.tsx',
   'src/components/CoverDrawer.tsx',
-  'src/components/FoldToggle.tsx',
   'src/components/LoreContext.tsx',
-  'src/components/LoreReference.tsx',
-  'src/components/LoreReorderHandle.tsx',
   'src/components/ManuscriptEditor.tsx',
   'src/components/ManuscriptHistory.tsx',
   'src/components/ManuscriptPanel.tsx',
@@ -111,7 +106,6 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/MentionSuggestions.tsx',
   'src/components/NameLinker.tsx',
   'src/components/NameSummaryDrawer.tsx',
-  'src/components/OutlineItem.tsx',
   'src/components/PickOneDrawer.tsx',
   'src/components/PlotArcForm.tsx',
   'src/components/ProjectEntitiesView.tsx',
@@ -239,5 +233,36 @@ test('a project delete asks through confirmDelete', () => {
       .filter((file) => asksDestructiveByHand(read(file))),
     [],
     'use confirmDelete from lib/confirm.ts',
+  )
+})
+
+const writesStoryOutline = (source: string) =>
+  tokens(source).some(
+    (token) =>
+      /^scenes?(__|--|$)/.test(token) ||
+      token.startsWith('chapter__') ||
+      token.startsWith('foldtoggle') ||
+      token.startsWith('lorechip'),
+  )
+
+// A story's arcs, chapters and scenes, a project's outline and the comic collections are TypeRows in a types list, their
+// facts a FactList and their lore EntityRows (#456 P7): no project file draws the old outline parts again.
+test('the story outline is TypeRow, FactList and EntityRow', () => {
+  assert.ok(writesStoryOutline('<ol className="scenes">'))
+  assert.ok(writesStoryOutline('<li className="scene">'))
+  assert.ok(writesStoryOutline('<p className="scene__summary prose">'))
+  assert.ok(writesStoryOutline('<div className={`scene__refs scene__refs--${kind}`}>'))
+  assert.ok(writesStoryOutline('<span className={`chapter__${part}`}>'))
+  assert.ok(writesStoryOutline("<button className={open ? 'foldtoggle' : 'foldtoggle'}>"))
+  assert.ok(writesStoryOutline('<a className={`lorechip ${extra}`}>'))
+  assert.ok(writesStoryOutline('<span className="lorechip__note">'))
+  assert.ok(!writesStoryOutline('<ul className="types__list">'))
+  assert.ok(!writesStoryOutline('<li className="relation">'))
+  assert.ok(!writesStoryOutline('<p className="scenery">'))
+  assert.ok(!writesStoryOutline('<div className="chapterlist">'))
+  assert.deepEqual(
+    projectFiles().filter((file) => writesStoryOutline(read(file))),
+    [],
+    'draw an outline row with TypeRow and TypeRowActions, its facts with FactList, its lore with EntityRow',
   )
 })
