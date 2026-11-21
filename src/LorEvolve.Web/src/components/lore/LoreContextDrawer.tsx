@@ -7,7 +7,6 @@ import { useLoreContextLinks } from '../../lore/useLoreContextLinks'
 import { LoreContextRow } from './LoreContextRow'
 import { LoreContextMentioned } from './LoreContextMentioned'
 import { LorePreview } from './LorePreview'
-import { FormActions } from '../FormActions'
 import { Announce } from '../Announce'
 import { SearchField } from '../SearchField'
 import { FormMessage } from '../FormMessage'
@@ -111,9 +110,7 @@ export function LoreContextDrawer({
       // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
       busy={busy !== null}
       onClose={onClose}
-      actions={(close) => (
-        <FormActions onCancel={close} dismiss="close" cancelTestId="lore-context-close" />
-      )}
+      closeTestId="lore-context-close"
     >
       {message ? <FormMessage testId="lore-context-error">{message}</FormMessage> : null}
 
