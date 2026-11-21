@@ -41,7 +41,7 @@ a.idearef__name {
   flex: none;
 }
 
-/* A saved record's save bar (EditorSaveBar `record`) holds to the bottom of the screen, as the manuscript's does. */
+/* A saved record's save bar (SaveBar `record`) holds to the bottom of the screen, as the manuscript's does. */
 .editorbar {
   background: var(--raised);
 }
