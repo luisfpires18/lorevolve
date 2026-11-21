@@ -148,10 +148,6 @@
   margin-top: 0.5rem;
 }
 
-.manuscript__context .scene__stamp {
-  margin: 0;
-}
-
 /* A tool's shorter label, drawn only where the whole one would push the row onto a second line. */
 .manuscript__toolshort {
   display: none;

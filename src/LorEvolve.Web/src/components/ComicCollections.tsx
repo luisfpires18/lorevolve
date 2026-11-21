@@ -90,7 +90,7 @@ export function ComicCollections({
             {ofKind.length === 0 ? (
               <QuietNote spacing="flush">{t(WORDS[kind].none)}</QuietNote>
             ) : (
-              <ol className="scenes">
+              <ul className="types__list">
                 {ofKind.map((collection, index) => (
                   <ComicCollectionItem
                     key={collection.id}
@@ -107,7 +107,7 @@ export function ComicCollections({
                     index={index}
                   />
                 ))}
-              </ol>
+              </ul>
             )}
           </Section>
         )

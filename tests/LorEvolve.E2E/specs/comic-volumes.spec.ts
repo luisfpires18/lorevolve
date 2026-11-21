@@ -59,7 +59,6 @@ async function collection(page: Page, kind: string, name: string) {
 }
 
 async function add(page: Page, collectionId: string, label: string) {
-  await page.getByTestId(`comic-collection-actions-${collectionId}`).click()
   await page.getByTestId(`comic-collection-entry-new-${collectionId}`).click()
   await page.getByTestId('comic-entry-drawer-node').selectOption({ label })
   await page.getByTestId('comic-entry-drawer-save').click()
@@ -83,7 +82,6 @@ test('a volume collects the chapters of a manga in an order that persists and le
   await expect(page.getByTestId('comic-collections')).toBeVisible()
   const volume = await collection(page, 'volume', 'Volume')
 
-  await page.getByTestId(`comic-collection-actions-${volume}`).click()
   await page.getByTestId(`comic-collection-edit-${volume}`).click()
   await page.getByTestId('comic-collection-drawer-name').fill('First volume')
   await page.getByTestId('comic-collection-drawer-save').click()
@@ -100,12 +98,10 @@ test('a volume collects the chapters of a manga in an order that persists and le
   await page.reload()
   await expect(entries).toHaveText([/Chapter two/, /Chapter one/])
 
-  // A volume reads as a story's chapter and its entries as scene cards, under the outline on the same page (#377).
+  // A volume and its entries are Types rows, under the outline on the same page (#456).
   await expect(page.getByTestId('project-outline')).toBeVisible()
-  await expect(
-    page.getByTestId(`comic-collection-${volume}`).locator(':scope > section.chapter'),
-  ).toBeVisible()
-  await expect(entries.first()).toHaveClass(/\bscene\b/)
+  await expect(page.getByTestId(`comic-collection-${volume}-toggle`)).toBeVisible()
+  await expect(entries.first()).toHaveClass(/\btypes__row\b/)
 
   await page.getByTestId(`comic-entry-actions-${volume}-${one}`).click()
   await page.getByTestId(`comic-entry-remove-${volume}-${one}`).click()

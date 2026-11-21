@@ -7,8 +7,8 @@ type NativeButtonProps = Extract<ButtonProps, { to?: never }>
 /**
  * A button that shows and hides a region: `aria-expanded` and `aria-controls` always together,
  * and the words swap with the state (View and Hide unless the caller says otherwise). Every other
- * `Button` prop passes through. Not a New that opens a form (`NewButton`) and not a section fold
- * (`FoldToggle`). Catalogue: `docs/design/ui-components.md`.
+ * `Button` prop passes through. Not a New that opens a form (`NewButton`) and not a type row's fold
+ * (`TypeRowActions fold`). Catalogue: `docs/design/ui-components.md`.
  */
 export function DisclosureButton({
   expanded,

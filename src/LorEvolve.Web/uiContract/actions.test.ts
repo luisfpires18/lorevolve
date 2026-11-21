@@ -28,7 +28,6 @@ const PLUS_IMPORTERS = new Set([
   'src/components/LoreFieldFilters.tsx',
   'src/components/ProjectEntitiesView.tsx',
   'src/components/worldLogic/MachineStateCard.tsx',
-  'src/components/projects/ComicCollectionItem.tsx',
 ])
 
 const writesFormActions = (source: string) =>

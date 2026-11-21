@@ -679,9 +679,9 @@ test.describe('stories', () => {
     const menu = chapter(page, 'Three').getByRole('button', {
       name: 'More actions for Chapter 3: Three',
     })
+    // Edit sits on the row (#456), so the menu opens on Move up.
     await menu.focus()
     await page.keyboard.press('Enter')
-    await page.keyboard.press('ArrowDown')
     await expect
       .poll(() => focused(page))
       .toMatchObject({ control: 'chapter-move-up', chapter: 'Three' })
@@ -697,7 +697,6 @@ test.describe('stories', () => {
       .toMatchObject({ control: 'chapter-actions', chapter: 'Three' })
 
     await page.keyboard.press('Enter')
-    await page.keyboard.press('ArrowDown')
     await saveAndAnnounce(
       page,
       '/chapters/order',
