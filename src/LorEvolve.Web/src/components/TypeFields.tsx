@@ -7,7 +7,7 @@ import { groupBySection } from '../lore/fieldSections'
 import { typeFieldLabels } from '../lore/typeFieldLabels'
 import { typeFieldActions } from '../lore/typeFieldActions'
 import { FieldDialog } from './lore/FieldDialog'
-import { TypeFieldRow } from './lore/TypeFieldRow'
+import { FieldList, FieldsPanel } from './lore/FieldsPanel'
 import { InheritedFields } from './lore/InheritedFields'
 import { TypeFieldTools } from './lore/TypeFieldTools'
 import { ArchivedFields } from './lore/ArchivedFields'
@@ -104,7 +104,7 @@ export function TypeFields({
   }
 
   return (
-    <div id={id} className="types__fields" data-testid={`type-fields-${type.name}`}>
+    <FieldsPanel id={id} testId={`type-fields-${type.name}`}>
       {message ? <FormMessage testId="fields-error">{message}</FormMessage> : null}
 
       <InheritedFields type={type} inherited={inherited} summary={summary} />
@@ -116,23 +116,17 @@ export function TypeFields({
             : t('entityTypes.fields.empty')}
         </QuietNote>
       ) : sections.length === 0 ? (
-        <ul
-          className="plainlist stack"
-          aria-label={t('entityTypes.fields.listLabel', { name: type.name })}
-        >
-          {type.fields.map((field) => (
-            <TypeFieldRow key={field.id} field={field} {...row} />
-          ))}
-        </ul>
+        <FieldList
+          fields={type.fields}
+          label={t('entityTypes.fields.listLabel', { name: type.name })}
+          {...row}
+        />
       ) : layout.ungrouped.length > 0 ? (
-        <ul
-          className="plainlist stack"
-          aria-label={t('entityTypes.fields.listNoSectionLabel', { name: type.name })}
-        >
-          {layout.ungrouped.map((field) => (
-            <TypeFieldRow key={field.id} field={field} {...row} />
-          ))}
-        </ul>
+        <FieldList
+          fields={layout.ungrouped}
+          label={t('entityTypes.fields.listNoSectionLabel', { name: type.name })}
+          {...row}
+        />
       ) : null}
 
       {layout.groups.map(({ section, items }) => (
@@ -144,17 +138,14 @@ export function TypeFields({
             ) : null}
           </p>
           {items.length > 0 ? (
-            <ul
-              className="plainlist stack"
-              aria-label={t('entityTypes.fields.sectionListLabel', {
+            <FieldList
+              fields={items}
+              label={t('entityTypes.fields.sectionListLabel', {
                 section: section.name,
                 type: type.name,
               })}
-            >
-              {items.map((field) => (
-                <TypeFieldRow key={field.id} field={field} {...row} />
-              ))}
-            </ul>
+              {...row}
+            />
           ) : (
             <QuietNote spacing="block">{t('entityTypes.fields.sectionEmpty')}</QuietNote>
           )}
@@ -231,6 +222,6 @@ export function TypeFields({
           }}
         />
       ) : null}
-    </div>
+    </FieldsPanel>
   )
 }

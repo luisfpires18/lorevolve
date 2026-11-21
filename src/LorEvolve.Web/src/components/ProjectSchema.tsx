@@ -1,6 +1,7 @@
 import type { CrumbItem } from './Crumb'
 import { Section } from './Section'
 import { applyProjectTemplate, createProjectType, saveProjectType } from '../projectEntities/api'
+import { typeInput } from '../projectEntities/fieldDefinition'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
 import { TypeFromTemplateDrawer } from './TypeFromTemplateDrawer'
@@ -118,21 +119,8 @@ export function ProjectSchema({
           parentHint={t('projects.schema.parentHint')}
           write={(values) =>
             editing === 'new'
-              ? createProjectType(projectId, {
-                  name: values.name,
-                  description: null,
-                  icon: values.icon,
-                  accentColor: null,
-                  parentId: values.parentId,
-                })
-              : // The route replaces the whole type: what the drawer does not edit goes back as it is stored.
-                saveProjectType(projectId, editing.id, {
-                  name: values.name,
-                  description: editing.description,
-                  icon: values.icon,
-                  accentColor: editing.accentColor,
-                  parentId: values.parentId,
-                })
+              ? createProjectType(projectId, typeInput(values, null))
+              : saveProjectType(projectId, editing.id, typeInput(values, editing))
           }
           onClose={() => setEditing(null)}
           onSaved={async () => {

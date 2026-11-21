@@ -10,6 +10,7 @@ import type { TypeTemplate } from '../typeTemplates/types'
 import { buildTypeTree, type TreeType } from '../lore/typeTree'
 import { useLoadedList } from '../lib/useLoadedList'
 import { confirmDelete } from '../lib/confirm'
+import { typeInput } from '../projectEntities/fieldDefinition'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
 import { t, useI18n } from '../i18n'
@@ -80,21 +81,8 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
           nameHint={t('entityTypes.page.templates.nameHint')}
           write={(values) =>
             editing === 'new'
-              ? createTypeTemplate(universeId, {
-                  name: values.name,
-                  description: null,
-                  icon: values.icon,
-                  accentColor: null,
-                  parentId: null,
-                })
-              : // The route replaces the whole template: what the drawer does not edit goes back as stored.
-                saveTypeTemplate(universeId, editing.id, {
-                  name: values.name,
-                  description: editing.description,
-                  icon: values.icon,
-                  accentColor: editing.accentColor,
-                  parentId: null,
-                })
+              ? createTypeTemplate(universeId, typeInput(values, null))
+              : saveTypeTemplate(universeId, editing.id, typeInput(values, editing))
           }
           onClose={() => setEditing(null)}
           onSaved={async () => {

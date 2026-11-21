@@ -1,16 +1,9 @@
-import { useId, useState } from 'react'
+import { useId } from 'react'
 import { addTemplateField, deleteTemplateField, saveTemplateField } from '../../typeTemplates/api'
 import type { TypeTemplate } from '../../typeTemplates/types'
-import { asFieldDefinition, PROJECT_FIELD_KINDS } from '../../projectEntities/fieldDefinition'
-import type { FieldDefinition } from '../../lore/typeDefinitions'
-import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
-import { confirmDelete } from '../../lib/confirm'
 import { TypeRow } from '../TypeRow'
 import { TypeRowActions } from '../TypeRowActions'
-import { TypeFieldRow } from '../lore/TypeFieldRow'
-import { FieldDialog } from '../lore/FieldDialog'
-import { NewButton } from '../NewButton'
-import { QuietNote } from '../QuietNote'
+import { PlainFieldsPanel } from '../lore/FieldsPanel'
 import { t } from '../../i18n'
 import { TagList } from '../TagList'
 
@@ -44,21 +37,6 @@ export function TemplateRow({
   remove: (template: TypeTemplate) => Promise<void>
 }) {
   const fieldsId = useId()
-  // The field drawer: a field being edited, or 'new'.
-  const [field, setField] = useState<FieldDefinition | 'new' | null>(null)
-
-  function removeField(each: FieldDefinition) {
-    return confirmDelete(
-      {
-        title: t('entityTypes.fields.deleteTitle', { name: each.name }),
-        message: t('entityTypes.fields.deleteMessage'),
-        confirmLabel: t('entityTypes.fields.deleteConfirm'),
-      },
-      () => deleteTemplateField(universeId, template.id, each.id).then(refresh),
-      { setBusy, fail: failing },
-    )
-  }
-
   return (
     <TypeRow
       name={template.name}
@@ -87,58 +65,25 @@ export function TemplateRow({
       }
     >
       {openId === template.id ? (
-        <div
+        <PlainFieldsPanel
           id={fieldsId}
-          className="types__fields"
-          data-testid={`template-fields-panel-${template.id}`}
-        >
-          {template.fields.length === 0 ? (
-            <QuietNote spacing="flush">{t('projects.schema.noFields')}</QuietNote>
-          ) : (
-            <ul className="plainlist stack" data-testid={`template-fields-${template.id}`}>
-              {template.fields.map((each) => (
-                <TypeFieldRow
-                  key={each.id}
-                  field={asFieldDefinition(each)}
-                  canEdit={canEdit}
-                  busy={busy}
-                  summary={(row) => FIELD_KIND_LABELS[row.kind]}
-                  setEditing={setField}
-                  remove={removeField}
-                />
-              ))}
-            </ul>
-          )}
-
-          {canEdit ? (
-            <NewButton
-              tone="secondary"
-              size="sm"
-              data-testid={`template-field-add-${template.id}`}
-              onClick={() => setField('new')}
-            >
-              {t('projects.schema.addField')}
-            </NewButton>
-          ) : null}
-
-          {field ? (
-            <FieldDialog
-              field={field === 'new' ? null : field}
-              owner={template.name}
-              kinds={PROJECT_FIELD_KINDS}
-              save={(input) =>
-                field === 'new'
-                  ? addTemplateField(universeId, template.id, input)
-                  : saveTemplateField(universeId, template.id, field.id, input)
-              }
-              onClose={() => setField(null)}
-              onSaved={async () => {
-                setField(null)
-                refresh()
-              }}
-            />
-          ) : null}
-        </div>
+          testIds={{
+            panel: `template-fields-panel-${template.id}`,
+            list: `template-fields-${template.id}`,
+            add: `template-field-add-${template.id}`,
+          }}
+          owner={template.name}
+          fields={template.fields}
+          canEdit={canEdit}
+          busy={busy}
+          setBusy={setBusy}
+          failing={failing}
+          refresh={refresh}
+          deleteMessage={t('entityTypes.fields.deleteMessage')}
+          add={(input) => addTemplateField(universeId, template.id, input)}
+          save={(fieldId, input) => saveTemplateField(universeId, template.id, fieldId, input)}
+          remove={(fieldId) => deleteTemplateField(universeId, template.id, fieldId)}
+        />
       ) : null}
     </TypeRow>
   )

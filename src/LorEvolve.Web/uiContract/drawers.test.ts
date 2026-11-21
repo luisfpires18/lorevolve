@@ -244,9 +244,12 @@ test('the Cinema and Comic drawers are the shared drawer forms', () => {
 test('every delete asks first', () => {
   // `trashActions.tsx` and `universeSettingsActions.ts` ask inline (#255); the three picture controls
   // only bind the call, which `lib/usePictureFraming.ts` asks before making.
+  // A project type's and a template's field delete is passed to `PlainFieldsPanel`, which asks through `confirmDelete`.
   const ASKED_ELSEWHERE = [
     'src/components/EntityImageField.tsx',
     'src/components/FieldImageInput.tsx',
+    'src/components/projectEntities/SchemaTypeItem.tsx',
+    'src/components/typeTemplates/TemplateRow.tsx',
     'src/components/UniverseArtworkField.tsx',
     'src/trash/trashActions.tsx',
     'src/universes/universeSettingsActions.ts',
