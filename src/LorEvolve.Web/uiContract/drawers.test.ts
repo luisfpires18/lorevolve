@@ -1,7 +1,7 @@
 // Run with `node --test uiContract/drawers.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps drawers and editors on their shared parts (#416): useSaveShortcut for Ctrl or Cmd + S, Drawer
-// for the focus and the save lock, useDrawerGuard for a hand-made dialog, StaleChoice for a save
+// for the focus and the save lock, Drawer's own footer (Save and Cancel, or Close) and message line, useDrawerGuard for a hand-made dialog, StaleChoice for a save
 // refused as stale, useDiscardGuard for an inline form's guard, useLoadedList for a list read with
 // changes, NameSummaryDrawer and PickOneDrawer for the two shared drawer forms, and a confirm before
 // every delete. Each list below only shrinks, and a stale entry fails. Catalogue:
@@ -58,6 +58,12 @@ const ownsDrawerFocus = (source: string) =>
 const unlockedDrawers = (source: string) =>
   elements(source, 'Drawer').filter(({ tag }) => /\bonSubmit=/.test(tag) && !/\bbusy=/.test(tag))
 
+// 3b. A drawer's footer is Drawer's own: `actions` as an object, or absent for Close.
+const handFooter = (source: string) =>
+  elements(source, 'Drawer').some(({ tag }) =>
+    /\bactions=\{\(\w*\) => \(?\s*<FormActions\b/.test(tag),
+  )
+
 // 4. A hand-made dialog routes Escape and cancel through the guard.
 const handDialog = (source: string) => /<dialog[\s>]/.test(source)
 const inlineCancel = (source: string) =>
@@ -101,6 +107,10 @@ test('the drawer guards fail on a bad snippet and pass a good one', () => {
 
   assert.equal(unlockedDrawers('<Drawer onSubmit={save} title={t}>x</Drawer>').length, 1)
   assert.equal(unlockedDrawers('<Drawer onSubmit={save} busy={saving}>x</Drawer>').length, 0)
+
+  assert.ok(handFooter('<Drawer testId="x" actions={(close) => <FormActions onCancel={close} />}>'))
+  assert.ok(!handFooter('<Drawer testId="x" closeTestId="x-close">'))
+  assert.ok(!handFooter('<Drawer testId="x" actions={{ submitLabel: \'Save\' }}>'))
 
   assert.ok(inlineCancel('<dialog onCancel={(event) => event.preventDefault()}>'))
   assert.ok(!inlineCancel('<dialog onCancel={dialogProps.onCancel}>'))
@@ -163,6 +173,23 @@ test('a drawer that submits locks while it saves', () => {
     LOCAL,
     'A submitting Drawer without busy',
   )
+})
+
+test("a drawer's footer is Drawer's own", () => {
+  const HAND_FOOTERS = [
+    // Next batch (B2 of #456): the same pure move.
+    'src/components/FamilyKindDialog.tsx',
+    'src/components/FieldSectionsDialog.tsx',
+    'src/components/LoreEditor.tsx',
+    'src/components/MapPinForm.tsx',
+    'src/components/TypeDialog.tsx',
+    'src/components/lore/FieldDialog.tsx',
+    // Its message takes the focus after a refused save.
+    'src/components/QuickCreateDialog.tsx',
+    // The drawer is busy for panels too, the submit only for its own save.
+    'src/components/projectEntities/NodeEditor.tsx',
+  ]
+  onlyIn(filesMatching(handFooter), HAND_FOOTERS, 'A Drawer footer written by hand')
 })
 
 test('a hand-made dialog uses useDrawerGuard', () => {
