@@ -108,16 +108,24 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
   const [app, setApp] = useState(listed)
   const [stopped, setStopped] = useState(false)
   const [confirming, setConfirming] = useState(false)
-  // Two saves with their own busy state; the row shows one error, and starting either clears both.
+  // Two saves with their own busy state that may overlap. The row shows one error, as one shared line did: starting
+  // either clears it, and the save that failed last is the one shown.
+  const [failedLast, setFailedLast] = useState<'removal' | 'reader'>('removal')
   const removal = useFormSave({
     needChange: null,
     failed: '',
-    refusal: () => t('data.connectedApps.disconnectFailed'),
+    refusal: () => {
+      setFailedLast('removal')
+      return t('data.connectedApps.disconnectFailed')
+    },
   })
   const reader = useFormSave({
     needChange: null,
     failed: '',
-    refusal: () => t('data.connectedApps.readerFailed'),
+    refusal: () => {
+      setFailedLast('reader')
+      return t('data.connectedApps.readerFailed')
+    },
   })
   const busy = removal.isSaving
   const stopping = reader.isSaving
@@ -241,7 +249,7 @@ function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemo
             }
           : null
       }
-      error={removal.message ?? reader.message}
+      error={failedLast === 'reader' ? reader.message : removal.message}
       errorClassName="connectedapps__error"
     >
       {stopped ? (
