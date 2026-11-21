@@ -1,17 +1,11 @@
-import { useCallback, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { WorldRuleEditor } from '../components/WorldRuleEditor'
-import { t, tx, useI18n } from '../i18n'
+import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { getWorldRule } from '../worldRules/api'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import type { WorldRulesListNotice } from './WorldRulesPage'
-import { ReadGate } from '../components/ReadGate'
-import { useAsyncRead } from '../lib/useAsyncRead'
-import { EmptyState } from '../components/EmptyState'
-import { DocumentHead } from '../components/DocumentHead'
-import { DateText } from '../components/DateText'
-import { Callout } from '../components/Callout'
+import { WorldRuleReading } from '../components/worldRules/WorldRuleReading'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -63,58 +57,5 @@ export default function WorldRulePage({ isNew = false }: { isNew?: boolean }) {
         void navigate(listPath, { state: { deleted: rule } satisfies WorldRulesListNotice })
       }
     />
-  )
-}
-
-function WorldRuleReading({
-  universeId,
-  ruleId,
-  listPath,
-}: {
-  universeId: string
-  ruleId: string
-  listPath: string
-}) {
-  useI18n() // re-renders when the language changes
-  const read = useCallback(
-    (signal: AbortSignal) => getWorldRule(universeId, ruleId, signal),
-    [universeId, ruleId],
-  )
-  const { load: state, retry } = useAsyncRead(read, {
-    missing: true,
-    failed: t('canon.rule.readFailed'),
-  })
-
-  return (
-    <article className="rule" data-testid="world-rule-reading">
-      <DocumentHead
-        back={{ to: listPath, label: t('canon.rule.back'), testId: 'world-rule-back' }}
-        title={state.kind === 'ready' ? <bdi>{state.value.title}</bdi> : t('canon.rule.heading')}
-        titleTestId="world-rule-heading"
-      />
-      <ReadGate
-        load={state}
-        loading={{ text: t('canon.rule.opening') }}
-        error={{ onRetry: retry, retryLabel: t('canon.rule.retry') }}
-        missing={<EmptyState title={t('canon.rule.missing')} testId="world-rule-missing" />}
-      >
-        {(rule) => (
-          <>
-            {rule.description ? (
-              <p className="rule__reading prose" data-testid="world-rule-text">
-                {rule.description}
-              </p>
-            ) : (
-              <Callout look="notice" as="p">
-                {t('canon.rule.noDescription')}
-              </Callout>
-            )}
-            <p className="rule__meta">
-              {tx('canon.rule.lastChanged', { date: <DateText value={rule.updatedAt} /> })}
-            </p>
-          </>
-        )}
-      </ReadGate>
-    </article>
   )
 }

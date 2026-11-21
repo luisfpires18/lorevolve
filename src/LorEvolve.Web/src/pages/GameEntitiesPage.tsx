@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Section } from '../components/Section'
-import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
-import { EmptyState } from '../components/EmptyState'
+import { useLocation, useOutletContext, useParams } from 'react-router-dom'
+import { MissingState } from '../components/MissingState'
 import { Crumb } from '../components/Crumb'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
@@ -50,14 +50,13 @@ export default function GameEntitiesPage() {
       {(project) =>
         // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
         project === null ? (
-          <EmptyState
+          <MissingState
             title={t('projects.gameEntities.notFound')}
             hint={t('projects.gameEntities.notFoundHint')}
-            action={
-              <Link to={back.to} data-testid={back.testId}>
-                {back.label}
-              </Link>
-            }
+            backTo={back.to}
+            backLabel={back.label}
+            backTestId={back.testId}
+            backIn="action"
             testId="game-entities-missing"
           />
         ) : (

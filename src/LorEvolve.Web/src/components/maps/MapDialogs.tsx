@@ -36,22 +36,11 @@ export function MapDialogs({
         />
       ) : null}
 
-      {dialog === 'details' ? (
+      {dialog ? (
+        // Keyed by mode: switching between the two forms starts the other one fresh, as two branches did.
         <MapForm
-          mode="details"
-          universeId={universe.id}
-          map={map}
-          onClose={() => setDialog(null)}
-          onSaved={(saved) => {
-            setDialog(null)
-            replaceMap(saved)
-          }}
-        />
-      ) : null}
-
-      {dialog === 'replace' ? (
-        <MapForm
-          mode="replace"
+          key={dialog}
+          mode={dialog}
           universeId={universe.id}
           map={map}
           onClose={() => setDialog(null)}

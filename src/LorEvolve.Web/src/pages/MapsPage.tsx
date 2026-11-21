@@ -1,5 +1,5 @@
 import { useCallback, useId, useState } from 'react'
-import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
+import { useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { MapForm } from '../components/MapForm'
 import { Quoted } from '../components/NameList'
@@ -7,7 +7,7 @@ import { PageHeader } from '../components/PageHeader'
 import { QueryTabList, TabPanel } from '../components/QueryTabs'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { useQueryTab, type QueryTab } from '../lib/queryTab'
-import { listMaps, mapImageUrl, mapPath } from '../maps/api'
+import { listMaps, mapPath } from '../maps/api'
 import { useUniverseAccess } from '../universes/access'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
@@ -15,7 +15,7 @@ import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
 import { Callout } from '../components/Callout'
 import { CardGrid } from '../components/CardGrid'
-import { QuietNote } from '../components/QuietNote'
+import { MapCard } from '../components/maps/MapCard'
 
 type MapsTab = 'maps' | 'interactive'
 
@@ -30,7 +30,7 @@ export interface MapsListNotice {
  * that is not the author's own picture.
  */
 export default function MapsPage() {
-  const { t, tn, tx } = useI18n()
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const navigate = useNavigate()
@@ -93,47 +93,7 @@ export default function MapsPage() {
             maps.length > 0 ? (
               <CardGrid min={16} gap={5} className="maps__list" testId="map-list">
                 {maps.map((map) => (
-                  <li
-                    className="mapcard"
-                    key={map.id}
-                    data-testid="map-card"
-                    data-map-name={map.name}
-                  >
-                    <Link
-                      className="mapcard__link"
-                      to={mapPath(universe.id, map.id)}
-                      data-testid="map-open"
-                    >
-                      <span className="mapcard__picture">
-                        <img
-                          src={mapImageUrl(universe.id, map.id, map.image.assetId, 'display')}
-                          alt=""
-                          width={map.image.width}
-                          height={map.image.height}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </span>
-                      <span className="mapcard__name">
-                        <bdi>{map.name}</bdi>
-                      </span>
-                    </Link>
-                    {map.description ? (
-                      <p className="mapcard__description" dir="auto">
-                        {map.description}
-                      </p>
-                    ) : null}
-                    <QuietNote className="mapcard__meta" testId="map-pin-count">
-                      {t('places.maps.meta', {
-                        pins:
-                          map.pinCount === 0
-                            ? t('places.maps.noPins')
-                            : tn('places.maps.pins', map.pinCount, { n: map.pinCount }),
-                        width: map.image.width,
-                        height: map.image.height,
-                      })}
-                    </QuietNote>
-                  </li>
+                  <MapCard key={map.id} universeId={universe.id} map={map} />
                 ))}
               </CardGrid>
             ) : (

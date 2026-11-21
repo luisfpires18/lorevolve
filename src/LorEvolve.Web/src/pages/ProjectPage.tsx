@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
-import { Link, Navigate, useLocation, useOutletContext, useParams } from 'react-router-dom'
-import { EmptyState } from '../components/EmptyState'
+import { Navigate, useLocation, useOutletContext, useParams } from 'react-router-dom'
+import { MissingState } from '../components/MissingState'
 import { useUniverseAccess } from '../universes/access'
 import { ProjectShell } from '../components/ProjectShell'
 import StoryPage from './StoryPage'
@@ -84,10 +84,12 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
         loading={{ text: t('projects.one.loading') }}
         error={{ onRetry: retry, testId: 'project-failed' }}
         missing={
-          <EmptyState
+          <MissingState
             title={t('projects.one.missing')}
             hint={t('projects.one.missingHint')}
-            action={<Link to="/app/projects">{t('projects.nav.all')}</Link>}
+            backTo="/app/projects"
+            backLabel={t('projects.nav.all')}
+            backIn="action"
             testId="project-missing"
           />
         }

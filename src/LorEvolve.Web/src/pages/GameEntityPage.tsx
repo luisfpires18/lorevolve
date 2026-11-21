@@ -1,5 +1,5 @@
-import { Link, useOutletContext, useParams } from 'react-router-dom'
-import { EmptyState } from '../components/EmptyState'
+import { useOutletContext, useParams } from 'react-router-dom'
+import { MissingState } from '../components/MissingState'
 import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
 import { useGameProject } from '../projects/useGameProject'
 import { useTitleDetail } from '../lib/useTitleDetail'
@@ -36,14 +36,12 @@ export default function GameEntityPage() {
     >
       {(game) =>
         game === null || !universeId || !entityId ? (
-          <EmptyState
+          <MissingState
             title={t('projects.gameEntities.notFound')}
             hint={t('projects.gameEntities.notFoundHint')}
-            action={
-              <Link to={`/app/universes/${universeId}/game-entities`}>
-                {t('projects.gameEntities.back')}
-              </Link>
-            }
+            backTo={`/app/universes/${universeId}/game-entities`}
+            backLabel={t('projects.gameEntities.back')}
+            backIn="action"
             testId="game-entities-missing"
           />
         ) : (
