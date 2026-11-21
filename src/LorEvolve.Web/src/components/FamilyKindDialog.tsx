@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
-import { CheckField } from './CheckField'
-import { Field } from './Field'
+import { FamilySemanticSelect } from './FamilySemanticSelect'
+import { KindFields, type KindNames } from './KindFields'
 import { payloadKey } from '../lib/drawerGuard'
 import { useFormSave } from '../lib/useFormSave'
 import { createRelationshipType } from '../relationships/api'
@@ -14,7 +14,6 @@ import {
 } from '../relationships/types'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
-import { QuietNote } from './QuietNote'
 
 interface Props {
   universeId: string
@@ -29,6 +28,8 @@ const MEANINGS = [
   { value: FamilySemantic.AdoptiveParent, label: 'places.kindDialog.meaningAdoptive' },
 ] as const
 
+const EMPTY: KindNames = { name: '', inverseName: '', isSymmetric: false }
+
 /**
  * A new family relation kind, made without leaving the Family Tree: an ordinary relation kind, posted to the same route
  * and validated the same way as one made under Types → Relation kinds, with only the fields a family connection needs.
@@ -37,10 +38,9 @@ const MEANINGS = [
  */
 export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
   const { t, tx } = useI18n()
-  const [name, setName] = useState('')
-  const [inverseName, setInverseName] = useState('')
-  const [isSymmetric, setIsSymmetric] = useState(false)
+  const [names, setNames] = useState<KindNames>(EMPTY)
   const [semantic, setSemantic] = useState<FamilySemanticValue>(FamilySemantic.NonStructuralFamily)
+  const { name, inverseName, isSymmetric } = names
   const form = useFormSave({
     needChange: t('places.kindDialog.fieldErrors'),
     failed: t('places.kindDialog.failed'),
@@ -48,16 +48,10 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
   const { fieldErrors, message, isSaving } = form
 
   const isDirty =
-    payloadKey({ name, inverseName, isSymmetric, semantic }) !==
-    payloadKey({
-      name: '',
-      inverseName: '',
-      isSymmetric: false,
-      semantic: FamilySemantic.NonStructuralFamily,
-    })
+    payloadKey({ ...names, semantic }) !==
+    payloadKey({ ...EMPTY, semantic: FamilySemantic.NonStructuralFamily })
 
   // A kind that reads the same both ways names no parent side, so only the meaning that defines no ancestry is left.
-  const meanings = isSymmetric ? MEANINGS.filter((each) => !isParentSemantic(each.value)) : MEANINGS
   const chosen =
     isSymmetric && isParentSemantic(semantic) ? FamilySemantic.NonStructuralFamily : semantic
 
@@ -103,68 +97,38 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
     >
       {message ? <FormMessage testId="family-kind-error">{message}</FormMessage> : null}
 
-      <Field
-        label={t('places.kindDialog.name')}
-        name="family-kind-name"
-        placeholder={t('places.kindDialog.namePlaceholder')}
-        dir="auto"
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        error={fieldErrors.name}
-        data-testid="family-kind-name"
+      <KindFields
+        draft={names}
+        edit={(change) => setNames((current) => ({ ...current, ...change }))}
+        fieldErrors={fieldErrors}
+        idPrefix="family-kind"
+        words={{
+          name: t('places.kindDialog.name'),
+          namePlaceholder: t('places.kindDialog.namePlaceholder'),
+          inverse: t('places.kindDialog.inverse'),
+          inversePlaceholder: t('places.kindDialog.inversePlaceholder'),
+          symmetric: t('places.kindDialog.symmetric'),
+        }}
+        bothWays={tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}
+        bothWaysSpacing="hint"
       />
 
-      {isSymmetric ? (
-        <QuietNote spacing="hint" testId="family-kind-both-ways">
-          {tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}
-        </QuietNote>
-      ) : (
-        <Field
-          label={t('places.kindDialog.inverse')}
-          name="family-kind-inverse"
-          placeholder={t('places.kindDialog.inversePlaceholder')}
-          dir="auto"
-          value={inverseName}
-          onChange={(event) => setInverseName(event.target.value)}
-          error={fieldErrors.inversename}
-          data-testid="family-kind-inverse"
-        />
-      )}
-
-      <CheckField
-        className="field--flow"
-        label={t('places.kindDialog.symmetric')}
-        checked={isSymmetric}
-        onChange={setIsSymmetric}
-        testId="family-kind-symmetric"
-      />
-
-      <Field
+      <FamilySemanticSelect
         label={t('places.kindDialog.meaning')}
         id="family-kind-meaning"
+        testId="family-kind-meaning"
         hint={
           isParentSemantic(chosen)
             ? t('places.kindDialog.hintParent')
             : t('places.kindDialog.hintOther')
         }
         error={fieldErrors.familysemantic}
-      >
-        {(control) => (
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value={chosen}
-            onChange={(event) => setSemantic(Number(event.target.value) as FamilySemanticValue)}
-            data-testid="family-kind-meaning"
-          >
-            {meanings.map((each) => (
-              <option key={each.value} value={each.value}>
-                {t(each.label)}
-              </option>
-            ))}
-          </select>
-        )}
-      </Field>
+        options={MEANINGS.map((each) => ({ value: each.value, label: t(each.label) }))}
+        value={semantic}
+        isSymmetric={isSymmetric}
+        fallback={FamilySemantic.NonStructuralFamily}
+        onChange={setSemantic}
+      />
     </Drawer>
   )
 }

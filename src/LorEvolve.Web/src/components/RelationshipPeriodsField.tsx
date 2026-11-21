@@ -7,7 +7,11 @@ import {
 } from './ChronologyPointFields'
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
+import { formatSpan } from '../lib/dates'
 import { newPeriod, type PeriodDraft } from '../relationships/periods'
+import type { RelationDraft } from '../relationships/relationDraft'
+import type { useRelationsState } from '../relationships/useRelationsState'
+import { Button } from './Button'
 import { IconButton } from './IconButton'
 import { NewButton } from './NewButton'
 import { SegmentedControl } from './SegmentedControl'
@@ -26,24 +30,27 @@ export interface EraChoice {
 export function RelationshipPeriodsField({
   chronology,
   eras,
-  erasReading,
-  erasFailed,
-  value,
-  onChange,
+  ends,
+  erasOf,
+  draft,
+  edit,
   errors,
 }: {
   chronology: Chronology
   eras: EraChoice[]
-  /** Either entry's eras are still being read. */
-  erasReading: boolean
-  /** Either entry's eras could not be read. */
-  erasFailed: boolean
-  value: PeriodDraft[]
-  onChange: (periods: PeriodDraft[]) => void
+  /** Both ends of the relation, whose eras `erasOf` reads. */
+  ends: string[]
+  erasOf: ReturnType<typeof useRelationsState>['erasOf']
+  draft: RelationDraft
+  edit: (change: Partial<RelationDraft>) => void
   /** The save's errors, lowercased by key: `periods[0].start.year`. */
   errors: Record<string, string>
 }) {
   const { t } = useI18n()
+  const value = draft.periods
+  const onChange = (periods: PeriodDraft[]) => edit({ periods })
+  const erasReading = ends.some((id) => erasOf[id]?.status === 'loading')
+  const erasFailed = ends.some((id) => erasOf[id]?.status === 'failed')
   const noEras = !erasReading && !erasFailed && eras.length === 0
 
   function patch(index: number, change: Partial<PeriodDraft>) {
@@ -51,149 +58,179 @@ export function RelationshipPeriodsField({
   }
 
   return (
-    <Field
-      label={t('relationships.periods.legend')}
-      group="fieldset"
-      className="relperiods"
-      data-testid="relation-periods"
-      error={errors['periods']}
-      errorAbove
-      hint={
-        value.length === 0
-          ? erasFailed
-            ? t('relationships.periods.hintAlwaysFailed')
-            : t('relationships.periods.hintAlways')
-          : erasFailed
-            ? t('relationships.periods.hintDuringFailed')
-            : t('relationships.periods.hintDuring')
-      }
-    >
-      {value.map((period, index) => {
-        const key = `periods[${index}]`
-        const error = (part: string) => errors[`${key}.${part}`.toLowerCase()]
-        const label = t('relationships.periods.period', { n: index + 1 })
-        const eraError = error('entityEraId')
-        // A stored era stays chosen and named even before - or without - the eras being read.
-        const options =
-          period.entityEraId && !eras.some((era) => era.id === period.entityEraId)
-            ? [
-                {
-                  id: period.entityEraId,
-                  label: period.eraLabel ?? t('relationships.periods.chosenStage'),
-                },
-                ...eras,
-              ]
-            : eras
-
-        return (
-          <div className="relperiod" key={period.key} data-testid={`relation-period-${index}`}>
-            <div className="relperiod__head">
-              <p className="relperiod__label">{label}</p>
-              <SegmentedControl
-                label={t('relationships.periods.datesOrEra', { n: index + 1 })}
-                options={[
-                  {
-                    value: 'dates',
-                    label: t('relationships.periods.dates'),
-                    testId: `relation-period-${index}-dates`,
-                  },
-                  {
-                    value: 'era',
-                    label: t('relationships.periods.stage'),
-                    disabled: noEras && period.kind !== 'era',
-                    title: noEras ? t('relationships.periods.noStages') : undefined,
-                    testId: `relation-period-${index}-era`,
-                  },
-                ]}
-                value={period.kind}
-                onChange={(kind) => patch(index, { kind })}
-              />
-              <IconButton
-                icon={X}
-                label={t('relationships.periods.remove', { n: index + 1 })}
-                onClick={() => onChange(value.filter((_, at) => at !== index))}
-                data-testid={`relation-period-${index}-remove`}
-              />
-            </div>
-            <Field
-              group
-              hideLabel
-              label={label}
-              error={errors[key]}
-              errorAbove
-              className="stack stack--3"
-            >
-              {(group) => (
-                <div {...group} className="stack stack--3">
-                  {period.kind === 'era' ? (
-                    <Field
-                      label={t('relationships.periods.era')}
-                      id={`${period.key}-era`}
-                      error={eraError}
-                    >
-                      {(control) => (
-                        <select
-                          {...control}
-                          className="field__input field__input--select"
-                          value={period.entityEraId}
-                          onChange={(event) => {
-                            const chosen = options.find((era) => era.id === event.target.value)
-                            patch(index, {
-                              entityEraId: event.target.value,
-                              eraLabel: chosen?.label ?? null,
-                            })
-                          }}
-                          data-testid={`relation-period-${index}-era-select`}
-                        >
-                          <option value="">
-                            {erasReading
-                              ? t('relationships.periods.readingStages')
-                              : t('relationships.periods.chooseStage')}
-                          </option>
-                          {options.map((era) => (
-                            <option key={era.id} value={era.id}>
-                              {era.label}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </Field>
-                  ) : (
-                    <>
-                      <PeriodPoint
-                        bound="start"
-                        prefix={`${period.key}-start`}
-                        chronology={chronology}
-                        value={period.start}
-                        onChange={(start) => patch(index, { start })}
-                        error={(part) => error(`start.${part}`)}
-                      />
-                      <PeriodPoint
-                        bound="end"
-                        prefix={`${period.key}-end`}
-                        chronology={chronology}
-                        value={period.end}
-                        onChange={(end) => patch(index, { end })}
-                        error={(part) => error(`end.${part}`)}
-                      />
-                    </>
-                  )}
-                </div>
-              )}
-            </Field>
-          </div>
-        )
-      })}
-
-      <NewButton
-        tone="secondary"
-        size="sm"
-        onClick={() => onChange([...value, newPeriod()])}
-        data-testid="relation-period-add"
+    <>
+      <Field
+        label={t('relationships.periods.legend')}
+        group="fieldset"
+        className="relperiods"
+        data-testid="relation-periods"
+        error={errors['periods']}
+        errorAbove
+        hint={
+          value.length === 0
+            ? erasFailed
+              ? t('relationships.periods.hintAlwaysFailed')
+              : t('relationships.periods.hintAlways')
+            : erasFailed
+              ? t('relationships.periods.hintDuringFailed')
+              : t('relationships.periods.hintDuring')
+        }
       >
-        {t('relationships.periods.add')}
-      </NewButton>
-    </Field>
+        {value.map((period, index) => {
+          const key = `periods[${index}]`
+          const error = (part: string) => errors[`${key}.${part}`.toLowerCase()]
+          const label = t('relationships.periods.period', { n: index + 1 })
+          const eraError = error('entityEraId')
+          // A stored era stays chosen and named even before - or without - the eras being read.
+          const options =
+            period.entityEraId && !eras.some((era) => era.id === period.entityEraId)
+              ? [
+                  {
+                    id: period.entityEraId,
+                    label: period.eraLabel ?? t('relationships.periods.chosenStage'),
+                  },
+                  ...eras,
+                ]
+              : eras
+
+          return (
+            <div className="relperiod" key={period.key} data-testid={`relation-period-${index}`}>
+              <div className="relperiod__head">
+                <p className="relperiod__label">{label}</p>
+                <SegmentedControl
+                  label={t('relationships.periods.datesOrEra', { n: index + 1 })}
+                  options={[
+                    {
+                      value: 'dates',
+                      label: t('relationships.periods.dates'),
+                      testId: `relation-period-${index}-dates`,
+                    },
+                    {
+                      value: 'era',
+                      label: t('relationships.periods.stage'),
+                      disabled: noEras && period.kind !== 'era',
+                      title: noEras ? t('relationships.periods.noStages') : undefined,
+                      testId: `relation-period-${index}-era`,
+                    },
+                  ]}
+                  value={period.kind}
+                  onChange={(kind) => patch(index, { kind })}
+                />
+                <IconButton
+                  icon={X}
+                  label={t('relationships.periods.remove', { n: index + 1 })}
+                  onClick={() => onChange(value.filter((_, at) => at !== index))}
+                  data-testid={`relation-period-${index}-remove`}
+                />
+              </div>
+              <Field
+                group
+                hideLabel
+                label={label}
+                error={errors[key]}
+                errorAbove
+                className="stack stack--3"
+              >
+                {(group) => (
+                  <div {...group} className="stack stack--3">
+                    {period.kind === 'era' ? (
+                      <Field
+                        label={t('relationships.periods.era')}
+                        id={`${period.key}-era`}
+                        error={eraError}
+                      >
+                        {(control) => (
+                          <select
+                            {...control}
+                            className="field__input field__input--select"
+                            value={period.entityEraId}
+                            onChange={(event) => {
+                              const chosen = options.find((era) => era.id === event.target.value)
+                              patch(index, {
+                                entityEraId: event.target.value,
+                                eraLabel: chosen?.label ?? null,
+                              })
+                            }}
+                            data-testid={`relation-period-${index}-era-select`}
+                          >
+                            <option value="">
+                              {erasReading
+                                ? t('relationships.periods.readingStages')
+                                : t('relationships.periods.chooseStage')}
+                            </option>
+                            {options.map((era) => (
+                              <option key={era.id} value={era.id}>
+                                {era.label}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </Field>
+                    ) : (
+                      <>
+                        <PeriodPoint
+                          bound="start"
+                          prefix={`${period.key}-start`}
+                          chronology={chronology}
+                          value={period.start}
+                          onChange={(start) => patch(index, { start })}
+                          error={(part) => error(`start.${part}`)}
+                        />
+                        <PeriodPoint
+                          bound="end"
+                          prefix={`${period.key}-end`}
+                          chronology={chronology}
+                          value={period.end}
+                          onChange={(end) => patch(index, { end })}
+                          error={(part) => error(`end.${part}`)}
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+              </Field>
+            </div>
+          )
+        })}
+
+        <NewButton
+          tone="secondary"
+          size="sm"
+          onClick={() => onChange([...value, newPeriod()])}
+          data-testid="relation-period-add"
+        >
+          {t('relationships.periods.add')}
+        </NewButton>
+      </Field>
+
+      {/* The real-world dates a relation could carry before it could be placed in the universe's own time: kept, shown and
+        clearable, never typed any more (Issue #18). */}
+      {draft.legacyStart || draft.legacyEnd ? (
+        <Field
+          label={t('relationships.section.legacyLabel')}
+          group
+          className="relform__legacy"
+          data-testid="relation-legacy-dates"
+          hint={t('relationships.section.legacyHint', {
+            span: formatSpan(draft.legacyStart, draft.legacyEnd) ?? '',
+          })}
+          error={errors.enddate}
+        >
+          {(control) => (
+            <div {...control}>
+              <Button
+                tone="secondary"
+                size="sm"
+                onClick={() => edit({ legacyStart: null, legacyEnd: null })}
+                data-testid="relation-legacy-clear"
+              >
+                {t('relationships.section.legacyClear')}
+              </Button>
+            </div>
+          )}
+        </Field>
+      ) : null}
+    </>
   )
 }
 
