@@ -63,10 +63,7 @@
 .callout,
 .form__message,
 .recovery,
-.chron__caution,
-.conflictbar,
-.editconflict,
-.idea__elsewhere {
+.editconflict {
   padding: var(--space-3) var(--space-4);
   border: 1px solid color-mix(in srgb, var(--callout-tone, var(--danger)) 35%, var(--rule));
   border-radius: var(--radius-md);
@@ -101,20 +98,19 @@
   color: var(--callout-tone);
 }
 
-/* `.conflictbar`: a save refused as stale - what changed, then keep mine or load saved. */
-.conflictbar {
-  --callout-tone: var(--warning);
+/* `StaleChoice`: a save refused as stale - what changed, then keep mine or load saved. */
+.stalechoice {
   margin-top: var(--space-4);
 }
 
-.conflictbar__text {
+.stalechoice__text {
   margin: 0;
   max-width: 62ch;
-  font-size: 0.925rem;
+  overflow-wrap: anywhere;
 }
 
-.conflictbar__actions {
-  margin-top: 0.7rem;
+.callout__actions {
+  margin-top: var(--space-3);
 }
 
 /* `EmptyState`: a line, a hint, one way to begin. No illustration and no panel around it. */

@@ -26,7 +26,7 @@ const BUILT: { family: RegExp; why: string }[] = [
   },
   { family: /^accountmenu--/, why: '`accountmenu--${variant}` (AccountMenu)' },
   { family: /^quietnote--/, why: '`quietnote--${spacing}` and its sizes (QuietNote)' },
-  { family: /^callout--/, why: '`${look}--${tone}` (Callout)' },
+  { family: /^(callout|notice)--/, why: '`${look}--${tone}` (Callout)' },
   { family: /^(idea|rule|story)row(__title|__meta)?$/, why: '`${look}row__*` (LinkRow)' },
   { family: /^cardgrid--(min|gap)-\d+$/, why: '`cardgrid--min-*` and `--gap-*` (CardGrid)' },
   { family: /^showmore--/, why: '`showmore--${align}` (ShowMore)' },

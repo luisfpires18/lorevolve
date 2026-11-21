@@ -9,7 +9,6 @@
    not to the order, and putting them on the spine would claim a place for them. */
 
 .chron__caution {
-  --callout-tone: var(--warning);
   margin: 0 0 var(--space-6);
   font-size: var(--text-sm);
   max-width: 62ch;

@@ -9,7 +9,7 @@ import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useGuardDrawerState } from '../../worldLogic/useGuardDrawerState'
 import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
-import { ConflictBar } from '../ConflictBar'
+import { StaleChoice } from '../StaleChoice'
 import { FormActions } from '../FormActions'
 import { LoadingNote } from '../LoadingNote'
 import { FormMessage } from '../FormMessage'
@@ -91,7 +91,7 @@ export function GuardBuilderDrawer({
       )}
     >
       {conflict ? (
-        <ConflictBar
+        <StaleChoice
           text={t(`${gb}.conflict`)}
           onKeepMine={() => void keepMine()}
           keepLabel={t(`${m}.keepMine`)}

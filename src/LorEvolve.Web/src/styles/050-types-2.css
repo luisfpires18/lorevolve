@@ -33,7 +33,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.types__notice:empty {
+.types__notice:has(> p:empty) {
   display: none;
 }
 

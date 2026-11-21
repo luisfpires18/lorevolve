@@ -1,7 +1,7 @@
 // Run with `node --test uiContract/drawers.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps drawers and editors on their shared parts (#416): useSaveShortcut for Ctrl or Cmd + S, Drawer
-// for the focus and the save lock, useDrawerGuard for a hand-made dialog, ConflictBar for a save
+// for the focus and the save lock, useDrawerGuard for a hand-made dialog, StaleChoice for a save
 // refused as stale, useDiscardGuard for an inline form's guard, useLoadedList for a list read with
 // changes, NameSummaryDrawer and PickOneDrawer for the two shared drawer forms, and a confirm before
 // every delete. Each list below only shrinks, and a stale entry fails. Catalogue:
@@ -173,15 +173,15 @@ test('a hand-made dialog uses useDrawerGuard', () => {
   assert.deepEqual(filesMatching(inlineCancel), [], 'onCancel comes from useDrawerGuard')
 })
 
-test('a save refused as stale is ConflictBar', () => {
+test('a save refused as stale is StaleChoice', () => {
   assert.deepEqual(
     filesMatching((source) => hasToken(source, (token) => OLD_CONFLICT.includes(token))),
     [],
   )
   onlyIn(
-    filesMatching((source) => hasToken(source, (token) => token.startsWith('conflictbar'))),
-    ['src/components/ConflictBar.tsx'],
-    'conflictbar classes',
+    filesMatching((source) => hasToken(source, (token) => token.startsWith('stalechoice'))),
+    ['src/components/StaleChoice.tsx'],
+    'stalechoice classes',
   )
   // The manuscript's conflict is EditConflict's own box (#456 stage 11b): nothing wraps it in a second one.
   assert.deepEqual(

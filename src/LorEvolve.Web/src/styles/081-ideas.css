@@ -175,7 +175,6 @@ a.idearow__title:focus-visible {
 }
 
 .idea__elsewhere {
-  --callout-tone: var(--accent);
   margin: var(--space-3) 0 0;
   font-size: var(--text-ui);
   overflow-wrap: anywhere;

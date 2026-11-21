@@ -11,6 +11,7 @@ import { TypeFieldRow } from './lore/TypeFieldRow'
 import { InheritedFields } from './lore/InheritedFields'
 import { TypeFieldTools } from './lore/TypeFieldTools'
 import { ArchivedFields } from './lore/ArchivedFields'
+import { Callout } from './Callout'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -170,9 +171,9 @@ export function TypeFields({
         />
       ) : null}
 
-      <p className="types__notice" role="status" data-testid={`fields-notice-${type.name}`}>
-        {notice}
-      </p>
+      <Callout look="notice" className="types__notice" testId={`fields-notice-${type.name}`}>
+        <p role="status">{notice}</p>
+      </Callout>
 
       {archived.length > 0 ? (
         <ArchivedFields

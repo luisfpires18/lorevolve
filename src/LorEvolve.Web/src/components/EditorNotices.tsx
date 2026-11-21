@@ -1,11 +1,11 @@
-import { ConflictBar, type ConflictBarProps } from './ConflictBar'
+import { StaleChoice, type StaleChoiceProps } from './StaleChoice'
 import { FormMessage } from './FormMessage'
 import { RecoveredDraft, type RecoveredDraftProps } from './RecoveredDraft'
 
 /**
  * The notices above an explicit-save editor, in order: the recovery copy offered (in `<div id={recoveryId}>`, which
  * the form names in `aria-describedby`), the stale-save choice, and why a save failed. `testId` is the editor's:
- * `idea` gives `idea-recovery`, the `ConflictBar` ids and `idea-error`. Catalogue: `docs/design/ui-components.md`.
+ * `idea` gives `idea-recovery`, the `StaleChoice` ids and `idea-error`. Catalogue: `docs/design/ui-components.md`.
  */
 export function EditorNotices({
   testId,
@@ -21,7 +21,7 @@ export function EditorNotices({
   recovery?: Omit<RecoveredDraftProps, 'testId'> | null
   recoveryId?: string
   /** The save refused over a newer one. Null while there is none. */
-  conflict?: Omit<ConflictBarProps, 'testId'> | null
+  conflict?: Omit<StaleChoiceProps, 'testId'> | null
   failure: string | null
   failureTestId?: string
   failureClassName?: string
@@ -34,7 +34,7 @@ export function EditorNotices({
         </div>
       ) : null}
 
-      {conflict ? <ConflictBar {...conflict} testId={testId} /> : null}
+      {conflict ? <StaleChoice {...conflict} testId={testId} /> : null}
 
       {failure ? (
         <FormMessage className={failureClassName} testId={failureTestId}>

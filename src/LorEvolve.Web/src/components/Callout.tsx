@@ -15,6 +15,8 @@ interface CalloutProps {
   /** No default: each screen states its own, as it did. */
   role?: 'status' | 'alert'
   testId?: string
+  /** Buttons or links under the text, in a row (`.callout__actions`). */
+  actions?: ReactNode
   /** Placement classes kept from the screen. */
   className?: string
   /** Takes the focus while truthy, again each time the value changes (pass the outcome), for what replaced the row the
@@ -26,8 +28,8 @@ interface CalloutProps {
 }
 
 /**
- * A message box: a notice line or a tinted callout, with a tone, an optional title and the focus
- * when asked. Catalogue: `docs/design/ui-components.md`.
+ * A message box: a notice line or a tinted callout, with a tone, an optional title, an optional row of
+ * actions and the focus when asked. Catalogue: `docs/design/ui-components.md`.
  */
 export function Callout({
   look,
@@ -38,6 +40,7 @@ export function Callout({
   labelledBy,
   role,
   testId,
+  actions,
   className,
   focusOnShow,
   ref,
@@ -64,6 +67,7 @@ export function Callout({
         </p>
       ) : null}
       {children}
+      {actions ? <div className="actions callout__actions">{actions}</div> : null}
     </Tag>
   )
 }
