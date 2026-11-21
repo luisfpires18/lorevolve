@@ -97,3 +97,17 @@ export function WorldCard({
     </li>
   )
 }
+
+/** A card's shape while the worlds are read: the artwork's frame and three bones for the name, chips and byline. */
+export function WorldCardSkeleton() {
+  return (
+    <li className="worldcard worldcard--skeleton">
+      <span className="worldcard__art" />
+      <span className="worldcard__text">
+        <span className="worldcard__bone worldcard__bone--name" />
+        <span className="worldcard__bone worldcard__bone--chips" />
+        <span className="worldcard__bone worldcard__bone--short" />
+      </span>
+    </li>
+  )
+}
