@@ -61,10 +61,6 @@ const OWN_READ_STATES = new Map<string, string>([
     'src/projects/useProjectRead.ts',
     'read through useAsyncRead; a story and a moved story are outcomes the page names by id',
   ],
-  ['src/pages/PublicAuthorPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
-  ['src/pages/PublicLorePage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
-  ['src/pages/PublicStoryPage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
-  ['src/pages/PublicWorldPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
 ])
 
 // Files that set `kind: 'missing'` with no 404 test near it, with the reason.

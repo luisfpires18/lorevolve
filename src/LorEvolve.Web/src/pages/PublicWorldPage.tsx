@@ -1,14 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { PortalError, PortalMissing } from '../components/PortalMissing'
-import { getPublicUniverse, type PublicUniverse } from '../portal/api'
+import { getPublicUniverse } from '../portal/api'
 import { useI18n } from '../i18n'
+import { PublicReadGate } from '../components/portal/PublicReadGate'
 import { World } from '../components/portal/World'
-
-type LoadState =
-  | { slug: string; kind: 'ready'; world: PublicUniverse }
-  | { slug: string; kind: 'missing' }
-  | { slug: string; kind: 'error' }
 
 /**
  * One public universe at `/worlds/{slug}` (Task 011): where an Explore card leads. The author's artwork behind a
@@ -24,42 +19,17 @@ type LoadState =
 export default function PublicWorldPage() {
   const { t } = useI18n()
   const { slug = '' } = useParams<{ slug: string }>()
-  const [attempt, setAttempt] = useState(0)
-  const [state, setState] = useState<LoadState | null>(null)
+  const read = useCallback((signal: AbortSignal) => getPublicUniverse(slug, signal), [slug])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getPublicUniverse(slug, controller.signal)
-      .then((world) => setState({ slug, kind: 'ready', world }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setState({
-          slug,
-          kind: (error as { status?: number }).status === 404 ? 'missing' : 'error',
-        })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [slug, attempt])
-
-  const current = state?.slug === slug ? state : null
-
-  if (current?.kind === 'missing') {
-    return <PortalMissing title={t('portal.world.missing')} testId="world-missing" />
-  }
-
-  if (current?.kind === 'error') {
-    return <PortalError onRetry={() => setAttempt((value) => value + 1)} />
-  }
-
-  if (!current) {
-    return (
-      <div className="pworld pworld--loading" role="status" aria-label={t('portal.world.opening')}>
-        <div className="pworld-hero pskeleton pskeleton--hero" />
-      </div>
-    )
-  }
-
-  return <World world={current.world} />
+  return (
+    <PublicReadGate
+      readKey={slug}
+      read={read}
+      missing={{ title: t('portal.world.missing'), testId: 'world-missing' }}
+      skeleton="hero"
+      opening={t('portal.world.opening')}
+    >
+      {(world) => <World world={world} />}
+    </PublicReadGate>
+  )
 }

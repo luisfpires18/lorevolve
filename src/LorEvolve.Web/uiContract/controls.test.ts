@@ -162,8 +162,8 @@ test('a move is MoveItems', () => {
       ...list('on every workspace page; a Crumb would add a second Breadcrumb nav', [
         'universes/WorkspaceSidebar',
       ]),
-      ...list('the public portal, out of scope', ['portal/PublicStory']),
-    ]).set('src/pages/PublicLorePage.tsx', 'the public portal, out of scope'),
+      ...list("the public portal's own way back, in its tokens", ['portal/PublicCrumbs']),
+    ]),
     'use Crumb with back, or MoveItems',
   )
 })

@@ -37,11 +37,11 @@ const H1_OWNERS = new Map<string, string>([
   ['src/components/AuthLayout.tsx', 'auth pages: a brand panel layout, out of #412 scope'],
   ['src/components/mcp/ConsentLayout.tsx', 'auth pages: out of #412 scope'],
   ['src/components/PortalMissing.tsx', 'public portal: its own tokens and tab title (ADR 0038)'],
+  ['src/components/portal/PublicAuthor.tsx', 'public portal (ADR 0038)'],
+  ['src/components/portal/PublicLore.tsx', 'public portal (ADR 0038)'],
   ['src/components/portal/PublicStory.tsx', 'public portal (ADR 0038)'],
   ['src/components/portal/World.tsx', 'public portal (ADR 0038)'],
   ['src/pages/ExplorePage.tsx', 'public portal (ADR 0038)'],
-  ['src/pages/PublicAuthorPage.tsx', 'public portal (ADR 0038)'],
-  ['src/pages/PublicLorePage.tsx', 'public portal (ADR 0038)'],
 ])
 
 // Classes of the hand-made heads, crumbs and blocks the shared parts replaced. `entry__head` is EntryHead's own.
@@ -84,11 +84,11 @@ const TITLE_OWNERS = new Map<string, string>([
   ['src/pages/InvitationPage.tsx', 'auth pages are out of #412 scope'],
   ['src/pages/ConnectAuthorizePage.tsx', 'auth pages are out of #412 scope'],
   ['src/components/PortalMissing.tsx', 'public portal: its own title (ADR 0038)'],
+  ['src/components/portal/PublicAuthor.tsx', 'public portal (ADR 0038)'],
+  ['src/components/portal/PublicLore.tsx', 'public portal (ADR 0038)'],
   ['src/components/portal/PublicStory.tsx', 'public portal (ADR 0038)'],
   ['src/components/portal/World.tsx', 'public portal (ADR 0038)'],
   ['src/pages/ExplorePage.tsx', 'public portal (ADR 0038)'],
-  ['src/pages/PublicAuthorPage.tsx', 'public portal (ADR 0038)'],
-  ['src/pages/PublicLorePage.tsx', 'public portal (ADR 0038)'],
 ])
 // Named so that nobody adds a hook back: these screens hand the shell a name instead, or have none.
 const NO_TITLE_HOOK = [

@@ -77,7 +77,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['publish', '#248'],
   ['publish__status', '#248'],
   ['pworld', '#248'],
-  ['pworld--loading', '#248'],
   ['pworld-hero__text', '#248'],
   ['quickcreate', '#248'],
   ['recovery__since', '#248'],
