@@ -1,6 +1,7 @@
 import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { QuietNote } from '../QuietNote'
+import { FieldListRow } from './FieldListRow'
 
 /** The fields a nested type inherits, under each type above it, read-only. */
 export function InheritedFields({
@@ -36,18 +37,12 @@ export function InheritedFields({
             })}
           >
             {fields.map((field) => (
-              <li
-                className="fieldlist__row"
+              <FieldListRow
                 key={field.id}
-                data-testid={`inherited-field-${field.name}`}
-              >
-                <div className="fieldlist__text">
-                  <span className="fieldlist__name">
-                    <bdi>{field.name}</bdi>
-                  </span>
-                  <span className="fieldlist__meta">{summary(field)}</span>
-                </div>
-              </li>
+                name={field.name}
+                meta={summary(field)}
+                testId={`inherited-field-${field.name}`}
+              />
             ))}
           </ul>
         </div>

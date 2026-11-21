@@ -1,10 +1,9 @@
 import type { RefObject } from 'react'
 import { useI18n } from '../../i18n'
 import type { PublishEverythingPreview } from '../../publishing/types'
-import { FormActions } from '../FormActions'
-import { InlineConfirm } from '../InlineConfirm'
 import { QuietNote } from '../QuietNote'
 import { NameListBlock } from './NameListBlock'
+import { PublicationConfirm } from './PublicationConfirm'
 
 /** The confirm before Publish everything: each entry and story it would publish, and the stories it would skip. */
 export function PublishEverythingConfirm({
@@ -25,18 +24,29 @@ export function PublishEverythingConfirm({
   const { t, tn } = useI18n()
 
   return (
-    <InlineConfirm
-      look="publication"
-      titleAs="h3"
+    <PublicationConfirm
       title={
         nothing
           ? t('universe.publish.everything.nothingTitle')
           : t('universe.publish.everything.title')
       }
-      panelRef={panel}
-      onKeep={() => setPreview(null)}
-      busy={busy}
       testId="publish-everything-confirm"
+      panel={panel}
+      busy={busy}
+      onKeep={() => setPreview(null)}
+      actions={{
+        submitLabel: nothing ? undefined : t('universe.publish.everything.confirm'),
+        busyLabel: t('universe.publish.everything.publishing'),
+        onSubmit: () => void confirm(),
+        submitTestId: 'publish-everything-confirm-button',
+        dismiss: nothing ? 'close' : 'cancel',
+        cancelLabel: nothing ? undefined : t('universe.publish.everything.keepPrivate'),
+      }}
+      after={
+        nothing ? null : (
+          <QuietNote spacing="block">{t('universe.publish.everything.again')}</QuietNote>
+        )
+      }
     >
       {nothing ? (
         <QuietNote spacing="block">{t('universe.publish.everything.allPublic')}</QuietNote>
@@ -84,21 +94,6 @@ export function PublishEverythingConfirm({
           items={preview.skippedStories.map((story) => ({ id: story.id, name: story.title }))}
         />
       ) : null}
-      <FormActions
-        submitLabel={nothing ? undefined : t('universe.publish.everything.confirm')}
-        busy={busy}
-        busyLabel={t('universe.publish.everything.publishing')}
-        onSubmit={() => void confirm()}
-        submitTestId="publish-everything-confirm-button"
-        onCancel={() => setPreview(null)}
-        dismiss={nothing ? 'close' : 'cancel'}
-        cancelLabel={nothing ? undefined : t('universe.publish.everything.keepPrivate')}
-        lockCancel
-        inline
-      />
-      {nothing ? null : (
-        <QuietNote spacing="block">{t('universe.publish.everything.again')}</QuietNote>
-      )}
-    </InlineConfirm>
+    </PublicationConfirm>
   )
 }

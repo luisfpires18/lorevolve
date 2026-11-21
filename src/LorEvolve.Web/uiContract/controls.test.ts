@@ -178,12 +178,7 @@ test('show and hide is DisclosureButton; the listed others own their aria-expand
     withText(/aria-expanded/),
     new Map([
       [c('DisclosureButton'), 'the shared part'],
-      ...list('a menu or a combobox', [
-        'ActionMenu',
-        'UniverseSearch',
-        'EntityPicker',
-        'EntityMultiPicker',
-      ]),
+      ...list('a menu or a combobox', ['ActionMenu', 'UniverseSearch', 'EntityPicker']),
       ...list('a New button opening a form', ['ProjectEntries']),
       ...list('a tree branch', ['LoreCatalog']),
       ...list('a canvas node', ['familyTree/FamilyNode']),
