@@ -12,8 +12,8 @@ export interface RevisionRow {
 }
 
 /**
- * Where a history reads and puts back its versions: an entry, an article or a scene's manuscript. Memoise it on the
- * record's ids, since the list is read again whenever it changes.
+ * Where a history reads and puts back its versions: an entry, an article, a scene's manuscript or a progression.
+ * Memoise it on the record's ids, since the list is read again whenever it changes.
  */
 export interface RevisionStore<S, D, R> {
   list: (signal: AbortSignal) => Promise<S[]>
@@ -44,6 +44,24 @@ export interface RevisionMessage {
   text: string
 }
 
+/** A record's versions as a history draws them: what `useRevisionHistory` returns. */
+export interface RevisionHistoryState<S, D> {
+  revisions: S[]
+  status: 'loading' | 'ready' | 'error'
+
+  /** Reads the list again after a failed read, showing it as loading meanwhile. */
+  retry: () => void
+  opened: D | null
+  openId: string | null
+  busyId: string | null
+  message: RevisionMessage | null
+
+  /** The Canon findings a gated restore was refused with. */
+  blocked: CanonBlockingFinding[] | null
+  open: (revisionId: string) => Promise<void>
+  restore: (revision: S) => Promise<void>
+}
+
 interface RevisionsArgs<S, D, R> {
   store: RevisionStore<S, D, R>
   words: RevisionWords<S>
@@ -68,15 +86,27 @@ interface RevisionsArgs<S, D, R> {
    */
   keepOpenOnReload?: boolean
 
-  /** An entry's restore is a gated save: a Canon refusal shows its findings, and any other refusal the API's words. */
+  /**
+   * A refusal says the API's words. An entry's restore is also a gated save, so a Canon refusal shows its findings;
+   * a progression's passes no gate, so for it this is the API's words alone.
+   */
   gated?: boolean
 
   /** Why no version can be put back right now, if none can. */
   blocked?: string | null
+
+  /**
+   * A progression's: the version shown stays until the next one is read, and stays when that read fails. Without it,
+   * an opening version shows as opening and a failed one closes.
+   */
+  holdWhileOpening?: boolean
+
+  /** A progression's: said as the message when the list cannot be read. Without it, the failure is `status` alone. */
+  readFailed?: string
 }
 
 /** A record's versions: the list read, a version opened in place, and putting one back. */
-export function useEntityRevisions<S extends RevisionRow, D, R>({
+export function useRevisionHistory<S extends RevisionRow, D, R>({
   store,
   words,
   reloadKey,
@@ -87,7 +117,9 @@ export function useEntityRevisions<S extends RevisionRow, D, R>({
   keepOpenOnReload = false,
   gated = false,
   blocked = null,
-}: RevisionsArgs<S, D, R>) {
+  holdWhileOpening = false,
+  readFailed,
+}: RevisionsArgs<S, D, R>): RevisionHistoryState<S, D> {
   const [revisions, setRevisions] = useState<S[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [viewing, setViewing] = useState<{ id: string; key: number; detail: D | null } | null>(null)
@@ -108,12 +140,16 @@ export function useEntityRevisions<S extends RevisionRow, D, R>({
         setStatus('ready')
       })
       .catch(() => {
-        if (!controller.signal.aborted) setStatus('error')
+        if (controller.signal.aborted) return
+        setStatus('error')
+        if (readFailed) setMessage({ tone: 'alert', text: readFailed })
       })
 
     return () => {
       controller.abort()
     }
+    // readFailed is words, read when a read fails; a language change does not read the list again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, enabled, reloadKey, reads])
 
   // An entry's version stays open only for the history it was opened against. When a write moves the list underneath
@@ -128,14 +164,18 @@ export function useEntityRevisions<S extends RevisionRow, D, R>({
       return
     }
 
-    setViewing({ id: revisionId, key: reloadKey, detail: null })
+    if (!holdWhileOpening) setViewing({ id: revisionId, key: reloadKey, detail: null })
     setMessage(null)
 
     try {
       const detail = await store.get(revisionId)
-      setViewing((now) => (now?.id === revisionId ? { ...now, detail } : now))
+      setViewing((now) =>
+        holdWhileOpening || now?.id === revisionId
+          ? { id: revisionId, key: reloadKey, detail }
+          : now,
+      )
     } catch {
-      setViewing(null)
+      if (!holdWhileOpening) setViewing(null)
       setMessage({ tone: 'alert', text: words.openFailed })
     }
   }
@@ -177,12 +217,14 @@ export function useEntityRevisions<S extends RevisionRow, D, R>({
   return {
     revisions,
     status,
-    setStatus,
+    retry: () => {
+      setStatus('loading')
+      setReads((count) => count + 1)
+    },
     opened,
     busyId,
     message,
     blocked: findings,
-    setReads,
     openId,
     open,
     restore,

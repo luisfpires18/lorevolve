@@ -44,6 +44,11 @@ interface RecordHead {
   children?: ReactNode
 }
 
+/**
+ * The head of a document editor or reader: the way back, the title with its actions menu, and the lede.
+ * The lede is a `QuietNote`. `children` sit under it (a note about where the document belongs).
+ * Catalogue: `docs/design/ui-components.md`.
+ */
 function Head({ back, title, titleId, titleTestId, actions, lede, children }: PlainHead) {
   return (
     <header className="dochead">
@@ -60,7 +65,11 @@ function Head({ back, title, titleId, titleTestId, actions, lede, children }: Pl
   )
 }
 
-function RecordDocumentHead(head: RecordHead) {
+/**
+ * A saved record's editor head (an idea, a board, a world rule): Back to the list, the stored title, a `...` menu with
+ * Delete, and the lede with the last saved moment. Catalogue: `docs/design/ui-components.md`.
+ */
+export function EditorHead(head: RecordHead) {
   const { tx } = useI18n()
   const { testIdPrefix: id, isNew, updatedAt } = head
   return (
@@ -96,12 +105,4 @@ function RecordDocumentHead(head: RecordHead) {
   )
 }
 
-/**
- * The head of a document editor or reader: the way back, the title with its actions menu, and the lede.
- * The lede is a `QuietNote`. `children` sit under it (a note about where the document belongs).
- * With `testIdPrefix` it is a saved record's head: Back to the list, the stored title, a `...` menu with Delete,
- * and the lede with the last saved moment. Catalogue: `docs/design/ui-components.md`.
- */
-export function DocumentHead(props: PlainHead | RecordHead) {
-  return 'testIdPrefix' in props ? <RecordDocumentHead {...props} /> : <Head {...props} />
-}
+export { Head as DocumentHead }

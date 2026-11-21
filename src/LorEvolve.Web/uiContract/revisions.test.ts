@@ -1,10 +1,9 @@
 // Run with `node --test uiContract/revisions.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps every record's history on Lore's parts (#456, I41): the manuscript's history is Lore's `ArticleHistory`, so no
-// file writes the old `mshistory` classes, and a version is put back with its question asked in one place, the
-// generalised `lore/useEntityRevisions.ts`. `ProgressionHistory` keeps its own look and logic (another state model:
-// no busy row, a failed read said as a message), so it stays on the list below, which only shrinks: a stale entry
-// fails. Catalogue: docs/design/ui-components.md.
+// file writes the old `mshistory` classes, and a version is put back with its question asked in one place,
+// `lore/useRevisionHistory.ts`, which an entry's, an article's, a manuscript's and a progression's history all use
+// (#494). The list below only shrinks: a stale entry fails. Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -25,10 +24,7 @@ const writesOldHistory = (source: string) =>
 const asksRestore = (source: string) =>
   /\bconfirmAction\s*\(/.test(source) && /\brestore\w*Revision\b|\.restore\s*\(/.test(source)
 
-const RESTORE_ASKERS = [
-  'src/components/progression/ProgressionHistory.tsx',
-  'src/lore/useEntityRevisions.ts',
-]
+const RESTORE_ASKERS = ['src/lore/useRevisionHistory.ts']
 
 test('the history guard catches an mshistory class, however it is written', () => {
   assert.ok(writesOldHistory('<section className="mshistory">'))
@@ -61,10 +57,10 @@ test('the restore guard catches a confirm question beside a version put back', (
   assert.ok(!asksRestore('await restoreArticleRevision(u, e, r, v)'))
 })
 
-test('a version is put back with its question asked only in useEntityRevisions', () => {
+test('a version is put back with its question asked only in useRevisionHistory', () => {
   assert.deepEqual(
     sourceFiles.filter((file) => asksRestore(read(file))),
     RESTORE_ASKERS,
-    'ask through lore/useEntityRevisions; a stale allowlist entry: remove it',
+    'ask through lore/useRevisionHistory; a stale allowlist entry: remove it',
   )
 })

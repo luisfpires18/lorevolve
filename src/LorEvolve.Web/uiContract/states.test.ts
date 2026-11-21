@@ -22,9 +22,11 @@ const ERROR_BLOCKS = new Map<string, string>([
   ['src/components/admin/BackupFacts.tsx', 'action error: the backup job reported a problem'],
   ['src/components/lore/MassCreateBar.tsx', 'action error: a create that failed'],
   ['src/components/projects/NewProject.tsx', 'action error: a create that failed'],
+  [
+    'src/components/DisclosurePanel.tsx',
+    "a row detail's read error: closing and opening reads again",
+  ],
   ['src/components/worldLogic/FindingDetail.tsx', 'action error: a decision that failed'],
-  ['src/components/worldLogic/FindingRow.tsx', 'action error: a decision that failed'],
-  ['src/components/worldLogic/SystemRow.tsx', 'action error: a change that failed'],
   [
     'src/components/worldLogic/WorldLogicIntegrity.tsx',
     'action error: a check that failed, and its cap',
@@ -40,7 +42,6 @@ const ERROR_BLOCKS = new Map<string, string>([
 // a `Callout` holding a `<p role="status">`.
 const STATUS_NOTICES = new Map<string, string>([
   ['src/components/LoadingNote.tsx', 'the part'],
-  ['src/pages/ConnectAuthorizePage.tsx', 'auth and consent pages are out of #410 scope'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
   [
     'src/components/worldLogic/MachinePanelBody.tsx',

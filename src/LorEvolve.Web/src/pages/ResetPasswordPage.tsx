@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
+import { FormMessage } from '../components/FormMessage'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
 import { Button } from '../components/Button'
@@ -78,9 +79,9 @@ export default function ResetPasswordPage() {
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
           {message ? (
-            <p className="form__message" role="alert" data-testid="auth-error">
+            <FormMessage testId="auth-error">
               {message} <Link to="/forgot-password">{t('auth.reset.askAgain')}</Link>
-            </p>
+            </FormMessage>
           ) : null}
 
           <Field

@@ -9,6 +9,7 @@ import {
 import type { BoardSelection } from '../../ideas/boardSelection'
 import type { ItemDrag, usePanZoom } from '../../lib/usePanZoom'
 import { useI18n } from '../../i18n'
+import { CanvasCardButton } from '../CanvasCardButton'
 
 /** One card on the board: a real button, pressed to choose it and dragged to move it. */
 export function BoardCardButton({
@@ -36,33 +37,25 @@ export function BoardCardButton({
   const name = cardName(card)
   const kind = BOARD_CARD_KIND_LABELS[card.kind]
   return (
-    <button
-      type="button"
-      className="boardcard"
-      style={{
-        left: `${card.x}px`,
-        top: `${card.y}px`,
-        width: `${card.width}px`,
-        height: `${card.height}px`,
-        zIndex: drawOrder.get(card.id),
+    <CanvasCardButton
+      x={card.x}
+      y={card.y}
+      width={card.width}
+      height={card.height}
+      z={drawOrder.get(card.id)}
+      label={t(card.isGone ? 'ideas.canvas.cardGone' : 'ideas.canvas.card', { kind, name })}
+      pressed={isSelected}
+      connecting={connecting === card.id}
+      dragging={dragging?.id === card.id}
+      testId="board-card"
+      data={{
+        'data-kind': BOARD_CARD_KIND_KEYS[card.kind],
+        'data-gone': card.isGone || undefined,
+        'data-card-id': card.id,
+        'data-name': name,
       }}
-      aria-label={t(card.isGone ? 'ideas.canvas.cardGone' : 'ideas.canvas.card', {
-        kind,
-        name,
-      })}
-      aria-pressed={isSelected}
-      data-kind={BOARD_CARD_KIND_KEYS[card.kind]}
-      data-gone={card.isGone || undefined}
-      data-connecting-from={connecting === card.id || undefined}
-      data-dragging={dragging?.id === card.id || undefined}
-      data-testid="board-card"
-      data-card-id={card.id}
-      data-name={name}
       onPointerDown={(event) => beginItemDrag(event, cardDrag(card))}
-      onClick={(event) => {
-        // A pointer press is handled on release; the keyboard's Enter and Space land here.
-        if (event.detail === 0) press(card)
-      }}
+      onPress={() => press(card)}
       onKeyDown={(event) => onCardKeyDown(event, card)}
     >
       <span className="boardcard__kind" aria-hidden="true">
@@ -91,6 +84,6 @@ export function BoardCardButton({
             : t('ideas.canvas.inTrash')}
         </span>
       ) : null}
-    </button>
+    </CanvasCardButton>
   )
 }
