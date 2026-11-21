@@ -48,7 +48,6 @@ const STAYS: string[] = [
   'src/components/FeedbackButton.tsx',
   'src/components/Field.tsx',
   'src/components/FieldInputs.tsx',
-  'src/components/MapFormName.tsx',
   'src/components/MapFormPicture.tsx',
   'src/components/MapPinForm.tsx',
   'src/components/PercentField.tsx',

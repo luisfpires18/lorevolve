@@ -3,7 +3,8 @@ import { useI18n } from '../i18n'
 import { mapFormActions } from '../maps/mapFormActions'
 import { useMapFormState } from '../maps/useMapFormState'
 import type { MapFormProps } from '../maps/mapDraft'
-import { MapFormName } from './MapFormName'
+import { MAP_NAME_MAX_LENGTH } from '../maps/types'
+import { NameNoteFields } from './NameNoteFields'
 import { MapFormPicture } from './MapFormPicture'
 import { MapFormReplace } from './MapFormReplace'
 import { FormActions } from './FormActions'
@@ -79,11 +80,22 @@ export function MapForm(props: MapFormProps) {
       {message ? <FormMessage testId="map-form-error">{message}</FormMessage> : null}
 
       {props.mode !== 'replace' ? (
-        <MapFormName
-          firstInput={firstInput}
-          draft={draft}
-          setDraft={setDraft}
-          fieldErrors={fieldErrors}
+        <NameNoteFields
+          idPrefix="map"
+          labels={{ name: t('places.mapForm.name'), note: t('places.mapForm.description') }}
+          placeholder={t('places.mapForm.namePlaceholder')}
+          hint={t('places.mapForm.descriptionHint')}
+          rows={3}
+          nameMaxLength={MAP_NAME_MAX_LENGTH}
+          value={{ name: draft.name, note: draft.description }}
+          onChange={(part, value) =>
+            setDraft((current) =>
+              part === 'name' ? { ...current, name: value } : { ...current, description: value },
+            )
+          }
+          errors={{ name: fieldErrors.name, note: fieldErrors.description }}
+          testIds={{ name: 'map-name-input', note: 'map-description-input' }}
+          nameRef={firstInput}
         />
       ) : null}
 

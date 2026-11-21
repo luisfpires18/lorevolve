@@ -10,8 +10,10 @@ export function NameNoteFields({
   labels,
   placeholder,
   hint,
+  notePlaceholder,
   rows = 4,
   maxLength,
+  nameMaxLength,
   value,
   onChange,
   errors,
@@ -24,9 +26,13 @@ export function NameNoteFields({
   placeholder?: string
   /** The note box's hint. */
   hint?: string
+  /** The note box's placeholder. */
+  notePlaceholder?: string
   rows?: number
   /** The note box's limit. */
   maxLength?: number
+  /** The name box's limit. */
+  nameMaxLength?: number
   value: { name: string; note: string }
   onChange: (part: 'name' | 'note', value: string) => void
   errors: { name?: string; note?: string }
@@ -42,6 +48,7 @@ export function NameNoteFields({
         name={null}
         ref={nameRef}
         dir="auto"
+        maxLength={nameMaxLength}
         placeholder={placeholder}
         value={value.name}
         onChange={(event) => onChange('name', event.target.value)}
@@ -57,6 +64,7 @@ export function NameNoteFields({
         rows={rows}
         dir="auto"
         maxLength={maxLength}
+        placeholder={notePlaceholder}
         value={value.note}
         onChange={(event) => onChange('note', event.target.value)}
         data-testid={testIds.note}
