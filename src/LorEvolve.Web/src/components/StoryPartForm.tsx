@@ -158,7 +158,15 @@ export function StoryPartForm(props: StoryPartFormProps) {
         <FormActions
           submitLabel={part ? t(`${ns}.save`) : t(`${ns}.add`)}
           busy={isSaving}
-          busyLabel={part ? t(`${ns}.saving`) : t(`${ns}.adding`)}
+          busyLabel={
+            kind === 'chapter'
+              ? part
+                ? t('stories.chapterForm.saving')
+                : t('stories.chapterForm.adding')
+              : part
+                ? t('stories.arcForm.saving')
+                : t('stories.arcForm.adding')
+          }
           submitTestId={`save-${id}`}
           onCancel={close}
           cancelTestId={`cancel-${id}`}
