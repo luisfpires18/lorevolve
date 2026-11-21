@@ -9,7 +9,8 @@ import { projectPath } from '../projects/sections'
 import { scriptParts } from '../projectEntities/scriptParts'
 import { ScriptPart } from './projectEntities/ScriptPart'
 import { useAsyncRead } from '../lib/useAsyncRead'
-import { ReadGate } from './ReadGate'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * A Series', Film's or Comic's Script view (#377): every node of its structure listed beside the text it holds, in the
@@ -42,22 +43,18 @@ export function ProjectScript({
     </Link>
   )
 
-  if (load.kind !== 'ready') {
+  if (load.kind === 'loading')
+    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
+  if (load.kind === 'error')
+    return <FormMessage testId="project-script-failed">{load.message}</FormMessage>
+
+  if (load.kind === 'missing') {
     return (
-      <ReadGate
-        load={load}
-        loading={{ text: t('projects.common.loading') }}
-        error={{ testId: 'project-script-failed' }}
-        missing={
-          <EmptyState
-            title={t('projects.script.noFormat')}
-            hint={tx('projects.script.noFormatHint', { link: structureLink })}
-            testId="project-script-no-format"
-          />
-        }
-      >
-        {() => null}
-      </ReadGate>
+      <EmptyState
+        title={t('projects.script.noFormat')}
+        hint={tx('projects.script.noFormatHint', { link: structureLink })}
+        testId="project-script-no-format"
+      />
     )
   }
 
