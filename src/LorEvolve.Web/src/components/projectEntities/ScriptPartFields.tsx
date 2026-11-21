@@ -3,7 +3,6 @@ import { MentionProse } from '../MentionProse'
 import { Field } from '../Field'
 import { t } from '../../i18n'
 import { PANEL_SCRIPT, type PanelScript } from '../../projectEntities/structure'
-import type { useScriptPartState } from '../../projectEntities/useScriptPartState'
 import { QuietNote } from '../QuietNote'
 
 const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
@@ -57,13 +56,13 @@ export function ScriptPartFields({
   universeId: string
   canEdit: boolean
   draft: string
-  setDraft: ReturnType<typeof useScriptPartState>['setDraft']
+  setDraft: (draft: string) => void
   name: string
   isTooLong: boolean
-  setAnnouncement: ReturnType<typeof useScriptPartState>['setAnnouncement']
+  setAnnouncement: (text: string) => void
   isPanel: boolean
   script: PanelScript
-  setScript: ReturnType<typeof useScriptPartState>['setScript']
+  setScript: (script: PanelScript) => void
 }) {
   return (
     <>

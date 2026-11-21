@@ -52,8 +52,6 @@ export function RecordForm({
     initial,
     draft,
     setDraft,
-    stories,
-    storyRead,
     errors,
     message,
     isSaving,
@@ -61,7 +59,7 @@ export function RecordForm({
 
   const isDirty = draftKey(draft) !== draftKey(initial)
 
-  useRecordStories({ ...state, universeId })
+  const { stories, storyRead } = useRecordStories({ ...state, universeId })
 
   // The story read is only the chosen story's: a read that arrives for a story no longer chosen is not shown.
   const story = storyRead && storyRead.id === draft.storyId ? storyRead : null

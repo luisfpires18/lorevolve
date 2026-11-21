@@ -58,12 +58,8 @@ const OWN_READ_STATES = new Map<string, string>([
   ['src/lib/useAsyncRead.ts', 'the shared Load<T> itself'],
   ['src/mcp/useConnectionRequest.ts', 'the consent flow is an auth page, out of #410 scope'],
   [
-    'src/components/ProjectEntityDetailView.tsx',
-    'keyed by entity id; a 403 is also not found, by design',
-  ],
-  [
     'src/projects/useProjectRead.ts',
-    'keyed by project id; a story and a moved story are outcomes too',
+    'read through useAsyncRead; a story and a moved story are outcomes the page names by id',
   ],
   ['src/pages/PublicAuthorPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
   ['src/pages/PublicLorePage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
