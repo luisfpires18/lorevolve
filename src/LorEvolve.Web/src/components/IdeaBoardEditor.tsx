@@ -1,5 +1,7 @@
 import { useId, type ReactNode } from 'react'
-import { IdeaBoardPicker } from './IdeaBoardPicker'
+import { SearchPickDrawer } from './SearchPickDrawer'
+import { Quoted } from './NameList'
+import { listBoardTargets } from '../ideas/api'
 import { BoardFields } from './ideas/BoardFields'
 import { BoardToolbar } from './ideas/BoardToolbar'
 import { RecordUnavailable } from './ideas/RecordUnavailable'
@@ -46,7 +48,7 @@ export function IdeaBoardEditor({
   onCreated,
   onDeleted,
 }: IdeaBoardEditorProps) {
-  const { t, tn } = useI18n()
+  const { t, tn, tx } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const universeFieldId = useId()
@@ -76,6 +78,10 @@ export function IdeaBoardEditor({
     universes?.find((universe) => universe.id === draft.universeId) ??
     (stored.universe && stored.universe.id === draft.universeId ? stored.universe : null)
   const cardsById = new Map(draft.cards.map((card) => [card.id, card]))
+  // Ideas and entries already on the board, shown as placed rather than offered twice.
+  const placed = new Set(
+    draft.cards.map((card) => card.ideaId ?? card.entityId ?? '').filter(Boolean),
+  )
   const view = {
     ...base,
     ...cards,
@@ -191,21 +197,53 @@ export function IdeaBoardEditor({
       />
 
       {picking ? (
-        <IdeaBoardPicker
-          what={picking}
-          universe={
+        <SearchPickDrawer
+          testId="board-picker"
+          testPrefix="board-picker"
+          eyebrow={
             draft.universeId
-              ? {
-                  id: draft.universeId,
-                  name: chosenUniverse?.name ?? t('ideas.board.thisUniverse'),
-                }
-              : null
+              ? tx('ideas.boardPicker.inUniverse', {
+                  universe: <Quoted text={chosenUniverse?.name ?? t('ideas.board.thisUniverse')} />,
+                })
+              : t('ideas.boardPicker.inNoUniverse')
           }
-          placed={
-            new Set(draft.cards.map((card) => card.ideaId ?? card.entityId ?? '').filter(Boolean))
+          title={
+            picking === 'idea' ? t('ideas.boardPicker.addIdea') : t('ideas.boardPicker.addEntry')
           }
+          searchLabel={t('ideas.boardPicker.findByName')}
+          placeholder={() =>
+            picking === 'idea'
+              ? t('ideas.boardPicker.placeholderIdea')
+              : t('ideas.boardPicker.placeholderEntry')
+          }
+          search={(words, _choice, signal) =>
+            listBoardTargets(picking, draft.universeId, words, signal)
+          }
+          option={(target) => ({
+            key: target.id,
+            name: target.name,
+            isolate: true,
+            context: target.entityTypeName,
+          })}
+          chosen={placed}
           onChoose={addPicked}
           onClose={() => setPicking(null)}
+          words={{
+            looking: t('ideas.boardPicker.looking'),
+            failed: t('ideas.boardPicker.loadFailed'),
+            empty:
+              picking === 'idea'
+                ? {
+                    named: t('ideas.boardPicker.emptyNamedIdea'),
+                    none: t('ideas.boardPicker.emptyIdeas'),
+                  }
+                : {
+                    named: t('ideas.boardPicker.emptyNamedEntry'),
+                    none: t('ideas.boardPicker.emptyEntries'),
+                  },
+            add: t('ideas.boardPicker.add'),
+            done: t('ideas.boardPicker.placed'),
+          }}
         />
       ) : null}
 
