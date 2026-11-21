@@ -17,6 +17,7 @@ import { useUniverseAccess } from '../universes/access'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { shelfActions, withCover } from '../projects/shelfActions'
+import { shelfCoverChange } from '../projects/shelfCover'
 import { VIEWS } from '../projects/shelfViews'
 import { useShelfState } from '../projects/useShelfState'
 import { CardGrid } from '../components/CardGrid'
@@ -181,14 +182,13 @@ export default function CategoryShelfPage({
           name={covering.name}
           cover={covering.cover ?? null}
           store={projectCoverStore(covering.id, covering.kind)}
-          onChanged={(cover) => {
-            setCovering({ ...covering, cover })
+          onChanged={shelfCoverChange(covering, setCovering, (id, cover) =>
             setState((current) =>
               current.kind === 'ready'
-                ? { kind: 'ready', value: withCover(current.value, covering.id, cover) }
+                ? { kind: 'ready', value: withCover(current.value, id, cover) }
                 : current,
-            )
-          }}
+            ),
+          )}
           onClose={() => setCovering(null)}
         />
       ) : null}

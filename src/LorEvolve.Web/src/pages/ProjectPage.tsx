@@ -5,14 +5,8 @@ import { useUniverseAccess } from '../universes/access'
 import { ProjectShell } from '../components/ProjectShell'
 import StoryPage from './StoryPage'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import {
-  formatLabel,
-  formatsFor,
-  kindLabel,
-  lifecycleLabel,
-  projectPath,
-  projectSections,
-} from '../projects/sections'
+import { projectPath, projectSections } from '../projects/sections'
+import { projectMetaSpans } from '../projects/projectMeta'
 import { ProjectKind } from '../projects/types'
 import { documentTitle, useWholeTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
@@ -163,17 +157,7 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   const entitiesPath = projectPath(project.id, 'entities', project.universe.id)
   // The facts, one dot between each, joined here: a separator is not a message anyone translates.
   const facts = [
-    <span key="kind">{kindLabel(project.kind)}</span>,
-    project.format ? (
-      <span key="format" data-testid="project-format">
-        {formatLabel(project.format)}
-      </span>
-    ) : formatsFor(project.kind).length > 0 ? (
-      <span key="format" data-testid="project-format">
-        {t('projects.format.unset')}
-      </span>
-    ) : null,
-    <span key="lifecycle">{lifecycleLabel(project.lifecycle)}</span>,
+    ...projectMetaSpans(project, 'project-format', { unset: true }),
     project.subtype ? <span key="subtype">{project.subtype}</span> : null,
   ].filter(Boolean)
   const meta = (

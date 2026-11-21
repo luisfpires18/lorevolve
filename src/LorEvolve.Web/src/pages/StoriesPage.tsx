@@ -9,6 +9,7 @@ import { StoryForm } from '../components/StoryForm'
 import { listAllProjects } from '../projects/api'
 import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
 import { focusCardMenu, withCover } from '../projects/shelfActions'
+import { shelfCoverChange } from '../projects/shelfCover'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
 import { listStories, reorderStories } from '../stories/api'
@@ -174,20 +175,19 @@ export default function StoriesPage() {
           name={covering.title}
           cover={covering.cover ?? null}
           store={storyCoverStore(universe.id, covering.id)}
-          onChanged={(cover) => {
-            setCovering({ ...covering, cover })
+          onChanged={shelfCoverChange(covering, setCovering, (id, cover) =>
             setState((current) =>
               current.kind === 'ready'
                 ? {
                     kind: 'ready',
                     value: {
                       ...current.value,
-                      stories: withCover(current.value.stories, covering.id, cover),
+                      stories: withCover(current.value.stories, id, cover),
                     },
                   }
                 : current,
-            )
-          }}
+            ),
+          )}
           onClose={() => setCovering(null)}
         />
       ) : null}

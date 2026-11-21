@@ -5,13 +5,11 @@ import { MissingState } from '../components/MissingState'
 import { Crumb } from '../components/Crumb'
 import { PageHeader } from '../components/PageHeader'
 import { ProjectEntitiesView } from '../components/ProjectEntitiesView'
-import { useGameProject } from '../projects/useGameProject'
+import { useGameProjectLoad } from '../projects/useGameProjectLoad'
 import { useTitleDetail } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { ReadGate } from '../components/ReadGate'
-import type { Load } from '../lib/useAsyncRead'
-import type { ProjectDetail } from '../projects/types'
 
 /**
  * One game's directory inside Game Entities (#284): its own categories, counts and entries, read by the game's id, so
@@ -25,21 +23,14 @@ export default function GameEntitiesPage() {
   const { pathname } = useLocation()
   const [schemaVersion, setSchemaVersion] = useState(0)
   // Only a game of this universe counts: a foreign project's name must not reach the tab title either.
-  const { loading, failed, retry, game: project } = useGameProject(projectId, universeId)
-  useTitleDetail(project?.name ?? null)
+  const { load, game, retry } = useGameProjectLoad(projectId, universeId)
+  useTitleDetail(game?.name ?? null)
 
   const back = {
     to: `/app/universes/${universeId}/game-entities`,
     label: t('projects.gameEntities.back'),
     testId: 'game-entities-back',
   }
-
-  // useGameProject answers in flags; the gate reads them as one state. A null game (403 too, G9) is drawn below.
-  const load: Load<ProjectDetail | null> = loading
-    ? { kind: 'loading' }
-    : failed
-      ? { kind: 'error', message: t('projects.one.failed') }
-      : { kind: 'ready', value: project }
 
   return (
     <ReadGate
