@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { ApiError } from '../lib/api'
 import { useDiscardGuard } from '../lib/useDiscardGuard'
+import { useFormSave } from '../lib/useFormSave'
 import { getPublicName, setPublicName } from '../profile/api'
 import { PUBLIC_NAME_MAX } from '../publishing/types'
 import { useI18n } from '../i18n'
@@ -21,8 +22,18 @@ export function PublicNameForm() {
   const [value, setValue] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    isSaving,
+    message: error,
+    save,
+  } = useFormSave({
+    needChange: null,
+    failed: t('account.publicName.saveFailed'),
+    refusal: (problem) =>
+      problem instanceof ApiError
+        ? (problem.fieldErrors.publicdisplayname ?? problem.message)
+        : false,
+  })
   const [done, setDone] = useState(false)
 
   useEffect(() => {
@@ -46,23 +57,13 @@ export function PublicNameForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setIsSaving(true)
-    setError(null)
     setDone(false)
-    try {
+    await save(async () => {
       const next = await setPublicName(value.trim() || null)
       setSaved(next)
       setValue(next ?? '')
       setDone(true)
-    } catch (problem: unknown) {
-      setError(
-        problem instanceof ApiError
-          ? (problem.fieldErrors.publicdisplayname ?? problem.message)
-          : t('account.publicName.saveFailed'),
-      )
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   if (loadFailed) {

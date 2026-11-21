@@ -52,7 +52,8 @@
   background: color-mix(in srgb, var(--raised) 60%, transparent);
 }
 
-.collab__row {
+/* `ManageRow`: one row of a settings list the account manages (collaborators, invitations, connected apps). */
+.managerow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -62,7 +63,7 @@
   border-top: 1px solid var(--rule);
 }
 
-.collab__row:first-child {
+.collab__list > .managerow:first-child {
   border-top: 0;
 }
 
@@ -87,12 +88,21 @@
 }
 
 @media (max-width: 640px) {
-  .collab__row {
+  .managerow {
     padding: var(--space-3) var(--space-4);
   }
 }
 
-.collab__row--highlight {
+/* After the phone padding, so a flush row keeps no side padding on every width. */
+.managerow--flush {
+  padding: var(--space-4) 0;
+}
+
+.managerow--start {
+  align-items: flex-start;
+}
+
+.managerow--highlight {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: var(--radius-xs);
@@ -103,13 +113,13 @@
   min-width: 0;
 }
 
-.collab__name {
+.managerow__name {
   margin: 0;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
-.collab__meta {
+.managerow__meta {
   margin: var(--space-1) 0 0;
 }
 

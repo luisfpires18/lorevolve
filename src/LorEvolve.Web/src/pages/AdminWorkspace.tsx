@@ -1,13 +1,12 @@
-import { Link, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
-import { AccountMenu } from '../components/AccountMenu'
-import { BrandMark } from '../components/BrandMark'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { EmptyState } from '../components/EmptyState'
+import { PageHeader } from '../components/PageHeader'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
-import { Wordmark } from '../components/Wordmark'
+import { WorkspaceBar } from '../components/WorkspaceBar'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { useI18n } from '../i18n'
 import { FeedbackScreen } from '../components/admin/FeedbackScreen'
 import { MainScreen } from '../components/admin/MainScreen'
-import { TracingScreen } from '../components/admin/TracingScreen'
 import { UserScreen } from '../components/admin/UserScreen'
 import { UsersScreen } from '../components/admin/UsersScreen'
 
@@ -33,68 +32,37 @@ export default function AdminWorkspace() {
 
   return (
     <div className="home">
-      <header className="workspacebar">
-        <Link
-          className="home__brand workspacebar__brand"
-          to="/"
-          aria-label={t('shell.brand.homeLabel')}
-        >
-          <BrandMark />
-          <Wordmark />
-        </Link>
-
-        <nav className="workspacebar__nav" aria-label={t('admin.nav.label')}>
-          <span className="workspacebar__context" aria-hidden="true">
-            {t('admin.nav.context')}
-          </span>
-          <ul className="workspacebar__links">
-            <li>
-              <NavLink className="workspacebar__link" to="/admin" end data-testid="admin-nav-main">
-                {t('admin.nav.main')}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/admin/users"
-                data-testid="admin-nav-users"
-              >
-                {t('admin.nav.users')}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/admin/feedback"
-                data-testid="admin-nav-feedback"
-              >
-                {t('admin.nav.feedback')}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/admin/tracing"
-                data-testid="admin-nav-tracing"
-              >
-                {t('admin.nav.tracing')}
-              </NavLink>
-            </li>
-          </ul>
-        </nav>
-
-        <Link className="workspacebar__explore" to="/app" data-testid="admin-my-workspace">
-          {t('admin.nav.myWorkspace')}
-        </Link>
-        <AccountMenu variant="bar" />
-      </header>
+      <WorkspaceBar
+        navLabel={t('admin.nav.label')}
+        context={t('admin.nav.context')}
+        testIdPrefix="admin-nav"
+        links={[
+          { id: 'main', to: '/admin', end: true, label: t('admin.nav.main') },
+          { id: 'users', to: '/admin/users', label: t('admin.nav.users') },
+          { id: 'feedback', to: '/admin/feedback', label: t('admin.nav.feedback') },
+          { id: 'tracing', to: '/admin/tracing', label: t('admin.nav.tracing') },
+        ]}
+        outbound={{ to: '/app', label: t('admin.nav.myWorkspace'), testId: 'admin-my-workspace' }}
+      />
 
       <main className="home__body" id={MAIN_CONTENT_ID} tabIndex={-1}>
         <Routes>
           <Route index element={<MainScreen />} />
           <Route path="users" element={<UsersScreen />} />
           <Route path="users/:userId" element={<UserScreen />} />
-          <Route path="tracing" element={<TracingScreen />} />
+          <Route
+            path="tracing"
+            element={
+              <>
+                <PageHeader title={t('admin.tracing.title')} lede={t('admin.tracing.lede')} />
+                <EmptyState
+                  testId="admin-tracing-empty"
+                  title={t('admin.tracing.emptyTitle')}
+                  hint={t('admin.tracing.emptyHint')}
+                />
+              </>
+            }
+          />
           <Route path="feedback" element={<FeedbackScreen />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>

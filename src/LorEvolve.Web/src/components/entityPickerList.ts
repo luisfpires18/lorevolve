@@ -27,15 +27,19 @@ export function useCloseOnOutside(
  * drawer, the foot of a relation form. On a phone the list then opens below the fold,
  * behind the drawer's own action bar, and the author sees nothing happen at all. Asking
  * for the nearest scroll brings it into view without moving anything that already is.
+ *
+ * The one place a list is scrolled into view: the pickers' lists, the universe search's highlighted option (passed
+ * by its element id, which changes as the arrows move) and a highlighted invitation row. Runs again when `count` does.
  */
 export function useKeepListInView(
-  list: RefObject<HTMLUListElement | null>,
+  list: RefObject<HTMLElement | null> | string,
   isOpen: boolean,
   count: number,
 ) {
   useEffect(() => {
     if (!isOpen) return
-    list.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    const element = typeof list === 'string' ? document.getElementById(list) : list.current
+    element?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
   }, [list, isOpen, count])
 }
 
