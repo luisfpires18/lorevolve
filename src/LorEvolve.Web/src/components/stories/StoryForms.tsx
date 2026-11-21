@@ -1,6 +1,5 @@
 import { useI18n } from '../../i18n'
-import { ChapterForm } from '../ChapterForm'
-import { PlotArcForm } from '../PlotArcForm'
+import { StoryPartForm } from '../StoryPartForm'
 import { SceneForm } from '../SceneForm'
 import { StoryForm } from '../StoryForm'
 import { arcNumber, chapterNumber } from '../../stories/format'
@@ -84,10 +83,11 @@ export function StoryForms({
       ) : null}
 
       {chapterForm.mode !== 'closed' ? (
-        <ChapterForm
+        <StoryPartForm
+          kind="chapter"
           universeId={universe.id}
           storyId={story.id}
-          chapter={chapterForm.mode === 'edit' ? chapterForm.chapter : null}
+          part={chapterForm.mode === 'edit' ? chapterForm.chapter : null}
           number={chapterForm.mode === 'edit' ? chapterNumber(chapterForm.index) : null}
           plotArcId={chapterForm.mode === 'new' ? chapterForm.arcId : null}
           arcs={groups.arcs.map((entry) => entry.arc)}
@@ -101,10 +101,11 @@ export function StoryForms({
       ) : null}
 
       {arcForm.mode !== 'closed' ? (
-        <PlotArcForm
+        <StoryPartForm
+          kind="arc"
           universeId={universe.id}
           storyId={story.id}
-          arc={arcForm.mode === 'edit' ? arcForm.arc : null}
+          part={arcForm.mode === 'edit' ? arcForm.arc : null}
           number={arcForm.mode === 'edit' ? arcNumber(arcForm.index) : null}
           onClose={() => setArcForm({ mode: 'closed' })}
           onSaved={(saved) => {
