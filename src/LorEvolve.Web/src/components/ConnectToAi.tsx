@@ -6,7 +6,6 @@ import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { getMcpConnectInfo, readable } from '../mcp/api'
 import { Button } from './Button'
-import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { FormMessage } from './FormMessage'
@@ -87,9 +86,7 @@ function ConnectDrawer({
         </QuietNote>
       }
       onClose={onClose}
-      actions={(close) => (
-        <FormActions onCancel={close} dismiss="close" cancelTestId="connect-ai-close" />
-      )}
+      closeTestId="connect-ai-close"
     >
       {load.kind === 'loading' ? (
         <QuietNote className="history__quiet" size="ui" role="status">

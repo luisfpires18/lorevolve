@@ -13,8 +13,6 @@ import { MomentBasics } from './timeline/MomentBasics'
 import { MomentDating } from './timeline/MomentDating'
 import { MomentDetails } from './timeline/MomentDetails'
 import { StoryLinks } from './timeline/StoryLinks'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 interface TimelineEntryFormProps {
   universeId: string
@@ -108,23 +106,20 @@ export function TimelineEntryForm({
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={entry ? t('time.momentForm.save') : t('time.momentForm.create')}
-          busy={isSaving}
-          busyLabel={entry ? t('time.momentForm.saving') : t('time.momentForm.adding')}
-          submitTestId="save-moment"
-          onCancel={close}
-          cancelTestId="cancel-moment"
-        />
-      )}
+      notice={
+        blocked ? (
+          <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
+        ) : null
+      }
+      message={message}
+      messageTestId="moment-error"
+      actions={{
+        submitLabel: entry ? t('time.momentForm.save') : t('time.momentForm.create'),
+        busyLabel: entry ? t('time.momentForm.saving') : t('time.momentForm.adding'),
+        submitTestId: 'save-moment',
+        cancelTestId: 'cancel-moment',
+      }}
     >
-      {blocked ? (
-        <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
-      ) : null}
-
-      {message ? <FormMessage testId="moment-error">{message}</FormMessage> : null}
-
       <MomentBasics title={title} draft={draft} edit={edit} fieldErrors={fieldErrors} />
 
       <MomentDating

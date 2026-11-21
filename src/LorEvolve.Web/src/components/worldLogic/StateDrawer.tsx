@@ -9,7 +9,6 @@ import type { Point } from '../../worldLogic/machine'
 import type { SystemMachineState } from '../../worldLogic/types'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { errorOf, textInput } from '../../worldLogic/machineDrawerFields'
-import { FormActions } from '../FormActions'
 
 export function StateDrawer({
   state,
@@ -86,17 +85,14 @@ export function StateDrawer({
       onClose={onClose}
       onSubmit={apply}
       noValidate
-      actions={(close) => (
-        <FormActions
-          submitLabel={!state ? t(`${m}.add`) : t(`${m}.save`)}
-          submitTestId="machine-state-apply"
-          onCancel={close}
-          cancelTestId="machine-state-cancel"
-          onDelete={onDelete ? () => void remove() : undefined}
-          deleteLabel={t(`${m}.delete`)}
-          deleteTestId="machine-state-delete"
-        />
-      )}
+      actions={{
+        submitLabel: !state ? t(`${m}.add`) : t(`${m}.save`),
+        submitTestId: 'machine-state-apply',
+        cancelTestId: 'machine-state-cancel',
+        onDelete: onDelete ? () => void remove() : undefined,
+        deleteLabel: t(`${m}.delete`),
+        deleteTestId: 'machine-state-delete',
+      }}
     >
       <Field label={t(`${m}.fields.name`)} error={errorOf(local, errors, 'name')}>
         {textInput(

@@ -6,7 +6,6 @@ import { t } from '../../i18n'
 import type { MachineDoc } from '../../worldLogic/machine'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { textInput } from '../../worldLogic/machineDrawerFields'
-import { FormActions } from '../FormActions'
 import { QuietNote } from '../QuietNote'
 
 export function BindingDrawer({
@@ -39,14 +38,11 @@ export function BindingDrawer({
       onClose={onClose}
       onSubmit={() => onApply(form)}
       noValidate
-      actions={(close) => (
-        <FormActions
-          submitLabel={t(`${m}.save`)}
-          submitTestId="machine-binding-apply"
-          onCancel={close}
-          cancelTestId="machine-binding-cancel"
-        />
-      )}
+      actions={{
+        submitLabel: t(`${m}.save`),
+        submitTestId: 'machine-binding-apply',
+        cancelTestId: 'machine-binding-cancel',
+      }}
     >
       <Field label={t(`${m}.fields.subjectType`)} error={errors?.subjecttype}>
         {textInput(

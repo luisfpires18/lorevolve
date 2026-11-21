@@ -5,8 +5,6 @@ import { useI18n } from '../i18n'
 import { useFormSave } from '../lib/useFormSave'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 import { SectionTitle } from './Section'
 
 /**
@@ -51,19 +49,15 @@ export function TypeFromTemplateDrawer({
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t('entityTypes.page.dialog.create')}
-          busy={isSaving}
-          busyLabel={t('entityTypes.page.dialog.creating')}
-          disabled={!templateId}
-          submitTestId="save-type-from-template"
-          onCancel={close}
-        />
-      )}
+      message={message}
+      messageTestId="type-from-template-error"
+      actions={{
+        submitLabel: t('entityTypes.page.dialog.create'),
+        busyLabel: t('entityTypes.page.dialog.creating'),
+        disabled: !templateId,
+        submitTestId: 'save-type-from-template',
+      }}
     >
-      {message ? <FormMessage testId="type-from-template-error">{message}</FormMessage> : null}
-
       <section className="drawer__group" aria-labelledby="type-from-template-source">
         <SectionTitle level={3} tone="rule-accent" id="type-from-template-source">
           {t('projects.schema.fromTemplate.source')}

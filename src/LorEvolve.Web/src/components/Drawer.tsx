@@ -1,8 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode, RefObject, SyntheticEvent } from 'react'
+import type { ComponentProps, ReactNode, RefObject, SyntheticEvent } from 'react'
 import { DrawerLockContext, useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
+import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
+
+/** The Save and Cancel footer's own props; Drawer sets `onCancel` (the guarded close) and `busy`. */
+type DrawerFooter = Pick<
+  ComponentProps<typeof FormActions>,
+  | 'submitLabel'
+  | 'busyLabel'
+  | 'disabled'
+  | 'submitTestId'
+  | 'submitRef'
+  | 'cancelTestId'
+  | 'lockCancel'
+  | 'onDelete'
+  | 'deleteLabel'
+  | 'deleteTestId'
+> & {
+  /** False: the submit gets no busy state (only `disabled`), while the panel still locks on `busy`. */
+  showBusy?: boolean
+}
 
 type DrawerProps = {
   /** data-testid on the dialog. */
@@ -37,8 +57,20 @@ type DrawerProps = {
   busy?: boolean
   /** For callers that read the dialog. */
   dialogRef?: RefObject<HTMLDialogElement | null>
-  /** Inside `footer.drawer__actions`; `close` is the guarded close, for Cancel. */
-  actions: (close: () => void) => ReactNode
+  /**
+   * Inside `footer.drawer__actions`. A function: drawn as it returns, `close` is the guarded close, for Cancel. An
+   * object: the Save and Cancel footer, `FormActions` with `busy` and the guarded Cancel. Absent: a Close button.
+   */
+  actions?: ((close: () => void) => ReactNode) | DrawerFooter
+  /** The Close button's test id, when `actions` is absent. */
+  closeTestId?: string
+  /** A refused save's line, drawn with FormMessage; nothing when empty. */
+  message?: string | null
+  messageTestId?: string
+  /** `top` (the default): after `notice`, before the children. `end`: after the children. */
+  messageAt?: 'top' | 'end'
+  /** Above the message: the suggesting, canon-block or changed-elsewhere notice. */
+  notice?: ReactNode
   children: ReactNode
 }
 
@@ -67,6 +99,11 @@ export function Drawer({
   busy,
   dialogRef,
   actions,
+  closeTestId,
+  message,
+  messageTestId,
+  messageAt = 'top',
+  notice,
   children,
 }: DrawerProps) {
   const ownRef = useRef<HTMLDialogElement>(null)
@@ -106,7 +143,24 @@ export function Drawer({
     </header>
   )
   const bodyClass = bodyClassName ? `drawer__body ${bodyClassName}` : 'drawer__body'
-  const footer = <footer className="actions drawer__actions">{actions(() => void close())}</footer>
+  const line = message ? <FormMessage testId={messageTestId}>{message}</FormMessage> : null
+  const body = (
+    <>
+      {notice}
+      {messageAt === 'top' ? line : null}
+      {children}
+      {messageAt === 'end' ? line : null}
+    </>
+  )
+
+  function footerOf(guarded: () => void) {
+    if (typeof actions === 'function') return actions(guarded)
+    if (!actions)
+      return <FormActions onCancel={guarded} dismiss="close" cancelTestId={closeTestId} />
+    const { showBusy = true, ...props } = actions
+    return <FormActions {...props} {...(showBusy ? { busy } : null)} onCancel={guarded} />
+  }
+  const footer = <footer className="actions drawer__actions">{footerOf(() => void close())}</footer>
 
   let panel: ReactNode
   if (onSubmit && submitFrom === 'body') {
@@ -114,7 +168,7 @@ export function Drawer({
       <div className="drawer__panel" aria-busy={busy}>
         {header}
         <form className={bodyClass} onSubmit={submit} noValidate={noValidate}>
-          {children}
+          {body}
           {footer}
         </form>
       </div>
@@ -123,7 +177,7 @@ export function Drawer({
     panel = (
       <form className="drawer__panel" aria-busy={busy} onSubmit={submit} noValidate={noValidate}>
         {header}
-        <div className={bodyClass}>{children}</div>
+        <div className={bodyClass}>{body}</div>
         {footer}
       </form>
     )
@@ -131,7 +185,7 @@ export function Drawer({
     panel = (
       <div className="drawer__panel" aria-busy={busy}>
         {header}
-        <div className={bodyClass}>{children}</div>
+        <div className={bodyClass}>{body}</div>
         {footer}
       </div>
     )

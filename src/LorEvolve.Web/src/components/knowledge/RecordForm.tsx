@@ -11,9 +11,7 @@ import { useRecordStories } from '../../knowledge/useRecordStories'
 import { recordFormSave } from '../../knowledge/recordFormSave'
 import { RecordOtherField } from './RecordOtherField'
 import { RecordSceneFields } from './RecordSceneFields'
-import { FormActions } from '../FormActions'
 import { QuietNote } from '../QuietNote'
-import { FormMessage } from '../FormMessage'
 
 // ---------- The form ----------
 
@@ -111,19 +109,15 @@ export function RecordForm({
       submitFrom="body"
       onSubmit={() => void save()}
       noValidate
-      actions={(close) => (
-        <FormActions
-          submitLabel={record ? t('ai.knowledge.form.save') : t('ai.knowledge.form.add')}
-          busy={isSaving}
-          busyLabel={record ? t('ai.knowledge.form.saving') : t('ai.knowledge.form.adding')}
-          submitTestId="knowledge-save"
-          onCancel={() => void close()}
-          cancelTestId="knowledge-cancel"
-        />
-      )}
+      message={message}
+      messageTestId="knowledge-form-error"
+      actions={{
+        submitLabel: record ? t('ai.knowledge.form.save') : t('ai.knowledge.form.add'),
+        busyLabel: record ? t('ai.knowledge.form.saving') : t('ai.knowledge.form.adding'),
+        submitTestId: 'knowledge-save',
+        cancelTestId: 'knowledge-cancel',
+      }}
     >
-      {message ? <FormMessage testId="knowledge-form-error">{message}</FormMessage> : null}
-
       <RecordOtherField
         universeId={universeId}
         entityId={entityId}

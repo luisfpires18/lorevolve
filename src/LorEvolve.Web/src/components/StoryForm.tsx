@@ -20,8 +20,6 @@ import {
   type StoryDetail,
   type StoryStatusValue,
 } from '../stories/types'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 import { Callout } from './Callout'
 
 interface StoryDraft {
@@ -130,39 +128,32 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={
-            suggesting
-              ? t('stories.storyForm.sendSuggestion')
-              : story
-                ? t('stories.storyForm.save')
-                : t('stories.storyForm.create')
-          }
-          busy={isSaving}
-          busyLabel={
-            suggesting
-              ? t('stories.storyForm.sending')
-              : story
-                ? t('stories.storyForm.saving')
-                : t('stories.storyForm.creating')
-          }
-          disabled={suggesting && !isDirty}
-          submitTestId="save-story"
-          submitRef={saveButton}
-          onCancel={close}
-          cancelTestId="cancel-story"
-        />
-      )}
+      notice={
+        suggesting ? (
+          <Callout look="callout" as="p" testId="story-suggesting">
+            {t('stories.storyForm.suggestingNote')}
+          </Callout>
+        ) : null
+      }
+      message={message}
+      messageTestId="story-error"
+      actions={{
+        submitLabel: suggesting
+          ? t('stories.storyForm.sendSuggestion')
+          : story
+            ? t('stories.storyForm.save')
+            : t('stories.storyForm.create'),
+        busyLabel: suggesting
+          ? t('stories.storyForm.sending')
+          : story
+            ? t('stories.storyForm.saving')
+            : t('stories.storyForm.creating'),
+        disabled: suggesting && !isDirty,
+        submitTestId: 'save-story',
+        submitRef: saveButton,
+        cancelTestId: 'cancel-story',
+      }}
     >
-      {suggesting ? (
-        <Callout look="callout" as="p" testId="story-suggesting">
-          {t('stories.storyForm.suggestingNote')}
-        </Callout>
-      ) : null}
-
-      {message ? <FormMessage testId="story-error">{message}</FormMessage> : null}
-
       {conflict && story ? (
         <EditConflict
           what={t('stories.storyForm.conflictNoun')}

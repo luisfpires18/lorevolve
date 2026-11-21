@@ -112,17 +112,14 @@ export function TransitionDrawer({
           })
         }
         noValidate
-        actions={(close) => (
-          <FormActions
-            submitLabel={!transition ? t(`${m}.add`) : t(`${m}.save`)}
-            submitTestId="machine-transition-apply"
-            onCancel={close}
-            cancelTestId="machine-transition-cancel"
-            onDelete={onDelete ? () => void remove() : undefined}
-            deleteLabel={t(`${m}.delete`)}
-            deleteTestId="machine-transition-delete"
-          />
-        )}
+        actions={{
+          submitLabel: !transition ? t(`${m}.add`) : t(`${m}.save`),
+          submitTestId: 'machine-transition-apply',
+          cancelTestId: 'machine-transition-cancel',
+          onDelete: onDelete ? () => void remove() : undefined,
+          deleteLabel: t(`${m}.delete`),
+          deleteTestId: 'machine-transition-delete',
+        }}
       >
         <Field label={t(`${m}.fields.from`)} error={errors?.fromstateid}>
           {stateSelect('fromStateId', 'machine-transition-from')}

@@ -10,7 +10,6 @@ import { useCommentsDrawerState } from '../comments/useCommentsDrawerState'
 import { commentsDrawerActions } from '../comments/commentsDrawerActions'
 import { CommentThreadItem } from './CommentThreadItem'
 import { CommentNewForm } from './CommentNewForm'
-import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
 import { HeadingCount } from './HeadingCount'
 import { FormMessage } from './FormMessage'
@@ -113,9 +112,7 @@ export function CommentsDrawer<T>({
       leaveMessage={t('review.comments.leave.title')}
       busy={busy !== null}
       onClose={onClose}
-      actions={(close) => (
-        <FormActions onCancel={close} dismiss="close" cancelTestId="comments-close" />
-      )}
+      closeTestId="comments-close"
     >
       <QueryTabList
         label={t('review.comments.tabs.label')}

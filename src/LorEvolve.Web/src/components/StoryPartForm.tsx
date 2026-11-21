@@ -13,8 +13,6 @@ import {
 } from '../stories/api'
 import { arcLabel } from '../stories/format'
 import type { Chapter, PlotArc } from '../stories/types'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 interface StoryPartDraft {
   title: string
@@ -150,27 +148,22 @@ export function StoryPartForm(props: StoryPartFormProps) {
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={part ? t(`${ns}.save`) : t(`${ns}.add`)}
-          busy={isSaving}
-          busyLabel={
-            kind === 'chapter'
-              ? part
-                ? t('stories.chapterForm.saving')
-                : t('stories.chapterForm.adding')
-              : part
-                ? t('stories.arcForm.saving')
-                : t('stories.arcForm.adding')
-          }
-          submitTestId={`save-${id}`}
-          onCancel={close}
-          cancelTestId={`cancel-${id}`}
-        />
-      )}
+      message={message}
+      messageTestId={`${id}-error`}
+      actions={{
+        submitLabel: part ? t(`${ns}.save`) : t(`${ns}.add`),
+        busyLabel:
+          kind === 'chapter'
+            ? part
+              ? t('stories.chapterForm.saving')
+              : t('stories.chapterForm.adding')
+            : part
+              ? t('stories.arcForm.saving')
+              : t('stories.arcForm.adding'),
+        submitTestId: `save-${id}`,
+        cancelTestId: `cancel-${id}`,
+      }}
     >
-      {message ? <FormMessage testId={`${id}-error`}>{message}</FormMessage> : null}
-
       <Field
         id={`${id}-title`}
         label={t(`${ns}.titleLabel`)}

@@ -7,9 +7,7 @@ import { useFormSave } from '../lib/useFormSave'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
-import { FormActions } from './FormActions'
 import { SegmentedField } from './SegmentedField'
-import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
 /**
@@ -101,19 +99,15 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
       onClose={onClose}
       onSubmit={() => void send()}
       busy={sending}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t('data.feedback.send')}
-          busy={sending}
-          busyLabel={t('data.feedback.sending')}
-          submitTestId="feedback-send"
-          onCancel={close}
-          lockCancel
-        />
-      )}
+      message={error}
+      messageTestId="feedback-error"
+      actions={{
+        submitLabel: t('data.feedback.send'),
+        busyLabel: t('data.feedback.sending'),
+        submitTestId: 'feedback-send',
+        lockCancel: true,
+      }}
     >
-      {error ? <FormMessage testId="feedback-error">{error}</FormMessage> : null}
-
       <SegmentedField
         label={t('data.feedback.kindLabel')}
         disabled={sending}

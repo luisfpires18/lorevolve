@@ -15,7 +15,6 @@ import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { PrivateNotesProps } from '../PrivateNotes'
 import { PrivateNoteConflict } from './PrivateNoteConflict'
-import { FormActions } from '../FormActions'
 import { ReadGate } from '../ReadGate'
 import type { Load } from '../../lib/useAsyncRead'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
@@ -137,9 +136,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       leaveMessage={t('entity.privateNote.discardGuard')}
       busy={isSaving}
       onClose={onClose}
-      actions={(close) => (
-        <FormActions onCancel={close} dismiss="close" cancelTestId="private-note-close" />
-      )}
+      closeTestId="private-note-close"
     >
       <ReadGate
         load={load}

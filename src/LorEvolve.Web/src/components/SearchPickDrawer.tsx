@@ -5,7 +5,6 @@ import { SegmentedControl } from './SegmentedControl'
 import { SegmentedField } from './SegmentedField'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { useAsyncRead } from '../lib/useAsyncRead'
-import { FormActions } from './FormActions'
 import { LoadingNote } from './LoadingNote'
 import { FormMessage } from './FormMessage'
 import { Callout } from './Callout'
@@ -96,9 +95,7 @@ export function SearchPickDrawer<T, K extends string | number = never>({
       eyebrow={eyebrow}
       title={title}
       onClose={onClose}
-      actions={() => (
-        <FormActions onCancel={onClose} dismiss="close" cancelTestId={`${testPrefix}-close`} />
-      )}
+      closeTestId={`${testPrefix}-close`}
     >
       {narrow && choice !== undefined ? (
         <SegmentedField
