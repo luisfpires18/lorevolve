@@ -77,6 +77,9 @@ function unaskedDeletes(source: string) {
     if (/^\s*(?:import|export)\b/.test(line) || /\bfunction\s+\w+\(/.test(line)) return []
     if (/^\s*(?:delete[A-Z]\w*|remove\w*|revokeInvitation),?$/.test(line)) return []
     const above = lines.slice(Math.max(0, at - 20), at + 1).join('\n')
+    // A field delete handed to `PlainFieldsPanel` as `remove`: the panel asks through `confirmDelete` first.
+    if (/^\s*remove=\{\(\w+\) => delete\w*Field\(/.test(line) && /<PlainFieldsPanel\b/.test(above))
+      return []
     return /\bconfirm\w*\(/.test(above) ? [] : [`${at + 1}: ${line.trim()}`]
   })
 }
@@ -119,6 +122,9 @@ test('the drawer guards fail on a bad snippet and pass a good one', () => {
     0,
   )
   assert.equal(unaskedDeletes("import { deleteSeason } from './api'").length, 0)
+  const handed = '  remove={(fieldId) => deleteProjectField(id, fieldId)}'
+  assert.equal(unaskedDeletes(`<PlainFieldsPanel\n${handed}`).length, 0)
+  assert.equal(unaskedDeletes(`<Other\n${handed}`).length, 1)
   assert.equal(unaskedDeletes('export function deleteSeason(id: string) {').length, 0)
 })
 
@@ -244,12 +250,9 @@ test('the Cinema and Comic drawers are the shared drawer forms', () => {
 test('every delete asks first', () => {
   // `trashActions.tsx` and `universeSettingsActions.ts` ask inline (#255); the three picture controls
   // only bind the call, which `lib/usePictureFraming.ts` asks before making.
-  // A project type's and a template's field delete is passed to `PlainFieldsPanel`, which asks through `confirmDelete`.
   const ASKED_ELSEWHERE = [
     'src/components/EntityImageField.tsx',
     'src/components/FieldImageInput.tsx',
-    'src/components/projectEntities/SchemaTypeItem.tsx',
-    'src/components/typeTemplates/TemplateRow.tsx',
     'src/components/UniverseArtworkField.tsx',
     'src/trash/trashActions.tsx',
     'src/universes/universeSettingsActions.ts',
