@@ -88,7 +88,6 @@ const STAYS: string[] = [
   'src/components/universes/CopyLink.tsx',
   'src/components/universes/InviteForm.tsx',
   'src/components/universes/RoleSelect.tsx',
-  'src/components/worldLogic/NumberInput.tsx',
   'src/components/worldLogic/Operand.tsx',
   'src/components/worldLogic/Related.tsx',
   'src/components/worldLogic/SystemDetails.tsx',
