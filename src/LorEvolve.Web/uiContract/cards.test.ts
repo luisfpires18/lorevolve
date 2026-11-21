@@ -74,6 +74,8 @@ const OUTLINE = named([
   'chapter__number',
   'chapter__dash',
 ])
+// A grid of entry cards draws through EntityGrid (#456 A3): no other file renders `<EntityCard` itself.
+const rendersEntityCard = (source: string) => /<EntityCard(?![\w$])/.test(source)
 const LIFT = /translateY\(-2px\)/
 const AUTO_GRID = /repeat\(auto-(fill|fit)/
 
@@ -97,12 +99,23 @@ test('the card guards catch a hand-made card, grid, row or lift', () => {
   assert.ok(hasToken('<span className="plotarc__dash">', OUTLINE))
   assert.ok(!hasToken('<header className={`${block}__head`}>', OUTLINE))
   assert.ok(/<EntityTile/.test('<EntityTile universeId={u} />'))
+  assert.ok(rendersEntityCard('<EntityCard universeId={u} entity={e} />'))
+  assert.ok(!rendersEntityCard('<EntityCardBody entity={e} />'))
+  assert.ok(!rendersEntityCard('<EntityGrid universeId={u} items={xs} testId="t" />'))
   assert.ok(LIFT.test('.x:hover { transform: translateY(-2px); }'))
   assert.ok(AUTO_GRID.test('grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));'))
 })
 
 test('an entry card is EntityCard', () => {
   check(withToken(ENTITY_CARD), only('src/components/EntityCard.tsx'), 'use EntityCard')
+})
+
+test('a list of entry cards is EntityGrid', () => {
+  check(
+    tsxFiles.filter((file) => rendersEntityCard(read(file))),
+    only('src/components/lore/EntityGrid.tsx'),
+    'a list of entry cards is EntityGrid',
+  )
 })
 
 test('a catalogue card is CatalogCard and a placeholder card is CardSkeleton', () => {

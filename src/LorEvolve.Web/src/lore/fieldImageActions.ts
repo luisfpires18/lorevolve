@@ -3,8 +3,18 @@ import type { EntityImageCrop, FieldImageRef } from './types'
 import type { FieldImageApi, PendingFieldImage } from '../components/FieldImageInput'
 import { pictureRatio, type Framing } from './fieldImageFraming'
 
-/** An Image field's handlers: reframe the picture, keep a crop. Picking and removing are `usePictureFraming`'s. */
-export function fieldImageActions({
+/**
+ * An Image field's or an entry picture's handlers: reframe the picture, keep a crop. Picking and removing are
+ * `usePictureFraming`'s.
+ */
+export function fieldImageActions<
+  Ref extends {
+    assetId: string
+    width: number
+    height: number
+    crop: EntityImageCrop | null
+  } = FieldImageRef,
+>({
   entityId,
   image,
   pending,
@@ -18,14 +28,14 @@ export function fieldImageActions({
   preview,
 }: {
   entityId: string | null
-  image: FieldImageRef | null
-  pending: PendingFieldImage | null
+  image: Ref | null
+  pending: { file: File; crop: EntityImageCrop } | null
   onPending: (pending: PendingFieldImage | null) => void
-  onChanged: (image: FieldImageRef | null) => void
+  onChanged: (image: Ref | null) => void
   setError: Dispatch<SetStateAction<string | null>>
-  framing: Framing | null
-  setFraming: Dispatch<SetStateAction<Framing | null>>
-  api: FieldImageApi
+  framing: Framing<Ref> | null
+  setFraming: Dispatch<SetStateAction<Framing<Ref> | null>>
+  api: Pick<FieldImageApi<Ref>, 'url' | 'set' | 'setCrop'>
   fixedAspect: number | null
   preview: string | null
 }) {

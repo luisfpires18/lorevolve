@@ -12,6 +12,7 @@ import { CroppedPicture, ImageCropDialog } from './ImageCropDialog'
 import { PictureActions } from './PictureActions'
 import { useI18n } from '../i18n'
 import { usePictureFraming } from '../lib/usePictureFraming'
+import { fieldImageActions } from '../lore/fieldImageActions'
 
 /** A picture chosen for an entry that does not exist yet, with the square the author framed. */
 export interface PendingImage {
@@ -55,7 +56,7 @@ export function EntityImageField({
   const { t } = useI18n()
   const inputId = useId()
   const { input, error, setError, busy, framing, setFraming, preview, choose, remove } =
-    usePictureFraming<EntityImageRef>({
+    usePictureFraming<EntityImageRef, { aspect: number }>({
       tooBigKey: 'entity.image.tooBig',
       pending,
       onPending,
@@ -63,43 +64,28 @@ export function EntityImageField({
 
   const hasPicture = Boolean(pending || image)
 
-  function reframe() {
-    setError(null)
-
-    if (pending && preview) {
-      setFraming({
-        kind: 'file',
-        file: pending.file,
-        source: preview,
-        ownsSource: false,
-        initial: pending.crop,
-      })
-      return
-    }
-
-    if (entityId && image) {
-      setFraming({
-        kind: 'stored',
-        image,
-        source: entityImageUrl(universeId, entityId, image, 'original'),
-      })
-    }
+  const api = {
+    url: (stored: EntityImageRef, variant: 'original' | 'crop') =>
+      entityImageUrl(universeId, entityId!, stored, variant === 'crop' ? 'thumbnail' : 'original'),
+    set: (file: File, crop: EntityImageCrop) => setEntityImage(universeId, entityId!, file, crop),
+    setCrop: (assetId: string, crop: EntityImageCrop) =>
+      setEntityThumbnail(universeId, entityId!, assetId, crop),
+    remove: () => removeEntityImage(universeId, entityId!),
   }
 
-  async function keep(crop: EntityImageCrop) {
-    if (!framing) return
-
-    if (framing.kind === 'stored') {
-      // Only the square is sent. The original stays exactly where it is.
-      onChanged(await setEntityThumbnail(universeId, entityId!, framing.image.assetId, crop))
-    } else if (!entityId) {
-      onPending({ file: framing.file, crop })
-    } else {
-      onChanged(await setEntityImage(universeId, entityId, framing.file, crop))
-    }
-
-    setFraming(null)
-  }
+  const { reframe, keep } = fieldImageActions({
+    entityId,
+    image,
+    pending,
+    onPending,
+    onChanged,
+    setError,
+    framing,
+    setFraming,
+    api,
+    fixedAspect: 1,
+    preview,
+  })
 
   return (
     <>
@@ -144,11 +130,11 @@ export function EntityImageField({
                 busy={busy}
                 disabled={disabled}
                 onFile={(file) => void choose(file)}
-                onReframe={reframe}
+                onReframe={() => void reframe()}
                 onRemove={() =>
                   void remove({
                     stored: Boolean(entityId && image),
-                    run: () => removeEntityImage(universeId, entityId!),
+                    run: api.remove,
                     done: () => onChanged(null),
                     failed: () => t('entity.image.removeFailed'),
                   })

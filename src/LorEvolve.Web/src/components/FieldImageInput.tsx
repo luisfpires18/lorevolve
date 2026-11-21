@@ -29,10 +29,10 @@ export interface PendingFieldImage {
  * Where a picture other than an entry field's lives (#295: a comic page or panel). Without one the control talks to the
  * entry field routes, as before.
  */
-export interface FieldImageApi {
-  url: (image: FieldImageRef, variant: 'original' | 'crop') => string
-  set: (file: File, crop: EntityImageCrop) => Promise<FieldImageRef>
-  setCrop: (assetId: string, crop: EntityImageCrop) => Promise<FieldImageRef>
+export interface FieldImageApi<Ref = FieldImageRef> {
+  url: (image: Ref, variant: 'original' | 'crop') => string
+  set: (file: File, crop: EntityImageCrop) => Promise<Ref>
+  setCrop: (assetId: string, crop: EntityImageCrop) => Promise<Ref>
   remove: () => Promise<void>
 }
 
