@@ -35,7 +35,7 @@ export function BoardListView({
       {draft.cards.length === 0 ? (
         <QuietNote className="idea__noreferences">{t('ideas.board.noCards')}</QuietNote>
       ) : (
-        <ol className="boardlist__cards">
+        <ol className="plainlist stack stack--3">
           {readingOrder(draft.cards).map((card) => {
             const lines = linesOf(card)
             return (

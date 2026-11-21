@@ -46,6 +46,11 @@ const WATCHED: { why: string; body: string; only: string[] }[] = [
     body: block(`${column}; list-style: none; margin: 0; padding: 0`),
     only: [],
   },
+  ...[2, 3, 4].map((step) => ({
+    why: `an unmarked column list with the gap of space-${step} is .plainlist .stack .stack--${step}`,
+    body: block(`${column}; gap: var(--space-${step}); list-style: none; margin: 0; padding: 0`),
+    only: [],
+  })),
   {
     why: 'a drawer and a confirm title share one rule',
     body: block(
@@ -117,6 +122,10 @@ test('self test: a copy of a watched block is an offender, whatever its order or
     ).length,
     1,
   )
+  for (const step of [2, 3, 4]) {
+    const list = `list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:var(--space-${step})`
+    assert.equal(twinsIn(`.a { ${list} }`).length, 1, `a gap-${step} column list`)
+  }
   assert.equal(twinsIn('.a { flex: 1 1 100%; margin: 0; order: -1; }').length, 1)
   assert.equal(twinsIn(`.a img { ${COVER} }`).length, 1)
   assert.equal(twinsIn(`@media (max-width: 40rem) {\n  ${COLUMN_3}\n}`).length, 1)

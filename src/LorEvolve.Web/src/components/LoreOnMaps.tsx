@@ -27,7 +27,7 @@ export function LoreOnMaps({ universeId, entityId }: { universeId: string; entit
       <SectionTitle level={2} tone="label">
         {t('lore.onMaps.heading')}
       </SectionTitle>
-      <ul className="entrymaps" data-testid="entry-maps-list">
+      <ul className="plainlist stack stack--2" data-testid="entry-maps-list">
         {state.value.map((pin) => (
           <li key={pin.pinId}>
             <Link
