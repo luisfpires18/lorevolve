@@ -1,17 +1,26 @@
 import { useId, type ReactNode } from 'react'
-import { IdeaReferencePicker } from './IdeaReferencePicker'
+import { SearchPickDrawer } from './SearchPickDrawer'
+import { Quoted } from './NameList'
+import { listReferenceTargets, referenceContext } from '../ideas/api'
 import { IdeaFormFields } from './ideas/IdeaFormFields'
 import { IdeaHead } from './ideas/IdeaHead'
 import { EditorNotices } from './EditorNotices'
 import { QuietNote } from './QuietNote'
 import { IdeaReferences } from './ideas/IdeaReferences'
-import { EditorSaveBar } from './EditorSaveBar'
+import { SaveBar } from './SaveAction'
 import { RecordUnavailable } from './ideas/RecordUnavailable'
-import type { IdeaDetail } from '../ideas/types'
+import {
+  IDEA_REFERENCE_KIND_KEYS,
+  IDEA_REFERENCE_KIND_LABELS,
+  IDEA_REFERENCE_KIND_PLACEHOLDERS,
+  IDEA_REFERENCE_KINDS,
+  IdeaReferenceKind,
+  type IdeaDetail,
+} from '../ideas/types'
 import { useIdeaEditor } from '../ideas/useIdeaEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
-import { DocumentHead } from './DocumentHead'
+import { EditorHead } from './DocumentHead'
 
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
@@ -58,7 +67,7 @@ export function IdeaEditor({
   onCreated,
   onDeleted,
 }: IdeaEditorProps) {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const bodyId = useId()
@@ -115,13 +124,14 @@ export function IdeaEditor({
     )
   }
 
+  const pickIn = draft.universeId
   const chosenUniverse =
     universes?.find((universe) => universe.id === draft.universeId) ??
     (stored.universe && stored.universe.id === draft.universeId ? stored.universe : null)
 
   return (
     <article className="idea" aria-labelledby={headingId} data-testid="idea-editor">
-      <DocumentHead
+      <EditorHead
         testIdPrefix="idea"
         listPath={listPath}
         listLabel={listLabel}
@@ -138,7 +148,7 @@ export function IdeaEditor({
         updatedAt={stored.updatedAt}
       >
         <IdeaHead isNew={isNew} stored={stored} contextUniverse={contextUniverse} ideaId={ideaId} />
-      </DocumentHead>
+      </EditorHead>
 
       <EditorNotices
         testId="idea"
@@ -218,7 +228,7 @@ export function IdeaEditor({
           fieldErrors={fieldErrors}
         />
 
-        <EditorSaveBar
+        <SaveBar
           record
           keyShortcuts
           warning={
@@ -241,13 +251,43 @@ export function IdeaEditor({
         />
       </form>
 
-      {isPicking && draft.universeId !== null ? (
-        <IdeaReferencePicker
-          universeId={draft.universeId}
-          universeName={chosenUniverse?.name ?? null}
-          chosen={draft.references}
+      {isPicking && pickIn !== null ? (
+        <SearchPickDrawer
+          testId="idea-reference-picker"
+          testPrefix="idea-picker"
+          eyebrow={
+            chosenUniverse?.name
+              ? tx('ideas.picker.inUniverse', { universe: <Quoted text={chosenUniverse.name} /> })
+              : t('ideas.picker.inThisUniverse')
+          }
+          title={t('ideas.picker.title')}
+          searchLabel={t('ideas.picker.findByName')}
+          narrow={{
+            label: t('ideas.picker.whatToReference'),
+            initial: IdeaReferenceKind.Entity,
+            options: IDEA_REFERENCE_KINDS.map((kind) => ({
+              value: kind,
+              label: IDEA_REFERENCE_KIND_LABELS[kind],
+              testId: `idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[kind]}`,
+            })),
+          }}
+          placeholder={(kind) => t(IDEA_REFERENCE_KIND_PLACEHOLDERS[kind!])}
+          search={(words, kind, signal) => listReferenceTargets(pickIn, kind!, words, signal)}
+          option={(target) => ({
+            key: `${target.kind}:${target.id}`,
+            name: target.name,
+            context: referenceContext(target),
+          })}
+          chosen={new Set(draft.references.map((chosen) => `${chosen.kind}:${chosen.id}`))}
           onChoose={addReference}
           onClose={() => setIsPicking(false)}
+          words={{
+            looking: t('ideas.picker.looking'),
+            failed: t('ideas.picker.loadFailed'),
+            empty: { named: t('ideas.picker.emptyNamed'), none: t('ideas.picker.emptyKind') },
+            add: t('ideas.picker.add'),
+            done: t('ideas.picker.added'),
+          }}
         />
       ) : null}
 
