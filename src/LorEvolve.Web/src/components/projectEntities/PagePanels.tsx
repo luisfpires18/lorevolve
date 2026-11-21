@@ -39,15 +39,13 @@ export function PagePanels({
           actions={
             <TypeRowActions
               name={panel.description ?? String(place + 1)}
-              move={{
-                isFirst: place === 0,
-                isLast: place === page.panels.length - 1,
+              sibling={{
+                index: place,
+                count: page.panels.length,
                 busy,
-                onMove: (direction) =>
+                to: (next) =>
                   run(() =>
-                    movePanel(projectId, volumeId, chapterId, page.id, panel.id, {
-                      place: place + (direction === 'up' ? -1 : 1),
-                    }),
+                    movePanel(projectId, volumeId, chapterId, page.id, panel.id, { place: next }),
                   ),
               }}
               moveTestIds={{

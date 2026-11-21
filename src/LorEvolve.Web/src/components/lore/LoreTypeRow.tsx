@@ -136,13 +136,13 @@ export function LoreTypeRow({
       actions={
         <TypeRowActions
           name={type.name}
-          move={
+          sibling={
             edit
               ? {
-                  isFirst: place === 0,
-                  isLast: place === siblings.length - 1,
+                  index: place,
+                  count: siblings.length,
                   busy: moving !== null,
-                  onMove: (direction) => void move(type, direction),
+                  to: (_, direction) => void move(type, direction),
                   buttonRef: (direction, element) => keep(`${type.id}:${direction}`, element),
                 }
               : undefined

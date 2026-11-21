@@ -50,20 +50,11 @@ export function PageRow({
       actions={
         <TypeRowActions
           name={name}
-          move={{
-            isFirst: index === 0,
-            isLast: index === pages.length - 1,
+          sibling={{
+            index,
+            count: pages.length,
             busy,
-            onMove: (direction) =>
-              run(() =>
-                movePage(
-                  projectId,
-                  volumeId,
-                  chapterId,
-                  page.id,
-                  index + (direction === 'up' ? -1 : 1),
-                ),
-              ),
+            to: (next) => run(() => movePage(projectId, volumeId, chapterId, page.id, next)),
           }}
           moveTestIds={{ up: `project-page-up-${page.id}`, down: `project-page-down-${page.id}` }}
           addChild={{ onAdd: () => setAddingTo(page.id), testId: `project-panel-add-${page.id}` }}
