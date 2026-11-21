@@ -158,7 +158,7 @@ export function EntityHistory({
             ) : null}
           </>
         )}
-        renderVersion={(opened) => <Snapshot revision={opened} chronology={chronology} />}
+        renderDetail={(opened) => <Snapshot revision={opened} chronology={chronology} />}
         restoreDisabled={history.busyId !== null}
       />
     </section>

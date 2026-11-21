@@ -14,7 +14,7 @@ import {
 import type { Progression } from '../../progression/types'
 import { LoadingNote } from '../LoadingNote'
 import { DateText } from '../DateText'
-import { FormMessage } from '../FormMessage'
+import { RevisionHistory } from '../RevisionHistory'
 
 /** The progression's own history: each saved version with when and by whom, readable in place and put back on request. */
 export function ProgressionHistory({
@@ -42,15 +42,7 @@ export function ProgressionHistory({
     }),
     [universeId, entityId],
   )
-  const {
-    revisions,
-    status,
-    opened,
-    openId,
-    message,
-    open: view,
-    restore,
-  } = useRevisionHistory({
+  const history = useRevisionHistory({
     store,
     // Read on opening only: a restore lands through onRestored, and the list is not read again.
     reloadKey: 0,
@@ -73,8 +65,9 @@ export function ProgressionHistory({
       failed: t('progression.history.restoreFailed'),
     },
   })
-  // The reading note stays until a read lands, beside the message of a read that failed.
-  const loaded = status === 'ready' || revisions.length > 0
+  const reading = open ? <LoadingNote>{t('progression.history.reading')}</LoadingNote> : null
+  // Until a read lands the reading note stays, beside the message of a read that failed.
+  const loaded = history.status === 'ready' || history.revisions.length > 0
 
   return (
     <details
@@ -87,80 +80,71 @@ export function ProgressionHistory({
         <ActionIcon icon={History} />
         {t('progression.history.title')}
       </summary>
-      {message ? <FormMessage>{message.text}</FormMessage> : null}
-      {!loaded ? (
-        open ? (
-          <LoadingNote>{t('progression.history.reading')}</LoadingNote>
-        ) : null
-      ) : (
-        <ol className="history__list">
-          {revisions.map((revision, index) => (
-            <li
-              className="history__item"
-              key={revision.id}
-              data-testid={`era-version-${revision.number}`}
-            >
-              <p className="history__line">
-                <strong>{t('progression.history.version', { number: revision.number })}</strong>{' '}
-                {revision.kind === RevisionKind.Created
-                  ? t('progression.history.kind.created')
-                  : revision.kind === RevisionKind.Restored
-                    ? t('progression.history.kind.restored')
-                    : t('progression.history.kind.changed')}{' '}
-                <DateText value={revision.createdAt} withTime />{' '}
-                <VersionActor name={revision.actorName} />
-              </p>
-              <div className="history__actions">
+      <RevisionHistory
+        history={history}
+        reading={reading}
+        failed={loaded ? undefined : reading}
+        empty={<ol className="history__list" />}
+        row={(revision, index, version) => (
+          <li className="history__item" data-testid={`era-version-${revision.number}`}>
+            <p className="history__line">
+              <strong>{t('progression.history.version', { number: revision.number })}</strong>{' '}
+              {revision.kind === RevisionKind.Created
+                ? t('progression.history.kind.created')
+                : revision.kind === RevisionKind.Restored
+                  ? t('progression.history.kind.restored')
+                  : t('progression.history.kind.changed')}{' '}
+              <DateText value={revision.createdAt} withTime />{' '}
+              <VersionActor name={revision.actorName} />
+            </p>
+            <div className="history__actions">
+              <button
+                className="linkbutton"
+                type="button"
+                aria-label={t(
+                  version.isOpen
+                    ? 'progression.history.hideVersion'
+                    : 'progression.history.viewVersion',
+                  { number: revision.number },
+                )}
+                onClick={version.view}
+              >
+                {version.isOpen ? t('progression.history.hide') : t('progression.history.view')}
+              </button>
+              {index > 0 ? (
                 <button
                   className="linkbutton"
                   type="button"
-                  aria-label={t(
-                    openId === revision.id
-                      ? 'progression.history.hideVersion'
-                      : 'progression.history.viewVersion',
-                    { number: revision.number },
-                  )}
-                  onClick={() => void view(revision.id)}
+                  aria-label={t('progression.history.restoreVersion', {
+                    number: revision.number,
+                  })}
+                  onClick={version.restore}
+                  data-testid={`restore-era-version-${revision.number}`}
                 >
-                  {openId === revision.id
-                    ? t('progression.history.hide')
-                    : t('progression.history.view')}
+                  {t('progression.history.restoreButton')}
                 </button>
-                {index > 0 ? (
-                  <button
-                    className="linkbutton"
-                    type="button"
-                    aria-label={t('progression.history.restoreVersion', {
-                      number: revision.number,
-                    })}
-                    onClick={() => void restore(revision)}
-                    data-testid={`restore-era-version-${revision.number}`}
-                  >
-                    {t('progression.history.restoreButton')}
-                  </button>
-                ) : null}
-              </div>
-              {openId === revision.id && opened ? (
-                <ul className="namelist" data-testid={`era-version-${revision.number}-eras`}>
-                  {opened.eras.length === 0 ? (
-                    <li>{t('progression.history.noStages')}</li>
-                  ) : (
-                    opened.eras.map((era) => <li key={era.id}>{era.name}</li>)
-                  )}
-                  {opened.forms.map((form) => (
-                    <li key={form.id}>{t('progression.history.formItem', { name: form.name })}</li>
-                  ))}
-                  {opened.abilities.map((ability) => (
-                    <li key={ability.id}>
-                      {t('progression.history.abilityItem', { name: ability.name })}
-                    </li>
-                  ))}
-                </ul>
               ) : null}
-            </li>
-          ))}
-        </ol>
-      )}
+            </div>
+            {version.opened ? (
+              <ul className="namelist" data-testid={`era-version-${revision.number}-eras`}>
+                {version.opened.eras.length === 0 ? (
+                  <li>{t('progression.history.noStages')}</li>
+                ) : (
+                  version.opened.eras.map((era) => <li key={era.id}>{era.name}</li>)
+                )}
+                {version.opened.forms.map((form) => (
+                  <li key={form.id}>{t('progression.history.formItem', { name: form.name })}</li>
+                ))}
+                {version.opened.abilities.map((ability) => (
+                  <li key={ability.id}>
+                    {t('progression.history.abilityItem', { name: ability.name })}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </li>
+        )}
+      />
     </details>
   )
 }

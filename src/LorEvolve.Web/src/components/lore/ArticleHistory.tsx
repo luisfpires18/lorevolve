@@ -152,7 +152,7 @@ export function ArticleHistory<S extends HistoryRevision, D, R>({
           <VersionActor name={revision.actorName} />
         </>
       )}
-      renderVersion={renderVersion}
+      renderDetail={renderVersion}
       restoreDisabled={panel ? blocked !== null : history.busyId !== null}
       restoreDescribedBy={blocked ? blockedId : undefined}
       versionId={panel ? (revision) => `${panel.id}-version-${revision.number}` : undefined}
