@@ -73,8 +73,6 @@ const HAND_READS = new Set([
   'src/components/CommentsDrawer.tsx',
   'src/components/ContentPublication.tsx',
   'src/components/EraRelations.tsx',
-  'src/components/IdeaBoardPicker.tsx',
-  'src/components/IdeaReferencePicker.tsx',
   'src/components/KnowledgeView.tsx',
   'src/components/LoreFieldFilters.tsx',
   'src/components/MomentPick.tsx',
