@@ -1,7 +1,5 @@
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react'
 import { Drawer } from '../Drawer'
-import { FormActions } from '../FormActions'
-import { FormMessage } from '../FormMessage'
 import type { Progression } from '../../progression/types'
 import { ProgressionConflict } from './ProgressionConflict'
 
@@ -75,20 +73,16 @@ export function ProgressionDrawer<Draft>({
       busy={state.isSaving}
       onClose={onClose}
       onSubmit={onSave}
-      actions={(close) => (
-        <FormActions
-          submitLabel={submitLabel}
-          busy={state.isSaving}
-          busyLabel={busyLabel}
-          submitTestId={`save-${name}`}
-          submitRef={state.saveButton}
-          onCancel={close}
-          cancelTestId={cancelTestId}
-        />
-      )}
+      message={state.message}
+      messageTestId={`${name}-error`}
+      actions={{
+        submitLabel,
+        busyLabel,
+        submitTestId: `save-${name}`,
+        submitRef: state.saveButton,
+        cancelTestId,
+      }}
     >
-      {state.message ? <FormMessage testId={`${name}-error`}>{state.message}</FormMessage> : null}
-
       {state.conflict ? (
         <ProgressionConflict
           universeId={universeId}

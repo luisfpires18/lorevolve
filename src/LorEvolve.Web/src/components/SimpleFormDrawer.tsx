@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react'
 import { Drawer } from './Drawer'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 import { errorText } from '../lib/errorText'
 import { useFormSave } from '../lib/useFormSave'
 
@@ -76,19 +74,18 @@ export function SimpleFormDrawer({
       onClose={onClose}
       onSubmit={save}
       busy={saving}
-      actions={(close) => (
-        <FormActions
-          submitLabel={submitLabel}
-          {...(showBusy ? { busy: saving, busyLabel } : null)}
-          disabled={disabled || saving}
-          submitTestId={submitTestId}
-          onCancel={close}
-          cancelTestId={cancelTestId}
-        />
-      )}
+      message={form.message}
+      messageAt="end"
+      actions={{
+        submitLabel,
+        showBusy,
+        busyLabel,
+        disabled: disabled || saving,
+        submitTestId,
+        cancelTestId,
+      }}
     >
       {children}
-      {form.message ? <FormMessage>{form.message}</FormMessage> : null}
     </Drawer>
   )
 }
