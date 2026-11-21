@@ -71,7 +71,7 @@ function ConnectDrawer({
       })),
     [universeId],
   )
-  const { load, retry } = useAsyncRead(read)
+  const { load } = useAsyncRead(read)
 
   return (
     <Drawer
@@ -94,7 +94,7 @@ function ConnectDrawer({
       <ReadGate
         load={load}
         loading={{ text: t('ai.connect.loading') }}
-        error={{ message: t('ai.connect.loadFailed'), onRetry: retry, testId: 'connect-ai-error' }}
+        error={{ message: t('ai.connect.loadFailed'), testId: 'connect-ai-error' }}
       >
         {(info) =>
           info.url === null ? (

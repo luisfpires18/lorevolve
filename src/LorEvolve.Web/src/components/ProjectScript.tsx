@@ -31,7 +31,7 @@ export function ProjectScript({
 
   // A 404 is a project with no format yet. A save reads again quietly and keeps the parts shown if that read fails.
   const read = useCallback((signal: AbortSignal) => getStructure(projectId, signal), [projectId])
-  const { load, retry, refresh } = useAsyncRead(read, {
+  const { load, refresh } = useAsyncRead(read, {
     missing: true,
     failed: t('projects.structure.failed'),
   })
@@ -47,7 +47,7 @@ export function ProjectScript({
       <ReadGate
         load={load}
         loading={{ text: t('projects.common.loading') }}
-        error={{ onRetry: retry, testId: 'project-script-failed' }}
+        error={{ testId: 'project-script-failed' }}
         missing={
           <EmptyState
             title={t('projects.script.noFormat')}

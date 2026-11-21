@@ -83,6 +83,7 @@ export function ConnectedApps() {
           message: t('data.connectedApps.loadFailed'),
           onRetry: retry,
           retryLabel: t('data.connectedApps.retry'),
+          retrySize: 'sm',
           testId: 'connected-apps-error',
         }}
       >

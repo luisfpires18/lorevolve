@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { Button } from './Button'
 import { Callout } from './Callout'
@@ -12,6 +12,7 @@ export function LoadError({
   message,
   onRetry,
   retryLabel,
+  retrySize,
   retryTestId,
   testId,
   className,
@@ -20,6 +21,7 @@ export function LoadError({
   message: ReactNode
   onRetry?: () => void
   retryLabel?: ReactNode
+  retrySize?: ComponentProps<typeof Button>['size']
   retryTestId?: string
   testId?: string
   className?: string
@@ -30,7 +32,7 @@ export function LoadError({
     <Callout look="notice" tone="error" className={className} role="alert" testId={testId}>
       <p>{message}</p>
       {onRetry && (
-        <Button tone="secondary" onClick={onRetry} data-testid={retryTestId}>
+        <Button tone="secondary" size={retrySize} onClick={onRetry} data-testid={retryTestId}>
           {retryLabel ?? t('shell.app.tryAgain')}
         </Button>
       )}
