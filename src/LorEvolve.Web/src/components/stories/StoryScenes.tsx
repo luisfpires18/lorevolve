@@ -92,7 +92,12 @@ export function StoryScenes(
   )
 
   return (
-    <section className="entry__layout" aria-labelledby="story-scenes-heading">
+    <section
+      // No premise, no rail: the scenes take the width, as a Lore entry's view does without a picture.
+      className={story.premise ? 'entry__layout' : 'entry__layout entry__layout--view'}
+      data-picture={story.premise ? undefined : 'false'}
+      aria-labelledby="story-scenes-heading"
+    >
       <h2 className="visually-hidden" id="story-scenes-heading">
         {t('stories.page.structureHeading')}
       </h2>
@@ -216,7 +221,7 @@ export function StoryScenes(
 
       {story.premise ? (
         <aside className="entry__rail" aria-label={t('stories.page.railLabel')}>
-          <p className="entitydetail__description prose" data-testid="story-premise">
+          <p className="erapanel__description prose" data-testid="story-premise">
             {story.premise}
           </p>
         </aside>

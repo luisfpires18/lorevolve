@@ -48,7 +48,7 @@ export function ManuscriptParts({
   children: ReactNode
 }) {
   const listId = useId()
-  // Where the entry layout folds into one column, the outline is a disclosure under the writing.
+  // Where the entry layout folds into one column, the outline is a disclosure above the writing.
   const narrow = useMediaQuery('(max-width: 1100px)')
   const toggle = useRef<HTMLButtonElement>(null)
   // Opened "at" a part rather than simply open: arriving at another part closes the list without an effect chasing the
@@ -68,9 +68,78 @@ export function ManuscriptParts({
     if (button && button.offsetParent !== null) button.focus()
   }
 
+  // Where the layout folds into one column the outline leads the main column, above the writing, so changing part never
+  // means scrolling past the editor and the keyboard meets the outline first; on a wide screen it is the rail.
+  const outline = (
+    <nav
+      className={narrow ? undefined : 'entry__rail'}
+      aria-label={outlineLabel}
+      data-testid="manuscript-outline"
+    >
+      {narrow ? (
+        <DisclosureButton
+          ref={toggle}
+          tone="text"
+          className="typemenu__trigger"
+          expanded={isOpen}
+          controls={listId}
+          onToggle={() => setOpenAt(isOpen ? null : currentId)}
+          data-testid="manuscript-outline-toggle"
+        >
+          {isOpen ? closeLabel : toggleLabel}{' '}
+          <bdi className="typemenu__current">{selected?.title ?? chooseLabel}</bdi>
+        </DisclosureButton>
+      ) : null}
+
+      <div id={listId} hidden={narrow && !isOpen} data-testid="manuscript-outline-list">
+        {groups.map((group) => {
+          const headingId = `${listId}-${group.key}`
+          return (
+            <div key={group.key} data-testid="manuscript-outline-group">
+              {group.label ? (
+                <QuietNote size="xs" id={headingId} testId="manuscript-outline-heading">
+                  {group.label}
+                </QuietNote>
+              ) : null}
+              {group.parts.length === 0 ? (
+                <QuietNote spacing="flush">{noneLabel}</QuietNote>
+              ) : (
+                // Links with their own aria-current, not NavLinks: a part named by a query (`?node=`) would never
+                // match a NavLink's path. A group, not a nav: the outline is the one landmark. `rail__block` stacks
+                // the links.
+                <ViewLinks
+                  landmark={false}
+                  className="rail__block"
+                  labelledBy={group.label ? headingId : undefined}
+                  items={group.parts.map((part) => ({
+                    to: part.to,
+                    current: part.id === currentId,
+                    title: part.title,
+                    onClick: chose,
+                    testId: 'manuscript-outline-scene',
+                    label: (
+                      <>
+                        <bdi>{part.title}</bdi>
+                        {part.mark}
+                      </>
+                    ),
+                  }))}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </nav>
+  )
+
   return (
     <section
-      className="manuscript entry__layout"
+      // Folded, there is no rail: one column, as a Lore entry's view without a picture, with no empty rows above it.
+      className={
+        narrow ? 'manuscript entry__layout entry__layout--view' : 'manuscript entry__layout'
+      }
+      data-picture={narrow ? 'false' : undefined}
       aria-labelledby={`${listId}-heading`}
       data-testid="manuscript"
     >
@@ -78,60 +147,12 @@ export function ManuscriptParts({
         {heading}
       </h2>
 
-      <div className="entry__main">{children}</div>
+      <div className="entry__main">
+        {narrow ? outline : null}
+        {children}
+      </div>
 
-      <nav className="entry__rail" aria-label={outlineLabel} data-testid="manuscript-outline">
-        {narrow ? (
-          <DisclosureButton
-            ref={toggle}
-            tone="text"
-            expanded={isOpen}
-            controls={listId}
-            onToggle={() => setOpenAt(isOpen ? null : currentId)}
-            data-testid="manuscript-outline-toggle"
-          >
-            {isOpen ? closeLabel : toggleLabel} <bdi>{selected?.title ?? chooseLabel}</bdi>
-          </DisclosureButton>
-        ) : null}
-
-        <div id={listId} hidden={narrow && !isOpen} data-testid="manuscript-outline-list">
-          {groups.map((group) => {
-            const headingId = `${listId}-${group.key}`
-            return (
-              <div key={group.key} data-testid="manuscript-outline-group">
-                {group.label ? (
-                  <QuietNote size="xs" id={headingId} testId="manuscript-outline-heading">
-                    {group.label}
-                  </QuietNote>
-                ) : null}
-                {group.parts.length === 0 ? (
-                  <QuietNote spacing="flush">{noneLabel}</QuietNote>
-                ) : (
-                  // Links with their own aria-current, not NavLinks: a part named by a query (`?node=`) would never
-                  // match a NavLink's path.
-                  <ViewLinks
-                    label={outlineLabel}
-                    labelledBy={group.label ? headingId : undefined}
-                    items={group.parts.map((part) => ({
-                      to: part.to,
-                      current: part.id === currentId,
-                      title: part.title,
-                      onClick: chose,
-                      testId: 'manuscript-outline-scene',
-                      label: (
-                        <>
-                          <bdi>{part.title}</bdi>
-                          {part.mark}
-                        </>
-                      ),
-                    }))}
-                  />
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </nav>
+      {narrow ? null : outline}
     </section>
   )
 }

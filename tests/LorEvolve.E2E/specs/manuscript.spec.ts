@@ -731,6 +731,11 @@ test.describe('manuscript', () => {
         // The outline folds away, and the prose takes the column.
         await expect(toggle).toBeVisible()
         await expect(list).toBeHidden()
+        // Above the prose, so changing scene never means scrolling past it.
+        const toggleBox = (await toggle.boundingBox())!
+        expect(toggleBox.y + toggleBox.height, `outline at ${width}px`).toBeLessThanOrEqual(
+          editorBox.y,
+        )
         expect(editorBox.width, `editor width at ${width}px`).toBeGreaterThanOrEqual(
           Math.min(width - 96, measure - 1),
         )

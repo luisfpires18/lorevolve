@@ -2,7 +2,7 @@
 
 /*
  * The page and its outline, on a Lore entry's layout: the writing in the main column, a plain sheet at a reading measure,
- * and the outline's links in the rail. Below the width the entry page folds at, the outline becomes a disclosure under
+ * and the outline's links in the rail. Below the width the entry page folds at, the outline becomes a disclosure above
  * the sheet so the prose gets the whole column.
  */
 .manuscript {
@@ -11,7 +11,8 @@
 
 /* On a phone the story's header and each view's tools give their height back to the work beneath them. */
 @media (max-width: 640px) {
-  .story .pageheader {
+  .story .pageheader,
+  .manuscript .entry__main {
     gap: var(--space-1);
   }
 

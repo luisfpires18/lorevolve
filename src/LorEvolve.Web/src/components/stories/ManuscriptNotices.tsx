@@ -86,7 +86,11 @@ export function ManuscriptNotices({
         />
       ) : null}
 
-      {failure ? <FormMessage testId="manuscript-error">{failure}</FormMessage> : null}
+      {failure ? (
+        <FormMessage className="idea__failure" testId="manuscript-error">
+          {failure}
+        </FormMessage>
+      ) : null}
     </>
   )
 }

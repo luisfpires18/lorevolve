@@ -16,7 +16,8 @@ export interface ViewLink {
 
 /**
  * The routed views of one object, as links with an underlined current one; `labelledBy` names the links by a heading
- * the caller draws instead of `label`. Catalogue: `docs/design/ui-components.md`.
+ * the caller draws instead of `label`. `landmark={false}` draws a labelled group instead of a `nav`, for links inside
+ * the caller's own `nav` (a manuscript's outline). Catalogue: `docs/design/ui-components.md`.
  */
 export function ViewLinks({
   label,
@@ -24,15 +25,19 @@ export function ViewLinks({
   items,
   testId,
   className,
+  landmark = true,
 }: {
   label?: string
   labelledBy?: string
   items: ViewLink[]
   testId?: string
   className?: string
+  landmark?: boolean
 }) {
+  const Tag = landmark ? 'nav' : 'div'
   return (
-    <nav
+    <Tag
+      role={landmark ? undefined : 'group'}
       className={className ? `views ${className}` : 'views'}
       aria-label={labelledBy ? undefined : label}
       aria-labelledby={labelledBy}
@@ -65,6 +70,6 @@ export function ViewLinks({
           </Link>
         ),
       )}
-    </nav>
+    </Tag>
   )
 }

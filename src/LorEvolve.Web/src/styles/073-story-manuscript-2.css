@@ -31,7 +31,9 @@
   margin: 0;
 }
 
-.manuscript__recovery .recovery {
+/* The recovery offer and a conflict keep a line's room under the scene's head. */
+.manuscript__recovery .recovery,
+.manuscript .editconflict {
   margin: 1rem 0 0;
 }
 
