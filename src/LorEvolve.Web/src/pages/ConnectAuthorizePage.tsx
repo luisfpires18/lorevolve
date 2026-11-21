@@ -9,7 +9,6 @@ import { ConsentDetails } from '../components/mcp/ConsentDetails'
 import { ConsentForm } from '../components/mcp/ConsentForm'
 import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
 import { Callout } from '../components/Callout'
-import { LoadError } from '../components/LoadError'
 import { LoadingNote } from '../components/LoadingNote'
 
 /**
@@ -84,8 +83,10 @@ export default function ConnectAuthorizePage() {
           <p>{t('universe.connect.invalidNote')}</p>
         </Callout>
       ) : load.kind === 'error' ? (
-        // No retry: the request is read once, from the address.
-        <LoadError message={t('universe.connect.checkFailed')} testId="consent-error" />
+        // Not LoadError: there is no re-read, and the consent states are not a `Load<T>` for ReadGate.
+        <Callout look="notice" tone="error" role="alert" testId="consent-error">
+          <p>{t('universe.connect.checkFailed')}</p>
+        </Callout>
       ) : token ? (
         <ConsentForm
           params={params}
