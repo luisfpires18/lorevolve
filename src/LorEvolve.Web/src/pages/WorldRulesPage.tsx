@@ -4,18 +4,14 @@ import { Link, useLocation, useOutletContext, useSearchParams } from 'react-rout
 import { Quoted } from '../components/NameList'
 import { t, useI18n } from '../i18n'
 import { listWorldRules } from '../worldRules/api'
-import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { Button } from '../components/Button'
-import { Pager } from '../components/Pager'
 import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
-import { LinkRow } from '../components/LinkRow'
+import { WorldRulesList } from '../components/worldRules/WorldRulesList'
 import { Callout } from '../components/Callout'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { pageParam } from '../lib/queryParams'
-import { DateText } from '../components/DateText'
 
 /** What a rule's editor says it did before handing back to the list. */
 export interface WorldRulesListNotice {
@@ -92,73 +88,12 @@ export default function WorldRulesPage() {
         }}
       >
         {(result) => (
-          <>
-            {result.items.length > 0 ? (
-              <ul className="rulelist" data-testid="world-rule-list">
-                {result.items.map((rule) => (
-                  <LinkRow
-                    look="rule"
-                    key={rule.id}
-                    to={`${basePath}/${rule.id}`}
-                    title={rule.title}
-                    titleTestId="world-rule-open"
-                    excerpt={
-                      rule.excerpt ? (
-                        <>
-                          {rule.excerpt}
-                          {rule.isExcerptShortened ? '…' : null}
-                        </>
-                      ) : null
-                    }
-                    excerptTestId="world-rule-excerpt"
-                    testId="world-rule-row"
-                    data-title={rule.title}
-                    meta={
-                      <>
-                        {rule.hasCheck ? (
-                          <span className="rulerow__check" data-testid="world-rule-has-check">
-                            {t('canon.rules.checked')}
-                          </span>
-                        ) : null}
-                        {tx('canon.rules.updated', {
-                          time: <DateText value={rule.updatedAt} />,
-                        })}
-                      </>
-                    }
-                  />
-                ))}
-              </ul>
-            ) : null}
-
-            {result.items.length === 0 && result.totalCount === 0 ? (
-              <EmptyState
-                testId="world-rules-empty"
-                title={t('canon.rules.empty.title')}
-                hint={t('canon.rules.empty.hint')}
-                action={
-                  access.editContent ? (
-                    <NewButton to={`${basePath}/new`} data-testid="empty-new-world-rule">
-                      {t('canon.rules.emptyNewRule')}
-                    </NewButton>
-                  ) : undefined
-                }
-              />
-            ) : null}
-
-            {result.items.length === 0 && result.totalCount > 0 ? (
-              <EmptyState
-                testId="world-rules-page-empty"
-                title={t('canon.rules.pageEmpty.title')}
-                action={
-                  <Button tone="secondary" onClick={() => goToPage(1)}>
-                    {t('canon.rules.pageEmpty.first')}
-                  </Button>
-                }
-              />
-            ) : null}
-
-            <Pager page={result.page} totalPages={result.totalPages} onPage={goToPage} />
-          </>
+          <WorldRulesList
+            result={result}
+            basePath={basePath}
+            canCreate={access.editContent}
+            onPage={goToPage}
+          />
         )}
       </ReadGate>
     </section>

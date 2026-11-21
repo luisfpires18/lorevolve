@@ -4,13 +4,8 @@ import { Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
-import {
-  formatLabel,
-  kindLabel,
-  lifecycleLabel,
-  newProjectPath,
-  projectRowPath,
-} from '../projects/sections'
+import { newProjectPath, projectRowPath } from '../projects/sections'
+import { projectMetaSpans } from '../projects/projectMeta'
 import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
 import { t, useI18n } from '../i18n'
 import { sectionLabel, type Section as WorkspaceSection } from '../universes/sections'
@@ -136,11 +131,7 @@ export default function ProjectsPage({
               data-kind={project.kind}
               meta={
                 <>
-                  <span>{kindLabel(project.kind)}</span>
-                  {project.format ? (
-                    <span data-testid="project-row-format">{formatLabel(project.format)}</span>
-                  ) : null}
-                  <span>{lifecycleLabel(project.lifecycle)}</span>
+                  {projectMetaSpans(project, 'project-row-format')}
                   {inUniverse ? null : <span>{project.universe.name}</span>}
                 </>
               }

@@ -17,14 +17,14 @@ import { useUniverseAccess } from '../universes/access'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { shelfActions, withCover } from '../projects/shelfActions'
+import { shelfCoverChange } from '../projects/shelfCover'
+import { shelfNotices } from '../projects/shelfNotices'
 import { VIEWS } from '../projects/shelfViews'
 import { useShelfState } from '../projects/useShelfState'
 import { CardGrid } from '../components/CardGrid'
 import { ViewLinks } from '../components/ViewLinks'
 import { NewButton } from '../components/NewButton'
-import { Announce } from '../components/Announce'
 import { ReadGate } from '../components/ReadGate'
-import { FormMessage } from '../components/FormMessage'
 
 /**
  * One Creation category's projects, each drawn as the thing it will be (owner, 2026-11-17): Gaming on a handheld,
@@ -113,8 +113,10 @@ export default function CategoryShelfPage({
         </ReadGate>
       ) : null}
 
-      <Announce testId="shelf-announcement">{announcement}</Announce>
-      {moveError ? <FormMessage testId="shelf-move-error">{moveError}</FormMessage> : null}
+      {shelfNotices(
+        { announcement, moveError },
+        { announcement: 'shelf-announcement', moveError: 'shelf-move-error' },
+      )}
 
       {!showView && state.kind === 'ready' && state.value.length > 0 ? (
         // A handheld and a strip of film lie on their side, so their grid has wider places.
@@ -181,14 +183,13 @@ export default function CategoryShelfPage({
           name={covering.name}
           cover={covering.cover ?? null}
           store={projectCoverStore(covering.id, covering.kind)}
-          onChanged={(cover) => {
-            setCovering({ ...covering, cover })
+          onChanged={shelfCoverChange(covering, setCovering, (id, cover) =>
             setState((current) =>
               current.kind === 'ready'
-                ? { kind: 'ready', value: withCover(current.value, covering.id, cover) }
+                ? { kind: 'ready', value: withCover(current.value, id, cover) }
                 : current,
-            )
-          }}
+            ),
+          )}
           onClose={() => setCovering(null)}
         />
       ) : null}

@@ -17,6 +17,7 @@ const workspace = {
   },
   missing: {
     title: 'That universe is not here.',
+    hint: 'It may have been deleted, or it belongs to someone else.',
     back: 'Back to your universes',
     failed: 'Could not open this universe.',
     tryAgain: 'Try again',

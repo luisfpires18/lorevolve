@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
-import { Link, useLocation, useOutletContext } from 'react-router-dom'
-import { listProposals, reviewPath } from '../aiChanges/api'
-import { ProposalStatus, type ProposalState } from '../aiChanges/types'
-import { countWords, sourceWords, STATUS_WORDS } from '../aiChanges/words'
+import { useLocation, useOutletContext } from 'react-router-dom'
+import { listProposals } from '../aiChanges/api'
+import type { ProposalState } from '../aiChanges/types'
+import { AiChangeRow } from '../components/aiChanges/AiChangeRow'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { SegmentedControl } from '../components/SegmentedControl'
@@ -10,17 +10,15 @@ import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { ShowMore } from '../components/ShowMore'
 import { ReadGate } from '../components/ReadGate'
-import { QuietNote } from '../components/QuietNote'
 import { errorText } from '../lib/errorText'
 import { useAsyncRead } from '../lib/useAsyncRead'
-import { DateText } from '../components/DateText'
 
 /**
  * Pending AI Changes (ADR 0047): the proposals an AI staged and a person decides on, from an app over MCP and from the
  * connected apps, newest first. Account-wide in My workspace; one universe's inside it. Each opens its review.
  */
 export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boolean }) {
-  const { t, tn, tx } = useI18n()
+  const { t } = useI18n()
   const location = useLocation()
   const context = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? (context?.universe.id ?? null) : null
@@ -99,56 +97,13 @@ export default function AiChangesPage({ inUniverse = false }: { inUniverse?: boo
             <>
               <ul className="aichanges__list">
                 {proposals.items.map((proposal) => (
-                  <li
-                    className="aichanges__item"
+                  <AiChangeRow
                     key={proposal.id}
-                    data-testid="ai-change-proposal"
-                  >
-                    <Link
-                      className="aichanges__link"
-                      to={reviewPath(proposal.universeId, proposal.id)}
-                      // The proposal's Back returns to this list, account-wide or the universe's.
-                      state={{ backTo: `${location.pathname}${location.search}` }}
-                    >
-                      <span className="aichanges__summary" dir="auto">
-                        {proposal.summary ??
-                          tn('review.aiChanges.proposedChanges', proposal.operationCount, {
-                            n: proposal.operationCount,
-                          })}
-                      </span>
-                    </Link>
-                    <QuietNote className="aichanges__meta" wrap>
-                      {inUniverse ? null : (
-                        <>
-                          <bdi>{proposal.universeName}</bdi>
-                          {' · '}
-                        </>
-                      )}
-                      <span data-testid="ai-change-source">{sourceWords(proposal)}</span>
-                      {' · '}
-                      {proposal.proposedByMe
-                        ? t('review.aiChanges.askedByYou')
-                        : tx('review.aiChanges.askedBy', {
-                            name: (
-                              <bdi>
-                                {proposal.proposedByName ?? t('review.aiChanges.askedByGone')}
-                              </bdi>
-                            ),
-                          })}
-                      {' · '}
-                      <DateText value={proposal.createdAt} withTime />
-                    </QuietNote>
-                    <QuietNote className="aichanges__meta" wrap>
-                      <span className="aichanges__status" data-status={proposal.status}>
-                        {STATUS_WORDS[proposal.status]}
-                      </span>
-                      {' · '}
-                      {countWords(proposal)}
-                      {proposal.status === ProposalStatus.Open && proposal.committedCount > 0
-                        ? ` · ${tn('review.aiChanges.alreadyApplied', proposal.committedCount, { n: proposal.committedCount })}`
-                        : null}
-                    </QuietNote>
-                  </li>
+                    proposal={proposal}
+                    inUniverse={inUniverse}
+                    // The proposal's Back returns to this list, account-wide or the universe's.
+                    backTo={`${location.pathname}${location.search}`}
+                  />
                 ))}
               </ul>
               <ShowMore

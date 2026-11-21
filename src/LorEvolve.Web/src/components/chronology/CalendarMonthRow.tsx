@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { Field } from '../Field'
-import { t, useI18n } from '../../i18n'
+import { t, tn, useI18n } from '../../i18n'
+import type { ChronologyCalendarMonth } from '../../chronology/types'
 import { usageOf, type MonthDraft } from '../../chronology/monthDrafts'
 import { IconButton } from '../IconButton'
 import { MoveItems } from '../MoveItems'
@@ -128,6 +129,28 @@ export function CalendarMonthRow({
           {usage}
         </p>
       ) : null}
+    </li>
+  )
+}
+
+/** One month of a custom calendar as a reader sees it: its place, name and length in days. */
+export function CalendarMonthReadingRow({
+  month,
+  index,
+}: {
+  month: ChronologyCalendarMonth
+  index: number
+}) {
+  useI18n()
+  return (
+    <li className="month month--reading" data-testid="month-reading">
+      <span className="month__ordinal" aria-hidden="true">
+        {index + 1}
+      </span>
+      <bdi className="month__readname">{month.name}</bdi>
+      <span className="month__use">
+        {tn('time.chronology.reading.days', month.dayCount, { n: month.dayCount })}
+      </span>
     </li>
   )
 }

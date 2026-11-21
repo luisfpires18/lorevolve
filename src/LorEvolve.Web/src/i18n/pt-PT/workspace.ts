@@ -19,6 +19,7 @@ const workspace: Dictionary['workspace'] = {
   },
   missing: {
     title: 'Esse universo não está aqui.',
+    hint: 'Pode ter sido apagado, ou pertence a outra pessoa.',
     back: 'Voltar aos teus universos',
     failed: 'Não foi possível abrir este universo.',
     tryAgain: 'Tentar de novo',

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
+import { useLocation, useOutletContext, useParams } from 'react-router-dom'
 import { ChangeStatus, ProposalStatus } from '../aiChanges/types'
-import { EmptyState } from '../components/EmptyState'
+import { MissingState } from '../components/MissingState'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { aiChangeActions } from '../aiChanges/aiChangeActions'
@@ -48,15 +48,12 @@ export default function AiChangePage() {
           retryLabel: t('review.aiChange.retry'),
         }}
         missing={
-          <EmptyState
+          <MissingState
             testId="ai-change-missing"
             title={t('review.aiChange.missing.title')}
-            hint={
-              <>
-                {t('review.aiChange.missing.hint')}{' '}
-                <Link to="..">{t('review.aiChange.missing.back')}</Link>
-              </>
-            }
+            hint={t('review.aiChange.missing.hint')}
+            backTo=".."
+            backLabel={t('review.aiChange.missing.back')}
           />
         }
       >

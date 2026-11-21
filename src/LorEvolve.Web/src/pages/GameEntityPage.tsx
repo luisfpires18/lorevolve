@@ -1,13 +1,11 @@
-import { Link, useOutletContext, useParams } from 'react-router-dom'
-import { EmptyState } from '../components/EmptyState'
+import { useOutletContext, useParams } from 'react-router-dom'
+import { MissingState } from '../components/MissingState'
 import { ProjectEntityDetailView } from '../components/ProjectEntityDetailView'
-import { useGameProject } from '../projects/useGameProject'
+import { useGameProjectLoad } from '../projects/useGameProjectLoad'
 import { useTitleDetail } from '../lib/useTitleDetail'
 import { t, useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { ReadGate } from '../components/ReadGate'
-import type { Load } from '../lib/useAsyncRead'
-import type { ProjectDetail } from '../projects/types'
 
 /**
  * One entry of a game, on its own screen (#286). The game is checked first, exactly as the game's directory checks it
@@ -18,15 +16,8 @@ export default function GameEntityPage() {
   const { projectId, entityId } = useParams<{ projectId: string; entityId: string }>()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = workspace?.universe.id
-  const { loading, failed, retry, game } = useGameProject(projectId, universeId)
+  const { load, game, retry } = useGameProjectLoad(projectId, universeId)
   useTitleDetail(game?.name ?? null)
-
-  // useGameProject answers in flags; the gate reads them as one state. A null game (403 too, G9) is drawn below.
-  const load: Load<ProjectDetail | null> = loading
-    ? { kind: 'loading' }
-    : failed
-      ? { kind: 'error', message: t('projects.one.failed') }
-      : { kind: 'ready', value: game }
 
   return (
     <ReadGate
@@ -36,14 +27,12 @@ export default function GameEntityPage() {
     >
       {(game) =>
         game === null || !universeId || !entityId ? (
-          <EmptyState
+          <MissingState
             title={t('projects.gameEntities.notFound')}
             hint={t('projects.gameEntities.notFoundHint')}
-            action={
-              <Link to={`/app/universes/${universeId}/game-entities`}>
-                {t('projects.gameEntities.back')}
-              </Link>
-            }
+            backTo={`/app/universes/${universeId}/game-entities`}
+            backLabel={t('projects.gameEntities.back')}
+            backIn="action"
             testId="game-entities-missing"
           />
         ) : (

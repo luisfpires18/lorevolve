@@ -1,6 +1,7 @@
 import { Field } from '../Field'
 import { usageOf, type EraDraft } from '../../chronology/eraDrafts'
-import { t, useI18n } from '../../i18n'
+import { t, tx, useI18n } from '../../i18n'
+import { EraDirection, EraLabelPosition, type ChronologyEra } from '../../chronology/types'
 import { ChronologyEraStyle } from './ChronologyEraStyle'
 import { Button } from '../Button'
 import { MoveItems } from '../MoveItems'
@@ -118,6 +119,33 @@ export function ChronologyEraRow({
             ) : null}
           </div>
         </div>
+      </div>
+    </li>
+  )
+}
+
+/** One date period as a reader sees it: its place, name, and which way it counts, with a sample year. */
+export function EraReadingRow({ era, index }: { era: ChronologyEra; index: number }) {
+  useI18n()
+  const label = era.abbreviation ?? era.name
+  const sample = era.labelPosition === EraLabelPosition.AfterYear ? `1 ${label}` : `${label} 1`
+  return (
+    <li className="era" data-testid="era-reading">
+      <span className="era__ordinal" aria-hidden="true">
+        {index + 1}
+      </span>
+      <div className="era__body">
+        <p className="era__readname">
+          <bdi>{era.name}</bdi>
+        </p>
+        <QuietNote spacing="hint">
+          {tx(
+            era.direction === EraDirection.Descending
+              ? 'time.chronology.reading.countsDown'
+              : 'time.chronology.reading.countsUp',
+            { sample: <bdi>{sample}</bdi> },
+          )}
+        </QuietNote>
       </div>
     </li>
   )
