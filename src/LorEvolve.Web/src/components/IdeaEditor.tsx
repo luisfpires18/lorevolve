@@ -7,7 +7,7 @@ import { IdeaHead } from './ideas/IdeaHead'
 import { EditorNotices } from './EditorNotices'
 import { QuietNote } from './QuietNote'
 import { IdeaReferences } from './ideas/IdeaReferences'
-import { EditorSaveBar } from './EditorSaveBar'
+import { SaveBar } from './SaveAction'
 import { RecordUnavailable } from './ideas/RecordUnavailable'
 import {
   IDEA_REFERENCE_KIND_KEYS,
@@ -20,7 +20,7 @@ import {
 import { useIdeaEditor } from '../ideas/useIdeaEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
-import { DocumentHead } from './DocumentHead'
+import { EditorHead } from './DocumentHead'
 
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
@@ -131,7 +131,7 @@ export function IdeaEditor({
 
   return (
     <article className="idea" aria-labelledby={headingId} data-testid="idea-editor">
-      <DocumentHead
+      <EditorHead
         testIdPrefix="idea"
         listPath={listPath}
         listLabel={listLabel}
@@ -148,7 +148,7 @@ export function IdeaEditor({
         updatedAt={stored.updatedAt}
       >
         <IdeaHead isNew={isNew} stored={stored} contextUniverse={contextUniverse} ideaId={ideaId} />
-      </DocumentHead>
+      </EditorHead>
 
       <EditorNotices
         testId="idea"
@@ -228,7 +228,7 @@ export function IdeaEditor({
           fieldErrors={fieldErrors}
         />
 
-        <EditorSaveBar
+        <SaveBar
           record
           keyShortcuts
           warning={

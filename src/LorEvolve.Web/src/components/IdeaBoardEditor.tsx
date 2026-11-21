@@ -11,9 +11,9 @@ import type { IdeaBoardDetail } from '../ideas/boards'
 import { useBoardEditor } from '../ideas/useBoardEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
-import { DocumentHead } from './DocumentHead'
+import { EditorHead } from './DocumentHead'
 import { EditorNotices } from './EditorNotices'
-import { EditorSaveBar } from './EditorSaveBar'
+import { SaveBar } from './SaveAction'
 
 interface IdeaBoardEditorProps {
   /** The board being edited, or null for a new one. */
@@ -101,7 +101,7 @@ export function IdeaBoardEditor({
 
   return (
     <article className="board" aria-labelledby={headingId} data-testid="board-editor">
-      <DocumentHead
+      <EditorHead
         testIdPrefix="board"
         listPath={listPath}
         listLabel={listLabel}
@@ -172,7 +172,7 @@ export function IdeaBoardEditor({
 
       <BoardWork {...view} />
 
-      <EditorSaveBar
+      <SaveBar
         record
         keyShortcuts
         warning={
