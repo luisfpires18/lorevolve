@@ -204,7 +204,7 @@ export function ManuscriptEditor({
           renderVersion={(detail, revision) =>
             detail.content === '' ? null : (
               <div
-                className="recovery__prose prose"
+                className="recovery__preview recovery__prose prose"
                 role="region"
                 aria-label={t('manuscript.history.textOf', { number: revision.number })}
                 tabIndex={0}
