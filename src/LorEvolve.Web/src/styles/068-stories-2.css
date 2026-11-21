@@ -24,24 +24,6 @@
   }
 }
 
-.story__meta {
-  margin: 0.5rem 0 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.3rem 0.75rem;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.story__premise {
-  margin: var(--space-5) 0 0;
-  max-width: 62ch;
-  line-height: 1.65;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
 /* A lore reference: the type's icon and the entry's name, a real link to its page. One chip wherever a story or the
    timeline names an entry - a scene's lore, a beat's, a moment's cast - quieter than the title it sits under. */
 .lorechip {
@@ -93,30 +75,4 @@ a.lorechip:focus-visible {
 
 :root[data-theme='dark'] .lorechip {
   --type-ink: color-mix(in srgb, var(--type-accent, var(--muted)) 50%, var(--ink));
-}
-/* A row's tools: its one direct action as a text button, then its ⋯ menu. Trailing, so the menu's panel opens back
-   toward the page from the row's end. */
-.rowtools {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-1);
-}
-
-.rowtools .button--text {
-  min-height: var(--control-sm);
-  padding-block: 0;
-  font-size: var(--text-sm);
-}
-
-@media (pointer: coarse) {
-  .rowtools .button--text {
-    min-height: var(--control-touch);
-  }
-
-  .rowtools .iconbutton {
-    width: var(--control-touch);
-    height: var(--control-touch);
-  }
 }

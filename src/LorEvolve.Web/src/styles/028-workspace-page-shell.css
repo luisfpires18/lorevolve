@@ -208,16 +208,6 @@
   border-left: 2px solid var(--rule);
 }
 
-/* A story part's publication pill sits among a row's tools; its panel hangs from its end like the row's menu. */
-.partpub {
-  flex: none;
-}
-
-.contentpub__what {
-  color: var(--muted);
-  font-weight: 400;
-}
-
 /* The prose's publication sits in the save bar, before Save; the bar holds to the screen's foot, so its panel opens
    upward. Outside the text box's flow, so it never moves the first line of prose down. */
 .manuscript__publication {

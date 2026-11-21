@@ -107,6 +107,7 @@
 .entitydetail__description {
   margin: 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 40rem) {

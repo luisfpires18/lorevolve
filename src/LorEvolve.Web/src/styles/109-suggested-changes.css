@@ -32,8 +32,8 @@
 @media (max-width: 640px) {
   .entry__lenses .reviewtrigger__label,
   .entry__tools .entry__toollabel,
-  .manuscript__tools .reviewtrigger__label,
-  .manuscript__tools .loretrigger__label {
+  .entry__tools .reviewtrigger__label,
+  .entry__tools .loretrigger__label {
     position: absolute;
     width: 1px;
     height: 1px;

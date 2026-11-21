@@ -183,10 +183,10 @@ test('a save refused as stale is ConflictBar', () => {
     ['src/components/ConflictBar.tsx'],
     'conflictbar classes',
   )
-  onlyIn(
+  // The manuscript's conflict is EditConflict's own box (#456 stage 11b): nothing wraps it in a second one.
+  assert.deepEqual(
     filesMatching((source) => hasToken(source, (token) => token === 'manuscript__conflict')),
-    ['src/components/stories/ManuscriptNotices.tsx'],
-    'manuscript__conflict',
+    [],
   )
 })
 

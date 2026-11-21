@@ -437,7 +437,7 @@ test.describe('text direction', () => {
 
     await expectLorEvolveStaysLeftToRight(page, [
       page.getByTestId('story-views'),
-      page.locator('.story__bar'),
+      page.locator('.entry__bar'),
       sceneCard.locator('.types__actions').first(),
     ])
 
@@ -1078,7 +1078,7 @@ test.describe('authored prose direction', () => {
     await expectWritten(page.getByTestId('manuscript-editor'), prose)
     await expectLorEvolveStaysLeftToRight(page, [
       page.getByTestId('story-views'),
-      page.locator('.manuscript__tools'),
+      page.getByTestId('manuscript-scene').locator('.entry__tools'),
       page.locator('.manuscript__bar'),
     ])
     expect(await scrollsSideways(page)).toBe(false)

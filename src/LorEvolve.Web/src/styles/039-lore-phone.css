@@ -1,8 +1,9 @@
 /* ---------- Lore on a phone ---------- */
 
 @media (max-width: 640px) {
-  .lore {
-    /* Room under the last card and the pager for the create button at the bottom edge. */
+  .lore,
+  .entry__layout:has(.lore__create) {
+    /* Room under the last card and the pager - or a story's last scene - for the create button at the bottom edge. */
     padding-bottom: 4.5rem;
   }
 

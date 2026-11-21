@@ -85,6 +85,7 @@ const storiesPage: Dictionary['stories']['page'] = {
     hint: 'As ideias são privadas de cada conta. As ideias deste universo pertencem ao seu proprietário.',
   },
   structureHeading: 'Estrutura',
+  railLabel: 'Sobre esta história',
   asideStructured:
     'Arcos e capítulos por ordem, e as cenas de cada um pela ordem em que são contadas. O momento em que cada uma acontece no universo nunca a desloca.',
   aside:

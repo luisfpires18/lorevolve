@@ -78,19 +78,6 @@
   margin-bottom: 0;
 }
 
-/* The views as the project's chips (#377) and the story's one menu at the end of the same line. On a 360px phone the
-   chips wrap, two lines at worst. */
-.story__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-}
-
-.story__menu {
-  align-self: center;
-}
-
 /* While writing, the header steps back to one line - "Stories / The title" - over the views, with no line of facts. */
 .story--manuscript .pageheader {
   flex-flow: row wrap;
@@ -116,27 +103,10 @@
   flex: 1 1 100%;
 }
 
-.story--manuscript .pageheader__title {
+/* The writing dominates: the story's title, and a scene's or a script part's name over its prose, at an item's size. */
+.story--manuscript .pageheader__title,
+.manuscript .entry__name {
   font-size: var(--text-item);
-}
-
-.story__stale,
-.story__sent {
-  margin: 1rem 0 0;
-}
-
-/* A view's own tools - New scene, New arc - beside the one line saying how that view is ordered. */
-.story__toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem 1.5rem;
-  margin: 1.5rem 0 0.25rem;
-}
-
-.story__aside {
-  margin: 0;
 }
 
 .empty__actions {

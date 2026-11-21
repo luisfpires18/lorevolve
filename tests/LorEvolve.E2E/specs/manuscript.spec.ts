@@ -753,12 +753,12 @@ test.describe('manuscript', () => {
           .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-testid')))
           .toBe('manuscript-outline-toggle')
       } else {
-        // Beside the prose, not above it.
+        // Beside the prose, in the entry layout's rail, not above it.
         await expect(toggle).toBeHidden()
         await expect(list).toBeVisible()
         const outlineBox = (await page.getByTestId('manuscript-outline').boundingBox())!
-        expect(outlineBox.x + outlineBox.width, `outline at ${width}px`).toBeLessThanOrEqual(
-          editorBox.x,
+        expect(outlineBox.x, `outline at ${width}px`).toBeGreaterThanOrEqual(
+          editorBox.x + editorBox.width,
         )
         for (const link of await list.getByTestId('manuscript-outline-scene').all()) {
           const box = (await link.boundingBox())!

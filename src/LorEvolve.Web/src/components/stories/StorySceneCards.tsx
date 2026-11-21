@@ -1,6 +1,6 @@
 import { useUniverseAccess } from '../../universes/access'
 import { SceneCard, type MoveTarget } from '../SceneCard'
-import { StoryPartPublication } from '../StoryPartPublication'
+import { ContentPublication } from '../ContentPublication'
 import type { Scene, StoryDetail } from '../../stories/types'
 import type { Chronology } from '../../chronology/types'
 import type { storyPatches } from '../../stories/storyPatches'
@@ -56,15 +56,18 @@ export function StorySceneCards({
       onReorderLore={(target, entityIds) => void reorderLore(target, entityIds)}
       publication={
         access.publish ? (
-          <StoryPartPublication
+          <ContentPublication
             universeId={universe.id}
-            storyId={story.id}
             kind="scene"
             id={scene.id}
             name={scene.title}
-            visibility={scene.visibility}
-            storyIsPublic={storyIsPublic}
-            onChange={(visibility) => patchScene(scene.id, { visibility })}
+            placement="bar"
+            part={{
+              storyId: story.id,
+              visibility: scene.visibility,
+              storyIsPublic,
+              onChange: (visibility) => patchScene(scene.id, { visibility }),
+            }}
           />
         ) : null
       }

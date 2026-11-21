@@ -6,10 +6,11 @@ import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { unchaptered } from '../../stories/format'
 import { chapterChoices } from '../../stories/structure'
-import { SceneBeatsField } from '../SceneBeatsField'
+import { SectionListEditor } from '../lore/SectionListEditor'
+import { beatEdits } from '../../stories/beats'
 import { EMPTY_POINT, type SceneDraft } from '../../stories/sceneDraft'
 import type { Chapter, PlotArc, Scene } from '../../stories/types'
-import type { RefObject } from 'react'
+import { useId, type RefObject } from 'react'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
 
@@ -44,6 +45,9 @@ export function SceneFormFields({
   setPart: (part: ChronologyPointPart, value: string) => void
 }) {
   const { t } = useI18n()
+  const beatList = useId()
+  const beats = beatEdits(draft.beats, (next) => edit({ beats: next }), beatList)
+  const beatName = (index: number) => t('stories.beats.named', { n: index + 1 })
 
   return (
     <>
@@ -97,11 +101,66 @@ export function SceneFormFields({
 
       {/* A suggestion never changes a scene's beats: the API takes none from one. */}
       {suggesting ? null : (
-        <SceneBeatsField
-          beats={draft.beats}
-          onChange={(beats) => edit({ beats })}
-          errors={fieldErrors}
-        />
+        // A scene's beats (ADR 0070): its steps in order, each a title and an optional note, saved with the scene, whole.
+        <Field
+          group="fieldset"
+          className="scenechron"
+          label={t('stories.beats.legend')}
+          hint={t('stories.beats.hint')}
+          error={fieldErrors.beats}
+          data-testid="scene-beats-field"
+        >
+          <SectionListEditor
+            bare
+            listId={beatList}
+            sections={draft.beats}
+            sectionLabel={(_, index) => beatName(index)}
+            move={beats.move}
+            add={beats.add}
+            remove={(key) => beats.remove(draft.beats.findIndex((beat) => beat.key === key))}
+            words={{
+              add: t('stories.beats.add'),
+              remove: t('stories.beats.remove'),
+              removeLabel: (_, index) => t('stories.beats.removeLabel', { n: index + 1 }),
+              moveTitles: { up: t('stories.beats.earlier'), down: t('stories.beats.later') },
+            }}
+            testIds={{
+              row: () => 'scene-beat-row',
+              up: () => 'scene-beat-up',
+              down: () => 'scene-beat-down',
+              remove: () => 'scene-beat-remove',
+              add: 'scene-beat-add',
+            }}
+            row={(beat, index) => (
+              <>
+                <Field
+                  hideLabel
+                  name={null}
+                  label={t('stories.beats.titleLabel', { n: index + 1 })}
+                  error={fieldErrors[`beats[${index}].title`]}
+                  type="text"
+                  dir="auto"
+                  placeholder={t('stories.beats.titlePlaceholder')}
+                  value={beat.title}
+                  onChange={(event) => beats.update(index, { title: event.target.value })}
+                  data-testid="scene-beat-title"
+                />
+                <Field
+                  hideLabel
+                  name={null}
+                  label={t('stories.beats.noteLabel', { n: index + 1 })}
+                  error={fieldErrors[`beats[${index}].note`]}
+                  type="text"
+                  dir="auto"
+                  placeholder={t('stories.beats.notePlaceholder')}
+                  value={beat.note}
+                  onChange={(event) => beats.update(index, { note: event.target.value })}
+                  data-testid="scene-beat-note"
+                />
+              </>
+            )}
+          />
+        </Field>
       )}
 
       <Field
@@ -158,15 +217,16 @@ export function SceneFormFields({
         ) : null}
 
         {hasPoint ? (
-          <Button
-            tone="secondary"
-            size="sm"
-            className="scenechron__clear"
-            onClick={() => edit({ point: EMPTY_POINT })}
-            data-testid="scene-chronology-clear"
-          >
-            {t('stories.sceneForm.clearWhen')}
-          </Button>
+          <p className="types__blockedlinks">
+            <Button
+              tone="secondary"
+              size="sm"
+              onClick={() => edit({ point: EMPTY_POINT })}
+              data-testid="scene-chronology-clear"
+            >
+              {t('stories.sceneForm.clearWhen')}
+            </Button>
+          </p>
         ) : null}
       </Field>
 

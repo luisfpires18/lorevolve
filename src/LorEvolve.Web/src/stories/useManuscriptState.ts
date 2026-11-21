@@ -4,6 +4,7 @@ import { useAuth } from '../auth/useAuth'
 import type { Load } from '../lib/useAsyncRead'
 import { useLocalDraft } from '../lib/useLocalDraft'
 import type { Scene, SceneManuscript } from './types'
+import { useMediaQuery } from '../lib/useMediaQuery'
 
 /** The manuscript as the API last confirmed it: what "unsaved" is measured against, and what the next save names. */
 export interface Stored {
@@ -46,6 +47,7 @@ export function useManuscriptState({ universeId, scene }: { universeId: string; 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   // On a phone the scene's planning folds behind Details, so the prose starts on the first screen. Wider, it is always shown.
   const [isContextOpen, setIsContextOpen] = useState(false)
+  const isPhone = useMediaQuery('(max-width: 640px)')
   const [historyKey, setHistoryKey] = useState(0)
   // Write is the editor, each mention a chip; Read shows the prose as a reader reads it, each mention a link.
   const [isReading, setIsReading] = useState(false)
@@ -88,6 +90,7 @@ export function useManuscriptState({ universeId, scene }: { universeId: string; 
     setIsHistoryOpen,
     isContextOpen,
     setIsContextOpen,
+    isPhone,
     historyKey,
     setHistoryKey,
     isReading,

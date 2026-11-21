@@ -87,7 +87,8 @@ function projectComponents(): string[] {
 
 // The project components today. A new one is refused (extend a Lore, Types or shared part instead); a deleted one is
 // taken off. Stage 10a took off TemplateFields, SchemaTypeFields and FieldForm; stage 10b ProjectCard, Production and
-// SagasUnassigned; stage 11a OutlineItem, ArcSection, ChapterSection, FoldToggle, LoreReference and LoreReorderHandle.
+// SagasUnassigned; stage 11a OutlineItem, ArcSection, ChapterSection, FoldToggle, LoreReference and LoreReorderHandle; stage 11b
+// SceneBeatsField and StoryPartPublication.
 const PROJECT_COMPONENTS: string[] = [
   'src/components/ChapterForm.tsx',
   'src/components/ChapterPages.tsx',
@@ -117,13 +118,11 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/ProjectScript.tsx',
   'src/components/ProjectSeasons.tsx',
   'src/components/ProjectShell.tsx',
-  'src/components/SceneBeatsField.tsx',
   'src/components/SceneCard.tsx',
   'src/components/SceneContext.tsx',
   'src/components/SceneForm.tsx',
   'src/components/ShelfCard.tsx',
   'src/components/StoryForm.tsx',
-  'src/components/StoryPartPublication.tsx',
   'src/components/StoryRedirect.tsx',
   'src/components/projectEntities/EntryPictures.tsx',
   'src/components/projectEntities/EpisodeForm.tsx',
@@ -264,5 +263,34 @@ test('the story outline is TypeRow, FactList and EntityRow', () => {
     projectFiles().filter((file) => writesStoryOutline(read(file))),
     [],
     'draw an outline row with TypeRow and TypeRowActions, its facts with FactList, its lore with EntityRow',
+  )
+})
+
+const writesStoryPage = (source: string) =>
+  tokens(source).some(
+    (token) =>
+      token.startsWith('story__') ||
+      token.startsWith('storygroup') ||
+      token.startsWith('msoutline') ||
+      token.startsWith('partpub'),
+  )
+
+// A story's page, its manuscript and a script part are a Lore entry's layout (`entry__layout`, `entry__main`,
+// `entry__rail`), head and tools; a part's publication is ContentPublication's (#456 P8): no project file draws the old
+// story page parts again.
+test('the story page and the manuscript are on a Lore entry layout', () => {
+  assert.ok(writesStoryPage('<div className="story__bar">'))
+  assert.ok(writesStoryPage('<section className={`story__scenes ${extra}`}>'))
+  assert.ok(writesStoryPage("<header className={open ? 'storygroup__head' : ''}>"))
+  assert.ok(writesStoryPage('<nav className={`msoutline msoutline--${state}`}>'))
+  assert.ok(writesStoryPage('<div className="contentpub partpub">'))
+  assert.ok(!writesStoryPage('<article className={`story story--${view}`}>'))
+  assert.ok(!writesStoryPage('<div className="entry__layout">'))
+  assert.ok(!writesStoryPage('<ol className="history__list">'))
+  assert.ok(!writesStoryPage('<li className="storyrow">'))
+  assert.deepEqual(
+    projectFiles().filter((file) => writesStoryPage(read(file))),
+    [],
+    'lay a story page or a manuscript out with entry__layout, EntryHead and EntryTools; publish a part with ContentPublication',
   )
 })

@@ -58,7 +58,7 @@ export function StoryHeader({
         view === 'manuscript' ? null : (
           // A div, because the publication control's panel is not phrasing content. The story's publication sits
           // with its other facts: the bar under the title is full at 360px, and this line has room.
-          <div className="story__meta">
+          <div className="actions actions--tight">
             <StatusBadge
               step={story.status}
               label={STORY_STATUS_LABELS[story.status]}
@@ -80,7 +80,13 @@ export function StoryHeader({
                 onChange={(state) => setPublication({ storyId: story.id, state })}
               />
             ) : null}
-            <Link className="story__timeline" to={timelinePath} data-testid="story-timeline">
+          </div>
+        )
+      }
+      actions={
+        view === 'manuscript' ? undefined : (
+          <>
+            <Link to={timelinePath} data-testid="story-timeline">
               {t('stories.page.timeline')}
             </Link>
             {/* Comments on the story as a whole. Not on the Manuscript view, where each scene has its own. */}
@@ -92,7 +98,7 @@ export function StoryHeader({
               onSuggestionAccepted={reload}
               onSuggest={() => setStoryForm('suggest')}
             />
-          </div>
+          </>
         )
       }
     >

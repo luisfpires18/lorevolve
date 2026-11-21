@@ -114,23 +114,9 @@ body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
 
   /* A phone's foot holds one thing (ADR 0028): while the page keeps its own control there - a save bar, or the fixed
      "New …" of Lore and a story - the pill leaves. Feedback stays a tap away on every other screen. */
-  body:has(
-      .actionbar,
-      .article__bar,
-      .manuscript__bar,
-      .consent__actions,
-      .lore__create,
-      .story__create
-    )
+  body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions, .lore__create)
     .feedbackbutton,
-  body:has(
-      .actionbar,
-      .article__bar,
-      .manuscript__bar,
-      .consent__actions,
-      .lore__create,
-      .story__create
-    )
+  body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions, .lore__create)
     .feedbackbutton__thanks {
     display: none;
   }
