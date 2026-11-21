@@ -8,6 +8,7 @@ import { useAuth } from '../auth/useAuth'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
 import { Button } from '../components/Button'
+import { Callout } from '../components/Callout'
 
 /**
  * The token that lets this visitor register while registration is invitation-only: an Admin's sign-up link
@@ -90,9 +91,9 @@ export default function RegisterPage() {
       })}
     >
       {inviteOnly === null ? null : inviteOnly && !inviteToken ? (
-        <p className="callout" role="status" data-testid="register-invite-only">
+        <Callout look="callout" as="p" role="status" testId="register-invite-only">
           {t('auth.register.inviteOnly')}
-        </p>
+        </Callout>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
           <FormMessage testId="auth-error">{message}</FormMessage>

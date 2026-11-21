@@ -5,6 +5,7 @@ import { networkFailure } from '../lib/api'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
 import { Button } from '../components/Button'
+import { Callout } from '../components/Callout'
 import { SessionPending } from '../components/SessionPending'
 
 /** Held while the session probe is in flight, so no screen paints before it settles. */
@@ -18,12 +19,12 @@ function SessionUnreachable({ onRetry }: { onRetry: () => void }) {
   const { t } = useI18n()
   return (
     <div className="session-pending session-pending--unreachable">
-      <div className="notice notice--error" role="alert">
+      <Callout look="notice" tone="error" role="alert">
         <p>{networkFailure()}</p>
         <Button tone="secondary" onClick={onRetry}>
           {t('auth.routes.retry')}
         </Button>
-      </div>
+      </Callout>
     </div>
   )
 }

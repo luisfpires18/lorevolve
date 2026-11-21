@@ -22,8 +22,9 @@ const headWithMenu = (source: string) =>
   /<DocumentHead\b/.test(source) && /<(ActionMenu|RowMenu)\b/.test(source)
 const writesBar = (source: string) => classStrings(source).some((value) => BAR.test(value))
 const noticesByHand = (source: string) =>
-  /<RecoveredDraft\b/.test(source) && /<ConflictBar\b/.test(source)
-const conflictByHand = (source: string) => /<ConflictBar\b/.test(source)
+  /<RecoveredDraft\b/.test(source) && /<StaleChoice\b/.test(source)
+// `boxId` marks a field or sections stale choice: a drawer's own box, not an editor's notices.
+const conflictByHand = (source: string) => /<StaleChoice\b/.test(source) && !/\bboxId=/.test(source)
 const unassignedCount = (source: string) => source.match(/export const UNASSIGNED\b/g)?.length ?? 0
 
 // Files that write the bar or warning class by hand, with the reason. SaveBar is the part.
@@ -32,8 +33,8 @@ const HAND_BARS = new Map<string, string>([
   ['src/components/lore/ArticleEditing.tsx', 'the article has no save bar, only the warning'],
 ])
 
-// Files that draw a ConflictBar outside EditorNotices, with the reason. Machine, World rule and the script part had
-// ConflictBar with FormMessage by hand and now use EditorNotices; these two were not in the stage 12 list.
+// Files that draw a StaleChoice outside EditorNotices, with the reason. Machine, World rule and the script part had
+// StaleChoice with FormMessage by hand and now use EditorNotices; these two were not in the stage 12 list.
 const HAND_CONFLICTS = new Map<string, string>([
   ['src/components/EditorNotices.tsx', 'the part'],
   [
@@ -108,9 +109,9 @@ test('the guards fail on a bad snippet', () => {
   assert.equal(writesBar('<div className={`manuscript__bar ${look}`}>'), true)
   assert.equal(writesBar("<p className={on ? 'recovery__warning' : 'x'}>"), true)
   assert.equal(writesBar('<div className="manuscript__barline">'), false)
-  assert.equal(noticesByHand('<RecoveredDraft what={w} />\n<ConflictBar text={t} />'), true)
+  assert.equal(noticesByHand('<RecoveredDraft what={w} />\n<StaleChoice text={t} />'), true)
   assert.equal(noticesByHand('<RecoveredDraft what={w} />'), false)
-  assert.equal(conflictByHand('<FormMessage>{f}</FormMessage>\n<ConflictBar text={t} />'), true)
+  assert.equal(conflictByHand('<FormMessage>{f}</FormMessage>\n<StaleChoice text={t} />'), true)
   assert.equal(conflictByHand('<EditorNotices conflict={c} />'), false)
   assert.equal(unassignedCount("export const UNASSIGNED = 'unassigned'"), 1)
 })

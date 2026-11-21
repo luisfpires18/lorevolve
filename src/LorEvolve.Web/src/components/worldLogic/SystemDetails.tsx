@@ -3,7 +3,7 @@ import { t } from '../../i18n'
 import { SYSTEM_NAME_MAX_LENGTH, SYSTEM_SUMMARY_MAX_LENGTH } from '../../worldLogic/types'
 import type { useSystemEditorState } from '../../worldLogic/useSystemEditorState'
 import type { systemEditorActions } from '../../worldLogic/systemEditorActions'
-import { ConflictBar } from '../ConflictBar'
+import { StaleChoice } from '../StaleChoice'
 import { FormActions } from '../FormActions'
 import { FormMessage } from '../FormMessage'
 
@@ -43,7 +43,7 @@ export function SystemDetails({
   return (
     <>
       {conflict ? (
-        <ConflictBar
+        <StaleChoice
           text={t('canon.worldLogic.systems.editor.conflict')}
           onLoadSaved={() => void reread()}
           loadLabel={t('canon.worldLogic.systems.editor.loadSaved')}

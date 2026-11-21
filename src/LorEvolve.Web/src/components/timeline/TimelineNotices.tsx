@@ -6,6 +6,7 @@ import { TimelineSource, type TimelineItemPage } from '../../timeline/types'
 import type { Load } from '../../lib/useAsyncRead'
 import type { SOURCES } from '../../timeline/timelineSources'
 import { Button } from '../Button'
+import { Callout } from '../Callout'
 import { ReadGate } from '../ReadGate'
 import { QuietNote } from '../QuietNote'
 import { FormMessage } from '../FormMessage'
@@ -70,9 +71,9 @@ export function TimelineNotices({
       ) : null}
 
       {mixedEras ? (
-        <p className="chron__caution" data-testid="chron-eras">
+        <Callout look="callout" tone="warning" as="p" className="chron__caution" testId="chron-eras">
           {t('time.timeline.mixedLabels')}
-        </p>
+        </Callout>
       ) : null}
 
       {message ? <FormMessage testId="chron-error">{message}</FormMessage> : null}

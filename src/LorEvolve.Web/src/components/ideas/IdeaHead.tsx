@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Callout } from '../Callout'
 import { Quoted } from '../NameList'
 import type { Stored } from '../../ideas/ideaDraft'
 import { useI18n } from '../../i18n'
@@ -21,7 +22,7 @@ export function IdeaHead({
   if (!belongsElsewhere) return null
 
   return (
-    <p className="idea__elsewhere" data-testid="idea-elsewhere">
+    <Callout look="callout" as="p" className="idea__elsewhere" testId="idea-elsewhere">
       {stored.universe
         ? tx('ideas.editor.belongsTo', {
             universe: <Quoted text={stored.universe.name} />,
@@ -33,6 +34,6 @@ export function IdeaHead({
           {t('ideas.editor.openInAll')}
         </Link>
       ) : null}
-    </p>
+    </Callout>
   )
 }

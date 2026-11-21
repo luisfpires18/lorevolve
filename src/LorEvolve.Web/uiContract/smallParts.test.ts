@@ -99,7 +99,6 @@ const rowRuleWithOwnLayout = (css: string) =>
 // 11. A place class that stays on a row comes with `actions`.
 const PLACES = [
   'form__actions',
-  'conflictbar__actions',
   'lore__resultactions',
   'cropper__actions',
   'drawer__actions',

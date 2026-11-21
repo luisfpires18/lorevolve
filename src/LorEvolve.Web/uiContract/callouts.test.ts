@@ -18,10 +18,6 @@ const sourceFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encodin
 // Files that write a `notice` or `callout` class by hand, with the reason. Callout itself is the part.
 const HAND_CALLOUTS = new Map<string, string>([
   ['src/components/Callout.tsx', 'the part'],
-  ['src/auth/routes.tsx', 'auth pages are not touched by #456'],
-  ['src/pages/ForgotPasswordPage.tsx', 'auth pages are not touched by #456'],
-  ['src/pages/RegisterPage.tsx', 'auth pages are not touched by #456'],
-  ['src/pages/ResetPasswordPage.tsx', 'auth pages are not touched by #456'],
 ])
 
 // Files whose effect focuses a confirm or its panel by hand. useConfirmFocus is the part.

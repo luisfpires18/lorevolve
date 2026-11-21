@@ -8,11 +8,10 @@ import { useFieldSectionsState } from '../lore/useFieldSectionsState'
 import { fieldSectionsActions } from '../lore/fieldSectionsActions'
 import { SectionListEditor } from './lore/SectionListEditor'
 import { SectionFieldPlacer } from './lore/SectionFieldPlacer'
-import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
-import { Callout } from './Callout'
+import { StaleChoice } from './StaleChoice'
 
 /**
  * A type's field sections (Issue #26) in the drawer every LorEvolve form uses: name, order, fold and remove sections, put each
@@ -94,26 +93,21 @@ export function FieldSectionsDialog({
       {message ? <FormMessage testId="sections-dialog-error">{message}</FormMessage> : null}
 
       {stale ? (
-        <Callout
-          look="callout"
-          tone="warning"
-          testId="sections-dialog-stale"
+        <StaleChoice
+          testId="sections"
+          boxId="sections-dialog-stale"
+          loadId="sections-use-saved"
           title={t('entityTypes.sections.savedNow')}
-        >
-          <p className="fieldconflict__saved">
-            {type.fieldSections.length === 0
+          text={
+            type.fieldSections.length === 0
               ? t('entityTypes.sections.noneSaved')
-              : type.fieldSections.map((section) => section.name).join(', ')}
-          </p>
-          <p className="types__blockedlinks">
-            <Button tone="secondary" size="sm" onClick={takeSaved} data-testid="sections-use-saved">
-              {t('entityTypes.sections.useSaved')}
-            </Button>
-            <Button tone="text" size="sm" onClick={keepMine} data-testid="sections-keep-mine">
-              {t('entityTypes.sections.keepMine')}
-            </Button>
-          </p>
-        </Callout>
+              : type.fieldSections.map((section) => section.name).join(', ')
+          }
+          onLoadSaved={takeSaved}
+          loadLabel={t('entityTypes.sections.useSaved')}
+          onKeepMine={keepMine}
+          keepLabel={t('entityTypes.sections.keepMine')}
+        />
       ) : null}
 
       <QuietNote spacing="hint">{t('entityTypes.sections.hint')}</QuietNote>
