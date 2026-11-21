@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react'
+import { X } from 'lucide-react'
 
 type DataAttributes = { [key: `data-${string}`]: string | undefined }
 
 /**
  * One chosen thing in a picker, as a removable chip: what the caller puts in it (a name in a `<bdi>`), a quiet `note`
- * after it ("in Trash", the scene's story), and the × that removes it, named by `removeLabel`. `as` is the element the
+ * after it ("in Trash", the scene's story), and the X that removes it, named by `removeLabel`. `as` is the element the
  * list around it needs: `li` in a list, `span` among an input's chips, `p` for a single pick. `removeIcon` replaces the
- * ×. Any `data-*` passes through. Catalogue: docs/design/ui-components.md.
+ * X. Any `data-*` passes through. Catalogue: docs/design/ui-components.md.
  */
 export function Token({
   children,
   note,
   removeLabel,
   onRemove,
-  removeIcon = '×',
+  removeIcon = <X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />,
   testId,
   removeTestId,
   as: Tag = 'span',

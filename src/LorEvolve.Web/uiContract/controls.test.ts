@@ -127,7 +127,7 @@ test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
       [c('SegmentedControl'), 'the shared part'],
       [c('ViewChips'), 'the shared part'],
       ...list('a canvas node or a map pin', [
-        'ideas/BoardCardButton',
+        'CanvasCardButton',
         'worldLogic/MachineStateCard',
         'worldLogic/MachineLineLabel',
         'maps/MapViewerLayer',
@@ -162,8 +162,8 @@ test('a move is MoveItems', () => {
       ...list('on every workspace page; a Crumb would add a second Breadcrumb nav', [
         'universes/WorkspaceSidebar',
       ]),
-      ...list('the public portal, out of scope', ['portal/PublicStory']),
-    ]).set('src/pages/PublicLorePage.tsx', 'the public portal, out of scope'),
+      ...list("the public portal's own way back, in its tokens", ['portal/PublicCrumbs']),
+    ]),
     'use Crumb with back, or MoveItems',
   )
 })
@@ -178,12 +178,7 @@ test('show and hide is DisclosureButton; the listed others own their aria-expand
     withText(/aria-expanded/),
     new Map([
       [c('DisclosureButton'), 'the shared part'],
-      ...list('a menu or a combobox', [
-        'ActionMenu',
-        'UniverseSearch',
-        'EntityPicker',
-        'EntityMultiPicker',
-      ]),
+      ...list('a menu or a combobox', ['ActionMenu', 'UniverseSearch', 'EntityPicker']),
       ...list('a New button opening a form', ['ProjectEntries']),
       ...list('a tree branch', ['LoreCatalog']),
       ...list('a canvas node', ['familyTree/FamilyNode']),

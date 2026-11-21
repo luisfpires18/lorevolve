@@ -107,3 +107,51 @@ export function referenceContext(reference: IdeaReference) {
       return t('ideas.reference.inStory', { title: reference.storyTitle ?? '' })
   }
 }
+
+/** What a picked idea or entry puts on a board card: its id and what the card shows of it. */
+export interface PickedTarget {
+  id: string
+  name: string
+  excerpt: string | null
+  entityTypeName: string | null
+}
+
+/**
+ * What a board may hold, by name (ADR 0066): an unassigned board takes any of the account's live ideas; a universe
+ * board takes that universe's ideas and unassigned ones, and its live entries. Nothing deleted or in the Trash.
+ */
+export async function listBoardTargets(
+  what: 'idea' | 'entry',
+  universeId: string | null,
+  search: string,
+  signal: AbortSignal,
+): Promise<PickedTarget[]> {
+  if (what === 'entry') {
+    const targets = await listReferenceTargets(
+      universeId!,
+      IdeaReferenceKind.Entity,
+      search,
+      signal,
+    )
+    return targets.map((target) => ({
+      id: target.id,
+      name: target.name,
+      excerpt: null,
+      entityTypeName: target.entityTypeName,
+    }))
+  }
+
+  const base = { storyId: null, deleted: false, search, page: 1 }
+  const pages = await Promise.all(
+    universeId
+      ? [
+          listIdeas({ ...base, universeId, unassigned: false }, signal),
+          listIdeas({ ...base, universeId: null, unassigned: true }, signal),
+        ]
+      : [listIdeas({ ...base, universeId: null, unassigned: false }, signal)],
+  )
+  return pages
+    .flatMap((page) => page.items)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .map((idea) => ({ id: idea.id, name: idea.title, excerpt: idea.excerpt, entityTypeName: null }))
+}

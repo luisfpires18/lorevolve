@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react'
 import { StatusBadge } from '../StatusBadge'
+import { CanvasCardButton } from '../CanvasCardButton'
 import { useI18n } from '../../i18n'
 import { STATE_HEIGHT, STATE_WIDTH } from '../../worldLogic/machine'
 import type { SystemMachineState } from '../../worldLogic/types'
@@ -48,28 +49,20 @@ export function MachineStateCard({
     ? tn('canon.worldLogic.systems.machine.openFindings', count, { count })
     : null
   return [
-    <button
+    <CanvasCardButton
       key={state.id}
-      type="button"
-      className="boardcard"
-      style={{
-        left: `${state.x}px`,
-        top: `${state.y}px`,
-        width: `${STATE_WIDTH}px`,
-        height: `${STATE_HEIGHT}px`,
-      }}
-      aria-label={findings ? `${label}, ${findings}` : label}
-      aria-pressed={isSelected}
-      data-connecting-from={connecting === state.id || undefined}
-      data-dragging={dragging?.id === state.id || undefined}
-      data-testid="machine-state"
-      data-state-id={state.id}
-      data-name={state.name}
+      x={state.x}
+      y={state.y}
+      width={STATE_WIDTH}
+      height={STATE_HEIGHT}
+      label={findings ? `${label}, ${findings}` : label}
+      pressed={isSelected}
+      connecting={connecting === state.id}
+      dragging={dragging?.id === state.id}
+      testId="machine-state"
+      data={{ 'data-state-id': state.id, 'data-name': state.name }}
       onPointerDown={(event) => beginItemDrag(event, stateDrag(state))}
-      onClick={(event) => {
-        // A pointer press is handled on release; the keyboard's Enter and Space land here.
-        if (event.detail === 0) press(state)
-      }}
+      onPress={() => press(state)}
       onKeyDown={(event) => onStateKeyDown(event, state)}
     >
       <span className="boardcard__kind" aria-hidden="true">
@@ -80,7 +73,7 @@ export function MachineStateCard({
       <span className="boardcard__name" aria-hidden="true">
         <bdi>{state.name}</bdi>
       </span>
-    </button>,
+    </CanvasCardButton>,
     // Outside the card, which clips, and named by the card's own label, so hidden here.
     findings ? (
       <span

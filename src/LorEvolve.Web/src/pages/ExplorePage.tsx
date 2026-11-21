@@ -1,9 +1,10 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
-import { WorldCard } from '../components/WorldCard'
+import { ExploreFilters } from '../components/portal/ExploreFilters'
+import { WorldGrid } from '../components/portal/WorldGrid'
 import { listPublicUniverses, type ExploreQuery } from '../portal/api'
 import { usePublicPages } from '../portal/usePublicPages'
-import { CATEGORIES, categoryLabel, GENRES, genreLabel } from '../publishing/types'
+import { CATEGORIES, GENRES } from '../publishing/types'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, tn, useI18n } from '../i18n'
 import { Button } from '../components/Button'
@@ -54,67 +55,7 @@ export default function ExplorePage() {
             {t('portal.explore.title')}
           </h1>
           <p className="explore-hero__lede">{t('portal.explore.lede')}</p>
-          <div className="explore-filters">
-            <nav className="explore-cats" aria-label={t('portal.explore.categories')}>
-              <ul className="explore-cats__list">
-                {[
-                  { key: undefined, label: t('portal.explore.all') },
-                  ...CATEGORIES.map((option) => ({
-                    key: option.key,
-                    label: categoryLabel(option.value),
-                  })),
-                ].map((option) => (
-                  <li key={option.key ?? 'all'}>
-                    <Link
-                      className="explore-cats__chip"
-                      to={{ search: withParam(params, 'category', option.key) }}
-                      aria-current={option.key === category ? 'true' : undefined}
-                      data-testid={`explore-category-${option.key ?? 'all'}`}
-                    >
-                      {option.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <div className="explore-filters__selects">
-              <label className="explore-select">
-                <span className="explore-select__label">{t('portal.explore.genre')}</span>
-                <select
-                  className="explore-select__control"
-                  value={genre ?? ''}
-                  onChange={(event) =>
-                    setParams(withParam(params, 'genre', event.target.value || undefined))
-                  }
-                  data-testid="explore-genre"
-                >
-                  <option value="">{t('portal.explore.allGenres')}</option>
-                  {GENRES.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {genreLabel(option.value)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="explore-select">
-                <span className="explore-select__label">{t('portal.explore.sortBy')}</span>
-                <select
-                  className="explore-select__control"
-                  value={sort ?? 'recent'}
-                  onChange={(event) =>
-                    setParams(
-                      withParam(params, 'sort', event.target.value === 'az' ? 'az' : undefined),
-                    )
-                  }
-                  data-testid="explore-sort"
-                >
-                  <option value="recent">{t('portal.explore.sortRecent')}</option>
-                  <option value="az">{t('portal.explore.sortAz')}</option>
-                </select>
-              </label>
-            </div>
-          </div>
+          <ExploreFilters category={category} genre={genre} sort={sort} />
         </div>
       </section>
 
@@ -130,20 +71,7 @@ export default function ExplorePage() {
 
         <h2 className="visually-hidden">{t('portal.explore.worldsHeading')}</h2>
 
-        {loading ? (
-          <ul className="explore-grid" aria-hidden="true" data-testid="explore-loading">
-            {Array.from({ length: 8 }, (_, index) => (
-              <li className="worldcard worldcard--skeleton" key={index}>
-                <span className="worldcard__art" />
-                <span className="worldcard__text">
-                  <span className="worldcard__bone worldcard__bone--name" />
-                  <span className="worldcard__bone worldcard__bone--chips" />
-                  <span className="worldcard__bone worldcard__bone--short" />
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {loading ? <WorldGrid skeleton={8} testId="explore-loading" /> : null}
 
         {pages.status === 'error' ? (
           <LoadError
@@ -177,11 +105,7 @@ export default function ExplorePage() {
         ) : null}
 
         {pages.items.length > 0 ? (
-          <ul className="explore-grid" data-testid="explore-list">
-            {pages.items.map((world, index) => (
-              <WorldCard key={world.slug} world={world} eager={index < 6} />
-            ))}
-          </ul>
+          <WorldGrid worlds={pages.items} eager={6} testId="explore-list" />
         ) : null}
 
         <ShowMore
@@ -200,15 +124,6 @@ export default function ExplorePage() {
       </div>
     </div>
   )
-}
-
-/** The current address with one parameter set, or removed when it would be the default. */
-function withParam(params: URLSearchParams, name: string, value: string | undefined) {
-  const next = new URLSearchParams(params)
-  if (value) next.set(name, value)
-  else next.delete(name)
-  const search = next.toString()
-  return search ? `?${search}` : ''
 }
 
 function countLine(shown: number, total: number, isFiltered: boolean) {

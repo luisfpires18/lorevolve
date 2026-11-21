@@ -2,8 +2,7 @@ import { useI18n } from '../../i18n'
 import { roleLabel } from '../../universes/access'
 import type { Collaborators } from '../../universes/collaborators'
 import { MemberRow } from './MemberRow'
-import { Section } from '../Section'
-import { QuietNote } from '../QuietNote'
+import { CollabSection } from './CollabSection'
 
 /** The people who work here, each with a role to change and a way to remove them. */
 export function CollaboratorMembers({
@@ -20,47 +19,40 @@ export function CollaboratorMembers({
   const { t } = useI18n()
 
   return (
-    <Section
+    <CollabSection
       title={t('universe.collab.people')}
-      className="collab__section"
       titleId="collab-people-heading"
+      isEmpty={data.members.length === 0}
+      emptyText={t('universe.collab.peopleEmpty')}
+      emptyTestId="collaborators-empty"
+      listTestId="collaborator-list"
     >
-      {data.members.length === 0 ? (
-        <QuietNote spacing="block" testId="collaborators-empty">
-          {t('universe.collab.peopleEmpty')}
-        </QuietNote>
-      ) : (
-        <ul className="collab__list" data-testid="collaborator-list">
-          {data.members.map((member) => (
-            <MemberRow
-              key={member.userId}
-              universeId={universeId}
-              member={member}
-              onChanged={(next) => {
-                update((current) => ({
-                  ...current,
-                  members: current.members.map((item) =>
-                    item.userId === next.userId ? next : item,
-                  ),
-                }))
-                setAnnouncement(
-                  t('universe.collab.nowRole', {
-                    name: next.username,
-                    role: roleLabel(next.role),
-                  }),
-                )
-              }}
-              onRemoved={() => {
-                update((current) => ({
-                  ...current,
-                  members: current.members.filter((item) => item.userId !== member.userId),
-                }))
-                setAnnouncement(t('universe.collab.removedAnnounce', { name: member.username }))
-              }}
-            />
-          ))}
-        </ul>
-      )}
-    </Section>
+      {data.members.map((member) => (
+        <MemberRow
+          key={member.userId}
+          universeId={universeId}
+          member={member}
+          onChanged={(next) => {
+            update((current) => ({
+              ...current,
+              members: current.members.map((item) => (item.userId === next.userId ? next : item)),
+            }))
+            setAnnouncement(
+              t('universe.collab.nowRole', {
+                name: next.username,
+                role: roleLabel(next.role),
+              }),
+            )
+          }}
+          onRemoved={() => {
+            update((current) => ({
+              ...current,
+              members: current.members.filter((item) => item.userId !== member.userId),
+            }))
+            setAnnouncement(t('universe.collab.removedAnnounce', { name: member.username }))
+          }}
+        />
+      ))}
+    </CollabSection>
   )
 }

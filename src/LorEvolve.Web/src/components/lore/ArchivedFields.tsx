@@ -5,6 +5,7 @@ import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { entries } from '../../lore/fieldInUse'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
+import { FieldListRow } from './FieldListRow'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
 import { Callout } from '../Callout'
@@ -51,57 +52,52 @@ export function ArchivedFields({
         aria-label={t('entityTypes.fields.archivedLabel', { name: type.name })}
       >
         {archived.map((field) => (
-          <li
-            className="fieldlist__row"
+          <FieldListRow
             key={field.id}
+            name={field.name}
             data-field-name={field.name}
-            data-testid={`archived-field-${field.name}`}
-          >
-            <div className="fieldlist__text">
-              <span className="fieldlist__name">
-                <bdi>{field.name}</bdi>
-              </span>
-              <span className="fieldlist__meta">
-                {[
-                  FIELD_KIND_LABELS[field.kind],
-                  field.isRequired ? t('entityTypes.fields.previouslyRequired') : null,
-                  sectionName(field.sectionId),
-                  field.entryCount === 0
-                    ? t('entityTypes.fields.noValues')
-                    : t('entityTypes.fields.valuesIn', { entries: entries(field.entryCount) }),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </span>
-            </div>
-            {canEdit ? (
-              <span className="actions actions--compact fieldlist__actions">
-                <Button
-                  tone="secondary"
-                  size="sm"
-                  icon={ArchiveRestore}
-                  onClick={() => void restore(field)}
-                  disabled={busyFieldId === field.id}
-                  aria-label={t('entityTypes.fields.restoreField', { name: field.name })}
-                  data-testid={`restore-field-${field.name}`}
-                >
-                  {t('entityTypes.fields.restore')}
-                </Button>
-                {field.entryCount === 0 && !field.usedInHistory ? (
+            testId={`archived-field-${field.name}`}
+            meta={[
+              FIELD_KIND_LABELS[field.kind],
+              field.isRequired ? t('entityTypes.fields.previouslyRequired') : null,
+              sectionName(field.sectionId),
+              field.entryCount === 0
+                ? t('entityTypes.fields.noValues')
+                : t('entityTypes.fields.valuesIn', { entries: entries(field.entryCount) }),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            actions={
+              canEdit ? (
+                <>
                   <Button
-                    tone="danger-quiet"
+                    tone="secondary"
                     size="sm"
-                    className="fieldlist__delete"
-                    onClick={() => void remove(field)}
+                    icon={ArchiveRestore}
+                    onClick={() => void restore(field)}
                     disabled={busyFieldId === field.id}
-                    aria-label={t('entityTypes.fields.deleteForGood', { name: field.name })}
-                    data-testid={`delete-archived-field-${field.name}`}
+                    aria-label={t('entityTypes.fields.restoreField', { name: field.name })}
+                    data-testid={`restore-field-${field.name}`}
                   >
-                    {t('entityTypes.fields.delete')}
+                    {t('entityTypes.fields.restore')}
                   </Button>
-                ) : null}
-              </span>
-            ) : null}
+                  {field.entryCount === 0 && !field.usedInHistory ? (
+                    <Button
+                      tone="danger-quiet"
+                      size="sm"
+                      className="fieldlist__delete"
+                      onClick={() => void remove(field)}
+                      disabled={busyFieldId === field.id}
+                      aria-label={t('entityTypes.fields.deleteForGood', { name: field.name })}
+                      data-testid={`delete-archived-field-${field.name}`}
+                    >
+                      {t('entityTypes.fields.delete')}
+                    </Button>
+                  ) : null}
+                </>
+              ) : null
+            }
+          >
             {restoreOffer?.fieldId === field.id ? (
               <Callout
                 look="callout"
@@ -134,7 +130,7 @@ export function ArchivedFields({
               blocked={blocked}
               archive={archive}
             />
-          </li>
+          </FieldListRow>
         ))}
       </ul>
     </details>

@@ -10,13 +10,8 @@ import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { classStrings, read, webRoot } from './support.ts'
 
-// The public pages that keep their own line for good: the portal and the auth pages are not touched.
-const PUBLIC_PAGES = [
-  'src/pages/InvitationPage.tsx',
-  'src/pages/LoginPage.tsx',
-  'src/pages/RegisterPage.tsx',
-  'src/pages/ResetPasswordPage.tsx',
-]
+// Files that may still write their own line. Empty since the auth pages moved onto FormMessage.
+const PUBLIC_PAGES: string[] = []
 
 const codeFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
   .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.d.ts'))
