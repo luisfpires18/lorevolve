@@ -43,49 +43,6 @@
   color: var(--muted);
 }
 
-/* A manuscript's saved versions, opened under its tools: the same rows as an article's history. */
-.mshistory {
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--rule);
-}
-
-.mshistory__title {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-}
-
-.mshistory__lede,
-.mshistory__blocked,
-.mshistory__done {
-  margin: 0.35rem 0 0;
-  max-width: 62ch;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.mshistory__blocked,
-.mshistory__done {
-  color: var(--ink);
-}
-
-.mshistory .history__list {
-  margin-top: 0.75rem;
-}
-
-.mshistory__text {
-  max-height: 24rem;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-family: var(--display);
-  font-size: 1rem;
-  line-height: 1.7;
-}
-
 @media (max-width: 1100px) {
   .manuscript__text {
     max-width: 46rem;

@@ -1,10 +1,19 @@
-import { useId } from 'react'
+import { useId, useMemo } from 'react'
 import { EMPTY_FACT } from '../lore/facts'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
 import { VersionActor } from './VersionActor'
 import type { Chronology } from '../chronology/types'
-import { describeChanges, imagesNotRestored, RevisionKind } from '../lore/revisions'
+import {
+  describeChanges,
+  getRevision,
+  imagesNotRestored,
+  listRevisions,
+  mentionsImage,
+  restoreRevision,
+  RevisionKind,
+} from '../lore/revisions'
+import { ENTRY_CHANGED } from '../lore/api'
 import { CANON_LABELS } from '../lore/types'
 import { useI18n } from '../i18n'
 import { useEntityRevisions } from '../lore/useEntityRevisions'
@@ -58,6 +67,16 @@ export function EntityHistory({
 }: EntityHistoryProps) {
   const { t } = useI18n()
   const snapshotId = useId()
+  const store = useMemo(
+    () => ({
+      list: (signal: AbortSignal) => listRevisions(universeId, entityId, signal),
+      get: (revisionId: string) => getRevision(universeId, entityId, revisionId),
+      restore: (revisionId: string, version: number) =>
+        restoreRevision(universeId, entityId, revisionId, version),
+      changedCode: ENTRY_CHANGED,
+    }),
+    [universeId, entityId],
+  )
   const {
     revisions,
     status,
@@ -69,9 +88,29 @@ export function EntityHistory({
     setReads,
     openId,
     open,
-    carriesImages,
     restore,
-  } = useEntityRevisions({ universeId, entityId, reloadKey, currentVersion, onRestored })
+  } = useEntityRevisions({
+    store,
+    reloadKey,
+    currentVersion,
+    onRestored,
+    onStale: onRestored,
+    gated: true,
+    words: {
+      openFailed: t('entity.history.openFailed'),
+      // Said once, where a version is about to be put back and where the list is read - not on every row, and not at
+      // all for an entry that has never had a picture.
+      confirm: (revision, all) => ({
+        title: t('entity.history.restoreConfirm.title', { number: revision.number }),
+        message: t('entity.history.restoreConfirm.message'),
+        details: mentionsImage(all) ? [imagesNotRestored()] : undefined,
+        confirmLabel: t('entity.history.restoreConfirm.confirm'),
+      }),
+      changedElsewhere: t('entity.history.changedElsewhere'),
+      failed: t('entity.history.restoreFailed'),
+    },
+  })
+  const carriesImages = mentionsImage(revisions)
 
   return (
     <section className="history" aria-labelledby="history-heading">
@@ -96,7 +135,7 @@ export function EntityHistory({
         <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
       ) : null}
 
-      {message ? <FormMessage testId="history-error">{message}</FormMessage> : null}
+      {message ? <FormMessage testId="history-error">{message.text}</FormMessage> : null}
 
       {status === 'loading' ? null : status === 'error' ? (
         <LoadError
