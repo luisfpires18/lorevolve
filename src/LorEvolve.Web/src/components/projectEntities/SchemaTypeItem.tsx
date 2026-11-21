@@ -2,18 +2,12 @@ import { addProjectField, deleteProjectField, deleteProjectType } from '../../pr
 import { confirmDelete } from '../../lib/confirm'
 import { typePathLabel } from '../../lore/typeTree'
 import type { ProjectEntityType } from '../../projectEntities/types'
-import { asFieldDefinition, PROJECT_FIELD_KINDS } from '../../projectEntities/fieldDefinition'
-import type { FieldDefinition } from '../../lore/typeDefinitions'
-import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
+import { asFieldDefinition } from '../../projectEntities/fieldDefinition'
 import { TypeRow } from '../TypeRow'
 import { TypeRowActions } from '../TypeRowActions'
-import { TypeFieldRow } from '../lore/TypeFieldRow'
-import { InheritedFields } from '../lore/InheritedFields'
-import { FieldDialog } from '../lore/FieldDialog'
-import { NewButton } from '../NewButton'
-import { QuietNote } from '../QuietNote'
+import { PlainFieldsPanel } from '../lore/FieldsPanel'
 import { t, tn, useI18n } from '../../i18n'
-import { useId, useState, type Dispatch, type SetStateAction } from 'react'
+import { useId, type Dispatch, type SetStateAction } from 'react'
 import type { buildTypeTree } from '../../lore/typeTree'
 
 type Tree = ReturnType<typeof buildTypeTree<ProjectEntityType>>
@@ -49,7 +43,6 @@ export function SchemaTypeItem({
 }) {
   useI18n()
   const fieldsId = useId()
-  const [adding, setAdding] = useState(false)
 
   const type = node.type
   const parent = node.depth > 0 ? tree.byId.get(node.path[node.path.length - 2]!.id) : null
@@ -63,20 +56,6 @@ export function SchemaTypeItem({
         .map(asFieldDefinition),
     }))
     .filter((each) => each.fields.length > 0)
-  const summary = (field: FieldDefinition) => FIELD_KIND_LABELS[field.kind]
-
-  function removeField(field: FieldDefinition) {
-    return confirmDelete(
-      {
-        title: t('entityTypes.fields.deleteTitle', { name: field.name }),
-        // The client cannot see whether entries hold a value; the API refuses when they do.
-        message: t('projects.structure.deleteEmpty'),
-        confirmLabel: t('entityTypes.fields.deleteConfirm'),
-      },
-      () => deleteProjectField(projectId, type.id, field.id).then(refresh),
-      { setBusy, fail: failing },
-    )
-  }
 
   return (
     <TypeRow
@@ -139,54 +118,26 @@ export function SchemaTypeItem({
       {type.description ? <p className="types__description prose">{type.description}</p> : null}
 
       {openTypeId === type.id ? (
-        <div
+        <PlainFieldsPanel
           id={fieldsId}
-          className="types__fields"
-          data-testid={`project-type-fields-panel-${type.id}`}
-        >
-          {type.fields.length === 0 && inherited.length === 0 ? (
-            <QuietNote spacing="flush">{t('projects.schema.noFields')}</QuietNote>
-          ) : (
-            <>
-              <InheritedFields type={type} inherited={inherited} summary={summary} />
-              <ul className="plainlist stack" data-testid={`project-type-fields-${type.id}`}>
-                {type.fields.map((field) => (
-                  <TypeFieldRow
-                    key={field.id}
-                    field={asFieldDefinition(field)}
-                    canEdit
-                    busy={busy}
-                    summary={summary}
-                    remove={removeField}
-                  />
-                ))}
-              </ul>
-            </>
-          )}
-
-          <NewButton
-            tone="secondary"
-            size="sm"
-            data-testid={`project-field-add-${type.id}`}
-            onClick={() => setAdding(true)}
-          >
-            {t('projects.schema.addField')}
-          </NewButton>
-
-          {adding ? (
-            <FieldDialog
-              field={null}
-              owner={type.name}
-              kinds={PROJECT_FIELD_KINDS}
-              save={(input) => addProjectField(projectId, type.id, input)}
-              onClose={() => setAdding(false)}
-              onSaved={async () => {
-                setAdding(false)
-                refresh()
-              }}
-            />
-          ) : null}
-        </div>
+          testIds={{
+            panel: `project-type-fields-panel-${type.id}`,
+            list: `project-type-fields-${type.id}`,
+            add: `project-field-add-${type.id}`,
+          }}
+          owner={type.name}
+          fields={type.fields}
+          inherited={inherited}
+          canEdit
+          busy={busy}
+          setBusy={setBusy}
+          failing={failing}
+          refresh={refresh}
+          // The client cannot see whether entries hold a value; the API refuses when they do.
+          deleteMessage={t('projects.structure.deleteEmpty')}
+          add={(input) => addProjectField(projectId, type.id, input)}
+          remove={(fieldId) => deleteProjectField(projectId, type.id, fieldId)}
+        />
       ) : null}
     </TypeRow>
   )

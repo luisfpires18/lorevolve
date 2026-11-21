@@ -77,6 +77,9 @@ function unaskedDeletes(source: string) {
     if (/^\s*(?:import|export)\b/.test(line) || /\bfunction\s+\w+\(/.test(line)) return []
     if (/^\s*(?:delete[A-Z]\w*|remove\w*|revokeInvitation),?$/.test(line)) return []
     const above = lines.slice(Math.max(0, at - 20), at + 1).join('\n')
+    // A field delete handed to `PlainFieldsPanel` as `remove`: the panel asks through `confirmDelete` first.
+    if (/^\s*remove=\{\(\w+\) => delete\w*Field\(/.test(line) && /<PlainFieldsPanel\b/.test(above))
+      return []
     return /\bconfirm\w*\(/.test(above) ? [] : [`${at + 1}: ${line.trim()}`]
   })
 }
@@ -119,6 +122,9 @@ test('the drawer guards fail on a bad snippet and pass a good one', () => {
     0,
   )
   assert.equal(unaskedDeletes("import { deleteSeason } from './api'").length, 0)
+  const handed = '  remove={(fieldId) => deleteProjectField(id, fieldId)}'
+  assert.equal(unaskedDeletes(`<PlainFieldsPanel\n${handed}`).length, 0)
+  assert.equal(unaskedDeletes(`<Other\n${handed}`).length, 1)
   assert.equal(unaskedDeletes('export function deleteSeason(id: string) {').length, 0)
 })
 

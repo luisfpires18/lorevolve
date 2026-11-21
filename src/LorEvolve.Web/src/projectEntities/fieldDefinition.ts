@@ -1,6 +1,6 @@
 import type { Chronology } from '../chronology/types'
 import type { FieldDefinition } from '../lore/typeDefinitions'
-import { FieldKind, type FieldKindValue, type ProjectField } from './types'
+import { FieldKind, type FieldKindValue, type ProjectField, type ProjectTypeInput } from './types'
 
 /** A project has no date periods: an empty chronology, so a number never offers an era. */
 export const NO_ERAS: Chronology = {
@@ -38,5 +38,22 @@ export function asFieldDefinition(field: ProjectField): FieldDefinition {
     version: 0,
     sectionId: null,
     imageShape: field.imageShape,
+  }
+}
+
+/**
+ * A project type or a template as the type drawer saves it. The route replaces the whole type: what the drawer does not
+ * edit (description, colour) goes back as it is stored, or empty for a new one.
+ */
+export function typeInput(
+  values: { name: string; icon: string | null; parentId: string | null },
+  stored: { description: string | null; accentColor: string | null } | null,
+): ProjectTypeInput {
+  return {
+    name: values.name,
+    description: stored ? stored.description : null,
+    icon: values.icon,
+    accentColor: stored ? stored.accentColor : null,
+    parentId: values.parentId,
   }
 }
