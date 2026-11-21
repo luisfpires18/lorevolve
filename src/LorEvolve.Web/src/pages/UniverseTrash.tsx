@@ -4,7 +4,7 @@ import { useOutletContext } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { EmptyState } from '../components/EmptyState'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { BulkEraseConfirm } from '../components/trash/BulkEraseConfirm'
+import { EraseConfirm } from '../components/trash/EraseConfirm'
 import { TrashHeader } from '../components/trash/TrashHeader'
 import { TrashNotices } from '../components/trash/TrashNotices'
 import { Pager } from '../components/Pager'
@@ -124,7 +124,7 @@ export default function UniverseTrash() {
       ) : null}
 
       {isSelecting && bulkConfirming ? (
-        <BulkEraseConfirm
+        <EraseConfirm
           items={selected}
           panelRef={bulkPanelRef}
           busy={bulkBusy}

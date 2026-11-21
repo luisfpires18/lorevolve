@@ -6,13 +6,13 @@ import type { EntityType, EntityTypeGroup, FieldDefinition } from '../../lore/ty
 import type { TypeTree } from '../../lore/typeTree'
 import { useFieldDialogState } from '../../lore/useFieldDialogState'
 import { fieldDialogActions, type FieldSave } from '../../lore/fieldDialogActions'
-import { FieldStaleNotice } from './FieldStaleNotice'
 import { FieldKindFields } from './FieldKindFields'
 import { FieldLinkTarget } from './FieldLinkTarget'
 import { FieldMeaningShape } from './FieldMeaningShape'
 import { FieldDefaultRequired } from './FieldDefaultRequired'
 import { FormActions } from '../FormActions'
 import { FormMessage } from '../FormMessage'
+import { StaleChoice } from '../StaleChoice'
 
 /**
  * One field's settings, new or existing, in the drawer every LorEvolve form uses: focus goes in, Escape and Cancel ask before
@@ -152,11 +152,21 @@ export function FieldDialog({
       {message ? <FormMessage testId="field-dialog-error">{message}</FormMessage> : null}
 
       {stale && latest && describe ? (
-        <FieldStaleNotice
-          latest={latest}
-          describe={describe}
-          takeSaved={takeSaved}
-          keepMine={keepMine}
+        <StaleChoice
+          testId="field"
+          boxId="field-dialog-stale"
+          loadId="field-use-saved"
+          title={t('entityTypes.fields.savedNow')}
+          text={tx(
+            latest.archivedAt !== null
+              ? 'entityTypes.fields.savedNowArchived'
+              : 'entityTypes.fields.savedNowSummary',
+            { name: <bdi>{latest.name}</bdi>, summary: describe(latest) },
+          )}
+          loadLabel={t('entityTypes.fields.useSaved')}
+          onLoadSaved={() => takeSaved(latest)}
+          onKeepMine={latest.archivedAt === null ? () => keepMine(latest) : undefined}
+          keepLabel={t('entityTypes.fields.keepMine')}
         />
       ) : null}
 
