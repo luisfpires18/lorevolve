@@ -3,17 +3,15 @@ import { History } from 'lucide-react'
 import { VersionActor } from '../VersionActor'
 import { RevisionKind } from '../../lore/revisions'
 import {
-  useEntityRevisions,
+  useRevisionHistory,
   type RevisionStore,
   type RevisionWords,
-} from '../../lore/useEntityRevisions'
+} from '../../lore/useRevisionHistory'
 import { useI18n } from '../../i18n'
 import { articleHistoryWords } from '../../lore/articleHistory'
-import { Button } from '../Button'
 import { DisclosureButton } from '../DisclosureButton'
 import { QuietNote } from '../QuietNote'
-import { DateText } from '../DateText'
-import { FormMessage } from '../FormMessage'
+import { RevisionHistory, type RevisionListWords } from '../RevisionHistory'
 
 /** A row of an article's or a manuscript's history. */
 export interface HistoryRevision {
@@ -27,7 +25,7 @@ export interface HistoryRevision {
 }
 
 /** Everything a history says, in its own store's words. The article's are the default. */
-export interface HistoryWords<S> extends RevisionWords<S> {
+export interface HistoryWords<S> extends RevisionWords<S>, RevisionListWords {
   restored: (number: number) => string
   restoredEarlier: string
   cleared: string
@@ -38,16 +36,8 @@ export interface HistoryWords<S> extends RevisionWords<S> {
   readFailed: string
   opening: string
   none: string
-  nowShowing: string
   version: (number: number) => string
-  restoring: string
-  restore: string
-  snapshotOpening: string
   snapshotBlank: string
-
-  /** A version's view and restore buttons named with its number, where the history has always named them. */
-  viewName?: (number: number, isOpen: boolean) => string
-  restoreName?: (number: number) => string
 }
 
 /** A history opened from a toggle elsewhere on the page: the panel the toggle controls, with its title and lede. */
@@ -106,12 +96,11 @@ export function ArticleHistory<S extends HistoryRevision, D, R>({
 }: ArticleHistoryProps<S, D, R>) {
   useI18n() // Re-renders on a language change; the words are read through the module's t.
   const bodyId = useId()
-  const snapshotId = useId()
   const titleId = useId()
   const blockedId = useId()
   const [isOpen, setIsOpen] = useState(false)
   const blocked = panel ? panel.blocked : null
-  const { revisions, status, opened, busyId, message, openId, open, restore } = useEntityRevisions({
+  const history = useRevisionHistory({
     store,
     words,
     reloadKey,
@@ -126,108 +115,48 @@ export function ArticleHistory<S extends HistoryRevision, D, R>({
   /** What a version was, in a few words. */
   function describeVersion(revision: S) {
     if (revision.kind === RevisionKind.Restored) {
-      const from = revisions.find((candidate) => candidate.id === revision.restoredFromRevisionId)
+      const from = history.revisions.find(
+        (candidate) => candidate.id === revision.restoredFromRevisionId,
+      )
       return from ? words.restored(from.number) : words.restoredEarlier
     }
     if (revision.isEmpty) return words.cleared
     return revision.kind === RevisionKind.Created ? words.first : words.saved
   }
 
-  const versionId = (revision: S) =>
-    panel ? `${panel.id}-version-${revision.number}` : `${snapshotId}-${revision.id}`
-
   const body = (
-    <>
-      {message?.tone === 'status' ? (
-        <QuietNote className="history__quiet" tone="saved" role="status" testId={messageTestId}>
-          {message.text}
-        </QuietNote>
-      ) : message ? (
-        <FormMessage testId={messageTestId}>{message.text}</FormMessage>
-      ) : null}
-
-      {status === 'error' ? (
-        <QuietNote className="history__quiet" size="ui" role="status">
-          {words.readFailed}
-        </QuietNote>
-      ) : status === 'loading' ? (
+    <RevisionHistory
+      history={history}
+      words={words}
+      testId={testId}
+      messageTestId={messageTestId}
+      reading={
         <QuietNote className="history__quiet" size="ui" role="status">
           {words.opening}
         </QuietNote>
-      ) : revisions.length === 0 ? (
+      }
+      failed={
+        <QuietNote className="history__quiet" size="ui" role="status">
+          {words.readFailed}
+        </QuietNote>
+      }
+      empty={
         <QuietNote className="history__quiet" size="ui">
           {words.none}
         </QuietNote>
-      ) : (
-        <ol className="history__list" data-testid={`${testId}-history-list`}>
-          {revisions.map((revision, index) => {
-            const isViewing = openId === revision.id
-            const text = isViewing && opened !== null ? renderVersion(opened, revision) : null
-            return (
-              <li className="version" key={revision.id} data-version={revision.number}>
-                <p className="version__when">
-                  <DateText value={revision.createdAt} withTime />
-                </p>
-
-                <div className="version__body">
-                  <p className="version__what" data-testid={`${testId}-version-what`}>
-                    {describeVersion(revision)}
-                    {index === 0 ? <span className="version__now">{words.nowShowing}</span> : null}
-                  </p>
-                  <p className="version__meta">
-                    <span>{words.version(revision.number)}</span>
-                    <VersionActor name={revision.actorName} />
-                  </p>
-                </div>
-
-                <div className="version__tools">
-                  <DisclosureButton
-                    tone="text"
-                    size="sm"
-                    expanded={isViewing}
-                    controls={versionId(revision)}
-                    aria-label={words.viewName?.(revision.number, isViewing)}
-                    onToggle={() => void open(revision.id)}
-                    data-testid={`${testId}-version-view`}
-                  />
-                  {index > 0 ? (
-                    <Button
-                      tone="text"
-                      size="sm"
-                      disabled={panel ? blocked !== null : busyId !== null}
-                      aria-describedby={blocked ? blockedId : undefined}
-                      aria-label={words.restoreName?.(revision.number)}
-                      onClick={() => void restore(revision)}
-                      data-testid={`${testId}-version-restore`}
-                    >
-                      {busyId === revision.id ? words.restoring : words.restore}
-                    </Button>
-                  ) : null}
-                </div>
-
-                {isViewing ? (
-                  <div
-                    className="version__snapshot"
-                    id={versionId(revision)}
-                    data-testid={`${testId}-version-snapshot`}
-                  >
-                    {opened === null ? (
-                      <QuietNote className="history__quiet" size="ui" role="status">
-                        {words.snapshotOpening}
-                      </QuietNote>
-                    ) : text === null ? (
-                      <QuietNote size="body">{words.snapshotBlank}</QuietNote>
-                    ) : (
-                      text
-                    )}
-                  </div>
-                ) : null}
-              </li>
-            )
-          })}
-        </ol>
+      }
+      describe={describeVersion}
+      meta={(revision) => (
+        <>
+          <span>{words.version(revision.number)}</span>
+          <VersionActor name={revision.actorName} />
+        </>
       )}
-    </>
+      renderDetail={renderVersion}
+      restoreDisabled={panel ? blocked !== null : history.busyId !== null}
+      restoreDescribedBy={blocked ? blockedId : undefined}
+      versionId={panel ? (revision) => `${panel.id}-version-${revision.number}` : undefined}
+    />
   )
 
   if (panel) {

@@ -5,6 +5,7 @@ import { useI18n } from '../../i18n'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
 import { FieldBlockedNote } from './FieldBlockedNote'
 import { Button } from '../Button'
+import { FieldListRow } from './FieldListRow'
 
 /**
  * One active field: its name and summary, Edit, the menu with Archive and Delete, and why it cannot be deleted. A place
@@ -40,58 +41,54 @@ export function TypeFieldRow({
 }) {
   const { t } = useI18n()
   return (
-    <li
-      className="fieldlist__row"
+    <FieldListRow
+      name={field.name}
+      meta={summary(field)}
+      metaTestId={`field-summary-${field.name}`}
       data-field-name={field.name}
-      data-testid={`field-row-${field.name}`}
-    >
-      <div className="fieldlist__text">
-        <span className="fieldlist__name">
-          <bdi>{field.name}</bdi>
-        </span>
-        <span className="fieldlist__meta" data-testid={`field-summary-${field.name}`}>
-          {summary(field)}
-        </span>
-      </div>
-      {canEdit ? (
-        <span className="actions actions--compact fieldlist__actions">
-          {setEditing ? (
-            <Button
-              tone="secondary"
-              size="sm"
-              icon={Pencil}
-              onClick={() => {
-                clear?.()
-                setEditing(field)
-              }}
-              disabled={busyFieldId === field.id}
-              aria-label={t('entityTypes.fields.editField', { name: field.name })}
-              data-testid={`edit-field-${field.name}`}
-            >
-              {t('entityTypes.fields.edit')}
-            </Button>
-          ) : null}
-          <RowMenu
-            label={t('entityTypes.fields.moreActions', { name: field.name })}
-            triggerTestId={`field-actions-${field.name}`}
-            onRemove={() => void remove(field)}
-            removeIcon={Trash2}
-            removeLabel={t('entityTypes.fields.deleteField')}
-            removeTestId={`delete-field-${field.name}`}
-            busy={busy}
-          >
-            {archive ? (
-              <ActionMenuItem
-                icon={Archive}
-                onClick={() => void archive(field)}
-                testId={`archive-field-${field.name}`}
+      testId={`field-row-${field.name}`}
+      actions={
+        canEdit ? (
+          <>
+            {setEditing ? (
+              <Button
+                tone="secondary"
+                size="sm"
+                icon={Pencil}
+                onClick={() => {
+                  clear?.()
+                  setEditing(field)
+                }}
+                disabled={busyFieldId === field.id}
+                aria-label={t('entityTypes.fields.editField', { name: field.name })}
+                data-testid={`edit-field-${field.name}`}
               >
-                {t('entityTypes.fields.archiveField')}
-              </ActionMenuItem>
+                {t('entityTypes.fields.edit')}
+              </Button>
             ) : null}
-          </RowMenu>
-        </span>
-      ) : null}
+            <RowMenu
+              label={t('entityTypes.fields.moreActions', { name: field.name })}
+              triggerTestId={`field-actions-${field.name}`}
+              onRemove={() => void remove(field)}
+              removeIcon={Trash2}
+              removeLabel={t('entityTypes.fields.deleteField')}
+              removeTestId={`delete-field-${field.name}`}
+              busy={busy}
+            >
+              {archive ? (
+                <ActionMenuItem
+                  icon={Archive}
+                  onClick={() => void archive(field)}
+                  testId={`archive-field-${field.name}`}
+                >
+                  {t('entityTypes.fields.archiveField')}
+                </ActionMenuItem>
+              ) : null}
+            </RowMenu>
+          </>
+        ) : null
+      }
+    >
       {universeId && type && archive ? (
         <FieldBlockedNote
           universeId={universeId}
@@ -101,6 +98,6 @@ export function TypeFieldRow({
           archive={archive}
         />
       ) : null}
-    </li>
+    </FieldListRow>
   )
 }

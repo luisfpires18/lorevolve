@@ -7,7 +7,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { draftOf, useNodeEdit } from '../../projectEntities/useNodeEdit'
 import { isChangedElsewhere } from '../../lib/editConflict'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
-import { EditorSaveBar } from '../EditorSaveBar'
+import { SaveBar } from '../SaveAction'
 import { ManuscriptHead } from '../stories/ManuscriptHead'
 import { ScriptPartFields } from './ScriptPartFields'
 import { EditorNotices } from '../EditorNotices'
@@ -118,7 +118,7 @@ export function ScriptPart({
       />
 
       {canEdit ? (
-        <EditorSaveBar
+        <SaveBar
           keyShortcuts
           count={{
             id: 'project-script-too-long',
