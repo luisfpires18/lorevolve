@@ -17,7 +17,7 @@ import { storyRemovals } from '../stories/storyRemovals'
 import { StoryHeader } from '../components/stories/StoryHeader'
 import { StoryBar } from '../components/stories/StoryBar'
 import { ManuscriptPanel } from '../components/ManuscriptPanel'
-import { StoryPartPublication } from '../components/StoryPartPublication'
+import { ContentPublication } from '../components/ContentPublication'
 import { StoryScenes } from '../components/stories/StoryScenes'
 import { StoryForms } from '../components/stories/StoryForms'
 import { LoadError } from '../components/LoadError'
@@ -239,13 +239,7 @@ function StoryView({ view }: { view: StoryViewName }) {
       </StoryHeader>
 
       {sent ? (
-        <Callout
-          look="callout"
-          as="p"
-          className="story__sent"
-          role="status"
-          testId="suggestion-sent"
-        >
+        <Callout look="callout" as="p" role="status" testId="suggestion-sent">
           {t('stories.page.sent')}
         </Callout>
       ) : null}
@@ -256,7 +250,6 @@ function StoryView({ view }: { view: StoryViewName }) {
           onRetry={reload}
           retryLabel={t('stories.page.staleRetry')}
           testId="story-stale"
-          className="story__stale"
         />
       ) : null}
 
@@ -272,15 +265,19 @@ function StoryView({ view }: { view: StoryViewName }) {
           onSceneSaved={(saved) => patchScene(saved.id, saved)}
           manuscriptPublication={(scene) =>
             access.publish ? (
-              <StoryPartPublication
+              <ContentPublication
                 universeId={universe.id}
-                storyId={story.id}
                 kind="manuscript"
                 id={scene.id}
                 name={scene.title}
-                visibility={scene.manuscriptVisibility}
-                storyIsPublic={storyIsPublic}
-                onChange={(manuscriptVisibility) => patchScene(scene.id, { manuscriptVisibility })}
+                placement="bar"
+                part={{
+                  storyId: story.id,
+                  visibility: scene.manuscriptVisibility,
+                  storyIsPublic,
+                  onChange: (manuscriptVisibility) =>
+                    patchScene(scene.id, { manuscriptVisibility }),
+                }}
               />
             ) : null
           }

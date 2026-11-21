@@ -34,7 +34,7 @@ function only(files: string[], check: (source: string) => boolean, allowed: stri
   )
 }
 
-// I30. The publication menu's markup: ContentPublication and its panel. StoryPartPublication moves onto them (stage 11b).
+// I30. The publication menu's markup: ContentPublication and its panel. A story part's is ContentPublication's `part` (stage 11b).
 const PUBLICATION_MENU = [
   'contentpub__panel',
   'contentpub__trigger',
@@ -52,11 +52,7 @@ test('the publication menu is drawn by ContentPublication and its panel only', (
   only(
     tsFiles,
     writesPublicationMenu,
-    [
-      'src/components/ContentPublication.tsx',
-      'src/components/ContentPublicationPanel.tsx',
-      'src/components/StoryPartPublication.tsx',
-    ],
+    ['src/components/ContentPublication.tsx', 'src/components/ContentPublicationPanel.tsx'],
     'use ContentPublication or ContentPublicationPanel',
   )
 })

@@ -58,13 +58,3 @@
 .moment__links a:focus-visible {
   color: var(--ink);
 }
-
-/* The story's way to its world chronology sits with its facts. */
-.story__timeline {
-  color: var(--muted);
-}
-
-.story__timeline:hover,
-.story__timeline:focus-visible {
-  color: var(--ink);
-}

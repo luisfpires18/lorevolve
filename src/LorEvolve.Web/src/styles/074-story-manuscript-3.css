@@ -6,19 +6,4 @@
   .storyrow__meta {
     justify-content: flex-start;
   }
-
-  /* The view's one creating action sits at the thumb, labelled, as Lore's does. */
-  .story__create .button {
-    position: fixed;
-    right: var(--gutter);
-    bottom: max(var(--space-4), env(safe-area-inset-bottom));
-    z-index: var(--z-sticky);
-    min-height: var(--control-touch);
-    padding-inline: var(--space-5);
-    box-shadow: var(--shadow-3);
-  }
-
-  .story__scenes {
-    padding-bottom: 5rem;
-  }
 }

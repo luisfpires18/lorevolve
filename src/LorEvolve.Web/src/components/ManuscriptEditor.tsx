@@ -175,11 +175,7 @@ export function ManuscriptEditor({
         tools={<ManuscriptTools {...view} />}
         context={
           hasContext ? (
-            <div
-              className="manuscript__context"
-              id={state.contextId}
-              data-open={state.isContextOpen ? 'true' : 'false'}
-            >
+            <div id={state.contextId} hidden={state.isPhone && !state.isContextOpen}>
               <FactList look="inline">
                 <SceneStamp
                   universeId={universeId}

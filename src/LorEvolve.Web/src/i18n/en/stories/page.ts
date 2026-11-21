@@ -83,6 +83,7 @@ const storiesPage = {
     hint: 'Ideas are private to each account. The ideas in this universe belong to its owner.',
   },
   structureHeading: 'Structure',
+  railLabel: 'About this story',
   asideStructured:
     'Arcs and chapters in order, and the scenes in each in the order they are told. When each happens in the world never moves it.',
   aside: 'In the order they are told. When each happens in the world never moves it.',

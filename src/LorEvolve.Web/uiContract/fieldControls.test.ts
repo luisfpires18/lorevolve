@@ -56,7 +56,6 @@ const STAYS: string[] = [
   'src/components/PublicDetailsForm.tsx',
   'src/components/QuickCreateDialog.tsx',
   'src/components/RelationshipPeriodsField.tsx',
-  'src/components/SceneBeatsField.tsx',
   'src/components/ScenePicks.tsx',
   'src/components/SearchField.tsx',
   'src/components/TypeDialogPlace.tsx',

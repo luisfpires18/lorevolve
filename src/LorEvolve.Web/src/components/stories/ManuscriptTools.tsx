@@ -37,6 +37,7 @@ export function ManuscriptTools({
   setIsHistoryOpen,
   isContextOpen,
   setIsContextOpen,
+  isPhone,
   setIsReading,
   setIsLinking,
   mentioned,
@@ -55,12 +56,12 @@ export function ManuscriptTools({
   useI18n() // Re-renders on a language change; the words are read through the module's t.
 
   return (
-    <div className="manuscript__tools rowtools">
-      {hasContext ? (
+    <div className="entry__tools">
+      {/* On a phone the scene's planning waits behind Details, so the prose starts on the first screen. */}
+      {hasContext && isPhone ? (
         <DisclosureButton
           tone="text"
           icon={Info}
-          className="manuscript__detailstoggle"
           expanded={isContextOpen}
           controls={contextId}
           onToggle={() => setIsContextOpen((open) => !open)}
@@ -78,12 +79,11 @@ export function ManuscriptTools({
           controls={historyId}
           aria-describedby={titleId}
           onToggle={() => setIsHistoryOpen((open) => !open)}
+          title={t('manuscript.editor.historyShort')}
           data-testid="manuscript-history-toggle"
         >
-          <span className="manuscript__toolname">{t('manuscript.editor.historyName')}</span>
-          <span className="manuscript__toolshort" aria-hidden="true">
-            {t('manuscript.editor.historyShort')}
-          </span>
+          {/* Its icon alone on a phone, still named, so the tools keep to one line, as an entry's tools do. */}
+          <span className="entry__toollabel">{t('manuscript.editor.historyName')}</span>
         </DisclosureButton>
       ) : null}
       <LoreContext

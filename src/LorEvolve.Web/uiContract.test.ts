@@ -112,7 +112,7 @@ const DIALOG_FILES = [
 
 // Font sizes written as a literal in src/styles/ instead of a --text-* token. Only goes down:
 // lower it when a screen's sizes move to tokens.
-const MAX_LITERAL_FONT_SIZES = 180
+const MAX_LITERAL_FONT_SIZES = 174
 
 const stylesheet = readdirSync(join(webRoot, 'src/styles'))
   .filter((file) => file.endsWith('.css'))

@@ -66,30 +66,28 @@ export function ManuscriptNotices({
       ) : null}
 
       {conflict ? (
-        <div className="manuscript__conflict">
-          <EditConflict
-            what={t('manuscript.editor.conflictWhat')}
-            read={() => getSceneManuscript(universeId, storyId, sceneId)}
-            renderLatest={(latest) => (
-              <LatestText label={t('manuscript.editor.latestLabel')}>
-                {latest.content === '' ? (
-                  <QuietNote size="body">{t('manuscript.editor.latestEmpty')}</QuietNote>
-                ) : (
-                  <div className="recovery__prose prose" dir="auto">
-                    {plainMentions(latest.content)}
-                  </div>
-                )}
-              </LatestText>
-            )}
-            onKeepMine={keepMine}
-            onUseLatest={takeLatest}
-            testId="manuscript-conflict"
-          />
-        </div>
+        <EditConflict
+          what={t('manuscript.editor.conflictWhat')}
+          read={() => getSceneManuscript(universeId, storyId, sceneId)}
+          renderLatest={(latest) => (
+            <LatestText label={t('manuscript.editor.latestLabel')}>
+              {latest.content === '' ? (
+                <QuietNote size="body">{t('manuscript.editor.latestEmpty')}</QuietNote>
+              ) : (
+                <div className="recovery__prose prose" dir="auto">
+                  {plainMentions(latest.content)}
+                </div>
+              )}
+            </LatestText>
+          )}
+          onKeepMine={keepMine}
+          onUseLatest={takeLatest}
+          testId="manuscript-conflict"
+        />
       ) : null}
 
       {failure ? (
-        <FormMessage className="manuscript__failure" testId="manuscript-error">
+        <FormMessage className="idea__failure" testId="manuscript-error">
           {failure}
         </FormMessage>
       ) : null}

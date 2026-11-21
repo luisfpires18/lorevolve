@@ -129,6 +129,7 @@
 .erapanel__description {
   margin: 0;
   white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .eracovers {

@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
+import { EntryHead } from '../EntryHead'
 import { QuietNote } from '../QuietNote'
 
 /**
- * The head of a writing surface (a scene's manuscript, a project's script part): where it is told, its title, and
- * the optional tools beside the title and context under it.
+ * The head of a writing surface (a scene's manuscript, a project's script part), as a Lore entry's head: where it is
+ * told in the crumb's place with the optional tools beside it on that line, its title as the name, and the optional
+ * context under it. Every line above the prose is a line of prose gone, so the tools share the place's line.
  */
 export function ManuscriptHead({
   where,
@@ -23,21 +25,21 @@ export function ManuscriptHead({
   context?: ReactNode
 }) {
   return (
-    <header className="manuscript__head">
-      <QuietNote className="manuscript__where" size="xs" wrap testId={whereTestId}>
-        {where.container ? <>{where.container} · </> : null}
-        <span className="manuscript__position">{where.position}</span>
-      </QuietNote>
-
-      <div className="manuscript__titlerow">
-        <h3 className="manuscript__title" id={titleId} data-testid={titleTestId}>
-          <bdi>{title}</bdi>
-        </h3>
-
-        {tools}
-      </div>
-
+    <EntryHead
+      crumb={
+        <QuietNote size="xs" spacing="flush" wrap testId={whereTestId}>
+          {where.container ? <>{where.container} · </> : null}
+          {where.position}
+        </QuietNote>
+      }
+      type={null}
+      status={tools}
+      level={3}
+      nameId={titleId}
+      nameTestId={titleTestId}
+      name={<bdi>{title}</bdi>}
+    >
       {context}
-    </header>
+    </EntryHead>
   )
 }

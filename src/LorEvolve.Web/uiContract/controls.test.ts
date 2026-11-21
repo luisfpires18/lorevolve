@@ -185,7 +185,6 @@ test('show and hide is DisclosureButton; the listed others own their aria-expand
         'EntityMultiPicker',
       ]),
       ...list('a New button opening a form', ['ProjectEntries']),
-      ...list('the outline switcher', ['ManuscriptParts']),
       ...list('a tree branch', ['LoreCatalog']),
       ...list('a canvas node', ['familyTree/FamilyNode']),
       ...list("the rail's menu", ['universes/WorkspaceRail']),

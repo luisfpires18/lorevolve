@@ -104,11 +104,6 @@
   gap: var(--space-2);
 }
 
-.entitydetail__description {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
 @media (max-width: 40rem) {
   .entitydetail {
     grid-template-columns: minmax(0, 1fr);

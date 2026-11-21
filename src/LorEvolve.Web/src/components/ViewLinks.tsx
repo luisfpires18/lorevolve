@@ -9,24 +9,38 @@ export interface ViewLink {
   current?: boolean
   /** Without `current`: match the path exactly (the first view). */
   end?: boolean
+  /** The item's plain name as `data-title`, for a list that is found by name (a manuscript's parts). */
+  title?: string
+  onClick?: () => void
 }
 
-/** The routed views of one object, as links with an underlined current one. Catalogue: `docs/design/ui-components.md`. */
+/**
+ * The routed views of one object, as links with an underlined current one; `labelledBy` names the links by a heading
+ * the caller draws instead of `label`. `landmark={false}` draws a labelled group instead of a `nav`, for links inside
+ * the caller's own `nav` (a manuscript's outline). Catalogue: `docs/design/ui-components.md`.
+ */
 export function ViewLinks({
   label,
+  labelledBy,
   items,
   testId,
   className,
+  landmark = true,
 }: {
-  label: string
+  label?: string
+  labelledBy?: string
   items: ViewLink[]
   testId?: string
   className?: string
+  landmark?: boolean
 }) {
+  const Tag = landmark ? 'nav' : 'div'
   return (
-    <nav
+    <Tag
+      role={landmark ? undefined : 'group'}
       className={className ? `views ${className}` : 'views'}
-      aria-label={label}
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
       data-testid={testId}
     >
       {items.map((item) =>
@@ -36,7 +50,9 @@ export function ViewLinks({
             className="views__link"
             to={item.to}
             end={item.end}
+            onClick={item.onClick}
             data-testid={item.testId}
+            data-title={item.title}
           >
             {item.label}
           </NavLink>
@@ -46,12 +62,14 @@ export function ViewLinks({
             className="views__link"
             to={item.to}
             aria-current={item.current ? 'page' : undefined}
+            onClick={item.onClick}
             data-testid={item.testId}
+            data-title={item.title}
           >
             {item.label}
           </Link>
         ),
       )}
-    </nav>
+    </Tag>
   )
 }
