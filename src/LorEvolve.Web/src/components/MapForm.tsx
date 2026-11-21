@@ -7,8 +7,6 @@ import { MAP_NAME_MAX_LENGTH } from '../maps/types'
 import { NameNoteFields } from './NameNoteFields'
 import { MapFormPicture } from './MapFormPicture'
 import { MapFormReplace } from './MapFormReplace'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
 /**
@@ -60,25 +58,20 @@ export function MapForm(props: MapFormProps) {
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={
-            props.mode === 'new'
-              ? t('places.mapForm.createMap')
-              : props.mode === 'details'
-                ? t('places.mapForm.saveDetails')
-                : t('places.mapForm.replacePicture')
-          }
-          busy={isSaving}
-          busyLabel={t('places.mapForm.saving')}
-          submitTestId="map-form-save"
-          onCancel={() => close()}
-          lockCancel
-        />
-      )}
+      message={message}
+      messageTestId="map-form-error"
+      actions={{
+        submitLabel:
+          props.mode === 'new'
+            ? t('places.mapForm.createMap')
+            : props.mode === 'details'
+              ? t('places.mapForm.saveDetails')
+              : t('places.mapForm.replacePicture'),
+        busyLabel: t('places.mapForm.saving'),
+        submitTestId: 'map-form-save',
+        lockCancel: true,
+      }}
     >
-      {message ? <FormMessage testId="map-form-error">{message}</FormMessage> : null}
-
       {props.mode !== 'replace' ? (
         <NameNoteFields
           idPrefix="map"
