@@ -9,6 +9,7 @@ const projectsSeasons = {
   summary: 'Summary',
   saving: 'Adding…',
   rename: 'Rename',
+  renameNamed: 'Rename {name}',
   renameSave: 'Save',
   delete: 'Delete season',
   noEpisodes: 'No episodes yet.',

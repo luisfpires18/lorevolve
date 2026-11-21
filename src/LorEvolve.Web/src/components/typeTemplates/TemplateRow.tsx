@@ -71,7 +71,7 @@ export function TemplateRow({
           name={template.name}
           onEdit={canEdit ? () => setEditing(template) : undefined}
           editTestId={`template-edit-${template.id}`}
-          fields={{
+          fold={{
             open: openId === template.id,
             count: template.fields.length,
             onToggle: () => setOpenId(openId === template.id ? null : template.id),

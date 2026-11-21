@@ -7,7 +7,6 @@
    card joins this list; layout stays with each card. */
 .entitycard,
 .typecard,
-.projectcard,
 .plate,
 .doorway,
 .adminuser,
@@ -20,8 +19,7 @@
 
 /* The cards that read as paper take a faint top-down wash over the raised ground. */
 .entitycard,
-.typecard,
-.projectcard {
+.typecard {
   background:
     linear-gradient(to bottom, color-mix(in srgb, var(--ink) 2.5%, transparent), transparent 55%),
     var(--raised);

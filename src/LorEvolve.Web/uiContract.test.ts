@@ -16,10 +16,6 @@ const HOOK_ONLY = new Map<string, string>([
   ['entitycard__status', 'E2E text-direction.spec.ts reads it'],
   ['entry__head', 'E2E shell-layout and text-direction specs read it'],
   ['moment__player', 'E2E timeline and text-direction specs read it'],
-  [
-    'projectcard__actions',
-    'uiContract/cards.test.ts reads it as a ProjectCard part, laid out by .actions',
-  ],
 ])
 
 // Classes used in a .tsx file with no rule in src/styles/, mapped to the Issue that removes them.

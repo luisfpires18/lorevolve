@@ -43,14 +43,13 @@ test('a settings note and a saved line are drawn by QuietNote', () => {
   }
 })
 
-// Still hand-written, each for a reason a QuietNote would change: the summary line wears `entry__summary` on top of
-// `projectcard__meta` (a later rule wins both margin and size); the three hints below carry a class of their own whose
+// Still hand-written, each for a reason a QuietNote would change: the three hints below carry a class of their own whose
 // sheet loads before `.field__hint`, so the margin they end up with comes from that rule; CharCount and the shared
 // Field and CheckField draw the hint class for good; a hint after a segmented control takes the `.segmented +`
 // margin; EraRelations styles a `summary`, which QuietNote cannot be.
 const STAYS: Record<string, string[]> = {
   entry__blank: [],
-  projectcard__meta: ['src/components/ProjectEntityDetailView.tsx'],
+  projectcard__meta: [],
   field__hint: [
     'src/components/CharCount.tsx',
     'src/components/CheckField.tsx',

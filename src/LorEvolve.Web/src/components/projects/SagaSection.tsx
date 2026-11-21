@@ -1,4 +1,4 @@
-import { ActionMenu, ActionMenuItem } from '../ActionMenu'
+import { ActionMenuItem } from '../ActionMenu'
 import { t, useI18n } from '../../i18n'
 import {
   deletePhase,
@@ -9,17 +9,16 @@ import {
   removeMember,
   type CinemaSaga,
   type CinemaSagas as Sagas,
+  productionRow,
   type Editing,
 } from '../../projects/sagas'
 import type { Dispatch, SetStateAction } from 'react'
-import { MoveItems } from '../MoveItems'
-import { Production } from './Production'
-import { FolderInput, Pencil, Plus, Trash } from 'lucide-react'
-import { ProjectCard } from '../ProjectCard'
-import { PageHeader } from '../PageHeader'
+import { FolderInput } from 'lucide-react'
+import { TypeRow } from '../TypeRow'
+import { TypeRowActions } from '../TypeRowActions'
 import { QuietNote } from '../QuietNote'
 
-/** One saga: its head and menu, and its phases with their productions. */
+/** One saga's row: its verbs, its summary, and its phases with their productions, each a row of its own. */
 export function SagaSection({
   universeId,
   data,
@@ -42,162 +41,157 @@ export function SagaSection({
   useI18n()
 
   return (
-    <section className="projects" data-testid={`saga-${saga.id}`}>
-      <PageHeader
-        level={2}
-        size="panel"
-        title={<bdi>{saga.name}</bdi>}
-        lede={saga.summary || undefined}
-        actions={
-          <ActionMenu
-            label={t('projects.common.more', { name: saga.name })}
-            triggerTestId={`saga-actions-${saga.id}`}
-          >
-            <MoveItems
-              first={sagaIndex === 0}
-              last={sagaIndex === data.sagas.length - 1}
-              busy={busy}
-              testIds={{ up: `saga-${saga.id}-up`, down: `saga-${saga.id}-down` }}
-              onMove={(step) => run(() => moveSaga(universeId, saga.id, sagaIndex + step))}
-            />
-            <ActionMenuItem
-              icon={Plus}
-              testId={`saga-phase-new-${saga.id}`}
-              onClick={() => setEditing({ saga, phase: null, forPhase: true })}
-            >
-              {t('projects.sagas.newPhase')}
-            </ActionMenuItem>
-            <ActionMenuItem
-              icon={Pencil}
-              testId={`saga-edit-${saga.id}`}
-              onClick={() => setEditing({ saga, phase: null, forPhase: false })}
-            >
-              {t('projects.sagas.editSaga')}
-            </ActionMenuItem>
-            <ActionMenuItem
-              icon={Trash}
-              tone="danger"
-              testId={`saga-delete-${saga.id}`}
-              onClick={() =>
-                confirmDelete(
-                  t('projects.sagas.deleteSagaTitle', { name: saga.name }),
-                  t('projects.sagas.deleteSaga'),
-                  () => deleteSaga(universeId, saga.id),
-                )
-              }
-            >
-              {t('projects.sagas.deleteSaga')}
-            </ActionMenuItem>
-          </ActionMenu>
-        }
-      />
-
+    <TypeRow
+      testId={`saga-${saga.id}`}
+      name={saga.name}
+      actions={
+        <TypeRowActions
+          name={saga.name}
+          move={{
+            isFirst: sagaIndex === 0,
+            isLast: sagaIndex === data.sagas.length - 1,
+            busy,
+            onMove: (direction) =>
+              run(() => moveSaga(universeId, saga.id, sagaIndex + (direction === 'up' ? -1 : 1))),
+          }}
+          moveTestIds={{ up: `saga-${saga.id}-up`, down: `saga-${saga.id}-down` }}
+          addChild={{
+            onAdd: () => setEditing({ saga, phase: null, forPhase: true }),
+            testId: `saga-phase-new-${saga.id}`,
+          }}
+          onEdit={() => setEditing({ saga, phase: null, forPhase: false })}
+          editTestId={`saga-edit-${saga.id}`}
+          words={{
+            addChild: t('projects.sagas.newPhase'),
+            addChildLabel: t('projects.sagas.newPhaseNamed', { name: saga.name }),
+            edit: t('projects.sagas.editSaga'),
+            editLabel: t('projects.sagas.editSagaNamed', { name: saga.name }),
+            first: t('projects.common.alreadyFirst'),
+            last: t('projects.common.alreadyLast'),
+          }}
+          onDelete={() =>
+            confirmDelete(
+              t('projects.sagas.deleteSagaTitle', { name: saga.name }),
+              t('projects.sagas.deleteSaga'),
+              () => deleteSaga(universeId, saga.id),
+            )
+          }
+          deleteLabel={t('projects.sagas.deleteSaga')}
+          deleteTestId={`saga-delete-${saga.id}`}
+          menuTestId={`saga-actions-${saga.id}`}
+        />
+      }
+    >
+      {saga.summary ? <p className="prose">{saga.summary}</p> : null}
       {saga.phases.length === 0 ? (
         <QuietNote spacing="flush">{t('projects.sagas.noPhases')}</QuietNote>
       ) : (
-        <ol className="projectcardlist">
+        <ol className="types__list">
           {saga.phases.map((phase, phaseIndex) => (
-            <ProjectCard
+            <TypeRow
               key={phase.id}
               testId={`phase-${phase.id}`}
-              title={<bdi>{phase.name}</bdi>}
+              name={phase.name}
               actions={
-                <ActionMenu
-                  label={t('projects.common.more', { name: phase.name })}
-                  triggerTestId={`phase-actions-${phase.id}`}
-                >
-                  <MoveItems
-                    first={phaseIndex === 0}
-                    last={phaseIndex === saga.phases.length - 1}
-                    busy={busy}
-                    testIds={{ up: `phase-${phase.id}-up`, down: `phase-${phase.id}-down` }}
-                    onMove={(step) =>
-                      run(() => movePhase(universeId, saga.id, phase.id, phaseIndex + step))
-                    }
-                  />
-                  <ActionMenuItem
-                    icon={Pencil}
-                    testId={`phase-edit-${phase.id}`}
-                    onClick={() => setEditing({ saga, phase, forPhase: true })}
-                  >
-                    {t('projects.sagas.editPhase')}
-                  </ActionMenuItem>
-                  <ActionMenuItem
-                    icon={Trash}
-                    tone="danger"
-                    testId={`phase-delete-${phase.id}`}
-                    onClick={() =>
-                      confirmDelete(
-                        t('projects.sagas.deletePhaseTitle', { name: phase.name }),
-                        t('projects.sagas.deletePhase'),
-                        () => deletePhase(universeId, saga.id, phase.id),
-                      )
-                    }
-                  >
-                    {t('projects.sagas.deletePhase')}
-                  </ActionMenuItem>
-                </ActionMenu>
+                <TypeRowActions
+                  name={phase.name}
+                  move={{
+                    isFirst: phaseIndex === 0,
+                    isLast: phaseIndex === saga.phases.length - 1,
+                    busy,
+                    onMove: (direction) =>
+                      run(() =>
+                        movePhase(
+                          universeId,
+                          saga.id,
+                          phase.id,
+                          phaseIndex + (direction === 'up' ? -1 : 1),
+                        ),
+                      ),
+                  }}
+                  moveTestIds={{ up: `phase-${phase.id}-up`, down: `phase-${phase.id}-down` }}
+                  onEdit={() => setEditing({ saga, phase, forPhase: true })}
+                  editTestId={`phase-edit-${phase.id}`}
+                  words={{
+                    edit: t('projects.sagas.editPhase'),
+                    editLabel: t('projects.sagas.editPhaseNamed', { name: phase.name }),
+                    first: t('projects.common.alreadyFirst'),
+                    last: t('projects.common.alreadyLast'),
+                  }}
+                  onDelete={() =>
+                    confirmDelete(
+                      t('projects.sagas.deletePhaseTitle', { name: phase.name }),
+                      t('projects.sagas.deletePhase'),
+                      () => deletePhase(universeId, saga.id, phase.id),
+                    )
+                  }
+                  deleteLabel={t('projects.sagas.deletePhase')}
+                  deleteTestId={`phase-delete-${phase.id}`}
+                  menuTestId={`phase-actions-${phase.id}`}
+                />
               }
             >
               {phase.summary ? <p className="prose">{phase.summary}</p> : null}
               {phase.members.length === 0 ? (
                 <QuietNote spacing="flush">{t('projects.sagas.noMembers')}</QuietNote>
               ) : (
-                <ol className="fieldlist" data-testid={`phase-members-${phase.id}`}>
+                <ol className="types__list" data-testid={`phase-members-${phase.id}`}>
                   {phase.members.map((member, memberIndex) => (
-                    <li
+                    <TypeRow
                       key={member.projectId}
-                      className="fieldlist__row"
-                      data-testid={`phase-member-${member.projectId}`}
-                    >
-                      <Production universeId={universeId} production={member} />
-                      <div className="actions actions--compact fieldlist__actions">
-                        <ActionMenu
-                          label={t('projects.common.more', { name: member.name })}
-                          triggerTestId={`member-actions-${member.projectId}`}
-                        >
-                          <MoveItems
-                            first={memberIndex === 0}
-                            last={memberIndex === phase.members.length - 1}
-                            busy={busy}
-                            testIds={{
-                              up: `member-${member.projectId}-up`,
-                              down: `member-${member.projectId}-down`,
-                            }}
-                            onMove={(step) =>
+                      {...productionRow(universeId, member)}
+                      testId={`phase-member-${member.projectId}`}
+                      actions={
+                        <TypeRowActions
+                          name={member.name}
+                          move={{
+                            isFirst: memberIndex === 0,
+                            isLast: memberIndex === phase.members.length - 1,
+                            busy,
+                            onMove: (direction) =>
                               run(() =>
                                 moveMember(
                                   universeId,
                                   saga.id,
                                   phase.id,
                                   member.projectId,
-                                  memberIndex + step,
+                                  memberIndex + (direction === 'up' ? -1 : 1),
                                 ),
-                              )
-                            }
-                          />
-                          <ActionMenuItem
-                            icon={FolderInput}
-                            disabled={busy}
-                            testId={`member-remove-${member.projectId}`}
-                            onClick={() =>
-                              run(() =>
-                                removeMember(universeId, saga.id, phase.id, member.projectId),
-                              )
-                            }
-                          >
-                            {t('projects.sagas.remove')}
-                          </ActionMenuItem>
-                        </ActionMenu>
-                      </div>
-                    </li>
+                              ),
+                          }}
+                          moveTestIds={{
+                            up: `member-${member.projectId}-up`,
+                            down: `member-${member.projectId}-down`,
+                          }}
+                          words={{
+                            first: t('projects.common.alreadyFirst'),
+                            last: t('projects.common.alreadyLast'),
+                          }}
+                          menuItems={
+                            <ActionMenuItem
+                              icon={FolderInput}
+                              disabled={busy}
+                              testId={`member-remove-${member.projectId}`}
+                              onClick={() =>
+                                run(() =>
+                                  removeMember(universeId, saga.id, phase.id, member.projectId),
+                                )
+                              }
+                            >
+                              {t('projects.sagas.remove')}
+                            </ActionMenuItem>
+                          }
+                          menuTestId={`member-actions-${member.projectId}`}
+                        />
+                      }
+                    />
                   ))}
                 </ol>
               )}
-            </ProjectCard>
+            </TypeRow>
           ))}
         </ol>
       )}
-    </section>
+    </TypeRow>
   )
 }

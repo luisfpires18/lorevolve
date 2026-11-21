@@ -1,38 +1,68 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
-import { useDiscardGuard } from '../../lib/useDiscardGuard'
+import { FormMessage } from '../FormMessage'
+import { errorText } from '../../lib/errorText'
 
+/** The drawer that adds an episode, or a film's scene or a comic's chapter, to a season. */
 export function EpisodeForm({
   busy,
+  eyebrow,
   addLabel,
   leaveMessage,
-  onSubmit,
+  onSave,
   onCancel,
 }: {
+  /** The list is busy elsewhere, as with a move in flight. */
   busy: boolean
+  /** The season the episode joins. */
+  eyebrow: ReactNode
   /** "Add an episode" or "Add a scene", from the project's own vocabulary. */
   addLabel: string
   /** The leave question once a title or synopsis is typed. */
   leaveMessage: string
-  onSubmit: (title: string, synopsis: string | null) => void
+  /** A rejection keeps the drawer open with its message. */
+  onSave: (title: string, synopsis: string | null) => Promise<unknown>
   onCancel: () => void
 }) {
   useI18n()
   const [title, setTitle] = useState('')
   const [synopsis, setSynopsis] = useState('')
-  const { confirmLeave } = useDiscardGuard((title !== '' || synopsis !== '') && !busy, leaveMessage)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function save() {
+    if (busy || saving) return
+    setSaving(true)
+    setError(null)
+    onSave(title, synopsis.length > 0 ? synopsis : null).catch((failure: unknown) => {
+      setSaving(false)
+      setError(errorText(failure, t('projects.seasons.failed')))
+    })
+  }
 
   return (
-    <form
-      className="form"
-      data-testid="project-episode-new"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (busy) return
-        onSubmit(title, synopsis.length > 0 ? synopsis : null)
-      }}
+    <Drawer
+      testId="project-episode-new"
+      titleId="project-episode-new-heading"
+      eyebrow={eyebrow}
+      title={addLabel}
+      isDirty={title !== '' || synopsis !== ''}
+      leaveMessage={leaveMessage}
+      onClose={onCancel}
+      onSubmit={save}
+      busy={saving}
+      actions={(close) => (
+        <FormActions
+          submitLabel={addLabel}
+          disabled={busy || saving}
+          submitTestId="project-episode-new-save"
+          onCancel={close}
+          cancelTestId="project-episode-new-cancel"
+        />
+      )}
     >
       <Field
         label={t('projects.seasons.episodeTitle')}
@@ -50,14 +80,7 @@ export function EpisodeForm({
         onChange={(event) => setSynopsis(event.target.value)}
         data-testid="project-episode-new-synopsis"
       />
-      <FormActions
-        submitLabel={addLabel}
-        disabled={busy}
-        submitTestId="project-episode-new-save"
-        onCancel={() => void confirmLeave().then((ok) => ok && onCancel())}
-        cancelTestId="project-episode-new-cancel"
-        inline
-      />
-    </form>
+      {error ? <FormMessage>{error}</FormMessage> : null}
+    </Drawer>
   )
 }

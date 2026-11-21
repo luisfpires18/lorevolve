@@ -1,4 +1,5 @@
 import { apiFetch } from '../lib/api'
+import { formatLabel, kindLabel, projectPath } from './sections'
 import type { ProjectKindValue } from './types'
 
 /** A production as a phase lists it: the original project's id, name, kind and format (#289). */
@@ -94,3 +95,15 @@ export const moveMember = (
 
 /** What the edit drawer is for: a new or existing saga, or a new or existing phase of one saga. */
 export type Editing = { saga: CinemaSaga | null; phase: CinemaPhase | null; forPhase: boolean }
+
+/** A production's `TypeRow` props: its name opens the original project, its kind and format follow it. */
+export function productionRow(universeId: string, production: CinemaProduction) {
+  return {
+    name: production.name,
+    to: projectPath(production.projectId, '', universeId),
+    linkTestId: `saga-production-${production.projectId}`,
+    count: production.format
+      ? `${kindLabel(production.kind)} · ${formatLabel(production.format)}`
+      : kindLabel(production.kind),
+  }
+}

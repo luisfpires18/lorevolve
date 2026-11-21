@@ -115,7 +115,6 @@ const PLACES = [
   'types__actions',
   'artwork__actions',
   'pincard__actions',
-  'projectcard__actions',
   'fieldlist__actions',
   'sectionlist__actions',
   'trash__actions',

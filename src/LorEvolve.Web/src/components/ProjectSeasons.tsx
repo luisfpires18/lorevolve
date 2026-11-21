@@ -1,14 +1,12 @@
 import { useCallback, useState } from 'react'
-import { Field } from './Field'
 import { createSeason, listSeasons } from '../projectEntities/seasons'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
 import { WORDS, type ProjectStructureWords } from '../projectEntities/seasonWords'
 import { SeasonItem } from './projectEntities/SeasonItem'
 import { NewButton } from './NewButton'
-import { FormActions } from './FormActions'
+import { NameSummaryDrawer } from './NameSummaryDrawer'
 import { useLoadedList } from '../lib/useLoadedList'
-import { useDiscardGuard } from '../lib/useDiscardGuard'
 import { PageHeader } from './PageHeader'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
@@ -36,10 +34,8 @@ export function ProjectSeasons({
   pages?: boolean
 }) {
   useI18n()
-  const [name, setName] = useState('')
   const [adding, setAdding] = useState(false)
   const [renaming, setRenaming] = useState<string | null>(null)
-  const [renameTo, setRenameTo] = useState('')
   const [addingTo, setAddingTo] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const say = WORDS[words]
@@ -47,13 +43,10 @@ export function ProjectSeasons({
   const {
     data: seasons,
     busy,
-    setBusy,
     failed,
     refresh,
-    failing,
     run,
   } = useLoadedList(read, t('projects.seasons.failed'), { emptyOnFail: [] })
-  const { confirmLeave } = useDiscardGuard(adding && name !== '' && !busy, say.leave())
 
   if (seasons === null) {
     return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
@@ -67,59 +60,33 @@ export function ProjectSeasons({
         title={say.title()}
         lede={say.lede()}
         actions={
-          <NewButton
-            aria-expanded={adding}
-            data-testid="project-season-add"
-            onClick={() => setAdding((open) => !open)}
-          >
+          <NewButton data-testid="project-season-add" onClick={() => setAdding(true)}>
             {say.add()}
           </NewButton>
         }
       />
 
-      {/* Asked for rather than standing open at the foot of the list. */}
       {adding ? (
-        <form
-          className="form"
-          data-testid="project-season-new"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (busy) return
-            setBusy(true)
-            createSeason(projectId, { name, summary: null })
-              .then(() => {
-                setName('')
-                setAdding(false)
-                return refresh()
-              })
-              .catch(failing)
+        <NameSummaryDrawer
+          testId="project-season-new"
+          eyebrow={say.title()}
+          title={say.add()}
+          initial={null}
+          busy={busy}
+          words={{
+            save: say.add(),
+            saving: t('projects.seasons.saving'),
+            name: t('projects.seasons.name'),
+            leave: say.leave(),
+            failed: t('projects.seasons.failed'),
           }}
-        >
-          <Field
-            label={t('projects.seasons.name')}
-            requiredMark
-            name={null}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            data-testid="project-season-new-name"
-            required
-          />
-          <FormActions
-            submitLabel={say.add()}
-            busy={busy}
-            busyLabel={t('projects.seasons.saving')}
-            submitTestId="project-season-new-save"
-            onCancel={() =>
-              void confirmLeave().then((ok) => {
-                if (!ok) return
-                setName('')
-                setAdding(false)
-              })
-            }
-            cancelTestId="project-season-new-cancel"
-            inline
-          />
-        </form>
+          onClose={() => setAdding(false)}
+          onSave={(input) =>
+            createSeason(projectId, { name: input.name, summary: null })
+              .then(refresh)
+              .then(() => setAdding(false))
+          }
+        />
       ) : null}
 
       {failed ? <FormMessage testId="project-seasons-failed">{failed}</FormMessage> : null}
@@ -128,33 +95,31 @@ export function ProjectSeasons({
         <EmptyState title={say.empty()} hint={say.emptyHint()} testId="project-seasons-empty" />
       ) : null}
 
-      <ol className="projectcardlist" data-testid="project-season-list">
-        {seasons.map((season, index) => (
-          <SeasonItem
-            key={season.id}
-            projectId={projectId}
-            universeId={universeId}
-            pages={pages}
-            seasons={seasons}
-            busy={busy}
-            setBusy={setBusy}
-            renaming={renaming}
-            setRenaming={setRenaming}
-            renameTo={renameTo}
-            setRenameTo={setRenameTo}
-            addingTo={addingTo}
-            setAddingTo={setAddingTo}
-            editing={editing}
-            setEditing={setEditing}
-            say={say}
-            refresh={refresh}
-            failing={failing}
-            run={run}
-            season={season}
-            index={index}
-          />
-        ))}
-      </ol>
+      {seasons.length > 0 ? (
+        <ol className="types__list" data-testid="project-season-list">
+          {seasons.map((season, index) => (
+            <SeasonItem
+              key={season.id}
+              projectId={projectId}
+              universeId={universeId}
+              pages={pages}
+              seasons={seasons}
+              busy={busy}
+              renaming={renaming}
+              setRenaming={setRenaming}
+              addingTo={addingTo}
+              setAddingTo={setAddingTo}
+              editing={editing}
+              setEditing={setEditing}
+              say={say}
+              refresh={refresh}
+              run={run}
+              season={season}
+              index={index}
+            />
+          ))}
+        </ol>
+      ) : null}
     </section>
   )
 }

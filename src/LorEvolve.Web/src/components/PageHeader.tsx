@@ -21,6 +21,7 @@ export function PageHeader({
   lead,
   level = 1,
   size = 'page',
+  accent = false,
   children,
 }: {
   title?: ReactNode
@@ -35,15 +36,22 @@ export function PageHeader({
   actions?: ReactNode
   /** A small picture before the title (an avatar). */
   lead?: ReactNode
-  /** The heading level: 1 for the screen's own head, 2 for a head inside a screen. */
-  level?: 1 | 2
+  /** The heading level: 1 for the screen's own head, 2 for a head inside a screen, 3 for one inside a row of that. */
+  level?: 1 | 2 | 3
   /** `panel` draws the title as a panel's name (the section rule) instead of a screen title. */
   size?: 'page' | 'panel'
+  /** With `size="panel"`: the smaller accent rule, as SectionTitle's `tone="rule-accent"` (a block's head inside a row). */
+  accent?: boolean
   /** Local navigation or a toolbar, directly under the title. */
   children?: ReactNode
 }) {
-  const Heading = level === 1 ? 'h1' : 'h2'
-  const base = size === 'panel' ? 'sectionrule' : 'pageheader__title'
+  const Heading = `h${level}` as const
+  const base =
+    size === 'panel'
+      ? accent
+        ? 'sectionrule sectionrule--accent'
+        : 'sectionrule'
+      : 'pageheader__title'
   return (
     <header className={size === 'panel' ? 'pageheader pageheader--panel' : 'pageheader'}>
       {crumb ? <div className="pageheader__crumb">{crumb}</div> : null}

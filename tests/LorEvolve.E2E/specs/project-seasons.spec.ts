@@ -332,7 +332,7 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-episode-new-save').click()
     await expect(season).toContainText('Pilot')
 
-    const seasonHead = season.locator('.projectcard__head').first()
+    const seasonHead = season.locator('.types__head').first()
     await seasonHead.getByRole('button', { name: /More actions/ }).click()
     await seasonHead.getByRole('button', { name: 'Delete season' }).click()
     await acceptConfirm(page)
@@ -351,7 +351,7 @@ test.describe('Project seasons', () => {
       .getByTestId('project-season-list')
       .locator('> li')
       .first()
-      .locator('.projectcard__head')
+      .locator('.types__head')
       .first()
     await head.getByRole('button', { name: /More actions/ }).click()
     await head.getByRole('button', { name: 'Delete season' }).click()

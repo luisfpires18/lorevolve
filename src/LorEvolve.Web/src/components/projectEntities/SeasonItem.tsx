@@ -1,4 +1,3 @@
-import { Field } from '../Field'
 import {
   createEpisode,
   deleteSeason,
@@ -6,39 +5,31 @@ import {
   saveSeason,
   type ProjectSeason,
 } from '../../projectEntities/seasons'
-import { ActionMenu, ActionMenuItem } from '../ActionMenu'
-import { MoveItems } from '../MoveItems'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { ProjectStructureWords, WORDS } from '../../projectEntities/seasonWords'
 import { EpisodeForm } from './EpisodeForm'
 import { SeasonEpisodes } from './SeasonEpisodes'
-import { NewButton } from '../NewButton'
-import { FormActions } from '../FormActions'
-import { Pencil, Trash } from 'lucide-react'
-import { ProjectCard } from '../ProjectCard'
+import { NameSummaryDrawer } from '../NameSummaryDrawer'
+import { TypeRow } from '../TypeRow'
+import { TypeRowActions } from '../TypeRowActions'
 import { confirmDelete } from '../../lib/confirm'
-import { useDiscardGuard } from '../../lib/useDiscardGuard'
 
-/** One season: its rename form, its head and menu, its summary, its episodes and the form to add one. */
+/** One season's row: its verbs, its summary, its episodes, and the drawers that rename it and add an episode. */
 export function SeasonItem({
   projectId,
   universeId,
   pages,
   seasons,
   busy,
-  setBusy,
   renaming,
   setRenaming,
-  renameTo,
-  setRenameTo,
   addingTo,
   setAddingTo,
   editing,
   setEditing,
   say,
   refresh,
-  failing,
   run,
   season,
   index,
@@ -48,27 +39,19 @@ export function SeasonItem({
   pages: boolean
   seasons: ProjectSeason[]
   busy: boolean
-  setBusy: Dispatch<SetStateAction<boolean>>
   renaming: string | null
   setRenaming: Dispatch<SetStateAction<string | null>>
-  renameTo: string
-  setRenameTo: Dispatch<SetStateAction<string>>
   addingTo: string | null
   setAddingTo: Dispatch<SetStateAction<string | null>>
   editing: string | null
   setEditing: Dispatch<SetStateAction<string | null>>
   say: (typeof WORDS)[ProjectStructureWords]
   refresh: () => Promise<void>
-  failing: (error: unknown) => void
   run: (work: () => Promise<unknown>) => void
   season: ProjectSeason
   index: number
 }) {
   useI18n()
-  const { confirmLeave } = useDiscardGuard(
-    renaming === season.id && renameTo !== season.name && !busy,
-    say.leave(),
-  )
 
   async function remove() {
     await confirmDelete(
@@ -83,87 +66,47 @@ export function SeasonItem({
   }
 
   return (
-    <ProjectCard
+    <TypeRow
       testId={`project-season-${season.id}`}
-      title={season.name}
-      meta={
+      name={season.name}
+      count={
         season.episodes.length === 0 ? say.noEpisodes() : say.episodeCount(season.episodes.length)
       }
-      head={
-        renaming === season.id ? (
-          <form
-            className="form projectform--inline"
-            onSubmit={(event) => {
-              event.preventDefault()
-              if (busy) return
-              setBusy(true)
-              saveSeason(projectId, season.id, { name: renameTo, summary: season.summary })
-                .then(() => {
-                  setRenaming(null)
-                  return refresh()
-                })
-                .catch(failing)
-            }}
-          >
-            <Field
-              label={t('projects.seasons.name')}
-              requiredMark
-              name={null}
-              value={renameTo}
-              onChange={(event) => setRenameTo(event.target.value)}
-              data-testid="project-season-rename-name"
-              required
-            />
-            {/* Without this the only way out of a rename the author thought better of was to save it. */}
-            <FormActions
-              submitLabel={t('projects.seasons.renameSave')}
-              busy={busy}
-              submitTestId="project-season-rename-save"
-              onCancel={() => void confirmLeave().then((ok) => ok && setRenaming(null))}
-              cancelTestId="project-season-rename-cancel"
-              lockCancel
-              size="sm"
-            />
-          </form>
-        ) : undefined
-      }
-      // Order, rename and delete are this row's secondary verbs: one menu, as the lore types screen does,
-      // rather than four pills on every card.
       actions={
-        <ActionMenu
-          label={t('projects.common.more', { name: season.name })}
-          triggerTestId={`project-season-actions-${season.id}`}
-        >
-          <MoveItems
-            first={index === 0}
-            last={index === seasons.length - 1}
-            busy={busy}
-            testIds={{
-              up: `project-season-up-${season.id}`,
-              down: `project-season-down-${season.id}`,
-            }}
-            onMove={(step) => run(() => moveSeason(projectId, season.id, { place: index + step }))}
-          />
-          <ActionMenuItem
-            icon={Pencil}
-            testId={`project-season-rename-${season.id}`}
-            onClick={() => {
-              setRenaming(season.id)
-              setRenameTo(season.name)
-            }}
-          >
-            {t('projects.seasons.rename')}
-          </ActionMenuItem>
-          <ActionMenuItem
-            icon={Trash}
-            tone="danger"
-            disabled={busy}
-            testId={`project-season-delete-${season.id}`}
-            onClick={() => void remove()}
-          >
-            {say.delete()}
-          </ActionMenuItem>
-        </ActionMenu>
+        <TypeRowActions
+          name={season.name}
+          move={{
+            isFirst: index === 0,
+            isLast: index === seasons.length - 1,
+            busy,
+            onMove: (direction) =>
+              run(() =>
+                moveSeason(projectId, season.id, { place: index + (direction === 'up' ? -1 : 1) }),
+              ),
+          }}
+          moveTestIds={{
+            up: `project-season-up-${season.id}`,
+            down: `project-season-down-${season.id}`,
+          }}
+          addChild={{
+            onAdd: () => setAddingTo(season.id),
+            testId: `project-episode-add-${season.id}`,
+          }}
+          onEdit={() => setRenaming(season.id)}
+          editTestId={`project-season-rename-${season.id}`}
+          words={{
+            addChild: say.addEpisode(),
+            edit: t('projects.seasons.rename'),
+            editLabel: t('projects.seasons.renameNamed', { name: season.name }),
+            first: t('projects.common.alreadyFirst'),
+            last: t('projects.common.alreadyLast'),
+          }}
+          onDelete={() => void remove()}
+          deleteLabel={say.delete()}
+          deleteDisabled={busy}
+          deleteTestId={`project-season-delete-${season.id}`}
+          menuTestId={`project-season-actions-${season.id}`}
+        />
       }
     >
       {season.summary ? <p className="prose">{season.summary}</p> : null}
@@ -182,37 +125,47 @@ export function SeasonItem({
         season={season}
       />
 
+      {renaming === season.id ? (
+        <NameSummaryDrawer
+          testId="project-season-rename"
+          eyebrow={say.title()}
+          title={t('projects.seasons.rename')}
+          initial={{ name: season.name, summary: season.summary }}
+          busy={busy}
+          words={{
+            save: t('projects.seasons.renameSave'),
+            name: t('projects.seasons.name'),
+            leave: say.leave(),
+            failed: t('projects.seasons.failed'),
+          }}
+          onClose={() => setRenaming(null)}
+          onSave={(input) =>
+            saveSeason(projectId, season.id, { name: input.name, summary: season.summary })
+              .then(refresh)
+              .then(() => setRenaming(null))
+          }
+        />
+      ) : null}
+
       {addingTo === season.id ? (
         <EpisodeForm
           busy={busy}
+          eyebrow={season.name}
           addLabel={say.addEpisode()}
           leaveMessage={say.leaveEpisode()}
           onCancel={() => setAddingTo(null)}
-          onSubmit={(title, synopsis) => {
-            setBusy(true)
+          onSave={(title, synopsis) =>
             createEpisode(projectId, season.id, {
               title,
               synopsis,
               script: null,
               expectedVersion: null,
             })
-              .then(() => {
-                setAddingTo(null)
-                return refresh()
-              })
-              .catch(failing)
-          }}
+              .then(refresh)
+              .then(() => setAddingTo(null))
+          }
         />
-      ) : (
-        <NewButton
-          tone="secondary"
-          size="sm"
-          data-testid={`project-episode-add-${season.id}`}
-          onClick={() => setAddingTo(season.id)}
-        >
-          {say.addEpisode()}
-        </NewButton>
-      )}
-    </ProjectCard>
+      ) : null}
+    </TypeRow>
   )
 }
