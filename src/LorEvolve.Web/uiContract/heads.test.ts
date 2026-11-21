@@ -183,9 +183,8 @@ test('the tab title has one owner per screen', () => {
   check(
     tsxFiles.filter((file) => handDetail(read(file))),
     new Map([
-      ['src/pages/GameEntitiesPage.tsx', 'the game name, once read'],
-      ['src/pages/GameEntityPage.tsx', 'the game name, once read'],
       ['src/pages/ProjectsPage.tsx', "a section's own list (Game Entities) names that section"],
+      ['src/projects/gameGate.tsx', 'the game name, once read'],
     ]),
     'only a screen that reads a name the shell cannot hands one up',
   )

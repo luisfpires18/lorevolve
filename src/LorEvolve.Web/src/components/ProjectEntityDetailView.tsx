@@ -6,15 +6,14 @@ import { getProjectEntity } from '../projectEntities/api'
 import type { ProjectEntityDetail } from '../projectEntities/types'
 import { isNotFoundOrForbidden, useAsyncRead } from '../lib/useAsyncRead'
 import { useUniverseAccess } from '../universes/access'
-import { t, tx, useI18n } from '../i18n'
+import { t, useI18n } from '../i18n'
 import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
-import { TypeIcon } from './TypeIcon'
 import { Button } from './Button'
 import { Crumb } from './Crumb'
-import { EntryHead } from './EntryHead'
+import { EntryHead, EntryTypeLink } from './EntryHead'
+import { EntryBar, EntryDates, EntryLayout } from './lore/EntryFrame'
 import { ReadGate } from './ReadGate'
-import { DateText } from './DateText'
 import { QuietNote } from './QuietNote'
 
 /**
@@ -117,19 +116,13 @@ export function ProjectEntityDetailView({
               }
               // Back to this entry's own type, with its row marked as the list marks a named entry (#195).
               type={
-                <Link
-                  className="entry__type"
+                <EntryTypeLink
                   to={typeHref}
-                  style={
-                    entity.entityTypeAccentColor
-                      ? { ['--type-accent' as string]: entity.entityTypeAccentColor }
-                      : undefined
-                  }
-                  data-testid="game-entity-crumb-type"
-                >
-                  <TypeIcon iconKey={entity.entityTypeIcon} className="entry__typeicon" />
-                  <bdi>{entity.entityTypeName}</bdi>
-                </Link>
+                  accent={entity.entityTypeAccentColor}
+                  icon={entity.entityTypeIcon}
+                  name={entity.entityTypeName}
+                  testId="game-entity-crumb-type"
+                />
               }
               name={<bdi>{entity.name}</bdi>}
               nameTestId="game-entity-title"
@@ -146,9 +139,8 @@ export function ProjectEntityDetailView({
             </EntryHead>
 
             {access.editContent ? (
-              <div className="entry__bar">
-                <div className="entry__lenses" />
-                <div className="entry__tools">
+              <EntryBar
+                tools={
                   <Button
                     tone="secondary"
                     icon={Pencil}
@@ -157,15 +149,11 @@ export function ProjectEntityDetailView({
                   >
                     {t('projects.gameEntities.entity.edit')}
                   </Button>
-                </div>
-              </div>
+                }
+              />
             ) : null}
 
-            <div
-              className="entry__layout"
-              data-picture={picture ? 'true' : 'false'}
-              data-shape={picture ? pictureShape(picture) : undefined}
-            >
+            <EntryLayout picture={picture}>
               {picture ? (
                 <figure className="entry__media">
                   <img
@@ -196,24 +184,12 @@ export function ProjectEntityDetailView({
                     {t('projects.gameEntities.entity.noImage')}
                   </QuietNote>
                 )}
-                <p className="rail__meta">
-                  {tx('entity.page.rail.created', { date: <DateText value={entity.createdAt} /> })}
-                  <br />
-                  {tx('entity.page.rail.lastChanged', {
-                    date: <DateText value={entity.updatedAt} />,
-                  })}
-                </p>
+                <EntryDates createdAt={entity.createdAt} updatedAt={entity.updatedAt} />
               </aside>
-            </div>
+            </EntryLayout>
           </article>
         )
       }}
     </ReadGate>
   )
-}
-
-/** Lore's own rule for how the picture sits beside the facts. */
-function pictureShape(image: { width: number; height: number }) {
-  const ratio = image.width / image.height
-  return ratio > 1.25 ? 'landscape' : ratio < 0.9 ? 'portrait' : 'square'
 }

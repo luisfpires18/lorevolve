@@ -34,7 +34,7 @@ export function EntryViewsNav({
 }) {
   const { t } = useI18n()
   return (
-    <div className="entry__lenses">
+    <>
       <ViewLinks
         label={t('entity.page.views.label')}
         testId="entry-views"
@@ -83,6 +83,6 @@ export function EntryViewsNav({
           onSuggest={startSuggesting}
         />
       )}
-    </div>
+    </>
   )
 }
