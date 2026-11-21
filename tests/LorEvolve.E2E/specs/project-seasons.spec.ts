@@ -224,8 +224,8 @@ test.describe('Project seasons', () => {
     await expect(volume).toContainText('No pages yet.')
 
     await volume.getByRole('button', { name: 'Add page' }).click()
-    await page.locator('[data-testid^="project-page-new-"][data-testid$="-name"]').fill('1')
-    await page.locator('[data-testid^="project-page-new-"][data-testid$="-save"]').click()
+    await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
+    await page.locator('[data-testid^="project-page-new-save-"]').first().click()
 
     const pageRow = volume.locator('[data-testid^="project-page-"]').first()
     await expect(pageRow).toContainText('No panels yet.')
@@ -286,8 +286,8 @@ test.describe('Project seasons', () => {
 
     await volume.getByRole('button', { name: 'Open pages' }).click()
     await volume.getByRole('button', { name: 'Add page' }).click()
-    await page.locator('[data-testid^="project-page-new-"][data-testid$="-name"]').fill('1')
-    await page.locator('[data-testid^="project-page-new-"][data-testid$="-save"]').click()
+    await page.locator('[data-testid^="project-page-new-name-"]').first().fill('1')
+    await page.locator('[data-testid^="project-page-new-save-"]').first().click()
 
     const pageRow = volume.locator('[data-testid^="project-page-"]').first()
 

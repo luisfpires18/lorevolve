@@ -25,6 +25,8 @@ export interface NameSummaryText {
 interface NameSummaryDrawerProps {
   /** The dialog's id; `-heading`, `-save`, `-cancel`, `-name` and `-summary` are derived from it. */
   testId: string
+  /** Each part's id instead, when a screen's ids put the part before a key (`project-page-new-name-<chapter>`). */
+  partTestId?: (part: 'heading' | 'save' | 'cancel' | 'name' | 'summary') => string
   eyebrow: ReactNode
   title: ReactNode
   /** What is being edited, or null for a new one. */
@@ -55,6 +57,7 @@ function textOf(words: NameSummaryWords): NameSummaryText {
 /** A drawer that names something and sums it up: a saga or a phase, a comic collection, a season, a comic page. */
 export function NameSummaryDrawer({
   testId,
+  partTestId = (part) => `${testId}-${part}`,
   eyebrow,
   title,
   initial,
@@ -84,7 +87,7 @@ export function NameSummaryDrawer({
   return (
     <Drawer
       testId={testId}
-      titleId={`${testId}-heading`}
+      titleId={partTestId('heading')}
       eyebrow={eyebrow}
       title={title}
       isDirty={isDirty}
@@ -98,9 +101,9 @@ export function NameSummaryDrawer({
           busy={saving}
           busyLabel={text.saving}
           disabled={busy || (!nameOptional && name.trim() === '')}
-          submitTestId={`${testId}-save`}
+          submitTestId={partTestId('save')}
           onCancel={close}
-          cancelTestId={`${testId}-cancel`}
+          cancelTestId={partTestId('cancel')}
         />
       )}
     >
@@ -112,7 +115,7 @@ export function NameSummaryDrawer({
         maxLength={200}
         required={!nameOptional}
         placeholder={text.namePlaceholder}
-        data-testid={`${testId}-name`}
+        data-testid={partTestId('name')}
         onChange={(event) => setName(event.target.value)}
       />
       {text.summary ? (
@@ -123,7 +126,7 @@ export function NameSummaryDrawer({
           maxLength={4000}
           rows={3}
           placeholder={text.summaryPlaceholder}
-          data-testid={`${testId}-summary`}
+          data-testid={partTestId('summary')}
           onChange={(event) => setSummary(event.target.value)}
         />
       ) : null}

@@ -103,6 +103,7 @@ export function ChapterPages({
       {addingPage ? (
         <NameSummaryDrawer
           testId={`project-page-new-${chapterId}`}
+          partTestId={(part) => `project-page-new-${part}-${chapterId}`}
           eyebrow={t('projects.pages.title')}
           title={t('projects.pages.add')}
           initial={null}
