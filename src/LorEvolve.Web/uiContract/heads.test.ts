@@ -35,7 +35,6 @@ const H1_OWNERS = new Map<string, string>([
   ['src/components/EntryHead.tsx', 'the shared part: an entry page'],
   ['src/components/ArticleView.tsx', "the author's own article headings, from stored content"],
   ['src/components/AuthLayout.tsx', 'auth pages: a brand panel layout, out of #412 scope'],
-  ['src/components/mcp/ConsentLayout.tsx', 'auth pages: out of #412 scope'],
   ['src/components/PortalMissing.tsx', 'public portal: its own tokens and tab title (ADR 0038)'],
   ['src/components/portal/PublicStory.tsx', 'public portal (ADR 0038)'],
   ['src/components/portal/World.tsx', 'public portal (ADR 0038)'],

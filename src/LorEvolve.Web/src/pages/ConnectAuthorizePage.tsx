@@ -1,18 +1,16 @@
-import { useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import type { ConsentToken } from '../mcp/api'
 import { useI18n } from '../i18n'
+import { AuthLayout } from '../components/AuthLayout'
 import { ConsentDetails } from '../components/mcp/ConsentDetails'
-import { ConsentLayout } from '../components/mcp/ConsentLayout'
+import { ConsentForm } from '../components/mcp/ConsentForm'
 import { useConnectionRequest, type Load } from '../mcp/useConnectionRequest'
-import { Button } from '../components/Button'
-import { FormActions } from '../components/FormActions'
 import { Callout } from '../components/Callout'
-
-/** The field the decision travels in, beside the request's own parameters. Read by `OAuthEndpoints` on the server. */
-const DECISION_FIELD = 'lorevolve_decision'
+import { LoadError } from '../components/LoadError'
+import { LoadingNote } from '../components/LoadingNote'
 
 /**
  * The consent screen (ADR 0046). An AI app sent the browser to LorEvolve's authorization endpoint, which validated the
@@ -28,71 +26,12 @@ export default function ConnectAuthorizePage() {
   const { user } = useAuth()
   const params = useMemo(() => new URLSearchParams(search), [search])
   const [load, setLoad] = useState<Load>({ kind: 'loading' })
-  const [deciding, setDeciding] = useState(false)
   const [token, setToken] = useState<ConsentToken | null>(null)
-  const submitted = useRef(false)
   const detailsId = useId()
 
   useDocumentTitle(t('universe.connect.title'))
 
   useConnectionRequest({ params, setLoad, setToken })
-
-  // The request exactly as it arrived, for the post back. Repeated names (more than one resource) stay repeated.
-  const fields = [...params.entries()].filter(
-    ([name]) => name !== DECISION_FIELD && name !== token?.fieldName,
-  )
-
-  // One decision per screen. The buttons are not disabled: a disabled submit button would leave its own value - the
-  // decision - out of the post. A second press is simply not sent.
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
-    if (submitted.current) {
-      event.preventDefault()
-      return
-    }
-    submitted.current = true
-    setDeciding(true)
-  }
-
-  // The form holds what is being decided as well as the decision, so its buttons can stay pinned to the foot of the
-  // screen while a long request scrolls past them (`.consent__actions`).
-  const decide = (content: ReactNode) => (
-    <form
-      className="consent__form"
-      method="post"
-      action="/oauth/authorize"
-      onSubmit={onSubmit}
-      aria-busy={deciding}
-      data-testid="consent-form"
-    >
-      {fields.map(([name, value], index) => (
-        <input key={`${name}-${index}`} type="hidden" name={name} value={value} />
-      ))}
-      {token ? <input type="hidden" name={token.fieldName} value={token.token} /> : null}
-      {content}
-      <FormActions inline className="consent__actions">
-        {load.kind === 'ready' ? (
-          <Button
-            type="submit"
-            name={DECISION_FIELD}
-            value="approve"
-            aria-describedby={detailsId}
-            data-testid="consent-approve"
-          >
-            {deciding ? t('universe.connect.connecting') : t('universe.connect.approve')}
-          </Button>
-        ) : null}
-        <Button
-          tone="secondary"
-          type="submit"
-          name={DECISION_FIELD}
-          value="deny"
-          data-testid="consent-deny"
-        >
-          {load.kind === 'ready' ? t('universe.connect.deny') : t('universe.connect.goBack')}
-        </Button>
-      </FormActions>
-    </form>
-  )
 
   // A request to decide on, or one to turn down: either way the decision waits for the antiforgery token.
   const request =
@@ -106,7 +45,8 @@ export default function ConnectAuthorizePage() {
     ) : null
 
   return (
-    <ConsentLayout
+    <AuthLayout
+      variant="card"
       heading={t('universe.connect.heading')}
       intro={
         // The gist, above the fold even when the warnings below are long (issue 38): read-only, manuscripts included,
@@ -136,9 +76,7 @@ export default function ConnectAuthorizePage() {
       }
     >
       {load.kind === 'loading' ? (
-        <Callout look="notice" as="p" role="status">
-          {t('universe.connect.checking')}
-        </Callout>
+        <LoadingNote>{t('universe.connect.checking')}</LoadingNote>
       ) : load.kind === 'invalid' ? (
         // An app or a return address LorEvolve does not recognise: there is nowhere trusted to send the browser back to.
         <Callout look="notice" tone="error" role="alert" testId="consent-invalid">
@@ -146,14 +84,20 @@ export default function ConnectAuthorizePage() {
           <p>{t('universe.connect.invalidNote')}</p>
         </Callout>
       ) : load.kind === 'error' ? (
-        <Callout look="notice" tone="error" role="alert" testId="consent-error">
-          <p>{t('universe.connect.checkFailed')}</p>
-        </Callout>
+        // No retry: the request is read once, from the address.
+        <LoadError message={t('universe.connect.checkFailed')} testId="consent-error" />
       ) : token ? (
-        decide(request)
+        <ConsentForm
+          params={params}
+          token={token}
+          ready={load.kind === 'ready'}
+          detailsId={detailsId}
+        >
+          {request}
+        </ConsentForm>
       ) : (
         request
       )}
-    </ConsentLayout>
+    </AuthLayout>
   )
 }

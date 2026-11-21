@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import { AccountMenu } from '../AccountMenu'
+import { BrandLink } from '../BrandLink'
 import { sectionLabel } from '../../universes/sections'
 import { t } from '../../i18n'
 import type { UniverseDetail } from '../../universes/types'
@@ -34,9 +34,7 @@ export function WorkspaceRail({
             universes", at the head of the sidebar and of the phone's Sections sheet; the account menu at the rail's
             foot names Explore and My workspace. The glyph stays small and its target does not: a 40px square, the
             rail's own width less its margins. */}
-      <Link className="rail__mark" to="/" aria-label={t('shell.brand.homeLabel')}>
-        L
-      </Link>
+      <BrandLink className="rail__mark" glyph="L" />
       <span className="rail__seal" aria-hidden="true" />
 
       {/* Only rendered into the narrow layout, where the sidebar head is folded away:
