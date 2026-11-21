@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom'
 import { Crumb } from '../Crumb'
-import { EntryHead } from '../EntryHead'
+import { EntryHead, EntryTypeLink } from '../EntryHead'
 import type { PendingFieldImage } from '../FieldImageInput'
 import { NameList } from '../NameList'
-import { TypeIcon } from '../TypeIcon'
 import { type CanonStatusValue, type EntityDetail } from '../../lore/types'
 import { CanonStatusPicker } from '../CanonStatusPicker'
 import { typeChoices } from '../../lore/typeTree'
@@ -81,19 +79,13 @@ export function EntryHeader({
           </select>
         ) : (
           // Back to the Lore list at this entry's type, by the type's id.
-          <Link
-            className="entry__type"
+          <EntryTypeLink
             to={`/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`}
-            style={
-              selectedType?.accentColor
-                ? { ['--type-accent' as string]: selectedType.accentColor }
-                : undefined
-            }
-            data-testid="entry-type"
-          >
-            <TypeIcon iconKey={selectedType?.icon ?? null} className="entry__typeicon" />
-            <bdi>{detail?.entityTypeName ?? selectedType?.name}</bdi>
-          </Link>
+            accent={selectedType?.accentColor}
+            icon={selectedType?.icon ?? null}
+            name={detail?.entityTypeName ?? selectedType?.name}
+            testId="entry-type"
+          />
         )
       }
       // How settled the entry is, changed in one press. A choice, not an action: the chosen step is raised paper with its

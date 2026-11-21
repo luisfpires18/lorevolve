@@ -32,7 +32,7 @@ export function EntryTools({
 }) {
   const { t } = useI18n()
   return (
-    <div className="entry__tools">
+    <>
       {/* Whether the entry is public, said in a word, and the way to change it - before Edit, because it is
                   state the author should see on arrival, not a tool buried in the menu. */}
       {access.publish ? (
@@ -114,6 +114,6 @@ export function EntryTools({
           ) : null}
         </RowMenu>
       ) : null}
-    </div>
+    </>
   )
 }

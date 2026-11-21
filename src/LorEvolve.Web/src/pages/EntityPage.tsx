@@ -17,6 +17,7 @@ import { EntryArticleView } from '../components/lore/EntryArticleView'
 import { EntryPicture } from '../components/lore/EntryPicture'
 import { EntryViewPanel, type EntryView } from '../components/lore/EntryViewPanel'
 import { EntryFormBar } from '../components/lore/EntryFormBar'
+import { EntryBar, EntryLayout } from '../components/lore/EntryFrame'
 import { useEntryState } from '../lore/useEntryState'
 import { useEntryPicture } from '../lore/useEntryPicture'
 import { useEntryLoad } from '../lore/useEntryLoad'
@@ -207,11 +208,10 @@ function EntityScreen({ view }: { view: EntryView }) {
           being written: one editor, and one set of tools, at a time. Comments sit just after the views, where a
           phone's views line has room the tools line does not. */}
       {!isNew && !isEditing ? (
-        <div className="entry__bar">
-          <EntryViewsNav {...entry} />
-
-          {isWritingArticle ? null : <EntryTools {...entry} />}
-        </div>
+        <EntryBar
+          lenses={<EntryViewsNav {...entry} />}
+          tools={isWritingArticle ? null : <EntryTools {...entry} />}
+        />
       ) : null}
 
       <EntryNotices {...entry} />
@@ -219,23 +219,16 @@ function EntityScreen({ view }: { view: EntryView }) {
       {isEditing ? (
         <EntryForm {...entry} />
       ) : view === 'article' ? (
-        <div
-          className="entry__layout"
-          data-picture={picture ? 'true' : 'false'}
-          data-shape={picture ? pictureShape(picture) : undefined}
-        >
+        <EntryLayout picture={picture}>
           <EntryPicture {...entry} />
 
           <EntryArticleView {...entry} />
-        </div>
+        </EntryLayout>
       ) : (
-        <div
-          className="entry__layout entry__layout--view"
-          data-picture={picture ? 'true' : 'false'}
-        >
+        <EntryLayout picture={picture} view>
           <EntryPicture {...entry} />
           <EntryViewPanel {...entry} />
-        </div>
+        </EntryLayout>
       )}
 
       {/* The form's own bar: what state the form is in on the left, Save then Cancel on the right -
@@ -254,13 +247,4 @@ function EntityScreen({ view }: { view: EntryView }) {
       ) : null}
     </article>
   )
-}
-
-/**
- * Whether a picture sits beside the article (taller than wide, or near square) or spans the page above
- * it (clearly wider than tall). Read from the original's stored dimensions; nothing is cropped either way.
- */
-function pictureShape(image: { width: number; height: number }) {
-  const ratio = image.width / image.height
-  return ratio > 1.25 ? 'landscape' : ratio < 0.9 ? 'portrait' : 'square'
 }

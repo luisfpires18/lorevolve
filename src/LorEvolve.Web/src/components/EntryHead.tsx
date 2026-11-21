@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { TypeIcon } from './TypeIcon'
 
 /**
  * The head of an entry page, Lore's or a project's: the crumb, the entry's type and status on one line, the name with the
@@ -51,5 +53,32 @@ export function EntryHead({
       )}
       {children}
     </header>
+  )
+}
+
+/** The entry's type in the head, read side: its icon and name, a link back to the list at that type, in its accent. */
+export function EntryTypeLink({
+  to,
+  accent,
+  icon,
+  name,
+  testId,
+}: {
+  to: string
+  accent: string | null | undefined
+  icon: string | null
+  name: ReactNode
+  testId: string
+}) {
+  return (
+    <Link
+      className="entry__type"
+      to={to}
+      style={accent ? { ['--type-accent' as string]: accent } : undefined}
+      data-testid={testId}
+    >
+      <TypeIcon iconKey={icon} className="entry__typeicon" />
+      <bdi>{name}</bdi>
+    </Link>
   )
 }

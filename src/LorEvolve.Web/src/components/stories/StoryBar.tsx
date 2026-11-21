@@ -3,6 +3,7 @@ import { FilePenLine, Hourglass, Pencil, Trash } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ViewChips } from '../ViewChips'
 import { ActionMenu, ActionMenuItem } from '../ActionMenu'
+import { EntryBar } from '../lore/EntryFrame'
 import { projectSections } from '../../projects/sections'
 import { ProjectKind } from '../../projects/types'
 import type { StoryDetail } from '../../stories/types'
@@ -27,8 +28,8 @@ export function StoryBar({
   const { t } = useI18n()
 
   return (
-    <div className="entry__bar">
-      <div className="entry__lenses">
+    <EntryBar
+      lenses={
         <ViewChips
           label={t('stories.page.views')}
           testId="story-views"
@@ -46,11 +47,10 @@ export function StoryBar({
             testId: `story-view-${section.segment === 'structure' ? 'scenes' : section.segment}`,
           }))}
         />
-      </div>
-
-      {/* Every view keeps a way to the story's world chronology here, the Manuscript view included, whose header has
-              no line of facts to hold it. */}
-      <div className="entry__tools">
+      }
+      // Every view keeps a way to the story's world chronology here, the Manuscript view included, whose header has
+      // no line of facts to hold it.
+      tools={
         <ActionMenu
           label={t('stories.page.storyActions', { title: story.title })}
           triggerTestId="story-actions"
@@ -88,7 +88,7 @@ export function StoryBar({
             </>
           ) : null}
         </ActionMenu>
-      </div>
-    </div>
+      }
+    />
   )
 }

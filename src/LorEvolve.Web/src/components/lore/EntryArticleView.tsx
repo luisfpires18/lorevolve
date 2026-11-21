@@ -10,7 +10,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { Chronology } from '../../chronology/types'
 import type { SectionGroup } from '../../lore/fieldSections'
 import { SectionTitle } from '../Section'
-import { DateText } from '../DateText'
+import { EntryDates } from './EntryFrame'
 import { TagList } from '../TagList'
 import { Fact } from '../Fact'
 import { FactList } from '../FactList'
@@ -41,7 +41,7 @@ export function EntryArticleView({
   selectedType: EntityType | null
   factSections: { ungrouped: FieldValue[]; groups: SectionGroup<FieldValue>[] }
 }) {
-  const { t, tx } = useI18n()
+  const { t } = useI18n()
   const isNew = entityId === undefined
   const fact = (value: FieldValue) => (
     <Fact key={value.fieldDefinitionId} name={value.name} valueClassName="prose">
@@ -121,13 +121,7 @@ export function EntryArticleView({
           <LoreOnMaps key={detail.id} universeId={universe.id} entityId={detail.id} />
         ) : null}
 
-        {detail ? (
-          <p className="rail__meta">
-            {tx('entity.page.rail.created', { date: <DateText value={detail.createdAt} /> })}
-            <br />
-            {tx('entity.page.rail.lastChanged', { date: <DateText value={detail.updatedAt} /> })}
-          </p>
-        ) : null}
+        {detail ? <EntryDates createdAt={detail.createdAt} updatedAt={detail.updatedAt} /> : null}
       </aside>
     </>
   )
