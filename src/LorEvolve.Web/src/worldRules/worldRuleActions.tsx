@@ -20,8 +20,7 @@ export function worldRuleActions({
   setStored,
   draft,
   setDraft,
-  setLoad,
-  setReads,
+  retry,
   isSaving,
   runSave,
   setSaves,
@@ -32,6 +31,7 @@ export function worldRuleActions({
   setAnnouncement,
   titleInput,
 }: ReturnType<typeof useWorldRuleState> & {
+  retry: () => void
   universeId: string
   ruleId: string | null
   onCreated: (rule: WorldRuleDetail) => void
@@ -104,8 +104,7 @@ export function worldRuleActions({
     setConflict(null)
     setFailure(null)
     setFieldErrors({})
-    setLoad({ kind: 'loading' })
-    setReads((current) => current + 1)
+    retry()
   }
 
   async function loadSavedVersion() {

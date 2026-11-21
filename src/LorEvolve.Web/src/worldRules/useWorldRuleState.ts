@@ -1,29 +1,12 @@
 import { useRef, useState } from 'react'
-import {
-  EMPTY_STORED,
-  fieldsOf,
-  storedMomentOf,
-  type Fields,
-  type LoadState,
-  type Stored,
-} from './ruleDraft'
+import { EMPTY_STORED, fieldsOf, storedMomentOf, type Fields, type Stored } from './ruleDraft'
 import { WORLD_RULE_CHANGED } from './api'
 import { t } from '../i18n'
 import { ApiError } from '../lib/api'
 import { useFormSave } from '../lib/useFormSave'
 
-/** The world rule editor's state: the read, the stored rule and the draft, the save's progress, and three refs. */
-export function useWorldRuleState({
-  isNew,
-  announceOnOpen,
-}: {
-  isNew: boolean
-  announceOnOpen: string | null
-}) {
-  const [load, setLoad] = useState<LoadState>(
-    isNew ? { kind: 'ready', value: null } : { kind: 'loading' },
-  )
-  const [reads, setReads] = useState(0)
+/** The world rule editor's state: the stored rule and the draft, the save's progress, and three refs. */
+export function useWorldRuleState({ announceOnOpen }: { announceOnOpen: string | null }) {
   const [stored, setStored] = useState<Stored>(EMPTY_STORED)
   const [draft, setDraft] = useState<Fields>(fieldsOf(EMPTY_STORED))
   const [saves, setSaves] = useState(0)
@@ -46,10 +29,6 @@ export function useWorldRuleState({
   const titleInput = useRef<HTMLInputElement>(null)
 
   return {
-    load,
-    setLoad,
-    reads,
-    setReads,
     stored,
     setStored,
     draft,

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { listValidationTerms } from './api'
 import type { ValidationTerm } from './types'
 
@@ -9,21 +10,18 @@ import type { ValidationTerm } from './types'
 export function useValidationTerms(universeId: string) {
   const [terms, setTerms] = useState<ValidationTerm[] | null>(null)
   const [failed, setFailed] = useState(false)
-  const [reads, setReads] = useState(0)
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listValidationTerms(universeId, controller.signal)
-      .then(setTerms)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true)
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, reads])
+  // A read again keeps the terms already read beside its failure, so the read writes into this state.
+  const { refresh } = useAsyncRead(
+    useCallback(
+      (signal: AbortSignal) =>
+        listValidationTerms(universeId, signal).then(setTerms, () => {
+          if (!signal.aborted) setFailed(true)
+        }),
+      [universeId],
+    ),
+    { keep: true },
+  )
 
   const add = useCallback((term: ValidationTerm) => {
     setTerms((current) => (current ? [...current, term] : [term]))
@@ -31,8 +29,8 @@ export function useValidationTerms(universeId: string) {
 
   const reload = useCallback(() => {
     setFailed(false)
-    setReads((count) => count + 1)
-  }, [])
+    refresh()
+  }, [refresh])
 
   return { terms, failed, add, reload }
 }

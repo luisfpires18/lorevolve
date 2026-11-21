@@ -1,12 +1,12 @@
 import { useId, useMemo } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { EntityChoice } from '../components/EntityPicker'
 import type { FamiliesReturn } from '../components/FamilyDiscovery'
 import { FamilyTreeTypes } from '../components/FamilyTreeTypes'
 import { FamilyTreeView } from '../components/FamilyTreeView'
 import { confirmLeaving } from '../lib/leaveGuard'
-import { FamilySemantic, type RelationshipType } from '../relationships/types'
+import { FamilySemantic } from '../relationships/types'
 import { PageHeader } from '../components/PageHeader'
 import { useWorkspaceTypes } from './useWorkspaceTypes'
 import { useI18n } from '../i18n'
@@ -15,7 +15,8 @@ import { useFamilyTreeReads } from '../familyTree/useFamilyTreeReads'
 import { useFamilyTreeState } from '../familyTree/useFamilyTreeState'
 import { FamilyAddLink } from '../components/familyTree/FamilyAddLink'
 import { FamilyEntityBar } from '../components/familyTree/FamilyEntityBar'
-import { FamilyLoadStates } from '../components/familyTree/FamilyLoadStates'
+import { ReadGate } from '../components/ReadGate'
+import { EmptyState } from '../components/EmptyState'
 import { FamilyOtherRelations } from '../components/familyTree/FamilyOtherRelations'
 import { FamilySetupNotices } from '../components/familyTree/FamilySetupNotices'
 import { FamilyStart } from '../components/familyTree/FamilyStart'
@@ -41,7 +42,7 @@ import { QuietNote } from '../components/QuietNote'
  * names and a size each, opening the tree on one of them. "Browse families" on a tree goes back to that list.
  */
 export default function FamilyTreePage() {
-  const { t } = useI18n()
+  const { t, tx } = useI18n()
   const access = useUniverseAccess()
   const { universe, types, groups, setGroups, refreshTypes } = useWorkspaceTypes()
   const { entityId } = useParams<{ entityId: string }>()
@@ -51,19 +52,13 @@ export default function FamilyTreePage() {
 
   const pageState = useFamilyTreeState()
   const {
-    state,
-    setState,
     answeredFor,
-    kinds,
-    setKinds,
     setupReads,
     setSetupReads,
-    others,
     addingFor,
     setAddingFor,
     isCreatingKind,
     setIsCreatingKind,
-    setReads,
   } = pageState
 
   // The types and groups, read with the universe: where the tree is offered.
@@ -74,7 +69,18 @@ export default function FamilyTreePage() {
         ? { types, groups }
         : null
 
-  useFamilyTreeReads({ ...pageState, universe, entityId })
+  const {
+    kinds,
+    addKind,
+    tree: state,
+    others,
+    reread,
+    retry,
+  } = useFamilyTreeReads({
+    ...pageState,
+    universe,
+    entityId,
+  })
 
   // Worked out while rendering rather than stored: no entry in the address is the empty state, and an answer
   // about another entry is a tree still on its way.
@@ -120,11 +126,6 @@ export default function FamilyTreePage() {
   const familiesFrom = typeof carried === 'string' && carried.startsWith('?') ? carried : ''
   const typesPath = `/app/universes/${universe.id}/types`
   const relationKindsPath = `${typesPath}?tab=relations`
-
-  /** A kind made here joins the list at once: no reload, and the form that asked for it chooses it. */
-  function addKind(created: RelationshipType) {
-    setKinds((current) => [...(current ?? []), created])
-  }
 
   /** Another entry's family. A button rather than a link, so it asks the leave question itself: an unsaved connection
    *  being added here goes with the family it belonged to. */
@@ -174,7 +175,34 @@ export default function FamilyTreePage() {
         show={show}
       />
 
-      <FamilyLoadStates universe={universe} view={view} setState={setState} setReads={setReads} />
+      {view.kind === 'idle' ? null : (
+        <ReadGate
+          load={view}
+          loading={{ text: t('places.familyPage.loading') }}
+          error={{
+            message: t('places.familyPage.error'),
+            onRetry: retry,
+            retryLabel: t('places.familyPage.retry'),
+            testId: 'family-error',
+          }}
+          missing={
+            <EmptyState
+              testId="family-missing"
+              title={t('places.familyPage.missingTitle')}
+              hint={tx('places.familyPage.missingHint', {
+                link: (
+                  <Link to={`/app/universes/${universe.id}/lore`}>
+                    {t('places.familyPage.missingLink')}
+                  </Link>
+                ),
+              })}
+            />
+          }
+        >
+          {/* The tree itself is drawn below. */}
+          {() => null}
+        </ReadGate>
+      )}
 
       {tree && focal ? (
         <>
@@ -206,7 +234,7 @@ export default function FamilyTreePage() {
               isAdding={isAdding}
               addKind={addKind}
               setAddingFor={setAddingFor}
-              setReads={setReads}
+              reread={reread}
             />
           ) : null}
         </>
@@ -225,7 +253,7 @@ export default function FamilyTreePage() {
             setGroups(setup.groups.map((group) => (group.id === changed.id ? changed : group)))
             refreshTypes().catch(() => undefined)
             setSetupReads((current) => current + 1)
-            setReads((current) => current + 1)
+            reread()
           }}
         />
       ) : null}

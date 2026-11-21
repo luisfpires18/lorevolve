@@ -28,6 +28,11 @@ export interface AsyncReadOptions<T> {
   key?: string
   /** `false`: a refresh that fails shows the failure instead of keeping the value shown. */
   keepOnFailure?: boolean
+  /**
+   * `true`: loading shows only on the first read and on `retry`; a new read (another page, filter or key) keeps the
+   * last answer on screen until the new one lands, so paging and filtering never blank the screen.
+   */
+  keep?: boolean
 }
 
 /** True for the 404 a read reports when the thing is gone. */
@@ -49,12 +54,12 @@ export function useAsyncRead<T>(
   options: AsyncReadOptions<T> = {},
 ) {
   const { t } = useI18n()
-  const { missing = false, initial, failed, key, keepOnFailure = true } = options
+  const { missing = false, initial, failed, key, keepOnFailure = true, keep = false } = options
   const [load, setLoad] = useState<Load<T>>(initial ?? { kind: 'loading' })
   const [shownKey, setShownKey] = useState(key)
   if (shownKey !== key) {
     setShownKey(key)
-    setLoad({ kind: 'loading' })
+    if (!keep) setLoad({ kind: 'loading' })
   }
   const [readKey, setReadKey] = useState(0)
   const quiet = useRef(false)
@@ -69,8 +74,8 @@ export function useAsyncRead<T>(
       if (initialRef.current) setLoad(initialRef.current)
       return () => controller.abort()
     }
-    // A new read (another id) never shows the last answer under the new one; a refresh keeps it.
-    if (!keepShown) setLoad((now) => (now.kind === 'loading' ? now : { kind: 'loading' }))
+    // A new read (another id) never shows the last answer under the new one, unless `keep`; a refresh keeps it.
+    if (!keepShown && !keep) setLoad((now) => (now.kind === 'loading' ? now : { kind: 'loading' }))
     settleRead(
       reading,
       controller.signal,
@@ -86,7 +91,7 @@ export function useAsyncRead<T>(
       },
     )
     return () => controller.abort()
-  }, [read, readKey, t, missing, failed, keepOnFailure])
+  }, [read, readKey, t, missing, failed, keepOnFailure, keep])
 
   const refresh = useCallback(() => {
     quiet.current = true

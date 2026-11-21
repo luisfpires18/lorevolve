@@ -49,7 +49,6 @@ export function FamilyDiscovery({
   const {
     text,
     setText,
-    state,
     setReads,
     isFinding,
     setIsFinding,
@@ -63,7 +62,7 @@ export function FamilyDiscovery({
 
   useDiscoverySearch({ ...discoveryState, q, searchParams, setSearchParams })
 
-  const { result, isCurrent } = useDiscoveryReads({ ...discoveryState, universeId, q, page })
+  const { state, result, isCurrent } = useDiscoveryReads({ ...discoveryState, universeId, q, page })
 
   // Unfiltered and empty: no family exists yet, and choosing someone is the way to start one.
   const isEmpty = isCurrent && !!result && result.totalCount === 0 && !q
@@ -149,7 +148,7 @@ export function FamilyDiscovery({
           state={state}
           result={result}
           isCurrent={isCurrent}
-          setReads={setReads}
+          retry={() => setReads((current) => current + 1)}
           returnTo={returnTo}
           goToPage={goToPage}
         />
