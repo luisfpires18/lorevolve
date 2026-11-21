@@ -67,6 +67,8 @@ const storiesPage = {
   crumb: 'Stories',
   timeline: 'View on timeline',
   views: 'Story views',
+  viewStructure: 'Structure',
+  viewManuscript: 'Manuscript',
   viewIdeas: 'Ideas',
   storyActions: 'Story actions for {title}',
   menuTimeline: 'View on timeline',

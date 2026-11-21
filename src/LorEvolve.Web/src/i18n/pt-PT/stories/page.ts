@@ -69,6 +69,8 @@ const storiesPage: Dictionary['stories']['page'] = {
   crumb: 'Histórias',
   timeline: 'Ver na linha do tempo',
   views: 'Vistas da história',
+  viewStructure: 'Estrutura',
+  viewManuscript: 'Manuscrito',
   viewIdeas: 'Ideias',
   storyActions: 'Ações da história {title}',
   menuTimeline: 'Ver na linha do tempo',

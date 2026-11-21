@@ -3,7 +3,7 @@ import { FilePenLine, Hourglass, Pencil, Trash } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ViewChips } from '../ViewChips'
 import { ActionMenu, ActionMenuItem } from '../ActionMenu'
-import { projectSectionLabel, projectSections } from '../../projects/sections'
+import { projectSections } from '../../projects/sections'
 import { ProjectKind } from '../../projects/types'
 import type { StoryDetail } from '../../stories/types'
 import type { useStoryState } from '../../stories/useStoryState'
@@ -34,7 +34,12 @@ export function StoryBar({
         items={projectSections(ProjectKind.Writing, story.id).map((section, index) => ({
           to: `${storyPath}/${section.segment}`,
           end: index === 0,
-          label: projectSectionLabel(section),
+          // A story's views keep the story's own words (`stories.page.view*`).
+          label: t(
+            section.segment === 'structure'
+              ? 'stories.page.viewStructure'
+              : 'stories.page.viewManuscript',
+          ),
           icon: section.icon,
           // The story's own ids (G26): the structure view is "scenes".
           testId: `story-view-${section.segment === 'structure' ? 'scenes' : section.segment}`,
