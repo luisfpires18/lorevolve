@@ -1,7 +1,7 @@
 import { IdeaBoardCanvas } from '../IdeaBoardCanvas'
 import type { BoardCard, BoardConnection } from '../../ideas/boards'
 import type { BoardSelection } from '../../ideas/boardSelection'
-import type { useBoardState } from '../../ideas/useBoardState'
+import type { useBoardEditor } from '../../ideas/useBoardEditor'
 import { BoardInspector } from './BoardInspector'
 import { BoardListView } from './BoardListView'
 
@@ -24,7 +24,7 @@ export function BoardWork({
   removeCard,
   editLine,
   removeLine,
-}: ReturnType<typeof useBoardState> & {
+}: ReturnType<typeof useBoardEditor> & {
   isHeld: boolean
   select: (selection: BoardSelection) => void
   connectTo: (toCardId: string) => void

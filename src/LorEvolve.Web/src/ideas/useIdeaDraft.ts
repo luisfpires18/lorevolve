@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useDraftedEditor } from '../lib/useDraftedEditor'
 import { IDEA_BODY_MAX_LENGTH } from './types'
-import { isBlank, parseCopy, sameFields } from './ideaDraft'
-import type { useIdeaState } from './useIdeaState'
+import { isBlank, parseCopy, sameFields, type Fields, type Stored } from './ideaDraft'
+import type { RecordState } from './recordKind'
 
 /** What an idea's editor holds against what is saved, and the recovery copy that follows it. */
 export function useIdeaDraft(
@@ -16,7 +16,7 @@ export function useIdeaDraft(
     keep,
     forget,
     titleInput,
-  }: ReturnType<typeof useIdeaState>,
+  }: RecordState<Fields, Stored>,
   leaveMessage: string,
 ) {
   const drafted = useDraftedEditor({

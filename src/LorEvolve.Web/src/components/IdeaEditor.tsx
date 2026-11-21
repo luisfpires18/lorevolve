@@ -7,12 +7,8 @@ import { QuietNote } from './QuietNote'
 import { IdeaReferences } from './ideas/IdeaReferences'
 import { EditorSaveBar } from './EditorSaveBar'
 import { RecordUnavailable } from './ideas/RecordUnavailable'
-import { ideaActions } from '../ideas/ideaActions'
 import type { IdeaDetail } from '../ideas/types'
-import { useIdeaDraft } from '../ideas/useIdeaDraft'
-import { useIdeaRead } from '../ideas/useIdeaRead'
-import { useIdeaSave } from '../ideas/useIdeaSave'
-import { useIdeaState } from '../ideas/useIdeaState'
+import { useIdeaEditor } from '../ideas/useIdeaEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 import { DocumentHead } from './DocumentHead'
@@ -62,7 +58,7 @@ export function IdeaEditor({
   onCreated,
   onDeleted,
 }: IdeaEditorProps) {
-  const { t, tn, tx } = useI18n()
+  const { t } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const bodyId = useId()
@@ -71,7 +67,6 @@ export function IdeaEditor({
   const statusId = useId()
   const recoveryId = useId()
 
-  const base = useIdeaState({ ideaId, defaultUniverseId, contextUniverse })
   const {
     isNew,
     failed,
@@ -89,16 +84,13 @@ export function IdeaEditor({
     announcement,
     titleInput,
     addButton,
-  } = base
-  useIdeaRead({ ...base, ideaId, t })
-  const name = draft.title.trim() || stored.title || t('ideas.editor.thisIdea')
-  const drafting = useIdeaDraft(base, t('ideas.editor.leaveGuard', { name }))
-  const { isDirty, isTooLong, copy, offer, isHeld } = drafting
-
-  const saving = useIdeaSave({ ...base, ...drafting, ideaId, onCreated, t })
-  const { edit, save } = saving
-
-  const {
+    isDirty,
+    isTooLong,
+    copy,
+    offer,
+    isHeld,
+    edit,
+    save,
     reread,
     loadSavedVersion,
     recoverDraft,
@@ -107,7 +99,7 @@ export function IdeaEditor({
     addReference,
     removeReference,
     remove,
-  } = ideaActions({ ...base, ...drafting, ...saving, ideaId, onDeleted, t, tn, tx })
+  } = useIdeaEditor({ ideaId, defaultUniverseId, contextUniverse, onCreated, onDeleted })
 
   if (load.kind !== 'ready') {
     return (

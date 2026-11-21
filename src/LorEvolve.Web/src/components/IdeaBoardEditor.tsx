@@ -5,13 +5,8 @@ import { BoardToolbar } from './ideas/BoardToolbar'
 import { RecordUnavailable } from './ideas/RecordUnavailable'
 import { BoardWork } from './ideas/BoardWork'
 import { boardCardActions } from '../ideas/boardCardActions'
-import { boardDraftActions } from '../ideas/boardDraftActions'
 import type { IdeaBoardDetail } from '../ideas/boards'
-import { isBlank, parseCopy, sameFields } from '../ideas/boardDraft'
-import { useBoardRead } from '../ideas/useBoardRead'
-import { useBoardSave } from '../ideas/useBoardSave'
-import { useBoardState } from '../ideas/useBoardState'
-import { useDraftedEditor } from '../lib/useDraftedEditor'
+import { useBoardEditor } from '../ideas/useBoardEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 import { DocumentHead } from './DocumentHead'
@@ -51,7 +46,7 @@ export function IdeaBoardEditor({
   onCreated,
   onDeleted,
 }: IdeaBoardEditorProps) {
-  const { t, tn, tx } = useI18n()
+  const { t, tn } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const universeFieldId = useId()
@@ -59,30 +54,8 @@ export function IdeaBoardEditor({
   const recoveryId = useId()
   const inspectorId = useId()
 
-  const base = useBoardState({ boardId, defaultUniverseId, contextUniverse })
+  const base = useBoardEditor({ boardId, defaultUniverseId, contextUniverse, onCreated, onDeleted })
   const { load, stored, draft, universes, picking, setPicking, announcement } = base
-  useBoardRead({ ...base, boardId, t })
-  const name = draft.title.trim() || stored.title || t('ideas.board.thisBoard')
-  const drafting = useDraftedEditor({
-    ...base,
-    isReady: load.kind === 'ready',
-    isBlank,
-    same: sameFields,
-    parseCopy,
-    leaveMessage: t('ideas.board.leaveGuard', { name }),
-  })
-
-  const saving = useBoardSave({ ...base, ...drafting, boardId, onCreated, t })
-  const drafts = boardDraftActions({
-    ...base,
-    ...drafting,
-    ...saving,
-    boardId,
-    onDeleted,
-    t,
-    tn,
-    tx,
-  })
   const cards = boardCardActions({ ...base, t })
 
   if (load.kind !== 'ready') {
@@ -94,7 +67,7 @@ export function IdeaBoardEditor({
         listPath={listPath}
         contextUniverse={contextUniverse}
         elsewhere={{ open: t('ideas.board.elsewhere.open') }}
-        reread={drafts.reread}
+        reread={base.reread}
       />
     )
   }
@@ -105,9 +78,6 @@ export function IdeaBoardEditor({
   const cardsById = new Map(draft.cards.map((card) => [card.id, card]))
   const view = {
     ...base,
-    ...drafting,
-    ...saving,
-    ...drafts,
     ...cards,
     listPath,
     listLabel,
@@ -134,7 +104,7 @@ export function IdeaBoardEditor({
         newTitle={t('ideas.board.newBoard')}
         menuLabel={t('ideas.board.moreActions', { title: stored.title })}
         deleteLabel={t('ideas.board.deleteBoard')}
-        onDelete={() => void drafts.remove()}
+        onDelete={() => void base.remove()}
         busy={base.isSaving}
         titleId={headingId}
         lede={t('ideas.board.lede')}

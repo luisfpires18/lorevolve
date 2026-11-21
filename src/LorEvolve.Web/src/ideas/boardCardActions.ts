@@ -3,7 +3,7 @@ import { freeSpot, LINKED_SIZE, NOTE_SIZE } from './boardPlacement'
 import type { BoardSelection } from './boardSelection'
 import type { PickedTarget } from '../components/IdeaBoardPicker'
 import type { useI18n } from '../i18n'
-import type { useBoardState } from './useBoardState'
+import type { useBoardEditor } from './useBoardEditor'
 
 /** A board editor's handlers for its cards and lines: adding, moving, joining, editing, taking off and choosing. */
 export function boardCardActions({
@@ -17,7 +17,7 @@ export function boardCardActions({
   setPicking,
   connecting,
   setConnecting,
-}: ReturnType<typeof useBoardState> & { t: ReturnType<typeof useI18n>['t'] }) {
+}: ReturnType<typeof useBoardEditor> & { t: ReturnType<typeof useI18n>['t'] }) {
   function editCard(id: string, change: Partial<BoardCard>) {
     setDraft((current) => ({
       ...current,
