@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { useSearchParams } from 'react-router-dom'
 import type { useDiscoveryState } from './useDiscoveryState'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
+import { changed } from '../lib/queryParams'
 
 export function useDiscoverySearch({
   q,
@@ -27,11 +28,7 @@ export function useDiscoverySearch({
   const settled = useDebouncedValue(text)
   useEffect(() => {
     if (settled.trim() === q) return
-    const next = new URLSearchParams(searchParams)
-    if (settled.trim()) next.set('q', settled.trim())
-    else next.delete('q')
-    next.delete('page')
-    setSearchParams(next, { replace: true })
+    setSearchParams(changed(searchParams, { q: settled.trim() }), { replace: true })
     // Only a settled word writes the address; an address that moved by itself is not written back over.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settled])

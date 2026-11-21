@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { listAllProjects } from '../projects/api'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
+import { changed } from '../lib/queryParams'
 
 /** The Types screen's context and game, from the address, with the universe's games read once. */
 export function useTypesGames({ universe }: { universe: { id: string } }) {
@@ -28,29 +29,22 @@ export function useTypesGames({ universe }: { universe: { id: string } }) {
 
   function chooseContext(next: 'lore' | 'gaming' | 'templates') {
     if (next === current) return
-    setParams((current) => {
-      const copy = new URLSearchParams(current)
-      if (next === 'lore') {
-        copy.delete('context')
-        copy.delete('game')
-      } else if (next === 'templates') {
-        copy.set('context', 'templates')
-        copy.delete('game')
-      } else {
-        copy.set('context', 'gaming')
-        copy.set('game', game.id)
-      }
-      return copy
-    })
+    setParams((current) =>
+      changed(
+        current,
+        next === 'lore'
+          ? { context: null, game: null }
+          : next === 'templates'
+            ? { context: 'templates', game: null }
+            : { context: 'gaming', game: game.id },
+        { keepPage: true },
+      ),
+    )
   }
 
   function chooseGame(id: string) {
     if (id === game?.id) return
-    setParams((current) => {
-      const copy = new URLSearchParams(current)
-      copy.set('game', id)
-      return copy
-    })
+    setParams((current) => changed(current, { game: id }, { keepPage: true }))
   }
 
   return {

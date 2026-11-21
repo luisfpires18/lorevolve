@@ -1,118 +1,121 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { RowMenu } from '../RowMenu'
 import { MoveItems } from '../MoveItems'
-import { useI18n } from '../../i18n'
-import type { Ability, Appearance, Form } from '../../progression/types'
-import { useUniverseAccess } from '../../universes/access'
-import { unlockParts } from '../../progression/unlockParts'
+import type { EraScene } from '../../progression/types'
 import { Fact } from '../Fact'
 import { FactList } from '../FactList'
 
-/** One form or ability on the main profile: its name, the actions menu, and what the author said of it. */
+/** One fact under a row: the term, the words, and the test id on the value. */
+export interface ItemFact {
+  name: string
+  value: string
+  testId: string
+}
+
+/**
+ * One form, ability or appearance on the main profile: its name, the actions menu, what the author said of it,
+ * whatever the row adds (an appearance's gallery), its facts and the scenes it is used in.
+ */
 export function ItemRow({
   kind,
-  item,
-  index,
-  items,
-  appearances,
+  name,
+  description,
   universeId,
+  first,
+  last,
   busy,
-  access,
+  canEdit,
   words,
+  facts,
+  scenes,
   onEdit,
   onMove,
   onRemove,
+  children,
 }: {
-  kind: 'form' | 'ability'
-  item: Form | Ability
-  index: number
-  items: (Form | Ability)[]
-  appearances: Appearance[]
+  kind: 'form' | 'ability' | 'appearance'
+  name: string
+  description: string | null
   universeId: string
+  first: boolean
+  last: boolean
   busy: boolean
-  access: ReturnType<typeof useUniverseAccess>
-  words: { title: string; add: string; edit: string; remove: string; empty: string }
-  onEdit: (item: Form | Ability) => void
-  onMove: (item: Form | Ability, by: number) => void
-  onRemove: (item: Form | Ability) => void
+  canEdit: boolean
+  words: {
+    actions: string
+    edit: string
+    remove: string
+    scenes: string
+    sceneInTrash: (title: string) => string
+  }
+  facts: ItemFact[]
+  scenes: EraScene[]
+  onEdit: () => void
+  onMove: (by: number) => void
+  onRemove: () => void
+  /** Shown under the description: an appearance's upload message, gallery and picture viewer. */
+  children?: ReactNode
 }) {
-  const { t } = useI18n()
-  const unlock = unlockParts(item.unlock)
   return (
-    <li className="progitems__item" data-testid={`${kind}-${item.name}`}>
+    <li className="progitems__item" data-testid={`${kind}-${name}`}>
       <div className="progitems__head">
         <h4 className="progitems__name">
-          <bdi>{item.name}</bdi>
+          <bdi>{name}</bdi>
         </h4>
-        {access.editContent ? (
+        {canEdit ? (
           <RowMenu
-            label={t('progression.items.actions', { name: item.name })}
-            triggerTestId={`${kind}-actions-${item.name}`}
+            label={words.actions}
+            triggerTestId={`${kind}-actions-${name}`}
             busy={busy}
-            onEdit={() => onEdit(item)}
+            onEdit={onEdit}
             editLabel={words.edit}
             editTestId={`edit-${kind}`}
-            onRemove={() => onRemove(item)}
+            onRemove={onRemove}
             removeLabel={words.remove}
             removeTestId={`remove-${kind}`}
           >
             <MoveItems
-              first={index === 0}
-              last={index === items.length - 1}
+              first={first}
+              last={last}
               busy={busy}
               wording="earlier-later"
-              onMove={(step) => onMove(item, step)}
+              onMove={onMove}
             />
           </RowMenu>
         ) : null}
       </div>
-      {item.description ? <p className="progitems__description prose">{item.description}</p> : null}
-      <FactList look="inline">
-        {unlock.length > 0 ? (
-          <Fact name={t('progression.items.firstUnlocked')} valueTestId={`${kind}-unlock`}>
-            {unlock.join(', ')}
-          </Fact>
-        ) : null}
-        <Fact name={t('progression.items.availableIn')} valueTestId={`${kind}-available`}>
-          {item.eras.length === 0
-            ? t('progression.items.noStage')
-            : item.eras.map((era) => era.name).join(', ')}
-        </Fact>
-        {kind === 'form' &&
-        appearances.some((look) => look.forms.some((form) => form.id === item.id)) ? (
-          <Fact name={t('progression.items.looks')} valueTestId="form-looks">
-            {appearances
-              .filter((look) => look.forms.some((form) => form.id === item.id))
-              .map((look) => look.label)
-              .join(', ')}
-          </Fact>
-        ) : null}
-        {'forms' in item && item.forms.length > 0 ? (
-          <Fact name={t('progression.items.forms')} valueTestId="ability-forms-read">
-            {item.forms.map((form) => form.name).join(', ')}
-          </Fact>
-        ) : null}
-        {item.scenes.length > 0 ? (
-          <Fact name={t('progression.items.usedIn')}>
-            <ul className="eracovers">
-              {item.scenes.map((scene) => (
-                <li key={scene.id}>
-                  {scene.isTrashed ? (
-                    <span>{t('progression.era.inTrash', { title: scene.title })}</span>
-                  ) : (
-                    <Link
-                      to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
-                    >
-                      {scene.title}
-                    </Link>
-                  )}
-                  <span> · {scene.storyTitle}</span>
-                </li>
-              ))}
-            </ul>
-          </Fact>
-        ) : null}
-      </FactList>
+      {description ? <p className="progitems__description prose">{description}</p> : null}
+      {children}
+      {facts.length > 0 || scenes.length > 0 ? (
+        <FactList look="inline">
+          {facts.map((fact) => (
+            <Fact name={fact.name} key={fact.testId} valueTestId={fact.testId}>
+              {fact.value}
+            </Fact>
+          ))}
+          {scenes.length > 0 ? (
+            <Fact name={words.scenes}>
+              <ul className="eracovers">
+                {scenes.map((scene) => (
+                  <li key={scene.id}>
+                    {scene.isTrashed ? (
+                      <span>{words.sceneInTrash(scene.title)}</span>
+                    ) : (
+                      <Link
+                        to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
+                      >
+                        {scene.title}
+                      </Link>
+                    )}
+                    <span> · {scene.storyTitle}</span>
+                  </li>
+                ))}
+              </ul>
+            </Fact>
+          ) : null}
+        </FactList>
+      ) : null}
     </li>
   )
 }

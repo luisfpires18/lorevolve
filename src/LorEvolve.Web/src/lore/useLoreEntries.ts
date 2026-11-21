@@ -16,6 +16,7 @@ import type { SetURLSearchParams } from 'react-router-dom'
 import { errorText } from '../lib/errorText'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import type { LoadState } from './loreAddress'
+import { changed } from '../lib/queryParams'
 
 /** Groups that could not be read: none to offer, one stable list. */
 const EMPTY_GROUPS: EntityTypeGroup[] = []
@@ -83,42 +84,22 @@ export function useLoreEntries({
   // A type this universe does not have is taken out of the address in place, which leaves nothing chosen.
   useEffect(() => {
     if (!isUnknownType) return
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        next.delete('type')
-        next.delete('page')
-        next.delete(FIELD_FILTER_PARAM)
-        return next
-      },
-      { replace: true },
-    )
+    setParams((current) => changed(current, { type: null, [FIELD_FILTER_PARAM]: null }), {
+      replace: true,
+    })
   }, [isUnknownType, setParams])
 
   useEffect(() => {
     if (!isUnknownGroup) return
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        next.delete('group')
-        next.delete('page')
-        return next
-      },
-      { replace: true },
-    )
+    setParams((current) => changed(current, { group: null }), { replace: true })
   }, [isUnknownGroup, setParams])
 
   // A catalog narrowed to a group the universe does not have shows every type again, with the address cleaned in place.
   useEffect(() => {
     if (!isUnknownBrowse) return
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        next.delete('browse')
-        return next
-      },
-      { replace: true },
-    )
+    setParams((current) => changed(current, { browse: null }, { keepPage: true }), {
+      replace: true,
+    })
   }, [isUnknownBrowse, setParams])
 
   // Field filters the chosen type can still answer. One the address carries that it cannot - a field since deleted or

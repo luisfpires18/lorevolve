@@ -14,6 +14,7 @@ import type { Era, Progression, ProgressionInput } from './types'
 import type { SetURLSearchParams } from 'react-router-dom'
 import type { useI18n } from '../i18n'
 import type { useProgressionState } from './useProgressionState'
+import { changed as withChanges } from '../lib/queryParams'
 
 /** The era handlers: choosing one by the address, saving the eras, and moving or removing one. */
 export function progressionActions({
@@ -37,10 +38,7 @@ export function progressionActions({
   changed: (next: Progression) => void
 }) {
   function choose(eraId: string | null) {
-    const next = new URLSearchParams(params)
-    if (eraId) next.set('era', eraId)
-    else next.delete('era')
-    setParams(next)
+    setParams(withChanges(params, { era: eraId }, { keepPage: true }))
   }
 
   /** Saves the eras given; forms and abilities are sent only when `items` says so (a removal that takes references with it). */

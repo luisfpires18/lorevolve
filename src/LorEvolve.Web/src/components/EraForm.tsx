@@ -7,10 +7,10 @@ import { Field } from './Field'
 import type { FieldValue } from '../lore/types'
 import type { FieldDefinition } from '../lore/typeDefinitions'
 import type { Era, Progression } from '../progression/types'
-import { inputOf } from '../progression/eraDraft'
+import { draftOf, inputOf } from '../progression/eraDraft'
 import { useEraFormState } from '../progression/useEraFormState'
 import { eraFormActions } from '../progression/eraFormActions'
-import { EraConflict } from './progression/EraConflict'
+import { ProgressionConflict } from './progression/ProgressionConflict'
 import { EraNameFields } from './progression/EraNameFields'
 import { EraPoint } from './progression/EraPoint'
 import { EraFieldRow } from './progression/EraFieldRow'
@@ -126,11 +126,15 @@ export function EraForm({
       {message ? <FormMessage testId="era-error">{message}</FormMessage> : null}
 
       {conflict ? (
-        <EraConflict
+        <ProgressionConflict
           universeId={universeId}
           entityId={entityId}
-          era={era}
-          definitions={definitions}
+          what={t('time.eraForm.conflictWhat')}
+          testId="era-conflict"
+          names={(latest) => latest.eras}
+          draftFrom={(latest) =>
+            draftOf(latest.eras.find((one) => one.id === era?.id) ?? null, definitions)
+          }
           setBase={setBase}
           setDraft={setDraft}
           setConflict={setConflict}

@@ -1,50 +1,50 @@
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { EditConflict } from '../EditConflict'
-import { useI18n } from '../../i18n'
 import { getProgression } from '../../progression/api'
 import type { Progression } from '../../progression/types'
-import {
-  draftOf,
-  listOf,
-  nameOf,
-  type Item,
-  type ItemDraft,
-  type Kind,
-} from '../../progression/itemDraft'
 
-/** The drawer's notice that the progression changed elsewhere, with Keep mine and Use latest. */
-export function ItemConflict({
+/**
+ * An era or item drawer's notice that the progression changed elsewhere, with Keep mine and Use latest. Keep mine
+ * focuses Save; Use latest takes the re-read draft, hands it to `onUseLatest` if given, and focuses the name.
+ */
+export function ProgressionConflict<Draft>({
   universeId,
   entityId,
-  kind,
-  item,
+  what,
+  testId,
+  names,
+  draftFrom,
   setBase,
-  setInitial,
   setDraft,
   setConflict,
   nameInput,
   saveButton,
+  onUseLatest,
 }: {
   universeId: string
   entityId: string
-  kind: Kind
-  item: Item | null
+  what: string
+  testId: string
+  /** The latest eras or items, listed by name. */
+  names: (latest: Progression) => { id: string; name: string }[]
+  /** The draft of the thing being edited, as the latest progression has it. */
+  draftFrom: (latest: Progression) => Draft
   setBase: Dispatch<SetStateAction<Progression>>
-  setInitial: Dispatch<SetStateAction<ItemDraft>>
-  setDraft: Dispatch<SetStateAction<ItemDraft>>
+  setDraft: Dispatch<SetStateAction<Draft>>
   setConflict: Dispatch<SetStateAction<boolean>>
   nameInput: RefObject<HTMLInputElement | null>
   saveButton: RefObject<HTMLButtonElement | null>
+  /** Use latest also resets this, with a draft of its own (the item drawer's unsaved baseline). */
+  onUseLatest?: (draft: Draft) => void
 }) {
-  const { t } = useI18n()
   return (
     <EditConflict
-      what={t('progression.item.conflictWhat')}
+      what={what}
       read={() => getProgression(universeId, entityId)}
       renderLatest={(latest) => (
         <ul className="namelist">
-          {listOf(latest, kind).map((one) => (
-            <li key={one.id}>{nameOf(one)}</li>
+          {names(latest).map((one) => (
+            <li key={one.id}>{one.name}</li>
           ))}
         </ul>
       )}
@@ -55,13 +55,12 @@ export function ItemConflict({
       }}
       onUseLatest={(latest) => {
         setBase(latest)
-        const reread = listOf(latest, kind).find((one) => one.id === item?.id) ?? null
-        setDraft(draftOf(reread))
-        setInitial(draftOf(reread))
+        setDraft(draftFrom(latest))
+        onUseLatest?.(draftFrom(latest))
         setConflict(false)
         requestAnimationFrame(() => nameInput.current?.focus())
       }}
-      testId={`${kind}-conflict`}
+      testId={testId}
     />
   )
 }
