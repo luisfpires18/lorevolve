@@ -10,7 +10,6 @@ import { useGuardDrawerState } from '../../worldLogic/useGuardDrawerState'
 import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
 import { StaleChoice } from '../StaleChoice'
-import { FormActions } from '../FormActions'
 import { LoadingNote } from '../LoadingNote'
 import { FormMessage } from '../FormMessage'
 import { SectionTitle } from '../Section'
@@ -80,31 +79,30 @@ export function GuardBuilderDrawer({
       onSubmit={() => void save(detail)}
       noValidate
       busy={saving}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t(`${m}.save`)}
-          disabled={load !== 'ready' || saving}
-          submitTestId="guard-builder-save"
-          onCancel={close}
-          cancelTestId="guard-builder-cancel"
-        />
-      )}
+      notice={
+        conflict ? (
+          <StaleChoice
+            text={t(`${gb}.conflict`)}
+            onKeepMine={() => void keepMine()}
+            keepLabel={t(`${m}.keepMine`)}
+            onLoadSaved={() => void loadSaved()}
+            loadLabel={t(`${m}.loadSaved`)}
+            busy={saving}
+            size="sm"
+            testId="guard"
+          />
+        ) : null
+      }
+      message={message}
+      messageTestId="guard-builder-error"
+      actions={{
+        submitLabel: t(`${m}.save`),
+        showBusy: false,
+        disabled: load !== 'ready' || saving,
+        submitTestId: 'guard-builder-save',
+        cancelTestId: 'guard-builder-cancel',
+      }}
     >
-      {conflict ? (
-        <StaleChoice
-          text={t(`${gb}.conflict`)}
-          onKeepMine={() => void keepMine()}
-          keepLabel={t(`${m}.keepMine`)}
-          onLoadSaved={() => void loadSaved()}
-          loadLabel={t(`${m}.loadSaved`)}
-          busy={saving}
-          size="sm"
-          testId="guard"
-        />
-      ) : null}
-
-      {message ? <FormMessage testId="guard-builder-error">{message}</FormMessage> : null}
-
       {load === 'loading' ? <LoadingNote>{t(`${gb}.loading`)}</LoadingNote> : null}
       {load === 'error' ? (
         <FormMessage testId="guard-builder-unavailable">{t(`${gb}.loadFailed`)}</FormMessage>
