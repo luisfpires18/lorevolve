@@ -1,10 +1,9 @@
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
-import { getStory, listStories } from '../stories/api'
-import { readingOrder } from '../stories/structure'
-import type { StorySummary } from '../stories/types'
 import type { EraScene } from '../progression/types'
+import { useUniverseStories } from '../stories/useUniverseStories'
+import { sceneChoices, useStoryScenes } from '../stories/useStoryScenes'
 import { Token } from './Token'
 
 /**
@@ -34,40 +33,18 @@ export function ScenePicks({
   const storyId = useId()
   const sceneId = useId()
   const fieldId = useId()
-  const [stories, setStories] = useState<StorySummary[] | null>(null)
   const [story, setStory] = useState('')
-  const [scenes, setScenes] = useState<EraScene[] | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listStories(universeId, controller.signal)
-      .then(setStories)
-      .catch(() => {
-        if (!controller.signal.aborted) setStories([])
-      })
-    return () => controller.abort()
-  }, [universeId])
-
-  useEffect(() => {
-    if (!story) return
-    const controller = new AbortController()
-    getStory(universeId, story, controller.signal)
-      .then((detail) =>
-        setScenes(
-          readingOrder(detail.arcs, detail.chapters, detail.scenes).map((scene) => ({
-            id: scene.id,
-            storyId: detail.id,
-            title: scene.title,
-            storyTitle: detail.title,
-            isTrashed: false,
-          })),
-        ),
-      )
-      .catch(() => {
-        if (!controller.signal.aborted) setScenes([])
-      })
-    return () => controller.abort()
-  }, [universeId, story])
+  // A read that fails offers nothing, as an empty one does.
+  const storiesLoad = useUniverseStories(universeId)
+  const stories =
+    storiesLoad.kind === 'loading' ? null : storiesLoad.kind === 'ready' ? storiesLoad.value : []
+  const storyLoad = useStoryScenes(universeId, story)
+  const scenes =
+    storyLoad.kind === 'loading'
+      ? null
+      : storyLoad.kind === 'ready'
+        ? sceneChoices(storyLoad.value)
+        : []
 
   const chosen = new Set(value.map((scene) => scene.id))
   const offered = (scenes ?? []).filter((scene) => !chosen.has(scene.id))
@@ -115,10 +92,7 @@ export function ScenePicks({
           id={storyId}
           className="field__input field__input--select"
           value={story}
-          onChange={(event) => {
-            setScenes(null)
-            setStory(event.target.value)
-          }}
+          onChange={(event) => setStory(event.target.value)}
           aria-describedby={describedBy}
           data-testid={`${testId}-story`}
         >

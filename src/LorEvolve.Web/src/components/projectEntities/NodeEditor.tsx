@@ -1,25 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { ComicArt, ComicPageEditor } from '../ComicPageEditor'
 import { ScriptField } from './ScriptPartFields'
-import { ApiError } from '../../lib/api'
-import {
-  ART_LEVELS,
-  getNode,
-  NODE_CHANGED,
-  PANEL_SCRIPT,
-  saveNode,
-  scriptOf,
-  type PanelScript,
-  type ProjectNodeDetail,
-  type ProjectNodeSummary,
-} from '../../projectEntities/structure'
+import { ART_LEVELS, PANEL_SCRIPT, type ProjectNodeSummary } from '../../projectEntities/structure'
+import { nodeChangedCode, useNodeEdit } from '../../projectEntities/useNodeEdit'
 import { capital, levelWord, nameOf } from '../../projectEntities/levelWords'
 import { t } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { FormActions } from '../FormActions'
-import { errorText } from '../../lib/errorText'
 import { FormMessage } from '../FormMessage'
 
 /**
@@ -39,68 +28,26 @@ export function NodeEditor({
   onClose: () => void
   onSaved: () => void
 }) {
-  const [node, setNode] = useState<ProjectNodeDetail | null>(null)
+  const edit = useNodeEdit(projectId, nodeId, nodeChangedCode)
+  const { node, draft, setDraft } = edit
   const canEdit = useUniverseAccess().editContent
-  const [title, setTitle] = useState('')
   // A page's panel cards save on their own; the drawer still guards and locks for them.
   const [panelsDirty, setPanelsDirty] = useState(false)
   const [panelsSaving, setPanelsSaving] = useState(false)
-  const [summary, setSummary] = useState('')
-  const [body, setBody] = useState('')
-  const [script, setScript] = useState<PanelScript>({
-    dialogue: '',
-    caption: '',
-    sfx: '',
-    notes: '',
-  })
-  const [saving, setSaving] = useState(false)
-  const [failed, setFailed] = useState<string | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getNode(projectId, nodeId, controller.signal)
-      .then((read) => {
-        setNode(read)
-        setTitle(read.title ?? '')
-        setSummary(read.summary ?? '')
-        setBody(read.body ?? '')
-        setScript(scriptOf(read))
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) setFailed(errorText(error, t('projects.structure.failed')))
-      })
-    return () => controller.abort()
-  }, [projectId, nodeId])
-
-  const isDirty =
-    node !== null &&
-    (title !== (node.title ?? '') ||
-      summary !== (node.summary ?? '') ||
-      body !== (node.body ?? '') ||
-      PANEL_SCRIPT.some((part) => script[part] !== (node[part] ?? '')))
+  const saving = edit.isSaving
+  const failed = edit.changed ? t('projects.structure.changed') : edit.message
 
   function save() {
     if (!node || saving || !canEdit) return
-    setSaving(true)
-    saveNode(projectId, node.id, {
-      title: title || null,
-      summary: summary || null,
-      body: body || null,
-      expectedVersion: node.version,
-      dialogue: script.dialogue || null,
-      caption: script.caption || null,
-      sfx: script.sfx || null,
-      notes: script.notes || null,
-    })
-      .then(onSaved)
-      .catch((error: unknown) => {
-        setSaving(false)
-        setFailed(
-          error instanceof ApiError && error.code === NODE_CHANGED
-            ? t('projects.structure.changed')
-            : errorText(error, t('projects.structure.failed')),
-        )
-      })
+    void edit.save(
+      {
+        title: draft.title || null,
+        summary: draft.summary || null,
+        body: draft.body,
+        script: draft.script,
+      },
+      onSaved,
+    )
   }
 
   return (
@@ -109,7 +56,7 @@ export function NodeEditor({
       titleId="project-node-editor-title"
       eyebrow={node ? capital(levelWord(node.level)) : null}
       title={node ? nameOf(node) : t('projects.common.loading')}
-      isDirty={isDirty || panelsDirty}
+      isDirty={edit.isDirty || panelsDirty}
       leaveMessage={t('projects.structure.leave')}
       onClose={onClose}
       onSubmit={save}
@@ -131,21 +78,21 @@ export function NodeEditor({
           <Field
             label={t('projects.structure.titleLabel')}
             name={null}
-            value={title}
+            value={draft.title}
             maxLength={200}
             readOnly={!canEdit}
             placeholder={t('projects.structure.titlePlaceholder')}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => setDraft({ ...draft, title: event.target.value })}
             data-testid="project-node-title"
           />
           <Field
             label={t('projects.structure.summaryLabel')}
             name={null}
-            value={summary}
+            value={draft.summary}
             maxLength={2000}
             readOnly={!canEdit}
             placeholder={t('projects.structure.summaryPlaceholder')}
-            onChange={(event) => setSummary(event.target.value)}
+            onChange={(event) => setDraft({ ...draft, summary: event.target.value })}
             data-testid="project-node-summary"
           />
           <Field
@@ -157,9 +104,9 @@ export function NodeEditor({
             as="textarea"
             rows={12}
             readOnly={!canEdit}
-            value={body}
+            value={draft.body}
             placeholder={t('projects.structure.bodyPlaceholder')}
-            onChange={(event) => setBody(event.target.value)}
+            onChange={(event) => setDraft({ ...draft, body: event.target.value })}
             data-testid="project-node-body"
           />
           {node.level === 'panel'
@@ -167,8 +114,10 @@ export function NodeEditor({
                 <ScriptField
                   key={part}
                   part={part}
-                  value={script[part]}
-                  onChange={(value) => setScript({ ...script, [part]: value })}
+                  value={draft.script[part]}
+                  onChange={(value) =>
+                    setDraft({ ...draft, script: { ...draft.script, [part]: value } })
+                  }
                   testId={`project-node-${part}`}
                   readOnly={!canEdit}
                 />
@@ -184,7 +133,7 @@ export function NodeEditor({
                   : t('projects.structure.art.panelArt')
               }
               image={node.image}
-              onChanged={(image) => setNode({ ...node, image })}
+              onChanged={(image) => edit.setNode({ ...node, image })}
             />
           ) : null}
           {node.level === 'page' ? (

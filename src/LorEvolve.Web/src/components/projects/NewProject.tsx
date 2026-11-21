@@ -11,6 +11,7 @@ import { FormActions } from '../FormActions'
 import { PageHeader } from '../PageHeader'
 import { Section } from '../Section'
 import { errorText } from '../../lib/errorText'
+import { useFormSave } from '../../lib/useFormSave'
 import { useDiscardGuard } from '../../lib/useDiscardGuard'
 import { Callout } from '../Callout'
 
@@ -59,8 +60,14 @@ export function NewProject() {
     () => formatsFor(kindFromParam(params.get('kind')))[0]?.id ?? null,
   )
   const [summary, setSummary] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [failed, setFailed] = useState<string | null>(null)
+  // `ApiError`'s message is already the refusal in the reader's language (#108); no field is marked.
+  const form = useFormSave({
+    needChange: null,
+    failed: t('projects.new.failed'),
+    refusal: (error) => errorText(error, t('projects.new.failed')),
+  })
+  const saving = form.isSaving
+  const failed = form.message
   useDiscardGuard((name !== '' || summary !== '') && !saving, t('projects.new.leave'))
 
   useDocumentTitle(t('projects.new.title'))
@@ -89,25 +96,19 @@ export function NewProject() {
         className="form"
         onSubmit={(event) => {
           event.preventDefault()
-          if (saving) return
-          setSaving(true)
-          setFailed(null)
-          createProject({
-            name,
-            kind,
-            lifecycle: ProjectLifecycle.Planning,
-            subtype: null,
-            format,
-            summary,
-            universeId,
-            expectedVersion: null,
-          })
-            .then((project) => navigate(projectPath(project.id, '', project.universe.id)))
-            .catch((error: unknown) => {
-              // `ApiError`'s message is already the refusal in the reader's language (#108).
-              setFailed(errorText(error, t('projects.new.failed')))
-              setSaving(false)
-            })
+          // Navigates while still saving, so the discard guard stays off on the way out.
+          void form.save(() =>
+            createProject({
+              name,
+              kind,
+              lifecycle: ProjectLifecycle.Planning,
+              subtype: null,
+              format,
+              summary,
+              universeId,
+              expectedVersion: null,
+            }).then((project) => navigate(projectPath(project.id, '', project.universe.id))),
+          )
         }}
       >
         <Field

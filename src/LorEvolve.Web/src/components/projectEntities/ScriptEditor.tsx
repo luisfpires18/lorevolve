@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Field } from '../Field'
 import { getEpisode, saveEpisode, type ProjectEpisodeSummary } from '../../projectEntities/seasons'
 import { t, useI18n } from '../../i18n'
 import { FormActions } from '../FormActions'
 import { errorText } from '../../lib/errorText'
+import { useAsyncRead } from '../../lib/useAsyncRead'
+import { useFormSave } from '../../lib/useFormSave'
 import { FormMessage } from '../FormMessage'
 import { QuietNote } from '../QuietNote'
 
@@ -29,12 +31,40 @@ export function ScriptEditor({
   const [script, setScript] = useState<string | null>(null)
   const [title, setTitle] = useState(episode.title)
   const [synopsis, setSynopsis] = useState(episode.synopsis ?? '')
-  const [version, setVersion] = useState(episode.version)
-  const [saving, setSaving] = useState(false)
-  const [failed, setFailed] = useState<string | null>(null)
-  const [opened, setOpened] = useState<{ title: string; synopsis: string; script: string } | null>(
-    null,
+  // The read fills the fields: typing waits for it, so nothing typed is taken back.
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      getEpisode(projectId, seasonId, episode.id, signal).then((stored) => {
+        if (!signal.aborted) {
+          setScript(stored.script ?? '')
+          setTitle(stored.title)
+          setSynopsis(stored.synopsis ?? '')
+        }
+        return stored
+      }),
+    [projectId, seasonId, episode.id],
   )
+  const { load } = useAsyncRead(read, { failed: t('projects.seasons.failed') })
+  const opened =
+    load.kind === 'ready'
+      ? {
+          title: load.value.title,
+          synopsis: load.value.synopsis ?? '',
+          script: load.value.script ?? '',
+        }
+      : null
+  // `ApiError`'s message is already the refusal in the reader's language (#108); the stale case gets its own
+  // sentence, because what matters is that nothing was overwritten.
+  const form = useFormSave({
+    needChange: null,
+    failed: t('projects.seasons.failed'),
+    refusal: (error) =>
+      (error as { code?: string }).code === 'project_episode_changed'
+        ? t('projects.seasons.scriptStale')
+        : errorText(error, t('projects.seasons.failed')),
+  })
+  const saving = form.isSaving
+  const failed = form.message ?? (load.kind === 'error' ? load.message : null)
   // Still dirty while a save runs: a save that fails keeps the draft, so closing before it ends must still ask.
   const isDirty =
     opened !== null &&
@@ -43,50 +73,21 @@ export function ScriptEditor({
     onDirtyChange(isDirty)
   }, [isDirty, onDirtyChange])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getEpisode(projectId, seasonId, episode.id, controller.signal)
-      .then((read) => {
-        setScript(read.script ?? '')
-        setTitle(read.title)
-        setSynopsis(read.synopsis ?? '')
-        setVersion(read.version)
-        setOpened({ title: read.title, synopsis: read.synopsis ?? '', script: read.script ?? '' })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setFailed(errorText(error, t('projects.seasons.failed')))
-      })
-    return () => controller.abort()
-  }, [projectId, seasonId, episode.id])
-
   return (
     <form
       className="form"
       data-testid={`project-script-${episode.id}`}
       onSubmit={(event) => {
         event.preventDefault()
-        if (saving || script === null) return
-        setSaving(true)
-        setFailed(null)
-        saveEpisode(projectId, seasonId, episode.id, {
-          title,
-          synopsis: synopsis.length > 0 ? synopsis : null,
-          script: script.length > 0 ? script : null,
-          expectedVersion: version,
-        })
-          .then(onSaved)
-          .catch((error: unknown) => {
-            setSaving(false)
-            // `ApiError`'s message is already the refusal in the reader's language (#108); the stale case gets its own
-            // sentence, because what matters is that nothing was overwritten.
-            const code = (error as { code?: string }).code
-            setFailed(
-              code === 'project_episode_changed'
-                ? t('projects.seasons.scriptStale')
-                : errorText(error, t('projects.seasons.failed')),
-            )
-          })
+        if (script === null || load.kind !== 'ready') return
+        void form.save(() =>
+          saveEpisode(projectId, seasonId, episode.id, {
+            title,
+            synopsis: synopsis.length > 0 ? synopsis : null,
+            script: script.length > 0 ? script : null,
+            expectedVersion: load.value.version,
+          }).then(onSaved),
+        )
       }}
     >
       {failed ? (

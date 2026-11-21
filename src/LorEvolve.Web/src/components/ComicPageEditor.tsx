@@ -5,23 +5,13 @@ import { Field } from './Field'
 import { ScriptField } from './projectEntities/ScriptPartFields'
 import { FieldImageInput } from './FieldImageInput'
 import { PictureWithFallback } from './PictureWithFallback'
-import { ApiError } from '../lib/api'
 import type { FieldImageRef } from '../lore/types'
 import { nodeImageApi } from '../projectEntities/nodeImages'
-import {
-  getNode,
-  NODE_CHANGED,
-  saveNode,
-  PANEL_SCRIPT,
-  scriptOf,
-  type PanelScript,
-  type ProjectNodeDetail,
-  type ProjectNodeSummary,
-} from '../projectEntities/structure'
+import { PANEL_SCRIPT, type ProjectNodeSummary } from '../projectEntities/structure'
+import { nodeChangedCode, useNodeEdit } from '../projectEntities/useNodeEdit'
 import { t } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
 import { Button } from './Button'
-import { errorText } from '../lib/errorText'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 import { Section } from './Section'
@@ -150,67 +140,25 @@ function PanelCard({
   number: number
   report: (id: string, dirty: boolean, saving: boolean) => void
 }) {
-  const [node, setNode] = useState<ProjectNodeDetail | null>(null)
-  const [body, setBody] = useState('')
-  const [script, setScript] = useState<PanelScript>({
-    dialogue: '',
-    caption: '',
-    sfx: '',
-    notes: '',
-  })
-  const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
+  const edit = useNodeEdit(projectId, panelId, nodeChangedCode)
+  const { node, draft, setDraft } = edit
+  const saving = edit.isSaving
+  const status = edit.changed ? t('projects.structure.changed') : edit.message
   const canEdit = useUniverseAccess().editContent
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getNode(projectId, panelId, controller.signal)
-      .then((read) => {
-        setNode(read)
-        setBody(read.body ?? '')
-        setScript(scriptOf(read))
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) setStatus(errorText(error, t('projects.structure.failed')))
-      })
-    return () => controller.abort()
-  }, [projectId, panelId])
-
   const testId = (part: string) => `comic-panel-${panelId}-${part}`
-  const isDirty =
-    node !== null &&
-    !saving &&
-    (body !== (node.body ?? '') || JSON.stringify(script) !== JSON.stringify(scriptOf(node)))
+  const isDirty = !saving && edit.isDirty
   useEffect(() => {
     report(panelId, isDirty, saving)
   }, [report, panelId, isDirty, saving])
 
   function save() {
     if (!node || saving || !canEdit) return
-    setSaving(true)
-    setStatus(null)
-    saveNode(projectId, node.id, {
-      title: node.title,
-      summary: node.summary,
-      body: body || null,
-      expectedVersion: node.version,
-      dialogue: script.dialogue || null,
-      caption: script.caption || null,
-      sfx: script.sfx || null,
-      notes: script.notes || null,
+    // The drafts stay as typed; the card shows the saved node and says so.
+    void edit.save({ body: draft.body, script: draft.script }, (saved) => {
+      edit.setNode(saved)
+      edit.setMessage(t('projects.structure.panel.saved'))
     })
-      .then((saved) => {
-        setNode(saved)
-        setStatus(t('projects.structure.panel.saved'))
-      })
-      .catch((error: unknown) =>
-        setStatus(
-          error instanceof ApiError && error.code === NODE_CHANGED
-            ? t('projects.structure.changed')
-            : errorText(error, t('projects.structure.failed')),
-        ),
-      )
-      .finally(() => setSaving(false))
   }
 
   return (
@@ -226,24 +174,26 @@ function PanelCard({
             nodeId={node.id}
             label={t('projects.structure.art.panelArt')}
             image={node.image}
-            onChanged={(image) => setNode({ ...node, image })}
+            onChanged={(image) => edit.setNode({ ...node, image })}
           />
           <Field
             as="textarea"
             label={t('projects.structure.panel.visualDescription')}
             rows={3}
             readOnly={!canEdit}
-            value={body}
+            value={draft.body}
             placeholder={t('projects.structure.panel.visualPlaceholder')}
-            onChange={(event) => setBody(event.target.value)}
+            onChange={(event) => setDraft({ ...draft, body: event.target.value })}
             data-testid={testId('visual')}
           />
           {PANEL_SCRIPT.map((part) => (
             <ScriptField
               key={part}
               part={part}
-              value={script[part]}
-              onChange={(value) => setScript({ ...script, [part]: value })}
+              value={draft.script[part]}
+              onChange={(value) =>
+                setDraft({ ...draft, script: { ...draft.script, [part]: value } })
+              }
               testId={testId(part)}
               readOnly={!canEdit}
             />

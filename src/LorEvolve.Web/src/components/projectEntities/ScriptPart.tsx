@@ -1,12 +1,11 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import { t } from '../../i18n'
 import { useLeaveGuard } from '../../lib/leaveGuard'
 import { nameOf } from '../../projectEntities/levelWords'
-import { NODE_BODY_MAX_LENGTH, PANEL_SCRIPT, scriptOf } from '../../projectEntities/structure'
+import { NODE_BODY_MAX_LENGTH, NODE_CHANGED } from '../../projectEntities/structure'
 import { useUniverseAccess } from '../../universes/access'
-import { scriptPartActions } from '../../projectEntities/scriptPartActions'
-import { NO_SCRIPT, useScriptPartState } from '../../projectEntities/useScriptPartState'
-import { useScriptPartLoad } from '../../projectEntities/useScriptPartLoad'
+import { draftOf, useNodeEdit } from '../../projectEntities/useNodeEdit'
+import { isChangedElsewhere } from '../../lib/editConflict'
 import { useSaveShortcut } from '../../lib/useSaveShortcut'
 import { EditorSaveBar } from '../EditorSaveBar'
 import { ManuscriptHead } from '../stories/ManuscriptHead'
@@ -33,43 +32,31 @@ export function ScriptPart({
   const canEdit = useUniverseAccess().editContent
   const titleId = useId()
   const statusId = useId()
-  const state = useScriptPartState()
-  const {
-    node,
-    draft,
-    setDraft,
-    script,
-    setScript,
-    isSaving,
-    saves,
-    failure,
-    setFailure,
-    changed,
-    setAnnouncement,
-  } = state
-
-  const { load } = useScriptPartLoad({ ...state, projectId, nodeId })
+  // A Script part keeps the shared changed-elsewhere rule, the 409 included, and shows it as a conflict bar.
+  const edit = useNodeEdit(projectId, nodeId, (error) => isChangedElsewhere(error, NODE_CHANGED))
+  const { node, draft: fields, setDraft: setFields, isSaving, changed, message: failure } = edit
+  const [saves, setSaves] = useState(0)
+  const [, setAnnouncement] = useState('')
+  const draft = fields.body
+  const script = fields.script
 
   const isPanel = node?.level === 'panel'
-  const stored = node ? scriptOf(node) : NO_SCRIPT
-  const isDirty =
-    node !== null &&
-    (draft !== (node.body ?? '') ||
-      (isPanel && PANEL_SCRIPT.some((part) => script[part] !== stored[part])))
+  const isDirty = edit.isDirty
   const isTooLong = draft.length > NODE_BODY_MAX_LENGTH
   const name = node ? nameOf(node) : ''
 
   useLeaveGuard(isDirty ? t('projects.script.unsaved', { name }) : null)
 
-  const { save } = scriptPartActions({
-    ...state,
-    projectId,
-    onSaved,
-    canEdit,
-    isPanel,
-    isDirty,
-    isTooLong,
-  })
+  async function save() {
+    if (!node || isSaving || !isDirty || isTooLong || !canEdit) return
+    // Only a panel holds a script; the API refuses script text on any other level.
+    await edit.save({ body: draft, script: isPanel ? script : null }, (saved) => {
+      edit.setNode(saved)
+      setFields(draftOf(saved))
+      setSaves((value) => value + 1)
+      onSaved()
+    })
+  }
 
   // Ctrl+S or Cmd+S saves the open part, as the Manuscript does.
   useSaveShortcut(() => void save())
@@ -78,14 +65,7 @@ export function ScriptPart({
     return failure ? (
       <FormMessage testId="project-script-part-failed">
         {failure}{' '}
-        <Button
-          tone="text"
-          onClick={() => {
-            setFailure(null)
-            void load()
-          }}
-          data-testid="project-script-part-retry"
-        >
+        <Button tone="text" onClick={edit.retry} data-testid="project-script-part-retry">
           {t('projects.script.retry')}
         </Button>
       </FormMessage>
@@ -113,13 +93,13 @@ export function ScriptPart({
         universeId={universeId}
         canEdit={canEdit}
         draft={draft}
-        setDraft={setDraft}
+        setDraft={(body) => setFields({ ...fields, body })}
         name={name}
         isTooLong={isTooLong}
         setAnnouncement={setAnnouncement}
         isPanel={isPanel}
         script={script}
-        setScript={setScript}
+        setScript={(next) => setFields({ ...fields, script: next })}
       />
 
       <EditorNotices
@@ -128,7 +108,7 @@ export function ScriptPart({
           changed
             ? {
                 text: t('projects.structure.changed'),
-                onLoadSaved: () => void load(),
+                onLoadSaved: edit.reload,
                 loadLabel: t('projects.script.reload'),
               }
             : null

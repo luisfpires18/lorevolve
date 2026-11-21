@@ -18,7 +18,6 @@ import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { shelfActions, withCover } from '../projects/shelfActions'
 import { VIEWS } from '../projects/shelfViews'
-import { useShelfRead } from '../projects/useShelfRead'
 import { useShelfState } from '../projects/useShelfState'
 import { CardGrid } from '../components/CardGrid'
 import { ViewLinks } from '../components/ViewLinks'
@@ -57,10 +56,8 @@ export default function CategoryShelfPage({
   const [params] = useSearchParams()
   const views = view ? VIEWS[view] : null
   const showView = view !== undefined && params.get('view') === view
-  const shelf = useShelfState()
+  const shelf = useShelfState(universe.id, kinds)
   const { state, setState, announcement, moveError, covering, setCovering } = shelf
-
-  useShelfRead({ ...shelf, universe, kinds })
 
   const { neighbour, move } = shelfActions({ ...shelf, universe, kinds })
 

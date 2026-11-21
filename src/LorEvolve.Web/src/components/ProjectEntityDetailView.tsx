@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { entityImageUrl, fieldImageUrl } from '../lore/images'
 import { getProjectEntity } from '../projectEntities/api'
 import type { ProjectEntityDetail } from '../projectEntities/types'
-import { ApiError } from '../lib/api'
+import { isNotFoundOrForbidden, useAsyncRead } from '../lib/useAsyncRead'
 import { useUniverseAccess } from '../universes/access'
 import { t, tx, useI18n } from '../i18n'
 import { EmptyState } from './EmptyState'
@@ -13,15 +13,9 @@ import { TypeIcon } from './TypeIcon'
 import { Button } from './Button'
 import { Crumb } from './Crumb'
 import { EntryHead } from './EntryHead'
-import { errorText } from '../lib/errorText'
 import { ReadGate } from './ReadGate'
 import { DateText } from './DateText'
 import { QuietNote } from './QuietNote'
-
-type LoadState =
-  | { kind: 'ready'; for: string; value: ProjectEntityDetail }
-  | { kind: 'missing'; for: string }
-  | { kind: 'error'; for: string; message: string }
 
 /**
  * The one detail screen of a project's entry (#286), the same for every type: its name, type, picture and full
@@ -44,38 +38,26 @@ export function ProjectEntityDetailView({
   gameHref: string
 }) {
   useI18n()
-  const [state, setState] = useState<LoadState | null>(null)
-  // Bumped after an edit: the entry is read again, so every part of the screen shows what was saved (#287).
-  const [reloadKey, setReloadKey] = useState(0)
   const access = useUniverseAccess()
   const [editing, setEditing] = useState(false)
-  const read = state !== null && state.for === entityId ? state : null
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getProjectEntity(projectId, entityId, controller.signal)
-      .then((entity) => setState({ kind: 'ready', for: entityId, value: entity }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        // The API decides access: a missing id, another project's entry or no access all answer 404 or 403.
-        if (error instanceof ApiError && (error.status === 404 || error.status === 403)) {
-          setState({ kind: 'missing', for: entityId })
-        } else {
-          setState({
-            kind: 'error',
-            for: entityId,
-            message: errorText(error, t('projects.gameEntities.entity.failed')),
-          })
-        }
-      })
-    return () => controller.abort()
-  }, [projectId, entityId, reloadKey])
+  const read = useCallback(
+    (signal: AbortSignal) => getProjectEntity(projectId, entityId, signal),
+    [projectId, entityId],
+  )
+  // The API decides access: a missing id, another project's entry or no access all answer 404 or 403. A re-read (after
+  // an edit, #287, or Try again) keeps the screen until it answers, and a failure shows instead of the old entry.
+  const { load, refresh } = useAsyncRead<ProjectEntityDetail>(read, {
+    missing: isNotFoundOrForbidden,
+    failed: t('projects.gameEntities.entity.failed'),
+    key: entityId,
+    keepOnFailure: false,
+  })
 
   return (
     <ReadGate
-      load={read ?? { kind: 'loading' }}
+      load={load}
       loading={{ text: t('projects.gameEntities.entity.loading'), testId: 'game-entity-loading' }}
-      error={{ onRetry: () => setReloadKey((key) => key + 1), testId: 'game-entity-failed' }}
+      error={{ onRetry: refresh, testId: 'game-entity-failed' }}
       missing={
         <EmptyState
           title={t('projects.gameEntities.entity.notFound')}
@@ -204,7 +186,7 @@ export function ProjectEntityDetailView({
                   detail={entity}
                   editing={editing}
                   onEditingChange={setEditing}
-                  onSaved={() => setReloadKey((key) => key + 1)}
+                  onSaved={refresh}
                 />
               </div>
 
