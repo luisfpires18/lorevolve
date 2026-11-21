@@ -5,21 +5,25 @@ import { t } from '../i18n'
 import { useFormSave } from '../lib/useFormSave'
 import type { TimelineEntry, TimelineStoryLink } from './types'
 import { DETAIL_ERROR_KEYS, draftFrom, EMPTY, type MomentDraft } from './momentDraft'
+import { useDraftForm } from '../lib/useDraftForm'
 
 /** The moment drawer's title ref and state, with the draft it opened on. */
 export function useMomentFormState({
   entry,
   initialStories,
+  measure,
 }: {
   entry: TimelineEntry | null
   initialStories: TimelineStoryLink[]
+  /** The draft as the save would send it, for `isDirty`. */
+  measure: (draft: MomentDraft) => object
 }) {
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the moment as stored, or the blank form - which the draft is measured against.
-  const [initial] = useState<MomentDraft>(() =>
-    entry ? draftFrom(entry) : { ...EMPTY, stories: initialStories },
+  const drafted = useDraftForm<MomentDraft>(
+    () => (entry ? draftFrom(entry) : { ...EMPTY, stories: initialStories }),
+    { measure },
   )
-  const [draft, setDraft] = useState<MomentDraft>(initial)
   const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(() => entry?.validation != null)
   const form = useFormSave({
@@ -42,9 +46,7 @@ export function useMomentFormState({
 
   return {
     title,
-    initial,
-    draft,
-    setDraft,
+    ...drafted,
     form,
     fieldErrors: form.fieldErrors,
     setFieldErrors: form.setFieldErrors,

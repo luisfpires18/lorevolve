@@ -1,6 +1,6 @@
 import { QuietNote } from './QuietNote'
-import { useRef, useState } from 'react'
-import { payloadKey } from '../lib/drawerGuard'
+import { useRef } from 'react'
+import { useDraftForm } from '../lib/useDraftForm'
 import { useFormSave } from '../lib/useFormSave'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
@@ -65,29 +65,25 @@ function inputOf(draft: PinDraft): MapPinInput {
 export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: MapPinFormProps) {
   const { t } = useI18n()
   const titleInput = useRef<HTMLInputElement>(null)
-  const [initial] = useState<PinDraft>(() => ({
-    title: pin?.title ?? '',
-    note: pin?.note ?? '',
-    xPercent: percent(pin?.x ?? at?.x ?? 0.5),
-    yPercent: percent(pin?.y ?? at?.y ?? 0.5),
-    lore:
-      pin?.lore && !pin.lore.isTrashed && pin.lore.name
-        ? { id: pin.lore.id, name: pin.lore.name, typeName: pin.lore.typeName ?? undefined }
-        : null,
-  }))
-  const [draft, setDraft] = useState<PinDraft>(initial)
+  const { draft, setDraft, edit, isDirty } = useDraftForm<PinDraft>(
+    () => ({
+      title: pin?.title ?? '',
+      note: pin?.note ?? '',
+      xPercent: percent(pin?.x ?? at?.x ?? 0.5),
+      yPercent: percent(pin?.y ?? at?.y ?? 0.5),
+      lore:
+        pin?.lore && !pin.lore.isTrashed && pin.lore.name
+          ? { id: pin.lore.id, name: pin.lore.name, typeName: pin.lore.typeName ?? undefined }
+          : null,
+    }),
+    { measure: inputOf },
+  )
   const form = useFormSave({
     needChange: (_fieldErrors, error) =>
       error.code === DUPLICATE_LINK_CODE ? error.message : t('places.pinForm.fieldErrors'),
     failed: t('places.pinForm.failed'),
   })
   const { fieldErrors, setFieldErrors, setMessage, message, isSaving } = form
-
-  const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
-
-  function edit(change: Partial<PinDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
 
   async function save() {
     setMessage(null)

@@ -15,7 +15,7 @@ export function useSceneSave({
   suggesting,
   onSuggested,
   onSaved,
-  base,
+  version,
   draft,
   reckonsInEras,
   custom,
@@ -28,7 +28,7 @@ export function useSceneSave({
   suggesting: boolean
   onSuggested?: () => void
   onSaved: (scene: Scene) => void
-  base: { draft: SceneDraft; version: number | undefined }
+  version: number | undefined
   draft: SceneDraft
   reckonsInEras: boolean
   custom: boolean
@@ -55,7 +55,7 @@ export function useSceneSave({
       if (suggesting && scene && onSuggested) {
         await suggestSceneChanges(universeId, storyId, scene.id, {
           ...input,
-          expectedVersion: base.version,
+          expectedVersion: version,
         })
         onSuggested()
         return
@@ -63,7 +63,7 @@ export function useSceneSave({
       const saved = scene
         ? await updateScene(universeId, storyId, scene.id, {
             ...input,
-            expectedVersion: base.version,
+            expectedVersion: version,
           })
         : await createScene(universeId, storyId, input)
       onSaved(saved)

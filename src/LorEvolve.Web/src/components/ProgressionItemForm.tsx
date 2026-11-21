@@ -1,6 +1,5 @@
 import { ScenePicks } from './ScenePicks'
 import { useI18n } from '../i18n'
-import { payloadKey } from '../lib/drawerGuard'
 import { Field } from './Field'
 import type { Progression } from '../progression/types'
 import {
@@ -51,11 +50,9 @@ export function ProgressionItemForm({
   onSaved: (progression: Progression) => void
 }) {
   const { t } = useI18n()
-  const state = useItemFormState({ progression, item })
+  const state = useItemFormState({ progression, item, measure: (of) => inputOf(of, null) })
   const words = wordsOf(kind)
-  const { nameInput, base, initial, setInitial, draft, fieldErrors } = state
-
-  const isDirty = payloadKey(inputOf(draft, null)) !== payloadKey(inputOf(initial, null))
+  const { nameInput, base, setInitial, draft, isDirty, fieldErrors } = state
 
   const list = listOf(base, kind)
   const index = item ? list.findIndex((one) => one.id === item.id) : -1

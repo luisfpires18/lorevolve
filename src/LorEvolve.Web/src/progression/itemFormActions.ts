@@ -1,14 +1,6 @@
 import { abilityInputOf, appearanceInputOf, eraInputOf, formInputOf, saveProgression } from './api'
 import type { AbilityInput, AppearanceInput, FormInput, Progression } from './types'
-import {
-  inputOf,
-  partOf,
-  SHOWN,
-  type Item,
-  type ItemDraft,
-  type Kind,
-  type wordsOf,
-} from './itemDraft'
+import { inputOf, partOf, SHOWN, type Item, type Kind, type wordsOf } from './itemDraft'
 import type { useItemFormState } from './useItemFormState'
 
 /** A form, ability or appearance drawer's handlers: editing the draft, the era ticks, and Save. */
@@ -22,7 +14,7 @@ export function itemFormActions({
   key,
   base,
   draft,
-  setDraft,
+  edit,
   form: saving,
   setConflict,
 }: ReturnType<typeof useItemFormState> & {
@@ -34,10 +26,6 @@ export function itemFormActions({
   words: ReturnType<typeof wordsOf>
   key: string
 }) {
-  function edit(change: Partial<ItemDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
   function toggle(list: string[], id: string, on: boolean) {
     return on ? [...new Set([...list, id])] : list.filter((one) => one !== id)
   }

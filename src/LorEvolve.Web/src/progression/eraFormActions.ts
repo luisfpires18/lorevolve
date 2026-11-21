@@ -1,7 +1,7 @@
 import type { FieldDefinition } from '../lore/typeDefinitions'
 import { eraInputOf, saveProgression } from './api'
 import type { Era, Progression } from './types'
-import { inputOf, type EraDraft, type FieldDraft } from './eraDraft'
+import { inputOf, type FieldDraft } from './eraDraft'
 import type { useEraFormState } from './useEraFormState'
 
 /** An era drawer's handlers: editing the draft and its fields, and Save. */
@@ -16,6 +16,7 @@ export function eraFormActions({
   base,
   draft,
   setDraft,
+  edit,
   form,
   setConflict,
 }: ReturnType<typeof useEraFormState> & {
@@ -27,10 +28,6 @@ export function eraFormActions({
   reckonsInEras: boolean
   custom: boolean
 }) {
-  function edit(change: Partial<EraDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
   function editField(id: string, change: Partial<FieldDraft>) {
     setDraft((current) => ({
       ...current,

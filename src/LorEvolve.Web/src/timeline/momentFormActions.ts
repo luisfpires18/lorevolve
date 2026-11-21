@@ -1,6 +1,6 @@
 import { createTimelineEntry, updateTimelineEntry } from './api'
 import { DateKind, type DateKindValue, type TimelineEntry } from './types'
-import { inputOf, type ComponentKey, type EraKey, type MomentDraft } from './momentDraft'
+import { inputOf, type ComponentKey, type EraKey } from './momentDraft'
 import type { useMomentFormState } from './useMomentFormState'
 
 /** The moment drawer's handlers: editing the draft, choosing a kind of date, and Save. */
@@ -12,6 +12,7 @@ export function momentFormActions({
   custom,
   draft,
   setDraft,
+  edit,
   form,
   setBlocked,
 }: ReturnType<typeof useMomentFormState> & {
@@ -21,10 +22,6 @@ export function momentFormActions({
   reckonsInEras: boolean
   custom: boolean
 }) {
-  function edit(change: Partial<MomentDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
   function setComponent(key: ComponentKey | EraKey, value: string) {
     setDraft((current) => ({ ...current, [key]: value }))
   }

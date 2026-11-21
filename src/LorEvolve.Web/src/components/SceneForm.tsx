@@ -3,7 +3,7 @@ import { ChangeList, EditConflict } from './EditConflict'
 import type { ChronologyPointPart } from './ChronologyPointFields'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
-import { payloadKey } from '../lib/drawerGuard'
+import { useDraftForm } from '../lib/useDraftForm'
 import { Drawer } from './Drawer'
 import { useI18n } from '../i18n'
 import { getScene } from '../stories/api'
@@ -65,30 +65,26 @@ export function SceneForm({
   // What the drawer opened on - the scene as stored, or the blank form in its chapter - which the draft is measured
   // against, and the version its save names. Its chapter, point of view, date and lore all count, and so does the order
   // the lore was picked in: it is kept and shown that way. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
-  const [base, setBase] = useState(() => ({
-    draft: draftFrom(scene, chapterId),
-    version: scene?.version,
-  }))
-  const initial = base.draft
-  const [draft, setDraft] = useState<SceneDraft>(() =>
-    startWithBeat && !suggesting
-      ? { ...initial, beats: [...initial.beats, { key: beatKey(), title: '', note: '' }] }
-      : initial,
-  )
-  const [conflict, setConflict] = useState(false)
-  const saveButton = useRef<HTMLButtonElement>(null)
-
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
+  const loreOrder = (of: SceneDraft) => of.entities.map((choice) => choice.id).join(' ')
+  const { draft, setDraft, setInitial, edit, isDirty } = useDraftForm(
+    () => draftFrom(scene, chapterId),
+    {
+      measure: (of) => ({ ...inputOf(of, reckonsInEras, custom), loreOrder: loreOrder(of) }),
+      start: (initial) =>
+        startWithBeat && !suggesting
+          ? { ...initial, beats: [...initial.beats, { key: beatKey(), title: '', note: '' }] }
+          : initial,
+    },
+  )
+  const [version, setVersion] = useState(scene?.version)
+  const [conflict, setConflict] = useState(false)
+  const saveButton = useRef<HTMLButtonElement>(null)
   const hasPoint = Object.values(draft.point).some((part) => part.trim() !== '')
 
   // A plain year written before the universe had date periods has no period to show in the picker.
   const unreckoned = reckonsInEras && scene?.chronology != null && scene.chronology.eraId === null
-
-  const loreOrder = (of: SceneDraft) => of.entities.map((choice) => choice.id).join(' ')
-  const isDirty =
-    payloadKey(inputOf(draft, reckonsInEras, custom)) !==
-      payloadKey(inputOf(initial, reckonsInEras, custom)) || loreOrder(draft) !== loreOrder(initial)
 
   useEffect(() => {
     const beat = startWithBeat
@@ -111,10 +107,6 @@ export function SceneForm({
   /** The latest saved scene against the form, in the form's own words. */
   const sceneChanges = sceneChangesIn(chapters, chronology, arcs)
 
-  function edit(change: Partial<SceneDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
   function setPart(part: ChronologyPointPart, value: string) {
     setDraft((current) => ({ ...current, point: { ...current.point, [part]: value } }))
   }
@@ -126,7 +118,7 @@ export function SceneForm({
     suggesting,
     onSuggested,
     onSaved,
-    base,
+    version,
     draft,
     reckonsInEras,
     custom,
@@ -200,12 +192,14 @@ export function SceneForm({
           )}
           onKeepMine={(latest) => {
             // The form stays as typed, measured against the latest; the next save names the version reviewed.
-            setBase({ draft: draftFrom(latest, null), version: latest.version })
+            setInitial(draftFrom(latest, null))
+            setVersion(latest.version)
             setConflict(false)
             requestAnimationFrame(() => saveButton.current?.focus())
           }}
           onUseLatest={(latest) => {
-            setBase({ draft: draftFrom(latest, null), version: latest.version })
+            setInitial(draftFrom(latest, null))
+            setVersion(latest.version)
             setDraft(draftFrom(latest, null))
             setConflict(false)
             requestAnimationFrame(() => title.current?.focus())

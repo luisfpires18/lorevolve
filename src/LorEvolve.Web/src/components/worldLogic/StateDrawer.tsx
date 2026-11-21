@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from 'react'
+import { useDraftForm } from '../../lib/useDraftForm'
 import { Drawer } from '../Drawer'
 import { CheckField } from '../CheckField'
 import { Field } from '../Field'
@@ -29,17 +30,19 @@ export function StateDrawer({
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
-  const [initial] = useState(() => ({
+  const {
+    draft: form,
+    edit,
+    isDirty,
+  } = useDraftForm(() => ({
     name: state?.name ?? '',
     value: state?.value ?? '',
     x: String(state?.x ?? place?.x ?? 0),
     y: String(state?.y ?? place?.y ?? 0),
     initial: state?.initial ?? isFirst,
   }))
-  const [form, setForm] = useState(initial)
   const [local, setLocal] = useState<Record<string, string>>({})
 
-  const isDirty = JSON.stringify(form) !== JSON.stringify(initial)
   const number = (text: string) => (Number.isFinite(Number(text)) ? Number(text) : 0)
 
   function apply() {
@@ -98,7 +101,7 @@ export function StateDrawer({
       <Field label={t(`${m}.fields.name`)} error={errorOf(local, errors, 'name')}>
         {textInput(
           form.name,
-          (name) => setForm((current) => ({ ...current, name })),
+          (name) => edit({ name }),
           t(`${m}.placeholders.name`),
           'machine-state-name',
           true,
@@ -111,7 +114,7 @@ export function StateDrawer({
       >
         {textInput(
           form.value,
-          (value) => setForm((current) => ({ ...current, value })),
+          (value) => edit({ value }),
           t(`${m}.placeholders.value`),
           'machine-state-value',
           true,
@@ -124,7 +127,7 @@ export function StateDrawer({
         step="1"
         inputMode="numeric"
         value={form.x}
-        onChange={(event) => setForm((current) => ({ ...current, x: event.target.value }))}
+        onChange={(event) => edit({ x: event.target.value })}
         error={errors?.x}
         data-testid="machine-state-x"
       />
@@ -135,7 +138,7 @@ export function StateDrawer({
         step="1"
         inputMode="numeric"
         value={form.y}
-        onChange={(event) => setForm((current) => ({ ...current, y: event.target.value }))}
+        onChange={(event) => edit({ y: event.target.value })}
         error={errors?.y}
         data-testid="machine-state-y"
       />
@@ -143,7 +146,7 @@ export function StateDrawer({
         className="field--flow"
         label={t(`${m}.fields.initial`)}
         checked={form.initial}
-        onChange={(initial) => setForm((current) => ({ ...current, initial }))}
+        onChange={(initial) => edit({ initial })}
         testId="machine-state-initial"
       />
     </Drawer>

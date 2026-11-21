@@ -1,4 +1,5 @@
-import { useId, useState } from 'react'
+import { useId } from 'react'
+import { useDraftForm } from '../../lib/useDraftForm'
 import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t } from '../../i18n'
@@ -20,7 +21,7 @@ export function BindingDrawer({
   onClose: () => void
 }) {
   const titleId = useId()
-  const [form, setForm] = useState(binding)
+  const { draft: form, edit, isDirty } = useDraftForm(() => binding)
 
   return (
     <Drawer
@@ -33,7 +34,7 @@ export function BindingDrawer({
           {t(`${m}.fields.bindingHint`)}
         </QuietNote>
       }
-      isDirty={JSON.stringify(form) !== JSON.stringify(binding)}
+      isDirty={isDirty}
       leaveMessage={t(`${m}.leaveGuard`)}
       onClose={onClose}
       onSubmit={() => onApply(form)}
@@ -50,7 +51,7 @@ export function BindingDrawer({
       <Field label={t(`${m}.fields.subjectType`)} error={errors?.subjecttype}>
         {textInput(
           form.subjectType,
-          (subjectType) => setForm((current) => ({ ...current, subjectType })),
+          (subjectType) => edit({ subjectType }),
           t(`${m}.placeholders.subjectType`),
           'machine-binding-subject-type',
         )}
@@ -58,7 +59,7 @@ export function BindingDrawer({
       <Field label={t(`${m}.fields.attribute`)} error={errors?.attribute}>
         {textInput(
           form.attribute,
-          (attribute) => setForm((current) => ({ ...current, attribute })),
+          (attribute) => edit({ attribute }),
           t(`${m}.placeholders.attribute`),
           'machine-binding-attribute',
         )}
