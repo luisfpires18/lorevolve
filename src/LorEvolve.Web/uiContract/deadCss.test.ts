@@ -54,7 +54,7 @@ function wordsIn(sources: string[]) {
   const words = new Set<string>()
   for (const source of sources) {
     for (const text of literals(stripComments(source))) {
-      for (const word of text.split(/[\s\u0001]+/)) words.add(word)
+      for (const word of text.replaceAll('\u0001', ' ').split(/\s+/)) words.add(word)
     }
   }
   return words
