@@ -44,7 +44,7 @@ export function SceneStamp({
   return (
     <>
       {when ? (
-        <Fact name={t('stories.sceneForm.whenLegend')} valueTestId={`${testId}-when`}>
+        <Fact name={t('stories.scene.when')} valueTestId={`${testId}-when`}>
           {/* The story's timeline: this scene among its other dated scenes and the moments linked to the story. */}
           <Link
             to={`/app/universes/${universeId}/timeline?story=${scene.storyId}`}

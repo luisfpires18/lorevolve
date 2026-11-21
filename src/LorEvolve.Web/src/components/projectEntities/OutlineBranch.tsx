@@ -152,11 +152,11 @@ function OutlineNode({
     >
       {leaf ? (
         node.summary ? (
-          <p className="prose">{node.summary}</p>
+          <p className="types__description prose">{node.summary}</p>
         ) : null
       ) : (
         <div id={bodyId} hidden={!open} data-fold={bodyId}>
-          {node.summary ? <p className="prose">{node.summary}</p> : null}
+          {node.summary ? <p className="types__description prose">{node.summary}</p> : null}
           <OutlineBranch {...props} parentId={node.id} depth={depth + 1} />
         </div>
       )}

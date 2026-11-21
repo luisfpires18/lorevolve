@@ -1,11 +1,3 @@
-/*
- * A chapter is a heading and a rule, not a box: the scenes under it keep the rows they always had, so
- * grouping adds one level of hierarchy and no card around cards.
- */
-.chapter {
-  margin-top: 2.5rem;
-}
-
 /* Unchaptered is a holding area: named quietly, with no number, no rule of its own and no tools. */
 .storygroup {
   margin-top: 1.75rem;

@@ -183,6 +183,7 @@ export function StoryScenes(
               words={{
                 add: t('stories.arc.addChapter'),
                 edit: t('stories.arc.edit'),
+                editLabel: t('stories.arc.editLabel', { label: arcLabel(index, arc.title) }),
                 more: t('stories.arc.moreActions', { label: arcLabel(index, arc.title) }),
                 delete: t('stories.arc.delete'),
               }}

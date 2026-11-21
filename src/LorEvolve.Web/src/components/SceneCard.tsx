@@ -225,7 +225,7 @@ export function SceneCard({
       ) : null}
       <div id={bodyId} hidden={foldable && !open} data-fold={bodyId}>
         {scene.summary ? (
-          <p className="prose" data-testid="scene-summary">
+          <p className="types__description prose" data-testid="scene-summary">
             {scene.summary}
           </p>
         ) : null}

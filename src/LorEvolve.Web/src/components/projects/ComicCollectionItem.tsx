@@ -103,6 +103,8 @@ export function ComicCollectionItem({
           words={{
             addChild: t('projects.comics.addEntry'),
             edit: t('projects.comics.edit'),
+            addChildLabel: t('projects.comics.addEntryLabel', { name: collection.name }),
+            editLabel: t('projects.comics.editLabel', { name: collection.name }),
             more: t('projects.common.more', { name: collection.name }),
             ...ends,
           }}
@@ -126,7 +128,9 @@ export function ComicCollectionItem({
       }
     >
       <div id={bodyId} hidden={!open} data-fold={bodyId}>
-        {collection.summary ? <p className="prose">{collection.summary}</p> : null}
+        {collection.summary ? (
+          <p className="types__description prose">{collection.summary}</p>
+        ) : null}
         {collection.entries.length === 0 ? (
           <QuietNote spacing="flush">{t('projects.comics.noEntries')}</QuietNote>
         ) : (

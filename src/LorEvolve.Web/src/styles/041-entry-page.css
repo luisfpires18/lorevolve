@@ -178,8 +178,9 @@
   color: var(--muted);
 }
 
-/* The facts a type records, on the sunken paper an infobox is set on. */
-.facts {
+/* The facts a type records, on the sunken paper an infobox is set on. Not while `hidden`, as a folded list of beats is:
+   `display` here would outrank the browser's own hiding. `:where` keeps the weight of one class, for the looks. */
+.facts:not(:where([hidden])) {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

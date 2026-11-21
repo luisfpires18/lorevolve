@@ -83,6 +83,7 @@ export function StoryChapterSections(
         words={{
           add: t('stories.chapter.addScene'),
           edit: t('stories.chapter.edit'),
+          editLabel: t('stories.chapter.editLabel', { label: chapterLabel(index, chapter.title) }),
           more: t('stories.chapter.moreActions', { label: chapterLabel(index, chapter.title) }),
           delete: t('stories.chapter.delete'),
         }}
@@ -160,7 +161,8 @@ export function StoryGroupRow({
   summary: string | null
   /** Drawn instead of the children while it holds nothing. */
   empty?: string
-  words: { add: string; edit: string; more: string; delete: string }
+  /** `editLabel` names Edit with the row, "Edit Arc 2: Fall of the King". */
+  words: { add: string; edit: string; editLabel: string; more: string; delete: string }
   publication?: ReactNode
   menuItems?: ReactNode[]
   onMove: (by: -1 | 1) => void
@@ -230,7 +232,7 @@ export function StoryGroupRow({
               controls: bodyId,
               label,
             }}
-            words={{ edit: words.edit, more: words.more }}
+            words={{ edit: words.edit, editLabel: words.editLabel, more: words.more }}
             menuItems={access.editContent && menuItems?.length ? menuItems : undefined}
             onDelete={access.editContent ? onDelete : undefined}
             deleteLabel={words.delete}
@@ -242,7 +244,7 @@ export function StoryGroupRow({
     >
       <div id={bodyId} hidden={!open} data-fold={bodyId}>
         {summary ? (
-          <p className="prose" data-testid={IDS[noun].summary}>
+          <p className="types__description prose" data-testid={IDS[noun].summary}>
             {summary}
           </p>
         ) : null}

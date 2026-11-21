@@ -1,9 +1,14 @@
 /*
  * A scene or beat reached by a link is marked for a moment - the surface behind it and the accent on its edge - so the
  * eye can tell which row the link meant. The mark fades rather than vanishing, unless motion is reduced. The row holds
- * the focus by then, and the mark is what shows it.
+ * the focus by then, and the mark is what shows it. Its parts - the head, the date and point of view, and the folded
+ * summary, lore and beats - stand a small step apart, as a scene's lines always did.
  */
-.types__row[id^='scene-'] {
+.types__row[id^='scene-'],
+.types__row[id^='scene-'] > [data-fold]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   transition:
     background-color 700ms ease,
     box-shadow 700ms ease;
