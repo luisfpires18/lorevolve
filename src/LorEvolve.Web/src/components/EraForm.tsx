@@ -1,7 +1,6 @@
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
-import { payloadKey } from '../lib/drawerGuard'
 import { Field } from './Field'
 import type { FieldValue } from '../lore/types'
 import type { FieldDefinition } from '../lore/typeDefinitions'
@@ -52,15 +51,16 @@ export function EraForm({
   onSaved,
 }: EraFormProps) {
   useI18n()
-  const state = useEraFormState({ progression, era, definitions })
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
+  const state = useEraFormState({
+    progression,
+    era,
+    definitions,
+    measure: (of) => inputOf(of, null, reckonsInEras, custom),
+  })
 
-  const { nameInput, base, initial, draft, fieldErrors } = state
-
-  const isDirty =
-    payloadKey(inputOf(draft, null, reckonsInEras, custom)) !==
-    payloadKey(inputOf(initial, null, reckonsInEras, custom))
+  const { nameInput, base, draft, isDirty, fieldErrors } = state
 
   const index = era ? base.eras.findIndex((one) => one.id === era.id) : -1
   const key = `eras[${index === -1 ? base.eras.length : index}]`

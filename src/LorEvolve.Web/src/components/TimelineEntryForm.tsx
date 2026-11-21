@@ -3,7 +3,6 @@ import { CanonBlockNotice } from './CanonBlockNotice'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
-import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
 import { useValidationTerms } from '../ruleValidation/useValidationTerms'
 import { DateKind, type TimelineEntry, type TimelineStoryLink } from '../timeline/types'
@@ -52,10 +51,16 @@ export function TimelineEntryForm({
   onSaved,
 }: TimelineEntryFormProps) {
   useI18n()
-  const state = useMomentFormState({ entry, initialStories })
+  const reckonsInEras = namesEras(chronology)
+  const custom = hasCalendar(chronology)
+  const state = useMomentFormState({
+    entry,
+    initialStories,
+    measure: (of) => inputOf(of, reckonsInEras, custom),
+  })
   const {
     title,
-    initial,
+    isDirty,
     draft,
     fieldErrors,
     message,
@@ -70,13 +75,6 @@ export function TimelineEntryForm({
     add: addTerm,
     reload: reloadTerms,
   } = useValidationTerms(universeId)
-
-  const reckonsInEras = namesEras(chronology)
-  const custom = hasCalendar(chronology)
-
-  const isDirty =
-    payloadKey(inputOf(draft, reckonsInEras, custom)) !==
-    payloadKey(inputOf(initial, reckonsInEras, custom))
 
   const { edit, setComponent, chooseKind, save } = momentFormActions({
     ...state,

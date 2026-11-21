@@ -5,23 +5,26 @@ import { useFormSave } from '../lib/useFormSave'
 import type { FieldDefinition } from '../lore/typeDefinitions'
 import { PROGRESSION_CHANGED } from './api'
 import type { Era, Progression } from './types'
-import { draftOf } from './eraDraft'
+import { draftOf, type EraDraft } from './eraDraft'
+import { useDraftForm } from '../lib/useDraftForm'
 
 /** An era drawer's refs and state, with the draft read once from the era. */
 export function useEraFormState({
   progression,
   era,
   definitions,
+  measure,
 }: {
   progression: Progression
   era: Era | null
   definitions: FieldDefinition[]
+  /** The draft as the save would send it, for `isDirty`. */
+  measure: (draft: EraDraft) => object
 }) {
   const nameInput = useRef<HTMLInputElement>(null)
   const saveButton = useRef<HTMLButtonElement>(null)
   const [base, setBase] = useState(progression)
-  const [initial] = useState(() => draftOf(era, definitions))
-  const [draft, setDraft] = useState(initial)
+  const drafted = useDraftForm(() => draftOf(era, definitions), { measure })
   const [conflict, setConflict] = useState(false)
   const form = useFormSave({
     refusal: (error) => {
@@ -38,9 +41,7 @@ export function useEraFormState({
     saveButton,
     base,
     setBase,
-    initial,
-    draft,
-    setDraft,
+    ...drafted,
     form,
     fieldErrors: form.fieldErrors,
     setFieldErrors: form.setFieldErrors,

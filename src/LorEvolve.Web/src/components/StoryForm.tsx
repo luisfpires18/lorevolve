@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { Field } from './Field'
 import { SegmentedField } from './SegmentedField'
 import { ChangeList, EditConflict } from './EditConflict'
-import { payloadKey } from '../lib/drawerGuard'
+import { useDraftForm } from '../lib/useDraftForm'
 import { Drawer } from './Drawer'
 import { isChangedElsewhere } from '../lib/editConflict'
 import { suggestStoryChanges } from '../suggestions/api'
@@ -68,9 +68,10 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the story as stored, or the blank form - which the draft is measured against, and the
   // version its save names. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
-  const [base, setBase] = useState(() => ({ draft: draftOf(story), version: story?.version }))
-  const initial = base.draft
-  const [draft, setDraft] = useState<StoryDraft>(initial)
+  const { draft, setDraft, setInitial, edit, isDirty } = useDraftForm(() => draftOf(story), {
+    measure: inputOf,
+  })
+  const [version, setVersion] = useState(story?.version)
   const [conflict, setConflict] = useState(false)
   const form = useFormSave({
     refusal: (error) => {
@@ -86,24 +87,18 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
   const { fieldErrors, message, isSaving } = form
   const saveButton = useRef<HTMLButtonElement>(null)
 
-  const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
-
-  function edit(change: Partial<StoryDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
   async function save() {
     const input = inputOf(draft)
 
     await form.save(async () => {
       setConflict(false)
       if (suggesting && story && onSuggested) {
-        await suggestStoryChanges(universeId, story.id, { ...input, expectedVersion: base.version })
+        await suggestStoryChanges(universeId, story.id, { ...input, expectedVersion: version })
         onSuggested()
         return
       }
       const saved = story
-        ? await updateStory(universeId, story.id, { ...input, expectedVersion: base.version })
+        ? await updateStory(universeId, story.id, { ...input, expectedVersion: version })
         : await createStory(universeId, input)
       // A new story is a Writing project: the sidebar's Writing follows it (#272).
       if (!story) refreshProjects?.().catch(() => undefined)
@@ -176,12 +171,14 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
           suggesting={suggesting}
           onKeepMine={(latest) => {
             // The form stays as typed, measured against the latest; the next save names the version reviewed.
-            setBase({ draft: draftOf(latest), version: latest.version })
+            setInitial(draftOf(latest))
+            setVersion(latest.version)
             setConflict(false)
             requestAnimationFrame(() => saveButton.current?.focus())
           }}
           onUseLatest={(latest) => {
-            setBase({ draft: draftOf(latest), version: latest.version })
+            setInitial(draftOf(latest))
+            setVersion(latest.version)
             setDraft(draftOf(latest))
             setConflict(false)
             requestAnimationFrame(() => title.current?.focus())

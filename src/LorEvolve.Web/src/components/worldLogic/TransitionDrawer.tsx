@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { useDraftForm } from '../../lib/useDraftForm'
 import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { t } from '../../i18n'
@@ -36,17 +37,19 @@ export function TransitionDrawer({
   onClose: () => void
 }) {
   const titleId = useId()
-  const [initial] = useState(() => ({
+  const {
+    draft: form,
+    edit,
+    isDirty,
+  } = useDraftForm(() => ({
     fromStateId: transition?.fromStateId ?? states[0]?.id ?? '',
     toStateId: transition?.toStateId ?? states[1]?.id ?? '',
     label: transition?.label ?? '',
     guardRuleId: transition?.guardRuleId ?? '',
   }))
-  const [form, setForm] = useState(initial)
   // The guard builder open over this drawer: a new rule, or the chosen one.
   const [building, setBuilding] = useState<{ ruleId: string | null } | null>(null)
 
-  const isDirty = JSON.stringify(form) !== JSON.stringify(initial)
   const ruleList = Array.isArray(rules) ? rules : []
   const unknownGuard =
     form.guardRuleId !== '' && !ruleList.some((rule) => rule.id === form.guardRuleId)
@@ -69,7 +72,7 @@ export function TransitionDrawer({
         id={control.id}
         className="field__input field__input--select"
         value={form[key]}
-        onChange={(event) => setForm((current) => ({ ...current, [key]: event.target.value }))}
+        onChange={(event) => edit({ [key]: event.target.value })}
         aria-invalid={control['aria-invalid']}
         aria-describedby={control['aria-describedby']}
         data-testid={testId}
@@ -130,7 +133,7 @@ export function TransitionDrawer({
         <Field label={t(`${m}.fields.label`)} error={errors?.label}>
           {textInput(
             form.label,
-            (label) => setForm((current) => ({ ...current, label })),
+            (label) => edit({ label }),
             t(`${m}.placeholders.label`),
             'machine-transition-label',
           )}
@@ -146,9 +149,7 @@ export function TransitionDrawer({
               className="field__input field__input--select"
               value={form.guardRuleId}
               disabled={rules === 'failed'}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, guardRuleId: event.target.value }))
-              }
+              onChange={(event) => edit({ guardRuleId: event.target.value })}
               aria-invalid={control['aria-invalid']}
               aria-describedby={control['aria-describedby']}
               data-testid="machine-transition-guard"
@@ -194,7 +195,7 @@ export function TransitionDrawer({
           rules={ruleList}
           onSaved={(rule) => {
             onRuleSaved(rule)
-            setForm((current) => ({ ...current, guardRuleId: rule.id }))
+            edit({ guardRuleId: rule.id })
             setBuilding(null)
           }}
           onClose={() => setBuilding(null)}

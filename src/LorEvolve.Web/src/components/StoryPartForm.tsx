@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useFormSave } from '../lib/useFormSave'
-import { payloadKey } from '../lib/drawerGuard'
+import { useDraftForm } from '../lib/useDraftForm'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
@@ -81,30 +81,26 @@ export function StoryPartForm(props: StoryPartFormProps) {
   const { t } = useI18n()
   const title = useRef<HTMLInputElement>(null)
   // What the drawer opened on - the part as stored, or the blank form - which the draft is measured against.
-  const [initial] = useState<StoryPartDraft>(() => ({
-    title: part?.title ?? '',
-    text: (props.kind === 'chapter' ? props.part?.summary : props.part?.description) ?? '',
-    notes: part?.notes ?? '',
-    arcId:
-      (props.kind === 'chapter'
-        ? props.part
-          ? props.part.plotArcId
-          : (props.plotArcId ?? null)
-        : null) ?? '',
-  }))
-  const [draft, setDraft] = useState<StoryPartDraft>(initial)
+  const { draft, edit, isDirty } = useDraftForm<StoryPartDraft>(
+    () => ({
+      title: part?.title ?? '',
+      text: (props.kind === 'chapter' ? props.part?.summary : props.part?.description) ?? '',
+      notes: part?.notes ?? '',
+      arcId:
+        (props.kind === 'chapter'
+          ? props.part
+            ? props.part.plotArcId
+            : (props.plotArcId ?? null)
+          : null) ?? '',
+    }),
+    // The arc is a pick the text measure leaves out, so it counts on its own.
+    { measure: (of) => ({ ...inputOf(of), arcId: of.arcId }) },
+  )
   const form = useFormSave({
     needChange: t(`${ns}.detailsToSave`),
     failed: t(`${ns}.failedSave`),
   })
   const { fieldErrors, message, isSaving } = form
-
-  const isDirty =
-    payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial)) || draft.arcId !== initial.arcId
-
-  function edit(change: Partial<StoryPartDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
 
   async function save() {
     const { text, ...rest } = inputOf(draft)
