@@ -71,7 +71,13 @@ export function TimelineNotices({
       ) : null}
 
       {mixedEras ? (
-        <Callout look="callout" tone="warning" as="p" className="chron__caution" testId="chron-eras">
+        <Callout
+          look="callout"
+          tone="warning"
+          as="p"
+          className="chron__caution"
+          testId="chron-eras"
+        >
           {t('time.timeline.mixedLabels')}
         </Callout>
       ) : null}

@@ -16,9 +16,7 @@ const sourceFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encodin
   .sort()
 
 // Files that write a `notice` or `callout` class by hand, with the reason. Callout itself is the part.
-const HAND_CALLOUTS = new Map<string, string>([
-  ['src/components/Callout.tsx', 'the part'],
-])
+const HAND_CALLOUTS = new Map<string, string>([['src/components/Callout.tsx', 'the part']])
 
 // Files whose effect focuses a confirm or its panel by hand. useConfirmFocus is the part.
 const HAND_CONFIRM_FOCUS = new Set(['src/lib/useConfirmFocus.ts'])
