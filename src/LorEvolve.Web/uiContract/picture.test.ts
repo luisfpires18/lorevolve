@@ -40,6 +40,9 @@ const importsCropDialog = (source: string) =>
 // The classes of a hand-built pick control, anywhere in the raw text: a class string, a template or an
 // option. Not read through string literals, where an apostrophe in a comment pairs the wrong quotes.
 const writesPickClass = (source: string) => /\b(imagefield|avatar)__(input|pick)\b/.test(source)
+// A cropper opened on a stored picture's original (#456 A3): the reframe of an Image field and of an entry's picture
+// is `fieldImageActions`'s, not a copy in the input.
+const setsStoredFraming = (source: string) => /setFraming\(\{\s*kind: 'stored'/.test(source)
 
 const IMAGE_ACCEPT_READERS = new Map<string, string>([
   ['src/components/PictureActions.tsx', 'the component'],
@@ -68,6 +71,12 @@ const CROP_DIALOG_IMPORTERS = new Map<string, string>([
     'src/components/ProfileAvatar.tsx',
     'the cropper sits outside the actions row, which PictureActions draws',
   ],
+])
+
+const STORED_FRAMING_SETTERS = new Map<string, string>([
+  ['src/lore/fieldImageActions.ts', "an Image field's and an entry's picture"],
+  ['src/components/ProfileAvatar.tsx', 'the profile picture: its own route and words'],
+  ['src/components/UniverseArtworkField.tsx', "a universe's artwork: its own route and words"],
 ])
 
 const PICK_CLASS_WRITERS = new Map<string, string>([
@@ -103,6 +112,13 @@ test('the guards fail on a bad snippet', () => {
   )
   assert.equal(writesPickClass('<div className="avatar__photo">'), false)
   assert.equal(writesPickClass('<div className="imagefield__preview">'), false)
+  assert.equal(
+    setsStoredFraming(`setFraming({
+  kind: 'stored',
+  image,`),
+    true,
+  )
+  assert.equal(setsStoredFraming("setFraming({ kind: 'file', file, source })"), false)
 })
 
 test('IMAGE_ACCEPT is read by PictureActions and the listed files only', () => {
@@ -115,4 +131,8 @@ test('ImageCropDialog is imported by the listed files only', () => {
 
 test('the picture input and pick classes are written by PictureActions and the listed files only', () => {
   onlyAllowed(filesWhere(writesPickClass), PICK_CLASS_WRITERS)
+})
+
+test('a stored picture is reframed by fieldImageActions or the listed files only', () => {
+  onlyAllowed(filesWhere(setsStoredFraming), STORED_FRAMING_SETTERS)
 })

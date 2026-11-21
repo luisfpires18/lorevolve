@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Pager } from '../Pager'
 import { EmptyState } from '../EmptyState'
-import { EntityCard } from '../EntityCard'
-import { CardGrid } from '../CardGrid'
+import { EntityGrid } from './EntityGrid'
 import { useI18n } from '../../i18n'
 import type { EntityPage } from '../../lore/types'
 import { useUniverseAccess } from '../../universes/access'
@@ -46,22 +45,17 @@ export function LoreResults({
   return (
     <>
       {chosenName && result && result.items.length > 0 ? (
-        <CardGrid className="lore__grid" testId="entity-grid">
-          {result.items.map((entity, index) => (
-            <li key={entity.id}>
-              <EntityCard
-                eager={index < 8}
-                universeId={universe.id}
-                entity={entity}
-                selection={
-                  isSelecting
-                    ? { checked: selectedIds.has(entity.id), onToggle: () => toggle(entity.id) }
-                    : undefined
-                }
-              />
-            </li>
-          ))}
-        </CardGrid>
+        <EntityGrid
+          testId="entity-grid"
+          universeId={universe.id}
+          items={result.items}
+          card={(entity, index) => ({
+            eager: index < 8,
+            selection: isSelecting
+              ? { checked: selectedIds.has(entity.id), onToggle: () => toggle(entity.id) }
+              : undefined,
+          })}
+        />
       ) : null}
 
       {chosenName && result && result.items.length === 0 && isFiltered ? (
