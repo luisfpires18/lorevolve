@@ -194,7 +194,6 @@ test('a card grid is the one .cardgrid rule; the other auto grids are listed wit
       ['src/styles/090-publishing-settings.css', '.publication__genrelist: form layout'],
       ['src/styles/116-entry-forms-and-abilities.css', '.scenepicks: a picker'],
       ['src/styles/102-universe-published.css', '.plore-grid, .pstory-grid: public portal'],
-      ['src/styles/127-projects.css', '.shelf, .shelf--wide: objects on a shelf'],
     ]),
     'use CardGrid (.cardgrid with a modifier)',
   )

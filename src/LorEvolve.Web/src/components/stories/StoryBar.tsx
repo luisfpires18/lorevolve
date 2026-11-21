@@ -1,8 +1,10 @@
 import { useUniverseAccess } from '../../universes/access'
-import { FilePenLine, FileText, Hourglass, ListTree, Pencil, Trash } from 'lucide-react'
+import { FilePenLine, Hourglass, Pencil, Trash } from 'lucide-react'
 import { useI18n } from '../../i18n'
 import { ViewChips } from '../ViewChips'
 import { ActionMenu, ActionMenuItem } from '../ActionMenu'
+import { projectSectionLabel, projectSections } from '../../projects/sections'
+import { ProjectKind } from '../../projects/types'
 import type { StoryDetail } from '../../stories/types'
 import type { useStoryState } from '../../stories/useStoryState'
 import type { storyRemovals } from '../../stories/storyRemovals'
@@ -29,21 +31,14 @@ export function StoryBar({
       <ViewChips
         label={t('stories.page.views')}
         testId="story-views"
-        items={[
-          {
-            to: `${storyPath}/structure`,
-            end: true,
-            label: t('stories.page.viewStructure'),
-            icon: ListTree,
-            testId: 'story-view-scenes',
-          },
-          {
-            to: `${storyPath}/manuscript`,
-            label: t('stories.page.viewManuscript'),
-            icon: FileText,
-            testId: 'story-view-manuscript',
-          },
-        ]}
+        items={projectSections(ProjectKind.Writing, story.id).map((section, index) => ({
+          to: `${storyPath}/${section.segment}`,
+          end: index === 0,
+          label: projectSectionLabel(section),
+          icon: section.icon,
+          // The story's own ids (G26): the structure view is "scenes".
+          testId: `story-view-${section.segment === 'structure' ? 'scenes' : section.segment}`,
+        }))}
       />
 
       {/* Every view keeps a way to the story's world chronology here, the Manuscript view included, whose header has

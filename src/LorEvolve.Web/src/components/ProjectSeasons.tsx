@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { Section } from './Section'
 import { createSeason, listSeasons } from '../projectEntities/seasons'
 import { EmptyState } from './EmptyState'
 import { t, useI18n } from '../i18n'
@@ -53,7 +54,7 @@ export function ProjectSeasons({
   }
 
   return (
-    <section className="projects" data-testid="project-seasons">
+    <Section testId="project-seasons">
       <PageHeader
         level={2}
         size="panel"
@@ -120,6 +121,6 @@ export function ProjectSeasons({
           ))}
         </ol>
       ) : null}
-    </section>
+    </Section>
   )
 }

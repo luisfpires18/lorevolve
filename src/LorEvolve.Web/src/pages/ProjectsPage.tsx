@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
+import { Section } from '../components/Section'
 import { Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
-import { formatLabel, kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
+import {
+  formatLabel,
+  kindLabel,
+  lifecycleLabel,
+  newProjectPath,
+  projectRowPath,
+} from '../projects/sections'
 import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
 import { t, useI18n } from '../i18n'
-import { sectionLabel, type Section } from '../universes/sections'
+import { sectionLabel, type Section as WorkspaceSection } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
@@ -47,7 +54,7 @@ export default function ProjectsPage({
   /** Only these kinds: the sidebar's Writing, Gaming, Cinema, Comic and Game Entities open this list narrowed (#272). */
   kinds?: readonly ProjectKindValue[]
   /** The sidebar section this list is the page of, which names it. */
-  section?: Section
+  section?: WorkspaceSection
   /** Where a row opens. Game Entities opens a game's directory instead of its project page (#284). */
   rowPath?: (project: ProjectDetail) => string
 }) {
@@ -85,10 +92,7 @@ export default function ProjectsPage({
          * away from any row here.
          */
         universeId ? (
-          <NewButton
-            to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
-            data-testid="projects-page-new"
-          >
+          <NewButton to={newProjectPath(universeId, kinds?.[0])} data-testid="projects-page-new">
             {t('projects.nav.new')}
           </NewButton>
         ) : null
@@ -132,7 +136,7 @@ export default function ProjectsPage({
   }
 
   return (
-    <section className="projects" data-testid="projects-page">
+    <Section testId="projects-page">
       {/* The head every other workspace screen uses, so Projects reads as one of them (#184). */}
       {head}
 
@@ -143,7 +147,7 @@ export default function ProjectsPage({
           testId="projects-empty"
         />
       ) : (
-        <ul className="storylist" data-testid="projects-list">
+        <ul className="idealist" data-testid="projects-list">
           {shown.map((project) => (
             <LinkRow
               look="story"
@@ -169,6 +173,6 @@ export default function ProjectsPage({
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   )
 }

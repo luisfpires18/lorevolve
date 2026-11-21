@@ -2,6 +2,7 @@ import { formatChronologyPoint, isPlaced } from '../chronology/format'
 import type { Chronology, ChronologyValue } from '../chronology/types'
 import { t, tn } from '../i18n'
 import { formatCount } from '../i18n/format'
+import { Visibility, type ContentPublicationState } from '../publishing/types'
 
 /**
  * Where a scene happens in the world, written by the shared chronology formatter - or null when the
@@ -87,4 +88,13 @@ export function containerLabel(
   if (chapterId === null) return unchaptered()
   const index = chapters.findIndex((chapter) => chapter.id === chapterId)
   return index < 0 ? unchaptered() : chapterLabel(index, chapters[index].title)
+}
+
+/** Whether anyone can read the story now; null until known, when no part claims to be public. */
+export function isStoryPublic(state: ContentPublicationState | null | undefined) {
+  return state
+    ? state.visibility === Visibility.Public &&
+        state.universeIsPublic &&
+        state.publicSummary !== null
+    : null
 }

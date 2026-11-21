@@ -1,14 +1,21 @@
+import type { ReactNode } from 'react'
 import { CardSkeleton } from './CardSkeleton'
-import type { CrumbItem } from './Crumb'
+import { Crumb, type CrumbItem } from './Crumb'
+import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { Field } from './Field'
 import { useLocation } from 'react-router-dom'
-import { FieldKind, type ProjectEntitySummary, type ProjectField } from '../projectEntities/types'
+import {
+  FieldKind,
+  type ProjectEntitySummary,
+  type ProjectEntityType,
+  type ProjectField,
+} from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
 import { EmptyState } from './EmptyState'
 import { t, tx, useI18n } from '../i18n'
 import { useProjectEntriesState } from '../projectEntities/useProjectEntriesState'
 import { useProjectEntriesRead } from '../projectEntities/useProjectEntriesRead'
-import { ProjectEntriesHead } from './projectEntities/ProjectEntriesHead'
 import { ProjectEntriesFilters } from './projectEntities/ProjectEntriesFilters'
 import { ProjectEntryList } from './projectEntities/ProjectEntryList'
 import { ProjectEntryForm } from './ProjectEntryForm'
@@ -56,6 +63,33 @@ export function ProjectEntries({
 }) {
   useI18n()
   const { pathname } = useLocation()
+  // Lore's head for one type: the path back with the type's ancestors, the type's name, and its action.
+  const head = (
+    title: ReactNode,
+    ancestors: readonly ProjectEntityType[] = [],
+    action?: ReactNode,
+  ) => (
+    <PageHeader
+      level={2}
+      size="panel"
+      crumb={
+        crumb ? (
+          <Crumb
+            items={[
+              crumb,
+              ...ancestors.map((ancestor) => ({
+                to: `${pathname}?type=${ancestor.id}`,
+                label: <bdi>{ancestor.name}</bdi>,
+                testId: 'project-entities-path-type',
+              })),
+            ]}
+          />
+        ) : undefined
+      }
+      title={title}
+      actions={action}
+    />
+  )
   const state = useProjectEntriesState({ startAdding, fixedTypeId })
   const {
     sort,
@@ -92,27 +126,27 @@ export function ProjectEntries({
 
   if (types.length === 0) {
     return (
-      <section className="projects" data-testid="project-entries">
-        <ProjectEntriesHead title={t('projects.entries.title')} crumb={crumb} pathname={pathname} />
+      <Section testId="project-entries">
+        {head(t('projects.entries.title'))}
         <EmptyState
           title={t('projects.entries.needsType')}
           hint={t('projects.entries.needsTypeHint')}
           testId="project-entries-needs-type"
         />
-      </section>
+      </Section>
     )
   }
 
   if (fixedTypeId && !types.some((each) => each.id === fixedTypeId)) {
     return (
-      <section className="projects" data-testid="project-entries">
-        <ProjectEntriesHead title={t('projects.entries.title')} crumb={crumb} pathname={pathname} />
+      <Section testId="project-entries">
+        {head(t('projects.entries.title'))}
         <EmptyState
           title={t('projects.entries.typeMissing')}
           hint={t('projects.entries.typeMissingHint')}
           testId="project-entries-type-missing"
         />
-      </section>
+      </Section>
     )
   }
 
@@ -127,27 +161,23 @@ export function ProjectEntries({
   const ancestors = (type && buildTypeTree(types).byId.get(type.id)?.path.slice(0, -1)) || []
 
   return (
-    <section className="projects" data-testid="project-entries">
-      <ProjectEntriesHead
-        crumb={crumb}
-        pathname={pathname}
-        title={type ? <bdi>{type.name}</bdi> : t('projects.entries.title')}
-        ancestors={ancestors}
-        action={
-          <NewButton
-            aria-expanded={adding}
-            aria-label={type ? t('lore.page.newTypeLabel', { name: type.name }) : undefined}
-            data-testid="project-entry-add"
-            onClick={() => setAdding((open) => !open)}
-          >
-            <span className="lore__createlabel">
-              {type
-                ? tx('lore.page.newType', { type: <bdi>{type.name}</bdi> })
-                : t('projects.entries.add')}
-            </span>
-          </NewButton>
-        }
-      />
+    <Section testId="project-entries">
+      {head(
+        type ? <bdi>{type.name}</bdi> : t('projects.entries.title'),
+        ancestors,
+        <NewButton
+          aria-expanded={adding}
+          aria-label={type ? t('lore.page.newTypeLabel', { name: type.name }) : undefined}
+          data-testid="project-entry-add"
+          onClick={() => setAdding((open) => !open)}
+        >
+          <span className="lore__createlabel">
+            {type
+              ? tx('lore.page.newType', { type: <bdi>{type.name}</bdi> })
+              : t('projects.entries.add')}
+          </span>
+        </NewButton>,
+      )}
 
       {failed ? <FormMessage testId="project-entries-failed">{failed}</FormMessage> : null}
 
@@ -239,7 +269,7 @@ export function ProjectEntries({
         onMore={loadMore}
         testId="project-entries-more"
       />
-    </section>
+    </Section>
   )
 }
 

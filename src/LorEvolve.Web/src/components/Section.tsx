@@ -51,7 +51,8 @@ export function Section({
   titleProps,
   children,
 }: {
-  title: ReactNode
+  /** Left out when the block opens with a `PageHeader level={2} size="panel"` of its own (pass its `titleId` here too). */
+  title?: ReactNode
   titleId?: string
   /** The section's own id, for an anchor. */
   id?: string
@@ -79,9 +80,11 @@ export function Section({
       aria-labelledby={titleId}
       data-testid={testId}
     >
-      <SectionTitle level={level} id={titleId} {...titleProps}>
-        {title}
-      </SectionTitle>
+      {title === undefined ? null : (
+        <SectionTitle level={level} id={titleId} {...titleProps}>
+          {title}
+        </SectionTitle>
+      )}
       {children}
     </section>
   )

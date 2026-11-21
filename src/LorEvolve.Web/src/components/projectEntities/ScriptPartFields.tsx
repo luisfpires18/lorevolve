@@ -1,10 +1,46 @@
 import { ManuscriptWriter } from '../ManuscriptWriter'
 import { MentionProse } from '../MentionProse'
-import { ScriptField } from '../ComicPageEditor'
+import { Field } from '../Field'
 import { t } from '../../i18n'
 import { PANEL_SCRIPT, type PanelScript } from '../../projectEntities/structure'
 import type { useScriptPartState } from '../../projectEntities/useScriptPartState'
 import { QuietNote } from '../QuietNote'
+
+const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
+  dialogue: 4,
+  caption: 2,
+  sfx: 2,
+  notes: 3,
+}
+
+/** One textarea of a panel's script, labelled and with its placeholder. */
+export function ScriptField({
+  part,
+  value,
+  onChange,
+  testId,
+  readOnly = false,
+}: {
+  part: (typeof PANEL_SCRIPT)[number]
+  value: string
+  onChange: (value: string) => void
+  testId: string
+  readOnly?: boolean
+}) {
+  return (
+    <Field
+      as="textarea"
+      label={t(`projects.structure.panel.${part}`)}
+      rows={SCRIPT_ROWS[part]}
+      maxLength={4000}
+      readOnly={readOnly}
+      value={value}
+      placeholder={t(`projects.structure.panel.${part}Placeholder`)}
+      onChange={(event) => onChange(event.target.value)}
+      data-testid={testId}
+    />
+  )
+}
 
 export function ScriptPartFields({
   universeId,

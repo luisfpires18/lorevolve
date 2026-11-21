@@ -9,6 +9,7 @@ import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
 import type { CrumbItem } from './Crumb'
 import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { useUniverseAccess } from '../universes/access'
 import { ProjectEntries } from './ProjectEntries'
 import { ProjectSchema } from './ProjectSchema'
@@ -73,7 +74,7 @@ export function ProjectEntitiesView({
 
   if (managing) {
     return (
-      <div className="projectbody" data-testid="project-entities-manage">
+      <div data-testid="project-entities-manage">
         <ProjectSchema
           projectId={projectId}
           reloadKey={reloadKey}
@@ -86,7 +87,7 @@ export function ProjectEntitiesView({
 
   if (typeId) {
     return (
-      <div className="projectbody" data-testid="project-entities-type">
+      <div data-testid="project-entities-type">
         {/* Keyed by the type, so opening another card starts its own first page rather than carrying this one's. */}
         <ProjectEntries
           key={typeId}
@@ -164,7 +165,7 @@ function TypeCards({
   }
 
   return (
-    <section className="projects" data-testid="project-entity-types">
+    <Section testId="project-entity-types">
       {typesHref ? (
         // Lore's own page head: the screen's name, one line on what it holds, and New entry by type on the right.
         <PageHeader
@@ -231,6 +232,6 @@ function TypeCards({
           countBranch={false}
         />
       </div>
-    </section>
+    </Section>
   )
 }

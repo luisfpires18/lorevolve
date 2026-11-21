@@ -5,6 +5,24 @@ import type { ProjectDetail, ProjectKindValue } from './types'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useShelfState } from './useShelfState'
 
+/** Puts the keyboard back on a moved card's menu, once the list has drawn it in its new place. */
+export function focusCardMenu(rowAttribute: string, id: string, testPrefix: 'shelf' | 'story') {
+  requestAnimationFrame(() =>
+    document
+      .querySelector<HTMLElement>(`[${rowAttribute}="${id}"] [data-testid="${testPrefix}-actions"]`)
+      ?.focus(),
+  )
+}
+
+/** The list with one card's cover replaced: what a `CoverDrawer` writes back when a picture is saved. */
+export function withCover<T extends { id: string; cover?: unknown }>(
+  list: readonly T[],
+  id: string,
+  cover: T['cover'],
+): T[] {
+  return list.map((one) => (one.id === id ? { ...one, cover } : one))
+}
+
 export function shelfActions({
   universe,
   kinds,
@@ -40,13 +58,7 @@ export function shelfActions({
     isMoving.current = true
     setMoveError(null)
     setState({ kind: 'ready', value: after })
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLElement>(
-          `[data-project-id="${project.id}"] [data-testid="shelf-actions"]`,
-        )
-        ?.focus(),
-    )
+    focusCardMenu('data-project-id', project.id, 'shelf')
     try {
       const saved = await reorderProjects(
         universe.id,

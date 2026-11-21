@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react'
 import { EmptyState } from './EmptyState'
-import { childrenOf } from '../projectEntities/structure'
+import { addableLevels, childrenOf } from '../projectEntities/structure'
 import { t, useI18n } from '../i18n'
+import { levelWord } from '../projectEntities/levelWords'
 import { useProjectOutline } from '../projectEntities/useProjectOutline'
-import { OutlineAddButtons } from './projectEntities/OutlineAddButtons'
 import { OutlineBranch } from './projectEntities/OutlineBranch'
 import { NodeEditor } from './projectEntities/NodeEditor'
+import { NewButton } from './NewButton'
 import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -45,15 +47,29 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
       <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
     )
   }
+  const topLevels = addableLevels(tree, null)
   return (
     <>
-      <section className="projects" data-testid="project-outline">
+      <Section testId="project-outline">
         <PageHeader
           level={2}
           size="panel"
           title={t('projects.structure.title')}
           lede={t('projects.structure.lede')}
-          actions={<OutlineAddButtons parent={null} tree={tree} busy={busy} add={add} />}
+          actions={
+            topLevels.length === 0
+              ? null
+              : topLevels.map((level) => (
+                  <NewButton
+                    key={level}
+                    disabled={busy}
+                    data-testid={`project-node-add-${level}`}
+                    onClick={() => add(level, null)}
+                  >
+                    {t('projects.structure.add', { level: levelWord(level) })}
+                  </NewButton>
+                ))
+          }
         />
 
         {failed ? <FormMessage testId="project-outline-failed">{failed}</FormMessage> : null}
@@ -76,7 +92,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
           add={add}
           remove={remove}
         />
-      </section>
+      </Section>
 
       {editing ? (
         <NodeEditor
@@ -93,7 +109,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
       ) : null}
 
       {hasLegacy ? (
-        <section className="projects" data-testid="project-outline-earlier">
+        <Section testId="project-outline-earlier">
           <PageHeader
             level={2}
             size="panel"
@@ -101,7 +117,7 @@ export function ProjectOutline({ projectId, legacy }: { projectId: string; legac
             lede={t('projects.structure.earlierHint')}
           />
           {legacy}
-        </section>
+        </Section>
       ) : null}
     </>
   )

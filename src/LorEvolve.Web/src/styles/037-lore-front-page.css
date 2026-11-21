@@ -50,6 +50,8 @@
   font: inherit;
   font-size: var(--text-ui);
   font-weight: 500;
+  /* Also a link (the views of a project or a story): a chip is never underlined. */
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color var(--duration-1) var(--ease),

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { Section } from './Section'
 import {
   createTypeTemplate,
   deleteTypeTemplate,
@@ -61,7 +62,7 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
   }
 
   return (
-    <section className="projects" data-testid="type-templates">
+    <Section testId="type-templates">
       {canEdit ? (
         <div className="types__context">
           <NewButton data-testid="template-new" onClick={() => setEditing('new')}>
@@ -137,6 +138,6 @@ export function TypeTemplates({ universeId, canEdit }: { universeId: string; can
           />
         ))}
       </ul>
-    </section>
+    </Section>
   )
 }

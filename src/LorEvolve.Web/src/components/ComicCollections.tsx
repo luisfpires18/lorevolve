@@ -19,6 +19,7 @@ import { NewButton } from './NewButton'
 import { useLoadedList } from '../lib/useLoadedList'
 import { ReadGate } from './ReadGate'
 import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -67,7 +68,7 @@ export function ComicCollections({
       {kinds.map((kind) => {
         const ofKind = data.collections.filter((collection) => collection.kind === kind)
         return (
-          <section key={kind} className="projects" data-testid={`comic-collections-${kind}`}>
+          <Section key={kind} testId={`comic-collections-${kind}`}>
             <PageHeader
               level={2}
               size="panel"
@@ -108,7 +109,7 @@ export function ComicCollections({
                 ))}
               </ol>
             )}
-          </section>
+          </Section>
         )
       })}
 

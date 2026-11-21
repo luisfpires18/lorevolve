@@ -14,7 +14,7 @@ import {
 import { capital, levelWord, nameOf } from '../../projectEntities/levelWords'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
-import { OutlineAddButtons } from './OutlineAddButtons'
+import { NewButton } from '../NewButton'
 import { Button } from '../Button'
 import { FolderInput } from 'lucide-react'
 
@@ -56,9 +56,17 @@ export function OutlineBranch(props: OutlineBranchProps): ReactNode {
             foldLabel={nameOf(node)}
             tools={
               <>
-                {leaf ? null : (
-                  <OutlineAddButtons parent={node} tree={tree} busy={busy} add={add} />
-                )}
+                {addableLevels(current, node.level).map((level) => (
+                  <NewButton
+                    key={level}
+                    tone="secondary"
+                    disabled={busy}
+                    data-testid={`project-node-add-${level}-${node.id}`}
+                    onClick={() => add(level, node.id)}
+                  >
+                    {t('projects.structure.add', { level: levelWord(level) })}
+                  </NewButton>
+                ))}
                 <Button
                   tone="text"
                   data-testid={`project-node-open-${node.id}`}

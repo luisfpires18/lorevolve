@@ -1,4 +1,5 @@
 import type { CrumbItem } from './Crumb'
+import { Section } from './Section'
 import { applyProjectTemplate, createProjectType, saveProjectType } from '../projectEntities/api'
 import { EmptyState } from './EmptyState'
 import { TypeDialog } from './TypeDialog'
@@ -83,7 +84,7 @@ export function ProjectSchema({
   const offerStarters = types.length === 0 && template !== null && template.types.length > 0
 
   return (
-    <section className="projects" data-testid="project-schema">
+    <Section testId="project-schema">
       <SchemaHead
         crumb={crumb}
         canEdit={canEdit}
@@ -189,6 +190,6 @@ export function ProjectSchema({
           />
         ))}
       </ul>
-    </section>
+    </Section>
   )
 }

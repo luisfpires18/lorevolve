@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Section } from '../components/Section'
 import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { Crumb } from '../components/Crumb'
@@ -60,7 +61,7 @@ export default function GameEntitiesPage() {
             testId="game-entities-missing"
           />
         ) : (
-          <section className="projects" data-testid="game-entities-page">
+          <Section testId="game-entities-page">
             <PageHeader
               crumb={<Crumb items={[back]} />}
               title={<bdi>{project.name}</bdi>}
@@ -75,7 +76,7 @@ export default function GameEntitiesPage() {
               entryHref={(entry) => `${pathname}/${entry.id}`}
               onChanged={() => setSchemaVersion((version) => version + 1)}
             />
-          </section>
+          </Section>
         )
       }
     </ReadGate>

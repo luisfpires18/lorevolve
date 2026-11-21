@@ -3,8 +3,7 @@ import { useUniverseAccess } from '../universes/access'
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import type { MoveTarget } from '../components/SceneCard'
-import { Visibility } from '../publishing/types'
-import { arcNumber, unchaptered as unchapteredLabel } from '../stories/format'
+import { arcNumber, isStoryPublic, unchaptered as unchapteredLabel } from '../stories/format'
 import { chapterChoices, chapterGroups, chapterNumbers, scenesIn } from '../stories/structure'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import { projectPath } from '../projects/sections'
@@ -17,7 +16,8 @@ import { storyChapterMoves } from '../stories/storyChapterMoves'
 import { storyRemovals } from '../stories/storyRemovals'
 import { StoryHeader } from '../components/stories/StoryHeader'
 import { StoryBar } from '../components/stories/StoryBar'
-import { StoryManuscript } from '../components/stories/StoryManuscript'
+import { ManuscriptPanel } from '../components/ManuscriptPanel'
+import { StoryPartPublication } from '../components/StoryPartPublication'
 import { StoryScenes } from '../components/stories/StoryScenes'
 import { StoryForms } from '../components/stories/StoryForms'
 import { LoadError } from '../components/LoadError'
@@ -155,14 +155,10 @@ function StoryView({ view }: { view: StoryViewName }) {
     : []
 
   const patches = storyPatches({ setState })
+  const { patchScene } = patches
 
-  /** Whether anyone can read the story now; null until known, when no part claims to be public. */
   const storyPublication = publication?.storyId === story.id ? publication : null
-  const storyIsPublic = storyPublication?.state
-    ? storyPublication.state.visibility === Visibility.Public &&
-      storyPublication.state.universeIsPublic &&
-      storyPublication.state.publicSummary !== null
-    : null
+  const storyIsPublic = isStoryPublic(storyPublication?.state)
 
   const sceneMoves = storySceneMoves({
     ...base,
@@ -265,7 +261,30 @@ function StoryView({ view }: { view: StoryViewName }) {
       ) : null}
 
       {view === 'manuscript' ? (
-        <StoryManuscript {...shared} sceneId={sceneId} />
+        <ManuscriptPanel
+          universeId={universe.id}
+          story={story}
+          chronology={chronology}
+          sceneId={sceneId}
+          onEditScene={(scene) => base.setSceneForm({ mode: 'edit', scene })}
+          onSuggestScene={(scene) => base.setSceneForm({ mode: 'suggest', scene })}
+          onSceneChanged={reload}
+          onSceneSaved={(saved) => patchScene(saved.id, saved)}
+          manuscriptPublication={(scene) =>
+            access.publish ? (
+              <StoryPartPublication
+                universeId={universe.id}
+                storyId={story.id}
+                kind="manuscript"
+                id={scene.id}
+                name={scene.title}
+                visibility={scene.manuscriptVisibility}
+                storyIsPublic={storyIsPublic}
+                onChange={(manuscriptVisibility) => patchScene(scene.id, { manuscriptVisibility })}
+              />
+            ) : null
+          }
+        />
       ) : (
         <StoryScenes {...shared} />
       )}
