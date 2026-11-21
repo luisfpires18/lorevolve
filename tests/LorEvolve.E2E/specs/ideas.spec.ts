@@ -376,6 +376,23 @@ test.describe('ideas', () => {
     await page.getByTestId('idea-picker-search').fill('Alenna')
     await expect(picker.getByTestId('idea-picker-option')).toHaveCount(1)
     await expect(picker.getByTestId('idea-picker-option')).toHaveAttribute('data-name', 'Alenna')
+    // While new words or a new kind are looked up, the last answer is gone at once, never offered.
+    let release = () => {}
+    const held = new Promise<void>((done) => (release = done))
+    const targets = (url: URL) => url.pathname.endsWith('/api/ideas/reference-targets')
+    await page.route(targets, async (route) => {
+      await held
+      // A held request the picker gave up on is gone by now.
+      await route.continue().catch(() => {})
+    })
+    await page.getByTestId('idea-picker-search').fill('Alen')
+    expect(await picker.getByTestId('idea-picker-results').count()).toBe(0)
+    await expect(picker.getByTestId('idea-picker-results')).toHaveCount(0)
+    await picker.getByTestId('idea-picker-kind-story').click()
+    expect(await picker.getByTestId('idea-picker-results').count()).toBe(0)
+    await picker.getByTestId('idea-picker-kind-lore').click()
+    release()
+    await expect(picker.getByTestId('idea-picker-option')).toHaveAttribute('data-name', 'Alenna')
     await page.getByTestId('idea-picker-search').fill('Isle')
     await expect(picker.getByTestId('idea-picker-empty')).toBeVisible()
     // Escape clears the search box first, as a search box does, then closes the picker and hands the focus back.

@@ -45,6 +45,7 @@ example and Literata. Still open there: the step 4 screenshot shows an empty sce
 deferred.
 
 ## In flight
+- #456 lane #493 (PR #503): the Ideas and Boards pickers are one `SearchPickDrawer`; `EditorHead` (in `DocumentHead.tsx`) and `SaveBar` (in `SaveAction.tsx`) by name, `EditorSaveBar.tsx` gone. `SYSTEMS.md` lines 436, 437, 609 still name the old files: owner to fix or assign.
 - #380 Web App Readable Structure tracker: done. Children #390 to #417 merged (PRs #404 to #444). Owner's DEV checklist is on #380. Close-out #403 (PR #448).
 - #363 World Systems State Machines tracker: all seven children merged on 2026-11-17 (#356 to #362, PRs #364, #366, #367, #368, #370, #381 and the close-out PR). A System can carry one state machine (ADR 0073, spec `docs/architecture/world-logic-state-machine-spec.md`): drawn on the Machine tab, guards built from blocks, illegal states found by the sweep, read and proposed over MCP. Backup format 59. Closing #363 is the owner's, after the checklist posted on it. Follow-ups are Issues linked from #363. Local focused runs on this machine need `--workers=2` and `xUnit.MaxParallelThreads=2`.
 - #300 M3 Types tracker: all children merged (#279 to #283, PRs #330 to #345). Backup format 55. CI and E2E brought green in PR #351. Owner checks: Lore Types unaffected; individual Game types available; universe templates can be managed; Game types copied from templates are independent; existing entity values intact.

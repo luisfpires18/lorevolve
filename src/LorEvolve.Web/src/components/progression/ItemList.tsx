@@ -3,9 +3,7 @@ import type { Ability, Appearance, Form } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
 import { ItemRow, type ItemFact } from './ItemRow'
 import { unlockParts } from '../../progression/unlockParts'
-import { NewButton } from '../NewButton'
-import { QuietNote } from '../QuietNote'
-import { PanelHead } from '../PanelHead'
+import { ProgressionSection } from './ProgressionSection'
 
 /** An entry's forms or abilities on the main profile: each as the author said it, nothing filled in. */
 export function ItemList({
@@ -50,64 +48,42 @@ export function ItemList({
           remove: t('progression.items.ability.remove'),
           empty: t('progression.items.ability.empty'),
         }
-  const headingId = `${kind}-list-heading`
-
-  if (items.length === 0 && !access.editContent) return null
-
   return (
-    <section className="stack stack--3" aria-labelledby={headingId} data-testid={`${kind}-list`}>
-      <PanelHead
-        look="label"
-        level={3}
-        align="start"
-        titleId={headingId}
-        title={words.title}
-        action={
-          access.editContent ? (
-            <NewButton
-              tone="secondary"
-              size="sm"
-              onClick={onAdd}
-              disabled={busy}
-              data-testid={`add-${kind}`}
-            >
-              {words.add}
-            </NewButton>
-          ) : null
-        }
-      />
-      {items.length === 0 ? (
-        <QuietNote>{words.empty}</QuietNote>
-      ) : (
-        <ul className="plainlist stack">
-          {items.map((item, index) => (
-            <ItemRow
-              key={item.id}
-              kind={kind}
-              name={item.name}
-              description={item.description}
-              universeId={universeId}
-              first={index === 0}
-              last={index === items.length - 1}
-              busy={busy}
-              canEdit={access.editContent}
-              words={{
-                actions: t('progression.items.actions', { name: item.name }),
-                edit: words.edit,
-                remove: words.remove,
-                scenes: t('progression.items.usedIn'),
-                sceneInTrash: (title) => t('progression.era.inTrash', { title }),
-              }}
-              facts={itemFacts(kind, item, appearances)}
-              scenes={item.scenes}
-              onEdit={() => onEdit(item)}
-              onMove={(by) => onMove(item, by)}
-              onRemove={() => onRemove(item)}
-            />
-          ))}
-        </ul>
-      )}
-    </section>
+    <ProgressionSection
+      kind={kind}
+      title={words.title}
+      addLabel={words.add}
+      empty={words.empty}
+      count={items.length}
+      busy={busy}
+      onAdd={onAdd}
+    >
+      {items.map((item, index) => (
+        <ItemRow
+          key={item.id}
+          kind={kind}
+          name={item.name}
+          description={item.description}
+          universeId={universeId}
+          first={index === 0}
+          last={index === items.length - 1}
+          busy={busy}
+          canEdit={access.editContent}
+          words={{
+            actions: t('progression.items.actions', { name: item.name }),
+            edit: words.edit,
+            remove: words.remove,
+            scenes: t('progression.items.usedIn'),
+            sceneInTrash: (title) => t('progression.era.inTrash', { title }),
+          }}
+          facts={itemFacts(kind, item, appearances)}
+          scenes={item.scenes}
+          onEdit={() => onEdit(item)}
+          onMove={(by) => onMove(item, by)}
+          onRemove={() => onRemove(item)}
+        />
+      ))}
+    </ProgressionSection>
   )
 }
 
