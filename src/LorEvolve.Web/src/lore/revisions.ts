@@ -1,4 +1,4 @@
-import { apiFetch, ApiError } from '../lib/api'
+import { apiFetch } from '../lib/api'
 import { t } from '../i18n'
 import type { CanonStatusValue } from './types'
 import type { FieldKindValue } from './fieldKinds'
@@ -135,17 +135,6 @@ export interface EntityRevisionDetail {
   aliases: string[]
   tags: string[]
   fields: RevisionFieldValue[]
-}
-
-/** The constant the restore stamps on its 409 when a version can no longer be replayed. */
-export const REVISION_NOT_RESTORABLE = 'revision_not_restorable'
-
-/**
- * True when this failure is a version that names lore since deleted, rather than a Canon
- * refusal or anything else. The message the API wrote already says what is missing.
- */
-export function isNotRestorable(error: unknown) {
-  return error instanceof ApiError && error.code === REVISION_NOT_RESTORABLE
 }
 
 function base(universeId: string, entityId: string) {

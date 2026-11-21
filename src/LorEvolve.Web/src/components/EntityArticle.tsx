@@ -1,8 +1,9 @@
-import { useId } from 'react'
+import { useId, useMemo } from 'react'
 import { Pencil } from 'lucide-react'
 import { LoreArticle } from './ArticleView'
 import { RecoveredDraft } from './RecoveredDraft'
 import { isEmptyDocument } from '../lore/document'
+import { articleRevisions } from '../lore/articleHistory'
 import { useI18n } from '../i18n'
 import { storedOf, useEntityArticle } from '../lore/useEntityArticle'
 import { useArticleEditing } from '../lore/useArticleEditing'
@@ -63,6 +64,10 @@ export function EntityArticleSection({
   const noteId = useId()
 
   const article = useEntityArticle({ universeId, entityId, entityName, onEditingChange, onSaved })
+  const revisionStore = useMemo(
+    () => articleRevisions(universeId, entityId),
+    [universeId, entityId],
+  )
   const editing = useArticleEditing({ ...article, onSaved })
   const {
     access,
@@ -225,8 +230,10 @@ export function EntityArticleSection({
       stored.updatedAt !== null &&
       access.manageHistory ? (
         <ArticleHistory
-          universeId={universeId}
-          entityId={entityId}
+          store={revisionStore}
+          renderVersion={(detail) =>
+            isEmptyDocument(detail.content) ? null : <LoreArticle content={detail.content} />
+          }
           reloadKey={historyKey}
           current={stored}
           onRestored={(article) => {

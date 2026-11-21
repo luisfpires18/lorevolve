@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react'
 import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { findMentions } from '../lore/mentions'
-import { ManuscriptHistory } from './ManuscriptHistory'
+import { findMentions, plainMentions } from '../lore/mentions'
+import { ArticleHistory } from './lore/ArticleHistory'
+import {
+  manuscriptHistoryWords,
+  manuscriptPanel,
+  useManuscriptRevisions,
+} from '../stories/manuscriptHistory'
 import type { Chronology } from '../chronology/types'
 import { sceneWhen } from '../stories/format'
 import { MANUSCRIPT_MAX_LENGTH, type Chapter, type Scene } from '../stories/types'
@@ -102,6 +107,7 @@ export function ManuscriptEditor({
   } = state
 
   useManuscriptLoad({ ...state, universeId, storyId })
+  const revisionStore = useManuscriptRevisions(universeId, storyId, sceneId)
 
   const isReady = load.kind === 'ready'
   const isDirty = isReady && draft !== stored.content
@@ -192,22 +198,26 @@ export function ManuscriptEditor({
       />
 
       {isHistoryOpen && access.manageHistory ? (
-        <ManuscriptHistory
-          id={historyId}
-          universeId={universeId}
-          storyId={storyId}
-          sceneId={sceneId}
+        <ArticleHistory
+          store={revisionStore}
+          words={manuscriptHistoryWords()}
+          renderVersion={(detail, revision) =>
+            detail.content === '' ? null : (
+              <div
+                className="recovery__prose prose"
+                role="region"
+                aria-label={t('manuscript.history.textOf', { number: revision.number })}
+                tabIndex={0}
+              >
+                {plainMentions(detail.content)}
+              </div>
+            )
+          }
+          testId="manuscript"
+          messageTestId="manuscript-history-message"
+          panel={manuscriptPanel(historyId, { isReady, recovered: Boolean(offer), isDirty })}
           reloadKey={historyKey}
           current={stored}
-          blocked={
-            !isReady
-              ? t('manuscript.editor.blocked.opening')
-              : offer
-                ? t('manuscript.editor.blocked.recovered')
-                : isDirty
-                  ? t('manuscript.editor.blocked.unsaved')
-                  : null
-          }
           onRestored={(restored) => {
             setStored(storedOf(restored))
             setDraft(restored.content)
