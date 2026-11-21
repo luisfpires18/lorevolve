@@ -1,83 +1,61 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import type { Chronology } from '../chronology/types'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import type { EntitySummary } from '../lore/types'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
 import { useEntitySearch } from '../lore/useEntitySearch'
 import { listKeyDown, useCloseOnOutside, useKeepListInView } from './entityPickerList'
-import { EntityPickerCreate } from './lore/EntityPickerCreate'
+import { PickerOptions } from './PickerOptions'
+import { QuickCreateDialog } from './QuickCreateDialog'
+import { QuietNote } from './QuietNote'
+import { Token } from './Token'
 import { usePickerQuickCreate } from '../lore/usePickerQuickCreate'
 import { Button } from './Button'
+import type { EntityPickerProps } from './entityPickerTypes'
 
-/** What a picker hands back: enough to show a name without a second request. */
-export interface EntityChoice {
-  id: string
-  name: string
-  /** The entry's type, where a chooser keeps it to tell two of the same name apart. */
-  typeName?: string
-}
+export type { EntityChoice, QuickCreateOptions } from './entityPickerTypes'
 
-/**
- * Quick Create (Issue #25), which a picker offers only when it is given this: an entry's link fields and its relation's
- * other end, for someone who may create Lore. Every other picker leaves it out and is unchanged.
- */
-export interface QuickCreateOptions {
-  /** For a required number that is a year in one of the universe's date periods. */
-  chronology: Chronology
-  /** Said once the new entry exists: what still has to be saved for the choice to be kept. */
-  keepHint: string
-}
-
-interface EntityPickerProps {
-  label: string
-  /** Draws " (required)" after the field's label; the listbox keeps the plain name. */
-  requiredMark?: boolean
-  universeId: string
-  /** The entity currently chosen, so the field can show its name rather than an id. */
-  value: EntityChoice | null
-  onChange: (choice: EntityChoice | null) => void
-  /** Left out of the results. Normally the entry being edited. */
-  excludeId?: string
-  /** Only entries whose type is enabled for the Family Tree. */
-  familyTreeOnly?: boolean
-  /**
-   * Only entries of this type or a type nested beneath it, searched for by the API rather than filtered here: a link field
-   * limited to one type (Issue #61). Null or left out offers every type.
-   */
-  entityTypeId?: string | null
-  /** Only entries whose type is in this semantic group: a link field limited to a group. */
-  entityTypeGroupId?: string | null
-  placeholder?: string
-  error?: string
-  /** Offers Create "..." beside the matches (Issue #25). Left out, the picker only finds entries that exist. */
-  quickCreate?: QuickCreateOptions | null
-}
-
-/** One entity, or none. Used for a relation's other end and for the timeline filter. */
+/** One entity, or none; with `multiple`, several. Used for a relation's other end, the timeline filter and a scene's cast. */
 export function EntityPicker({
   label,
   requiredMark,
+  hint,
   universeId,
-  value,
-  onChange,
   excludeId,
   familyTreeOnly = false,
   entityTypeId = null,
   entityTypeGroupId = null,
   placeholder: customPlaceholder,
   error,
-  quickCreate = null,
+  quickCreate: offered = null,
+  ...pick
 }: EntityPickerProps) {
   const { t, tx } = useI18n()
-  const placeholder = customPlaceholder ?? t('entity.picker.placeholder')
+  const multiple = pick.multiple === true
+  const quickCreate = multiple ? null : offered
+  // The several-entities picker keeps its own words and test ids (`participant-*`).
+  const words = multiple ? 'entity.multiPicker' : 'entity.picker'
+  const prefix = multiple ? 'participant' : 'picker'
+  const placeholder = customPlaceholder ?? t(`${words}.placeholder`)
   const inputId = useId()
   const listId = useId()
   const noteId = useId()
+  // `pick` is a union, so what each mode needs is read once: `chosen` is the single choice, `chosenMany` the list.
+  const chosen = pick.multiple ? null : pick.value
+  const chosenMany = pick.multiple ? pick.value : []
 
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const { creating, focusAfterCreate, createName, startCreate, finishCreate, note } =
-    usePickerQuickCreate({ quickCreate, query, setQuery, setIsOpen, value, onChange })
+    usePickerQuickCreate({
+      quickCreate,
+      query,
+      setQuery,
+      setIsOpen,
+      value: chosen,
+      onChange: (choice) => {
+        if (!pick.multiple) pick.onChange(choice)
+      },
+    })
 
   const wrapper = useRef<HTMLDivElement>(null)
   const list = useRef<HTMLUListElement>(null)
@@ -88,7 +66,7 @@ export function EntityPicker({
     universeId,
     query,
     isOpen,
-    excludeId ? [excludeId] : [],
+    [...(excludeId ? [excludeId] : []), ...chosenMany.map((choice) => choice.id)],
     familyTreeOnly,
     entityTypeId,
     entityTypeGroupId,
@@ -100,7 +78,7 @@ export function EntityPicker({
   // Change removes the button that was pressed, so the focus follows to the search box that replaces it rather than falling
   // to the page.
   useEffect(() => {
-    if (focusInput.current && !value) {
+    if (focusInput.current && !chosen) {
       focusInput.current = false
       input.current?.focus()
     }
@@ -112,148 +90,180 @@ export function EntityPicker({
   })
 
   function choose(item: EntitySummary) {
-    onChange({ id: item.id, name: item.name, typeName: item.entityTypeName })
-    setIsOpen(false)
+    if (pick.multiple) {
+      pick.onChange([...pick.value, { id: item.id, name: item.name }])
+    } else {
+      pick.onChange({ id: item.id, name: item.name, typeName: item.entityTypeName })
+      setIsOpen(false)
+    }
     setQuery('')
   }
 
+  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    // Backspace on an empty field takes the last one back off, as it does for tags.
+    if (pick.multiple && event.key === 'Backspace' && query === '' && pick.value.length > 0) {
+      pick.onChange(pick.value.slice(0, -1))
+      return
+    }
+    listKeyDown(event, {
+      isOpen,
+      open: () => setIsOpen(true),
+      close: () => setIsOpen(false),
+      results,
+      active,
+      setActive,
+      choose,
+      extra: startCreate,
+    })
+  }
+
   return (
-    <Field label={label} requiredMark={requiredMark} id={inputId} className="picker" error={error}>
-      {(control) => (
-        <div ref={wrapper}>
-          {value ? (
-            <p className="picker__chosen">
-              <span className="picker__chosenname">
-                <bdi>{value.name}</bdi>
-              </span>
-              <Button
-                tone="secondary"
-                size="sm"
-                ref={change}
-                aria-describedby={note ? noteId : undefined}
-                onClick={() => {
-                  focusInput.current = true
-                  onChange(null)
-                  setIsOpen(true)
-                }}
-                data-testid="picker-clear"
-              >
-                {t('entity.picker.change')}
-              </Button>
-            </p>
-          ) : (
-            <>
-              <input
-                {...control}
-                ref={input}
-                className="field__input"
-                type="text"
-                role="combobox"
-                autoComplete="off"
-                aria-expanded={isOpen}
-                aria-controls={listId}
-                aria-autocomplete="list"
-                aria-activedescendant={
-                  isOpen && results[active]
-                    ? `${listId}-${results[active].id}`
-                    : isOpen && startCreate && active === results.length
-                      ? `${listId}-create`
-                      : undefined
-                }
-                placeholder={placeholder}
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value)
-                  setIsOpen(true)
-                }}
-                onFocus={() => setIsOpen(true)}
-                onKeyDown={(event) =>
-                  listKeyDown(event, {
-                    isOpen,
-                    open: () => setIsOpen(true),
-                    close: () => setIsOpen(false),
-                    results,
-                    active,
-                    setActive,
-                    choose,
-                    extra: startCreate,
-                  })
-                }
-                data-testid="picker-input"
-              />
-
-              {isOpen ? (
-                <ul
-                  className="picker__list"
-                  id={listId}
-                  role="listbox"
-                  aria-label={label}
-                  ref={list}
-                >
-                  {results.map((item, index) => (
-                    <li key={item.id}>
-                      <button
-                        id={`${listId}-${item.id}`}
-                        className="picker__option"
-                        type="button"
-                        role="option"
-                        aria-selected={index === active}
-                        onMouseEnter={() => setActive(() => index)}
-                        onClick={() => choose(item)}
-                        data-testid={`picker-option-${item.name}`}
-                      >
-                        <span className="picker__name">
-                          <bdi>{item.name}</bdi>
-                        </span>
-                        <span className="picker__kind">
-                          <bdi>{item.entityTypeName}</bdi>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-
-                  {results.length === 0 ? (
-                    <li className="picker__none">
-                      {isSearching ? t('entity.picker.looking') : t('entity.picker.none')}
-                    </li>
-                  ) : null}
-
-                  {startCreate ? (
-                    <li>
-                      <button
-                        id={`${listId}-create`}
-                        className="picker__option picker__create"
-                        type="button"
-                        role="option"
-                        aria-selected={active === results.length}
-                        onMouseEnter={() => setActive(() => results.length)}
-                        onClick={startCreate}
-                        data-testid="picker-create"
-                      >
-                        <span className="picker__name">
-                          {tx('entity.picker.create', { name: <bdi>{createName}</bdi> })}
-                        </span>
-                        <span className="picker__kind">{t('entity.picker.newEntry')}</span>
-                      </button>
-                    </li>
-                  ) : null}
-                </ul>
-              ) : null}
-            </>
-          )}
-
-          <EntityPickerCreate
-            universeId={universeId}
-            quickCreate={quickCreate}
-            noteId={noteId}
-            note={note}
-            creating={creating}
-            entityTypeId={entityTypeId}
-            entityTypeGroupId={entityTypeGroupId}
-            finishCreate={finishCreate}
+    <Field
+      label={label}
+      requiredMark={requiredMark}
+      id={inputId}
+      className="picker"
+      hint={hint}
+      error={error}
+    >
+      {(control) => {
+        const search = (
+          <input
+            {...control}
+            ref={input}
+            className={multiple ? 'tokens__input' : 'field__input'}
+            type="text"
+            role="combobox"
+            autoComplete="off"
+            aria-expanded={isOpen}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={
+              isOpen && results[active]
+                ? `${listId}-${results[active].id}`
+                : isOpen && startCreate && active === results.length
+                  ? `${listId}-create`
+                  : undefined
+            }
+            placeholder={chosenMany.length === 0 ? placeholder : ''}
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setIsOpen(true)
+            }}
+            onFocus={() => setIsOpen(true)}
+            onKeyDown={onKeyDown}
+            data-testid={`${prefix}-input`}
           />
-        </div>
-      )}
+        )
+        const options = isOpen ? (
+          <PickerOptions
+            id={listId}
+            label={label}
+            listRef={list}
+            results={results}
+            active={active}
+            setActive={setActive}
+            onChoose={choose}
+            testPrefix={prefix}
+            emptyText={isSearching ? t(`${words}.looking`) : t(`${words}.none`)}
+            startCreate={startCreate}
+            createName={createName}
+          />
+        ) : null
+
+        return (
+          <div ref={wrapper}>
+            {pick.multiple ? (
+              <>
+                <div className="tokens" data-testid="participants">
+                  {pick.value.map((choice) => (
+                    <Token
+                      key={choice.id}
+                      removeLabel={t('entity.multiPicker.remove', { name: choice.name })}
+                      onRemove={() =>
+                        pick.onChange(pick.value.filter((other) => other.id !== choice.id))
+                      }
+                      removeTestId={`participant-remove-${choice.name}`}
+                    >
+                      <bdi>{choice.name}</bdi>
+                    </Token>
+                  ))}
+                  {search}
+                </div>
+                {options}
+              </>
+            ) : chosen ? (
+              <p className="picker__chosen">
+                <span className="picker__chosenname">
+                  <bdi>{chosen.name}</bdi>
+                </span>
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  ref={change}
+                  aria-describedby={note ? noteId : undefined}
+                  onClick={() => {
+                    focusInput.current = true
+                    pick.onChange(null)
+                    setIsOpen(true)
+                  }}
+                  data-testid="picker-clear"
+                >
+                  {t('entity.picker.change')}
+                </Button>
+              </p>
+            ) : (
+              <>
+                {search}
+                {options}
+              </>
+            )}
+
+            {quickCreate ? (
+              // Announced as it appears: the entry exists now, the choice does not until the form it sits in is saved.
+              <QuietNote
+                className="picker__created"
+                size="ui"
+                wrap
+                testId="picker-created"
+                id={noteId}
+                role="status"
+              >
+                {note
+                  ? tx('entity.picker.created', {
+                      name: <bdi>{note.name}</bdi>,
+                      hint: quickCreate.keepHint,
+                      link: (
+                        <a
+                          href={`/app/universes/${universeId}/lore/${note.id}`}
+                          target="_blank"
+                          rel="noopener"
+                          data-testid="picker-created-open"
+                        >
+                          {t('entity.picker.openFull')}
+                        </a>
+                      ),
+                    })
+                  : null}
+              </QuietNote>
+            ) : null}
+
+            {creating !== null && quickCreate ? (
+              <QuickCreateDialog
+                universeId={universeId}
+                initialName={creating}
+                entityTypeId={entityTypeId}
+                entityTypeGroupId={entityTypeGroupId}
+                chronology={quickCreate.chronology}
+                onCreated={(choice) => finishCreate(choice, true)}
+                onChooseExisting={(choice) => finishCreate(choice, false)}
+                onCancel={() => finishCreate(null, false)}
+              />
+            ) : null}
+          </div>
+        )
+      }}
     </Field>
   )
 }
