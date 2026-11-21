@@ -6,8 +6,8 @@ import type { SystemSummary } from '../../worldLogic/types'
 import { useReadOnOpen } from '../../lib/useReadOnOpen'
 import { LinkRow } from '../LinkRow'
 import { Button } from '../Button'
-import { LoadingNote } from '../LoadingNote'
 import { Callout } from '../Callout'
+import { DisclosurePanel } from '../DisclosurePanel'
 
 /**
  * One System, and the rule definitions it references once the author opens it.
@@ -64,17 +64,15 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
         </Button>
       ) : null}
 
-      <div id={panelId} hidden={!open} data-testid="world-logic-system-rules">
-        {failed ? (
-          <Callout look="notice" tone="error" as="p" role="alert">
-            {t('canon.worldLogic.systems.readFailed')}
-          </Callout>
-        ) : null}
-
-        {open && !detail && !failed ? (
-          <LoadingNote>{t('canon.worldLogic.systems.loading')}</LoadingNote>
-        ) : null}
-
+      <DisclosurePanel
+        id={panelId}
+        open={open}
+        loaded={!!detail}
+        failed={failed}
+        failedText={t('canon.worldLogic.systems.readFailed')}
+        loadingText={t('canon.worldLogic.systems.loading')}
+        testId="world-logic-system-rules"
+      >
         {detail && detail.rules.length > 0 ? (
           <ul className="rulelist">
             {detail.rules.map((rule) => (
@@ -105,7 +103,7 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
             {t('canon.worldLogic.systems.noRules')}
           </Callout>
         ) : null}
-      </div>
+      </DisclosurePanel>
     </LinkRow>
   )
 }

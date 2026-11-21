@@ -127,7 +127,7 @@ test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
       [c('SegmentedControl'), 'the shared part'],
       [c('ViewChips'), 'the shared part'],
       ...list('a canvas node or a map pin', [
-        'ideas/BoardCardButton',
+        'CanvasCardButton',
         'worldLogic/MachineStateCard',
         'worldLogic/MachineLineLabel',
         'maps/MapViewerLayer',
