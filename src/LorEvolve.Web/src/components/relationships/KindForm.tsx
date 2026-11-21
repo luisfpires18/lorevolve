@@ -1,11 +1,10 @@
 import { t } from '../../i18n'
-import { CheckField } from '../CheckField'
 import { Field } from '../Field'
 import type { TypeDraft } from '../../relationships/typeDraft'
 import { KindFormCanon } from './KindFormCanon'
 import { KindFormFamily } from './KindFormFamily'
 import { FormActions } from '../FormActions'
-import { QuietNote } from '../QuietNote'
+import { KindFields } from '../KindFields'
 
 export function KindForm({
   draft,
@@ -28,40 +27,22 @@ export function KindForm({
 }) {
   return (
     <div className="reltype__form" data-testid="relationship-type-form">
-      <Field
-        label={t('relationships.types.readsAs')}
-        name="reltype-name"
-        placeholder={t('relationships.types.readsAsPlaceholder')}
-        dir="auto"
-        value={draft.name}
-        onChange={(event) => edit({ name: event.target.value })}
-        error={fieldErrors.name}
-      />
-
-      {draft.isSymmetric ? (
-        <QuietNote spacing="block">
-          {t('relationships.types.bothRead', {
-            name: draft.name.trim() || t('relationships.types.thisFallback'),
-          })}
-        </QuietNote>
-      ) : (
-        <Field
-          label={t('relationships.types.readsAsOther')}
-          name="reltype-inverse"
-          placeholder={t('relationships.types.readsAsOtherPlaceholder')}
-          dir="auto"
-          value={draft.inverseName}
-          onChange={(event) => edit({ inverseName: event.target.value })}
-          error={fieldErrors.inversename}
-        />
-      )}
-
-      <CheckField
-        className="field--flow"
-        label={t('relationships.types.symmetric')}
-        checked={draft.isSymmetric}
-        onChange={(isSymmetric) => edit({ isSymmetric })}
-        testId="reltype-symmetric"
+      <KindFields
+        draft={draft}
+        edit={edit}
+        fieldErrors={fieldErrors}
+        idPrefix="reltype"
+        words={{
+          name: t('relationships.types.readsAs'),
+          namePlaceholder: t('relationships.types.readsAsPlaceholder'),
+          inverse: t('relationships.types.readsAsOther'),
+          inversePlaceholder: t('relationships.types.readsAsOtherPlaceholder'),
+          symmetric: t('relationships.types.symmetric'),
+        }}
+        bothWays={t('relationships.types.bothRead', {
+          name: draft.name.trim() || t('relationships.types.thisFallback'),
+        })}
+        bothWaysSpacing="block"
       />
 
       <Field

@@ -45,7 +45,6 @@ const STAYS: string[] = [
   'src/components/CommentThreadItem.tsx',
   'src/components/ConnectToAi.tsx',
   'src/components/EntityPicker.tsx',
-  'src/components/FamilyKindDialog.tsx',
   'src/components/FeedbackButton.tsx',
   'src/components/Field.tsx',
   'src/components/FieldInputs.tsx',
