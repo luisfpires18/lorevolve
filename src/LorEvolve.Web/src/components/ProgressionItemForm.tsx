@@ -1,10 +1,10 @@
 import { ScenePicks } from './ScenePicks'
 import { useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
-import { Drawer } from './Drawer'
 import { Field } from './Field'
 import type { Progression } from '../progression/types'
 import {
+  DESCRIPTION_MAX,
   LISTS,
   draftOf,
   inputOf,
@@ -17,12 +17,10 @@ import {
 } from '../progression/itemDraft'
 import { useItemFormState } from '../progression/useItemFormState'
 import { itemFormActions } from '../progression/itemFormActions'
-import { ProgressionConflict } from './progression/ProgressionConflict'
-import { ItemNameFields } from './progression/ItemNameFields'
+import { ProgressionDrawer } from './progression/ProgressionDrawer'
+import { NameNoteFields } from './NameNoteFields'
 import { ItemUnlockField } from './progression/ItemUnlockField'
 import { Button } from './Button'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 /**
  * One form or one ability of an entry (Issue #42), in the drawer every LorEvolve form uses: what it is; when it was first unlocked
@@ -55,21 +53,7 @@ export function ProgressionItemForm({
   const { t } = useI18n()
   const state = useItemFormState({ progression, item })
   const words = wordsOf(kind)
-  const {
-    nameInput,
-    saveButton,
-    base,
-    setBase,
-    initial,
-    setInitial,
-    draft,
-    setDraft,
-    fieldErrors,
-    message,
-    isSaving,
-    conflict,
-    setConflict,
-  } = state
+  const { nameInput, base, initial, setInitial, draft, fieldErrors } = state
 
   const isDirty = payloadKey(inputOf(draft, null)) !== payloadKey(inputOf(initial, null))
 
@@ -94,9 +78,11 @@ export function ProgressionItemForm({
   const unlockAt = base.eras.findIndex((era) => era.id === draft.unlockEraId)
 
   return (
-    <Drawer
-      initialFocus={nameInput}
-      testId={`${kind}-form`}
+    <ProgressionDrawer
+      name={kind}
+      universeId={universeId}
+      entityId={entityId}
+      state={state}
       titleId="item-heading"
       eyebrow={item ? words.eyebrow(entityName) : words.eyebrowNew(entityName)}
       title={heading}
@@ -104,48 +90,40 @@ export function ProgressionItemForm({
       leaveMessage={
         item ? t('progression.item.unsavedExisting', { name: nameOf(item) }) : words.unsaved
       }
-      busy={isSaving}
+      submitLabel={item ? words.save : words.add}
+      busyLabel={item ? t('progression.item.saving') : t('progression.item.adding')}
+      conflict={{
+        what: t('progression.item.conflictWhat'),
+        names: (latest) => listOf(latest, kind).map((one) => ({ id: one.id, name: nameOf(one) })),
+        draftFrom: (latest) =>
+          draftOf(listOf(latest, kind).find((one) => one.id === item?.id) ?? null),
+        onUseLatest: setInitial,
+      }}
       onClose={onClose}
-      onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={item ? words.save : words.add}
-          busy={isSaving}
-          busyLabel={item ? t('progression.item.saving') : t('progression.item.adding')}
-          submitTestId={`save-${kind}`}
-          submitRef={saveButton}
-          onCancel={close}
-        />
-      )}
+      onSave={() => void save()}
     >
-      {message ? <FormMessage testId={`${kind}-error`}>{message}</FormMessage> : null}
-
-      {conflict ? (
-        <ProgressionConflict
-          universeId={universeId}
-          entityId={entityId}
-          what={t('progression.item.conflictWhat')}
-          testId={`${kind}-conflict`}
-          names={(latest) => listOf(latest, kind).map((one) => ({ id: one.id, name: nameOf(one) }))}
-          draftFrom={(latest) =>
-            draftOf(listOf(latest, kind).find((one) => one.id === item?.id) ?? null)
-          }
-          setBase={setBase}
-          setDraft={setDraft}
-          onUseLatest={setInitial}
-          setConflict={setConflict}
-          nameInput={nameInput}
-          saveButton={saveButton}
-        />
-      ) : null}
-
-      <ItemNameFields
-        kind={kind}
-        isLook={isLook}
-        draft={draft}
-        edit={edit}
-        errorOf={errorOf}
-        nameInput={nameInput}
+      <NameNoteFields
+        idPrefix="item"
+        labels={{
+          name: isLook ? t('progression.item.label') : t('progression.item.name'),
+          note: isLook ? t('progression.item.notes') : t('progression.item.whatItIs'),
+        }}
+        placeholder={
+          isLook ? t('progression.item.labelPlaceholder') : t('progression.item.namePlaceholder')
+        }
+        hint={
+          kind === 'form'
+            ? t('progression.item.hint.form')
+            : kind === 'ability'
+              ? t('progression.item.hint.ability')
+              : t('progression.item.hint.appearance')
+        }
+        maxLength={DESCRIPTION_MAX}
+        value={{ name: draft.name, note: draft.description }}
+        onChange={(part, value) => edit(part === 'name' ? { name: value } : { description: value })}
+        errors={{ name: errorOf('name'), note: errorOf('description') }}
+        testIds={{ name: `${kind}-name-input`, note: `${kind}-description-input` }}
+        nameRef={nameInput}
       />
 
       {isLook ? null : (
@@ -228,6 +206,6 @@ export function ProgressionItemForm({
           ))}
         </Field>
       ) : null}
-    </Drawer>
+    </ProgressionDrawer>
   )
 }
