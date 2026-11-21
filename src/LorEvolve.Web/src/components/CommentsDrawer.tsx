@@ -161,13 +161,19 @@ export function CommentsDrawer<T>({
         ) : (
           <>
             {open.length > 0 ? (
-              <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
+              <section
+                className="stack stack--3 reviewsection"
+                aria-labelledby={`${headingId}-open`}
+              >
                 <h3 className="reviewsection__title" id={`${headingId}-open`}>
                   {tx('review.comments.open', {
                     n: <HeadingCount n={open.length} />,
                   })}
                 </h3>
-                <ol className="reviewsection__list" data-testid="comments-open">
+                <ol
+                  className="plainlist stack stack--4 reviewsection__list"
+                  data-testid="comments-open"
+                >
                   {open.map((thread) => (
                     <CommentThreadItem
                       key={thread.id}
@@ -189,13 +195,19 @@ export function CommentsDrawer<T>({
               </section>
             ) : null}
             {resolved.length > 0 ? (
-              <details className="reviewsection" data-testid="comments-resolved-group">
+              <details
+                className="stack stack--3 reviewsection"
+                data-testid="comments-resolved-group"
+              >
                 <summary className="reviewsection__title">
                   {tx('review.comments.resolved', {
                     n: <HeadingCount n={resolved.length} />,
                   })}
                 </summary>
-                <ol className="reviewsection__list" data-testid="comments-resolved">
+                <ol
+                  className="plainlist stack stack--4 reviewsection__list"
+                  data-testid="comments-resolved"
+                >
                   {resolved.map((thread) => (
                     <CommentThreadItem
                       key={thread.id}

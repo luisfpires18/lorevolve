@@ -47,7 +47,7 @@ export function ArchivedFields({
         {t('entityTypes.fields.archivedLede', { name: type.name })}
       </QuietNote>
       <ul
-        className="fieldlist"
+        className="plainlist stack"
         aria-label={t('entityTypes.fields.archivedLabel', { name: type.name })}
       >
         {archived.map((field) => (

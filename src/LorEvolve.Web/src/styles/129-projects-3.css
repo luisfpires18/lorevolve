@@ -108,14 +108,6 @@
     inset 0 0 0 1px color-mix(in oklab, white 14%, transparent);
 }
 
-.filmstrip__frame img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 /*
  * The comic issue: a 2:3 cover in a heavy ink keyline with the hard offset shadow of printed comics, a masthead band in
  * the theme's accent across the top. The picture runs full bleed under the masthead.
@@ -173,14 +165,6 @@
     color-mix(in oklab, var(--accent) 62%, black),
     color-mix(in oklab, var(--accent) 48%, black)
   );
-}
-
-.comic__cover img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 /* The one hover: the object lifts off the shelf, as a thing picked up does. */

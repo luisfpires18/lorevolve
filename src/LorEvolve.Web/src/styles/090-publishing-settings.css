@@ -47,12 +47,6 @@
   overflow-wrap: anywhere;
 }
 
-.publication__heading {
-  font-size: var(--text-ui);
-  font-weight: 600;
-  margin: var(--space-6) 0 var(--space-3);
-}
-
 .publication__genres {
   min-width: 0;
   margin: 0 0 var(--space-4);
@@ -196,16 +190,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.usage__kind + .usage__kind {
-  margin-top: var(--space-4);
-}
-
-.usage__kind-name {
-  margin: 0 0 var(--space-1);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
 .usage__percent {
   color: var(--muted);
 }
@@ -214,7 +198,6 @@
   background: var(--danger);
 }
 
-.usage__left,
 .usage__full,
 .usage__status {
   margin: var(--space-3) 0 0;

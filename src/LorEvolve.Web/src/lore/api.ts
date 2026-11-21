@@ -7,7 +7,6 @@ import type {
   EntityInput,
   EntityPage,
   EntityQuery,
-  TagSummary,
 } from './types'
 
 export const ENTITY_PAGE_SIZE = 12
@@ -117,8 +116,4 @@ export function bulkTrashEntities(universeId: string, entityIds: string[]) {
 
 export function deleteEntity(universeId: string, entityId: string) {
   return apiFetch<void>(`${base(universeId)}/entities/${entityId}`, { method: 'DELETE' })
-}
-
-export function listTags(universeId: string, signal?: AbortSignal) {
-  return apiFetch<TagSummary[]>(`${base(universeId)}/tags`, { signal })
 }

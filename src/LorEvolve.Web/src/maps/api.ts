@@ -144,6 +144,3 @@ export function listEntityMapPins(universeId: string, entityId: string, signal?:
 
 /** A stable code on a refused pin: the entry is already pinned on this map, by the pin the problem names. */
 export const DUPLICATE_LINK_CODE = 'map_pin_duplicate_link'
-
-/** The details were saved over a version that is no longer current. */
-export const MAP_CHANGED_CODE = 'map_changed'

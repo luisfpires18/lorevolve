@@ -34,7 +34,7 @@ export function LoreContextMentioned({
     <>
       {mentioned.length > 0 ? (
         <section
-          className="lorecontext__group"
+          className="stack stack--3 lorecontext__group"
           aria-labelledby={`${headingId}-mentioned`}
           data-testid="lore-context-mentions"
         >

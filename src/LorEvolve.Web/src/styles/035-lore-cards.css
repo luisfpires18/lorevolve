@@ -90,30 +90,6 @@
   text-decoration: underline;
 }
 
-/* A game entry's own page (#286): the picture beside the description, stacked on a phone. */
-.entitydetail {
-  display: grid;
-  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
-  gap: var(--space-6);
-  align-items: start;
-}
-
-.entitydetail__media {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-@media (max-width: 40rem) {
-  .entitydetail {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .entitydetail__media {
-    max-width: 14rem;
-  }
-}
-
 .entitycard__actions {
   position: absolute;
   top: var(--space-2);

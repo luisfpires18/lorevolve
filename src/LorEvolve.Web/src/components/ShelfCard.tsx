@@ -136,7 +136,7 @@ export function ShelfCard({
         </Link>
       </h3>
       <div className="shelfcard__text">
-        <div className="shelfcard__status">
+        <div className="actions">
           <StatusBadge step={step} label={statusLabel} />
           {meta ? <span className="shelfcard__meta">{meta}</span> : null}
         </div>

@@ -22,7 +22,7 @@ export function CommentNewForm({
   const { t } = useI18n()
   return (
     <form
-      className="reviewform"
+      className="stack stack--2"
       onSubmit={(event) => {
         event.preventDefault()
         void post()

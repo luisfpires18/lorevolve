@@ -149,7 +149,7 @@ export function SchemaTypeItem({
           ) : (
             <>
               <InheritedFields type={type} inherited={inherited} summary={summary} />
-              <ul className="fieldlist" data-testid={`project-type-fields-${type.id}`}>
+              <ul className="plainlist stack" data-testid={`project-type-fields-${type.id}`}>
                 {type.fields.map((field) => (
                   <TypeFieldRow
                     key={field.id}

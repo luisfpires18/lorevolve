@@ -86,7 +86,7 @@ export function CopyPanel({
     <Callout
       look="callout"
       as="section"
-      className="entrycopy"
+      className="stack stack--2 entrycopy"
       labelledBy="entry-copy-title"
       testId="entry-copy"
       title={

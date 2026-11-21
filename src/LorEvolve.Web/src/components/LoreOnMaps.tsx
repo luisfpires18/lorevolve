@@ -23,7 +23,7 @@ export function LoreOnMaps({ universeId, entityId }: { universeId: string; entit
   if (state.kind !== 'ready' || state.value.length === 0) return null
 
   return (
-    <div className="rail__block" data-testid="entry-maps">
+    <div className="stack stack--2" data-testid="entry-maps">
       <SectionTitle level={2} tone="label">
         {t('lore.onMaps.heading')}
       </SectionTitle>

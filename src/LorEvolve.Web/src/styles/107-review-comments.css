@@ -5,12 +5,6 @@
    as its tooltip; the story's line of facts wraps and keeps the word. A thread is a column of
    comments, replies set in under a rule; resolved threads fold away under their own heading. */
 
-.reviewform {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 /* The owner's private note (issue 23): one tall box and its save under it, inside the shared drawer. */
 .privatenote__text {
   min-height: 16rem;

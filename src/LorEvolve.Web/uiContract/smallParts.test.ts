@@ -8,7 +8,15 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { classStrings, elements, read, tsxFiles, webRoot } from './support.ts'
+import {
+  classStrings,
+  elements,
+  read,
+  rulesOf,
+  stripComments,
+  tsxFiles,
+  webRoot,
+} from './support.ts'
 import { monogram } from '../src/lib/monogram.ts'
 
 const srcFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
@@ -18,8 +26,6 @@ const tsFiles = srcFiles.filter((file) => /\.tsx?$/.test(file))
 const cssFiles = srcFiles.filter((file) => file.endsWith('.css'))
 
 const EM_DASH = String.fromCharCode(0x2014)
-const stripComments = (code: string) =>
-  code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
 const tokens = (source: string) => classStrings(source).flatMap((value) => value.split(/\s+/))
 
 /** The files a check finds must be exactly the allowed ones: a new one is an offender, a missing one is stale. */
@@ -36,13 +42,6 @@ function only(files: string[], check: (source: string) => boolean, allowed: stri
     'stale allowlist entry: remove it',
   )
 }
-
-type Rule = { selector: string; body: string }
-const rulesOf = (css: string): Rule[] =>
-  [...stripComments(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
-    selector: match[1].trim(),
-    body: match[2],
-  }))
 
 // 1. Dates: the formatters are DateText's; RevisionSnapshot returns a field's fact as text, not a node.
 const callsDateFormatter = (source: string) => /\bformatDate(Time)?\(/.test(source)

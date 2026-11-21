@@ -106,7 +106,7 @@ export function EntityImageField({
       <Field
         label={t('entity.image.heading')}
         id={inputId}
-        className="imagefield"
+        className="stack stack--2"
         data-testid="entity-image-field"
         hint={pending ? t('entity.image.hint.pending') : t('entity.image.hint.rules')}
         error={error ?? undefined}

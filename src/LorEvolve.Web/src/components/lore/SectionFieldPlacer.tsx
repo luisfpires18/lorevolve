@@ -27,12 +27,12 @@ export function SectionFieldPlacer({
         {t('entityTypes.sections.fields')}
       </SectionTitle>
       {groups.map((group) => (
-        <div className="sectionfields__group" key={group.key || 'none'}>
+        <div className="stack stack--2" key={group.key || 'none'}>
           <p className="sectionfields__label">
             <bdi>{group.label}</bdi>
           </p>
           <ol
-            className="sectionfields"
+            className="plainlist stack stack--3"
             aria-label={t('entityTypes.sections.fieldsIn', { name: group.label })}
             data-testid={`fields-in-${group.label}`}
           >

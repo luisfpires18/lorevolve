@@ -116,7 +116,7 @@ export function TypeFields({
         </QuietNote>
       ) : sections.length === 0 ? (
         <ul
-          className="fieldlist"
+          className="plainlist stack"
           aria-label={t('entityTypes.fields.listLabel', { name: type.name })}
         >
           {type.fields.map((field) => (
@@ -125,7 +125,7 @@ export function TypeFields({
         </ul>
       ) : layout.ungrouped.length > 0 ? (
         <ul
-          className="fieldlist"
+          className="plainlist stack"
           aria-label={t('entityTypes.fields.listNoSectionLabel', { name: type.name })}
         >
           {layout.ungrouped.map((field) => (
@@ -144,7 +144,7 @@ export function TypeFields({
           </p>
           {items.length > 0 ? (
             <ul
-              className="fieldlist"
+              className="plainlist stack"
               aria-label={t('entityTypes.fields.sectionListLabel', {
                 section: section.name,
                 type: type.name,

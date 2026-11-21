@@ -130,7 +130,7 @@ export function ArticleEditing({
           max={ARTICLE_MAX_LENGTH}
           show="over"
           words={{ tooLong: 'entity.article.tooLong' }}
-          className="article__toolong"
+          toolong
           testId="article-too-long"
         />
         {failed && isDirty ? (

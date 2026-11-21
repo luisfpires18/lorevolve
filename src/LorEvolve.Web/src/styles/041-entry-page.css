@@ -163,12 +163,6 @@
   border-top: 0;
 }
 
-.rail__block {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .rail__meta {
   margin: 0;
   padding-top: var(--space-3);
@@ -206,13 +200,6 @@
   margin: 0;
   font-size: var(--text-ui);
   overflow-wrap: anywhere;
-}
-
-/* An entry's facts in its type's sections (Issue #26): the ungrouped ones first, each section folded or open beneath. */
-.facts__sections {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 /* One section of a type's fields, in the entry form and on the entry: a native fold, named, saying what it holds. */

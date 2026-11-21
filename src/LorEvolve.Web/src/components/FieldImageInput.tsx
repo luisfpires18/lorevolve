@@ -121,7 +121,7 @@ export function FieldImageInput({
       <Field
         label={name}
         id={inputId}
-        className="imagefield"
+        className="stack stack--2"
         data-testid={`field-image-${fieldId}`}
         hint={
           <>

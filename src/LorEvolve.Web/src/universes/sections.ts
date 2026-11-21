@@ -165,7 +165,7 @@ const SETTINGS: Section = {
  * The sidebar's world building group (#191): every worldbuilding destination in the owner's order. Chronology is no
  * section of its own: it is Timeline's configuration view (#200).
  */
-export const WORLD_BUILDING: readonly Section[] = [
+const WORLD_BUILDING: readonly Section[] = [
   LORE,
   TYPES,
   FAMILY_TREE,
@@ -186,7 +186,7 @@ export const CREATION: readonly Section[] = [WRITING_PROJECTS, GAMING, CINEMA, C
  * presentation, recovery and configuration. The sidebar sets it off under a rule, and a phone's Sections sheet gives it
  * a row of its own at the foot.
  */
-export const MANAGEMENT: readonly Section[] = [PROJECTS, AI_CHANGES, PUBLISH, TRASH, SETTINGS]
+const MANAGEMENT: readonly Section[] = [PROJECTS, AI_CHANGES, PUBLISH, TRASH, SETTINGS]
 
 /** A labelled group's dictionary key; the front page alone carries no label (#191). */
 export function groupKey(source: readonly Section[]) {
@@ -202,7 +202,7 @@ export function groupKey(source: readonly Section[]) {
  * section any more. Both pages keep every address: Stories are reached through Writing, Canon through World Logic's Integrity tab and
  * the canon block notice. They are listed here only so the workspace can still name the page the author is on.
  */
-export const UNLISTED: readonly Section[] = [STORIES, CANON]
+const UNLISTED: readonly Section[] = [STORIES, CANON]
 
 /** Whether a section is at this address: its own segment, or one of the others it owns. */
 export function owns(section: Section, segment: string) {

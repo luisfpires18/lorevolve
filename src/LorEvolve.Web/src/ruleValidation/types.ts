@@ -51,9 +51,6 @@ export const TERM_KIND_WORDS: Record<ValidationTermKindValue, string> = {
 export const TERM_NAME_MAX_LENGTH = 80
 export const MAX_OCCURRENCES_CEILING = 10_000
 
-/** The code on the 409 for deleting a term something still names. */
-export const VALIDATION_TERM_IN_USE = 'validation_term_in_use'
-
 /** One event kind or method, with how many rules (the Trash included) and moments name it. */
 export interface ValidationTerm {
   id: string

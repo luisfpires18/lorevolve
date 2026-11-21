@@ -101,17 +101,6 @@ export function capabilitiesOf(role: UniverseRoleValue): UniverseCapabilities {
   }
 }
 
-export const canEditContent = (role: UniverseRoleValue) => capabilitiesOf(role).editContent
-export const canManageTrash = (role: UniverseRoleValue) => capabilitiesOf(role).manageTrash
-export const canManageHistory = (role: UniverseRoleValue) => capabilitiesOf(role).manageHistory
-export const canPermanentlyDelete = (role: UniverseRoleValue) =>
-  capabilitiesOf(role).permanentlyDelete
-export const canManageUniverse = (role: UniverseRoleValue) => capabilitiesOf(role).manageUniverse
-export const canPublish = (role: UniverseRoleValue) => capabilitiesOf(role).publish
-export const canBackup = (role: UniverseRoleValue) => capabilitiesOf(role).backup
-export const canManageCollaborators = (role: UniverseRoleValue) =>
-  capabilitiesOf(role).manageCollaborators
-
 /**
  * The open universe's capabilities, provided by its workspace. Outside a universe the default is the owner's, which is
  * what every screen did before collaboration - nothing outside a universe is role-dependent.

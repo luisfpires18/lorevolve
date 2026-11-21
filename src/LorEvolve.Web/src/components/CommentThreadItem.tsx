@@ -45,7 +45,7 @@ export function CommentThreadItem({
       data-testid="comment-thread"
       data-resolved={thread.isResolved ? 'true' : 'false'}
     >
-      <ol className="reviewthread__comments">
+      <ol className="plainlist stack stack--3">
         {thread.comments.map((comment, index) => (
           <li
             className={index === 0 ? 'reviewcomment' : 'reviewcomment reviewcomment--reply'}
