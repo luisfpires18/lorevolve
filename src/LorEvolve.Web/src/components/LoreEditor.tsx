@@ -6,7 +6,6 @@ import { useI18n } from '../i18n'
 import { ALLOWED_LINK_SCHEMES, isSafeHref } from '../lore/document'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
-import { FormActions } from './FormActions'
 
 /**
  * ProseMirror builds DOM nodes from the schema rather than parsing HTML, so authored text
@@ -81,7 +80,7 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
       title={t('lore.editor.link')}
       onClose={onClose}
       onSubmit={apply}
-      actions={(close) => <FormActions submitLabel={t('lore.editor.linkApply')} onCancel={close} />}
+      actions={{ submitLabel: t('lore.editor.linkApply') }}
     >
       <Field
         label={t('lore.editor.linkPrompt')}

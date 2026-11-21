@@ -12,8 +12,6 @@ import {
   type FamilySemanticValue,
   type RelationshipType,
 } from '../relationships/types'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 interface Props {
   universeId: string
@@ -84,19 +82,15 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t('places.kindDialog.create')}
-          busy={isSaving}
-          busyLabel={t('places.kindDialog.creating')}
-          submitTestId="create-family-kind"
-          onCancel={close}
-          cancelTestId="cancel-family-kind"
-        />
-      )}
+      message={message}
+      messageTestId="family-kind-error"
+      actions={{
+        submitLabel: t('places.kindDialog.create'),
+        busyLabel: t('places.kindDialog.creating'),
+        submitTestId: 'create-family-kind',
+        cancelTestId: 'cancel-family-kind',
+      }}
     >
-      {message ? <FormMessage testId="family-kind-error">{message}</FormMessage> : null}
-
       <KindFields
         draft={names}
         edit={(change) => setNames((current) => ({ ...current, ...change }))}
