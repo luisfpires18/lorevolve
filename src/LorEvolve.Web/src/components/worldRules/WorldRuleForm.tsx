@@ -1,4 +1,4 @@
-import { EditorSaveBar } from '../EditorSaveBar'
+import { SaveBar } from '../SaveAction'
 import { Field } from '../Field'
 import { WorldRuleCheckSection } from '../WorldRuleCheckSection'
 import {
@@ -116,7 +116,7 @@ export function WorldRuleForm({
         errors={fieldErrors}
       />
 
-      <EditorSaveBar
+      <SaveBar
         record
         keyShortcuts
         save={{

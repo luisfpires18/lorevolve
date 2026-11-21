@@ -12,7 +12,7 @@ import { FormActions } from '../FormActions'
 import { MachineStates } from './MachineStates'
 import { MachineTransitions } from './MachineTransitions'
 import { MachineBinding } from './MachineBinding'
-import { EditorSaveBar } from '../EditorSaveBar'
+import { SaveBar as EditorSaveBar } from '../SaveAction'
 import { MachineDrawers } from './MachineDrawers'
 import { FormMessage } from '../FormMessage'
 
