@@ -12,8 +12,6 @@ import { draftFrom, inputOf, sceneChangesIn, type SceneDraft } from '../stories/
 import type { Chapter, PlotArc, Scene } from '../stories/types'
 import { useSceneSave } from '../stories/useSceneSave'
 import { SceneFormFields } from './stories/SceneFormFields'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 import { Callout } from './Callout'
 
 interface SceneFormProps {
@@ -150,39 +148,32 @@ export function SceneForm({
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={
-            suggesting
-              ? t('stories.sceneForm.sendSuggestion')
-              : scene
-                ? t('stories.sceneForm.save')
-                : t('stories.sceneForm.add')
-          }
-          busy={isSaving}
-          busyLabel={
-            suggesting
-              ? t('stories.sceneForm.sending')
-              : scene
-                ? t('stories.sceneForm.saving')
-                : t('stories.sceneForm.adding')
-          }
-          disabled={suggesting && !isDirty}
-          submitTestId="save-scene"
-          submitRef={saveButton}
-          onCancel={close}
-          cancelTestId="cancel-scene"
-        />
-      )}
+      notice={
+        suggesting ? (
+          <Callout look="callout" as="p" testId="scene-suggesting">
+            {t('stories.sceneForm.suggestingNote')}
+          </Callout>
+        ) : null
+      }
+      message={message}
+      messageTestId="scene-error"
+      actions={{
+        submitLabel: suggesting
+          ? t('stories.sceneForm.sendSuggestion')
+          : scene
+            ? t('stories.sceneForm.save')
+            : t('stories.sceneForm.add'),
+        busyLabel: suggesting
+          ? t('stories.sceneForm.sending')
+          : scene
+            ? t('stories.sceneForm.saving')
+            : t('stories.sceneForm.adding'),
+        disabled: suggesting && !isDirty,
+        submitTestId: 'save-scene',
+        submitRef: saveButton,
+        cancelTestId: 'cancel-scene',
+      }}
     >
-      {suggesting ? (
-        <Callout look="callout" as="p" testId="scene-suggesting">
-          {t('stories.sceneForm.suggestingNote')}
-        </Callout>
-      ) : null}
-
-      {message ? <FormMessage testId="scene-error">{message}</FormMessage> : null}
-
       {conflict && scene ? (
         <EditConflict
           what={t('stories.sceneForm.conflictNoun')}
