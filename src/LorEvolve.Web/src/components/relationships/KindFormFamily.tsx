@@ -1,12 +1,11 @@
 import { t } from '../../i18n'
-import { Field } from '../Field'
+import { FamilySemanticSelect } from '../FamilySemanticSelect'
 import {
   FAMILY_SEMANTIC_LABELS,
   FAMILY_SEMANTIC_ORDER,
   FAMILY_SEMANTIC_WORDS,
   FamilySemantic,
   isParentSemantic,
-  type FamilySemanticValue,
 } from '../../relationships/types'
 import { FAMILY_KEY, type TypeDraft } from '../../relationships/typeDraft'
 import { QuietNote } from '../QuietNote'
@@ -31,29 +30,20 @@ export function KindFormFamily({
         </QuietNote>
       ) : null}
 
-      <Field
-        as="select"
+      <FamilySemanticSelect
         label={t('relationships.types.familyMeaning')}
         id="reltype-family-meaning"
+        testId="reltype-family-meaning"
         error={fieldErrors[FAMILY_KEY]}
-        value={
-          draft.isSymmetric && isParentSemantic(draft.familySemantic)
-            ? FamilySemantic.None
-            : draft.familySemantic
-        }
-        onChange={(event) =>
-          edit({ familySemantic: Number(event.target.value) as FamilySemanticValue })
-        }
-        data-testid="reltype-family-meaning"
-      >
-        {FAMILY_SEMANTIC_ORDER.filter(
-          (option) => !draft.isSymmetric || !isParentSemantic(option),
-        ).map((option) => (
-          <option key={option} value={option}>
-            {FAMILY_SEMANTIC_LABELS[option]}
-          </option>
-        ))}
-      </Field>
+        options={FAMILY_SEMANTIC_ORDER.map((value) => ({
+          value,
+          label: FAMILY_SEMANTIC_LABELS[value],
+        }))}
+        value={draft.familySemantic}
+        isSymmetric={draft.isSymmetric}
+        fallback={FamilySemantic.None}
+        onChange={(familySemantic) => edit({ familySemantic })}
+      />
 
       {!draft.isSymmetric && isParentSemantic(draft.familySemantic) ? (
         <p className="reltype__direction" data-testid="reltype-family-direction">

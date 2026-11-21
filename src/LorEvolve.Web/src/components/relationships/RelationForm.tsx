@@ -1,13 +1,12 @@
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
-import type { EraChoice } from '../RelationshipPeriodsField'
+import { RelationshipPeriodsField, type EraChoice } from '../RelationshipPeriodsField'
 import type { Chronology } from '../../chronology/types'
 import { labelChoices, type RelationshipType } from '../../relationships/types'
 import type { useUniverseAccess } from '../../universes/access'
 import { labelFor, type RelationDraft } from '../../relationships/relationDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
 import { RelationFormFields } from './RelationFormFields'
-import { RelationFormPeriods } from './RelationFormPeriods'
 import { RelationPreview } from './RelationPreview'
 import { FormActions } from '../FormActions'
 
@@ -76,14 +75,14 @@ export function RelationForm({
         chronology={chronology}
       />
 
-      <RelationFormPeriods
+      <RelationshipPeriodsField
         chronology={chronology}
-        eraChoices={eraChoices}
+        eras={eraChoices}
         ends={ends}
         erasOf={erasOf}
         draft={draft}
         edit={edit}
-        fieldErrors={fieldErrors}
+        errors={fieldErrors}
       />
 
       <Field
