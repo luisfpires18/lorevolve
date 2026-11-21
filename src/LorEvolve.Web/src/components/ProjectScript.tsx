@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { EmptyState } from './EmptyState'
 import { ManuscriptParts } from './ManuscriptParts'
 import { t, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
 import { capital, levelWord } from '../projectEntities/levelWords'
-import { childrenOf, getStructure, type ProjectStructureTree } from '../projectEntities/structure'
+import { childrenOf, getStructure } from '../projectEntities/structure'
 import { projectPath } from '../projects/sections'
 import { scriptParts } from '../projectEntities/scriptParts'
 import { ScriptPart } from './projectEntities/ScriptPart'
-import { errorText } from '../lib/errorText'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -27,29 +26,16 @@ export function ProjectScript({
   universeId: string
 }) {
   const { tx } = useI18n()
-  const [tree, setTree] = useState<ProjectStructureTree | 'none' | null>(null)
-  const [failed, setFailed] = useState<string | null>(null)
   const [params] = useSearchParams()
   const structurePath = projectPath(projectId, 'structure', universeId)
   const scriptPath = projectPath(projectId, 'script', universeId)
 
-  const read = useCallback(
-    (signal?: AbortSignal) =>
-      getStructure(projectId, signal)
-        .then(setTree)
-        .catch((error: unknown) => {
-          if (signal?.aborted) return
-          if (error instanceof ApiError && error.status === 404) setTree('none')
-          else setFailed(errorText(error, t('projects.structure.failed')))
-        }),
-    [projectId],
-  )
-
-  useEffect(() => {
-    const controller = new AbortController()
-    void read(controller.signal)
-    return () => controller.abort()
-  }, [read])
+  // A 404 is a project with no format yet. A save reads again quietly and keeps the parts shown if that read fails.
+  const read = useCallback((signal: AbortSignal) => getStructure(projectId, signal), [projectId])
+  const { load, refresh } = useAsyncRead(read, {
+    missing: true,
+    failed: t('projects.structure.failed'),
+  })
 
   const structureLink = (
     <Link to={structurePath} data-testid="project-script-structure">
@@ -57,15 +43,12 @@ export function ProjectScript({
     </Link>
   )
 
-  if (tree === null) {
-    return failed ? (
-      <FormMessage testId="project-script-failed">{failed}</FormMessage>
-    ) : (
-      <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
-    )
-  }
+  if (load.kind === 'loading')
+    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
+  if (load.kind === 'error')
+    return <FormMessage testId="project-script-failed">{load.message}</FormMessage>
 
-  if (tree === 'none') {
+  if (load.kind === 'missing') {
     return (
       <EmptyState
         title={t('projects.script.noFormat')}
@@ -75,6 +58,7 @@ export function ProjectScript({
     )
   }
 
+  const tree = load.value
   const groups = scriptParts({ tree, scriptPath })
 
   if (groups.length === 0) {
@@ -112,7 +96,7 @@ export function ProjectScript({
           number: siblings.findIndex((node) => node.id === current.id) + 1,
           total: siblings.length,
         })}
-        onSaved={() => void read()}
+        onSaved={refresh}
       />
     </ManuscriptParts>
   )

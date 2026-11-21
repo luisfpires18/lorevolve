@@ -1,42 +1,35 @@
-import { useEffect } from 'react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
 import { t } from '../i18n'
-import { getStory, listStories } from '../stories/api'
-import type { StoryDetail, StorySummary } from '../stories/types'
-import type { Dispatch, SetStateAction } from 'react'
+import type { Load } from '../lib/useAsyncRead'
+import { useStoryScenes } from '../stories/useStoryScenes'
+import { useUniverseStories } from '../stories/useUniverseStories'
 import type { Draft } from './recordDraft'
 
-/** Reads the universe's stories for the picker, and the chosen story for its scenes. */
+/**
+ * Reads the universe's stories for the picker, and the chosen story for its scenes. A read that fails says so in the
+ * form's message line once, when it fails, so a later save still clears it as before.
+ */
 export function useRecordStories({
   universeId,
   draft,
-  setStories,
-  setStoryRead,
   setMessage,
 }: {
   universeId: string
   draft: Draft
-  setStories: Dispatch<SetStateAction<StorySummary[] | null>>
-  setStoryRead: Dispatch<SetStateAction<StoryDetail | null>>
   setMessage: Dispatch<SetStateAction<string | null>>
 }) {
-  useEffect(() => {
-    const controller = new AbortController()
-    listStories(universeId, controller.signal)
-      .then(setStories)
-      .catch(() => {
-        if (!controller.signal.aborted) setMessage(t('ai.knowledge.form.storiesFailed'))
-      })
-    return () => controller.abort()
-  }, [universeId])
-
-  useEffect(() => {
-    if (draft.storyId === '') return
-    const controller = new AbortController()
-    getStory(universeId, draft.storyId, controller.signal)
-      .then(setStoryRead)
-      .catch(() => {
-        if (!controller.signal.aborted) setMessage(t('ai.knowledge.form.storyFailed'))
-      })
-    return () => controller.abort()
-  }, [universeId, draft.storyId])
+  const storiesLoad = useUniverseStories(universeId)
+  const storyLoad = useStoryScenes(universeId, draft.storyId)
+  const [seen, setSeen] = useState<[Load<unknown>, Load<unknown>]>([storiesLoad, storyLoad])
+  if (seen[0] !== storiesLoad || seen[1] !== storyLoad) {
+    setSeen([storiesLoad, storyLoad])
+    if (seen[0] !== storiesLoad && storiesLoad.kind === 'error')
+      setMessage(t('ai.knowledge.form.storiesFailed'))
+    if (seen[1] !== storyLoad && storyLoad.kind === 'error')
+      setMessage(t('ai.knowledge.form.storyFailed'))
+  }
+  return {
+    stories: storiesLoad.kind === 'ready' ? storiesLoad.value : null,
+    storyRead: storyLoad.kind === 'ready' ? storyLoad.value : null,
+  }
 }

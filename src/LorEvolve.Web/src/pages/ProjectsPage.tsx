@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { Section } from '../components/Section'
 import { Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
@@ -19,14 +19,7 @@ import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
 import { LinkRow } from '../components/LinkRow'
 import { useTitleDetail } from '../lib/useTitleDetail'
-
-/**
- * What was read, and what it was read for. Keeping the request's own key beside the result is what lets the screen say
- * "loading" for a filter it has not read yet without setting state inside the effect: the answer is derived in render
- * from whether the key still matches.
- */
-type LoadState =
-  { kind: 'ready'; for: string; projects: ProjectDetail[] } | { kind: 'failed'; for: string }
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /** The empty wording of a category list, named by its first kind; Series reads as Cinema, like Film. */
 function categoryEmpty(kind: ProjectKindValue) {
@@ -61,24 +54,18 @@ export default function ProjectsPage({
   useI18n()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? workspace?.universe.id : undefined
-  const requested = universeId ?? 'all'
-  const [state, setState] = useState<LoadState | null>(null)
-  const [attempt, setAttempt] = useState(0)
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
   // A list that is a section's own page (Game Entities) leads the tab with that section, as its entries lead with the game.
   useTitleDetail(section ? heading : null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198).
-    listAllProjects(universeId ? { universeId } : {}, controller.signal)
-      .then((projects) => setState({ kind: 'ready', for: requested, projects }))
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })
-      })
-    return () => controller.abort()
-  }, [universeId, requested, attempt])
+  // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198). The
+  // workspace remounts per universe, so `universeId` is the whole key and a new read never shows another's list.
+  const read = useCallback(
+    (signal: AbortSignal) => listAllProjects(universeId ? { universeId } : {}, signal),
+    [universeId],
+  )
+  const { load, retry } = useAsyncRead(read)
 
   // The head is drawn above every state: its title is static, so there is nothing to wait for.
   const head = (
@@ -100,25 +87,15 @@ export default function ProjectsPage({
     />
   )
 
-  // A read for another key is still loading here; the gate draws that line and the failed one under the head.
-  if (state === null || state.for !== requested || state.kind === 'failed') {
+  // The gate draws the loading and the failed line under the head.
+  if (load.kind !== 'ready') {
     return (
       <>
         {head}
         <ReadGate
-          load={
-            state?.for === requested
-              ? { kind: 'error', message: t('projects.list.failed') }
-              : { kind: 'loading' }
-          }
+          load={load}
           loading={{ text: t('projects.list.loading') }}
-          error={{
-            onRetry: () => {
-              setState(null)
-              setAttempt((current) => current + 1)
-            },
-            testId: 'projects-failed',
-          }}
+          error={{ message: t('projects.list.failed'), onRetry: retry, testId: 'projects-failed' }}
         >
           {() => null}
         </ReadGate>
@@ -126,9 +103,7 @@ export default function ProjectsPage({
     )
   }
 
-  const shown = kinds
-    ? state.projects.filter((project) => kinds.includes(project.kind))
-    : state.projects
+  const shown = kinds ? load.value.filter((project) => kinds.includes(project.kind)) : load.value
 
   // One game is no choice: go straight to it. `replace` keeps Back from landing on a picker that would bounce again.
   if (rowPath !== projectRowPath && shown.length === 1) {

@@ -1,18 +1,27 @@
-import { useRef, useState } from 'react'
-import type { Load } from '../lib/useAsyncRead'
-import type { ProjectDetail } from './types'
+import { useCallback, useRef, useState } from 'react'
+import { t } from '../i18n'
+import { useAsyncRead } from '../lib/useAsyncRead'
+import { listAllProjects } from './api'
+import type { ProjectDetail, ProjectKindValue } from './types'
 
-export function useShelfState() {
-  const [state, setState] = useState<Load<ProjectDetail[]>>({ kind: 'loading' })
+/** A category shelf's projects, read for the universe and narrowed to the shelf's kinds, with its move and cover state. */
+export function useShelfState(universeId: string, kinds: readonly ProjectKindValue[]) {
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      listAllProjects({ universeId }, signal).then((projects) =>
+        projects.filter((project) => kinds.includes(project.kind)),
+      ),
+    [universeId, kinds],
+  )
+  const {
+    load: state,
+    setLoad: setState,
+    retry,
+  } = useAsyncRead(read, { failed: t('projects.list.failed') })
   const [announcement, setAnnouncement] = useState('')
   const [moveError, setMoveError] = useState<string | null>(null)
   const [covering, setCovering] = useState<ProjectDetail | null>(null)
   const isMoving = useRef(false)
-  const [attempt, setAttempt] = useState(0)
-  const retry = () => {
-    setState({ kind: 'loading' })
-    setAttempt((current) => current + 1)
-  }
   return {
     state,
     setState,
@@ -23,7 +32,6 @@ export function useShelfState() {
     covering,
     setCovering,
     isMoving,
-    attempt,
     retry,
   }
 }

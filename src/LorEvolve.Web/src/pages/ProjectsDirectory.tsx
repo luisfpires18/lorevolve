@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { Section } from '../components/Section'
 import { useOutletContext } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
@@ -12,9 +12,7 @@ import { LoadError } from '../components/LoadError'
 import { CardGrid } from '../components/CardGrid'
 import { CatalogCard } from '../components/CatalogCard'
 import { formatCount } from '../i18n/format'
-
-type LoadState =
-  { kind: 'ready'; for: string; counts: Map<string, number> } | { kind: 'failed'; for: string }
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * Inside a universe, Projects is a directory of the four project families, not the unfiltered list (#275). Every family
@@ -24,29 +22,23 @@ export default function ProjectsDirectory() {
   useI18n()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = workspace?.universe.id
-  const [state, setState] = useState<LoadState | null>(null)
-  const [attempt, setAttempt] = useState(0)
 
   const heading = t('projects.list.title')
 
-  useEffect(() => {
-    if (!universeId) return
-    const controller = new AbortController()
-    listAllProjects({ universeId }, controller.signal)
-      .then((projects) => {
-        const counts = new Map<string, number>()
-        for (const [segment, kinds] of Object.entries(CATEGORY_KINDS)) {
-          counts.set(segment, projects.filter((project) => kinds.includes(project.kind)).length)
-        }
-        setState({ kind: 'ready', for: universeId, counts })
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'failed', for: universeId })
-      })
-    return () => controller.abort()
-  }, [universeId, attempt])
-
-  const current = state !== null && state.for === universeId ? state : null
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      universeId
+        ? listAllProjects({ universeId }, signal).then((projects) => {
+            const counts = new Map<string, number>()
+            for (const [segment, kinds] of Object.entries(CATEGORY_KINDS)) {
+              counts.set(segment, projects.filter((project) => kinds.includes(project.kind)).length)
+            }
+            return counts
+          })
+        : undefined,
+    [universeId],
+  )
+  const { load, retry } = useAsyncRead(read)
 
   return (
     <Section testId="projects-directory">
@@ -61,21 +53,17 @@ export default function ProjectsDirectory() {
           ) : null
         }
       />
-      {current?.kind === 'failed' ? (
+      {load.kind === 'error' ? (
         <LoadError
           message={t('projects.directory.loadFailed')}
-          onRetry={() => {
-            setState(null)
-            setAttempt((current) => current + 1)
-          }}
+          onRetry={retry}
           testId="projects-failed"
         />
       ) : null}
       <CardGrid rows gap={3} className="lorecatalog__grid" testId="projects-directory-cards">
         {CREATION.map((section) => {
           const Icon = section.icon
-          const count =
-            current?.kind === 'ready' ? (current.counts.get(section.segment) ?? 0) : null
+          const count = load.kind === 'ready' ? (load.value.get(section.segment) ?? 0) : null
           return (
             <li key={section.segment}>
               <CatalogCard

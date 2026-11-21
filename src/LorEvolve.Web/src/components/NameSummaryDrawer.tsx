@@ -4,6 +4,7 @@ import { Field } from './Field'
 import { t } from '../i18n'
 import { FormActions } from './FormActions'
 import { errorText } from '../lib/errorText'
+import { useFormSave } from '../lib/useFormSave'
 import { FormMessage } from './FormMessage'
 
 /** The words a name and summary drawer reads: `${words}.save`, `.saving`, `.name` and the rest. */
@@ -69,19 +70,19 @@ export function NameSummaryDrawer({
 }: NameSummaryDrawerProps) {
   const [name, setName] = useState(initial?.name ?? '')
   const [summary, setSummary] = useState(initial?.summary ?? '')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const isDirty = name !== (initial?.name ?? '') || summary !== (initial?.summary ?? '')
   const text = typeof words === 'string' ? textOf(words) : words
+  // Every refusal shows its own message, or the drawer's failed line; no field is marked.
+  const form = useFormSave({
+    needChange: null,
+    failed: text.failed,
+    refusal: (failure) => errorText(failure, text.failed),
+  })
+  const saving = form.isSaving
 
   function save() {
-    if (busy || saving) return
-    setSaving(true)
-    setError(null)
-    onSave({ name: name.trim(), summary: summary.trim() || null }).catch((failure: unknown) => {
-      setSaving(false)
-      setError(errorText(failure, text.failed))
-    })
+    if (busy) return
+    void form.save(() => onSave({ name: name.trim(), summary: summary.trim() || null }))
   }
 
   return (
@@ -130,7 +131,7 @@ export function NameSummaryDrawer({
           onChange={(event) => setSummary(event.target.value)}
         />
       ) : null}
-      {error ? <FormMessage>{error}</FormMessage> : null}
+      {form.message ? <FormMessage>{form.message}</FormMessage> : null}
     </Drawer>
   )
 }

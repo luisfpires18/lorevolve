@@ -1,6 +1,5 @@
 import { useId, useState } from 'react'
 import type { KnowledgeRecord } from './api'
-import type { StoryDetail, StorySummary } from '../stories/types'
 import { draftOf, type Draft, type Side } from './recordDraft'
 
 /** A knowledge record drawer's ids and state, with the draft read once from the record. */
@@ -18,8 +17,6 @@ export function useRecordFormState({
   const startId = useId()
   const [initial] = useState(() => draftOf(record, side))
   const [draft, setDraft] = useState<Draft>(initial)
-  const [stories, setStories] = useState<StorySummary[] | null>(null)
-  const [storyRead, setStoryRead] = useState<StoryDetail | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -33,10 +30,6 @@ export function useRecordFormState({
     initial,
     draft,
     setDraft,
-    stories,
-    setStories,
-    storyRead,
-    setStoryRead,
     errors,
     setErrors,
     message,

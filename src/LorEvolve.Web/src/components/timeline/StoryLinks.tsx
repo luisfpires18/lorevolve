@@ -1,8 +1,7 @@
-import { useEffect, useId, useState } from 'react'
+import { useId } from 'react'
 import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
-import { listStories } from '../../stories/api'
-import type { StorySummary } from '../../stories/types'
+import { useUniverseStories } from '../../stories/useUniverseStories'
 import type { TimelineStoryLink } from '../../timeline/types'
 import { Token } from '../Token'
 
@@ -25,20 +24,9 @@ export function StoryLinks({
 }) {
   useI18n()
   const selectId = useId()
-  const [stories, setStories] = useState<StorySummary[] | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listStories(universeId, controller.signal)
-      .then(setStories)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true)
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId])
+  const load = useUniverseStories(universeId)
+  const stories = load.kind === 'ready' ? load.value : null
+  const failed = load.kind === 'error'
 
   const linked = new Set(value.map((story) => story.storyId))
   const offered = (stories ?? []).filter((story) => !linked.has(story.id))

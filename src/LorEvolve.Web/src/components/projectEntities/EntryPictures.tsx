@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { getProjectEntity } from '../../projectEntities/api'
 import type { FieldImageRef } from '../../lore/types'
 import type { ProjectField } from '../../projectEntities/types'
 import { FieldImageInput } from '../FieldImageInput'
+import { useAsyncRead } from '../../lib/useAsyncRead'
 
 /**
  * An entry's pictures, one per Image field of its type: read from the entry itself, because the list carries no
@@ -21,19 +22,19 @@ export function EntryPictures({
   fields: ProjectField[]
   busy: boolean
 }) {
-  const [pictures, setPictures] = useState<FieldImageRef[] | null>(null)
+  // A read that fails shows the fields with no pictures, as an entry without any.
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      getProjectEntity(projectId, entryId, signal).then(
+        (entry): FieldImageRef[] => entry.fieldImages,
+        () => [],
+      ),
+    [projectId, entryId],
+  )
+  const { load, setLoad } = useAsyncRead(read)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getProjectEntity(projectId, entryId, controller.signal)
-      .then((read) => setPictures(read.fieldImages))
-      .catch(() => {
-        if (!controller.signal.aborted) setPictures([])
-      })
-    return () => controller.abort()
-  }, [projectId, entryId])
-
-  if (pictures === null) return null
+  if (load.kind !== 'ready') return null
+  const pictures = load.value
 
   return (
     <div className="entry__fieldimages" data-testid={`project-entry-images-${entryId}`}>
@@ -49,10 +50,15 @@ export function EntryPictures({
           pending={null}
           onPending={() => undefined}
           onChanged={(picture) =>
-            setPictures((current) => [
-              ...(current ?? []).filter((one) => one.fieldId !== field.id),
-              ...(picture ? [picture] : []),
-            ])
+            setLoad((current) => ({
+              kind: 'ready',
+              value: [
+                ...(current.kind === 'ready' ? current.value : []).filter(
+                  (one) => one.fieldId !== field.id,
+                ),
+                ...(picture ? [picture] : []),
+              ],
+            }))
           }
           disabled={busy}
         />
