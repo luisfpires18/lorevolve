@@ -9,8 +9,7 @@ import { projectPath } from '../projects/sections'
 import { scriptParts } from '../projectEntities/scriptParts'
 import { ScriptPart } from './projectEntities/ScriptPart'
 import { useAsyncRead } from '../lib/useAsyncRead'
-import { FormMessage } from './FormMessage'
-import { QuietNote } from './QuietNote'
+import { ReadGate } from './ReadGate'
 
 /**
  * A Series', Film's or Comic's Script view (#377): every node of its structure listed beside the text it holds, in the
@@ -32,7 +31,7 @@ export function ProjectScript({
 
   // A 404 is a project with no format yet. A save reads again quietly and keeps the parts shown if that read fails.
   const read = useCallback((signal: AbortSignal) => getStructure(projectId, signal), [projectId])
-  const { load, refresh } = useAsyncRead(read, {
+  const { load, retry, refresh } = useAsyncRead(read, {
     missing: true,
     failed: t('projects.structure.failed'),
   })
@@ -43,18 +42,22 @@ export function ProjectScript({
     </Link>
   )
 
-  if (load.kind === 'loading')
-    return <QuietNote spacing="flush">{t('projects.common.loading')}</QuietNote>
-  if (load.kind === 'error')
-    return <FormMessage testId="project-script-failed">{load.message}</FormMessage>
-
-  if (load.kind === 'missing') {
+  if (load.kind !== 'ready') {
     return (
-      <EmptyState
-        title={t('projects.script.noFormat')}
-        hint={tx('projects.script.noFormatHint', { link: structureLink })}
-        testId="project-script-no-format"
-      />
+      <ReadGate
+        load={load}
+        loading={{ text: t('projects.common.loading') }}
+        error={{ onRetry: retry, testId: 'project-script-failed' }}
+        missing={
+          <EmptyState
+            title={t('projects.script.noFormat')}
+            hint={tx('projects.script.noFormatHint', { link: structureLink })}
+            testId="project-script-no-format"
+          />
+        }
+      >
+        {() => null}
+      </ReadGate>
     )
   }
 
