@@ -33,23 +33,6 @@ export function RecordUnavailable({
   useI18n() // Re-renders on a language change; the words are read through the module's t.
   const key = (name: string) => `${w}.${name}` as TextKey<Dictionary>
 
-  if (load.kind === 'elsewhere') {
-    return (
-      <EmptyState
-        testId={`${id}-not-in-universe`}
-        title={tx(key('elsewhere.title'), {
-          universe: <Quoted text={contextUniverse?.name ?? ''} />,
-        })}
-        hint={tx(key('elsewhere.hint'), {
-          open: <Link to={listPath}>{elsewhere.open}</Link>,
-          ...(elsewhere.back !== undefined
-            ? { back: <Link to={listPath}>{elsewhere.back}</Link> }
-            : {}),
-        })}
-      />
-    )
-  }
-
   return (
     <ReadGate
       load={load}
@@ -61,6 +44,20 @@ export function RecordUnavailable({
           title={t(key('missing.title'))}
           hint={tx(key('missing.hint'), {
             link: <Link to={`${listPath}?view=deleted`}>{t(key('missing.link'))}</Link>,
+          })}
+        />
+      }
+      elsewhere={
+        <EmptyState
+          testId={`${id}-not-in-universe`}
+          title={tx(key('elsewhere.title'), {
+            universe: <Quoted text={contextUniverse?.name ?? ''} />,
+          })}
+          hint={tx(key('elsewhere.hint'), {
+            open: <Link to={listPath}>{elsewhere.open}</Link>,
+            ...(elsewhere.back !== undefined
+              ? { back: <Link to={listPath}>{elsewhere.back}</Link> }
+              : {}),
           })}
         />
       }

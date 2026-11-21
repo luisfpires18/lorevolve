@@ -17,9 +17,8 @@ import { Section } from './Section'
 import { Announce } from './Announce'
 import { QuietNote } from './QuietNote'
 import { useAsyncRead } from '../lib/useAsyncRead'
-import { LoadingNote } from './LoadingNote'
+import { ReadGate } from './ReadGate'
 import { DateText } from './DateText'
-import { FormMessage } from './FormMessage'
 
 const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
   get [ConnectedAppStatus.Active]() {
@@ -77,26 +76,31 @@ export function ConnectedApps() {
     >
       <QuietNote spacing="block">{t('data.connectedApps.note')}</QuietNote>
 
-      {load.kind === 'loading' ? (
-        <LoadingNote className="usage__status">{t('data.connectedApps.loading')}</LoadingNote>
-      ) : load.kind !== 'ready' ? (
-        <FormMessage as="div" testId="connected-apps-error">
-          <p>{t('data.connectedApps.loadFailed')}</p>
-          <Button tone="secondary" size="sm" onClick={retry}>
-            {t('data.connectedApps.retry')}
-          </Button>
-        </FormMessage>
-      ) : load.value.length === 0 ? (
-        <QuietNote className="connectedapps__empty" size="ui" testId="connected-apps-empty">
-          {t('data.connectedApps.empty')}
-        </QuietNote>
-      ) : (
-        <ul className="connectedapps__list">
-          {load.value.map((app) => (
-            <ConnectedAppRow key={app.id} app={app} onRemoved={() => removed(app)} />
-          ))}
-        </ul>
-      )}
+      <ReadGate
+        load={load}
+        loading={{ text: t('data.connectedApps.loading'), className: 'usage__status' }}
+        error={{
+          message: t('data.connectedApps.loadFailed'),
+          onRetry: retry,
+          retryLabel: t('data.connectedApps.retry'),
+          retrySize: 'sm',
+          testId: 'connected-apps-error',
+        }}
+      >
+        {(apps) =>
+          apps.length === 0 ? (
+            <QuietNote className="connectedapps__empty" size="ui" testId="connected-apps-empty">
+              {t('data.connectedApps.empty')}
+            </QuietNote>
+          ) : (
+            <ul className="connectedapps__list">
+              {apps.map((app) => (
+                <ConnectedAppRow key={app.id} app={app} onRemoved={() => removed(app)} />
+              ))}
+            </ul>
+          )
+        }
+      </ReadGate>
 
       <Announce testId="connected-apps-announcer">{announcement}</Announce>
     </Section>
