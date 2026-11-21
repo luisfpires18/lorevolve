@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import { MissingState } from '../components/MissingState'
 import { ReadGate } from '../components/ReadGate'
 import { t } from '../i18n'
-import type { Load } from '../lib/useAsyncRead'
 import { useTitleDetail } from '../lib/useTitleDetail'
+import { gameGateLoad } from './gameGateLoad'
 import type { ProjectDetail } from './types'
 import { useGameProject } from './useGameProject'
 
@@ -24,23 +24,19 @@ export function GameGate({
   notFound?: boolean
   children: (game: ProjectDetail, universeId: string) => ReactNode
 }) {
-  const { loading, failed, retry, game } = useGameProject(projectId, universeId)
-  const load: Load<ProjectDetail | null> = loading
-    ? { kind: 'loading' }
-    : failed
-      ? { kind: 'error', message: t('projects.one.failed') }
-      : { kind: 'ready', value: game }
-  useTitleDetail(game?.name ?? null)
+  const read = useGameProject(projectId, universeId)
+  const load = gameGateLoad<ProjectDetail>(read, notFound, t('projects.one.failed'))
+  useTitleDetail(notFound ? null : (read.game?.name ?? null))
 
   return (
     <ReadGate
       load={load}
       loading={{ text: t('projects.list.loading') }}
-      error={{ onRetry: retry, testId: 'game-project-failed' }}
+      error={{ onRetry: read.retry, testId: 'game-project-failed' }}
     >
       {(game) =>
         // Not a game of this universe: the API still decides who may read it, this only keeps the screen honest.
-        game === null || !universeId || notFound ? (
+        game === null || !universeId ? (
           <MissingState
             title={t('projects.gameEntities.notFound')}
             hint={t('projects.gameEntities.notFoundHint')}
