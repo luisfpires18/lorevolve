@@ -14,8 +14,6 @@ import {
 } from '../maps/types'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { useI18n } from '../i18n'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 interface PinDraft {
   title: string
@@ -132,19 +130,15 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={pin ? t('places.pinForm.save') : t('places.pinForm.place')}
-          busy={isSaving}
-          busyLabel={t('places.pinForm.saving')}
-          submitTestId="map-pin-save"
-          onCancel={() => close()}
-          lockCancel
-        />
-      )}
+      message={message}
+      messageTestId="map-pin-error"
+      actions={{
+        submitLabel: pin ? t('places.pinForm.save') : t('places.pinForm.place'),
+        busyLabel: t('places.pinForm.saving'),
+        submitTestId: 'map-pin-save',
+        lockCancel: true,
+      }}
     >
-      {message ? <FormMessage testId="map-pin-error">{message}</FormMessage> : null}
-
       <EntityPicker
         label={t('places.pinForm.lore')}
         universeId={universeId}

@@ -177,13 +177,6 @@ test('a drawer that submits locks while it saves', () => {
 
 test("a drawer's footer is Drawer's own", () => {
   const HAND_FOOTERS = [
-    // Next batch (B2 of #456): the same pure move.
-    'src/components/FamilyKindDialog.tsx',
-    'src/components/FieldSectionsDialog.tsx',
-    'src/components/LoreEditor.tsx',
-    'src/components/MapPinForm.tsx',
-    'src/components/TypeDialog.tsx',
-    'src/components/lore/FieldDialog.tsx',
     // Its message takes the focus after a refused save.
     'src/components/QuickCreateDialog.tsx',
     // The drawer is busy for panels too, the submit only for its own save.

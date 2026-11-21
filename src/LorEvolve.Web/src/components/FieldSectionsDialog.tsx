@@ -8,8 +8,6 @@ import { useFieldSectionsState } from '../lore/useFieldSectionsState'
 import { fieldSectionsActions } from '../lore/fieldSectionsActions'
 import { SectionListEditor } from './lore/SectionListEditor'
 import { SectionFieldPlacer } from './lore/SectionFieldPlacer'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 import { StaleChoice } from './StaleChoice'
 
@@ -79,19 +77,15 @@ export function FieldSectionsDialog({
       onClose={onClose}
       noValidate
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t('entityTypes.sections.save')}
-          busy={isSaving}
-          busyLabel={t('entityTypes.sections.saving')}
-          submitTestId="save-sections"
-          onCancel={close}
-          cancelTestId="cancel-sections"
-        />
-      )}
+      message={message}
+      messageTestId="sections-dialog-error"
+      actions={{
+        submitLabel: t('entityTypes.sections.save'),
+        busyLabel: t('entityTypes.sections.saving'),
+        submitTestId: 'save-sections',
+        cancelTestId: 'cancel-sections',
+      }}
     >
-      {message ? <FormMessage testId="sections-dialog-error">{message}</FormMessage> : null}
-
       {stale ? (
         <StaleChoice
           testId="sections"

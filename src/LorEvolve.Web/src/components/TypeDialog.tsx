@@ -10,9 +10,7 @@ import { typeDialogSave } from '../lore/typeDialogSave'
 import { TypeDialogIdentity } from './TypeDialogIdentity'
 import { TypeDialogPlace } from './TypeDialogPlace'
 import { TypeDialogBehaviour } from './TypeDialogBehaviour'
-import { FormActions } from './FormActions'
 import { QuietNote } from './QuietNote'
-import { FormMessage } from './FormMessage'
 
 /** What the drawer reads of the type it edits: a lore type, or a project's own type (#144). */
 export type DialogType = TreeType & { icon: string | null; familyTreeEligible?: boolean }
@@ -171,23 +169,19 @@ export function TypeDialog({
       busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={
-            type ? t('entityTypes.page.dialog.saveChanges') : t('entityTypes.page.dialog.create')
-          }
-          busy={isSaving}
-          busyLabel={
-            type ? t('entityTypes.page.dialog.saving') : t('entityTypes.page.dialog.creating')
-          }
-          submitTestId="save-type"
-          onCancel={close}
-          cancelTestId="cancel-type"
-        />
-      )}
+      message={message}
+      messageTestId="type-dialog-error"
+      actions={{
+        submitLabel: type
+          ? t('entityTypes.page.dialog.saveChanges')
+          : t('entityTypes.page.dialog.create'),
+        busyLabel: type
+          ? t('entityTypes.page.dialog.saving')
+          : t('entityTypes.page.dialog.creating'),
+        submitTestId: 'save-type',
+        cancelTestId: 'cancel-type',
+      }}
     >
-      {message ? <FormMessage testId="type-dialog-error">{message}</FormMessage> : null}
-
       {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
       <TypeDialogIdentity
         type={type}

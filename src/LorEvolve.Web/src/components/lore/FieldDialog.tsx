@@ -10,8 +10,6 @@ import { FieldKindFields } from './FieldKindFields'
 import { FieldLinkTarget } from './FieldLinkTarget'
 import { FieldMeaningShape } from './FieldMeaningShape'
 import { FieldDefaultRequired } from './FieldDefaultRequired'
-import { FormActions } from '../FormActions'
-import { FormMessage } from '../FormMessage'
 import { StaleChoice } from '../StaleChoice'
 
 /**
@@ -136,21 +134,15 @@ export function FieldDialog({
       onClose={onClose}
       noValidate
       onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={
-            field ? t('entityTypes.fields.saveChanges') : t('entityTypes.fields.addTitle')
-          }
-          busy={isSaving}
-          busyLabel={field ? t('entityTypes.fields.saving') : t('entityTypes.fields.adding')}
-          submitTestId="save-field"
-          onCancel={close}
-          cancelTestId="cancel-field"
-        />
-      )}
+      message={message}
+      messageTestId="field-dialog-error"
+      actions={{
+        submitLabel: field ? t('entityTypes.fields.saveChanges') : t('entityTypes.fields.addTitle'),
+        busyLabel: field ? t('entityTypes.fields.saving') : t('entityTypes.fields.adding'),
+        submitTestId: 'save-field',
+        cancelTestId: 'cancel-field',
+      }}
     >
-      {message ? <FormMessage testId="field-dialog-error">{message}</FormMessage> : null}
-
       {stale && latest && describe ? (
         <StaleChoice
           testId="field"
