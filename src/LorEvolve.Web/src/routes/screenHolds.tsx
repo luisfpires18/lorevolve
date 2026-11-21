@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { LoadingNote } from '../components/LoadingNote'
+import { SessionPending } from '../components/SessionPending'
 
 /**
  * Held while a whole screen's code is fetched. The same plate the session probe holds behind
@@ -8,7 +9,7 @@ import { LoadingNote } from '../components/LoadingNote'
  */
 function ScreenPending() {
   const { t } = useI18n()
-  return <div className="session-pending" role="status" aria-label={t('shell.app.screenPending')} />
+  return <SessionPending label={t('shell.app.screenPending')} />
 }
 
 /** The same hold inside a frame that stays put around it: a universe's rail, sidebar and search, or the workspace bar. */

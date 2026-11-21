@@ -16,6 +16,8 @@ import {
 } from '../universes/collaborators'
 import { Button } from '../components/Button'
 import { Announce } from '../components/Announce'
+import { FormMessage } from '../components/FormMessage'
+import { SessionPending } from '../components/SessionPending'
 import { errorText } from '../lib/errorText'
 import type { Load } from '../lib/useAsyncRead'
 
@@ -109,15 +111,7 @@ export default function InvitationPage() {
     </Link>
   )
 
-  if (isLoading) {
-    return (
-      <div
-        className="session-pending"
-        role="status"
-        aria-label={t('auth.invitation.checkingSession')}
-      />
-    )
-  }
+  if (isLoading) return <SessionPending label={t('auth.invitation.checkingSession')} />
 
   if (!user) {
     const from = { from: location.pathname }
@@ -201,11 +195,7 @@ export default function InvitationPage() {
             <p className="invite__role" data-testid="invitation-role">
               {roleDescription(invitation.role)}
             </p>
-            {actionError ? (
-              <p className="form__message" role="alert" data-testid="invitation-error">
-                {actionError}
-              </p>
-            ) : null}
+            <FormMessage testId="invitation-error">{actionError}</FormMessage>
             <div className="actions">
               <Button
                 busy={busy}

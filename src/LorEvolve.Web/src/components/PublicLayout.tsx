@@ -3,13 +3,12 @@ import { SunMoon } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { AccountMenu } from './AccountMenu'
 import { ActionMenu } from './ActionMenu'
-import { BrandMark } from './BrandMark'
+import { BrandLink } from './BrandLink'
 import { PortalSearch } from './PortalSearch'
 import { SiteFooter } from './SiteFooter'
 import { ThemeSwitch } from './ThemeSwitch'
 import { LanguageSwitch } from './LanguageSwitch'
 import { MAIN_CONTENT_ID } from './SkipLink'
-import { Wordmark } from './Wordmark'
 import { useI18n } from '../i18n'
 
 /**
@@ -46,10 +45,7 @@ export function PublicLayout() {
   return (
     <div className="portal">
       <header className="portal__bar">
-        <Link className="portal__brand" to="/" aria-label={t('shell.brand.homeLabel')}>
-          <BrandMark />
-          <Wordmark />
-        </Link>
+        <BrandLink className="portal__brand" />
         <nav className="portal__nav" aria-label={t('portal.layout.exploreNav')}>
           <NavLink className="portal__link" to="/" end data-testid="portal-explore">
             {t('portal.layout.explore')}

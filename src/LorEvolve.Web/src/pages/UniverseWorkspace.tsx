@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom'
+import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { MAIN_CONTENT_ID } from '../components/SkipLink'
 import { SiteFooter } from '../components/SiteFooter'
 import { UniverseSearch } from '../components/UniverseSearch'
@@ -21,7 +21,7 @@ import { useWorkspaceReads } from '../universes/useWorkspaceReads'
 import { useWorkspaceSetters } from '../universes/useWorkspaceSetters'
 import { useWorkspaceState } from '../universes/useWorkspaceState'
 import { currentSection } from '../universes/workspaceSections'
-import { EmptyState } from '../components/EmptyState'
+import { MissingState } from '../components/MissingState'
 import { ReadGate } from '../components/ReadGate'
 
 export interface WorkspaceContext {
@@ -97,7 +97,6 @@ function Workspace() {
   )
 
   if (state.kind !== 'ready') {
-    // shortcut: the hint's first sentence is English in every language (gap G3), until it gets a key in both dictionaries.
     return (
       <ReadGate
         load={state}
@@ -110,15 +109,12 @@ function Workspace() {
           retryLabel: t('workspace.missing.tryAgain'),
         }}
         missing={
-          <EmptyState
+          <MissingState
             testId="universe-missing"
             title={t('workspace.missing.title')}
-            hint={
-              <>
-                It may have been deleted, or it belongs to someone else.{' '}
-                <Link to="/app">{t('workspace.missing.back')}</Link>
-              </>
-            }
+            hint={t('workspace.missing.hint')}
+            backTo="/app"
+            backLabel={t('workspace.missing.back')}
           />
         }
       >

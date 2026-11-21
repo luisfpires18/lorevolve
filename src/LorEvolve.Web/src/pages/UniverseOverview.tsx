@@ -1,26 +1,16 @@
-import { CardGrid } from '../components/CardGrid'
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
 import { ConnectToAi } from '../components/ConnectToAi'
-import { WipBadge } from '../components/WipBadge'
 import { PageHeader } from '../components/PageHeader'
 import { t, tx, useI18n } from '../i18n'
 import { listEntities } from '../lore/api'
-import { roleDescription, roleLabel, useUniverseAccess } from '../universes/access'
-import {
-  groupKey,
-  offered,
-  SECTION_GROUPS,
-  sectionLabel,
-  sectionPurpose,
-  type Section,
-} from '../universes/sections'
+import { useUniverseAccess } from '../universes/access'
+import { groupKey, offered, SECTION_GROUPS } from '../universes/sections'
 import { UniverseRole } from '../universes/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { DateText } from '../components/DateText'
 import { Callout } from '../components/Callout'
-import { SectionTitle } from '../components/Section'
+import { OverviewContents } from '../components/universes/OverviewContents'
+import { OverviewLede } from '../components/universes/OverviewLede'
 
 /**
  * A universe's front page, set as a book's contents: its name and opening line, then a doorway into
@@ -81,37 +71,7 @@ export default function UniverseOverview() {
             <ConnectToAi universeId={universe.id} universeName={universe.name} />
           ) : undefined
         }
-        lede={
-          <>
-            {universe.description ? (
-              <p className="overview__description prose">{universe.description}</p>
-            ) : shared ? (
-              <p className="overview__description">{t('workspace.overview.noDescription')}</p>
-            ) : (
-              <p className="overview__description">
-                {tx('workspace.overview.noDescriptionOwn', {
-                  settings: (
-                    <Link to="settings">{t('workspace.overview.noDescriptionSettings')}</Link>
-                  ),
-                })}
-              </p>
-            )}
-            <p className="overview__meta">
-              {tx('workspace.overview.dates', {
-                created: <DateText value={universe.createdAt} />,
-                changed: <DateText value={universe.updatedAt} />,
-              })}
-            </p>
-            {shared ? (
-              <p className="overview__meta" data-testid="overview-role">
-                {t('workspace.overview.shared', {
-                  role: roleLabel(universe.accessRole),
-                  description: roleDescription(universe.accessRole),
-                })}
-              </p>
-            ) : null}
-          </>
-        }
+        lede={<OverviewLede universe={universe} shared={shared} />}
       />
 
       {canWrite && emptyId === universe.id ? (
@@ -122,48 +82,14 @@ export default function UniverseOverview() {
         </Callout>
       ) : null}
 
-      {world ? <Contents {...world} /> : null}
+      {world ? <OverviewContents {...world} /> : null}
       {rest.length > 0 ? (
         <div className="contents__pair">
           {rest.map((group) => (
-            <Contents key={group.name} {...group} />
+            <OverviewContents key={group.name} {...group} />
           ))}
         </div>
       ) : null}
     </article>
-  )
-}
-
-function Contents({ name, sections }: { name: string; sections: readonly Section[] }) {
-  useI18n()
-  return (
-    <section className={`contents contents--${name}`} aria-labelledby={`contents-${name}`}>
-      <SectionTitle tone="rule" className="contents__heading" id={`contents-${name}`}>
-        {t(`workspace.rail.groups.${name}` as never)}
-      </SectionTitle>
-      <CardGrid min={14} className="contents__list">
-        {sections.map((section) => (
-          <li key={section.segment}>
-            <Link
-              className="doorway"
-              to={section.segment}
-              data-testid={`overview-${section.segment}`}
-            >
-              <span className="doorway__medallion" aria-hidden="true">
-                <section.icon className="doorway__icon" focusable="false" strokeWidth={1.75} />
-              </span>
-              <span className="doorway__name">
-                {sectionLabel(section)}
-                {section.wip ? <WipBadge /> : null}
-              </span>
-              <span className="doorway__purpose">{sectionPurpose(section)}</span>
-              <span className="doorway__go" aria-hidden="true">
-                <ArrowRight focusable="false" strokeWidth={1.75} />
-              </span>
-            </Link>
-          </li>
-        ))}
-      </CardGrid>
-    </section>
   )
 }

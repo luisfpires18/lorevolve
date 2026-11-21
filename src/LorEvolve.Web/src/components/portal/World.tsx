@@ -2,10 +2,13 @@ import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, BookOpen, ScrollText } from 'lucide-react'
 import { BrandMark } from '../BrandMark'
+import { LoadingNote } from '../LoadingNote'
 import { WorldAttribution } from '../WorldAttribution'
 import {
   listPublicLore,
   listPublicStories,
+  lorePath,
+  storyPath,
   type PublicLoreEntry,
   type PublicStory,
   type PublicUniverse,
@@ -15,10 +18,10 @@ import { useWorkspaceLink } from '../../portal/useWorkspaceLink'
 import { categoryLabel } from '../../publishing/types'
 import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { useI18n } from '../../i18n'
+import { monogram } from '../../lib/monogram'
 import { GenreChips } from './GenreChips'
-import { LoreCard } from './LoreCard'
+import { PortalCard } from './PortalCard'
 import { ShowMore } from '../ShowMore'
-import { StoryCard } from './StoryCard'
 
 export function World({ world }: { world: PublicUniverse }) {
   const { t } = useI18n()
@@ -104,9 +107,7 @@ export function World({ world }: { world: PublicUniverse }) {
         ) : null}
 
         {lore.status === 'loading' || stories.status === 'loading' ? (
-          <p className="pworld__status" role="status">
-            {t('portal.world.loading')}
-          </p>
+          <LoadingNote className="pworld__status">{t('portal.world.loading')}</LoadingNote>
         ) : null}
 
         {hasLore ? (
@@ -117,7 +118,27 @@ export function World({ world }: { world: PublicUniverse }) {
             </h2>
             <ul className="plore-grid" data-testid="public-lore-list">
               {lore.items.map((entry) => (
-                <LoreCard key={entry.slug} world={world.slug} entry={entry} />
+                <PortalCard
+                  key={entry.slug}
+                  to={lorePath(world.slug, entry.slug)}
+                  kicker={entry.typeName}
+                  thumb={
+                    entry.thumbnailUrl ? (
+                      <img
+                        src={entry.thumbnailUrl}
+                        alt=""
+                        width={320}
+                        height={320}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="plorecard__initial">{monogram(entry.name, '·')}</span>
+                    )
+                  }
+                  title={entry.name}
+                  summary={entry.summary || undefined}
+                />
               ))}
             </ul>
             <ShowMore
@@ -139,7 +160,13 @@ export function World({ world }: { world: PublicUniverse }) {
             </h2>
             <ul className="pstory-grid" data-testid="public-story-list">
               {stories.items.map((story) => (
-                <StoryCard key={story.slug} world={world.slug} story={story} />
+                <PortalCard
+                  key={story.slug}
+                  to={storyPath(world.slug, story.slug)}
+                  title={story.title}
+                  summary={story.publicSummary}
+                  cta={t('portal.world.storyCta')}
+                />
               ))}
             </ul>
             <ShowMore

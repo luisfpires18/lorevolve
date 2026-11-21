@@ -1,14 +1,9 @@
 import { useOutletContext } from 'react-router-dom'
-import { useI18n } from '../i18n'
 import { CalendarEditor } from '../components/CalendarEditor'
 import { ChronologyEditor } from '../components/ChronologyEditor'
-import { EmptyState } from '../components/EmptyState'
-import { PageHeader } from '../components/PageHeader'
-import { EraDirection, EraLabelPosition, type Chronology } from '../chronology/types'
+import { ChronologyReading } from '../components/chronology/ChronologyReading'
 import { useUniverseAccess } from '../universes/access'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { Section } from '../components/Section'
-import { QuietNote } from '../components/QuietNote'
 
 /**
  * A universe's chronology as a workspace section of its own, beside World Rules: the eras its dates are written and
@@ -41,82 +36,5 @@ export default function ChronologyPage() {
         <ChronologyReading chronology={chronology} />
       )}
     </article>
-  )
-}
-
-function ChronologyReading({ chronology }: { chronology: Chronology }) {
-  const { t, tn, tx } = useI18n()
-
-  return (
-    <>
-      <PageHeader
-        title={t('time.chronology.reading.title')}
-        lede={<p>{t('time.chronology.reading.lede')}</p>}
-      />
-      <Section
-        title={t('time.chronology.reading.periods')}
-        className="chronology"
-        titleId="chronology-reading-heading"
-        rule={false}
-      >
-        {chronology.eras.length === 0 ? (
-          <EmptyState testId="chronology-empty" title={t('time.chronology.reading.plain')} />
-        ) : (
-          <ol className="eras eras--reading" data-testid="eras-reading">
-            {chronology.eras.map((era, index) => {
-              const label = era.abbreviation ?? era.name
-              const sample =
-                era.labelPosition === EraLabelPosition.AfterYear ? `1 ${label}` : `${label} 1`
-              return (
-                <li className="era" key={era.id} data-testid="era-reading">
-                  <span className="era__ordinal" aria-hidden="true">
-                    {index + 1}
-                  </span>
-                  <div className="era__body">
-                    <p className="era__readname">
-                      <bdi>{era.name}</bdi>
-                    </p>
-                    <QuietNote spacing="hint">
-                      {tx(
-                        era.direction === EraDirection.Descending
-                          ? 'time.chronology.reading.countsDown'
-                          : 'time.chronology.reading.countsUp',
-                        { sample: <bdi>{sample}</bdi> },
-                      )}
-                    </QuietNote>
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
-        )}
-      </Section>
-      <Section
-        title={t('time.chronology.reading.calendar')}
-        className="chronology calendar"
-        titleId="calendar-reading-heading"
-        rule={false}
-      >
-        {chronology.calendar ? (
-          <ol className="months months--reading" data-testid="months-reading">
-            {chronology.calendar.months.map((month, index) => (
-              <li className="month month--reading" key={month.id} data-testid="month-reading">
-                <span className="month__ordinal" aria-hidden="true">
-                  {index + 1}
-                </span>
-                <bdi className="month__readname">{month.name}</bdi>
-                <span className="month__use">
-                  {tn('time.chronology.reading.days', month.dayCount, { n: month.dayCount })}
-                </span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <QuietNote spacing="block" testId="calendar-note">
-            {t('time.chronology.reading.simple')}
-          </QuietNote>
-        )}
-      </Section>
-    </>
   )
 }

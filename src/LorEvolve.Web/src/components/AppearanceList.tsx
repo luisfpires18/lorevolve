@@ -9,9 +9,7 @@ import { AppearanceGallery } from './lore/AppearanceGallery'
 import { FormMessage } from './FormMessage'
 import { ImageViewer } from './ImageViewer'
 import { ItemRow } from './progression/ItemRow'
-import { NewButton } from './NewButton'
-import { QuietNote } from './QuietNote'
-import { PanelHead } from './PanelHead'
+import { ProgressionSection } from './progression/ProgressionSection'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -40,59 +38,34 @@ export function AppearanceList({
   onPicturesChanged: () => void
 }) {
   useI18n()
-  const access = useUniverseAccess()
-
-  if (appearances.length === 0 && !access.editContent) return null
 
   return (
-    <section
-      className="stack stack--3"
-      aria-labelledby="appearance-list-heading"
-      data-testid="appearance-list"
+    <ProgressionSection
+      kind="appearance"
+      title={t('progression.appearanceList.heading')}
+      addLabel={t('progression.appearanceList.add')}
+      addIcon={ImagePlus}
+      empty={t('progression.appearanceList.empty')}
+      count={appearances.length}
+      busy={busy}
+      onAdd={onAdd}
     >
-      <PanelHead
-        look="label"
-        level={3}
-        align="start"
-        titleId="appearance-list-heading"
-        title={t('progression.appearanceList.heading')}
-        action={
-          access.editContent ? (
-            <NewButton
-              tone="secondary"
-              size="sm"
-              icon={ImagePlus}
-              onClick={onAdd}
-              disabled={busy}
-              data-testid="add-appearance"
-            >
-              {t('progression.appearanceList.add')}
-            </NewButton>
-          ) : null
-        }
-      />
-      {appearances.length === 0 ? (
-        <QuietNote>{t('progression.appearanceList.empty')}</QuietNote>
-      ) : (
-        <ul className="plainlist stack">
-          {appearances.map((appearance, index) => (
-            <AppearanceRow
-              key={appearance.id}
-              canMoveEarlier={index > 0}
-              canMoveLater={index < appearances.length - 1}
-              onMove={(by) => onMove(appearance, by)}
-              universeId={universeId}
-              entityId={entityId}
-              appearance={appearance}
-              busy={busy}
-              onEdit={() => onEdit(appearance)}
-              onRemove={() => onRemove(appearance)}
-              onPicturesChanged={onPicturesChanged}
-            />
-          ))}
-        </ul>
-      )}
-    </section>
+      {appearances.map((appearance, index) => (
+        <AppearanceRow
+          key={appearance.id}
+          canMoveEarlier={index > 0}
+          canMoveLater={index < appearances.length - 1}
+          onMove={(by) => onMove(appearance, by)}
+          universeId={universeId}
+          entityId={entityId}
+          appearance={appearance}
+          busy={busy}
+          onEdit={() => onEdit(appearance)}
+          onRemove={() => onRemove(appearance)}
+          onPicturesChanged={onPicturesChanged}
+        />
+      ))}
+    </ProgressionSection>
   )
 }
 

@@ -2,8 +2,7 @@ import { useI18n } from '../../i18n'
 import { categoryLabel, genreLabel } from '../../publishing/types'
 import type { Confirming, usePublishState } from '../../publishing/usePublishState'
 import { SelectedLoreReview } from './SelectedLoreReview'
-import { FormActions } from '../FormActions'
-import { InlineConfirm } from '../InlineConfirm'
+import { PublicationConfirm } from './PublicationConfirm'
 import { QuietNote } from '../QuietNote'
 import { Fact } from '../Fact'
 import { FactList } from '../FactList'
@@ -22,14 +21,19 @@ export function PublishConfirm({
   const { t, tx } = useI18n()
 
   return (
-    <InlineConfirm
-      look="publication"
-      titleAs="h3"
+    <PublicationConfirm
       title={tx('universe.publish.confirm.title', { name: <bdi>{confirming.state.name}</bdi> })}
-      panelRef={panel}
-      onKeep={() => setConfirming(null)}
-      busy={busy}
       testId="publish-confirm"
+      panel={panel}
+      busy={busy}
+      onKeep={() => setConfirming(null)}
+      actions={{
+        submitLabel: t('universe.publish.confirm.publish'),
+        busyLabel: t('universe.publish.confirm.publishing'),
+        onSubmit: () => void publish(),
+        submitTestId: 'confirm-publish',
+        cancelLabel: t('universe.publish.confirm.keepPrivate'),
+      }}
     >
       <QuietNote spacing="block">{t('universe.publish.confirm.anyone')}</QuietNote>
       <FactList look="labelled">
@@ -75,17 +79,6 @@ export function PublishConfirm({
         <strong>{t('universe.publish.confirm.notPublished')}</strong>{' '}
         {t('universe.publish.confirm.staysPrivate')}
       </QuietNote>
-      <FormActions
-        submitLabel={t('universe.publish.confirm.publish')}
-        busy={busy}
-        busyLabel={t('universe.publish.confirm.publishing')}
-        onSubmit={() => void publish()}
-        submitTestId="confirm-publish"
-        onCancel={() => setConfirming(null)}
-        cancelLabel={t('universe.publish.confirm.keepPrivate')}
-        lockCancel
-        inline
-      />
-    </InlineConfirm>
+    </PublicationConfirm>
   )
 }

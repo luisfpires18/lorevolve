@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { useI18n } from '../i18n'
@@ -19,8 +18,6 @@ import { FormMessage } from '../components/FormMessage'
 import { QuietNote } from '../components/QuietNote'
 
 const TAB_IDS = ['general', 'appearance', 'collaborators', 'data', 'advanced'] as const
-
-type TabId = (typeof TAB_IDS)[number]
 
 /**
  * A universe's Settings (UI refinement 014; Collaborators since 030): five tabs rather than one long page, in the workspace's one page shell - the
@@ -70,7 +67,7 @@ export default function UniverseSettings() {
 
       {/* One outer shell for every workspace page; only the forms keep a readable column. */}
       <div className="settings__body">
-        <Panel id="general" tab={tab}>
+        <TabPanel idPrefix="settings" id="general" tab={tab}>
           <Section title={t('universe.settings.details')} narrow>
             {savedDetails ? (
               <QuietNote tone="saved" role="status" testId="settings-saved">
@@ -99,9 +96,9 @@ export default function UniverseSettings() {
               }}
             />
           </Section>
-        </Panel>
+        </TabPanel>
 
-        <Panel id="appearance" tab={tab}>
+        <TabPanel idPrefix="settings" id="appearance" tab={tab}>
           <Section title={t('universe.settings.colour')} narrow>
             <QuietNote spacing="block">{t('universe.settings.colourNote')}</QuietNote>
             {savedColour ? (
@@ -130,17 +127,17 @@ export default function UniverseSettings() {
               }}
             />
           </Section>
-        </Panel>
+        </TabPanel>
 
-        <Panel id="collaborators" tab={tab}>
+        <TabPanel idPrefix="settings" id="collaborators" tab={tab}>
           <CollaboratorsPanel universeId={universe.id} />
-        </Panel>
+        </TabPanel>
 
-        <Panel id="data" tab={tab}>
+        <TabPanel idPrefix="settings" id="data" tab={tab}>
           <SettingsData {...state} exportFile={exportFile} />
-        </Panel>
+        </TabPanel>
 
-        <Panel id="advanced" tab={tab}>
+        <TabPanel idPrefix="settings" id="advanced" tab={tab}>
           <SettingsArchive
             {...state}
             universe={universe}
@@ -152,17 +149,8 @@ export default function UniverseSettings() {
           <SettingsDelete {...state} universe={universe} remove={remove} />
 
           {error ? <FormMessage>{error}</FormMessage> : null}
-        </Panel>
+        </TabPanel>
       </div>
     </article>
-  )
-}
-
-/** One tab's panel: always mounted, hidden unless chosen, so what is typed in it is kept. */
-function Panel({ id, tab, children }: { id: TabId; tab: TabId; children: ReactNode }) {
-  return (
-    <TabPanel idPrefix="settings" id={id} tab={tab}>
-      {children}
-    </TabPanel>
   )
 }

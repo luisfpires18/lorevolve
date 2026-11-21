@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { WorldAttribution } from '../WorldAttribution'
 import { worldPath, type PublicStoryDetail, type PublicUniverse } from '../../portal/api'
 import { useWorkspaceLink } from '../../portal/useWorkspaceLink'
@@ -7,6 +6,8 @@ import { useDocumentTitle } from '../../lib/useDocumentTitle'
 import { useI18n } from '../../i18n'
 import { paragraphs } from '../../portal/storyParagraphs'
 import { DateText } from '../DateText'
+import { PublicCrumbs } from './PublicCrumbs'
+import { PublicEditLink } from './PublicEditLink'
 
 export function Story({ world, story }: { world: PublicUniverse; story: PublicStoryDetail }) {
   const { t, tx } = useI18n()
@@ -20,21 +21,12 @@ export function Story({ world, story }: { world: PublicUniverse; story: PublicSt
 
   return (
     <article className="pread pstory" data-testid="public-story">
-      <nav className="pcrumbs" aria-label={t('portal.story.breadcrumb')}>
-        <ol>
-          <li>
-            <Link
-              className="pcrumbs__back"
-              to={worldPath(world.slug)}
-              data-testid="public-story-world"
-            >
-              <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-              <bdi>{world.name}</bdi>
-            </Link>
-          </li>
-          <li aria-current="page">{t('portal.story.crumb')}</li>
-        </ol>
-      </nav>
+      <PublicCrumbs
+        world={world}
+        label={t('portal.story.breadcrumb')}
+        current={t('portal.story.crumb')}
+        testId="public-story-world"
+      />
 
       <header className="pread__head pstory__head">
         <p className="pread__eyebrow">{t('portal.story.eyebrow')}</p>
@@ -57,16 +49,10 @@ export function Story({ world, story }: { world: PublicUniverse; story: PublicSt
         <p className="pstory__summary" dir="auto" data-testid="public-story-summary">
           {story.publicSummary}
         </p>
-        {owner?.storyId ? (
-          <Link
-            className="pread__edit"
-            to={`/app/universes/${owner.universeId}/stories/${owner.storyId}`}
-            data-testid="edit-in-workspace"
-          >
-            {t('portal.story.edit')}
-            <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.75} />
-          </Link>
-        ) : null}
+        <PublicEditLink
+          to={owner?.storyId ? `/app/universes/${owner.universeId}/stories/${owner.storyId}` : null}
+          label={t('portal.story.edit')}
+        />
         {sections.length > 1 ? (
           <nav className="pstory__sections" aria-label={t('portal.story.sections')}>
             <ul>

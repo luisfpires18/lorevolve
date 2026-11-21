@@ -22,9 +22,11 @@ const ERROR_BLOCKS = new Map<string, string>([
   ['src/components/admin/BackupFacts.tsx', 'action error: the backup job reported a problem'],
   ['src/components/lore/MassCreateBar.tsx', 'action error: a create that failed'],
   ['src/components/projects/NewProject.tsx', 'action error: a create that failed'],
+  [
+    'src/components/DisclosurePanel.tsx',
+    "a row detail's read error: closing and opening reads again",
+  ],
   ['src/components/worldLogic/FindingDetail.tsx', 'action error: a decision that failed'],
-  ['src/components/worldLogic/FindingRow.tsx', 'action error: a decision that failed'],
-  ['src/components/worldLogic/SystemRow.tsx', 'action error: a change that failed'],
   [
     'src/components/worldLogic/WorldLogicIntegrity.tsx',
     'action error: a check that failed, and its cap',
@@ -40,7 +42,6 @@ const ERROR_BLOCKS = new Map<string, string>([
 // a `Callout` holding a `<p role="status">`.
 const STATUS_NOTICES = new Map<string, string>([
   ['src/components/LoadingNote.tsx', 'the part'],
-  ['src/pages/ConnectAuthorizePage.tsx', 'auth and consent pages are out of #410 scope'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
   [
     'src/components/worldLogic/MachinePanelBody.tsx',
@@ -61,10 +62,6 @@ const OWN_READ_STATES = new Map<string, string>([
     'src/projects/useProjectRead.ts',
     'read through useAsyncRead; a story and a moved story are outcomes the page names by id',
   ],
-  ['src/pages/PublicAuthorPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
-  ['src/pages/PublicLorePage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
-  ['src/pages/PublicStoryPage.tsx', 'keyed by key; null stands for loading; PortalError retries'],
-  ['src/pages/PublicWorldPage.tsx', 'keyed by slug; null stands for loading; PortalError retries'],
 ])
 
 // Files that set `kind: 'missing'` with no 404 test near it, with the reason.

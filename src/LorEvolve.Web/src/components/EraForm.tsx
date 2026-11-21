@@ -2,7 +2,6 @@ import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
 import { payloadKey } from '../lib/drawerGuard'
-import { Drawer } from './Drawer'
 import { Field } from './Field'
 import type { FieldValue } from '../lore/types'
 import type { FieldDefinition } from '../lore/typeDefinitions'
@@ -10,13 +9,11 @@ import type { Era, Progression } from '../progression/types'
 import { draftOf, inputOf } from '../progression/eraDraft'
 import { useEraFormState } from '../progression/useEraFormState'
 import { eraFormActions } from '../progression/eraFormActions'
-import { ProgressionConflict } from './progression/ProgressionConflict'
-import { EraNameFields } from './progression/EraNameFields'
+import { ProgressionDrawer } from './progression/ProgressionDrawer'
+import { NameNoteFields } from './NameNoteFields'
 import { EraPoint } from './progression/EraPoint'
 import { EraFieldRow } from './progression/EraFieldRow'
 import { EraStories } from './progression/EraStories'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 interface EraFormProps {
   universeId: string
@@ -59,20 +56,7 @@ export function EraForm({
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
 
-  const {
-    nameInput,
-    saveButton,
-    base,
-    setBase,
-    initial,
-    draft,
-    setDraft,
-    fieldErrors,
-    message,
-    isSaving,
-    conflict,
-    setConflict,
-  } = state
+  const { nameInput, base, initial, draft, fieldErrors } = state
 
   const isDirty =
     payloadKey(inputOf(draft, null, reckonsInEras, custom)) !==
@@ -94,9 +78,11 @@ export function EraForm({
   })
 
   return (
-    <Drawer
-      initialFocus={nameInput}
-      testId="era-form"
+    <ProgressionDrawer
+      name="era"
+      universeId={universeId}
+      entityId={entityId}
+      state={state}
       titleId="era-heading"
       eyebrow={
         era
@@ -108,47 +94,28 @@ export function EraForm({
       leaveMessage={
         era ? t('time.eraForm.leaveGuardEdit', { name: era.name }) : t('time.eraForm.leaveGuardNew')
       }
-      busy={isSaving}
+      submitLabel={era ? t('time.eraForm.save') : t('time.eraForm.add')}
+      busyLabel={era ? t('time.eraForm.saving') : t('time.eraForm.adding')}
+      cancelTestId="cancel-era"
+      conflict={{
+        what: t('time.eraForm.conflictWhat'),
+        names: (latest) => latest.eras,
+        draftFrom: (latest) =>
+          draftOf(latest.eras.find((one) => one.id === era?.id) ?? null, definitions),
+      }}
       onClose={onClose}
-      onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={era ? t('time.eraForm.save') : t('time.eraForm.add')}
-          busy={isSaving}
-          busyLabel={era ? t('time.eraForm.saving') : t('time.eraForm.adding')}
-          submitTestId="save-era"
-          submitRef={saveButton}
-          onCancel={close}
-          cancelTestId="cancel-era"
-        />
-      )}
+      onSave={() => void save()}
     >
-      {message ? <FormMessage testId="era-error">{message}</FormMessage> : null}
-
-      {conflict ? (
-        <ProgressionConflict
-          universeId={universeId}
-          entityId={entityId}
-          what={t('time.eraForm.conflictWhat')}
-          testId="era-conflict"
-          names={(latest) => latest.eras}
-          draftFrom={(latest) =>
-            draftOf(latest.eras.find((one) => one.id === era?.id) ?? null, definitions)
-          }
-          setBase={setBase}
-          setDraft={setDraft}
-          setConflict={setConflict}
-          nameInput={nameInput}
-          saveButton={saveButton}
-        />
-      ) : null}
-
-      <EraNameFields
-        entityName={entityName}
-        draft={draft}
-        edit={edit}
-        errorOf={errorOf}
-        nameInput={nameInput}
+      <NameNoteFields
+        idPrefix="era"
+        labels={{ name: t('time.eraForm.name'), note: t('time.eraForm.happens') }}
+        placeholder={t('time.eraForm.namePlaceholder')}
+        hint={t('time.eraForm.happensHint', { name: entityName })}
+        value={{ name: draft.name, note: draft.description }}
+        onChange={(part, value) => edit(part === 'name' ? { name: value } : { description: value })}
+        errors={{ name: errorOf('name'), note: errorOf('description') }}
+        testIds={{ name: 'era-name-input', note: 'era-description-input' }}
+        nameRef={nameInput}
       />
 
       <Field
@@ -211,6 +178,6 @@ export function EraForm({
           ))}
         </Field>
       ) : null}
-    </Drawer>
+    </ProgressionDrawer>
   )
 }

@@ -30,7 +30,7 @@ const BUILT: { family: RegExp; why: string }[] = [
   { family: /^(idea|rule|story)row(__title|__meta)?$/, why: '`${look}row__*` (LinkRow)' },
   { family: /^cardgrid--(min|gap)-\d+$/, why: '`cardgrid--min-*` and `--gap-*` (CardGrid)' },
   { family: /^showmore--/, why: '`showmore--${align}` (ShowMore)' },
-  { family: /^contents--/, why: '`contents--${name}` (UniverseOverview)' },
+  { family: /^contents--/, why: '`contents--${name}` (OverviewContents)' },
   {
     family: /^(publication|settings|trash)__confirm(title)?$/,
     why: '`${look}__confirm*` (InlineConfirm)',

@@ -9,6 +9,8 @@ import { StoryForm } from '../components/StoryForm'
 import { listAllProjects } from '../projects/api'
 import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
 import { focusCardMenu, withCover } from '../projects/shelfActions'
+import { shelfCoverChange } from '../projects/shelfCover'
+import { shelfNotices } from '../projects/shelfNotices'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
 import { listStories, reorderStories } from '../stories/api'
@@ -20,10 +22,8 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { CardGrid } from '../components/CardGrid'
 import { ShelfCard, shelfStep } from '../components/ShelfCard'
 import { NewButton } from '../components/NewButton'
-import { Announce } from '../components/Announce'
 import { ReadGate } from '../components/ReadGate'
 import { useAsyncRead } from '../lib/useAsyncRead'
-import { FormMessage } from '../components/FormMessage'
 
 /**
  * The stories told in this universe. A story is narrative an author writes with the lore - it draws
@@ -123,8 +123,10 @@ export default function StoriesPage() {
         {() => null}
       </ReadGate>
 
-      <Announce testId="stories-announcement">{announcement}</Announce>
-      {moveError ? <FormMessage testId="stories-move-error">{moveError}</FormMessage> : null}
+      {shelfNotices(
+        { announcement, moveError },
+        { announcement: 'stories-announcement', moveError: 'stories-move-error' },
+      )}
 
       {state.kind === 'ready' && state.value.stories.length > 0 ? (
         // Each story as a book on its shelf (owner, 2026-11-17); the Gaming page draws its games the same way.
@@ -174,20 +176,19 @@ export default function StoriesPage() {
           name={covering.title}
           cover={covering.cover ?? null}
           store={storyCoverStore(universe.id, covering.id)}
-          onChanged={(cover) => {
-            setCovering({ ...covering, cover })
+          onChanged={shelfCoverChange(covering, setCovering, (id, cover) =>
             setState((current) =>
               current.kind === 'ready'
                 ? {
                     kind: 'ready',
                     value: {
                       ...current.value,
-                      stories: withCover(current.value.stories, covering.id, cover),
+                      stories: withCover(current.value.stories, id, cover),
                     },
                   }
                 : current,
-            )
-          }}
+            ),
+          )}
           onClose={() => setCovering(null)}
         />
       ) : null}
