@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { EntityChoice } from '../components/EntityPicker'
-import type { Load } from '../lib/useAsyncRead'
 import { CANON_ORDER, type CanonStatusValue } from '../lore/types'
-import type { StorySummary } from '../stories/types'
-import type { TimelineEntry, TimelineItemPage } from './types'
+import type { TimelineEntry } from './types'
 import { SOURCES } from './timelineSources'
 
 export type FormState =
@@ -26,11 +24,8 @@ export function useTimelineState() {
 
   const [participant, setParticipant] = useState<EntityChoice | null>(null)
   const [typed, setTyped] = useState(search)
-  const [stories, setStories] = useState<StorySummary[] | null>(null)
-  const [state, setState] = useState<Load<TimelineItemPage>>({ kind: 'loading' })
   const [form, setForm] = useState<FormState>({ mode: 'closed' })
   const [message, setMessage] = useState<string | null>(null)
-  const [reloads, setReloads] = useState(0)
 
   return {
     params,
@@ -46,15 +41,9 @@ export function useTimelineState() {
     setParticipant,
     typed,
     setTyped,
-    stories,
-    setStories,
-    state,
-    setState,
     form,
     setForm,
     message,
     setMessage,
-    reloads,
-    setReloads,
   }
 }

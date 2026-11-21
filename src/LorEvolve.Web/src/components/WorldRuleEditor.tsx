@@ -59,9 +59,8 @@ export function WorldRuleEditor({
 
   const isNew = ruleId === null
 
-  const state = useWorldRuleState({ isNew, announceOnOpen })
+  const state = useWorldRuleState({ announceOnOpen })
   const {
-    load,
     stored,
     draft,
     isSaving,
@@ -72,7 +71,7 @@ export function WorldRuleEditor({
     announcement,
     titleInput,
   } = state
-  useWorldRuleReads({ ...state, universeId, ruleId })
+  const { load, retry } = useWorldRuleReads({ ...state, universeId, ruleId })
 
   const isReady = load.kind === 'ready'
   const isDirty =
@@ -89,6 +88,7 @@ export function WorldRuleEditor({
 
   const { edit, editCheck, save, reread, loadSavedVersion, remove } = worldRuleActions({
     ...state,
+    retry,
     universeId,
     ruleId,
     onCreated,
@@ -105,6 +105,7 @@ export function WorldRuleEditor({
       load={load}
       loading={{ text: t('canon.editor.opening'), testId: 'world-rule-loading' }}
       error={{
+        message: t('canon.editor.openFailed'),
         onRetry: reread,
         retryLabel: t('canon.editor.retry'),
         testId: 'world-rule-load-error',

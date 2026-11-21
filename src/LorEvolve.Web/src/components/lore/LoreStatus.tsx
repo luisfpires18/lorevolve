@@ -8,6 +8,7 @@ import type { useLoreSelection } from '../../lore/useLoreSelection'
 import type { LoadState } from '../../lore/loreAddress'
 import type { ReactNode } from 'react'
 import { LoadError } from '../LoadError'
+import { ReadGate } from '../ReadGate'
 import { CardSkeleton } from '../CardSkeleton'
 import { Callout } from '../Callout'
 type Entries = ReturnType<typeof useLoreEntries>
@@ -20,8 +21,7 @@ const SKELETON_CARDS = 6
 export function LoreStatus({
   types,
   typesFailed,
-  setState,
-  setReads,
+  retry,
   trashedNotice,
   universe,
   massCreated,
@@ -34,7 +34,7 @@ export function LoreStatus({
   refreshTypes: ReturnType<typeof useWorkspaceTypes>['refreshTypes']
   view: LoadState
   children: ReactNode
-} & Pick<Entries, 'types' | 'typesFailed' | 'setState' | 'setReads'> &
+} & Pick<Entries, 'types' | 'typesFailed' | 'retry'> &
   Pick<Selection, 'trashedNotice'>) {
   const { t, tn, tx } = useI18n()
   return (
@@ -78,28 +78,32 @@ export function LoreStatus({
         </Callout>
       ) : null}
 
-      {view.kind === 'loading' ? (
-        <div className="lore__loading">
-          <CardSkeleton
-            shape="tile"
-            className="lore__grid"
-            count={SKELETON_CARDS}
-            announce={t('lore.page.reading')}
-          />
-        </div>
-      ) : null}
-
-      {view.kind === 'error' ? (
-        <LoadError
-          message={t('lore.page.loadFailed')}
-          onRetry={() => {
-            setState({ kind: 'loading' })
-            setReads((count) => count + 1)
+      {/* The entries themselves are drawn by the page's results, so ready says nothing here. */}
+      {view.kind === 'idle' ? null : (
+        <ReadGate
+          load={view}
+          loading={{
+            skeleton: (
+              <div className="lore__loading">
+                <CardSkeleton
+                  shape="tile"
+                  className="lore__grid"
+                  count={SKELETON_CARDS}
+                  announce={t('lore.page.reading')}
+                />
+              </div>
+            ),
           }}
-          retryLabel={t('lore.page.retryLore')}
-          testId="lore-load-error"
-        />
-      ) : null}
+          error={{
+            message: t('lore.page.loadFailed'),
+            onRetry: retry,
+            retryLabel: t('lore.page.retryLore'),
+            testId: 'lore-load-error',
+          }}
+        >
+          {() => null}
+        </ReadGate>
+      )}
     </>
   )
 }

@@ -40,17 +40,14 @@ export default function TimelinePage() {
     setParticipant,
     typed,
     setTyped,
-    stories,
-    state,
-    setState,
     form,
     setForm,
     message,
   } = timeline
   const { update } = useTimelineSearch(timeline)
-  const { forgetMoment, reload } = useTimelineReads({ ...timeline, universe })
+  const { stories, items, forgetMoment, reload } = useTimelineReads({ ...timeline, universe })
 
-  const result = state.kind === 'ready' ? state.value : null
+  const result = items.load.kind === 'ready' ? items.load.value : null
   const isFiltered =
     sourceParam !== null ||
     canonStatus !== null ||
@@ -101,9 +98,8 @@ export default function TimelinePage() {
         canonStatus={canonStatus}
         mixedEras={mixedEras}
         message={message}
-        state={state}
-        setState={setState}
-        reload={reload}
+        state={items.load}
+        retry={items.retry}
       />
 
       {result && result.items.length > 0 ? (

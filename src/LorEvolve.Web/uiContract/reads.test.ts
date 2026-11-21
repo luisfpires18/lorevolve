@@ -65,8 +65,8 @@ const READ_HOMES = new Set([
   'src/lib/useReadOnOpen.ts',
 ])
 
-// Hand-written reads not moved yet: the I41 and I44 files, the ones that keep content while reloading, the public portal
-// and auth pages #456 does not touch, and reads no stage of #456 has reached. Only shrinks.
+// Hand-written reads not moved yet: the I41 files, the public portal and auth pages #456 does not touch, and reads no
+// stage of #456 has reached. Only shrinks.
 const HAND_READS = new Set([
   'src/aiChanges/useAiChangeReads.ts',
   'src/chronology/useChronologyEditorState.ts',
@@ -89,16 +89,12 @@ const HAND_READS = new Set([
   'src/components/lore/ArticleHistory.tsx',
   'src/components/lore/PrivateNoteDrawer.tsx',
   'src/components/progression/ProgressionHistory.tsx',
-  'src/familyTree/useDiscoveryReads.ts',
-  'src/familyTree/useFamilyTreeReads.ts',
   'src/ideas/useRecordEditor.ts',
-  'src/ideas/useRecordList.tsx',
   'src/lore/useEntityArticle.ts',
   'src/lore/useEntityRevisions.ts',
   'src/lore/useEntitySearch.ts',
   'src/lore/useEntryLoad.ts',
   'src/lore/useLoreContextLinks.ts',
-  'src/lore/useLoreEntries.ts',
   'src/lore/useQuickCreate.ts',
   'src/lore/useTypesGames.ts',
   'src/mcp/useConnectionRequest.ts',
@@ -118,21 +114,15 @@ const HAND_READS = new Set([
   'src/projectEntities/useProjectOutline.ts',
   'src/projectEntities/useProjectSchema.ts',
   'src/publishing/usePublishReads.ts',
-  'src/relationships/useRelationsRead.ts',
-  'src/ruleValidation/useTermManagerState.ts',
-  'src/ruleValidation/useValidationTerms.ts',
   'src/search/useUniverseSearchFetch.ts',
   'src/stories/useManuscriptLoad.ts',
   'src/stories/useStoryLoad.ts',
   'src/suggestions/useSuggestionReads.ts',
-  'src/timeline/useTimelineReads.ts',
   'src/trash/useTrashReads.ts',
   'src/universes/useUniverseSettingsState.ts',
   'src/universes/useWorkspaceReads.ts',
   'src/worldLogic/useGuardDrawerEffects.ts',
   'src/worldLogic/useMachinePanelState.ts',
-  'src/worldLogic/useWorldLogicReads.ts',
-  'src/worldRules/useWorldRuleReads.ts',
 ])
 
 // A component (`components/`, `pages/`) or a hook (`use*.ts`, `use*.tsx`).

@@ -14,7 +14,7 @@ export function FamilyAddLink({
   isAdding,
   addKind,
   setAddingFor,
-  setReads,
+  reread,
 }: {
   universe: WorkspaceContext['universe']
   entityId: string | undefined
@@ -23,7 +23,7 @@ export function FamilyAddLink({
   isAdding: boolean
   addKind: (created: RelationshipType) => void
   setAddingFor: Dispatch<SetStateAction<string | null>>
-  setReads: Dispatch<SetStateAction<number>>
+  reread: () => void
 }) {
   const { t } = useI18n()
 
@@ -35,7 +35,7 @@ export function FamilyAddLink({
       onKindCreated={addKind}
       onSaved={() => {
         setAddingFor(null)
-        setReads((current) => current + 1)
+        reread()
       }}
       onCancel={() => setAddingFor(null)}
     />

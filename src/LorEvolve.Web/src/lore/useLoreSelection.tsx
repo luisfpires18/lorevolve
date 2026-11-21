@@ -6,7 +6,6 @@ import type { EntityPage } from './types'
 import { confirmAction } from '../lib/confirm'
 import { changed } from '../lib/queryParams'
 import { useSelection } from '../lib/useSelection'
-import type { Dispatch, SetStateAction } from 'react'
 
 /** Selecting the entries on the page on screen, and moving them to the Trash together. */
 export function useLoreSelection({
@@ -14,13 +13,13 @@ export function useLoreSelection({
   pageSize,
   result,
   universe,
-  setReads,
+  reread,
 }: {
   location: { search: string }
   pageSize: number
   result: EntityPage | null
   universe: { id: string }
-  setReads: Dispatch<SetStateAction<number>>
+  reread: () => void
 }) {
   const { t, tn } = useI18n()
   // Selecting, to move entries to the Trash together. A mode the author turns on, so ordinary browsing carries no
@@ -83,7 +82,7 @@ export function useLoreSelection({
       if (!moved) return
       setTrashed({ text: tn('lore.page.trash.moved', count, { n: count }), list: listKey })
       stopSelecting()
-      setReads((reads) => reads + 1)
+      reread()
     } finally {
       trashing.current = false
     }

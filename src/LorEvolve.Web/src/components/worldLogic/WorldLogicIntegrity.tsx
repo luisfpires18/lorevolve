@@ -4,12 +4,13 @@ import { t, useI18n } from '../../i18n'
 import type { useUniverseAccess } from '../../universes/access'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useWorldLogicState } from '../../worldLogic/useWorldLogicState'
+import type { WorldLogicFindingRow, WorldLogicPage as Page } from '../../worldLogic/types'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
 import { Pager } from '../Pager'
 import { FindingRow } from './FindingRow'
 import { Button } from '../Button'
-import { LoadError } from '../LoadError'
-import { LoadingNote } from '../LoadingNote'
+import { ReadGate } from '../ReadGate'
+import type { Load } from '../../lib/useAsyncRead'
 import { DateText } from '../DateText'
 import { Callout } from '../Callout'
 
@@ -27,8 +28,9 @@ export function WorldLogicIntegrity({
   check,
   reread,
   goTo,
-}: Pick<ReturnType<typeof useWorldLogicState>, 'findings' | 'sweep' | 'sweeping' | 'sweepFailed'> &
-  Pick<ReturnType<typeof worldLogicActions>, 'retry' | 'check' | 'reread' | 'goTo'> & {
+}: Pick<ReturnType<typeof useWorldLogicState>, 'sweep' | 'sweeping' | 'sweepFailed'> & {
+  findings: Load<Page<WorldLogicFindingRow>>
+} & Pick<ReturnType<typeof worldLogicActions>, 'retry' | 'check' | 'reread' | 'goTo'> & {
     tab: string
     universe: WorkspaceContext['universe']
     base: string
@@ -85,76 +87,78 @@ export function WorldLogicIntegrity({
         </Callout>
       ) : null}
 
-      {findings.kind === 'loading' ? (
-        <LoadingNote>{t('canon.worldLogic.integrity.loading')}</LoadingNote>
-      ) : null}
+      <ReadGate
+        load={findings}
+        loading={{ text: t('canon.worldLogic.integrity.loading') }}
+        error={{
+          message: t('canon.worldLogic.integrity.readFailed'),
+          onRetry: retry,
+          retryLabel: t('canon.rules.retry'),
+          testId: 'world-logic-findings-error',
+        }}
+      >
+        {(list) => (
+          <>
+            {list.items.length > 0 ? (
+              <ul className="rulelist" data-testid="world-logic-finding-list">
+                {list.items.map((finding) => (
+                  <FindingRow
+                    key={finding.id}
+                    universeId={universe.id}
+                    finding={finding}
+                    canDecide={access.editContent}
+                    onDecided={reread}
+                  />
+                ))}
+              </ul>
+            ) : null}
 
-      {findings.kind === 'error' ? (
-        <LoadError
-          message={t('canon.worldLogic.integrity.readFailed')}
-          onRetry={retry}
-          retryLabel={t('canon.rules.retry')}
-          testId="world-logic-findings-error"
-        />
-      ) : null}
+            {list.totalCount === 0 ? (
+              <EmptyState
+                testId={sweep ? 'world-logic-integrity-passed' : 'world-logic-integrity-empty'}
+                title={
+                  sweep
+                    ? t('canon.worldLogic.integrity.passed.title')
+                    : t('canon.worldLogic.integrity.empty.title')
+                }
+                hint={
+                  sweep
+                    ? t('canon.worldLogic.integrity.passed.hint')
+                    : t('canon.worldLogic.integrity.empty.hint')
+                }
+                action={
+                  <Button
+                    tone="secondary"
+                    to={`${base}/canon`}
+                    data-testid="world-logic-canon-link"
+                  >
+                    {t('canon.worldLogic.integrity.canonLink')}
+                  </Button>
+                }
+              />
+            ) : null}
 
-      {findings.kind === 'ready' && findings.value.items.length > 0 ? (
-        <ul className="rulelist" data-testid="world-logic-finding-list">
-          {findings.value.items.map((finding) => (
-            <FindingRow
-              key={finding.id}
-              universeId={universe.id}
-              finding={finding}
-              canDecide={access.editContent}
-              onDecided={reread}
+            {list.items.length === 0 && list.totalCount > 0 ? (
+              <EmptyState
+                testId="world-logic-findings-page-empty"
+                title={t('canon.rules.pageEmpty.title')}
+                action={
+                  <Button tone="secondary" onClick={() => goTo('findingsPage', 1)}>
+                    {t('canon.rules.pageEmpty.first')}
+                  </Button>
+                }
+              />
+            ) : null}
+
+            <Pager
+              testId="world-logic-findings-pager"
+              page={list.page}
+              totalPages={list.totalPages}
+              onPage={(next) => goTo('findingsPage', next)}
             />
-          ))}
-        </ul>
-      ) : null}
-
-      {findings.kind === 'ready' && findings.value.totalCount === 0 ? (
-        <EmptyState
-          testId={sweep ? 'world-logic-integrity-passed' : 'world-logic-integrity-empty'}
-          title={
-            sweep
-              ? t('canon.worldLogic.integrity.passed.title')
-              : t('canon.worldLogic.integrity.empty.title')
-          }
-          hint={
-            sweep
-              ? t('canon.worldLogic.integrity.passed.hint')
-              : t('canon.worldLogic.integrity.empty.hint')
-          }
-          action={
-            <Button tone="secondary" to={`${base}/canon`} data-testid="world-logic-canon-link">
-              {t('canon.worldLogic.integrity.canonLink')}
-            </Button>
-          }
-        />
-      ) : null}
-
-      {findings.kind === 'ready' &&
-      findings.value.items.length === 0 &&
-      findings.value.totalCount > 0 ? (
-        <EmptyState
-          testId="world-logic-findings-page-empty"
-          title={t('canon.rules.pageEmpty.title')}
-          action={
-            <Button tone="secondary" onClick={() => goTo('findingsPage', 1)}>
-              {t('canon.rules.pageEmpty.first')}
-            </Button>
-          }
-        />
-      ) : null}
-
-      {findings.kind === 'ready' ? (
-        <Pager
-          testId="world-logic-findings-pager"
-          page={findings.value.page}
-          totalPages={findings.value.totalPages}
-          onPage={(next) => goTo('findingsPage', next)}
-        />
-      ) : null}
+          </>
+        )}
+      </ReadGate>
     </TabPanel>
   )
 }
