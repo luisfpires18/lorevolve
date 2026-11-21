@@ -1,4 +1,4 @@
-import { EntityMultiPicker } from './EntityMultiPicker'
+import { EntityPicker } from './EntityPicker'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
@@ -139,7 +139,8 @@ export function TimelineEntryForm({
         isDated={isDated}
       />
 
-      <EntityMultiPicker
+      <EntityPicker
+        multiple
         label={t('time.momentForm.entities')}
         hint={t('time.momentForm.entitiesHint')}
         universeId={universeId}

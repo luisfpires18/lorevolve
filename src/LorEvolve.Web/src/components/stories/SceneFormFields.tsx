@@ -1,6 +1,5 @@
 import { ChronologyPointFields, type ChronologyPointPart } from '../ChronologyPointFields'
 import { EntityPicker } from '../EntityPicker'
-import { EntityMultiPicker } from '../EntityMultiPicker'
 import type { Chronology } from '../../chronology/types'
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
@@ -231,7 +230,8 @@ export function SceneFormFields({
       </Field>
 
       <div data-testid="scene-lore-field">
-        <EntityMultiPicker
+        <EntityPicker
+          multiple
           label={t('stories.sceneForm.loreLabel')}
           hint={t('stories.sceneForm.loreHint')}
           universeId={universeId}
