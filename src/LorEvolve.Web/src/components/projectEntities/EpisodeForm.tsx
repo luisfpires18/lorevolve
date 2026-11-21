@@ -1,10 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Drawer } from '../Drawer'
 import { Field } from '../Field'
+import { SimpleFormDrawer } from '../SimpleFormDrawer'
 import { t, useI18n } from '../../i18n'
-import { FormActions } from '../FormActions'
-import { FormMessage } from '../FormMessage'
-import { errorText } from '../../lib/errorText'
 
 /** The drawer that adds an episode, or a film's scene or a comic's chapter, to a season. */
 export function EpisodeForm({
@@ -30,39 +27,24 @@ export function EpisodeForm({
   useI18n()
   const [title, setTitle] = useState('')
   const [synopsis, setSynopsis] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  function save() {
-    if (busy || saving) return
-    setSaving(true)
-    setError(null)
-    onSave(title, synopsis.length > 0 ? synopsis : null).catch((failure: unknown) => {
-      setSaving(false)
-      setError(errorText(failure, t('projects.seasons.failed')))
-    })
-  }
 
   return (
-    <Drawer
+    <SimpleFormDrawer
       testId="project-episode-new"
       titleId="project-episode-new-heading"
       eyebrow={eyebrow}
       title={addLabel}
       isDirty={title !== '' || synopsis !== ''}
       leaveMessage={leaveMessage}
+      submitLabel={addLabel}
+      showBusy={false}
+      disabled={busy}
+      submitTestId="project-episode-new-save"
+      cancelTestId="project-episode-new-cancel"
+      canSave={!busy}
+      failed={t('projects.seasons.failed')}
+      onSave={() => onSave(title, synopsis.length > 0 ? synopsis : null)}
       onClose={onCancel}
-      onSubmit={save}
-      busy={saving}
-      actions={(close) => (
-        <FormActions
-          submitLabel={addLabel}
-          disabled={busy || saving}
-          submitTestId="project-episode-new-save"
-          onCancel={close}
-          cancelTestId="project-episode-new-cancel"
-        />
-      )}
     >
       <Field
         label={t('projects.seasons.episodeTitle')}
@@ -80,7 +62,6 @@ export function EpisodeForm({
         onChange={(event) => setSynopsis(event.target.value)}
         data-testid="project-episode-new-synopsis"
       />
-      {error ? <FormMessage>{error}</FormMessage> : null}
-    </Drawer>
+    </SimpleFormDrawer>
   )
 }

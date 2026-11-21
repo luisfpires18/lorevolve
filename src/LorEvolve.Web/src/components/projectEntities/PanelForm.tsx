@@ -1,11 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Drawer } from '../Drawer'
 import { Field } from '../Field'
 import { EntityPicker } from '../EntityPicker'
+import { SimpleFormDrawer } from '../SimpleFormDrawer'
 import { t, useI18n } from '../../i18n'
-import { FormActions } from '../FormActions'
-import { FormMessage } from '../FormMessage'
-import { errorText } from '../../lib/errorText'
 
 /** The drawer that adds a panel to a comic page: what happens, what is said, and the lore entry it shows. */
 export function PanelForm({
@@ -32,43 +29,30 @@ export function PanelForm({
   const [description, setDescription] = useState('')
   const [dialogue, setDialogue] = useState('')
   const [shows, setShows] = useState<{ id: string; name: string } | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  function save() {
-    if (busy || saving) return
-    setSaving(true)
-    setError(null)
-    onSave(
-      description.length > 0 ? description : null,
-      dialogue.length > 0 ? dialogue : null,
-      shows?.id ?? null,
-    ).catch((failure: unknown) => {
-      setSaving(false)
-      setError(errorText(failure, t('projects.pages.failed')))
-    })
-  }
 
   return (
-    <Drawer
+    <SimpleFormDrawer
       testId="project-panel-new"
       titleId="project-panel-new-heading"
       eyebrow={eyebrow}
       title={t('projects.pages.addPanel')}
       isDirty={description !== '' || dialogue !== '' || shows !== null}
       leaveMessage={t('projects.pages.leavePanel')}
+      submitLabel={t('projects.pages.addPanel')}
+      showBusy={false}
+      disabled={busy}
+      submitTestId="project-panel-new-save"
+      cancelTestId="project-panel-new-cancel"
+      canSave={!busy}
+      failed={t('projects.pages.failed')}
+      onSave={() =>
+        onSave(
+          description.length > 0 ? description : null,
+          dialogue.length > 0 ? dialogue : null,
+          shows?.id ?? null,
+        )
+      }
       onClose={onCancel}
-      onSubmit={save}
-      busy={saving}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t('projects.pages.addPanel')}
-          disabled={busy || saving}
-          submitTestId="project-panel-new-save"
-          onCancel={close}
-          cancelTestId="project-panel-new-cancel"
-        />
-      )}
     >
       <Field
         label={t('projects.pages.description')}
@@ -94,7 +78,6 @@ export function PanelForm({
           onChange={(choice) => setShows(choice ? { id: choice.id, name: choice.name } : null)}
         />
       </div>
-      {error ? <FormMessage>{error}</FormMessage> : null}
-    </Drawer>
+    </SimpleFormDrawer>
   )
 }

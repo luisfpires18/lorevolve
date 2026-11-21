@@ -1,12 +1,10 @@
 import { useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
+import { useFormSave } from '../lib/useFormSave'
 import { saveStoryPublicSummary } from '../publishing/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { PUBLIC_SUMMARY_MAX, type ContentPublicationState } from '../publishing/types'
-import { FormActions } from './FormActions'
-import { FormMessage } from './FormMessage'
 
 /**
  * A story's public summary (Task 011): the few lines readers of the public portal are shown about it, in the same
@@ -31,25 +29,17 @@ export function StoryPublicSummaryForm({
   const { t } = useI18n()
   const field = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState(summary ?? '')
-  const [error, setError] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: (fieldErrors, error) => fieldErrors.publicSummary ?? error.message,
+    failed: t('stories.summaryForm.failedSave'),
+  })
 
   const isDirty = draft.trim() !== (summary ?? '').trim()
 
-  async function save() {
-    setError(null)
-    setIsSaving(true)
-    try {
-      onSaved(await saveStoryPublicSummary(universeId, storyId, draft.trim() || null))
-    } catch (failure: unknown) {
-      setError(
-        failure instanceof ApiError
-          ? (failure.fieldErrors.publicSummary ?? failure.message)
-          : t('stories.summaryForm.failedSave'),
-      )
-    } finally {
-      setIsSaving(false)
-    }
+  function save() {
+    void form.save(async () =>
+      onSaved(await saveStoryPublicSummary(universeId, storyId, draft.trim() || null)),
+    )
   }
 
   return (
@@ -61,22 +51,18 @@ export function StoryPublicSummaryForm({
       title={<bdi>{title}</bdi>}
       isDirty={isDirty}
       leaveMessage={t('stories.summaryForm.leaveUnsaved')}
-      busy={isSaving}
+      busy={form.isSaving}
       onClose={onClose}
-      onSubmit={() => void save()}
-      actions={(close) => (
-        <FormActions
-          submitLabel={t('stories.summaryForm.save')}
-          busy={isSaving}
-          busyLabel={t('stories.summaryForm.saving')}
-          submitTestId="save-story-public-summary"
-          onCancel={close}
-          cancelTestId="cancel-story-public-summary"
-        />
-      )}
+      onSubmit={save}
+      message={form.message}
+      messageTestId="story-public-summary-error"
+      actions={{
+        submitLabel: t('stories.summaryForm.save'),
+        busyLabel: t('stories.summaryForm.saving'),
+        submitTestId: 'save-story-public-summary',
+        cancelTestId: 'cancel-story-public-summary',
+      }}
     >
-      {error ? <FormMessage testId="story-public-summary-error">{error}</FormMessage> : null}
-
       <Field
         as="textarea"
         id="story-public-summary"
@@ -86,7 +72,7 @@ export function StoryPublicSummaryForm({
         rows={5}
         dir="auto"
         maxLength={PUBLIC_SUMMARY_MAX}
-        aria-invalid={error ? true : undefined}
+        aria-invalid={form.message ? true : undefined}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         data-testid="story-public-summary-input"

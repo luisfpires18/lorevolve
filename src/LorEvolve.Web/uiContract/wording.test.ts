@@ -57,6 +57,19 @@ const busyKeys = (source: string) => {
     }
     for (const k of source.slice(start, i).matchAll(/\bt\(\s*['`]([^'`]+)['`]/g)) keys.push(k[1])
   }
+  // The same key in a Drawer footer object, `busyLabel: ...`, up to the next comma or closing brace at its own depth.
+  for (const m of source.matchAll(/\bbusyLabel:/g)) {
+    let depth = 0
+    let i = m.index + m[0].length
+    const start = i
+    for (; i < source.length; i++) {
+      const c = source[i]
+      if ('([{'.includes(c)) depth++
+      else if (')]}'.includes(c) && depth-- === 0) break
+      else if (c === ',' && depth === 0) break
+    }
+    for (const k of source.slice(start, i).matchAll(/\bt\(\s*['`]([^'`]+)['`]/g)) keys.push(k[1])
+  }
   return [...new Set(keys)]
 }
 const lackEllipsis = (keys: string[], texts: Map<string, string>[]) =>
@@ -69,6 +82,10 @@ test('the guards fail on a bad snippet', () => {
   ])
   assert.deepEqual(strayActionWords(bad, ['Cancel']), ['a.cancel'])
   assert.deepEqual(busyKeys(`<Button busyLabel={t('a.saving')}>x</Button>`), ['a.saving'])
+  assert.deepEqual(
+    busyKeys(`actions={{ busyLabel: x ? t('a.saving') : t('a.adding'), y: t('a.y') }}`),
+    ['a.saving', 'a.adding'],
+  )
   assert.deepEqual(
     lackEllipsis(
       ['a.saving', 'a.sending'],
