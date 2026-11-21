@@ -8,6 +8,7 @@ import { m } from '../../worldLogic/machinePanelTypes'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
 import { SectionTitle } from '../Section'
+import { LinkRow } from '../LinkRow'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -33,37 +34,33 @@ export function MachineStates({
           {draft.states.map((state) => {
             const count = counts.get(state.id) ?? 0
             return (
-              <li
-                className="rulerow"
+              <LinkRow
+                look="rule"
                 key={state.id}
-                data-testid="machine-state-row"
+                testId="machine-state-row"
                 data-state-id={state.id}
-              >
-                <button
-                  className="rulerow__title rulerow__toggle"
-                  type="button"
-                  aria-label={t(`${m}.editState`, { name: state.name })}
-                  onClick={() => openItem({ kind: 'state', id: state.id })}
-                  data-testid="machine-state-open"
-                >
-                  <bdi>{state.name}</bdi>
-                </button>
-                <p className="rulerow__meta">
-                  {t(`${m}.value`, { value: state.value })}
-                  {state.initial ? ` · ${t(`${m}.initial`)}` : null}
-                  {count ? (
-                    <>
-                      {' · '}
-                      <StatusBadge
-                        step={1}
-                        label={tn(`${m}.openFindings`, count, { count })}
-                        testId="machine-state-row-findings"
-                      />
-                    </>
-                  ) : null}
-                </p>
-                {rowError(state.id)}
-              </li>
+                title={state.name}
+                titleTestId="machine-state-open"
+                openLabel={t(`${m}.editState`, { name: state.name })}
+                onOpen={() => openItem({ kind: 'state', id: state.id })}
+                meta={
+                  <>
+                    {t(`${m}.value`, { value: state.value })}
+                    {state.initial ? ` · ${t(`${m}.initial`)}` : null}
+                    {count ? (
+                      <>
+                        {' · '}
+                        <StatusBadge
+                          step={1}
+                          label={tn(`${m}.openFindings`, count, { count })}
+                          testId="machine-state-row-findings"
+                        />
+                      </>
+                    ) : null}
+                  </>
+                }
+                aside={rowError(state.id)}
+              />
             )
           })}
         </ul>

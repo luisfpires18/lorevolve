@@ -6,6 +6,7 @@ import { Field } from './Field'
 import type { Progression } from '../progression/types'
 import {
   LISTS,
+  draftOf,
   inputOf,
   listOf,
   nameOf,
@@ -16,7 +17,7 @@ import {
 } from '../progression/itemDraft'
 import { useItemFormState } from '../progression/useItemFormState'
 import { itemFormActions } from '../progression/itemFormActions'
-import { ItemConflict } from './progression/ItemConflict'
+import { ProgressionConflict } from './progression/ProgressionConflict'
 import { ItemNameFields } from './progression/ItemNameFields'
 import { ItemUnlockField } from './progression/ItemUnlockField'
 import { Button } from './Button'
@@ -120,14 +121,18 @@ export function ProgressionItemForm({
       {message ? <FormMessage testId={`${kind}-error`}>{message}</FormMessage> : null}
 
       {conflict ? (
-        <ItemConflict
+        <ProgressionConflict
           universeId={universeId}
           entityId={entityId}
-          kind={kind}
-          item={item}
+          what={t('progression.item.conflictWhat')}
+          testId={`${kind}-conflict`}
+          names={(latest) => listOf(latest, kind).map((one) => ({ id: one.id, name: nameOf(one) }))}
+          draftFrom={(latest) =>
+            draftOf(listOf(latest, kind).find((one) => one.id === item?.id) ?? null)
+          }
           setBase={setBase}
-          setInitial={setInitial}
           setDraft={setDraft}
+          onUseLatest={setInitial}
           setConflict={setConflict}
           nameInput={nameInput}
           saveButton={saveButton}

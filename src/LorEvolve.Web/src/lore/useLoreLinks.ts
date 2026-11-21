@@ -8,7 +8,7 @@ import {
   type FieldFilter,
 } from './fieldFilters'
 import type { SetURLSearchParams } from 'react-router-dom'
-import { changed } from './loreAddress'
+import { changed } from '../lib/queryParams'
 import type { EntityType } from './typeDefinitions'
 
 /** Lore's address written: the links to a type, a group or no filters, and the moves to a page or a filter. */

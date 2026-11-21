@@ -139,14 +139,6 @@ test('a row that opens as a whole is LinkRow', () => {
     withToken(ROW_LINK),
     new Map([
       ['src/components/LinkRow.tsx', 'the shared part'],
-      [
-        'src/components/worldLogic/FindingRow.tsx',
-        'a disclosure row: its title is a button that opens in place',
-      ],
-      ['src/components/worldLogic/MachineBinding.tsx', 'a disclosure row'],
-      ['src/components/worldLogic/MachineStates.tsx', 'a disclosure row'],
-      ['src/components/worldLogic/MachineTransitions.tsx', 'a disclosure row'],
-      ['src/components/worldLogic/SystemRow.tsx', 'a disclosure row with nested rule rows'],
       ['src/components/worldLogic/FindingDetail.tsx', 'label headings, not a row'],
       ['src/components/ideas/BoardCardInspector.tsx', 'the inspector title, not a row'],
     ]),
@@ -225,7 +217,6 @@ test('a card grid is the one .cardgrid rule; the other auto grids are listed wit
       ['src/styles/116-entry-forms-and-abilities.css', '.scenepicks: a picker'],
       ['src/styles/102-universe-published.css', '.plore-grid, .pstory-grid: public portal'],
       ['src/styles/127-projects.css', '.shelf, .shelf--wide: objects on a shelf'],
-      ['src/styles/121-maps.css', '.maplist: audit class d, left'],
     ]),
     'use CardGrid (.cardgrid with a modifier)',
   )

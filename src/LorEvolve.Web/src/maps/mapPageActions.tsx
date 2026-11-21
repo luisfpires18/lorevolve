@@ -8,6 +8,7 @@ import type { MapsListNotice } from '../pages/MapsPage'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useMapPageState } from './useMapPageState'
 import type { useNavigate, useSearchParams } from 'react-router-dom'
+import { changed } from '../lib/queryParams'
 
 export function mapPageActions({
   universe,
@@ -35,15 +36,7 @@ export function mapPageActions({
   tx: ReturnType<typeof useI18n>['tx']
 }) {
   function select(pinId: string | null, focus = false) {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        if (pinId) next.set('pin', pinId)
-        else next.delete('pin')
-        return next
-      },
-      { replace: true },
-    )
+    setParams((current) => changed(current, { pin: pinId }, { keepPage: true }), { replace: true })
     if (focus && pinId) setFocusPinId(pinId)
   }
 

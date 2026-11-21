@@ -37,11 +37,9 @@ export default function UniverseTrash() {
 
   const trash = useTrashState()
   const {
-    page,
     setPage,
     state,
-    selection,
-    setSelection,
+    selecting,
     restoring,
     confirming,
     erasing,
@@ -57,10 +55,8 @@ export default function UniverseTrash() {
   const result = state.kind === 'ready' ? state.value : null
   const pageItems = result?.items ?? []
 
-  // What is selected belongs to the page on screen, as in Lore: another page is another list, so nothing is ever selected
-  // out of sight. Reset while rendering, so no frame shows an old page's selection; and only rows still on screen count.
-  if (selection.page !== page) setSelection({ page, keys: new Set() })
-  const selectedKeys = selection.page === page ? selection.keys : new Set<string>()
+  // Only rows still on screen count.
+  const selectedKeys = selecting.selectedIds
   const selected = pageItems.filter((item) => selectedKeys.has(keyOf(item)))
   // While the question is open or the delete is working, the selection cannot change underneath it.
   const selectionLocked = bulkConfirming || bulkBusy
@@ -71,8 +67,6 @@ export default function UniverseTrash() {
     user,
     tn,
     load,
-    pageItems,
-    selectedKeys,
     selected,
     selectionLocked,
   })

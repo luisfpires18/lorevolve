@@ -14,6 +14,7 @@ import { ReadGate } from '../components/ReadGate'
 import { LinkRow } from '../components/LinkRow'
 import { Callout } from '../components/Callout'
 import { useAsyncRead } from '../lib/useAsyncRead'
+import { pageParam } from '../lib/queryParams'
 import { DateText } from '../components/DateText'
 
 /** What a rule's editor says it did before handing back to the list. */
@@ -51,12 +52,7 @@ export default function WorldRulesPage() {
   const notice = (location.state as WorldRulesListNotice | null)?.deleted ?? null
 
   function goToPage(next: number) {
-    setParams((current) => {
-      const updated = new URLSearchParams(current)
-      if (next <= 1) updated.delete('page')
-      else updated.set('page', String(next))
-      return updated
-    })
+    setParams((current) => pageParam(current, 'page', next))
   }
 
   return (

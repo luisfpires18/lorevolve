@@ -3,6 +3,7 @@ import { t } from '../../i18n'
 import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { SectionTitle } from '../Section'
+import { LinkRow } from '../LinkRow'
 
 type State = ReturnType<typeof useMachinePanelState>
 
@@ -23,21 +24,20 @@ export function MachineBinding({
     <section className="machinepanel__group">
       <SectionTitle tone="rule">{t(`${m}.binding`)}</SectionTitle>
       <ul className="rulelist">
-        <li className="rulerow" data-testid="machine-binding-row">
-          <button
-            className="rulerow__title rulerow__toggle"
-            type="button"
-            aria-label={t(`${m}.editBinding`)}
-            onClick={() => setOpen({ kind: 'binding' })}
-            data-testid="machine-binding-open"
-          >
-            {t(`${m}.binding`)}
-          </button>
-          <p className="rulerow__meta" dir="auto">
-            {hasBinding ? t(`${m}.bindingSet`, { subjectType, attribute }) : t(`${m}.bindingUnset`)}
-          </p>
-          {rowError('binding')}
-        </li>
+        <LinkRow
+          look="rule"
+          testId="machine-binding-row"
+          title={t(`${m}.binding`)}
+          isolate={false}
+          titleTestId="machine-binding-open"
+          openLabel={t(`${m}.editBinding`)}
+          onOpen={() => setOpen({ kind: 'binding' })}
+          metaDirAuto
+          meta={
+            hasBinding ? t(`${m}.bindingSet`, { subjectType, attribute }) : t(`${m}.bindingUnset`)
+          }
+          aside={rowError('binding')}
+        />
       </ul>
     </section>
   )

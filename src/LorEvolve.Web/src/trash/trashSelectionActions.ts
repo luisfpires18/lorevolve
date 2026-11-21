@@ -14,12 +14,9 @@ export function trashSelectionActions({
   user,
   tn,
   load,
-  page,
-  pageItems,
-  selectedKeys,
   selected,
   selectionLocked,
-  setSelection,
+  selecting,
   setIsSelecting,
   setBulkConfirming,
   bulkBusy,
@@ -35,33 +32,27 @@ export function trashSelectionActions({
   user: ReturnType<typeof useAuth>['user']
   tn: ReturnType<typeof useI18n>['tn']
   load: (signal?: AbortSignal) => void
-  pageItems: TrashItem[]
-  selectedKeys: ReadonlySet<string>
   selected: TrashItem[]
   selectionLocked: boolean
 }) {
   function toggle(item: TrashItem) {
     if (selectionLocked) return
-    const next = new Set(selectedKeys)
-    if (next.has(keyOf(item))) next.delete(keyOf(item))
-    else next.add(keyOf(item))
-    setSelection({ page, keys: next })
+    selecting.toggle(keyOf(item))
   }
 
   function selectPage() {
-    setSelection({ page, keys: new Set(pageItems.map(keyOf)) })
+    selecting.selectPage()
     // Select page has nothing left to do once it has; the next step is the delete.
     requestAnimationFrame(() => bulkDeleteRef.current?.focus())
   }
 
   function clearSelection() {
-    setSelection({ page, keys: new Set() })
+    selecting.clear()
     requestAnimationFrame(() => selectPageRef.current?.focus())
   }
 
   function stopSelecting() {
-    setSelection({ page, keys: new Set() })
-    setIsSelecting(false)
+    selecting.stop()
     setBulkConfirming(false)
     setBulkError(null)
   }

@@ -18,14 +18,3 @@ export function readPage(value: string | null) {
   const page = Number(value)
   return Number.isInteger(page) && page > 1 ? page : 1
 }
-
-/** The address with these changes, always back on the first page unless a page is given. */
-export function changed(from: URLSearchParams, changes: Record<string, string | null>) {
-  const next = new URLSearchParams(from)
-  next.delete('page')
-  for (const [key, value] of Object.entries(changes)) {
-    if (value === null || value === '') next.delete(key)
-    else next.set(key, value)
-  }
-  return next
-}

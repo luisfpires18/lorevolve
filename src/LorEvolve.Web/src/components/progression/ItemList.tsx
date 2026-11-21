@@ -1,7 +1,8 @@
-import { useI18n } from '../../i18n'
+import { t as translate, useI18n } from '../../i18n'
 import type { Ability, Appearance, Form } from '../../progression/types'
 import { useUniverseAccess } from '../../universes/access'
-import { ItemRow } from './ItemRow'
+import { ItemRow, type ItemFact } from './ItemRow'
+import { unlockParts } from '../../progression/unlockParts'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
 import { PanelHead } from '../PanelHead'
@@ -83,21 +84,63 @@ export function ItemList({
             <ItemRow
               key={item.id}
               kind={kind}
-              item={item}
-              index={index}
-              items={items}
-              appearances={appearances}
+              name={item.name}
+              description={item.description}
               universeId={universeId}
+              first={index === 0}
+              last={index === items.length - 1}
               busy={busy}
-              access={access}
-              words={words}
-              onEdit={onEdit}
-              onMove={onMove}
-              onRemove={onRemove}
+              canEdit={access.editContent}
+              words={{
+                actions: t('progression.items.actions', { name: item.name }),
+                edit: words.edit,
+                remove: words.remove,
+                scenes: t('progression.items.usedIn'),
+                sceneInTrash: (title) => t('progression.era.inTrash', { title }),
+              }}
+              facts={itemFacts(kind, item, appearances)}
+              scenes={item.scenes}
+              onEdit={() => onEdit(item)}
+              onMove={(by) => onMove(item, by)}
+              onRemove={() => onRemove(item)}
             />
           ))}
         </ul>
       )}
     </section>
   )
+}
+
+/** A form's or ability's facts, in the order the profile lists them. */
+function itemFacts(kind: 'form' | 'ability', item: Form | Ability, appearances: Appearance[]) {
+  const unlock = unlockParts(item.unlock)
+  const looks = appearances.filter((look) => look.forms.some((form) => form.id === item.id))
+  const facts: ItemFact[] = []
+  if (unlock.length > 0)
+    facts.push({
+      name: translate('progression.items.firstUnlocked'),
+      value: unlock.join(', '),
+      testId: `${kind}-unlock`,
+    })
+  facts.push({
+    name: translate('progression.items.availableIn'),
+    value:
+      item.eras.length === 0
+        ? translate('progression.items.noStage')
+        : item.eras.map((era) => era.name).join(', '),
+    testId: `${kind}-available`,
+  })
+  if (kind === 'form' && looks.length > 0)
+    facts.push({
+      name: translate('progression.items.looks'),
+      value: looks.map((look) => look.label).join(', '),
+      testId: 'form-looks',
+    })
+  if ('forms' in item && item.forms.length > 0)
+    facts.push({
+      name: translate('progression.items.forms'),
+      value: item.forms.map((form) => form.name).join(', '),
+      testId: 'ability-forms-read',
+    })
+  return facts
 }

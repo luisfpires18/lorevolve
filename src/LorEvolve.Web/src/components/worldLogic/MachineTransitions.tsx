@@ -14,6 +14,7 @@ import type { GuardMarkValue } from '../../worldLogic/markText'
 import { NewButton } from '../NewButton'
 import { FormActions } from '../FormActions'
 import { SectionTitle } from '../Section'
+import { LinkRow } from '../LinkRow'
 
 /** The machine panel's transitions group: one row per transition with its guard, and Add transition. */
 export function MachineTransitions({
@@ -39,37 +40,33 @@ export function MachineTransitions({
           {draft.transitions.map((transition) => {
             const name = transition.label.trim() || pairName(transition)
             return (
-              <li
-                className="rulerow"
+              <LinkRow
+                look="rule"
                 key={transition.id}
-                data-testid="machine-transition-row"
+                testId="machine-transition-row"
                 data-transition-id={transition.id}
-              >
-                <button
-                  className="rulerow__title rulerow__toggle"
-                  type="button"
-                  aria-label={t(`${m}.editTransition`, { name })}
-                  onClick={() => openItem({ kind: 'transition', id: transition.id })}
-                  data-testid="machine-transition-open"
-                >
-                  <bdi>{name}</bdi>
-                </button>
-                <p className="rulerow__meta">
-                  {pairName(transition)} ·{' '}
-                  {transition.guardRuleId
-                    ? t(`${m}.guard`, {
-                        title: ruleTitle.get(transition.guardRuleId) ?? t(`${m}.unknownGuard`),
-                      })
-                    : t(`${m}.noGuard`)}
-                  {marks.has(transition.id) ? (
-                    <>
-                      {' · '}
-                      <GuardMark mark={marks.get(transition.id)!} />
-                    </>
-                  ) : null}
-                </p>
-                {rowError(transition.id)}
-              </li>
+                title={name}
+                titleTestId="machine-transition-open"
+                openLabel={t(`${m}.editTransition`, { name })}
+                onOpen={() => openItem({ kind: 'transition', id: transition.id })}
+                meta={
+                  <>
+                    {pairName(transition)} ·{' '}
+                    {transition.guardRuleId
+                      ? t(`${m}.guard`, {
+                          title: ruleTitle.get(transition.guardRuleId) ?? t(`${m}.unknownGuard`),
+                        })
+                      : t(`${m}.noGuard`)}
+                    {marks.has(transition.id) ? (
+                      <>
+                        {' · '}
+                        <GuardMark mark={marks.get(transition.id)!} />
+                      </>
+                    ) : null}
+                  </>
+                }
+                aside={rowError(transition.id)}
+              />
             )
           })}
         </ul>
