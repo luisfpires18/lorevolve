@@ -1,11 +1,9 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { t, useI18n } from '../i18n'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
-import { AccountMenu } from './AccountMenu'
-import { BrandMark } from './BrandMark'
 import { SiteFooter } from './SiteFooter'
 import { MAIN_CONTENT_ID } from './SkipLink'
-import { Wordmark } from './Wordmark'
+import { WorkspaceBar } from './WorkspaceBar'
 
 /** The account-level screen an address is, named as its tab and its title say it. */
 function screenName(pathname: string) {
@@ -37,50 +35,17 @@ export function WorkspaceLayout() {
 
   return (
     <div className="home">
-      <header className="workspacebar">
-        <Link
-          className="home__brand workspacebar__brand"
-          to="/"
-          aria-label={t('shell.brand.homeLabel')}
-          data-testid="home-brand"
-        >
-          <BrandMark />
-          <Wordmark />
-        </Link>
-
-        <nav className="workspacebar__nav" aria-label={t('shell.workspace.navLabel')}>
-          {/* Shown, not spoken: the landmark's own name already says it. */}
-          <span className="workspacebar__context" aria-hidden="true">
-            {t('shell.workspace.context')}
-          </span>
-          <ul className="workspacebar__links">
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/app"
-                end
-                data-testid="workspacebar-universes"
-              >
-                {t('shell.workspace.universes')}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                className="workspacebar__link"
-                to="/app/projects"
-                data-testid="workspacebar-projects"
-              >
-                {t('shell.workspace.projects')}
-              </NavLink>
-            </li>
-          </ul>
-        </nav>
-
-        <Link className="workspacebar__explore" to="/" data-testid="home-explore">
-          {t('shell.workspace.explore')}
-        </Link>
-        <AccountMenu variant="bar" />
-      </header>
+      <WorkspaceBar
+        navLabel={t('shell.workspace.navLabel')}
+        context={t('shell.workspace.context')}
+        testIdPrefix="workspacebar"
+        brandTestId="home-brand"
+        links={[
+          { id: 'universes', to: '/app', end: true, label: t('shell.workspace.universes') },
+          { id: 'projects', to: '/app/projects', label: t('shell.workspace.projects') },
+        ]}
+        outbound={{ to: '/', label: t('shell.workspace.explore'), testId: 'home-explore' }}
+      />
 
       <main className="home__body" id={MAIN_CONTENT_ID} tabIndex={-1}>
         <Outlet />

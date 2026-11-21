@@ -6,6 +6,7 @@ import { getTimelineEntry, listTimelineItems } from './api'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useTimelineState } from './useTimelineState'
 import { errorText } from '../lib/errorText'
+import { changed } from '../lib/queryParams'
 
 /** The Timeline screen's reads: the story list, a moment named by `?moment=`, and the page of items. */
 export function useTimelineReads({
@@ -40,14 +41,9 @@ export function useTimelineReads({
 
   /** Forgets `?moment=` in place, keeping every filter and the page. */
   const forgetMoment = useCallback(() => {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        next.delete('moment')
-        return next
-      },
-      { replace: true },
-    )
+    setParams((current) => changed(current, { moment: null }, { keepPage: true }), {
+      replace: true,
+    })
   }, [setParams])
 
   // `?moment=<id>` opens that moment's editor wherever it sits in the chronology - the address a Canon finding or a rule's check

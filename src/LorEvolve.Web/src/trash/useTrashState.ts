@@ -4,6 +4,8 @@ import type { Load } from '../lib/useAsyncRead'
 import type { Outcome } from '../lib/outcome'
 import { useConfirmFocus } from '../lib/useConfirmFocus'
 import type { TrashItem, TrashPage } from './types'
+import { useSelection } from '../lib/useSelection'
+import { keyOf } from './trashText'
 
 /** The Trash's states: the page and its read, restoring and its confirm, erasing, selecting and the bulk erase, with their refs and focus. */
 export function useTrashState() {
@@ -27,11 +29,13 @@ export function useTrashState() {
   // Selecting, to delete several rows permanently together. A mode the author turns on, so ordinary browsing carries no
   // checkboxes; while it is on, the rows' own Restore and Delete permanently… step aside, so one row cannot be restored or
   // erased on its own while others are selected.
-  const [isSelecting, setIsSelecting] = useState(false)
-  const [selection, setSelection] = useState<{ page: number; keys: ReadonlySet<string> }>({
-    page: 1,
-    keys: new Set(),
+  // What is selected belongs to the page on screen, as in Lore: another page is another list, so nothing is ever selected
+  // out of sight.
+  const selecting = useSelection({
+    scope: String(page),
+    pageIds: state.kind === 'ready' ? state.value.items.map(keyOf) : [],
   })
+  const { isSelecting, setIsSelecting } = selecting
   const [bulkConfirming, setBulkConfirming] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkError, setBulkError] = useState<string | null>(null)
@@ -80,8 +84,7 @@ export function useTrashState() {
     eraseButtons,
     isSelecting,
     setIsSelecting,
-    selection,
-    setSelection,
+    selecting,
     bulkConfirming,
     setBulkConfirming,
     bulkBusy,

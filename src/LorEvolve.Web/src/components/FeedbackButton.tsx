@@ -3,6 +3,7 @@ import { MessageSquareWarning } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
@@ -60,8 +61,19 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   const { pathname } = useLocation()
   const [kind, setKind] = useState<FeedbackKindValue>(FeedbackKind.Bug)
   const [text, setText] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [sending, setSending] = useState(false)
+  const {
+    isSaving: sending,
+    message: error,
+    setMessage: setError,
+    save,
+  } = useFormSave({
+    needChange: null,
+    failed: t('data.feedback.sendFailed'),
+    refusal: (failure) =>
+      failure instanceof ApiError
+        ? (Object.values(failure.fieldErrors)[0] ?? failure.message)
+        : false,
+  })
 
   const textArea = useRef<HTMLTextAreaElement>(null)
 
@@ -70,19 +82,10 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
       setError(t('data.feedback.describe'))
       return
     }
-    setSending(true)
-    setError(null)
-    try {
+    await save(async () => {
       await sendFeedback(kind, text.trim(), pathname)
       onSent()
-    } catch (failure: unknown) {
-      setError(
-        failure instanceof ApiError
-          ? (Object.values(failure.fieldErrors)[0] ?? failure.message)
-          : t('data.feedback.sendFailed'),
-      )
-      setSending(false)
-    }
+    })
   }
 
   return (

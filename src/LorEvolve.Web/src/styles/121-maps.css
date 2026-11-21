@@ -12,13 +12,9 @@
   overflow-wrap: anywhere;
 }
 
-.maplist {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: var(--space-5);
-  margin: 2rem 0 0;
-  padding: 0;
+/* The grid is `CardGrid min={16} gap={5}`; this keeps only its distance from the tabs. */
+.maps__list {
+  margin-top: 2rem;
 }
 
 .mapcard {

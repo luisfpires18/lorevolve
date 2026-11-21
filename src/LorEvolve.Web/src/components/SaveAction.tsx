@@ -8,7 +8,7 @@ import { Announce } from './Announce'
 /** How long "Saved" stays on the button after a save, before it goes quiet again. */
 const SAVED_FOR_MS = 2000
 
-interface SaveActionProps {
+export interface SaveActionProps {
   /** The verb at rest: "Save changes", "Create idea", "Save chronology". */
   label: string
   isDirty: boolean

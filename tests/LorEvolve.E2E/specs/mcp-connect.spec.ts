@@ -436,3 +436,78 @@ test.describe('Consent and connected apps', () => {
     }
   })
 })
+
+test.describe('Connected apps errors', () => {
+  /** One listed app that may still propose; its Disconnect and Make reader requests wait until the test fails them. */
+  async function heldRow(page: Page) {
+    const app = {
+      id: 'held-app',
+      clientName: 'E2E held client',
+      verifiedHost: null,
+      universeId: 'held-universe',
+      universeName: 'Held universe',
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+      status: 0,
+      canPropose: true,
+      canProposeSchema: false,
+    }
+    const held = new Map<string, () => Promise<void>>()
+    const arrived = new Map<string, Promise<void>>()
+    for (const path of [
+      `/api/profile/connected-apps/${app.id}`,
+      `/api/profile/connected-apps/${app.id}/proposals`,
+    ]) {
+      let seen = () => {}
+      arrived.set(path, new Promise<void>((resolve) => (seen = resolve)))
+      await page.route(`**${path}`, async (route) => {
+        if (route.request().method() !== 'DELETE') return route.continue()
+        let fail = () => {}
+        const failed = new Promise<void>((resolve) => (fail = resolve))
+        held.set(path, async () => fail())
+        seen()
+        await failed
+        await route.fulfill({ status: 500, body: '' })
+      })
+    }
+    await page.route('**/api/profile/connected-apps', (route) =>
+      route.request().method() === 'GET' ? route.fulfill({ json: [app] }) : route.continue(),
+    )
+    await page.goto('/app/profile?tab=connected-apps')
+    const row = page.getByTestId('connected-app')
+    await expect(row).toContainText(app.clientName)
+
+    // Make reader goes first and is held; Disconnect stays open beside it, and is held too.
+    await row.getByTestId('stop-app-proposals').click()
+    await arrived.get(`/api/profile/connected-apps/${app.id}/proposals`)
+    await row.getByTestId('disconnect-app').click()
+    await row.getByTestId('confirm-disconnect-app').click()
+    await arrived.get(`/api/profile/connected-apps/${app.id}`)
+    return {
+      row,
+      failDisconnect: () => held.get(`/api/profile/connected-apps/${app.id}`)!(),
+      failReader: () => held.get(`/api/profile/connected-apps/${app.id}/proposals`)!(),
+    }
+  }
+
+  const DISCONNECT_FAILED = 'The app couldn’t be disconnected. Try again.'
+  const READER_FAILED = 'It couldn’t be made a Reader. Try again.'
+
+  test('Disconnect then Make reader failing shows the Make reader error', async ({ page }) => {
+    await signUp(page)
+    const { row, failDisconnect, failReader } = await heldRow(page)
+    await failDisconnect()
+    await expect(row.getByRole('alert')).toHaveText(DISCONNECT_FAILED)
+    await failReader()
+    await expect(row.getByRole('alert')).toHaveText(READER_FAILED)
+  })
+
+  test('Make reader then Disconnect failing shows the Disconnect error', async ({ page }) => {
+    await signUp(page)
+    const { row, failDisconnect, failReader } = await heldRow(page)
+    await failReader()
+    await expect(row.getByRole('alert')).toHaveText(READER_FAILED)
+    await failDisconnect()
+    await expect(row.getByRole('alert')).toHaveText(DISCONNECT_FAILED)
+  })
+})

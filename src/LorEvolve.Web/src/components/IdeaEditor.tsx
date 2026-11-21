@@ -2,18 +2,16 @@ import { useId, type ReactNode } from 'react'
 import { IdeaReferencePicker } from './IdeaReferencePicker'
 import { IdeaFormFields } from './ideas/IdeaFormFields'
 import { IdeaHead } from './ideas/IdeaHead'
-import { IdeaNotices } from './ideas/IdeaNotices'
+import { EditorNotices } from './EditorNotices'
+import { QuietNote } from './QuietNote'
 import { IdeaReferences } from './ideas/IdeaReferences'
-import { IdeaSaveBar } from './ideas/IdeaSaveBar'
-import { IdeaUnavailable } from './ideas/IdeaUnavailable'
-import { ideaActions } from '../ideas/ideaActions'
+import { EditorSaveBar } from './EditorSaveBar'
+import { RecordUnavailable } from './ideas/RecordUnavailable'
 import type { IdeaDetail } from '../ideas/types'
-import { useIdeaDraft } from '../ideas/useIdeaDraft'
-import { useIdeaRead } from '../ideas/useIdeaRead'
-import { useIdeaSave } from '../ideas/useIdeaSave'
-import { useIdeaState } from '../ideas/useIdeaState'
+import { useIdeaEditor } from '../ideas/useIdeaEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
+import { DocumentHead } from './DocumentHead'
 
 interface IdeaEditorProps {
   /** The idea being edited, or null for a new one. */
@@ -60,7 +58,7 @@ export function IdeaEditor({
   onCreated,
   onDeleted,
 }: IdeaEditorProps) {
-  const { t, tn, tx } = useI18n()
+  const { t } = useI18n()
   const headingId = useId()
   const titleId = useId()
   const bodyId = useId()
@@ -69,7 +67,6 @@ export function IdeaEditor({
   const statusId = useId()
   const recoveryId = useId()
 
-  const base = useIdeaState({ ideaId, defaultUniverseId, contextUniverse })
   const {
     isNew,
     failed,
@@ -87,16 +84,13 @@ export function IdeaEditor({
     announcement,
     titleInput,
     addButton,
-  } = base
-  useIdeaRead({ ...base, ideaId, t })
-  const name = draft.title.trim() || stored.title || t('ideas.editor.thisIdea')
-  const drafting = useIdeaDraft(base, t('ideas.editor.leaveGuard', { name }))
-  const { isDirty, isTooLong, copy, offer, isHeld } = drafting
-
-  const saving = useIdeaSave({ ...base, ...drafting, ideaId, onCreated, t })
-  const { edit, save } = saving
-
-  const {
+    isDirty,
+    isTooLong,
+    copy,
+    offer,
+    isHeld,
+    edit,
+    save,
     reread,
     loadSavedVersion,
     recoverDraft,
@@ -105,15 +99,17 @@ export function IdeaEditor({
     addReference,
     removeReference,
     remove,
-  } = ideaActions({ ...base, ...drafting, ...saving, ideaId, onDeleted, t, tn, tx })
+  } = useIdeaEditor({ ideaId, defaultUniverseId, contextUniverse, onCreated, onDeleted })
 
   if (load.kind !== 'ready') {
     return (
-      <IdeaUnavailable
+      <RecordUnavailable
         load={load}
+        testIdPrefix="idea"
+        words="ideas.editor"
         listPath={listPath}
-        listLabel={listLabel}
         contextUniverse={contextUniverse}
+        elsewhere={{ open: t('ideas.editor.openInAll'), back: listLabel }}
         reread={reread}
       />
     )
@@ -125,31 +121,68 @@ export function IdeaEditor({
 
   return (
     <article className="idea" aria-labelledby={headingId} data-testid="idea-editor">
-      <IdeaHead
+      <DocumentHead
+        testIdPrefix="idea"
         listPath={listPath}
         listLabel={listLabel}
-        headingId={headingId}
         isNew={isNew}
-        stored={stored}
-        isSaving={isSaving}
-        remove={remove}
-        contextUniverse={contextUniverse}
-        ideaId={ideaId}
-      />
+        title={stored.title}
+        newTitle={t('ideas.editor.newIdea')}
+        menuLabel={t('ideas.editor.moreActions', { title: stored.title })}
+        deleteLabel={t('ideas.editor.deleteIdea')}
+        onDelete={() => void remove()}
+        busy={isSaving}
+        titleId={headingId}
+        lede={t('ideas.editor.lede')}
+        lastSavedKey="ideas.editor.lastSaved"
+        updatedAt={stored.updatedAt}
+      >
+        <IdeaHead isNew={isNew} stored={stored} contextUniverse={contextUniverse} ideaId={ideaId} />
+      </DocumentHead>
 
-      <IdeaNotices
-        offer={offer}
-        copy={copy}
+      <EditorNotices
+        testId="idea"
         recoveryId={recoveryId}
-        isNew={isNew}
-        stored={stored}
-        recoverDraft={recoverDraft}
-        discardDraft={discardDraft}
-        conflict={conflict}
-        isSaving={isSaving}
-        save={save}
-        loadSavedVersion={loadSavedVersion}
+        recovery={
+          offer && copy
+            ? {
+                what: isNew ? t('ideas.editor.recoveryNew') : t('ideas.editor.recoveryThis'),
+                draft: offer,
+                savedUpdatedAt: stored.updatedAt,
+                preview: (
+                  <div
+                    className="recovery__prose idea__preview prose"
+                    role="region"
+                    aria-label={t('ideas.editor.recoveredDraft')}
+                    tabIndex={0}
+                  >
+                    <p className="idea__previewtitle">{copy.title || t('ideas.editor.untitled')}</p>
+                    {copy.body === '' ? (
+                      <QuietNote size="body">{t('ideas.editor.noBody')}</QuietNote>
+                    ) : (
+                      copy.body
+                    )}
+                  </div>
+                ),
+                onRecover: recoverDraft,
+                onDiscard: discardDraft,
+              }
+            : null
+        }
+        conflict={
+          conflict
+            ? {
+                text: t('ideas.editor.conflict.text'),
+                onKeepMine: () => void save(conflict.updatedAt),
+                keepLabel: t('ideas.editor.conflict.keepMine'),
+                onLoadSaved: loadSavedVersion,
+                loadLabel: t('ideas.editor.conflict.loadSaved'),
+                busy: isSaving,
+              }
+            : null
+        }
         failure={failure}
+        failureClassName="idea__failure"
       />
 
       <form
@@ -185,16 +218,26 @@ export function IdeaEditor({
           fieldErrors={fieldErrors}
         />
 
-        <IdeaSaveBar
-          failed={failed}
-          isDirty={isDirty}
-          isNew={isNew}
-          isSaving={isSaving}
-          isTooLong={isTooLong}
-          isHeld={isHeld}
-          saves={saves}
-          stored={stored}
-          statusId={statusId}
+        <EditorSaveBar
+          record
+          keyShortcuts
+          warning={
+            failed && isDirty
+              ? { text: t('ideas.editor.recoveryWarning'), testId: 'idea-recovery-warning' }
+              : null
+          }
+          save={{
+            label: isNew ? t('ideas.editor.create') : t('ideas.editor.save'),
+            isDirty,
+            isSaving,
+            isBlocked: isTooLong || isHeld,
+            saves,
+            restingStatus:
+              stored.updatedAt === null ? t('ideas.editor.notSavedYet') : t('ideas.editor.saved'),
+            statusId,
+            statusTestId: 'idea-status',
+            testId: 'idea-save',
+          }}
         />
       </form>
 

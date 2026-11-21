@@ -190,7 +190,7 @@ test('show and hide is DisclosureButton; the listed others own their aria-expand
       ...list('a tree branch', ['LoreCatalog']),
       ...list('a canvas node', ['familyTree/FamilyNode']),
       ...list("the rail's menu", ['universes/WorkspaceRail']),
-      ...list('a rule row, left by the audit', ['worldLogic/FindingRow', 'worldLogic/SystemRow']),
+      ...list("a rule row's fold, LinkRow's button mode", ['LinkRow']),
     ]).set('src/pages/UniversesPage.tsx', 'Restore opens only'),
     'use DisclosureButton',
   )

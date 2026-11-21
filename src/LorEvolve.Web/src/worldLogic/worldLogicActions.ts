@@ -1,6 +1,7 @@
 import { evaluateWorldLogicFindings } from './api'
 import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import type { useWorldLogicState } from './useWorldLogicState'
+import { pageParam } from '../lib/queryParams'
 
 /** The World Logic page's handlers: paging a list, reading the lists again, and running the check. */
 export function worldLogicActions({
@@ -23,12 +24,7 @@ export function worldLogicActions({
     else if (which === 'systemsPage') setSystems({ kind: 'loading' })
     else setFindings({ kind: 'loading' })
 
-    setParams((current) => {
-      const updated = new URLSearchParams(current)
-      if (next <= 1) updated.delete(which)
-      else updated.set(which, String(next))
-      return updated
-    })
+    setParams((current) => pageParam(current, which, next))
   }
 
   function retry() {

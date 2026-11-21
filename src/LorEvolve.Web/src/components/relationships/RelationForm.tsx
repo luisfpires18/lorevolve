@@ -8,6 +8,7 @@ import { labelFor, type RelationDraft } from '../../relationships/relationDraft'
 import type { useRelationsState } from '../../relationships/useRelationsState'
 import { RelationFormFields } from './RelationFormFields'
 import { RelationFormPeriods } from './RelationFormPeriods'
+import { RelationPreview } from './RelationPreview'
 import { FormActions } from '../FormActions'
 
 export function RelationForm({
@@ -55,13 +56,13 @@ export function RelationForm({
 
   return (
     <div className="relform" data-testid="relationship-form">
-      <p className="relform__reads" data-testid="relationship-preview">
-        <span className="relform__subject">
-          {entityName || t('relationships.section.thisEntryCap')}
-        </span>{' '}
-        <span className="relform__verb">{labelFor(types, draft.typeId, draft.useInverse)}</span>{' '}
-        <span className="relform__object">{draft.related?.name ?? '…'}</span>
-      </p>
+      <RelationPreview
+        subject={entityName || t('relationships.section.thisEntryCap')}
+        verb={labelFor(types, draft.typeId, draft.useInverse)}
+        object={draft.related?.name ?? '…'}
+        testId="relationship-preview"
+        isolate={false}
+      />
 
       <RelationFormFields
         draft={draft}

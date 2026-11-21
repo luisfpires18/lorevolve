@@ -1,46 +1,43 @@
 import type { ReactNode } from 'react'
-import { SceneBeatList, SceneLore, SceneStamp } from '../SceneContext'
-import { ManuscriptTools, type ManuscriptToolsProps } from './ManuscriptTools'
 import { QuietNote } from '../QuietNote'
 
-/** Where the scene is told, its title and its tools, and the scene's planning folded behind Details on a phone. */
-export function ManuscriptHead(
-  props: ManuscriptToolsProps & { where: { container: ReactNode; position: string } },
-) {
-  const { where, titleId, scene, hasContext, contextId, isContextOpen, universeId, chronology } =
-    props
-
+/**
+ * The head of a writing surface (a scene's manuscript, a project's script part): where it is told, its title, and
+ * the optional tools beside the title and context under it.
+ */
+export function ManuscriptHead({
+  where,
+  titleId,
+  title,
+  whereTestId,
+  titleTestId,
+  tools,
+  context,
+}: {
+  where: { container?: ReactNode; position: string }
+  titleId: string
+  title: string
+  whereTestId: string
+  titleTestId: string
+  tools?: ReactNode
+  context?: ReactNode
+}) {
   return (
     <header className="manuscript__head">
-      <QuietNote className="manuscript__where" size="xs" wrap testId="manuscript-where">
+      <QuietNote className="manuscript__where" size="xs" wrap testId={whereTestId}>
         {where.container ? <>{where.container} · </> : null}
         <span className="manuscript__position">{where.position}</span>
       </QuietNote>
 
       <div className="manuscript__titlerow">
-        <h3 className="manuscript__title" id={titleId} data-testid="manuscript-scene-title">
-          <bdi>{scene.title}</bdi>
+        <h3 className="manuscript__title" id={titleId} data-testid={titleTestId}>
+          <bdi>{title}</bdi>
         </h3>
 
-        <ManuscriptTools {...props} />
+        {tools}
       </div>
 
-      {hasContext ? (
-        <div
-          className="manuscript__context"
-          id={contextId}
-          data-open={isContextOpen ? 'true' : 'false'}
-        >
-          <SceneStamp
-            universeId={universeId}
-            chronology={chronology}
-            scene={scene}
-            testId="manuscript"
-          />
-          <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
-          <SceneBeatList beats={scene.beats} testId="manuscript" />
-        </div>
-      ) : null}
+      {context}
     </header>
   )
 }

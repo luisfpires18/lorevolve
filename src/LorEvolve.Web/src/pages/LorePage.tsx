@@ -17,6 +17,7 @@ import { LoreStatus } from '../components/lore/LoreStatus'
 import { LoreResults } from '../components/lore/LoreResults'
 import { LoreSelectBar } from '../components/lore/LoreSelectBar'
 import type { LoadState } from '../lore/loreAddress'
+import { pageParam } from '../lib/queryParams'
 
 /**
  * The Lore browser. Where the author is - which type, which status, what is typed in the filter, which of the type's own
@@ -127,15 +128,7 @@ export default function LorePage() {
   const lastPage = result?.totalPages ?? 1
   useEffect(() => {
     if (!pastTheEnd) return
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        if (lastPage > 1) next.set('page', String(lastPage))
-        else next.delete('page')
-        return next
-      },
-      { replace: true },
-    )
+    setParams((current) => pageParam(current, 'page', lastPage), { replace: true })
   }, [pastTheEnd, lastPage, setParams])
 
   /** A new size is a new way of cutting the list: back to its first page, as a filter change is. */

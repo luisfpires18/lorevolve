@@ -1,7 +1,8 @@
 import { Field } from '../Field'
+import { UniverseSelect } from './UniverseSelect'
 import { BOARD_TITLE_MAX_LENGTH } from '../../ideas/boards'
 import type { Fields } from '../../ideas/boardDraft'
-import type { useBoardState } from '../../ideas/useBoardState'
+import type { useBoardEditor } from '../../ideas/useBoardEditor'
 import { useI18n } from '../../i18n'
 
 /** A board editor's title and universe fields. */
@@ -16,7 +17,7 @@ export function BoardFields({
   changeUniverse,
   chosenUniverse,
   universes,
-}: ReturnType<typeof useBoardState> & {
+}: ReturnType<typeof useBoardEditor> & {
   titleId: string
   universeFieldId: string
   isHeld: boolean
@@ -47,8 +48,10 @@ export function BoardFields({
         aria-required="true"
         data-testid="board-title"
       />
-      <Field
-        as="select"
+      <UniverseSelect
+        universes={universes}
+        archivedKey="ideas.board.fields.archivedUniverse"
+        stray={chosenUniverse ? { id: chosenUniverse.id, label: chosenUniverse.name } : null}
         id={universeFieldId}
         label={t('ideas.board.fields.universe')}
         value={draft.universeId ?? ''}
@@ -57,18 +60,7 @@ export function BoardFields({
           void changeUniverse(event.target.value === '' ? null : event.target.value)
         }
         data-testid="board-universe"
-      >
-        {chosenUniverse && !universes?.some((universe) => universe.id === chosenUniverse.id) ? (
-          <option value={chosenUniverse.id}>{chosenUniverse.name}</option>
-        ) : null}
-        {(universes ?? []).map((universe) => (
-          <option key={universe.id} value={universe.id}>
-            {universe.isArchived
-              ? t('ideas.board.fields.archivedUniverse', { name: universe.name })
-              : universe.name}
-          </option>
-        ))}
-      </Field>
+      />
     </div>
   )
 }

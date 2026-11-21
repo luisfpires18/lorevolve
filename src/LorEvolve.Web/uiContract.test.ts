@@ -36,7 +36,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['connect__url', '#248'],
   ['connectdrawer', '#248'],
   ['connectedapps', '#248'],
-  ['connectedapps__controls', '#248'],
   ['consent__form', '#248'],
   ['contents__heading', '#248'],
   ['entitycard__tile', '#248'],

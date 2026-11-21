@@ -14,6 +14,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
 import { Callout } from '../components/Callout'
+import { CardGrid } from '../components/CardGrid'
 import { QuietNote } from '../components/QuietNote'
 
 type MapsTab = 'maps' | 'interactive'
@@ -90,7 +91,7 @@ export default function MapsPage() {
         >
           {(maps) =>
             maps.length > 0 ? (
-              <ul className="maplist" data-testid="map-list">
+              <CardGrid min={16} gap={5} className="maps__list" testId="map-list">
                 {maps.map((map) => (
                   <li
                     className="mapcard"
@@ -134,7 +135,7 @@ export default function MapsPage() {
                     </QuietNote>
                   </li>
                 ))}
-              </ul>
+              </CardGrid>
             ) : (
               <EmptyState
                 testId="maps-empty"

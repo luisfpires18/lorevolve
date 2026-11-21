@@ -1,10 +1,10 @@
-import { useEffect, useId, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { ActionIcon } from '../ActionIcon'
+import { useId, useState } from 'react'
 import { t, useI18n } from '../../i18n'
 import { useUniverseAccess } from '../../universes/access'
 import { getSystem } from '../../worldLogic/api'
-import type { SystemDetail, SystemSummary } from '../../worldLogic/types'
+import type { SystemSummary } from '../../worldLogic/types'
+import { useReadOnOpen } from '../../lib/useReadOnOpen'
+import { LinkRow } from '../LinkRow'
 import { Button } from '../Button'
 import { LoadingNote } from '../LoadingNote'
 import { Callout } from '../Callout'
@@ -19,57 +19,41 @@ import { Callout } from '../Callout'
 export function SystemRow({ universeId, system }: { universeId: string; system: SystemSummary }) {
   const { tn } = useI18n()
   const [open, setOpen] = useState(false)
-  const [detail, setDetail] = useState<SystemDetail | null>(null)
-  const [failed, setFailed] = useState(false)
+  const { detail, failed } = useReadOnOpen(open, (signal) =>
+    getSystem(universeId, system.id, signal),
+  )
   const panelId = useId()
   const access = useUniverseAccess()
 
-  useEffect(() => {
-    if (!open || detail) return
-
-    const controller = new AbortController()
-
-    getSystem(universeId, system.id, controller.signal)
-      .then((read) => setDetail(read))
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true)
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [open, detail, universeId, system.id])
-
   return (
-    <li className="rulerow" data-testid="world-logic-system-row" data-name={system.name}>
-      <button
-        className="rulerow__title rulerow__toggle"
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((current) => !current)}
-        data-testid="world-logic-system-toggle"
-      >
-        <ActionIcon icon={open ? ChevronDown : ChevronRight} />
-        <bdi>{system.name}</bdi>
-      </button>
-
-      {system.excerpt ? (
-        <p className="rulerow__excerpt" dir="auto">
-          {system.excerpt}
-          {system.isExcerptShortened ? '…' : null}
-        </p>
-      ) : null}
-
-      <p className="rulerow__meta">
-        <span className="rulerow__check" data-testid="world-logic-system-scope">
-          {system.scope === 'Project'
-            ? t('canon.worldLogic.scopes.project')
-            : t('canon.worldLogic.scopes.universe')}
-        </span>
-        {tn('canon.worldLogic.systems.ruleCount', system.ruleCount, { count: system.ruleCount })}
-      </p>
-
+    <LinkRow
+      look="rule"
+      testId="world-logic-system-row"
+      data-name={system.name}
+      title={system.name}
+      titleTestId="world-logic-system-toggle"
+      expanded={open}
+      controls={panelId}
+      onToggle={() => setOpen((current) => !current)}
+      excerpt={
+        system.excerpt ? (
+          <>
+            {system.excerpt}
+            {system.isExcerptShortened ? '…' : null}
+          </>
+        ) : null
+      }
+      meta={
+        <>
+          <span className="rulerow__check" data-testid="world-logic-system-scope">
+            {system.scope === 'Project'
+              ? t('canon.worldLogic.scopes.project')
+              : t('canon.worldLogic.scopes.universe')}
+          </span>
+          {tn('canon.worldLogic.systems.ruleCount', system.ruleCount, { count: system.ruleCount })}
+        </>
+      }
+    >
       {access.editContent ? (
         <Button
           tone="secondary"
@@ -94,21 +78,24 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
         {detail && detail.rules.length > 0 ? (
           <ul className="rulelist">
             {detail.rules.map((rule) => (
-              <li className="rulerow" key={rule.id} data-testid="world-logic-system-rule">
-                <p className="rulerow__title">
-                  <bdi>{rule.title}</bdi>
-                </p>
-                <p className="rulerow__meta">
-                  {rule.hasCondition ? (
-                    <span className="rulerow__check">{t('canon.worldLogic.hasCondition')}</span>
-                  ) : (
-                    <span className="rulerow__check">{t('canon.worldLogic.wordsOnly')}</span>
-                  )}
-                  {tn('canon.worldLogic.systems.sharedWith', rule.systemCount, {
-                    count: rule.systemCount,
-                  })}
-                </p>
-              </li>
+              <LinkRow
+                look="rule"
+                key={rule.id}
+                testId="world-logic-system-rule"
+                title={rule.title}
+                meta={
+                  <>
+                    {rule.hasCondition ? (
+                      <span className="rulerow__check">{t('canon.worldLogic.hasCondition')}</span>
+                    ) : (
+                      <span className="rulerow__check">{t('canon.worldLogic.wordsOnly')}</span>
+                    )}
+                    {tn('canon.worldLogic.systems.sharedWith', rule.systemCount, {
+                      count: rule.systemCount,
+                    })}
+                  </>
+                }
+              />
             ))}
           </ul>
         ) : null}
@@ -119,6 +106,6 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
           </Callout>
         ) : null}
       </div>
-    </li>
+    </LinkRow>
   )
 }

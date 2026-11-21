@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import type { useMapPageState } from './useMapPageState'
 import type { useSearchParams } from 'react-router-dom'
+import { changed } from '../lib/queryParams'
 
 export function useMapPageReads({
   state,
@@ -14,14 +15,7 @@ export function useMapPageReads({
   useEffect(() => {
     if (state.kind !== 'ready' || !selectedPinId) return
     if (!state.value.pins.some((pin) => pin.id === selectedPinId)) {
-      setParams(
-        (current) => {
-          const next = new URLSearchParams(current)
-          next.delete('pin')
-          return next
-        },
-        { replace: true },
-      )
+      setParams((current) => changed(current, { pin: null }, { keepPage: true }), { replace: true })
     }
   }, [state, selectedPinId, setParams])
 }

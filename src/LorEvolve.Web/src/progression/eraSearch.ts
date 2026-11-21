@@ -1,12 +1,10 @@
+import { changed } from '../lib/queryParams'
+
 export function withEra(params: URLSearchParams, eraId: string) {
-  const next = new URLSearchParams(params)
-  next.set('era', eraId)
-  return `?${next.toString()}`
+  return `?${changed(params, { era: eraId }, { keepPage: true }).toString()}`
 }
 
 export function withoutEra(params: URLSearchParams) {
-  const next = new URLSearchParams(params)
-  next.delete('era')
-  const search = next.toString()
+  const search = changed(params, { era: null }, { keepPage: true }).toString()
   return search ? `?${search}` : ''
 }

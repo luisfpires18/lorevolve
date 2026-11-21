@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { useTimelineState } from './useTimelineState'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
+import { changed } from '../lib/queryParams'
 
 /** Writes filters into the address, and keeps the search box and the address in step with a pause while typing. */
 export function useTimelineSearch({
@@ -13,15 +14,7 @@ export function useTimelineSearch({
   const update = useCallback(
     (change: Record<string, string | null>) => {
       setParams(
-        (current) => {
-          const next = new URLSearchParams(current)
-          for (const [key, value] of Object.entries(change)) {
-            if (value === null || value === '') next.delete(key)
-            else next.set(key, value)
-          }
-          if (!('page' in change)) next.delete('page')
-          return next
-        },
+        (current) => changed(current, change, { keepPage: 'page' in change }),
         // Typing is one filter being written, not a history entry per pause.
         { replace: 'q' in change },
       )

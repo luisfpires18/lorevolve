@@ -1,92 +1,38 @@
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Trash2 } from 'lucide-react'
-import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { Quoted } from '../NameList'
 import type { Stored } from '../../ideas/ideaDraft'
 import { useI18n } from '../../i18n'
-import { DocumentHead } from '../DocumentHead'
-import { DateText } from '../DateText'
 
-/** An idea editor's head: the way back, the heading with its actions menu, the lede, and where the idea belongs. */
+/** Under an idea editor's head: the note that the idea belongs to another universe than the one it is opened in. */
 export function IdeaHead({
-  listPath,
-  listLabel,
-  headingId,
   isNew,
   stored,
-  isSaving,
-  remove,
   contextUniverse,
   ideaId,
 }: {
-  listPath: string
-  listLabel: ReactNode
-  headingId: string
   isNew: boolean
   stored: Stored
-  isSaving: boolean
-  remove: () => Promise<void>
   contextUniverse: { id: string; name: string } | null
   ideaId: string | null
 }) {
   const { t, tx } = useI18n()
   const belongsElsewhere =
     !isNew && contextUniverse !== null && stored.universeId !== contextUniverse.id
+  if (!belongsElsewhere) return null
 
   return (
-    <DocumentHead
-      back={{ to: listPath, label: listLabel, testId: 'idea-back' }}
-      title={isNew ? t('ideas.editor.newIdea') : <bdi>{stored.title}</bdi>}
-      titleId={headingId}
-      titleTestId="idea-heading"
-      actions={
-        !isNew ? (
-          <ActionMenu
-            label={t('ideas.editor.moreActions', { title: stored.title })}
-            triggerTestId="idea-actions"
-          >
-            <ActionMenuItem
-              icon={Trash2}
-              tone="danger"
-              disabled={isSaving}
-              onClick={() => void remove()}
-              testId="idea-delete"
-            >
-              {t('ideas.editor.deleteIdea')}
-            </ActionMenuItem>
-          </ActionMenu>
-        ) : null
-      }
-      lede={
-        <>
-          {t('ideas.editor.lede')}
-          {!isNew && stored.updatedAt ? (
-            <>
-              {' '}
-              {tx('ideas.editor.lastSaved', {
-                time: <DateText value={stored.updatedAt} withTime />,
-              })}
-            </>
-          ) : null}
-        </>
-      }
-    >
-      {belongsElsewhere ? (
-        <p className="idea__elsewhere" data-testid="idea-elsewhere">
-          {stored.universe
-            ? tx('ideas.editor.belongsTo', {
-                universe: <Quoted text={stored.universe.name} />,
-                context: <Quoted text={contextUniverse.name} />,
-              })
-            : t('ideas.editor.belongsToNone')}{' '}
-          {stored.universe ? (
-            <Link to={`/app/universes/${stored.universe.id}/ideas/${ideaId}`}>
-              {t('ideas.editor.openInAll')}
-            </Link>
-          ) : null}
-        </p>
+    <p className="idea__elsewhere" data-testid="idea-elsewhere">
+      {stored.universe
+        ? tx('ideas.editor.belongsTo', {
+            universe: <Quoted text={stored.universe.name} />,
+            context: <Quoted text={contextUniverse.name} />,
+          })
+        : t('ideas.editor.belongsToNone')}{' '}
+      {stored.universe ? (
+        <Link to={`/app/universes/${stored.universe.id}/ideas/${ideaId}`}>
+          {t('ideas.editor.openInAll')}
+        </Link>
       ) : null}
-    </DocumentHead>
+    </p>
   )
 }
