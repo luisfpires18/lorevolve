@@ -18,12 +18,6 @@ import type {
 /** The 409 a save or restore gets when the eras were saved somewhere else after they were read here. */
 export const PROGRESSION_CHANGED = 'entity_progression_changed'
 
-/** The 409 for removing an era that still holds a value in an archived field. */
-export const ERA_ARCHIVED_VALUES = 'entity_era_archived_values'
-
-/** The 409 for a version that can no longer be put back exactly as it was saved. */
-export const REVISION_UNRESTORABLE = 'entity_progression_revision_unrestorable'
-
 function progression(universeId: string, entityId: string) {
   return `/api/universes/${universeId}/entities/${entityId}/progression`
 }
@@ -134,9 +128,6 @@ export function appearanceInputOf(
     sceneIds: appearance.scenes.map((scene) => scene.id),
   }
 }
-
-/** The 409 for removing an appearance that still holds pictures, which history cannot bring back. */
-export const APPEARANCE_HOLDS_PICTURES = 'entity_appearance_has_pictures'
 
 function images(universeId: string, entityId: string, appearanceId: string) {
   return `/api/universes/${universeId}/entities/${entityId}/appearances/${appearanceId}/images`

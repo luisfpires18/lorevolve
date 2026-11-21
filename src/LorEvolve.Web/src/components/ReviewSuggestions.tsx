@@ -130,13 +130,16 @@ export function ReviewSuggestions<T>({
       ) : (
         <>
           {open.length > 0 || loaded.more.open ? (
-            <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
+            <section className="stack stack--3 reviewsection" aria-labelledby={`${headingId}-open`}>
               <h3 className="reviewsection__title" id={`${headingId}-open`}>
                 {tx('review.suggestions.open', {
                   n: <HeadingCount n={open.length} more={Boolean(loaded?.more.open)} />,
                 })}
               </h3>
-              <ol className="reviewsection__list" data-testid="suggestions-open">
+              <ol
+                className="plainlist stack stack--4 reviewsection__list"
+                data-testid="suggestions-open"
+              >
                 {open.map((suggestion) => (
                   <SuggestionItem
                     key={suggestion.id}
@@ -153,13 +156,19 @@ export function ReviewSuggestions<T>({
             </section>
           ) : null}
           {decided.length > 0 || loaded.more.decided ? (
-            <details className="reviewsection" data-testid="suggestions-decided-group">
+            <details
+              className="stack stack--3 reviewsection"
+              data-testid="suggestions-decided-group"
+            >
               <summary className="reviewsection__title">
                 {tx('review.suggestions.decided', {
                   n: <HeadingCount n={decided.length} more={Boolean(loaded?.more.decided)} />,
                 })}
               </summary>
-              <ol className="reviewsection__list" data-testid="suggestions-decided">
+              <ol
+                className="plainlist stack stack--4 reviewsection__list"
+                data-testid="suggestions-decided"
+              >
                 {decided.map((suggestion) => (
                   <SuggestionItem
                     key={suggestion.id}

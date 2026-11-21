@@ -121,10 +121,10 @@ export function RelationshipPeriodsField({
               label={label}
               error={errors[key]}
               errorAbove
-              className="relperiod__body"
+              className="stack stack--3"
             >
               {(group) => (
-                <div {...group} className="relperiod__points">
+                <div {...group} className="stack stack--3">
                   {period.kind === 'era' ? (
                     <Field
                       label={t('relationships.periods.era')}

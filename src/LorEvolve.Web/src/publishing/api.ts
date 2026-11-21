@@ -90,18 +90,6 @@ export function setArtwork(
   })
 }
 
-/** Cuts a new card from the artwork already stored; refused if it has been replaced since. */
-export function setArtworkCard(universeId: string, assetId: string, crop: ImageCrop) {
-  return apiFetch<UniverseArtworkRef>(`${base(universeId)}/artwork/card`, {
-    method: 'PUT',
-    body: JSON.stringify({ assetId, crop }),
-  })
-}
-
-export function removeArtwork(universeId: string) {
-  return apiFetch<void>(`${base(universeId)}/artwork`, { method: 'DELETE' })
-}
-
 /** The owner's routes for one entry's or story's publication: read, and the two transitions. */
 function contentBase(universeId: string, kind: ContentKind, id: string) {
   return `${base(universeId)}/${kind === 'entry' ? 'entities' : 'stories'}/${id}`

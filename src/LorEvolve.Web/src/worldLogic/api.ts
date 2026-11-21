@@ -1,6 +1,5 @@
 import { apiFetch } from '../lib/api'
 import type {
-  ConditionEvaluationResponse,
   SystemDetail,
   SystemInput,
   SystemMachineDetail,
@@ -140,26 +139,6 @@ export function saveSystemRule(universeId: string, id: string, input: SystemRule
     method: 'PUT',
     body: JSON.stringify(input),
   })
-}
-
-/**
- * Evaluates one rule now and stores nothing. `targetId` is what `self` stands for; without it a rule written with
- * `self` answers unknown.
- */
-export function evaluateSystemRule(
-  universeId: string,
-  id: string,
-  options: { targetId?: string; projectId?: string } = {},
-) {
-  const params = new URLSearchParams()
-  if (options.targetId) params.set('targetId', options.targetId)
-  if (options.projectId) params.set('projectId', options.projectId)
-  const query = params.toString() ? `?${params.toString()}` : ''
-
-  return apiFetch<ConditionEvaluationResponse>(
-    `${base(universeId)}/system-rules/${id}/evaluate${query}`,
-    { method: 'POST' },
-  )
 }
 
 function findings(universeId: string) {

@@ -104,26 +104,9 @@
   margin-left: auto;
 }
 
-.article__toolong {
-  flex: 1 1 100%;
-  order: -1;
-  margin: 0;
-}
-
 .article__failure {
   max-width: 62ch;
   margin: 0 0 1rem;
-}
-
-.article__conflict {
-  --callout-tone: var(--warning);
-  max-width: 62ch;
-  margin: 0 0 var(--space-4);
-}
-
-.article__conflicttext {
-  margin: 0;
-  font-size: 0.925rem;
 }
 
 /* Saved somewhere else while being edited (ADR 0043): the notice, then the latest version on request. Stacked at every

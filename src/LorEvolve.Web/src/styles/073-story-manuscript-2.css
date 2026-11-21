@@ -25,12 +25,6 @@
   background: var(--raised);
 }
 
-.manuscript__toolong {
-  flex: 1 1 100%;
-  order: -1;
-  margin: 0;
-}
-
 /* The recovery offer and a conflict keep a line's room under the scene's head. */
 .manuscript__recovery .recovery,
 .manuscript .editconflict {

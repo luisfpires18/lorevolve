@@ -117,7 +117,7 @@ function ConfirmDialog({ request }: { request: ConfirmRequest }) {
         <h2 className="confirm__title" id={titleId}>
           {options.title}
         </h2>
-        <div className="confirm__body" id={bodyId}>
+        <div className="stack stack--3" id={bodyId}>
           {options.message ? <p className="confirm__message">{options.message}</p> : null}
           {options.details && options.details.length > 0 ? (
             <ul className="confirm__details" data-testid="confirm-dialog-details">

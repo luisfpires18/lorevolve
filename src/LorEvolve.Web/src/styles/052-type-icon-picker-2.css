@@ -1,17 +1,4 @@
 /* The sections drawer: each section a row of its name, its fold and its moves, then every field with its section. */
-.sectionlist,
-.sectionfields {
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.sectionlist {
-  gap: var(--space-4);
-}
-
 .sectionlist__row {
   display: flex;
   flex-wrap: wrap;
@@ -34,10 +21,6 @@
   margin-left: auto;
 }
 
-.sectionfields {
-  gap: var(--space-3);
-}
-
 .sectionfields__row {
   display: flex;
   flex-wrap: wrap;
@@ -50,12 +33,6 @@
   min-width: 0;
   font-size: var(--text-ui);
   overflow-wrap: anywhere;
-}
-
-.sectionfields__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
 
 .sectionfields__label {

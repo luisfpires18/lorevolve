@@ -52,19 +52,14 @@
   padding: var(--space-6);
 }
 
-.confirm__title {
+.confirm__title,
+.drawer__title {
   margin: 0;
   font-family: var(--display);
   font-weight: 400;
   font-size: var(--text-section);
   line-height: 1.25;
   overflow-wrap: anywhere;
-}
-
-.confirm__body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 .confirm__message {

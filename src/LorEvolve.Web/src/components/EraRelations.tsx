@@ -53,7 +53,7 @@ export function EraRelations({
   if (views.length === 0) return null
 
   return (
-    <div className="rail__block" data-testid="era-relations">
+    <div className="stack stack--2" data-testid="era-relations">
       <SectionTitle level={4} tone="label">
         {t('time.eraRelations.heading')}
       </SectionTitle>

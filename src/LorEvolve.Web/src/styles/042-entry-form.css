@@ -47,12 +47,6 @@
 }
 
 /* What a copy takes from the entry it is made from (Issue #27), above the new entry's form. */
-.entrycopy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .entrycopy > p,
 .entrycopy__links {
   margin: 0;

@@ -55,7 +55,7 @@ export function ItemList({
   if (items.length === 0 && !access.editContent) return null
 
   return (
-    <section className="progitems" aria-labelledby={headingId} data-testid={`${kind}-list`}>
+    <section className="stack stack--3" aria-labelledby={headingId} data-testid={`${kind}-list`}>
       <PanelHead
         look="label"
         level={3}
@@ -79,7 +79,7 @@ export function ItemList({
       {items.length === 0 ? (
         <QuietNote>{words.empty}</QuietNote>
       ) : (
-        <ul className="progitems__list">
+        <ul className="plainlist stack">
           {items.map((item, index) => (
             <ItemRow
               key={item.id}

@@ -5,12 +5,6 @@
    with the layers mark; types are the destinations, so they are the cards. Both take the type's own accent only as a tint
    on the icon well, mixed toward the ink like every other use of an author's colour. */
 
-.lorecatalog {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
 .lorecatalog__browse {
   display: flex;
   flex-wrap: wrap;

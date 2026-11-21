@@ -95,7 +95,7 @@ export function TemplateRow({
           {template.fields.length === 0 ? (
             <QuietNote spacing="flush">{t('projects.schema.noFields')}</QuietNote>
           ) : (
-            <ul className="fieldlist" data-testid={`template-fields-${template.id}`}>
+            <ul className="plainlist stack" data-testid={`template-fields-${template.id}`}>
               {template.fields.map((each) => (
                 <TypeFieldRow
                   key={each.id}

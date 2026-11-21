@@ -16,7 +16,7 @@ export function EraLooks({
 }) {
   const { t } = useI18n()
   return (
-    <div className="rail__block">
+    <div className="stack stack--2">
       <SectionTitle level={4} tone="label">
         {t('progression.era.appearances')}
       </SectionTitle>

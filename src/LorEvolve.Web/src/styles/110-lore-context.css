@@ -3,12 +3,6 @@
    The manuscript's Lore drawer: the moment drawer's frame, so a side sheet over the writing on a wide screen and the whole
    width on a phone. Its rows are an entry's relation rows; its preview is the entry's facts, shortened. */
 
-.lorecontext__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
 .lorecontext__group > .sectionrule {
   margin: 0;
 }
@@ -41,12 +35,6 @@
   min-height: 2.75rem;
 }
 
-.lorepreview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
 .lorepreview__back {
   align-self: flex-start;
   min-height: 2.75rem;
@@ -61,15 +49,6 @@
 
 .lorepreview__more {
   margin: var(--space-1) 0 0;
-}
-
-.lorepreview__name {
-  margin: 0;
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: var(--text-section);
-  line-height: 1.25;
-  overflow-wrap: anywhere;
 }
 
 .lorepreview__summary {

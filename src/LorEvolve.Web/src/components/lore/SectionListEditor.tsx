@@ -97,7 +97,7 @@ export function SectionListEditor<Item extends { key: string } = DraftSection>({
 
   const list =
     sections.length === 0 ? null : (
-      <ol className="sectionlist" id={listId}>
+      <ol className="plainlist stack stack--4" id={listId}>
         {sections.map((section, index) => (
           <li className="sectionlist__row" key={section.key} data-testid={ids.row(index)}>
             {(row ?? sectionRow)(section, index)}

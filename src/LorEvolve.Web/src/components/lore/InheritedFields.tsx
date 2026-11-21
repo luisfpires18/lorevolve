@@ -29,7 +29,7 @@ export function InheritedFields({
             })}
           </QuietNote>
           <ul
-            className="fieldlist"
+            className="plainlist stack"
             aria-label={t('entityTypes.fields.inheritedLabel', {
               type: type.name,
               owner: owner.name,

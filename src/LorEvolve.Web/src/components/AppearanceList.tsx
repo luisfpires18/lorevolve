@@ -46,7 +46,7 @@ export function AppearanceList({
 
   return (
     <section
-      className="progitems"
+      className="stack stack--3"
       aria-labelledby="appearance-list-heading"
       data-testid="appearance-list"
     >
@@ -74,7 +74,7 @@ export function AppearanceList({
       {appearances.length === 0 ? (
         <QuietNote>{t('progression.appearanceList.empty')}</QuietNote>
       ) : (
-        <ul className="progitems__list">
+        <ul className="plainlist stack">
           {appearances.map((appearance, index) => (
             <AppearanceRow
               key={appearance.id}

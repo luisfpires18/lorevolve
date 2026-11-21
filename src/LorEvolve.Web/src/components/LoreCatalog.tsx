@@ -74,7 +74,7 @@ export function LoreCatalog({
   }
 
   return (
-    <section className="lorecatalog" aria-labelledby={headingId} data-testid="lore-catalog">
+    <section className="stack stack--4" aria-labelledby={headingId} data-testid="lore-catalog">
       <h2 className="visually-hidden" id={headingId}>
         {t('lore.catalog.heading')}
       </h2>
@@ -199,7 +199,7 @@ export function LoreCatalog({
 export function LoreCatalogSkeleton() {
   const { t } = useI18n()
   return (
-    <div className="lorecatalog" data-testid="lore-catalog-loading">
+    <div className="stack stack--4" data-testid="lore-catalog-loading">
       <CardSkeleton
         shape="icon"
         min={16}

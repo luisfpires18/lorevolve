@@ -153,7 +153,7 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
       >
         {() => (
           <form
-            className="reviewform privatenote"
+            className="stack stack--2 privatenote"
             onSubmit={(event) => {
               event.preventDefault()
               void save()

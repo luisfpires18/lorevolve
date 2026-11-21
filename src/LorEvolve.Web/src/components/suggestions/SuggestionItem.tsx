@@ -36,7 +36,7 @@ export function SuggestionItem<T>({
 
   return (
     <li
-      className="reviewthread suggestion"
+      className="stack stack--3 reviewthread suggestion"
       data-testid="suggestion"
       data-status={state}
       data-resolved={isOpen ? 'false' : 'true'}

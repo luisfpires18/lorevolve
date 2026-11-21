@@ -161,14 +161,6 @@
   opacity: 0.85;
 }
 
-.fieldlist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-}
-
 .fieldlist__row {
   display: flex;
   flex-wrap: wrap;

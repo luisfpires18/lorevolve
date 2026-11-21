@@ -4,12 +4,6 @@
    way back to the article. An era's page ends with a row of links through the eras in order: earlier, the
    main profile, later - wrapping on a phone. */
 
-.progoverview {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 .progoverview__summary {
   margin: 0;
   white-space: pre-line;

@@ -52,7 +52,7 @@ export function MapScaleSummary({
   }
 
   return (
-    <div className="mapscale" data-testid="map-scale">
+    <div className="stack stack--2" data-testid="map-scale">
       <SectionTitle level={2} tone="label">
         {t('places.calibration.scale')}
       </SectionTitle>
@@ -164,7 +164,7 @@ export function MapCalibrationForm({
 
   return (
     <form
-      className="mapcalibration"
+      className="stack stack--2 mapcalibration"
       data-testid="map-calibration-form"
       onSubmit={(event) => {
         event.preventDefault()

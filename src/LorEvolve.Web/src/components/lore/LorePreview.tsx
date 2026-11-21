@@ -65,7 +65,7 @@ export function LorePreview({
       : []
 
   return (
-    <article className="lorepreview" aria-labelledby={nameId} data-testid="lore-preview">
+    <article className="stack stack--4" aria-labelledby={nameId} data-testid="lore-preview">
       <Button
         tone="text"
         icon={ArrowLeft}
@@ -103,7 +103,7 @@ export function LorePreview({
               typeIcon={state.value.entity.entityTypeIcon}
               typeAccent={state.value.entity.entityTypeAccentColor}
               name={
-                <h3 className="lorepreview__name" id={nameId} data-testid="lore-preview-name">
+                <h3 className="drawer__title" id={nameId} data-testid="lore-preview-name">
                   <bdi>{state.value.entity.name}</bdi>
                 </h3>
               }

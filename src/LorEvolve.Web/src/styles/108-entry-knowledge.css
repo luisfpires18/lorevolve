@@ -64,12 +64,6 @@
   font-weight: 500;
 }
 
-.reviewsection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
 .reviewsection__title {
   display: flex;
   align-items: center;
@@ -82,19 +76,6 @@
 
 summary.reviewsection__title {
   cursor: pointer;
-}
-
-.reviewsection__list,
-.reviewthread__comments {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.reviewsection__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }
 
 details.reviewsection > .reviewsection__list {
@@ -110,12 +91,6 @@ details.reviewsection > .reviewsection__list {
 
 .reviewthread[data-resolved='true'] {
   border-style: dashed;
-}
-
-.reviewthread__comments {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
 .reviewcomment--reply {

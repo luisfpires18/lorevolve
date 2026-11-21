@@ -17,7 +17,7 @@ export function EraItems({
   const { t } = useI18n()
   if (items.length === 0) return null
   return (
-    <div className="rail__block">
+    <div className="stack stack--2">
       <SectionTitle level={4} tone="label">
         {heading}
       </SectionTitle>

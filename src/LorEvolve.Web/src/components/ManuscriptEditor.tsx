@@ -257,7 +257,7 @@ export function ManuscriptEditor({
                   max: MANUSCRIPT_MAX_LENGTH,
                   show: 'over',
                   words: { tooLong: 'manuscript.editor.tooLong' },
-                  className: 'manuscript__toolong',
+                  toolong: true,
                   testId: 'manuscript-too-long',
                 }}
                 warning={

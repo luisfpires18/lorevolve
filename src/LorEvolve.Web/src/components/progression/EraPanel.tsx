@@ -106,7 +106,7 @@ export function EraPanel({
       ) : null}
 
       {era.stories.length > 0 || era.scenes.length > 0 ? (
-        <div className="rail__block">
+        <div className="stack stack--2">
           <SectionTitle level={4} tone="label">
             {t('progression.era.covers')}
           </SectionTitle>

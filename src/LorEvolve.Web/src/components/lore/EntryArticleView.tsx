@@ -70,7 +70,7 @@ export function EntryArticleView({
         ) : null}
 
         {factSections.groups.length > 0 ? (
-          <div className="facts__sections" data-testid="entry-fields">
+          <div className="stack stack--3" data-testid="entry-fields">
             {factSections.ungrouped.length > 0 ? (
               <FactList>{factSections.ungrouped.map(fact)}</FactList>
             ) : null}
@@ -90,7 +90,7 @@ export function EntryArticleView({
         ) : null}
 
         {(detail?.fieldImages.length ?? 0) > 0 ? (
-          <div className="rail__block" data-testid="entry-field-images">
+          <div className="stack stack--2" data-testid="entry-field-images">
             {detail!.fieldImages.map((picture) => {
               const name =
                 selectedType?.fields.find((one) => one.id === picture.fieldId)?.name ?? ''
@@ -109,7 +109,7 @@ export function EntryArticleView({
         ) : null}
 
         {(detail?.tags.length ?? 0) > 0 ? (
-          <div className="rail__block">
+          <div className="stack stack--2">
             <SectionTitle level={2} tone="label">
               {t('entity.page.rail.tags')}
             </SectionTitle>

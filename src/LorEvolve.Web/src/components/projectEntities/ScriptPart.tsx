@@ -126,7 +126,7 @@ export function ScriptPart({
             max: NODE_BODY_MAX_LENGTH,
             show: 'over',
             words: { tooLong: 'projects.script.tooLong' },
-            className: 'manuscript__toolong',
+            toolong: true,
             testId: 'project-script-too-long',
           }}
           save={{

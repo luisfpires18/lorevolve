@@ -16,12 +16,6 @@
   gap: var(--space-6);
 }
 
-.suggestion {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
 .suggestion .reviewcomment__meta,
 .suggestion .reviewthread__resolved,
 .suggestion .reviewthread__tools,

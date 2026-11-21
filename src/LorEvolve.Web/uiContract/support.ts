@@ -98,3 +98,16 @@ export function elements(source: string, name: string): { tag: string; body: str
   }
   return found
 }
+
+// Source with its comments cut out (a `//` only counts after a space or at a line start, so URLs survive).
+export const stripComments = (code: string) =>
+  code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
+
+export type Rule = { selector: string; body: string }
+
+// Every rule of a stylesheet, at any @media depth: the selector list and its declaration block.
+export const rulesOf = (css: string): Rule[] =>
+  [...stripComments(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((match) => ({
+    selector: match[1].trim(),
+    body: match[2],
+  }))

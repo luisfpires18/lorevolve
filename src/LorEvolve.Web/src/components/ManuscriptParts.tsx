@@ -105,11 +105,11 @@ export function ManuscriptParts({
                 <QuietNote spacing="flush">{noneLabel}</QuietNote>
               ) : (
                 // Links with their own aria-current, not NavLinks: a part named by a query (`?node=`) would never
-                // match a NavLink's path. A group, not a nav: the outline is the one landmark. `rail__block` stacks
+                // match a NavLink's path. A group, not a nav: the outline is the one landmark. `stack` stacks
                 // the links.
                 <ViewLinks
                   landmark={false}
-                  className="rail__block"
+                  className="stack stack--2"
                   labelledBy={group.label ? headingId : undefined}
                   items={group.parts.map((part) => ({
                     to: part.to,

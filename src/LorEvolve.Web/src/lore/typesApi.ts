@@ -62,12 +62,6 @@ export function setEntityTypeGroupFamilyTree(
   )
 }
 
-/** The code on the 409 for deleting a group a link field is limited to. */
-export const GROUP_TARGETED = 'entity_type_group_targeted'
-
-/** The code on the 409 for taking a type out of a group that existing links rely on. */
-export const GROUP_IN_USE = 'entity_type_group_in_use'
-
 /** Deletes a group and its memberships. The types, fields and entries stay. Refused (409) while a field is limited to it. */
 export function deleteEntityTypeGroup(universeId: string, groupId: string) {
   return apiFetch<void>(`${base(universeId)}/entity-type-groups/${groupId}`, { method: 'DELETE' })

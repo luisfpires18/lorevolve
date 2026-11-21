@@ -26,7 +26,7 @@ export function Overview({
   const told = counts.filter(([count]) => count > 0).map(([count, key]) => tn(key, count))
 
   return (
-    <div className="progoverview" data-testid="progression-overview">
+    <div className="stack stack--2" data-testid="progression-overview">
       {entry.summary ? <p className="progoverview__summary prose">{entry.summary}</p> : null}
       <p className="progoverview__meta">
         {told.length > 0 ? <span data-testid="progression-counts">{told.join(' · ')}</span> : null}

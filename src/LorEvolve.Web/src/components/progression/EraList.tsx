@@ -17,7 +17,7 @@ export function EraList({
 }) {
   const { t, tn } = useI18n()
   return (
-    <ol className="eralist" data-testid="era-list">
+    <ol className="plainlist stack" data-testid="era-list">
       {progression.eras.map((era) => {
         const span = formatSpan(chronology, era.start, era.end)
         return (

@@ -28,10 +28,6 @@ export function listProposals(
   return apiFetch<ProposalPage>(`/api/ai-changes?${query}`, { signal })
 }
 
-export function countProposals(signal?: AbortSignal) {
-  return apiFetch<{ open: number }>('/api/ai-changes/count', { signal })
-}
-
 function proposalPath(universeId: string, proposalId: string) {
   return `/api/universes/${universeId}/ai-changes/${proposalId}`
 }

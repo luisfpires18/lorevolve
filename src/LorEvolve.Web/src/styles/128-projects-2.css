@@ -64,13 +64,6 @@
   min-width: 0;
 }
 
-.shelfcard__status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .shelfcard__meta {
   color: var(--muted);
   font-size: var(--text-sm);
@@ -212,7 +205,8 @@
   );
 }
 
-.handheld__screen img {
+/* The card's picture fills whichever frame the card puts it in. */
+.shelfcard img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -270,12 +264,4 @@
     color-mix(in oklab, white 10%, transparent) 55%,
     color-mix(in oklab, black 20%, transparent)
   );
-}
-
-.book__cover img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }

@@ -130,7 +130,10 @@ export function LoreContextDrawer({
         />
       ) : (
         <>
-          <section className="lorecontext__group" aria-labelledby={`${headingId}-linked`}>
+          <section
+            className="stack stack--3 lorecontext__group"
+            aria-labelledby={`${headingId}-linked`}
+          >
             <SectionTitle
               level={3}
               tone="rule-accent"
@@ -176,7 +179,10 @@ export function LoreContextDrawer({
             openPreview={openPreview}
           />
 
-          <section className="lorecontext__group" aria-labelledby={`${headingId}-find`}>
+          <section
+            className="stack stack--3 lorecontext__group"
+            aria-labelledby={`${headingId}-find`}
+          >
             <SectionTitle level={3} tone="rule-accent" id={`${headingId}-find`}>
               {t('lore.context.find')}
             </SectionTitle>

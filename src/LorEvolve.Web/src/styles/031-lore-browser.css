@@ -32,13 +32,6 @@
   margin-top: var(--space-6);
 }
 
-.lore__trashfailure {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--danger);
-  font-size: var(--text-sm);
-}
-
 /* While selecting, the selection bar holds the foot of a phone's screen; New waits until it is done. */
 @media (max-width: 640px) {
   .lore[data-selecting='true'] .lore__create {
