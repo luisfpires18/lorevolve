@@ -5,11 +5,7 @@ import {
   type IdeaBoardDetail,
   type IdeaBoardInput,
 } from './boards'
-import type { Load } from '../lib/useAsyncRead'
 import type { IdeaUniverse } from './types'
-
-/** The read of the thing, plus `elsewhere`: it exists, but not in the universe this editor is in. The fields live beside it. */
-export type LoadState = Load<null> | { kind: 'elsewhere' }
 
 /** What an author edits, and exactly what a recovery copy holds. */
 export interface Fields {
@@ -95,11 +91,6 @@ export function parseCopy(content: string): Fields | null {
   } catch {
     return null
   }
-}
-
-export function storedMomentOf(problem: unknown) {
-  const updatedAt = (problem as { updatedAt?: unknown } | null)?.updatedAt
-  return typeof updatedAt === 'string' ? updatedAt : null
 }
 
 /** The fields without their lore cards and the lines that touched them: lore cards need the board's universe. */

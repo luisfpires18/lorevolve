@@ -1,6 +1,6 @@
 import { Lightbulb, List, StickyNote } from 'lucide-react'
 import { BOARD_MAX_CARDS, cardName, type BoardCard } from '../../ideas/boards'
-import type { useBoardState } from '../../ideas/useBoardState'
+import type { useBoardEditor } from '../../ideas/useBoardEditor'
 import { useI18n } from '../../i18n'
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
@@ -19,7 +19,7 @@ export function BoardToolbar({
   connecting,
   cardsById,
   setConnecting,
-}: ReturnType<typeof useBoardState> & {
+}: ReturnType<typeof useBoardEditor> & {
   isHeld: boolean
   addNote: () => void
   cardsById: Map<string, BoardCard>
