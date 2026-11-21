@@ -1,10 +1,7 @@
 import { useState, type ReactNode } from 'react'
-import { Drawer } from './Drawer'
 import { Field } from './Field'
-import { FormActions } from './FormActions'
-import { errorText } from '../lib/errorText'
-import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
+import { SimpleFormDrawer } from './SimpleFormDrawer'
 
 interface PickOneDrawerProps {
   testId: string
@@ -44,35 +41,20 @@ export function PickOneDrawer({
   onAdd,
 }: PickOneDrawerProps) {
   const [chosen, setChosen] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  function add() {
-    if (!options.some((option) => option.value === chosen)) return
-    setSaving(true)
-    setError(null)
-    onAdd(chosen).catch((failure: unknown) => {
-      setSaving(false)
-      setError(errorText(failure, failed))
-    })
-  }
 
   return (
-    <Drawer
+    <SimpleFormDrawer
       testId={testId}
       titleId={titleId}
       title={title}
+      submitLabel={submitLabel}
+      showBusy={false}
+      disabled={chosen === ''}
+      submitTestId={submitTestId}
+      canSave={options.some((option) => option.value === chosen)}
+      failed={failed}
+      onSave={() => onAdd(chosen)}
       onClose={onClose}
-      onSubmit={add}
-      busy={saving}
-      actions={(close) => (
-        <FormActions
-          submitLabel={submitLabel}
-          disabled={saving || chosen === ''}
-          submitTestId={submitTestId}
-          onCancel={close}
-        />
-      )}
     >
       {emptyText !== undefined && options.length === 0 ? (
         <QuietNote spacing="flush">{emptyText}</QuietNote>
@@ -92,7 +74,6 @@ export function PickOneDrawer({
           ))}
         </Field>
       )}
-      {error ? <FormMessage>{error}</FormMessage> : null}
-    </Drawer>
+    </SimpleFormDrawer>
   )
 }

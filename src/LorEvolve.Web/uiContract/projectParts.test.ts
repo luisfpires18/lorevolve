@@ -88,9 +88,9 @@ function projectComponents(): string[] {
 // The project components today. A new one is refused (extend a Lore, Types or shared part instead); a deleted one is
 // taken off. Stage 10a took off TemplateFields, SchemaTypeFields and FieldForm; stage 10b ProjectCard, Production and
 // SagasUnassigned; stage 11a OutlineItem, ArcSection, ChapterSection, FoldToggle, LoreReference and LoreReorderHandle; stage 11b
-// SceneBeatsField and StoryPartPublication.
+// SceneBeatsField and StoryPartPublication. The story drawers lane merged ChapterForm and PlotArcForm into StoryPartForm,
+// and moved NameSummaryDrawer's and PickOneDrawer's shared shell into SimpleFormDrawer.
 const PROJECT_COMPONENTS: string[] = [
-  'src/components/ChapterForm.tsx',
   'src/components/ChapterPages.tsx',
   'src/components/CinemaSagas.tsx',
   'src/components/ComicCollections.tsx',
@@ -107,7 +107,6 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/NameLinker.tsx',
   'src/components/NameSummaryDrawer.tsx',
   'src/components/PickOneDrawer.tsx',
-  'src/components/PlotArcForm.tsx',
   'src/components/ProjectEntitiesView.tsx',
   'src/components/ProjectEntityDetailView.tsx',
   'src/components/ProjectEntityFields.tsx',
@@ -121,7 +120,9 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/SceneContext.tsx',
   'src/components/SceneForm.tsx',
   'src/components/ShelfCard.tsx',
+  'src/components/SimpleFormDrawer.tsx',
   'src/components/StoryForm.tsx',
+  'src/components/StoryPartForm.tsx',
   'src/components/StoryRedirect.tsx',
   'src/components/projectEntities/EntryPictures.tsx',
   'src/components/projectEntities/EpisodeForm.tsx',
