@@ -1,5 +1,4 @@
 import { useState, type KeyboardEvent } from 'react'
-import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
 import { Token } from './Token'
@@ -48,7 +47,6 @@ export function TokenInput({ label, name, placeholder, values, onChange }: Token
               key={value}
               removeLabel={t('data.tokens.remove', { value })}
               onRemove={() => onChange(values.filter((candidate) => candidate !== value))}
-              removeIcon={<X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />}
             >
               {value}
             </Token>

@@ -11,9 +11,8 @@ import {
   statusLabel,
 } from '../../worldLogic/findingLabels'
 import { FindingDetail } from './FindingDetail'
-import { LoadingNote } from '../LoadingNote'
 import { DateText } from '../DateText'
-import { Callout } from '../Callout'
+import { DisclosurePanel } from '../DisclosurePanel'
 
 /**
  * One finding: which rule produced it, what checking concluded, and, once the author opens it, the records the
@@ -126,17 +125,15 @@ export function FindingRow({
         </>
       }
     >
-      <div id={panelId} hidden={!open} data-testid="world-logic-finding-detail">
-        {failed ? (
-          <Callout look="notice" tone="error" as="p" role="alert">
-            {t('canon.worldLogic.integrity.readOneFailed')}
-          </Callout>
-        ) : null}
-
-        {open && !detail && !failed ? (
-          <LoadingNote>{t('canon.worldLogic.integrity.loadingOne')}</LoadingNote>
-        ) : null}
-
+      <DisclosurePanel
+        id={panelId}
+        open={open}
+        loaded={!!detail}
+        failed={failed}
+        failedText={t('canon.worldLogic.integrity.readOneFailed')}
+        loadingText={t('canon.worldLogic.integrity.loadingOne')}
+        testId="world-logic-finding-detail"
+      >
         {detail ? (
           <FindingDetail
             detail={detail}
@@ -147,7 +144,7 @@ export function FindingRow({
             decide={decide}
           />
         ) : null}
-      </div>
+      </DisclosurePanel>
     </LinkRow>
   )
 }

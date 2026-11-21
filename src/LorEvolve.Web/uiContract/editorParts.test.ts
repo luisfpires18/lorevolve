@@ -1,7 +1,7 @@
 // Run with `node --test uiContract/editorParts.test.ts` (Node 22.18+ strips the types itself).
 //
-// Keeps the editor and record list parts shared (#456, stage 12): DocumentHead draws a record's head with its menu,
-// EditorSaveBar every explicit-save bar, EditorNotices the recovered draft with the conflict, the Record* parts the
+// Keeps the editor and record list parts shared (#456, stage 12): EditorHead (in DocumentHead.tsx) draws a record's head
+// with its menu, SaveBar (in SaveAction.tsx) every explicit-save bar, EditorNotices the recovered draft with the conflict, the Record* parts the
 // Ideas and Boards lists, and UNASSIGNED is said once. Each list below only shrinks, and a stale entry fails.
 // Catalogue: docs/design/ui-components.md.
 
@@ -26,9 +26,9 @@ const noticesByHand = (source: string) =>
 const conflictByHand = (source: string) => /<ConflictBar\b/.test(source)
 const unassignedCount = (source: string) => source.match(/export const UNASSIGNED\b/g)?.length ?? 0
 
-// Files that write the bar or warning class by hand, with the reason. EditorSaveBar is the part.
+// Files that write the bar or warning class by hand, with the reason. SaveBar is the part.
 const HAND_BARS = new Map<string, string>([
-  ['src/components/EditorSaveBar.tsx', 'the part'],
+  ['src/components/SaveAction.tsx', 'the part: SaveBar'],
   ['src/components/lore/ArticleEditing.tsx', 'the article has no save bar, only the warning'],
 ])
 
@@ -48,6 +48,9 @@ const HAND_CONFLICTS = new Map<string, string>([
 
 // The twins the Record* parts replaced, by role: their names must not come back.
 const GONE = [
+  'src/components/EditorSaveBar.tsx',
+  'src/components/IdeaBoardPicker.tsx',
+  'src/components/IdeaReferencePicker.tsx',
   'src/components/ideas/BoardHead.tsx',
   'src/components/worldRules/WorldRuleHead.tsx',
   'src/components/ideas/IdeaSaveBar.tsx',
@@ -119,7 +122,7 @@ test('only DocumentHead draws a document head with its actions menu', () => {
   )
 })
 
-test('only EditorSaveBar writes the save bar and the no recovery copy warning', () => {
+test('only SaveBar writes the save bar and the no recovery copy warning', () => {
   onlyAllowed(
     tsxFiles.filter((file) => writesBar(read(file))),
     [...HAND_BARS.keys()],
@@ -144,7 +147,7 @@ test('the Idea and Board twins of the Record parts stay gone', () => {
   assert.deepEqual(
     GONE.filter((file) => existsSync(join(webRoot, file))),
     [],
-    'Use the shared part (DocumentHead, EditorSaveBar, EditorNotices, components/ideas/Record*)',
+    'Use the shared part (EditorHead, SaveBar, SearchPickDrawer, EditorNotices, components/ideas/Record*)',
   )
 })
 

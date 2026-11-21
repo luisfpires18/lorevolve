@@ -1,7 +1,7 @@
 import { BOARD_MAX_CONNECTIONS, BoardCardKind, cardName, type BoardCard } from './boards'
 import { freeSpot, LINKED_SIZE, NOTE_SIZE } from './boardPlacement'
 import type { BoardSelection } from './boardSelection'
-import type { PickedTarget } from '../components/IdeaBoardPicker'
+import type { PickedTarget } from './api'
 import type { useI18n } from '../i18n'
 import type { useBoardEditor } from './useBoardEditor'
 

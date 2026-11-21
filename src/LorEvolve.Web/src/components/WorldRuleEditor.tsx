@@ -10,7 +10,7 @@ import { useWorldRuleReads } from '../worldRules/useWorldRuleReads'
 import { worldRuleActions } from '../worldRules/worldRuleActions'
 import { useSaveShortcut } from '../lib/useSaveShortcut'
 import { sameFields } from '../worldRules/ruleDraft'
-import { DocumentHead } from './DocumentHead'
+import { EditorHead } from './DocumentHead'
 import { EditorNotices } from './EditorNotices'
 import { WorldRuleForm } from './worldRules/WorldRuleForm'
 import { Announce } from './Announce'
@@ -123,7 +123,7 @@ export function WorldRuleEditor({
     >
       {() => (
         <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
-          <DocumentHead
+          <EditorHead
             testIdPrefix="world-rule"
             listPath={listPath}
             listLabel={t('canon.editor.back')}

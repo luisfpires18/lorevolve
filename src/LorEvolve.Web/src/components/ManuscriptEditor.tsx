@@ -23,7 +23,7 @@ import { ManuscriptBody } from './stories/ManuscriptBody'
 import { ManuscriptTools } from './stories/ManuscriptTools'
 import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
 import { FactList } from './FactList'
-import { EditorSaveBar } from './EditorSaveBar'
+import { SaveBar } from './SaveAction'
 import { Announce } from './Announce'
 import { ReadGate } from './ReadGate'
 
@@ -249,7 +249,7 @@ export function ManuscriptEditor({
             <ManuscriptNotices {...view} />
             <ManuscriptBody {...view} />
             {access.editContent ? (
-              <EditorSaveBar
+              <SaveBar
                 keyShortcuts
                 count={{
                   id: tooLongId,
@@ -286,7 +286,7 @@ export function ManuscriptEditor({
                 }}
               >
                 {publication}
-              </EditorSaveBar>
+              </SaveBar>
             ) : null}
           </>
         )}
