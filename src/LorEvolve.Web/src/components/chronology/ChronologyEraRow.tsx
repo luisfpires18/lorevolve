@@ -44,42 +44,30 @@ export function ChronologyEraRow({
       <div className="era__body">
         <div className="era__fields">
           <Field
+            name={null}
             label={t('time.periods.name')}
             id={`${base}-name`}
             error={fieldErrors[`${prefix}.name`]}
-          >
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                placeholder={t('time.periods.namePlaceholder')}
-                autoComplete="off"
-                value={era.name}
-                onChange={(event) => update(index, { name: event.target.value })}
-                data-testid="era-name"
-              />
-            )}
-          </Field>
+            placeholder={t('time.periods.namePlaceholder')}
+            autoComplete="off"
+            value={era.name}
+            onChange={(event) => update(index, { name: event.target.value })}
+            data-testid="era-name"
+          />
 
           {/* The hint shows only while empty: once there is a label, Write dates as shows it in use. */}
           <Field
+            name={null}
             label={t('time.periods.shortLabel')}
             id={`${base}-abbreviation`}
             hint={era.abbreviation.trim() ? undefined : t('time.periods.abbreviationHint')}
             error={fieldErrors[`${prefix}.abbreviation`]}
-          >
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                placeholder={t('time.periods.abbreviationPlaceholder')}
-                autoComplete="off"
-                value={era.abbreviation}
-                onChange={(event) => update(index, { abbreviation: event.target.value })}
-                data-testid="era-abbreviation"
-              />
-            )}
-          </Field>
+            placeholder={t('time.periods.abbreviationPlaceholder')}
+            autoComplete="off"
+            value={era.abbreviation}
+            onChange={(event) => update(index, { abbreviation: event.target.value })}
+            data-testid="era-abbreviation"
+          />
 
           <ChronologyEraStyle era={era} index={index} base={base} label={label} update={update} />
         </div>

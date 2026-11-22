@@ -102,8 +102,6 @@ const STAYS: string[] = [
   'src/components/WorldRuleCheckSection.tsx',
   'src/components/aiChanges/EditChange.tsx',
   'src/components/aiChanges/MediaChange.tsx',
-  'src/components/chronology/CalendarMonthRow.tsx',
-  'src/components/chronology/ChronologyEraRow.tsx',
   'src/components/ideas/QuickCapture.tsx',
   'src/components/lore/EntryHeader.tsx',
   'src/components/lore/FieldFilterEditor.tsx',
