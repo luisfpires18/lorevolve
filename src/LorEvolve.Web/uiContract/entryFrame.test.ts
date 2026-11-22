@@ -84,12 +84,22 @@ test("an entry's type link is EntryTypeLink", () => {
   only(tsxFiles, writes('entry__type'), ['src/components/EntryHead.tsx'], 'use EntryTypeLink')
 })
 
-// The entry page draws a Lore or a project entry (#551): each Lore-only part is gated by `isLore`.
+// The entry page and the list draw a Lore or a project entry (#551): each Lore-only part is gated by `isLore`.
 const LORE_ONLY_FILES = [
   'src/pages/EntityPage.tsx',
-  ...['EntryHeader', 'EntryTools', 'EntryNotices', 'EntryForm', 'EntryArticleView'].map(
-    (name) => `src/components/lore/${name}.tsx`,
-  ),
+  'src/pages/LorePage.tsx',
+  ...[
+    'EntryHeader',
+    'EntryTools',
+    'EntryNotices',
+    'EntryForm',
+    'EntryArticleView',
+    'LoreHeader',
+    'LoreControls',
+    'LoreResultActions',
+    'LoreStatus',
+    'LoreResults',
+  ].map((name) => `src/components/lore/${name}.tsx`),
 ]
 const LORE_ONLY = [
   '<EntryViewsNav',
@@ -107,6 +117,14 @@ const LORE_ONLY = [
   'duplicate-entity',
   'suggest-entity',
   "'entity.page.form.noteArticle'",
+  // A test id keeps its double quotes, so "lore-select" is not lore-selectbar.
+  '"mass-create"',
+  '<GroupSwitcher',
+  '"lore-exact"',
+  '<LoreFieldFilters',
+  '"lore-select"',
+  '<LoreSelectBar',
+  '"lore-trashed"',
 ]
 // Comments cut out, their line breaks kept, so "the 12 lines above" counts the file's own lines.
 const codeLines = (source: string) =>
@@ -117,16 +135,35 @@ const codeLines = (source: string) =>
 // A gate is `isLore` in a JSX condition that opens a branch (`{isLore ? (`, `isLore && <X`) or an early return
 // (`if (!isLore) return`). A line that only declares, destructures or reads it as a value (`isLore: boolean`,
 // `isLore,`, `isLore = true`, `const x = isLore ? a : b`, `label={isLore ? a : b}`) gates nothing.
-const GATE = /\bisLore\b.*(\?|&&)\s*(\(\s*$|<)|\bif\s*\(\s*!?isLore\b[^)]*\)\s*return\b/
-/** The Lore-only markers on a code line with no `isLore` gate on it or the 12 lines above. */
+const INLINE_GATE = /\bisLore\b.*(\?|&&)\s*</
+const OPEN_GATE = /\bisLore\b.*(\?|&&)\s*\(\s*$/
+const RETURN_GATE = /\bif\s*\(\s*!?isLore\b[^)]*\)\s*return\b/
+/** The branch a gate line opens is still open at the end of `text`: its `(` is never closed on the way. */
+function stillOpen(text: string) {
+  let depth = 1
+  for (const char of text) {
+    depth += char === '(' ? 1 : char === ')' ? -1 : 0
+    if (depth <= 0) return false
+  }
+  return true
+}
+/** A marker passes with a gate on its own line, an early return above it, or a branch opened in the 12 lines above
+ * and still open at the marker: a nearby branch that closed first gates nothing. */
+function gated(lines: string[], at: number, marker: string) {
+  if (INLINE_GATE.test(lines[at])) return true
+  const before = lines[at].slice(0, lines[at].indexOf(marker))
+  for (let from = at - 1; from >= Math.max(0, at - 12); from--) {
+    if (RETURN_GATE.test(lines[from])) return true
+    if (OPEN_GATE.test(lines[from]) && stillOpen([...lines.slice(from + 1, at), before].join('\n')))
+      return true
+  }
+  return false
+}
+/** The Lore-only markers on a code line with no open `isLore` gate. */
 function ungated(source: string) {
   const lines = codeLines(source)
   return LORE_ONLY.filter((marker) =>
-    lines.some(
-      (line, at) =>
-        line.includes(marker) &&
-        !lines.slice(Math.max(0, at - 12), at + 1).some((one) => GATE.test(one)),
-    ),
+    lines.some((line, at) => line.includes(marker) && !gated(lines, at, marker)),
   )
 }
 
@@ -144,13 +181,39 @@ test('the Lore-only gate fails on an ungated part and passes a gated one', () =>
   assert.deepEqual(ungated('{isLore && <CanonBadge />}'), [])
   assert.deepEqual(ungated('{isNew && isLore ? (\n  <TagList />'), [])
   assert.deepEqual(ungated('if (!isLore) return null\nreturn <PrivateNotes />'), [])
+  assert.deepEqual(ungated('{isLore ? (\n  <A />\n) : null}\n<CanonBadge />'), ['<CanonBadge'])
+  assert.deepEqual(ungated('{isLore ? (\n  <div>\n    <CanonBadge />'), [])
+  assert.deepEqual(ungated('{isLore && x ? (\n  <A onClick={() => f(y)} />\n  <CanonBadge />'), [])
 })
 
-test('the entry page draws its Lore-only parts only for a Lore entry', () => {
+// Not behind an open isLore branch yet; the next commit of #551 C3 gates each and empties this. Only shrinks.
+const NOT_YET_GATED = [
+  'src/pages/LorePage.tsx <LoreSelectBar',
+  'src/components/lore/EntryHeader.tsx <CanonBadge',
+  'src/components/lore/EntryArticleView.tsx <EntityArticleSection',
+  'src/components/lore/LoreHeader.tsx "mass-create"',
+  'src/components/lore/LoreHeader.tsx <GroupSwitcher',
+  'src/components/lore/LoreControls.tsx <CanonStatusPicker',
+  'src/components/lore/LoreControls.tsx "lore-exact"',
+  'src/components/lore/LoreControls.tsx <LoreFieldFilters',
+  'src/components/lore/LoreResultActions.tsx "lore-select"',
+  'src/components/lore/LoreStatus.tsx "lore-trashed"',
+]
+
+test('the entry page and the list draw their Lore-only parts only for a Lore source', () => {
   const found = LORE_ONLY_FILES.flatMap((file) =>
     ungated(read(file)).map((marker) => `${file} ${marker}`),
   )
-  assert.deepEqual(found, [], 'gate it with isLore')
+  assert.deepEqual(
+    found.filter((hit) => !NOT_YET_GATED.includes(hit)),
+    [],
+    'gate it with isLore',
+  )
+  assert.deepEqual(
+    NOT_YET_GATED.filter((hit) => !found.includes(hit)),
+    [],
+    'stale exception: remove it',
+  )
   const code = LORE_ONLY_FILES.map((file) => codeLines(read(file)).join('\n')).join('\n')
   assert.deepEqual(
     LORE_ONLY.filter((marker) => !code.includes(marker)),

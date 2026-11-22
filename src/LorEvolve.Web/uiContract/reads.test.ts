@@ -182,7 +182,7 @@ const entryScreen = (file: string) =>
   )
 
 const entryApi = (source: string) =>
-  /\b(getEntity|listEntities|createEntity|updateEntity|deleteEntity|ENTRY_CHANGED|getProjectEntity|createProjectEntity|saveProjectEntity|deleteProjectEntity|PROJECT_ENTRY_CHANGED)\b/.test(
+  /\b(getEntity|listEntities|createEntity|updateEntity|deleteEntity|ENTRY_CHANGED|getProjectEntity|listProjectEntities|createProjectEntity|saveProjectEntity|deleteProjectEntity|PROJECT_ENTRY_CHANGED)\b/.test(
     code(source),
   )
 
@@ -203,6 +203,7 @@ test('the entry source guard catches an entry call or a hand-built entry address
   assert.ok(entryApi('listEntities (\n  universeId,'))
   assert.ok(entryApi("import { ENTRY_CHANGED } from './api'"))
   assert.ok(entryApi('getProjectEntity(projectId, id)'))
+  assert.ok(entryApi('listProjectEntities(projectId, typeId, signal'))
   assert.ok(!entryApi('getEntityArticle(universe.id, id)'))
   assert.ok(!entryApi('entrySource.get(id)'))
   assert.ok(!entryApi('// getEntity( lives in entrySource'))
