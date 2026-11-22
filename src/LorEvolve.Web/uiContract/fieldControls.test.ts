@@ -45,6 +45,26 @@ test('the field control guard catches a hand-written control, template-built cla
   assert.ok(writes('(control) => <input id={control.id} className="field__input" type="text" />'))
   assert.ok(!writes('<Field name={null} type="text" dir="auto" maxLength={MAX} data-testid="x" />'))
   assert.ok(!writes('<Field as="textarea" id={x} rows={5} readOnly={held} />'))
+  assert.ok(
+    writes(
+      '(control) => <input {...control} className="field__input" placeholder={p} autoComplete="off" value={v} />',
+    ),
+  )
+  assert.ok(
+    writes(
+      '(control) => <input {...control} className="field__input" type="number" aria-describedby={[control[\'aria-describedby\'], useId].filter(Boolean).join(\' \')} />',
+    ),
+  )
+  assert.ok(
+    !writes(
+      '<Field name={null} id={x} placeholder={p} autoComplete="off" value={v} data-testid="era-name" />',
+    ),
+  )
+  assert.ok(
+    !writes(
+      '<Field name={null} id={x} type="number" aria-describedby={useId} className="month__days" />',
+    ),
+  )
   assert.ok(slotSelect('<select {...control} value={v}>{o}</select>'))
   assert.ok(slotSelect('<select id={control.id} onChange={(e) => f(e)}>{o}</select>'))
   assert.ok(
@@ -82,8 +102,6 @@ const STAYS: string[] = [
   'src/components/WorldRuleCheckSection.tsx',
   'src/components/aiChanges/EditChange.tsx',
   'src/components/aiChanges/MediaChange.tsx',
-  'src/components/chronology/CalendarMonthRow.tsx',
-  'src/components/chronology/ChronologyEraRow.tsx',
   'src/components/ideas/QuickCapture.tsx',
   'src/components/lore/EntryHeader.tsx',
   'src/components/lore/FieldFilterEditor.tsx',

@@ -44,58 +44,46 @@ export function CalendarMonthRow({
       </span>
 
       <div className="month__fields">
-        <Field label={t('time.calendar.name')} id={`${base}-name`} error={nameError}>
-          {(control) => (
-            <input
-              {...control}
-              className="field__input"
-              placeholder={t('time.calendar.namePlaceholder')}
-              autoComplete="off"
-              value={month.name}
-              onChange={(event) => update(index, { name: event.target.value })}
-              data-testid="month-name"
-            />
-          )}
-        </Field>
-
-        <Field label={t('time.calendar.shortName')} id={`${base}-short`} error={shortError}>
-          {(control) => (
-            <input
-              {...control}
-              className="field__input"
-              placeholder={t('time.calendar.optional')}
-              autoComplete="off"
-              value={month.abbreviation}
-              onChange={(event) => update(index, { abbreviation: event.target.value })}
-              data-testid="month-abbreviation"
-            />
-          )}
-        </Field>
+        <Field
+          name={null}
+          label={t('time.calendar.name')}
+          id={`${base}-name`}
+          error={nameError}
+          placeholder={t('time.calendar.namePlaceholder')}
+          autoComplete="off"
+          value={month.name}
+          onChange={(event) => update(index, { name: event.target.value })}
+          data-testid="month-name"
+        />
 
         <Field
+          name={null}
+          label={t('time.calendar.shortName')}
+          id={`${base}-short`}
+          error={shortError}
+          placeholder={t('time.calendar.optional')}
+          autoComplete="off"
+          value={month.abbreviation}
+          onChange={(event) => update(index, { abbreviation: event.target.value })}
+          data-testid="month-abbreviation"
+        />
+
+        <Field
+          name={null}
           label={t('time.calendar.days')}
           id={`${base}-days`}
           error={daysError}
           className="month__days"
-        >
-          {(control) => (
-            <input
-              {...control}
-              className="field__input"
-              type="number"
-              inputMode="numeric"
-              step="1"
-              min={Math.max(1, month.maxDayUsed ?? 1)}
-              max={1000}
-              value={month.days}
-              onChange={(event) => update(index, { days: event.target.value })}
-              aria-describedby={
-                [control['aria-describedby'], useId].filter(Boolean).join(' ') || undefined
-              }
-              data-testid="month-days"
-            />
-          )}
-        </Field>
+          type="number"
+          inputMode="numeric"
+          step="1"
+          min={Math.max(1, month.maxDayUsed ?? 1)}
+          max={1000}
+          value={month.days}
+          onChange={(event) => update(index, { days: event.target.value })}
+          aria-describedby={useId}
+          data-testid="month-days"
+        />
       </div>
 
       <div className="month__tools">
