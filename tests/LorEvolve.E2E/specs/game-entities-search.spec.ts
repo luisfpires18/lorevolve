@@ -179,6 +179,15 @@ test.describe('Game Entities search', () => {
       options: null,
       imageShape: null,
     })
+    // A Lore type in a group: Lore would draw its group controls for it, as it draws its field filter for Motto.
+    await api(page, 'POST', `/api/universes/${world.id}/entity-types`, {
+      name: 'Runes',
+      description: null,
+      icon: null,
+      accentColor: null,
+      displayOrder: null,
+      groups: [{ name: 'Magic' }],
+    })
     const elite = await newType(page, game.id, 'Elite', unit.id)
     const bram = (await newEntry(page, game.id, unit.id, 'Bram')) as { id: string }
     await newEntry(page, game.id, elite.id, 'Keep')
@@ -225,6 +234,7 @@ test.describe('Game Entities search', () => {
       'mass-create',
       'lore-exact',
       'lore-field-filters',
+      'lore-add-field-filter',
       'lore-select',
       'lore-selectbar',
       'lore-trashed',
