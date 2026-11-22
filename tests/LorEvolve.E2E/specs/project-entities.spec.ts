@@ -93,7 +93,7 @@ test.describe('Project entities', () => {
     await expect(page.getByTestId('project-schema-offer')).toHaveCount(0)
     await page.getByTestId('projecttab-entities').click()
 
-    // A card opens that type's entries alone: no other type is offered and the editor is not on the way.
+    // A card opens that type's list, with the list's controls and without the type editor on the way.
     await cards.getByRole('link', { name: /Map/ }).click()
     await expect(page).toHaveURL(/\/entities\?type=/)
     await expect(page.getByTestId('lore-controls')).toBeVisible()
