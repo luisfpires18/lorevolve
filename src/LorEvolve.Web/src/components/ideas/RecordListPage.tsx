@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { Callout } from '../Callout'
 import { ReadGate } from '../ReadGate'
 import { Quoted } from '../NameList'
-import { Pager } from '../Pager'
+import { PagedList } from '../Pager'
 import { RecordListControls } from './RecordListControls'
 import { RecordListEmpty } from './RecordListEmpty'
 import type { IdeaQuery } from '../../ideas/types'
@@ -195,29 +195,24 @@ export function RecordListPage<
         {() => null}
       </ReadGate>
 
-      {result && result.items.length > 0 ? (
-        <ul className="idealist" data-testid={listTestId}>
-          {result.items.map((record) => renderRow(record, { deleted, restoring, restore }))}
-        </ul>
-      ) : null}
-
-      {result && result.items.length === 0 ? (
-        <RecordListEmpty
-          testId={`${testId}-empty`}
-          words={w}
-          deleted={deleted}
-          isFiltered={isFiltered}
-          scope={emptyScope}
-          newPath={`${basePath}/new`}
-          newLabel={newLabel}
-          newTestId={newTestId}
-        />
-      ) : null}
-
       {result ? (
-        <Pager
-          page={result.page}
-          totalPages={result.totalPages}
+        <PagedList
+          result={result}
+          renderItem={(record) => renderRow(record, { deleted, restoring, restore })}
+          listClassName="idealist"
+          listTestId={listTestId}
+          empty={
+            <RecordListEmpty
+              testId={`${testId}-empty`}
+              words={w}
+              deleted={deleted}
+              isFiltered={isFiltered}
+              scope={emptyScope}
+              newPath={`${basePath}/new`}
+              newLabel={newLabel}
+              newTestId={newTestId}
+            />
+          }
           onPage={(next) => update({ page: String(next) })}
         />
       ) : null}

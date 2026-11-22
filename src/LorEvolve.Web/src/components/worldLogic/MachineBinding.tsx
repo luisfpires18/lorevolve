@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import { t } from '../../i18n'
 import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState'
 import { m } from '../../worldLogic/machinePanelTypes'
-import { SectionTitle } from '../Section'
-import { LinkRow } from '../LinkRow'
+import { MachineGroup } from '../SystemMachineTry'
+import { LinkRow, RuleList } from '../LinkRow'
 
 type State = ReturnType<typeof useMachinePanelState>
 
@@ -21,9 +21,8 @@ export function MachineBinding({
   rowError: (item: string) => ReactNode
 }) {
   return (
-    <section className="machinepanel__group">
-      <SectionTitle tone="rule">{t(`${m}.binding`)}</SectionTitle>
-      <ul className="rulelist">
+    <MachineGroup title={t(`${m}.binding`)}>
+      <RuleList>
         <LinkRow
           look="rule"
           testId="machine-binding-row"
@@ -38,7 +37,7 @@ export function MachineBinding({
           }
           aside={rowError('binding')}
         />
-      </ul>
-    </section>
+      </RuleList>
+    </MachineGroup>
   )
 }

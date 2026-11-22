@@ -113,6 +113,26 @@ test.describe('Game entity details', () => {
     await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
   })
 
+  test("an editor moves the entry to the Trash from its page and lands back on the game's directory", async ({
+    page,
+  }) => {
+    await signUp(page)
+    const world = await api<{ id: string }>(page, 'POST', '/api/universes', {
+      name: unique('Detworld '),
+      description: null,
+    })
+    const alpha = await game(page, world.id, 'Alpha game', {
+      Units: [{ name: 'Bastion', summary: null }],
+    })
+    const base = `/app/universes/${world.id}/game-entities/${alpha.id}`
+    await page.goto(`${base}/${alpha.ids['Bastion']}`)
+    await page.getByTestId('project-entity-actions').click()
+    await page.getByTestId('project-entity-delete').click()
+    await acceptConfirm(page, 'Bastion')
+    await expect(page).toHaveURL(base)
+    await page.goto(`${base}/${alpha.ids['Bastion']}`)
+    await expect(page.getByTestId('game-entity-missing')).toBeVisible()
+  })
   test("the project's own Entities tab opens the same page, inside the project", async ({
     page,
   }) => {

@@ -1,11 +1,8 @@
 import type { KeyboardEvent, RefObject } from 'react'
 import type { BoardCard } from './boards'
 import type { BoardSelection } from './boardSelection'
-import { fitView, ZOOM_STEP, type usePanZoom } from '../lib/usePanZoom'
-
-const PAN_STEP = 48
-const MOVE_STEP = 10
-const BIG_MOVE_STEP = 50
+import { arrowMove, panZoomKey } from '../lib/canvasKeys'
+import { fitView, type usePanZoom } from '../lib/usePanZoom'
 
 /** The board canvas's key handler for one card: the arrows move it, Escape lets go of the choice. */
 export function cardKeyDown({
@@ -24,14 +21,7 @@ export function cardKeyDown({
   onSelect: (selection: BoardSelection) => void
 }) {
   function onCardKeyDown(event: KeyboardEvent<HTMLButtonElement>, card: BoardCard) {
-    const step = event.shiftKey ? BIG_MOVE_STEP : MOVE_STEP
-    const moves: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
-    }
-    const move = moves[event.key]
+    const move = arrowMove(event)
     if (move && !readOnly) {
       event.preventDefault()
       event.stopPropagation()
@@ -67,38 +57,13 @@ export function stageKeyDown({
 }) {
   function onStageKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget) return
-    const about = { x: size.width / 2, y: size.height / 2 }
-    switch (event.key) {
-      case 'ArrowLeft':
-        setView((current) => ({ ...current, x: current.x + PAN_STEP }))
-        break
-      case 'ArrowRight':
-        setView((current) => ({ ...current, x: current.x - PAN_STEP }))
-        break
-      case 'ArrowUp':
-        setView((current) => ({ ...current, y: current.y + PAN_STEP }))
-        break
-      case 'ArrowDown':
-        setView((current) => ({ ...current, y: current.y - PAN_STEP }))
-        break
-      case '+':
-      case '=':
-        zoomAbout(ZOOM_STEP, about.x, about.y)
-        break
-      case '-':
-      case '_':
-        zoomAbout(1 / ZOOM_STEP, about.x, about.y)
-        break
-      case '0':
-        setView(fitView(cards, size))
-        break
-      case 'Escape':
-        if (!selected && !connecting) return
-        onSelect(null)
-        break
-      default:
-        return
-    }
+    if (event.key === 'Escape') {
+      if (!selected && !connecting) return
+      onSelect(null)
+    } else if (
+      !panZoomKey(event.key, { size, setView, zoomAbout, fit: () => fitView(cards, size) })
+    )
+      return
     event.preventDefault()
   }
 

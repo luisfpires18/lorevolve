@@ -9,7 +9,7 @@ import type { useCanonConflicts } from '../../canon/useCanonConflicts'
 import type { canonActions } from '../../canon/canonActions'
 import { emptyLine, hint } from '../../canon/canonEmptyCopy'
 import { Button } from '../Button'
-import { Pager } from '../Pager'
+import { PagedList } from '../Pager'
 import { ReadGate } from '../ReadGate'
 import { FormMessage } from '../FormMessage'
 
@@ -76,9 +76,10 @@ export function CanonResults({
         </h2>
       ) : null}
 
-      {result && result.items.length > 0 ? (
-        <ul className="integrity__ledger" data-testid="canon-ledger">
-          {result.items.map((conflict) => (
+      {result ? (
+        <PagedList
+          result={result}
+          renderItem={(conflict) => (
             <ConflictEntry
               key={conflict.id}
               universeId={universe.id}
@@ -87,31 +88,33 @@ export function CanonResults({
               onDismiss={() => void transition(conflict.id, 'dismiss')}
               onReopen={() => void transition(conflict.id, 'reopen')}
             />
-          ))}
-        </ul>
-      ) : null}
-
-      {result && result.items.length === 0 ? (
-        <EmptyState
-          testId="canon-empty"
-          title={emptyLine(status, severity)}
-          hint={severity !== null ? t('canon.page.otherSeverity') : hint(status)}
-          action={
-            access.editContent && severity === null && status === CanonConflictStatus.Pending ? (
-              <Button
-                tone="secondary"
-                onClick={() => void evaluate()}
-                disabled={isEvaluating}
-                data-testid="empty-evaluate-canon"
-              >
-                {isEvaluating ? t('canon.page.emptyEvaluating') : t('canon.page.emptyEvaluate')}
-              </Button>
-            ) : undefined
+          )}
+          listClassName="integrity__ledger"
+          listTestId="canon-ledger"
+          empty={
+            <EmptyState
+              testId="canon-empty"
+              title={emptyLine(status, severity)}
+              hint={severity !== null ? t('canon.page.otherSeverity') : hint(status)}
+              action={
+                access.editContent &&
+                severity === null &&
+                status === CanonConflictStatus.Pending ? (
+                  <Button
+                    tone="secondary"
+                    onClick={() => void evaluate()}
+                    disabled={isEvaluating}
+                    data-testid="empty-evaluate-canon"
+                  >
+                    {isEvaluating ? t('canon.page.emptyEvaluating') : t('canon.page.emptyEvaluate')}
+                  </Button>
+                ) : undefined
+              }
+            />
           }
+          onPage={setPage}
         />
       ) : null}
-
-      {result ? <Pager page={result.page} totalPages={result.totalPages} onPage={setPage} /> : null}
     </>
   )
 }

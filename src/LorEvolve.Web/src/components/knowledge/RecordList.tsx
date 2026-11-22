@@ -3,7 +3,7 @@ import { RowMenu } from '../RowMenu'
 import { t, useI18n } from '../../i18n'
 import { describeScene, type KnowledgeIssue, type KnowledgeRecord } from '../../knowledge/api'
 import type { Side } from '../../knowledge/recordDraft'
-import { SectionTitle } from '../Section'
+import { GroupedRows } from '../relationships/RelationsList'
 import { QuietNote } from '../QuietNote'
 
 // ---------- The list ----------
@@ -68,98 +68,91 @@ export function RecordList({
   }
 
   return (
-    <ul className="relations__list knowledge__list" data-testid={testId}>
-      {groups.map((group) => (
-        <li className="relations__group" key={group.label}>
-          <SectionTitle level={4} tone="label">
-            <bdi>{group.label}</bdi>
-          </SectionTitle>
-          <ul className="relations__rows">
-            {group.records.map((record) => (
-              <li
-                className="knowledge__row"
-                key={record.id}
-                data-testid="knowledge-record"
-                data-side={side}
-              >
-                <p
-                  className="knowledge__statement"
-                  dir="auto"
-                  data-testid="knowledge-statement-text"
+    <GroupedRows
+      level={4}
+      className="knowledge__list"
+      testId={testId}
+      groups={groups.map((group) => ({
+        label: group.label,
+        rows: group.records.map((record) => (
+          <li
+            className="knowledge__row"
+            key={record.id}
+            data-testid="knowledge-record"
+            data-side={side}
+          >
+            <p className="knowledge__statement" dir="auto" data-testid="knowledge-statement-text">
+              {side === 'about' ? (
+                <>
+                  {tx('ai.knowledge.knowerKnows', {
+                    knower: (
+                      <Link to={`/app/universes/${universeId}/lore/${record.knower.id}`}>
+                        <bdi>{record.knower.name}</bdi>
+                      </Link>
+                    ),
+                  })}
+                </>
+              ) : null}
+              {record.statement}
+            </p>
+            <p className="knowledge__meta">
+              {side === 'knows' && record.subject ? (
+                <>
+                  {tx('ai.knowledge.about', {
+                    subject: (
+                      <Link to={`/app/universes/${universeId}/lore/${record.subject.id}`}>
+                        <bdi>{record.subject.name}</bdi>
+                      </Link>
+                    ),
+                  })}
+                  {' · '}
+                </>
+              ) : null}
+              {record.scene ? (
+                <>
+                  {tx('ai.knowledge.since', {
+                    scene: (
+                      <Link
+                        to={`/app/universes/${universeId}/stories/${record.scene.storyId}#scene-${record.scene.sceneId}`}
+                        data-testid="knowledge-scene-link"
+                      >
+                        <bdi>{record.scene.title}</bdi>
+                      </Link>
+                    ),
+                    where: describeScene(record.scene),
+                  })}
+                </>
+              ) : (
+                t('ai.knowledge.fromStartMeta')
+              )}
+              {record.issues.map((issue) => (
+                <span
+                  className="knowledge__issue"
+                  key={issue}
+                  data-testid="knowledge-issue"
+                  data-issue={issue}
                 >
-                  {side === 'about' ? (
-                    <>
-                      {tx('ai.knowledge.knowerKnows', {
-                        knower: (
-                          <Link to={`/app/universes/${universeId}/lore/${record.knower.id}`}>
-                            <bdi>{record.knower.name}</bdi>
-                          </Link>
-                        ),
-                      })}
-                    </>
-                  ) : null}
-                  {record.statement}
-                </p>
-                <p className="knowledge__meta">
-                  {side === 'knows' && record.subject ? (
-                    <>
-                      {tx('ai.knowledge.about', {
-                        subject: (
-                          <Link to={`/app/universes/${universeId}/lore/${record.subject.id}`}>
-                            <bdi>{record.subject.name}</bdi>
-                          </Link>
-                        ),
-                      })}
-                      {' · '}
-                    </>
-                  ) : null}
-                  {record.scene ? (
-                    <>
-                      {tx('ai.knowledge.since', {
-                        scene: (
-                          <Link
-                            to={`/app/universes/${universeId}/stories/${record.scene.storyId}#scene-${record.scene.sceneId}`}
-                            data-testid="knowledge-scene-link"
-                          >
-                            <bdi>{record.scene.title}</bdi>
-                          </Link>
-                        ),
-                        where: describeScene(record.scene),
-                      })}
-                    </>
-                  ) : (
-                    t('ai.knowledge.fromStartMeta')
-                  )}
-                  {record.issues.map((issue) => (
-                    <span
-                      className="knowledge__issue"
-                      key={issue}
-                      data-testid="knowledge-issue"
-                      data-issue={issue}
-                    >
-                      {ISSUE_WORDS[issue]}
-                    </span>
-                  ))}
-                </p>
-                {canEdit ? (
-                  <div className="knowledge__tools">
-                    <RowMenu
-                      label={t('ai.knowledge.actions')}
-                      triggerTestId="knowledge-actions"
-                      onEdit={() => onEdit(record)}
-                      editLabel={t('ai.knowledge.edit')}
-                      editTestId="knowledge-edit"
-                      onRemove={() => void onRemove(record)}
-                      removeLabel={t('ai.knowledge.remove.button')}
-                      removeTestId="knowledge-delete"
-                    />
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))}
-    </ul>
+                  {ISSUE_WORDS[issue]}
+                </span>
+              ))}
+            </p>
+            {canEdit ? (
+              <div className="knowledge__tools">
+                <RowMenu
+                  label={t('ai.knowledge.actions')}
+                  triggerTestId="knowledge-actions"
+                  onEdit={() => onEdit(record)}
+                  editLabel={t('ai.knowledge.edit')}
+                  editTestId="knowledge-edit"
+                  onRemove={() => void onRemove(record)}
+                  removeLabel={t('ai.knowledge.remove.button')}
+                  removeTestId="knowledge-delete"
+                />
+              </div>
+            ) : null}
+          </li>
+        )),
+      }))}
+    />
   )
 }

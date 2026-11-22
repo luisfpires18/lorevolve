@@ -1,9 +1,7 @@
-import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { IdeaEditor } from '../components/IdeaEditor'
-import { Quoted } from '../components/NameList'
 import type { RecordListNotice } from '../components/ideas/RecordListPage'
-import { useI18n } from '../i18n'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useRecordPlace } from '../ideas/useRecordPlace'
 
 interface IdeaPageProps {
   inUniverse?: boolean
@@ -15,26 +13,15 @@ interface IdeaPageProps {
  * universe starts in that universe; its author may take it out again before saving.
  */
 export default function IdeaPage({ inUniverse = false, isNew = false }: IdeaPageProps) {
-  const { t, tx } = useI18n()
+  const { navigate, listPath, place } = useRecordPlace(inUniverse, 'ideas')
   const { ideaId } = useParams<{ ideaId: string }>()
-  const navigate = useNavigate()
-  const context = useOutletContext<WorkspaceContext | undefined>()
-  const universe = inUniverse && context ? context.universe : null
-  const listPath = universe ? `/app/universes/${universe.id}/ideas` : '/app/ideas'
 
   return (
     <IdeaEditor
       // A different idea - or the new one becoming saved - is a different editor, starting from nothing.
       key={isNew ? 'new' : ideaId}
       ideaId={isNew ? null : (ideaId ?? null)}
-      defaultUniverseId={universe?.id ?? null}
-      contextUniverse={universe ? { id: universe.id, name: universe.name } : null}
-      listPath={listPath}
-      listLabel={
-        universe
-          ? tx('ideas.pages.ideasIn', { universe: <Quoted text={universe.name} /> })
-          : t('ideas.pages.allIdeas')
-      }
+      {...place}
       // Creating is finished once it is created: back to the universe's list it was started from. Replacing the finished form
       // in history, so Back never returns to it; the list says what was created.
       onCreated={(idea) =>
@@ -42,9 +29,6 @@ export default function IdeaPage({ inUniverse = false, isNew = false }: IdeaPage
           replace: true,
           state: { created: { id: idea.id, title: idea.title } } satisfies RecordListNotice,
         })
-      }
-      onDeleted={(idea) =>
-        void navigate(listPath, { state: { deleted: idea } satisfies RecordListNotice })
       }
     />
   )

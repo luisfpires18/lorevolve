@@ -30,6 +30,7 @@ export function RecordRow<R extends RecordSummary>({
   restore,
   seal,
   excerpt,
+  excerptShortened,
   count,
   countFirst,
 }: {
@@ -43,6 +44,7 @@ export function RecordRow<R extends RecordSummary>({
   restore: (record: R) => Promise<void>
   seal?: boolean
   excerpt?: ReactNode
+  excerptShortened?: boolean
   count: ReactNode
   countFirst?: boolean
 }) {
@@ -55,6 +57,7 @@ export function RecordRow<R extends RecordSummary>({
       title={record.title}
       titleTestId={`${id}-open`}
       excerpt={excerpt}
+      excerptShortened={excerptShortened}
       excerptTestId={excerpt === undefined ? undefined : `${id}-excerpt`}
       testId={`${id}-row`}
       data-title={record.title}

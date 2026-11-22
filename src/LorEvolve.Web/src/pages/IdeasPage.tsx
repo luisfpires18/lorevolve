@@ -1,10 +1,7 @@
 import { useId } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { IdeasHeader } from '../components/ideas/IdeasHeader'
-import { IdeasTabs } from '../components/IdeasTabs'
 import { Quoted } from '../components/NameList'
-import { NewButton } from '../components/NewButton'
-import { PageHeader } from '../components/PageHeader'
 import { QuickCapture } from '../components/ideas/QuickCapture'
 import { RecordListPage } from '../components/ideas/RecordListPage'
 import { RecordRow } from '../components/ideas/RecordRow'
@@ -39,9 +36,8 @@ function IdeasList({ scope }: { scope: IdeasScope }) {
       headingId={headingId}
       header={
         <IdeasHeader
-          isNested={nested !== null}
+          nested={nested}
           headingId={headingId}
-          scope={scope}
           universe={universe}
           basePath={basePath}
         />
@@ -77,14 +73,8 @@ function IdeasList({ scope }: { scope: IdeasScope }) {
           basePath={basePath}
           universe={universe}
           seal
-          excerpt={
-            idea.excerpt ? (
-              <>
-                {idea.excerpt}
-                {idea.isExcerptShortened ? '…' : null}
-              </>
-            ) : null
-          }
+          excerpt={idea.excerpt}
+          excerptShortened={idea.isExcerptShortened}
           count={
             idea.referenceCount > 0 ? (
               <span>
@@ -117,26 +107,12 @@ function BoardsList({ universe }: { universe: { id: string; name: string } | nul
       basePath={basePath}
       headingId={headingId}
       header={
-        <>
-          <PageHeader
-            title={t('ideas.boards.title')}
-            titleId={headingId}
-            lede={
-              <p className="ideas__lede">
-                {universe
-                  ? tx('ideas.boards.ledeUniverse', { universe: <Quoted text={universe.name} /> })
-                  : t('ideas.boards.ledeAll')}
-              </p>
-            }
-            actions={
-              <NewButton to={`${basePath}/new`} data-testid="new-board">
-                {t('ideas.boards.newBoard')}
-              </NewButton>
-            }
-          />
-
-          <IdeasTabs basePath={ideasPath} current="boards" />
-        </>
+        <IdeasHeader
+          current="boards"
+          headingId={headingId}
+          universe={universe}
+          basePath={ideasPath}
+        />
       }
       read={listIdeaBoards}
       restoreRecord={restoreIdeaBoard}

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Check, CircleHelp, X } from 'lucide-react'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
 import { t, useI18n } from '../i18n'
 import { evaluateSystemMachine } from '../worldLogic/api'
 import { markText, type GuardMarkValue } from '../worldLogic/markText'
 import type { SystemMachineTryResult } from '../worldLogic/types'
+import { FormActions } from './FormActions'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 import { SectionTitle } from './Section'
@@ -24,6 +25,30 @@ export function GuardMark({ mark }: { mark: GuardMarkValue }) {
       <Icon aria-hidden="true" focusable="false" strokeWidth={2} />
       {markText(mark)}
     </span>
+  )
+}
+
+/**
+ * One group of the machine panel: its rule title, its content, then its add button when it has one (`add`, the
+ * caller's whole `NewButton`). Without `add` no actions row is drawn.
+ */
+export function MachineGroup({
+  title,
+  testId,
+  add,
+  children,
+}: {
+  title: ReactNode
+  testId?: string
+  add?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className="machinepanel__group" data-testid={testId}>
+      <SectionTitle tone="rule">{title}</SectionTitle>
+      {children}
+      {add ? <FormActions inline>{add}</FormActions> : null}
+    </section>
   )
 }
 
@@ -73,8 +98,7 @@ export function SystemMachineTry({
   }
 
   return (
-    <section className="machinepanel__group" data-testid="machine-try">
-      <SectionTitle tone="rule">{t(`${m}.try.title`)}</SectionTitle>
+    <MachineGroup testId="machine-try" title={t(`${m}.try.title`)}>
       <EntityPicker
         label={t(`${m}.try.entry`)}
         universeId={universeId}
@@ -93,6 +117,6 @@ export function SystemMachineTry({
           )
         ) : null}
       </QuietNote>
-    </section>
+    </MachineGroup>
   )
 }

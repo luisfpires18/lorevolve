@@ -1,16 +1,11 @@
 import { deleteProjectEntity } from '../../projectEntities/api'
 import { confirmDelete } from '../../lib/confirm'
-import {
-  FieldKind,
-  type ProjectEntitySummary,
-  type ProjectField,
-} from '../../projectEntities/types'
+import type { ProjectEntitySummary } from '../../projectEntities/types'
 import { ActionMenu, ActionMenuItem } from '../ActionMenu'
 import { EntityGrid } from '../lore/EntityGrid'
 import { t, useI18n } from '../../i18n'
 import type { useProjectEntriesRead } from '../../projectEntities/useProjectEntriesRead'
 import type { useProjectEntriesState } from '../../projectEntities/useProjectEntriesState'
-import { EntryPictures } from './EntryPictures'
 import { Trash } from 'lucide-react'
 
 /** The entries as cards, each opening to its own form and pictures. */
@@ -24,16 +19,12 @@ export function ProjectEntryList({
   setBusy,
   refresh,
   failing,
-  fields,
-  imageFieldIds,
 }: Pick<ReturnType<typeof useProjectEntriesState>, 'entries' | 'busy' | 'setBusy'> &
   Pick<ReturnType<typeof useProjectEntriesRead>, 'refresh' | 'failing'> & {
     projectId: string
     universeId: string
     openEntryId?: string
     entryHref?: (entry: ProjectEntitySummary) => string
-    fields: ProjectField[]
-    imageFieldIds: Set<string>
   }) {
   useI18n()
 
@@ -87,17 +78,6 @@ export function ProjectEntryList({
           </ActionMenu>
         ),
       })}
-      extra={(entry) =>
-        imageFieldIds.size > 0 ? (
-          <EntryPictures
-            projectId={projectId}
-            universeId={universeId}
-            entryId={entry.id}
-            fields={fields.filter((one) => one.kind === FieldKind.Image)}
-            busy={busy}
-          />
-        ) : null
-      }
     />
   )
 }

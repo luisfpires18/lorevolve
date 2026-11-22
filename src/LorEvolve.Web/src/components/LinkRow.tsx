@@ -28,6 +28,7 @@ export function LinkRow({
   title,
   titleTestId,
   excerpt,
+  excerptShortened,
   excerptTestId,
   meta,
   aside,
@@ -48,6 +49,8 @@ export function LinkRow({
   title: string
   titleTestId?: string
   excerpt?: ReactNode
+  /** The excerpt is cut short: it ends with an ellipsis. */
+  excerptShortened?: boolean
   excerptTestId?: string
   meta: ReactNode
   aside?: ReactNode
@@ -103,6 +106,7 @@ export function LinkRow({
       data-testid={excerptTestId}
     >
       {excerpt}
+      {excerptShortened ? '…' : null}
     </p>
   ) : null
   const metaNode = (
@@ -135,5 +139,14 @@ export function LinkRow({
       {children}
       {aside}
     </li>
+  )
+}
+
+/** The list that holds rule rows (`LinkRow look="rule"`): a machine group's rows, an opened System's rules. */
+export function RuleList({ testId, children }: { testId?: string; children: ReactNode }) {
+  return (
+    <ul className="rulelist" data-testid={testId}>
+      {children}
+    </ul>
   )
 }

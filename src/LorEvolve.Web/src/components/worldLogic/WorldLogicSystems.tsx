@@ -4,9 +4,8 @@ import { t } from '../../i18n'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { SystemSummary, WorldLogicPage as Page } from '../../worldLogic/types'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
-import { Pager } from '../Pager'
+import { PagedList } from '../Pager'
 import { SystemRow } from './SystemRow'
-import { Button } from '../Button'
 import { ReadGate } from '../ReadGate'
 import type { Load } from '../../lib/useAsyncRead'
 
@@ -37,42 +36,24 @@ export function WorldLogicSystems({
         }}
       >
         {(list) => (
-          <>
-            {list.items.length > 0 ? (
-              <ul className="rulelist" data-testid="world-logic-system-list">
-                {list.items.map((system) => (
-                  <SystemRow key={system.id} universeId={universe.id} system={system} />
-                ))}
-              </ul>
-            ) : null}
-
-            {list.totalCount === 0 ? (
+          <PagedList
+            result={list}
+            renderItem={(system) => (
+              <SystemRow key={system.id} universeId={universe.id} system={system} />
+            )}
+            listClassName="rulelist"
+            listTestId="world-logic-system-list"
+            empty={
               <EmptyState
                 testId="world-logic-systems-empty"
                 title={t('canon.worldLogic.systems.empty.title')}
                 hint={t('canon.worldLogic.systems.empty.hint')}
               />
-            ) : null}
-
-            {list.items.length === 0 && list.totalCount > 0 ? (
-              <EmptyState
-                testId="world-logic-systems-page-empty"
-                title={t('canon.rules.pageEmpty.title')}
-                action={
-                  <Button tone="secondary" onClick={() => goTo('systemsPage', 1)}>
-                    {t('canon.rules.pageEmpty.first')}
-                  </Button>
-                }
-              />
-            ) : null}
-
-            <Pager
-              testId="world-logic-systems-pager"
-              page={list.page}
-              totalPages={list.totalPages}
-              onPage={(next) => goTo('systemsPage', next)}
-            />
-          </>
+            }
+            pageEmptyTestId="world-logic-systems-page-empty"
+            pagerTestId="world-logic-systems-pager"
+            onPage={(next) => goTo('systemsPage', next)}
+          />
         )}
       </ReadGate>
     </TabPanel>
