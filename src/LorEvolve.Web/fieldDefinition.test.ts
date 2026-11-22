@@ -4,11 +4,12 @@ import { test } from 'node:test'
 import {
   asEntryDetail,
   asEntrySummary,
+  asEntryPage,
   asEntryType,
-  pageOf,
 } from './src/projectEntities/fieldDefinition.ts'
 import type {
   ProjectEntityDetail,
+  ProjectEntityPage,
   ProjectEntityType,
   ProjectEntitySummary,
   ProjectField,
@@ -99,10 +100,17 @@ const row = (id: string): ProjectEntitySummary => ({
   updatedAt: '2026-11-22T00:00:00Z',
   image: null,
 })
-const rows = (count: number) =>
-  Array.from({ length: count }, (_, index) => asEntrySummary(row(`e${index + 1}`)))
-const cut = (count: number, page: number, size = 12) => {
-  const one = pageOf(rows(count), page, size)
+// What the server answers for `page` of `total` entries: that page's rows and the total of them all.
+const served = (total: number, page: number, size: number): ProjectEntityPage => {
+  const from = Math.min((page - 1) * size, total)
+  const count = Math.min(size, total - from)
+  return {
+    items: Array.from({ length: count }, (_, index) => row(`e${from + index + 1}`)),
+    totalCount: total,
+  }
+}
+const read = (total: number, page: number, size = 12) => {
+  const one = asEntryPage(served(total, page, size), page, size)
   return [one.items.map((item) => item.id), one.page, one.pageSize, one.totalCount, one.totalPages]
 }
 
@@ -113,17 +121,19 @@ test('a project list row reads as a Lore card with none of Lore own parts, its L
   assert.deepEqual([shaped.canonStatus, shaped.isArchived], [1, false])
 })
 
-test('the one read is cut into pages in the browser, with the real totals', () => {
+test("a server page reads as a Lore page with the server's total", () => {
   const ids = (from: number, to: number) =>
     Array.from({ length: to - from + 1 }, (_, index) => `e${from + index}`)
   // The first page, a middle page and the last, short one.
-  assert.deepEqual(cut(30, 1), [ids(1, 12), 1, 12, 30, 3])
-  assert.deepEqual(cut(30, 2), [ids(13, 24), 2, 12, 30, 3])
-  assert.deepEqual(cut(30, 3), [ids(25, 30), 3, 12, 30, 3])
-  // No rows, and a page past the end: no items, the real totals.
-  assert.deepEqual(cut(0, 1), [[], 1, 12, 0, 0])
-  assert.deepEqual(cut(30, 4), [[], 4, 12, 30, 3])
-  // Exactly 500 rows, the most one read brings.
-  assert.deepEqual(cut(500, 1, 50), [ids(1, 50), 1, 50, 500, 10])
-  assert.deepEqual(cut(500, 10, 50), [ids(451, 500), 10, 50, 500, 10])
+  assert.deepEqual(read(30, 1), [ids(1, 12), 1, 12, 30, 3])
+  assert.deepEqual(read(30, 2), [ids(13, 24), 2, 12, 30, 3])
+  assert.deepEqual(read(30, 3), [ids(25, 30), 3, 12, 30, 3])
+  // A page past the end keeps its number and the real totals, so the list moves to the last page.
+  assert.deepEqual(read(30, 4), [[], 4, 12, 30, 3])
+  // No entries: no pages.
+  assert.deepEqual(read(0, 1), [[], 1, 12, 0, 0])
+  assert.deepEqual(read(41, 2, 40), [ids(41, 41), 2, 40, 41, 2])
+  // Each row reads as a Lore card.
+  const card = asEntryPage(served(1, 1, 12), 1, 12).items[0]
+  assert.deepEqual([card.canonStatus, card.isArchived, card.aliases, card.tags], [1, false, [], []])
 })
