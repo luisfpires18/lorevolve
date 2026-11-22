@@ -1,14 +1,14 @@
 // Run with `node --test uiContract/states.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps a failed read, a loading line, a quiet line and a screen reader message on their shared parts
-// (#410): LoadError, LoadingNote, QuietNote, Announce, Callout, errorText and useAsyncRead.
-// Each list below only shrinks, and a stale entry fails. Catalogue: docs/design/ui-components.md.
+// (#410): LoadError, LoadingNote, QuietNote, Announce, Callout, errorText and useAsyncRead. A progress bar or a meter
+// is ProgressBar (#456). Each list below only shrinks, and a stale entry fails. Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { elements, read, tsxFiles, webRoot } from './support.ts'
+import { classStrings, elements, read, tsxFiles, webRoot } from './support.ts'
 
 const sourceFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
   .filter((file) => file.endsWith('.ts') || file.endsWith('.tsx'))
@@ -104,6 +104,23 @@ const setsMissingWithout404: Guard = (source) => {
   )
 }
 const usesMuted: Guard = (source) => /className="muted"/.test(source)
+// A bar drawn by hand: `progressbar` or `progressbar__fill` as a class token (template literals included), or its role.
+const drawsProgressBar: Guard = (source) =>
+  classStrings(source).some((value) =>
+    value
+      .replaceAll('\u0001', ' ')
+      .split(/\s+/)
+      .some((token) => token === 'progressbar' || token === 'progressbar__fill'),
+  ) || /role="(progressbar|meter)"/.test(source)
+
+// Files that draw a progress bar or a meter. ProgressBar is the part.
+const PROGRESS_BARS = new Set([
+  'src/components/CropperProgress.tsx',
+  'src/components/UsageItem.tsx',
+  'src/components/aiChanges/AiChangeDecision.tsx',
+  'src/components/backups/RestoreChooseForm.tsx',
+  'src/components/backups/Restoring.tsx',
+])
 
 function check(guard: Guard, files: string[], allowed: Set<string> | Map<string, string>) {
   const found = files.filter((file) => guard(read(file)))
@@ -142,6 +159,10 @@ test('each guard catches the hand-written form', () => {
   assert.ok(!setsMissingWithout404("  | { kind: 'missing'; for: string }"))
   assert.ok(!setsMissingWithout404("status === 404 ? 'x' : 1\nsetState({ kind: 'missing' })"))
   assert.ok(usesMuted('<p className="muted">x</p>'))
+  assert.ok(drawsProgressBar('<span className="progressbar__fill" />'))
+  assert.ok(drawsProgressBar('<div className={`progressbar ${extra}`}>'))
+  assert.ok(drawsProgressBar('<div className="usage__meter" role="meter">'))
+  assert.ok(!drawsProgressBar('<ProgressBar meter testId="image-crop-progressbar" />'))
 })
 
 test('a failed read is LoadError; only action errors draw their own block', () => {
@@ -166,6 +187,10 @@ test('a read state is useAsyncRead; the list of own read states only shrinks', (
 
 test('kind: missing comes from a 404, never from a failed read', () => {
   check(setsMissingWithout404, sourceFiles, MISSING_WITHOUT_404)
+})
+
+test('a progress bar or a meter is ProgressBar', () => {
+  check(drawsProgressBar, tsxFiles, PROGRESS_BARS)
 })
 
 test('no className="muted": it has no rule; QuietNote is the quiet line', () => {
