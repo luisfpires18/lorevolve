@@ -145,9 +145,9 @@ test.describe('Project sections', () => {
     await expect(page.getByTestId('project-entries')).toBeVisible()
     await expect(page.getByTestId('project-entries-needs-type')).toHaveCount(0)
     await page.getByTestId('project-entry-add').click()
-    await page.getByTestId('project-entry-new-name').fill('Ambush')
-    await page.getByTestId('project-entry-new-save').click()
-    await expect(page.getByTestId('project-entry-list')).toContainText('Ambush')
+    await page.getByLabel('Name', { exact: true }).fill('Ambush')
+    await page.getByTestId('save-entity').click()
+    await expect(page.getByTestId('entry-name')).toHaveText('Ambush')
 
     expect(await page.evaluate(() => (window as unknown as { noReload?: boolean }).noReload)).toBe(
       true,

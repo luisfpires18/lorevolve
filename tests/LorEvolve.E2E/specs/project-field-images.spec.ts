@@ -98,9 +98,9 @@ test.describe('Image fields on project entries', () => {
     const cover = withFields.fields.find((field) => field.name === 'Cover')!.id
     const banner = withFields.fields.find((field) => field.name === 'Banner')!.id
 
-    await page.goto(`/app/projects/${project.id}/entities?type=${type.id}`)
-    await page.getByTestId('project-entry-add').click()
-    await page.getByTestId('project-entry-new-name').fill('Sentinel')
+    const entities = `/app/universes/${world.id}/projects/${project.id}/entities`
+    await page.goto(`${entities}/new?type=${type.id}`)
+    await page.getByLabel('Name', { exact: true }).fill('Sentinel')
 
     // The first picture is cropped to the field's 4:3 frame and held: the entry does not exist yet.
     await addPicture(page, cover, picture('cover.png', 400, 300))
@@ -110,16 +110,14 @@ test.describe('Image fields on project entries', () => {
     await addPicture(page, banner, picture('banner.png', 600, 200))
     await expect(page.getByTestId(`field-image-${banner}-preview`)).toBeVisible()
 
-    await page.getByTestId('project-entry-new-save').click()
+    await page.getByTestId('save-entity').click()
 
     // Created, then each held picture is uploaded; the entry's own page shows them, each labelled with the field's name.
-    const row = page.getByTestId('project-entry-list').locator('> li', { hasText: 'Sentinel' })
-    await expect(row).toBeVisible()
-    await row.getByRole('link', { name: /Sentinel/ }).click()
-    const coverImage = page.getByTestId(`game-entity-field-${cover}`).getByRole('img')
-    const bannerImage = page.getByTestId(`game-entity-field-${banner}`).getByRole('img')
-    await expect(coverImage).toHaveAttribute('alt', 'Picture for Cover')
-    await expect(bannerImage).toHaveAttribute('alt', 'Picture for Banner')
+    await page.waitForURL(new RegExp(`${entities}/[0-9a-f-]{36}$`))
+    const coverImage = page.getByTestId(`entry-field-image-${cover}`).getByRole('img')
+    const bannerImage = page.getByTestId(`entry-field-image-${banner}`).getByRole('img')
+    await expect(coverImage).toHaveAttribute('alt', 'Cover')
+    await expect(bannerImage).toHaveAttribute('alt', 'Banner')
     await expect
       .poll(() => coverImage.evaluate((image: HTMLImageElement) => image.naturalWidth))
       .toBeGreaterThan(0)
@@ -128,15 +126,15 @@ test.describe('Image fields on project entries', () => {
       .toBeGreaterThan(0)
     // The two fields hold two different pictures.
     expect(await coverImage.getAttribute('src')).not.toBe(await bannerImage.getAttribute('src'))
-    // One goes, from the Edit drawer; the other stays.
-    await page.getByTestId('project-entity-edit').click()
+    // One goes, from the entry's form; the other stays.
+    await page.getByTestId('edit-entity').click()
     await page.getByTestId(`field-image-${banner}-remove`).click()
     await acceptConfirm(page)
     await expect(page.getByTestId(`field-image-${banner}-preview`)).toHaveCount(0)
     // And the removal is real: a fresh read of the page does not bring it back.
     await page.reload()
-    await expect(page.getByTestId(`game-entity-field-${cover}`).getByRole('img')).toBeVisible()
-    await expect(page.getByTestId(`game-entity-field-${banner}`).getByRole('img')).toHaveCount(0)
+    await expect(page.getByTestId(`entry-field-image-${cover}`).getByRole('img')).toBeVisible()
+    await expect(page.getByTestId(`entry-field-image-${banner}`)).toHaveCount(0)
   })
   test('while an entry type change is unsaved, its Image field controls are disabled', async ({
     page,

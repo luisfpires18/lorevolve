@@ -92,28 +92,26 @@ test.describe('Game entity details', () => {
     await page.getByRole('link', { name: /Units/ }).first().click()
     await page.getByTestId(`project-entry-open-${alpha.ids['Bram']}`).click()
     await expect(page).toHaveURL(`${base}/${alpha.ids['Bram']}`)
-    await expect(page.getByTestId('game-entity-title')).toHaveText('Bram')
-    await expect(page.getByTestId('game-entity-crumb-type')).toContainText('Units')
-    const text = page.getByTestId('game-entity-description')
+    await expect(page.getByTestId('entry-name')).toHaveText('Bram')
+    await expect(page.getByTestId('entry-type')).toContainText('Units')
+    const text = page.getByTestId('entry-summary')
     await expect(text).toContainText('First line of the lore.')
     await expect(text).toContainText('Second line of the lore.')
-    await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
+    await expect(page.getByTestId('entry-image')).toHaveCount(0)
 
-    // Back goes to the entry's own type, with its row marked.
-    await page.getByTestId('game-entity-crumb-type').click()
-    await expect(page.getByTestId(`project-entry-${alpha.ids['Bram']}`)).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
+    // Back goes to the entry's own type, with its row listed.
+    await page.getByTestId('entry-type').click()
+    await expect(page).toHaveURL(/\?type=/)
+    await expect(page.getByTestId(`project-entry-${alpha.ids['Bram']}`)).toBeVisible()
 
-    // A second type, a bare entry: the same shell with the empty states.
+    // A second type, a bare entry: the same page, with no summary and no picture.
     await page.goto(`${base}/${alpha.ids['Keep']}`)
-    await expect(page.getByTestId('game-entity-title')).toHaveText('Keep')
-    await expect(page.getByTestId('game-entity-no-description')).toBeVisible()
-    await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
+    await expect(page.getByTestId('entry-name')).toHaveText('Keep')
+    await expect(page.getByTestId('entry-summary')).toHaveCount(0)
+    await expect(page.getByTestId('entry-image')).toHaveCount(0)
   })
 
-  test("an editor moves the entry to the Trash from its page and lands back on the game's directory", async ({
+  test("an editor deletes the entry from its page and lands back on the game's directory", async ({
     page,
   }) => {
     await signUp(page)
@@ -126,12 +124,12 @@ test.describe('Game entity details', () => {
     })
     const base = `/app/universes/${world.id}/game-entities/${alpha.id}`
     await page.goto(`${base}/${alpha.ids['Bastion']}`)
-    await page.getByTestId('project-entity-actions').click()
-    await page.getByTestId('project-entity-delete').click()
+    await page.getByTestId('entity-actions').click()
+    await page.getByTestId('trash-entity').click()
     await acceptConfirm(page, 'Bastion')
     await expect(page).toHaveURL(base)
     await page.goto(`${base}/${alpha.ids['Bastion']}`)
-    await expect(page.getByTestId('game-entity-missing')).toBeVisible()
+    await expect(page.getByTestId('entity-missing')).toBeVisible()
   })
   test("the project's own Entities tab opens the same page, inside the project", async ({
     page,
@@ -156,17 +154,14 @@ test.describe('Game entity details', () => {
       .click()
     await page.getByTestId(`project-entry-open-${alpha.ids['Bastion']}`).click()
     await expect(page).toHaveURL(`${entities}/${alpha.ids['Bastion']}`)
-    await expect(page.getByTestId('game-entity-title')).toHaveText('Bastion')
-    await expect(page.getByTestId('game-entity-description')).toContainText('A walled post.')
+    await expect(page.getByTestId('entry-name')).toHaveText('Bastion')
+    await expect(page.getByTestId('entry-summary')).toContainText('A walled post.')
     await expect(page.getByTestId('projecttab-entities')).toHaveAttribute('aria-current', 'page')
 
-    // Back from the type crumb lands on the project's own list, the row marked.
-    await page.getByTestId('game-entity-crumb-type').click()
+    // Back from the type link lands on the project's own list, the row listed.
+    await page.getByTestId('entry-type').click()
     await expect(page).toHaveURL(new RegExp(`^[^?]*${entities}\\?type=`))
-    await expect(page.getByTestId(`project-entry-${alpha.ids['Bastion']}`)).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
+    await expect(page.getByTestId(`project-entry-${alpha.ids['Bastion']}`)).toBeVisible()
 
     // Only `entities/<entryId>` is a sub-address. A deeper one, an empty one, or one under another view falls back to
     // the project's first view, as any unknown address always has (#192): Entities for a game.
@@ -178,7 +173,7 @@ test.describe('Game entity details', () => {
     ]) {
       await page.goto(wrong)
       await expect(page).toHaveURL(entities)
-      await expect(page.getByTestId('game-entity-page')).toHaveCount(0)
+      await expect(page.getByTestId('entry-name')).toHaveCount(0)
     }
   })
 
@@ -197,10 +192,10 @@ test.describe('Game entity details', () => {
     const entry = alpha.ids['Bastion']
 
     await page.goto(`${entities}/${entry}`)
-    await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
+    await expect(page.getByTestId('entry-image')).toHaveCount(0)
     // As on a Lore entry, the picture is changed while editing.
     await expect(page.getByTestId('entity-image-input')).toHaveCount(0)
-    await page.getByTestId('project-entity-edit').click()
+    await page.getByTestId('edit-entity').click()
     await page.getByTestId('entity-image-input').setInputFiles({
       name: 'bastion.png',
       mimeType: 'image/png',
@@ -211,19 +206,16 @@ test.describe('Game entity details', () => {
     await dialog.getByTestId('image-crop-confirm').click()
     await expect(dialog).toHaveCount(0)
 
-    // The page draws it large, through Lore's own entry image route, and the control now offers Replace and Remove.
-    const picture = page.getByTestId('game-entity-image')
-    await expect(picture).toHaveAttribute('src', new RegExp(`/entities/${entry}/image/`))
+    // The control now offers Replace and Remove.
     await expect(page.getByTestId('entity-image-remove')).toBeVisible()
 
-    // Saving the rest of the entry after the picture changed is not a conflict.
-    await page
-      .getByTestId('project-entity-edit-drawer')
-      .getByRole('button', { name: 'Save' })
-      .click()
-    await expect(page.getByTestId('project-entity-edit-drawer')).toHaveCount(0)
-    await expect(page.getByTestId('project-entity-edit-notice')).toHaveCount(0)
-    await expect(picture).toBeVisible()
+    // Saving the rest of the entry after the picture changed is not a conflict, and the page draws it large, through
+    // Lore's own entry image route.
+    await page.getByTestId('save-entity').click()
+    await expect(page.getByTestId('entry-form')).toHaveCount(0)
+    await expect(page.getByTestId('entry-conflict')).toHaveCount(0)
+    const picture = page.getByTestId('entry-image').locator('img')
+    await expect(picture).toHaveAttribute('src', new RegExp(`/entities/${entry}/image/`))
 
     // The type's list shows it on the entry's card, as a Lore card does.
     const types = await api<{ id: string; name: string }[]>(
@@ -239,14 +231,12 @@ test.describe('Game entity details', () => {
 
     // Removed, it is gone from the page again.
     await page.goto(`${entities}/${entry}`)
-    await page.getByTestId('project-entity-edit').click()
+    await page.getByTestId('edit-entity').click()
     await page.getByTestId('entity-image-remove').click()
     await acceptConfirm(page)
-    await page
-      .getByTestId('project-entity-edit-drawer')
-      .getByRole('button', { name: 'Cancel' })
-      .click()
-    await expect(page.getByTestId('game-entity-no-image')).toBeVisible()
+    await page.getByTestId('cancel-entity').click()
+    await expect(page.getByTestId('entry-form')).toHaveCount(0)
+    await expect(page.getByTestId('entry-image')).toHaveCount(0)
   })
 
   test('an entry with an uploaded Image field picture shows it on the page', async ({ page }) => {
@@ -278,9 +268,9 @@ test.describe('Game entity details', () => {
     const cover = withField.fields.find((one) => one.name === 'Cover')!.id
 
     // Same journey as project-field-images.spec.ts: the picture is held in the new entry form, then uploaded.
-    await page.goto(`/app/universes/${world.id}/game-entities/${alpha.id}?type=${typeId}`)
-    await page.getByTestId('project-entry-add').click()
-    await page.getByTestId('project-entry-new-name').fill('Pictured')
+    const base = `/app/universes/${world.id}/game-entities/${alpha.id}`
+    await page.goto(`${base}/new?type=${typeId}`)
+    await page.getByLabel('Name', { exact: true }).fill('Pictured')
     await page.getByTestId(`field-image-${cover}-input`).setInputFiles({
       name: 'cover.png',
       mimeType: 'image/png',
@@ -290,14 +280,9 @@ test.describe('Game entity details', () => {
     await expect(dialog.getByTestId('image-crop-confirm')).toBeEnabled()
     await dialog.getByTestId('image-crop-confirm').click()
     await expect(dialog).toHaveCount(0)
-    await page.getByTestId('project-entry-new-save').click()
-    await expect(page.getByTestId(`field-image-${cover}-preview`)).toBeVisible()
-
-    const open = page.locator('[data-testid^="project-entry-open-"]').first()
-    const id = (await open.getAttribute('data-testid'))!.replace('project-entry-open-', '')
-    await page.goto(`/app/universes/${world.id}/game-entities/${alpha.id}/${id}`)
-    await expect(page.getByTestId('game-entity-image')).toBeVisible()
-    await expect(page.getByTestId('game-entity-no-image')).toHaveCount(0)
+    await page.getByTestId('save-entity').click()
+    await page.waitForURL(new RegExp(`${base}/[0-9a-f-]{36}$`))
+    await expect(page.getByTestId(`entry-field-image-${cover}`).locator('img')).toBeVisible()
   })
 
   test("a random id, or another game's entry, is a plain not-found", async ({ page }) => {
@@ -315,10 +300,10 @@ test.describe('Game entity details', () => {
     const base = `/app/universes/${world.id}/game-entities/${alpha.id}`
 
     await page.goto(`${base}/00000000-0000-0000-0000-000000000000`)
-    await expect(page.getByTestId('game-entity-missing')).toBeVisible()
+    await expect(page.getByTestId('entity-missing')).toBeVisible()
 
     await page.goto(`${base}/${beta.ids['Secretname']}`)
-    await expect(page.getByTestId('game-entity-missing')).toBeVisible()
+    await expect(page.getByTestId('entity-missing')).toBeVisible()
     await expect(page.getByText('Secretname')).toHaveCount(0)
     await expect(page.getByText('Hidden text')).toHaveCount(0)
   })

@@ -100,18 +100,19 @@ test.describe('Project entities', () => {
     await expect(page.getByTestId('project-entries-type')).toHaveCount(0)
     await expect(page.getByTestId('project-schema')).toHaveCount(0)
 
-    // An entry of the type, with one of those choices made. The form opens from the panel's head (#184).
+    // An entry of the type, with one of those choices made. New, in the panel's head (#184), opens the Lore entry page.
     await page.getByTestId('project-entry-add').click()
-    await page.getByTestId('project-entry-new-name').fill('Saltflats')
+    await page.getByLabel('Name', { exact: true }).fill('Saltflats')
 
     const players = page.getByRole('group', { name: /Supported players/ })
     await players.getByText('4', { exact: true }).click()
 
-    await page.getByTestId('project-entry-new-save').click()
+    await page.getByTestId('save-entity').click()
 
-    await expect(page.getByTestId('project-entry-list')).toContainText('Saltflats')
+    await expect(page.getByTestId('entry-name')).toHaveText('Saltflats')
 
-    // Back on the cards, the count is read again.
+    // Back on the cards, by way of the entry's type, the count is read again.
+    await page.getByTestId('entry-type').click()
     await page.getByTestId('project-entities-back').click()
     await expect(cards.getByTestId('lore-type-card').filter({ hasText: 'Map' })).toContainText(
       '1 entry',
@@ -212,9 +213,9 @@ test.describe('Project entities', () => {
     await page.getByTestId('project-entity-type-cards').getByRole('link', { name: /Unit/ }).click()
 
     await page.getByTestId('project-entry-add').click()
-    await page.getByTestId('project-entry-new-name').fill('Saltbearer')
-    await page.getByTestId('project-entry-new-save').click()
-    await expect(page.getByTestId('project-entry-list')).toContainText('Saltbearer')
+    await page.getByLabel('Name', { exact: true }).fill('Saltbearer')
+    await page.getByTestId('save-entity').click()
+    await expect(page.getByTestId('entry-name')).toHaveText('Saltbearer')
 
     // The other project of the same universe shares neither: it is offered its own starters and holds nothing.
     await page.goto(`/app/projects/${second.id}/entities`)
