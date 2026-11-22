@@ -127,7 +127,7 @@ public static class ProjectEntityImport
             }
 
             // No link resolver: a copy takes plain values only, so one import never fans out through the lore.
-            var plain = await MapAsync(db, universeId, projectId, target, typeId.Value, linkFor: null, cancellationToken);
+            var plain = await ProjectEntityImportMapping.MapAsync(db, universeId, projectId, target, typeId.Value, linkFor: null, cancellationToken);
 
             var (created, problem) = await EntityEndpoints.CreateEntryAsync(
                 db,
@@ -148,7 +148,7 @@ public static class ProjectEntityImport
             return created!.Id;
         }
 
-        var mapped = await MapAsync(db, universeId, projectId, lore, entity.EntityTypeId, CopyOfAsync, cancellationToken);
+        var mapped = await ProjectEntityImportMapping.MapAsync(db, universeId, projectId, lore, entity.EntityTypeId, CopyOfAsync, cancellationToken);
 
         if (failure is not null)
         {
@@ -211,96 +211,5 @@ public static class ProjectEntityImport
             db, universeId, entity.Id, cancellationToken, liveOnly: false, projectId);
 
         return Results.Ok(new ImportLoreResult(detail, imported, skipped, copied));
-    }
-
-    /// <summary>
-    /// The lore entry's values as inputs for the fields of <paramref name="targetTypeId"/> they match. A reference goes
-    /// through <paramref name="linkFor"/>, the project-side entry to link to, or is skipped when there is none.
-    /// </summary>
-    private static async Task<(List<EntityFieldDefinition> Targets, List<FieldValueInput> Inputs, List<string> Skipped)> MapAsync(
-        LorEvolveDbContext db,
-        Guid universeId,
-        Guid? projectId,
-        LoreEntity source,
-        Guid targetTypeId,
-        Func<Guid, Task<Guid?>>? linkFor,
-        CancellationToken cancellationToken)
-    {
-        var values = await db.EntityFieldValues.AsNoTracking().IgnoreQueryFilters()
-            .Include(value => value.FieldDefinition)
-            .Include(value => value.Option)
-            .Where(value => value.EntityId == source.Id && value.FieldDefinition!.ArchivedAt == null)
-            .ToListAsync(cancellationToken);
-
-        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, targetTypeId, cancellationToken, projectId);
-
-        var targets = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
-            .Include(field => field.Options)
-            .Where(field => lineage.Contains(field.EntityTypeId)
-                && field.EntityType!.UniverseId == universeId
-                && field.EntityType!.ProjectId == projectId
-                && field.ArchivedAt == null)
-            .ToListAsync(cancellationToken);
-
-        var inputs = new List<FieldValueInput>();
-        var skipped = new List<string>();
-
-        foreach (var field in values.GroupBy(value => value.FieldDefinitionId))
-        {
-            var first = field.First();
-            var from = first.FieldDefinition!;
-
-            // A picture is never a value (Issue #238); it has its own upload and is not imported.
-            var target = from.Kind == EntityFieldKind.Image
-                ? null
-                : targets.FirstOrDefault(candidate => candidate.Kind == from.Kind
-                    && string.Equals(candidate.Name, from.Name, StringComparison.OrdinalIgnoreCase));
-
-            if (target is null)
-            {
-                if (from.Kind != EntityFieldKind.Image)
-                {
-                    skipped.Add(from.Name);
-                }
-
-                continue;
-            }
-
-            Guid? linked = null;
-
-            if (from.Kind == EntityFieldKind.EntityReference)
-            {
-                linked = linkFor is not null && first.ReferencedEntityId is { } loreTarget
-                    ? await linkFor(loreTarget)
-                    : null;
-
-                if (linked is null)
-                {
-                    skipped.Add(from.Name);
-                    continue;
-                }
-            }
-
-            var optionIds = from.Kind is EntityFieldKind.Select or EntityFieldKind.MultiSelect
-                ? field.Select(value => value.Option?.Value)
-                    .OfType<string>()
-                    .Select(text => target.Options.FirstOrDefault(
-                        option => string.Equals(option.Value, text, StringComparison.OrdinalIgnoreCase))?.Id)
-                    .OfType<Guid>()
-                    .ToList()
-                : null;
-
-            inputs.Add(new FieldValueInput(
-                target.Id,
-                first.TextValue,
-                first.NumberValue,
-                first.BooleanValue,
-                first.DateValue,
-                optionIds,
-                linked,
-                first.EraId));
-        }
-
-        return (targets, inputs, skipped);
     }
 }
