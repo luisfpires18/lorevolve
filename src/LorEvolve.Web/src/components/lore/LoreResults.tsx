@@ -3,7 +3,8 @@ import { Pager } from '../Pager'
 import { EmptyState } from '../EmptyState'
 import { EntityGrid } from './EntityGrid'
 import { useI18n } from '../../i18n'
-import type { EntityPage } from '../../lore/types'
+import type { EntityPage, EntitySummary } from '../../lore/types'
+import type { CardEntity } from '../EntityCard'
 import { useUniverseAccess } from '../../universes/access'
 import { useWorkspaceTypes } from '../../pages/useWorkspaceTypes'
 import type { useLoreEntries } from '../../lore/useLoreEntries'
@@ -16,9 +17,12 @@ import { useEntrySource } from '../../lore/entrySource'
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
 type Selection = ReturnType<typeof useLoreSelection>
+/** A card as the list draws it: a project's has no Canon status, and may name its Lore entry (#551). */
+type ListedEntry = CardEntity & Pick<EntitySummary, 'canonEntityName'>
 
-/** The entries found, the empty states and the pager. */
+/** The entries found, the empty states and the pager. A project's cards carry no Canon status (#551). */
 export function LoreResults({
+  isLore,
   selectedNode,
   selectedType,
   selectedGroup,
@@ -34,6 +38,7 @@ export function LoreResults({
   isFiltered,
   createTo,
 }: {
+  isLore: boolean
   universe: ReturnType<typeof useWorkspaceTypes>['universe']
   access: ReturnType<typeof useUniverseAccess>
   result: EntityPage | null
@@ -50,10 +55,17 @@ export function LoreResults({
         <EntityGrid
           testId="entity-grid"
           universeId={universe.id}
-          items={result.items}
+          items={
+            isLore
+              ? result.items
+              : result.items.map((item): ListedEntry => ({ ...item, canonStatus: undefined }))
+          }
           card={(entity, index) => ({
             href: entrySource.href.entry(entity.id),
             eager: index < 8,
+            note: entity.canonEntityName
+              ? t('projects.entries.canon', { name: entity.canonEntityName })
+              : undefined,
             selection: isSelecting
               ? { checked: selectedIds.has(entity.id), onToggle: () => toggle(entity.id) }
               : undefined,

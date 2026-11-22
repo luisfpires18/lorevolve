@@ -90,7 +90,7 @@ test.describe('Game entity details', () => {
 
     await page.goto(base)
     await page.getByRole('link', { name: /Units/ }).first().click()
-    await page.getByTestId(`project-entry-open-${alpha.ids['Bram']}`).click()
+    await page.getByTestId('entity-grid').locator('[data-entity-name="Bram"]').click()
     await expect(page).toHaveURL(`${base}/${alpha.ids['Bram']}`)
     await expect(page.getByTestId('entry-name')).toHaveText('Bram')
     await expect(page.getByTestId('entry-type')).toContainText('Units')
@@ -102,7 +102,7 @@ test.describe('Game entity details', () => {
     // Back goes to the entry's own type, with its row listed.
     await page.getByTestId('entry-type').click()
     await expect(page).toHaveURL(/\?type=/)
-    await expect(page.getByTestId(`project-entry-${alpha.ids['Bram']}`)).toBeVisible()
+    await expect(page.getByTestId('entity-grid').locator('[data-entity-name="Bram"]')).toBeVisible()
 
     // A second type, a bare entry: the same page, with no summary and no picture.
     await page.goto(`${base}/${alpha.ids['Keep']}`)
@@ -152,7 +152,7 @@ test.describe('Game entity details', () => {
       .getByTestId('lore-type-card')
       .filter({ hasText: 'Units' })
       .click()
-    await page.getByTestId(`project-entry-open-${alpha.ids['Bastion']}`).click()
+    await page.getByTestId('entity-grid').locator('[data-entity-name="Bastion"]').click()
     await expect(page).toHaveURL(`${entities}/${alpha.ids['Bastion']}`)
     await expect(page.getByTestId('entry-name')).toHaveText('Bastion')
     await expect(page.getByTestId('entry-summary')).toContainText('A walled post.')
@@ -161,7 +161,9 @@ test.describe('Game entity details', () => {
     // Back from the type link lands on the project's own list, the row listed.
     await page.getByTestId('entry-type').click()
     await expect(page).toHaveURL(new RegExp(`^[^?]*${entities}\\?type=`))
-    await expect(page.getByTestId(`project-entry-${alpha.ids['Bastion']}`)).toBeVisible()
+    await expect(
+      page.getByTestId('entity-grid').locator('[data-entity-name="Bastion"]'),
+    ).toBeVisible()
 
     // Only `entities/<entryId>` is a sub-address. A deeper one, an empty one, or one under another view falls back to
     // the project's first view, as any unknown address always has (#192): Entities for a game.
@@ -224,10 +226,8 @@ test.describe('Game entity details', () => {
       `/api/projects/${alpha.id}/entity-types`,
     )
     await page.goto(`${entities}?type=${types.find((one) => one.name === 'Units')!.id}`)
-    await expect(page.getByTestId(`project-entry-${entry}`).locator('img')).toHaveAttribute(
-      'src',
-      new RegExp(`/entities/${entry}/image/`),
-    )
+    const card = page.getByTestId('entity-grid').locator('[data-entity-name="Bastion"] img')
+    await expect(card).toHaveAttribute('src', new RegExp(`/entities/${entry}/image/`))
 
     // Removed, it is gone from the page again.
     await page.goto(`${entities}/${entry}`)

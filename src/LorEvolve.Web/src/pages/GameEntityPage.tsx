@@ -2,7 +2,7 @@ import { useOutletContext, useParams } from 'react-router-dom'
 import { GameGate } from '../projects/gameGate'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
-import { ProjectEntryPage } from './ProjectEntryPage'
+import { ProjectLore } from './ProjectLore'
 
 /**
  * One entry of a game, on its own screen (#286), or a new one (`new?type=`, #551), drawn by the Lore entry page. The game
@@ -23,7 +23,7 @@ export default function GameEntityPage({ isNew = false }: { isNew?: boolean }) {
       {(game, universeId) => {
         const base = `/app/universes/${universeId}/game-entities/${game.id}`
         return (
-          <ProjectEntryPage
+          <ProjectLore
             projectId={game.id}
             base={base}
             typesHref={`${base}?manage=types`}

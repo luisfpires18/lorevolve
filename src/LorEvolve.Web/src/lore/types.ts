@@ -132,6 +132,8 @@ export interface EntitySummary {
   tags: string[]
   image: EntityImageRef | null
   updatedAt: string
+  /** A project entry's Lore entry, named on its card (#551). Never on a Lore entry. */
+  canonEntityName?: string | null
 
   /**
    * A few words of the article around what a search matched, cut by the API. Only on a search result whose article

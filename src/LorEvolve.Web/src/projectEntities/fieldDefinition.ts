@@ -1,11 +1,12 @@
 import type { Chronology } from '../chronology/types'
-import type { EntityDetail } from '../lore/types'
+import type { EntityDetail, EntityPage, EntitySummary } from '../lore/types'
 import type { EntityType, FieldDefinition } from '../lore/typeDefinitions'
 // The .ts extension lets `node --test` load this file on its own (fieldDefinition.test.ts).
 import {
   FieldKind,
   type FieldKindValue,
   type ProjectEntityDetail,
+  type ProjectEntitySummary,
   type ProjectEntityType,
   type ProjectField,
   type ProjectTypeInput,
@@ -90,6 +91,22 @@ export function asEntryDetail(entry: ProjectEntityDetail): EntityDetail {
     articleExcerpt: null,
     hasFamilyConnections: false,
     hasProgression: false,
+  }
+}
+
+/** A project entry as the Lore list reads a card: no Canon status, aliases, tags or excerpt; its Lore link kept (#551). */
+export function asEntrySummary(row: ProjectEntitySummary): EntitySummary {
+  return { ...row, canonStatus: 1, isArchived: false, aliases: [], tags: [], articleExcerpt: null }
+}
+
+/** One page of `items`, cut here (#551 pick 1). A page past the end has no items and the real totals. */
+export function pageOf(items: EntitySummary[], page: number, size: number): EntityPage {
+  return {
+    items: items.slice((page - 1) * size, page * size),
+    page,
+    pageSize: size,
+    totalCount: items.length,
+    totalPages: Math.ceil(items.length / size),
   }
 }
 

@@ -195,11 +195,7 @@ test('a head inside a project says its level', () => {
     (file) =>
       (file.startsWith('src/components/projects/') && !file.endsWith('/NewProject.tsx')) ||
       file.startsWith('src/components/projectEntities/') ||
-      [
-        'src/components/ProjectEntitiesView.tsx',
-        'src/components/ProjectSchema.tsx',
-        'src/components/ProjectOutline.tsx',
-      ].includes(file),
+      ['src/components/ProjectSchema.tsx', 'src/components/ProjectOutline.tsx'].includes(file),
   )
   const missing = scope.filter((file) =>
     elements(read(file), 'PageHeader').some(({ tag }) => !/\blevel=/.test(tag)),

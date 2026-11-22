@@ -94,18 +94,20 @@ export function EntryHeader({
       // How settled the entry is, changed in one press. A choice, not an action: the chosen step is raised paper with its
       // glyph and word, never a filled block louder than the name.
       status={
-        !isLore ? undefined : access.editContent || isNew || suggesting ? (
-          <CanonStatusPicker
-            label={t('entity.page.head.canonGroup')}
-            disabled={isSaving}
-            optionTestId="canon-"
-            value={draft.canonStatus}
-            onChange={changeCanon}
-          />
-        ) : (
-          // Read only: the status, stated, with nothing to press.
-          <CanonBadge status={draft.canonStatus} testId="entry-canon-status" />
-        )
+        isLore ? (
+          access.editContent || isNew || suggesting ? (
+            <CanonStatusPicker
+              label={t('entity.page.head.canonGroup')}
+              disabled={isSaving}
+              optionTestId="canon-"
+              value={draft.canonStatus}
+              onChange={changeCanon}
+            />
+          ) : (
+            // Read only: the status, stated, with nothing to press.
+            <CanonBadge status={draft.canonStatus} testId="entry-canon-status" />
+          )
+        ) : undefined
       }
       name={<bdi>{detail?.name}</bdi>}
       nameTestId="entry-name"
