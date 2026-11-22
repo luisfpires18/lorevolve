@@ -1,10 +1,16 @@
 // Run with `node --test fieldDefinition.test.ts` (Node 22.18+ strips the types itself).
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { asEntryDetail, asEntryType } from './src/projectEntities/fieldDefinition.ts'
+import {
+  asEntryDetail,
+  asEntrySummary,
+  asEntryType,
+  pageOf,
+} from './src/projectEntities/fieldDefinition.ts'
 import type {
   ProjectEntityDetail,
   ProjectEntityType,
+  ProjectEntitySummary,
   ProjectField,
 } from './src/projectEntities/types.ts'
 
@@ -78,4 +84,46 @@ test('a project entry reads as a Lore entry with none of Lore own parts, its Lor
     [shaped.isArchived, shaped.hasFamilyConnections, shaped.hasProgression],
     [false, false, false],
   )
+})
+
+const row = (id: string): ProjectEntitySummary => ({
+  id,
+  name: id,
+  summary: null,
+  entityTypeId: 'knight',
+  entityTypeName: 'Knight',
+  entityTypeIcon: null,
+  entityTypeAccentColor: null,
+  canonEntityId: null,
+  canonEntityName: null,
+  updatedAt: '2026-11-22T00:00:00Z',
+  image: null,
+})
+const rows = (count: number) =>
+  Array.from({ length: count }, (_, index) => asEntrySummary(row(`e${index + 1}`)))
+const cut = (count: number, page: number, size = 12) => {
+  const one = pageOf(rows(count), page, size)
+  return [one.items.map((item) => item.id), one.page, one.pageSize, one.totalCount, one.totalPages]
+}
+
+test('a project list row reads as a Lore card with none of Lore own parts, its Lore link kept', () => {
+  const shaped = asEntrySummary({ ...row('e1'), canonEntityId: 'lore-1', canonEntityName: 'Bram' })
+  assert.equal(shaped.canonEntityName, 'Bram')
+  assert.deepEqual([shaped.aliases, shaped.tags, shaped.articleExcerpt], [[], [], null])
+  assert.deepEqual([shaped.canonStatus, shaped.isArchived], [1, false])
+})
+
+test('the one read is cut into pages in the browser, with the real totals', () => {
+  const ids = (from: number, to: number) =>
+    Array.from({ length: to - from + 1 }, (_, index) => `e${from + index}`)
+  // The first page, a middle page and the last, short one.
+  assert.deepEqual(cut(30, 1), [ids(1, 12), 1, 12, 30, 3])
+  assert.deepEqual(cut(30, 2), [ids(13, 24), 2, 12, 30, 3])
+  assert.deepEqual(cut(30, 3), [ids(25, 30), 3, 12, 30, 3])
+  // No rows, and a page past the end: no items, the real totals.
+  assert.deepEqual(cut(0, 1), [[], 1, 12, 0, 0])
+  assert.deepEqual(cut(30, 4), [[], 4, 12, 30, 3])
+  // Exactly 500 rows, the most one read brings.
+  assert.deepEqual(cut(500, 1, 50), [ids(1, 50), 1, 50, 500, 10])
+  assert.deepEqual(cut(500, 10, 50), [ids(451, 500), 10, 50, 500, 10])
 })

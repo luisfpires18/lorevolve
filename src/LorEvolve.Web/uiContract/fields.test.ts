@@ -179,7 +179,6 @@ test('one yes or no option is CheckField', () => {
       c('FamilyTreeTypes'),
       c('NameLinker'),
       c('lore/SectionListEditor'),
-      c('projectEntities/ProjectEntriesFilters'),
       c('WorldRuleCheckSection'),
     ],
     'use CheckField',

@@ -20,6 +20,9 @@ import type { LoadState } from '../lore/loreAddress'
 import { pageParam } from '../lib/queryParams'
 import { useEntrySource } from '../lore/entrySource'
 
+/** A project's address carries no field filter: one stable empty list. */
+const NO_FILTERS: ReturnType<typeof readFieldFilters> = []
+
 /**
  * The Lore browser. Where the author is - which type, which status, what is typed in the filter, which of the type's own
  * fields narrow it, which page - is the address and nothing else:
@@ -53,6 +56,8 @@ import { useEntrySource } from '../lore/entrySource'
 export default function LorePage() {
   const { universe, entryTypes: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
   const entrySource = useEntrySource()
+  // A project's entries (#551) have no status, exact match, field filters, groups, mass create, Select or Trash.
+  const isLore = entrySource.kind === 'lore'
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
   const filtersId = useId()
@@ -74,12 +79,12 @@ export default function LorePage() {
   const typeParam = params.get('type')
   const groupParam = params.get('group')
   const browseParam = params.get('browse')
-  const canonStatus = readStatus(params.get('status'))
+  const canonStatus = isLore ? readStatus(params.get('status')) : null
   const search = params.get('q') ?? ''
-  const exact = params.get('exact') === '1'
+  const exact = isLore && params.get('exact') === '1'
   const sort = readSort(params.get('sort'))
   const page = readPage(params.get('page'))
-  const addressFilters = readFieldFilters(params)
+  const addressFilters = isLore ? readFieldFilters(params) : NO_FILTERS
 
   const entries = useLoreEntries({
     typesRead,
@@ -144,7 +149,7 @@ export default function LorePage() {
     (result?.totalCount ?? 0) > LORE_PAGE_SIZES[0] || pageSize !== LORE_PAGE_SIZES[0]
   const isFiltered = search.trim().length > 0 || canonStatus !== null || fieldFilters.length > 0
   // A search that is not exact is read best match first, unless another order is chosen.
-  const ranked = search.trim().length > 0 && !exact
+  const ranked = isLore && search.trim().length > 0 && !exact
   const activeFilters =
     (search.trim() ? 1 : 0) + (canonStatus !== null ? 1 : 0) + fieldFilters.length
   // Under a group, the member types a field filter could be added from - each a link to that type, search and status kept.
@@ -161,6 +166,7 @@ export default function LorePage() {
       <LoreHeader
         {...entries}
         {...links}
+        isLore={isLore}
         universe={universe}
         access={access}
         filtersId={filtersId}
@@ -176,6 +182,7 @@ export default function LorePage() {
         <LoreControls
           {...entries}
           {...links}
+          isLore={isLore}
           universe={universe}
           filtersId={filtersId}
           canonStatus={canonStatus}
@@ -190,6 +197,7 @@ export default function LorePage() {
           {...entries}
           {...links}
           {...entrySelection}
+          isLore={isLore}
           access={access}
           sort={sort}
           result={result}
@@ -202,6 +210,7 @@ export default function LorePage() {
       <LoreStatus
         {...entries}
         {...entrySelection}
+        isLore={isLore}
         massCreated={massCreated}
         refreshTypes={refreshTypes}
         view={view}
@@ -228,6 +237,7 @@ export default function LorePage() {
         {...entries}
         {...links}
         {...entrySelection}
+        isLore={isLore}
         universe={universe}
         access={access}
         result={result}
@@ -235,7 +245,7 @@ export default function LorePage() {
         createTo={createTo}
       />
 
-      <LoreSelectBar {...entrySelection} />
+      {isLore ? <LoreSelectBar {...entrySelection} /> : null}
     </article>
   )
 }

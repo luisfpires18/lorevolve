@@ -21,12 +21,10 @@ const SHARED_CANCEL_READERS = new Set([
   'src/components/lore/MassCreateBar.tsx',
 ])
 
-// Files that import Plus on purpose: the New button, three that are not a New button, and two row
-// menus whose "New" and "Add" items carry the Plus glyph.
+// Files that import Plus on purpose: the New button and two that are not a New button.
 const PLUS_IMPORTERS = new Set([
   'src/components/NewButton.tsx',
   'src/components/LoreFieldFilters.tsx',
-  'src/components/ProjectEntitiesView.tsx',
   'src/components/worldLogic/MachineStateCard.tsx',
 ])
 

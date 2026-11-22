@@ -270,7 +270,7 @@ test('an inline form guards through useDiscardGuard', () => {
 test('a list read with changes is useLoadedList', () => {
   onlyIn(
     filesMatching((source) => /\bfunction failing\(|\bfunction run\(work/.test(source)),
-    ['src/lib/useLoadedList.ts', 'src/projectEntities/useProjectEntriesRead.ts'],
+    ['src/lib/useLoadedList.ts'],
     'A failing or run helper',
   )
 })

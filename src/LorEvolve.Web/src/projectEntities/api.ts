@@ -70,12 +70,7 @@ export function deleteProjectField(projectId: string, typeId: string, fieldId: s
   })
 }
 
-/**
- * The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196).
- *
- * `page.recent` asks for the most recently updated first rather than by name, which is what the project's overview
- * draws (#195). Everything else reads the list in its own order.
- */
+/** The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196). */
 export function listProjectEntities(
   projectId: string,
   typeId?: string,
@@ -83,7 +78,6 @@ export function listProjectEntities(
   page?: {
     skip: number
     take: number
-    recent?: boolean
     q?: string
     sort?: string
     includeDescendants?: boolean
@@ -94,7 +88,6 @@ export function listProjectEntities(
   if (page) {
     params.set('skip', String(page.skip))
     params.set('take', String(page.take))
-    if (page.recent) params.set('recent', 'true')
     if (page.q) params.set('q', page.q)
     if (page.sort) params.set('sort', page.sort)
     if (page.includeDescendants) params.set('includeDescendants', 'true')

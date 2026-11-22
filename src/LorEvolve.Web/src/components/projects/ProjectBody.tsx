@@ -1,7 +1,6 @@
 import { ComicCollections } from '../ComicCollections'
 import { EmptyState } from '../EmptyState'
 import { RoleGate } from '../RoleGate'
-import { ProjectEntitiesView } from '../ProjectEntitiesView'
 import { ProjectSchema } from '../ProjectSchema'
 import { ProjectOutline } from '../ProjectOutline'
 import { ProjectScript } from '../ProjectScript'
@@ -11,9 +10,9 @@ import { ProjectKind, type ProjectDetail } from '../../projects/types'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { useUniverseAccess } from '../../universes/access'
-import { ProjectEntryPage } from '../../pages/ProjectEntryPage'
+import { ProjectLore } from '../../pages/ProjectLore'
 
-/** An entry's own screen (the Lore entry page, #551), a new entry's, or the section's panels. */
+/** An entry's own screen (the Lore entry page, #551), a new entry's, or the section's panels; Entities is the Lore list. */
 export function ProjectBody({
   project,
   section,
@@ -37,15 +36,16 @@ export function ProjectBody({
   setSchemaVersion: Dispatch<SetStateAction<number>>
 }) {
   useI18n()
+  const typesHref = typesPath ?? `${entitiesPath}?manage=types`
 
   return entryId || creating ? (
     <div>
       {/* A new entry needs editContent, as `lore/new` does; one RoleGate for both keeps the page mounted after a create. */}
       <RoleGate need={creating ? 'editContent' : undefined}>
-        <ProjectEntryPage
+        <ProjectLore
           projectId={project.id}
           base={entitiesPath}
-          typesHref={typesPath ?? `${entitiesPath}?manage=types`}
+          typesHref={typesHref}
           entityId={entryId}
         />
       </RoleGate>
@@ -61,12 +61,12 @@ export function ProjectBody({
        * moves between this project's views and between the Entities view's own screens.
        */}
       {section.segment === 'entities' ? (
-        <ProjectEntitiesView
+        <ProjectLore
+          list
           projectId={project.id}
-          universeId={project.universe.id}
+          base={entitiesPath}
+          typesHref={typesHref}
           reloadKey={schemaVersion}
-          entryHref={(entry) => `${entitiesPath}/${entry.id}`}
-          typesHref={typesPath}
           onChanged={() => setSchemaVersion((version) => version + 1)}
         />
       ) : section.segment === 'types' ? (

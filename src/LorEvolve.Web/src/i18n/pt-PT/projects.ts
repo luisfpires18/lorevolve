@@ -119,18 +119,7 @@ const projects = {
     entity: {
       loading: 'A ler esta entidade.',
       failed: 'Não foi possível ler esta entidade.',
-      notFound: 'Não foi possível encontrar esta entidade.',
       notFoundHint: 'Pode ter sido apagada ou não faz parte deste jogo.',
-      backToGame: 'Voltar ao jogo',
-      noImage: 'Ainda sem imagem',
-      noDescription: 'Ainda sem descrição.',
-      imageAlt: 'Imagem de {name}',
-      fields: 'Campos',
-      edit: 'Editar',
-      editTitle: 'Editar esta entidade',
-      noValue: 'Ainda sem valor',
-      noFields: 'Este tipo ainda não tem campos.',
-      fieldImageAlt: 'Imagem de {name}',
     },
   },
   directory: {

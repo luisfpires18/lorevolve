@@ -98,18 +98,20 @@ export function EntryArticleView({
   return (
     <>
       <div className="entry__main">
-        {!isLore ? (
+        {isLore ? (
+          isNew ? null : (
+            <EntityArticleSection
+              key={entityId}
+              universeId={universe.id}
+              entityId={entityId}
+              entityName={detail?.name ?? ''}
+              canEdit={!isEditing}
+              onEditingChange={setIsWritingArticle}
+              onSaved={articleSaved}
+            />
+          )
+        ) : (
           facts
-        ) : isNew ? null : (
-          <EntityArticleSection
-            key={entityId}
-            universeId={universe.id}
-            entityId={entityId}
-            entityName={detail?.name ?? ''}
-            canEdit={!isEditing}
-            onEditingChange={setIsWritingArticle}
-            onSaved={articleSaved}
-          />
         )}
       </div>
 

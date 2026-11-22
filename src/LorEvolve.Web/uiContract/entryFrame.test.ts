@@ -186,34 +186,11 @@ test('the Lore-only gate fails on an ungated part and passes a gated one', () =>
   assert.deepEqual(ungated('{isLore && x ? (\n  <A onClick={() => f(y)} />\n  <CanonBadge />'), [])
 })
 
-// Not behind an open isLore branch yet; the next commit of #551 C3 gates each and empties this. Only shrinks.
-const NOT_YET_GATED = [
-  'src/pages/LorePage.tsx <LoreSelectBar',
-  'src/components/lore/EntryHeader.tsx <CanonBadge',
-  'src/components/lore/EntryArticleView.tsx <EntityArticleSection',
-  'src/components/lore/LoreHeader.tsx "mass-create"',
-  'src/components/lore/LoreHeader.tsx <GroupSwitcher',
-  'src/components/lore/LoreControls.tsx <CanonStatusPicker',
-  'src/components/lore/LoreControls.tsx "lore-exact"',
-  'src/components/lore/LoreControls.tsx <LoreFieldFilters',
-  'src/components/lore/LoreResultActions.tsx "lore-select"',
-  'src/components/lore/LoreStatus.tsx "lore-trashed"',
-]
-
 test('the entry page and the list draw their Lore-only parts only for a Lore source', () => {
   const found = LORE_ONLY_FILES.flatMap((file) =>
     ungated(read(file)).map((marker) => `${file} ${marker}`),
   )
-  assert.deepEqual(
-    found.filter((hit) => !NOT_YET_GATED.includes(hit)),
-    [],
-    'gate it with isLore',
-  )
-  assert.deepEqual(
-    NOT_YET_GATED.filter((hit) => !found.includes(hit)),
-    [],
-    'stale exception: remove it',
-  )
+  assert.deepEqual(found, [], 'gate it with isLore')
   const code = LORE_ONLY_FILES.map((file) => codeLines(read(file)).join('\n')).join('\n')
   assert.deepEqual(
     LORE_ONLY.filter((marker) => !code.includes(marker)),

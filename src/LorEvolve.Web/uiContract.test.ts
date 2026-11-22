@@ -281,7 +281,6 @@ const BUTTON_CLASS_CALLERS = new Map<string, string>([
     'its trigger can be an avatar or a pill, so it keeps its own button',
   ],
   ['src/components/LoreFieldFilters.tsx', 'an ActionMenu trigger styled as a button'],
-  ['src/components/ProjectEntitiesView.tsx', 'an ActionMenu trigger styled as a button'],
   ['src/components/lore/TypeLevelMenus.tsx', 'an ActionMenu trigger styled as a button'],
   ['src/components/PictureActions.tsx', 'a label that opens the file input'],
   ['src/components/lore/AppearanceGallery.tsx', 'a label that opens the file input'],

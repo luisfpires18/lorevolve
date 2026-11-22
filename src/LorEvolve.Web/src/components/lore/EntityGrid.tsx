@@ -7,7 +7,7 @@ type ItemProps = ComponentPropsWithRef<'li'> & { 'data-testid'?: string }
 
 /**
  * Entry cards in the Lore grid: one `li` per entry holding its `EntityCard`, then `extra` under the card.
- * The Lore list and a project's entry list draw through it. Catalogue: docs/design/ui-components.md.
+ * The Lore list draws through it, for a Lore or a project source (#551). Catalogue: docs/design/ui-components.md.
  */
 export function EntityGrid<T extends CardEntity>({
   universeId,

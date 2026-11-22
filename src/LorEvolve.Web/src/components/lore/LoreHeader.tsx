@@ -14,8 +14,12 @@ import { NewButton } from '../NewButton'
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
 
-/** The page header: the crumb, the title, Create and Mass create, and the type and group navigation. */
+/**
+ * The page header: the crumb, the title, Create and Mass create, and the type and group navigation. A project's list
+ * (#551) has no Mass create or groups, and sits under the project's own heading.
+ */
 export function LoreHeader({
+  isLore,
   types,
   groups,
   filtersOpen,
@@ -36,6 +40,7 @@ export function LoreHeader({
   createTo,
   massCreateTo,
 }: {
+  isLore: boolean
   universe: ReturnType<typeof useWorkspaceTypes>['universe']
   access: ReturnType<typeof useUniverseAccess>
   filtersId: string
@@ -57,15 +62,18 @@ export function LoreHeader({
 > &
   Pick<Links, 'hrefFor' | 'typeHref' | 'groupHref'>) {
   const { t, tx } = useI18n()
+  const root = isLore ? t('lore.page.pathRoot') : t('projects.entities.title')
+  const title = isLore ? t('lore.page.title') : t('projects.entities.title')
   return (
     <PageHeader
+      level={isLore ? 1 : 2}
       crumb={
         selectedNode || selectedGroup ? (
           <Crumb
             testId="lore-path"
             items={[
               // Lore itself: the catalog, which reads no entry - not every entry. A group's list has it too.
-              { to: hrefFor(null), label: t('lore.page.pathRoot'), testId: 'lore-path-root' },
+              { to: hrefFor(null), label: root, testId: 'lore-path-root' },
               ...(selectedNode?.path ?? []).slice(0, -1).map((ancestor) => ({
                 to: hrefFor(ancestor.id),
                 label: <bdi>{ancestor.name}</bdi>,
@@ -75,26 +83,30 @@ export function LoreHeader({
           />
         ) : null
       }
-      title={chosenName ? <bdi>{chosenName}</bdi> : t('lore.page.title')}
+      title={chosenName ? <bdi>{chosenName}</bdi> : title}
       lede={
         atCatalog && types !== null && types.length > 0
-          ? tx('lore.page.lede', { universe: <bdi>{universe.name}</bdi> })
+          ? isLore
+            ? tx('lore.page.lede', { universe: <bdi>{universe.name}</bdi> })
+            : t('projects.entities.lede')
           : undefined
       }
       actions={
         access.editContent ? (
           <>
             {/* Many names at once: beside New, never above it - the everyday way in stays the primary one. */}
-            <Button
-              tone="secondary"
-              icon={ListPlus}
-              className="lore__masscreate"
-              to={massCreateTo}
-              title={t('lore.page.massCreateTitle')}
-              data-testid="mass-create"
-            >
-              <span className="lore__masscreatelabel">{t('lore.page.massCreateLabel')}</span>
-            </Button>
+            {isLore ? (
+              <Button
+                tone="secondary"
+                icon={ListPlus}
+                className="lore__masscreate"
+                to={massCreateTo}
+                title={t('lore.page.massCreateTitle')}
+                data-testid="mass-create"
+              >
+                <span className="lore__masscreatelabel">{t('lore.page.massCreateLabel')}</span>
+              </Button>
+            ) : null}
             <NewButton
               className="lore__create"
               to={createTo}
@@ -147,11 +159,13 @@ export function LoreHeader({
               </DisclosureButton>
             ) : null}
           </div>
-          <GroupSwitcher
-            groups={groups ?? []}
-            selectedGroupId={selectedGroup?.id ?? null}
-            groupHref={groupHref}
-          />
+          {isLore ? (
+            <GroupSwitcher
+              groups={groups ?? []}
+              selectedGroupId={selectedGroup?.id ?? null}
+              groupHref={groupHref}
+            />
+          ) : null}
         </>
       )}
     </PageHeader>
