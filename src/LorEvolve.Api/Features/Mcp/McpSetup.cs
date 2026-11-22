@@ -305,6 +305,7 @@ public static class McpSetup
             .WithTools<LorEvolveMcpProposalTools>()
             .WithTools<LorEvolveMcpWorldLogicTools>()
             .WithTools<LorEvolveMcpPrivateNoteTools>()
+            .WithTools<LorEvolveMcpIdeaTools>()
             .WithTools<LorEvolveMcpEntryImageTools>()
             .WithRequestFilters(LorEvolveMcpProposalTools.Filters);
 

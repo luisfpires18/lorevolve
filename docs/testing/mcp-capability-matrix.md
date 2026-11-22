@@ -157,6 +157,7 @@ A status is `implemented`, `in progress` (work open on a branch) or `missing`. N
 | `get_world_logic_finding` | One recorded finding with its evidence. | implemented | |
 | `submit_semantic_finding` | Stages the client's own unverified, cited claim for the author to decide. | implemented | |
 | `add_private_note` | Adds text to the owner's private note on one entry; never reads, replaces or removes it. | implemented | Owner only, on a connection allowed to write. |
+| `get_idea` | Reads one of the owner's ideas in full, by the id `get_change_options` lists. | implemented | Owner only, on a connection allowed to propose. Returns the whole body. |
 | `get_change_options` | What the person's role may propose, and the universe's real ids to propose against. | implemented | |
 | `propose_changes` | Stages changes for a person to review in LorEvolve; never applies them. | implemented | |
 | `propose_entry_image` | Stages one picture change for a lore or project entry with the file itself, held on R2 until approved. | implemented | Since #441. Base64, or a ChatGPT file link fetched once from an allowed host over HTTPS. |
