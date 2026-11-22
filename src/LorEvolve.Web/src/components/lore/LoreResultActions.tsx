@@ -15,7 +15,6 @@ type Selection = ReturnType<typeof useLoreSelection>
 
 /** What acts on the list: the order, the page size, Select, Create and Mass create. */
 export function LoreResultActions({
-  isLore,
   pageSize,
   chosenName,
   update,
@@ -29,7 +28,6 @@ export function LoreResultActions({
   offerPageSize,
   ranked,
 }: {
-  isLore: boolean
   access: ReturnType<typeof useUniverseAccess>
   sort: EntitySort | null
   result: EntityPage | null
@@ -77,7 +75,7 @@ export function LoreResultActions({
               ))}
             </Field>
           ) : null}
-          {isLore && access.manageTrash && (pageItems.length > 0 || isSelecting) ? (
+          {access.manageTrash && (pageItems.length > 0 || isSelecting) ? (
             <Button
               tone="secondary"
               icon={ListChecks}

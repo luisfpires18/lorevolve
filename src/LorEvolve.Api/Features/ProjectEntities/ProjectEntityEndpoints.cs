@@ -45,10 +45,12 @@ public static class ProjectEntityEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListProjectEntities");
         group.MapPost("/", CreateAsync).WithName("CreateProjectEntity");
+        group.MapPost("/bulk-trash", ProjectEntityTrash.BulkTrashAsync).WithName("BulkTrashProjectEntities");
         group.MapGet("/{entityId:guid}", GetAsync).WithName("GetProjectEntity");
         group.MapPut("/{entityId:guid}", UpdateAsync).WithName("UpdateProjectEntity");
-        group.MapDelete("/{entityId:guid}", DeleteAsync).WithName("DeleteProjectEntity");
+        group.MapDelete("/{entityId:guid}", ProjectEntityTrash.DeleteAsync).WithName("DeleteProjectEntity");
         group.MapGet("/{entityId:guid}/revisions", RevisionsAsync).WithName("ListProjectEntityRevisions");
+        ProjectEntityImport.Map(group);
 
         return endpoints;
     }
@@ -64,7 +66,9 @@ public static class ProjectEntityEndpoints
         [FromQuery] bool recent = false,
         [FromQuery] string? q = null,
         [FromQuery] string? sort = null,
-        [FromQuery] bool includeDescendants = false)
+        [FromQuery] bool includeDescendants = false,
+        [FromQuery(Name = "field")] string[]? field = null,
+        [FromQuery] bool exact = false)
     {
         var (project, denied) = await ReadableAsync(db, projectId, principal, cancellationToken);
 
@@ -90,29 +94,14 @@ public static class ProjectEntityEndpoints
             return Problems.Field("q", $"Search can be at most {MaxSearchLength} characters.");
         }
 
-        // The project id stays in the base predicate, before any filter, so no search or type id reaches another game.
-        var matching = db.Entities.AsNoTracking().IgnoreQueryFilters()
-            .Where(entry => entry.ProjectId == projectId && entry.DeletedAt == null);
+        var (matching, refused) = await ProjectEntityListQuery.MatchingAsync(
+            db, project!.UniverseId, projectId, typeId, includeDescendants, q, exact, field, cancellationToken);
 
-        if (typeId is { } wanted && includeDescendants)
+        if (refused is not null)
         {
-            // The type and every type nested beneath it, from this project's own small type graph (as Lore's list does).
-            var parentOf = await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
-                .Where(type => type.UniverseId == project!.UniverseId && type.ProjectId == projectId)
-                .ToDictionaryAsync(type => type.Id, type => type.ParentId, cancellationToken);
-            var branch = EntityTypeHierarchy.Branch(parentOf, wanted).ToList();
-            matching = matching.Where(entry => branch.Contains(entry.EntityTypeId));
-        }
-        else if (typeId is { } exact)
-        {
-            matching = matching.Where(entry => entry.EntityTypeId == exact);
+            return refused;
         }
 
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var text = EntityFieldFilters.AsciiLower(q.Trim());
-            matching = matching.Where(entry => entry.Name.ToLower().Contains(text));
-        }
 
         // The id breaks ties, so a page boundary never repeats or drops a row. By name is this list's own order, the
         // one the Entities view reads a type a page at a time in. `recent` asks for the newest first instead, for the
@@ -339,45 +328,6 @@ public static class ProjectEntityEndpoints
             db, project.UniverseId, entityId, cancellationToken, liveOnly: false, projectId);
 
         return Results.Ok(detail);
-    }
-
-    /// <summary>
-    /// Moves the entry to the Trash, the same way a lore entry goes: the row and everything pointing at it stay where
-    /// they are and a timestamp says when it was thrown away (ADR 0015), so nothing dependent is destroyed on the way
-    /// in and a restore has nothing to rebuild.
-    /// </summary>
-    private static async Task<IResult> DeleteAsync(
-        Guid projectId,
-        Guid entityId,
-        ClaimsPrincipal principal,
-        LorEvolveDbContext db,
-        CancellationToken cancellationToken)
-    {
-        var (_, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
-
-        if (denied is not null)
-        {
-            return denied;
-        }
-
-        var entity = await db.Entities.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(
-                candidate => candidate.Id == entityId && candidate.ProjectId == projectId,
-                cancellationToken);
-
-        if (entity is null)
-        {
-            return Results.NotFound();
-        }
-
-        if (entity.DeletedAt is null)
-        {
-            entity.DeletedAt = DateTime.UtcNow;
-            entity.UpdatedAt = entity.DeletedAt.Value;
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        return Results.NoContent();
     }
 
     /// <summary>

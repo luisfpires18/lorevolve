@@ -2,7 +2,7 @@
 
 - **Milestones moved (22 Nov 2026):** milestones now live on the GitHub Milestones page (https://github.com/luisfpires18/lorevolve/milestones); Issues are tasks only. The tracker Issue numbers below are closed, and each links to its Milestone. Start a run with "Run milestone M<n>."
 
-Current operational state only, as of 2026-11-13. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-22. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
@@ -20,7 +20,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43468813582 on `master` `c8581c0`, succeeded (2026-11-13, release PR #121: a story opens on its first arc and first chapter; a scene lists all its lore in the author's order, dragged by a grip or the arrow keys, and group priority no longer reorders it; beats fold; more interface language strings; no migration).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45062757685 on `master` `72afdb6d`, succeeded (2026-11-22, release PR #559: a project's entries are listed, opened, created and edited on the Lore screens (#551), and a project list pages on the server (#557); no migration). Earlier the same day: PR #555 (`b71e1233`, MCP `get_idea`) and PR #537 (`088c0a3b`). Owner checks of #551 and #557 on DEV were still deferred when it went out.
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -41,21 +41,19 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-14 `dev` is ahead of `master` by the language work merged since PR #121 (latest: #161, #162). `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-22 `dev` and `master` hold the same tree (release PR #559). `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
 ## In flight
-- #456 lane #493 (PR #503): the Ideas and Boards pickers are one `SearchPickDrawer`; `EditorHead` (in `DocumentHead.tsx`) and `SaveBar` (in `SaveAction.tsx`) by name, `EditorSaveBar.tsx` gone. `SYSTEMS.md` lines 436, 437, 609 still name the old files: owner to fix or assign.
-- #456 lane #495 (L6, branch `refactor/field-lists`): active, archived and inherited field rows draw one `lore/FieldListRow`. The other L6 targets were already folded by #456.
-- #456 lane #497 (L7, branch `refactor/world-logic-rows`): canvas cards draw one `CanvasCardButton`, `NumberInput` folded into `TypedValue`, finding and System rows' region is `DisclosurePanel`. The row toggle was already `LinkRow` + `useReadOnOpen` on dev.
-- #456 lane #511 (L8, branch `refactor/relationship-kinds`): relation kind names are one `KindFields`, the family meaning one `FamilySemanticSelect` (Family Tree dialog and Types), `RelationFormPeriods` folded into `RelationshipPeriodsField`. The panel heads were already `PanelHead` on dev.
-- #456 lane L9 (branch `refactor/shell-auth-collab`): one `BrandLink` for every brand home link, one `SessionPending` plate, `ConsentForm` out of `ConnectAuthorizePage`, `ConsentLayout` folded into `AuthLayout variant="card"`, auth pages on `FormMessage`, collaborator rows on `CollabRow` + `useRoleChange` and lists on `CollabSection` (the two confirms stay separate, #255). `WorkspaceBar` was already shared on dev.
-- #456 lane #499 (L11, PR #501): workspace pages on `MapCard`, `AiChangeRow`, `OverviewLede`/`OverviewContents`, `ChronologyReading`, `WorldRuleReading`, `WorldRulesList` and the `MissingState` preset; UniverseSettings on `TabPanel`, one MapForm branch, `workspace.missing.hint` (#485). Project meta, the game load, the shelf cover change and the shelf notices are helpers in `projects/`, since the `projectParts` guard refuses a new project component (owner rule 2026-11-20).
-- #456 merge candidates M5 and M6 (branches `refactor/callout-merge` PR #520, `refactor/use-draft-form`): W1 one `Callout` and `StaleChoice` for notice and stale boxes; W2 one `lib/useDraftForm` (draft read once, `edit`, `isDirty`) for the pin, map, story, chapter and arc, scene, era, form, moment, state, transition and binding forms. W3 (#523, branch `refactor/name-note-adoption`): the map and moment drawers' name and note pair on `NameNoteFields`, `MapFormName` gone; `IdeaFormFields` stays (own ids, count, read-only lock). W4 (#525): `EntityMultiPicker`, `BulkEraseConfirm` and `FieldStaleNotice` gone, their callers on `EntityPicker multiple`, `EraseConfirm` and `StaleChoice`. W5 (branch `refactor/readgate-states`): `ReadGate` draws an `elsewhere` node; RecordUnavailable and ConnectedApps read through it.
-- #551 Lane C complete: C1 #552, C2 #553, C3 #556 (branch `feat/project-entry-list`). A project's entries are listed, opened, created, edited and deleted on the Lore screens on both address families; the project-only entry screens are deleted; components 525 to 518. Closing #551 is the owner's, after the DEV checks.
-- #557 (PR #558, branch `feat/project-list-server-paging`): a project's entry list pages on the server; `GET /api/projects/{id}/entities` answers `{ items, totalCount }`, the web asks for one page.
+Checked 2026-11-22. Nothing from #456, #551 or #557 is in flight: all of it is merged and on PROD (release PR #559).
+
+- #456 stays open for one owner box: "Pages look and behave as before". Lanes A and B (PRs #529 to #549) and the earlier lanes are merged; the summaries and the deferred DEV checks are on #456. #551 and #557 are closed; their deferred DEV checks are on those Issues.
+- Open PRs, none from this work: #539 (a STATE note for release #537, now out of date), #74, #75, #76, #80 and five dependabot PRs.
+
+Merged trackers whose owner checks are still open:
+
 - #380 Web App Readable Structure tracker: done. Children #390 to #417 merged (PRs #404 to #444). Owner's DEV checklist is on #380. Close-out #403 (PR #448).
 - #363 World Systems State Machines tracker: all seven children merged on 2026-11-17 (#356 to #362, PRs #364, #366, #367, #368, #370, #381 and the close-out PR). A System can carry one state machine (ADR 0073, spec `docs/architecture/world-logic-state-machine-spec.md`): drawn on the Machine tab, guards built from blocks, illegal states found by the sweep, read and proposed over MCP. Backup format 59. Closing #363 is the owner's, after the checklist posted on it. Follow-ups are Issues linked from #363. Local focused runs on this machine need `--workers=2` and `xUnit.MaxParallelThreads=2`.
 - #300 M3 Types tracker: all children merged (#279 to #283, PRs #330 to #345). Backup format 55. CI and E2E brought green in PR #351. Owner checks: Lore Types unaffected; individual Game types available; universe templates can be managed; Game types copied from templates are independent; existing entity values intact.
@@ -83,16 +81,14 @@ migration `AddEntityFieldImages`, backup format 48. Owner check on DEV: upload a
 
 ## Committed, not on `dev`
 
-Checked 2026-10-29 with `git log origin/dev..<branch>`.
+Checked 2026-11-22 with `git log origin/dev..<branch>` and `git cherry`. Every merged branch, local and remote, was deleted that day.
 
-- `feat/ai-help-off-by-default` (local only, 1 commit `3f32588`, "New universes start with AI help off"): not on `dev`
-  or `demo`. Owner to decide: merge or drop.
-- `feat/alpha-demo-page` / `claude/magical-mirzakhani-3846ef` (1 commit, "alpha page features as expandable rows"): not
-  on `dev` or `demo`; the branch itself was merged earlier, this later commit was not. Probably superseded by
-  `feat/alpha-page-polish`; check before deleting.
-- `fix/alpha-contact-address`, `feat/demo-refresh`, `feat/demo-screenshots`: on `demo`, not on `dev`. Expected for
-  demo-only work.
-- Local `master` is a stale 2026-09-07 ref; `origin/master` is authoritative.
+- `feat/ai-help-off-by-default` (local only, 1 commit, "New universes start with AI help off"): not on `dev` or `demo`. Owner to decide: merge or drop.
+- `claude/reverent-joliot-d21db1` (local only, 24 commits not on `dev`, last "WIP counting", 2026-11-01). Owner to decide.
+- `claude/prod-indexing-dbc11e` (local only, 1 commit, "PROD search indexing on"); the same subject as open PR #75.
+- `pre-push-gate` (on origin, 1 commit, "Workflow: pre-push gate for LorEvolve", 2026-11-16), no PR.
+- Worktree `D:\Workspace\lv-console` on `feat/game-console-card` (the branch is merged): 5 files with uncommitted edits. Kept at the owner's word.
+- `demo` holds demo-only work, as expected.
 
 ## Open issues
 

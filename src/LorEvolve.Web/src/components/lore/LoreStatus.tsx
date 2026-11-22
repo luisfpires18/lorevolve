@@ -41,7 +41,7 @@ export function LoreStatus({
   const entrySource = useEntrySource()
   return (
     <>
-      {isLore && trashedNotice ? (
+      {trashedNotice ? (
         <p className="lore__created" role="status" data-testid="lore-trashed">
           <ActionIcon icon={Check} />
           {trashedNotice} <Link to={entrySource.href.afterRemove}>{t('lore.page.openTrash')}</Link>

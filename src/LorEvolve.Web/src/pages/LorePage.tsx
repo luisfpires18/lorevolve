@@ -21,7 +21,6 @@ import { pageParam } from '../lib/queryParams'
 import { useEntrySource } from '../lore/entrySource'
 
 /** A project's address carries no field filter: one stable empty list. */
-const NO_FILTERS: ReturnType<typeof readFieldFilters> = []
 
 /**
  * The Lore browser. Where the author is - which type, which status, what is typed in the filter, which of the type's own
@@ -56,7 +55,7 @@ const NO_FILTERS: ReturnType<typeof readFieldFilters> = []
 export default function LorePage() {
   const { universe, entryTypes: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
   const entrySource = useEntrySource()
-  // A project's entries (#551) have no status, exact match, field filters, groups, mass create, Select or Trash.
+  // A project's entries (#551) have no status, groups or mass create; they go to the same Trash.
   const isLore = entrySource.kind === 'lore'
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
@@ -81,10 +80,10 @@ export default function LorePage() {
   const browseParam = params.get('browse')
   const canonStatus = isLore ? readStatus(params.get('status')) : null
   const search = params.get('q') ?? ''
-  const exact = isLore && params.get('exact') === '1'
+  const exact = params.get('exact') === '1'
   const sort = readSort(params.get('sort'))
   const page = readPage(params.get('page'))
-  const addressFilters = isLore ? readFieldFilters(params) : NO_FILTERS
+  const addressFilters = readFieldFilters(params)
 
   const entries = useLoreEntries({
     typesRead,
@@ -126,7 +125,7 @@ export default function LorePage() {
     entityTypeId === null && entityTypeGroupId === null ? { kind: 'idle' } : state
   const result = view.kind === 'ready' ? view.value : null
 
-  const entrySelection = useLoreSelection({ location, pageSize, result, universe, reread })
+  const entrySelection = useLoreSelection({ location, pageSize, result, reread })
   const { isSelecting } = entrySelection
 
   // A page past the last one - a hand-edited address, or entries gone since - lands on the last page there is, in place.
@@ -197,7 +196,6 @@ export default function LorePage() {
           {...entries}
           {...links}
           {...entrySelection}
-          isLore={isLore}
           access={access}
           sort={sort}
           result={result}
@@ -245,7 +243,7 @@ export default function LorePage() {
         createTo={createTo}
       />
 
-      {isLore ? <LoreSelectBar {...entrySelection} /> : null}
+      <LoreSelectBar {...entrySelection} />
     </article>
   )
 }

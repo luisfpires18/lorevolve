@@ -133,16 +133,8 @@ test.describe('Project entry list', () => {
 
     const shell = `/app/universes/${world.id}/projects/${game.id}/entities`
     const games = `/app/universes/${world.id}/game-entities/${game.id}`
-    const loreParts = [
-      'mass-create',
-      'lore-exact',
-      'lore-field-filters',
-      'lore-add-field-filter',
-      'lore-select',
-      'lore-selectbar',
-      'lore-trashed',
-      'lore-groups',
-    ]
+    // Exact, field filters and Select are shared with Lore; mass create and groups stay Lore's own.
+    const loreParts = ['mass-create', 'lore-selectbar', 'lore-trashed', 'lore-groups']
     for (const base of [shell, games]) {
       // The catalog: a card counts its type with its sub-types, and New is the create page.
       await page.goto(base)
@@ -172,6 +164,8 @@ test.describe('Project entry list', () => {
       await expect(grid.locator('[data-entity-name="Bram"]')).toBeVisible()
       await expect(grid.locator('[data-entity-name="Keep"]')).toBeVisible()
       for (const id of loreParts) await expect(page.getByTestId(id), id).toHaveCount(0)
+      await expect(page.getByTestId('lore-exact')).toBeVisible()
+      await expect(page.getByTestId('lore-select')).toBeVisible()
       await expect(page.locator('.entitycard__status')).toHaveCount(0)
       await expect(page.getByText('Any status')).toHaveCount(0)
 
