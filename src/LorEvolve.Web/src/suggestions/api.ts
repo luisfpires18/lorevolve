@@ -1,6 +1,7 @@
 import { apiFetch } from '../lib/api'
 import type { CommentSubject } from '../comments/api'
-import type { CanonStatusValue, EntityInput, FieldKindValue } from '../lore/types'
+import type { CanonStatusValue, EntityInput } from '../lore/types'
+import type { FieldKindValue } from '../lore/fieldKinds'
 import type { SceneInput, StoryInput, StoryStatusValue } from '../stories/types'
 
 /** What a suggestion can be about: the same three subjects review comments have. */

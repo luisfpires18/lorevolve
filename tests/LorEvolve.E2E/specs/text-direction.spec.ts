@@ -269,7 +269,7 @@ test.describe('text direction', () => {
     )
     await expectLorEvolveStaysLeftToRight(page, [
       page.locator('.entry__kind'),
-      page.locator('.entry__crumbs'),
+      page.locator('.crumb'),
       status,
       page.getByTestId('entry-views'),
       page.locator('.entry__tools'),
@@ -282,7 +282,7 @@ test.describe('text direction', () => {
     await expectIsolated(page.getByTestId('entry-name'), Text.numbers)
     // The reading is said once, as the heading over the links it gathers.
     await expectIsolated(
-      page.getByTestId('relationship-list').locator('.relations__reading').first(),
+      page.getByTestId('relationship-list').locator('.sectiontitle').first(),
       'والد',
     )
     const relation = page.getByTestId('relationship-list').locator('li.relation').first()
@@ -413,7 +413,7 @@ test.describe('text direction', () => {
     await expect(chapterHeading).toHaveAccessibleName(`Chapter 1: ${Text.brackets}`)
     await expectIsolated(chapterHeading, Text.brackets)
     const [numberLeft, titleLeft] = await lefts(
-      chapterHeading.locator('.chapter__number'),
+      chapterHeading.getByTestId('chapter-number'),
       chapterHeading.locator('bdi'),
     )
     expect(titleLeft).toBeGreaterThan(numberLeft)
@@ -424,25 +424,21 @@ test.describe('text direction', () => {
     await expect(
       sceneCard.getByRole('heading', { name: `Scene 1: ${Text.rtlThenLatin}` }),
     ).toBeVisible()
-    await expectIsolated(sceneCard.locator('.scene__title'), Text.rtlThenLatin)
-    expect(await drawnOrder(sceneCard.locator('.scene__title'), ['آكرون', 'Wright'])).toEqual([
-      'Wright',
-      'آكرون',
-    ])
+    await expectIsolated(sceneCard.locator('.types__name').first(), Text.rtlThenLatin)
+    expect(
+      await drawnOrder(sceneCard.locator('.types__name').first(), ['آكرون', 'Wright']),
+    ).toEqual(['Wright', 'آكرون'])
     await expectIsolated(sceneCard.getByTestId('lore-reference'), Text.arabic)
     // A beat keeps its own direction: written "آكرون!", the mark ends the word - on its left - rather than dangling off
     // the right of it.
     const beat = sceneCard.getByTestId('scene-beat')
     await expectIsolated(beat, 'آكرون!')
-    expect(await drawnOrder(beat.locator('.scene__beattitle'), ['آكرون', '!'])).toEqual([
-      '!',
-      'آكرون',
-    ])
+    expect(await drawnOrder(beat.locator('bdi'), ['آكرون', '!'])).toEqual(['!', 'آكرون'])
 
     await expectLorEvolveStaysLeftToRight(page, [
       page.getByTestId('story-views'),
-      page.locator('.story__bar'),
-      sceneCard.locator('.scene__tools'),
+      page.locator('.entry__bar'),
+      sceneCard.locator('.types__actions').first(),
     ])
 
     // ---- Manuscript ----
@@ -1082,7 +1078,7 @@ test.describe('authored prose direction', () => {
     await expectWritten(page.getByTestId('manuscript-editor'), prose)
     await expectLorEvolveStaysLeftToRight(page, [
       page.getByTestId('story-views'),
-      page.locator('.manuscript__tools'),
+      page.getByTestId('manuscript-scene').locator('.entry__tools'),
       page.locator('.manuscript__bar'),
     ])
     expect(await scrollsSideways(page)).toBe(false)
@@ -1163,7 +1159,7 @@ test.describe('authored prose direction', () => {
       expect(await endsAtRight(shown, Prose.year)).toBe(true)
       expect(await sideOf(shown, Prose.after)).toBe('left')
 
-      const summary = page.locator('.scene__summary')
+      const summary = page.getByTestId('scene-summary')
       expect(await isParagraphwise(summary)).toBe('plaintext')
       expect(await summary.evaluate((node) => node.getClientRects().length)).toBeGreaterThan(0)
       expect(await sideOf(summary, 'آكرون رايت')).toBe('right')

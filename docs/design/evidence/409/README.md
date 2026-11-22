@@ -1,0 +1,169 @@
+# Evidence for #409: one footer, one New button, one wording for actions
+
+Everything here was produced for PR #426 (branch `feat/form-actions`, code head `d37e54d3`) against a local stack, the way #408 did it: API on port 5185 with a scratch database, one registered capture account and one seeded universe, and two Vite servers on the same API. The "before" side is a detached worktree of `origin/dev` at `6e7eea7f` with its own `npm ci`, served on port 5194. The "after" side is the main checkout at the branch head, served on port 5193. Both sides use the same database and the same account, so a difference between them comes from the code and nothing else.
+
+The seed holds a universe (entries, a type group, a story with a chapter, a scene and an arc, an idea, a board, a rule, a System, a calibrated map, a trashed entry) and seven projects (Writing, Series with a season and episodes, two Films with a saga group, a Western Comic with an issue and collections, a Manga, a Game with a type and an entity). A second account with no projects serves the empty directory. The capture refuses every request that is not a read (the one exception is the backup check, `PUT /api/backups/validate`, which only stages a file that expires on its own), so the database never changes during a run and the two sides cannot drift apart.
+
+The capture script and the logs live outside the repository; only the PNGs, this file and `dom-diff-lines.txt` are committed.
+
+## Result in one place
+
+| Proof | Command | Result |
+| --- | --- | --- |
+| Find the states | `capture409.mjs crawl before` and `crawl after`: open every route, click every button that is not a save, send or sign-out, up to three levels deep (menus, drawers, tabs, inline forms) | 442 states on the before side, 439 on the after side, 434 distinct |
+| DOM dump of every state | `capture409.mjs redump before` and `redump after`: replay each of the 434 states by its steps, dump `body` (attributes and class tokens sorted, React ids and guids normalised, `<time>` ignored when comparing), desktop 1440x900, light | 434 dumps per side. Replays that fail on the first pass (16 before, 10 after in the final run) are replayed again; 3 idea picker sub-states still fail on both sides and are left out. Of the other 431: 241 differ, 190 are identical |
+| Hand-driven states | `capture409.mjs extras` (12 states: sagas, restore steps, machine tab, feedback, arc form, and others) | 12 dumps per side, 9 differ, 3 identical |
+| The 92 screens | mapping below | all 92 reached: 72 in the first capture (49 differ in the DOM, 23 identical) and 20 in the seeded capture (15 differ, 5 identical) |
+| Screenshots | `capture409.mjs shots before` and `shots after` | 568 PNG (71 screens x 4 variants x 2 sides), 284 pairs. First capture: 408 PNG, 106 pairs byte-identical, 98 differ. Seeded capture: 160 PNG, 54 pairs pixel-identical, 26 differ. Folder size about 16 MB |
+| Phone width scroll | `scrollWidth - clientWidth` on every phone shot | 0 px everywhere (the 20 seeded screens included) except `map-calibration`, +7 px in light and dark on both sides (already there before) |
+| Capture is repeatable (first pass, before the last fixes) | `redump before` run a second time on 120 states (every crawl state used by a screen below plus 60 others), and `extras` run twice | 118 of 120 identical, 12 of 12 extras identical. The 2 that differ are not screens: a board zoom state where a "Recovered draft" notice shows on one run only (the draft lives in the browser's local storage), and one of the 3 failing picker sub-states |
+| CSS removed by the PR | `git diff origin/dev...HEAD -- '*.css'` | one rule, `.relform__actions` (7 lines). No file uses the class after the PR; the three forms that did (`RelationForm`, `KindForm`, `FamilyLinkForm`) now use `FormActions inline`, and `relationships-section`, `relationship-types` and `family-tree-forms` render pixel-identical before and after |
+
+The screenshots are 256-colour PNGs (palette quantised) to keep the folder small. Identical renders stay byte-identical, so a pair that is identical is identical.
+
+## The intended differences
+
+The 241 differing dumps boil down to a handful of changes. Counts are dumps that contain the change.
+
+| Change | Dumps | Example (before `-`, after `+`) |
+| --- | --- | --- |
+| Plus icon on New and Add buttons | 106 | `-<button class="button" data-testid="project-node-add-issue" type="button">Add issue</button>` then `+<button class="button" ...>` and `+<svg aria-hidden="true" class="button__icon lucide lucide-plus" ...>` before the label |
+| Delete reads in the quiet danger tone | 60 | `-<button aria-label="Delete the group Characters" class="button button--sm button--text typegroups__delete" ...>` then `+<button ... class="button button--danger-quiet button--secondary button--sm typegroups__delete" ...>` |
+| Save buttons carry the busy state | 120 | `-<button class="button" data-testid="save-type" type="submit">Add type</button>` then `+<button aria-busy="false" class="button" data-testid="save-type" type="submit">Add type</button>` |
+| Openers say whether they are open | 16 | `+<button aria-expanded="false" class="button" ...>` on "Add season" |
+| Menu items carry an icon (Projects area) | 10 | `+<button class="actionmenu__item actionmenu__item--danger" ...>` then `+<svg ... lucide-trash ...>` |
+| The cover drawer closes with "Close" | 10 | `-<button class="button button--secondary" type="button">Done</button>` then `+<button class="button button--secondary" type="button">Close</button>` |
+| System editor Delete is quiet danger | 5 | `-<button class="button button--secondary" data-testid="system-editor-delete" type="button">Delete</button>` then `+<button class="button button--danger-quiet button--secondary" data-testid="system-editor-delete" type="button">Delete</button>` |
+
+`dom-diff-lines.txt` lists the 69 most frequent distinct diff lines with their counts.
+
+16 of the 49 screens that differ in the DOM render pixel-identical in all four variants (marked below): the footer markup changed and the picture did not, which is the point of `FormActions`.
+
+## Looks worth a glance
+
+The recaptured shots were checked by the pixel and DOM comparisons above and by the phone width scroll check (0 px except `map-calibration`), not by eye. Things to know:
+
+1. `system-editor`: Delete is the quiet red outline, the same as every other Delete in the set. The solid red button is kept for the last word of a confirm.
+2. `universe-types` and `project-schema`: "Add child" is quiet text again with its `ListTree` glyph (not a Plus), so the rows are no denser than before.
+3. The phone "New scene" button on the story page already has its Plus through `NewButton`. "New volume" and the other collection kinds' New buttons on the comic Structure page now have theirs too.
+4. `trash-row` and `trash-erase-confirm` are byte-identical to their before shots in all four variants: the Delete permanently button is quiet text again.
+5. `map-calibration` scrolls 7 px sideways on the phone, in both before and after, so the PR did not cause it.
+6. The recapture also changed a few shots in regions the code does not touch (the map picture in the `map-*` screens, a 1 px line in the comic drawers, a few pixels in `knowledge-view` and `publish-confirm`). Those are render differences between runs, not investigated further.
+7. `comic-page-row` (seeded): on desktop the panel description runs into its "Shows" line with no space ("harbourShows"), the same before and after, so the PR did not cause it. The 20 seeded screens have 0 px phone scroll. Their differences are the intended ones: footer Delete in the machine drawers and the archived field row is the quiet red outline, the lore filter and name linker Cancel is the shared secondary Cancel, Add volume and New guard have their Plus, and submit buttons carry `aria-busy`.
+
+## The 92 screens
+
+The screen list is the "Screenshot coverage" section of the plan. "crawl state" is a state found and replayed by the script; "driven by hand" is a short list of steps written for the screen. Dumps are desktop 1440x900 light. Screens whose DOM is identical render the same (same markup, and the only CSS removed is a class nothing uses), so they are covered by the DOM comparison and have no PNGs, the method #408 used.
+
+| # | Screen | Method | DOM before and after | Screenshots |
+| --- | --- | --- | --- | --- |
+| 1 | `projects-directory` | crawl state `app_projects` | identical | covered by the DOM comparison |
+| 2 | `projects-directory-empty` | driven by hand: page opened | identical | covered by the DOM comparison |
+| 3 | `project-new` | crawl state `app_projects_new` | identical | covered by the DOM comparison |
+| 4 | `cinema-sagas` | driven by hand: cinema-view-sagas | differs | 8 PNG |
+| 5 | `cinema-saga-drawer` | driven by hand: cinema-view-sagas then saga-new | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 6 | `comic-collections` | crawl state `PComic_structure__p7-comic_collection_actions_653daa20_ce6a_4` | differs | 8 PNG |
+| 7 | `comic-collection-drawer` | crawl state `PComic_structure__p7-comic_collection_actions_653daa20_ce6a_4__m1-comi...` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 8 | `comic-entry-drawer` | crawl state `PComic_structure__p7-comic_collection_actions_653daa20_ce6a_4__m0-comi...` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 9 | `comic-pages` | crawl state `PComic_structure__p2-project_node_add_page_b62132ff_9d29_4e91` | differs | 8 PNG |
+| 10 | `comic-page-row` | seeded: Open pages on the episode, then Add panel on the page | differs | 8 PNG |
+| 11 | `project-outline` | crawl state `PComic_structure__p4-project_node_actions_b62132ff_9d29_4e91_` | differs | 8 PNG |
+| 12 | `project-outline-drawer` | crawl state `PComic_structure__p0-project_node_add_issue` | differs | 8 PNG |
+| 13 | `project-seasons` | crawl state `PSeries_structure__p0-project_season_add` | differs | 8 PNG |
+| 14 | `project-season-menu` | crawl state `PSeries_structure__p1-project_season_actions_b1173ab5_c226_44e__m0-pro...` | differs | 8 PNG |
+| 15 | `project-episodes` | crawl state `PSeries_structure__p6-project_episode_add_b1173ab5_c226_44e1_9` | differs | 8 PNG |
+| 16 | `project-script` | crawl state `PSeries_script` | identical | covered by the DOM comparison |
+| 17 | `project-entries` | crawl state `PGame_entities__p0-project_entities_new` | identical | covered by the DOM comparison |
+| 18 | `project-schema` | crawl state `PGame_types__p4-project_type_actions_a2a3a746_cc0e_4948_` | differs | 8 PNG |
+| 19 | `project-field-form` | crawl state `PGame_types__p3-project_type_fields_open_a2a3a746_cc0e_4__p5-project_f...` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 20 | `type-templates` | crawl state `PSeries_types__p1-project_schema_starters` | identical | covered by the DOM comparison |
+| 21 | `universe-types` | crawl state `U_types__p12-type_actions_Character` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 22 | `type-dialog` | crawl state `U_types__p0-new_type` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 23 | `type-from-template` | seeded: types page in the game context, Add from template | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 24 | `field-dialog` | crawl state `U_types__p11-fields_Character__p13-new_field_Character` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 25 | `field-sections` | seeded: Fields on Character, then Sections | differs | 8 PNG |
+| 26 | `type-groups-field` | crawl state `U_types__p10-edit_type_Character__d1-type_group_another` | differs | 8 PNG (3 of 4 pairs pixel-identical) |
+| 27 | `type-archived-fields` | seeded: Fields on Character, Archived fields opened | differs | 8 PNG |
+| 28 | `universe-new` | crawl state `app__p0-new_universe` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 29 | `settings-details` | crawl state `U_settings` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 30 | `account-public-name` | crawl state `app_profile` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 31 | `settings-archive-confirm` | crawl state `U_settings__p4-settings_tab_advanced__p5-toggle_archive` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 32 | `settings-delete-confirm` | seeded: archived universe, Advanced tab, Delete | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 33 | `collaborators-invite` | crawl state `U_settings__p2-settings_tab_collaborators` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 34 | `collaborators-remove-confirm` | seeded: Collaborators tab, Remove on the member | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 35 | `connected-apps-confirm` | seeded: profile Connected apps, Disconnect | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 36 | `publish-confirm` | crawl state `U_publish__p0-publish` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 37 | `publish-unpublish-confirm` | seeded: public universe, Make private | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 38 | `publish-everything-confirm` | seeded: public universe, Publish everything | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 39 | `trash-erase-confirm` | crawl state `U_trash__p2-erase_Binned_Beta` | identical | 8 PNG (4 of 4 pairs pixel-identical) |
+| 40 | `trash-bulk-confirm` | crawl state `U_trash__p0-trash_select__p1-trash_select_page__p1-trash_bulk_delete` | identical | covered by the DOM comparison |
+| 41 | `trash-restore-public` | seeded: Restore on a trashed public entry | identical | 8 PNG (all 4 pairs pixel-identical) |
+| 42 | `trash-select-bar` | crawl state `U_trash__p0-trash_select` | identical | covered by the DOM comparison |
+| 43 | `trash-row` | crawl state `U_trash` | identical | 8 PNG (4 of 4 pairs pixel-identical) |
+| 44 | `restore-choose` | crawl state `app__p1-restore_backup` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 45 | `restore-ready` | driven by hand: restore-backup then restore-file then restore-check then restore-preview | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 46 | `restore-refused` | driven by hand: restore-backup then restore-file then restore-check | identical | covered by the DOM comparison |
+| 47 | `admin-signup-password` | seeded: admin users, open the member | identical | 8 PNG (all 4 pairs pixel-identical) |
+| 48 | `connect-authorize` | driven by hand: page opened | identical | covered by the DOM comparison |
+| 49 | `system-editor` | crawl state `U_world_logic_systems_ID` | differs | 8 PNG |
+| 50 | `system-machine-tab` | driven by hand: system-editor-tab-machine | differs | 8 PNG |
+| 51 | `machine-state-drawer` | driven by hand: system-editor-tab-machine then machine-add-state | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 52 | `machine-transition-drawer` | seeded: machine tab, open the transition | differs | 8 PNG |
+| 53 | `machine-binding-drawer` | crawl state `U_world_logic_systems_ID__p1-system_editor_tab_machine__p3-machine_bin...` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 54 | `machine-guard-drawer` | seeded: transition drawer, New guard | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 55 | `integrity-finding` | seeded: integrity tab, open a finding | identical | 8 PNG (all 4 pairs pixel-identical) |
+| 56 | `story-page` | crawl state `U_stories_ID` | differs | 8 PNG |
+| 57 | `story-form` | crawl state `U_stories_ID__p2-story_actions__m0-edit_story` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 58 | `chapter-form` | crawl state `U_stories_ID__p8-chapter_actions__m0-chapter_edit` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 59 | `scene-form` | crawl state `U_stories_ID__p10-scene_edit` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 60 | `arc-form` | driven by hand: arc-actions then arc-edit | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 61 | `story-summary-form` | crawl state `U_stories_ID__p0-story_publication__m0-edit_story_public_summary` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 62 | `timeline-era-drawer` | crawl state `U_timeline_configuration__p0-add_era` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 63 | `timeline-moment-drawer` | crawl state `U_timeline__p0-new_moment` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 64 | `chronology-editor` | crawl state `U_timeline_configuration` | identical | covered by the DOM comparison |
+| 65 | `calendar-editor` | crawl state `U_timeline_configuration__p3-calendar_mode_custom` | identical | covered by the DOM comparison |
+| 66 | `progression-item-drawer` | driven by hand: add-appearance | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 67 | `map-form` | crawl state `U_maps__p0-new_map` | differs | 8 PNG (1 of 4 pairs pixel-identical) |
+| 68 | `map-pin-form` | crawl state `U_maps_ID__p0-map_add_pin__p2-map_place_centre` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 69 | `map-calibration` | driven by hand: map-calibrate | differs | 8 PNG |
+| 70 | `map-notices` | crawl state `U_maps_ID__p0-map_add_pin` | differs | 8 PNG |
+| 71 | `lore-quick-create` | seeded: edit entry, Kingdom picker, create Erandor | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 72 | `lore-link-drawer` | seeded: article Write, select text, Link | identical | 8 PNG (all 4 pairs pixel-identical) |
+| 73 | `lore-private-note` | crawl state `U_lore_ID__p5-private_note_trigger` | identical | covered by the DOM comparison |
+| 74 | `lore-context` | crawl state `U_stories_ID_manuscript_ID__p1-lore_context_trigger` | identical | covered by the DOM comparison |
+| 75 | `lore-filters` | seeded: Character list, add a Title filter | differs | 8 PNG |
+| 76 | `lore-mass-create` | crawl state `U_lore_mass_create` | identical | covered by the DOM comparison |
+| 77 | `lore-select-bar` | seeded: Character list, Select, pick a card | identical | 8 PNG (all 4 pairs pixel-identical) |
+| 78 | `lore-name-linker` | seeded: scene actions, Link names | differs | 8 PNG |
+| 79 | `entry-page-bar` | crawl state `U_lore_ID__p4-edit_entity` | identical | covered by the DOM comparison |
+| 80 | `article-editing` | crawl state `U_lore_ID__p7-article_write` | identical | covered by the DOM comparison |
+| 81 | `relationships-section` | crawl state `U_lore_ID_relations__p7-relations_when_open` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 82 | `relationship-types` | crawl state `U_types__p6-types_tab_relations__p7-add_relationship_type` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 83 | `family-tree-forms` | crawl state `U_family_tree_ID__p1-family_new_kind` | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 84 | `knowledge-view` | crawl state `U_lore_ID_relations__p8-knowledge_add` | differs | 8 PNG (2 of 4 pairs pixel-identical) |
+| 85 | `rule-validation` | crawl state `U_types__p7-types_tab_events__p7-add_term` | differs | 8 PNG |
+| 86 | `ideas-board` | crawl state `U_ideas_boards_ID__p1-board_add_note` | identical | covered by the DOM comparison |
+| 87 | `idea-pickers` | crawl state `U_ideas_ID__p1-idea_add_reference` | identical | covered by the DOM comparison |
+| 88 | `comments-drawer` | crawl state `U_lore_ID__p3-comments_trigger` | identical | covered by the DOM comparison |
+| 89 | `feedback-drawer` | driven by hand: feedback-open | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+| 90 | `connect-to-ai` | crawl state `U__p0-connect_ai_trigger` | identical | covered by the DOM comparison |
+| 91 | `cover-drawer` | crawl state `U_writing__p2-story_actions__m0-story_cover` | differs | 8 PNG |
+| 92 | `ai-change-edit` | seeded: proposal review, Edit on the change | differs | 8 PNG (4 of 4 pairs pixel-identical) |
+
+## The seeded capture
+
+The first capture refused every write, so 20 screens that need data a write creates were missing. They were captured afterwards on their own seed, with the same rule kept during the capture.
+
+Seed (script `seed.mjs` outside the repository, run once through the API on the scratch database): a new owner account and a member account; a public universe "Seed World" with a public summary, artwork and public name; on Character the fields Title, Strength, Weapon, Kingdom (a link to a new Kingdoms type), Mood and Rage, a Combat section holding Strength and Weapon, and Strength archived; entries Mara (published), Arlen, Brannoc, Odile and a Draft entry; a published entry "Lost Herald" then moved to the trash; a Complete story with a public summary and a scene whose manuscript names Mara and Arlen; a type template with one field and a game; a comic with no format holding a season, an episode, a page and a panel; a System with two states and an unguarded transition, and a second System whose transitions are guarded by rules, then a findings evaluation (6 findings); the member invited as Editor and accepted; an MCP app connected through OAuth with proposals allowed, which also staged one pending AI proposal over `propose_changes`; a second universe, archived; and the owner made Admin by a direct write to `AspNetUsers.PlatformRole`, as `tests/LorEvolve.E2E/specs/support/admin.ts` does.
+
+The API was then stopped and the database file copied as a snapshot. Before each side the API was stopped, the snapshot restored over the working file and the API started again, so both sides read the same seeded database and nothing from one run could reach the other. During the capture every request that is not a read was still refused. Each screen is opened by a short list of steps taken from the specs that open it, in all four variants on both sides; the DOM dump is desktop light. PNGs were taken for all 20 even where the DOM is identical.
+
+## Screenshots
+
+`<screen>-<desktop|phone>-<light|dark>-<before|after>.png`: desktop 1440x900, phone 390x844 (touch, scale 1), emulated colour scheme with no saved theme, reduced motion, viewport only (not full page). 71 screens x 8 files = 568 PNG (51 from the first capture, 20 from the seeded one).
+
+## After the capture
+
+Two reviews followed the first capture, and the code changed. The "before" files are untouched. The "after" side was captured again on the head after the corrections, all 51 screens in all 8 variants; 54 of the 204 after files changed and were replaced, the rest are byte-for-byte what the first capture gave. The DOM comparison was run again on the same 434 states and the 12 hand-driven states.
+
+What changed in the code: a footer Delete (`FormActions` `onDelete`) is now `danger-quiet` by default, because each one opens a confirm (`deleteTone="danger"` exists for a Delete with no confirm after it, and nothing uses it); `New volume` and the other collection kinds use `NewButton`; `Add child` is `tone="text"` again; the crop dialog's Cancel is the shared one. The `trash-row` shots now show the quiet text Delete permanently that `trash-permanent-delete.spec.ts:326` requires, and the two specs the first CI run failed (`trash-permanent-delete.spec.ts`, `shelf-cards.spec.ts`) were fixed in earlier commits.

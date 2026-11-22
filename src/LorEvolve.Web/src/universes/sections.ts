@@ -1,5 +1,6 @@
 import { t } from '../i18n'
 import type { UniverseCapabilities } from './access'
+import { ProjectKind, type ProjectKindValue } from '../projects/types'
 import {
   BadgeCheck,
   BookImage,
@@ -117,7 +118,24 @@ export const COMIC: Section = {
   icon: BookImage,
   needs: 'comic',
 }
-const PROJECTS: Section = { segment: 'projects', testId: 'workspace-projects', icon: FolderOpen }
+/**
+ * The project kinds each Creation category lists, by its segment: the Directory's counts, each shelf's list and its New
+ * project default (the first kind) read this one table. Stable arrays, so a shelf reads its projects once.
+ */
+export const CATEGORY_KINDS: Readonly<Record<string, readonly ProjectKindValue[]>> = {
+  [WRITING_PROJECTS.segment]: [ProjectKind.Writing],
+  [GAMING.segment]: [ProjectKind.Game],
+  [CINEMA.segment]: [ProjectKind.Film, ProjectKind.Series],
+  [COMIC.segment]: [ProjectKind.Comic],
+}
+
+// A game's Entities directory lives under its own address but is still part of Projects, so the shell names it (and the tab) so.
+const PROJECTS: Section = {
+  segment: 'projects',
+  testId: 'workspace-projects',
+  icon: FolderOpen,
+  also: ['game-entities'],
+}
 const AI_CHANGES: Section = {
   segment: 'ai-changes',
   testId: 'workspace-ai-changes',
@@ -147,7 +165,7 @@ const SETTINGS: Section = {
  * The sidebar's world building group (#191): every worldbuilding destination in the owner's order. Chronology is no
  * section of its own: it is Timeline's configuration view (#200).
  */
-export const WORLD_BUILDING: readonly Section[] = [
+const WORLD_BUILDING: readonly Section[] = [
   LORE,
   TYPES,
   FAMILY_TREE,
@@ -168,7 +186,7 @@ export const CREATION: readonly Section[] = [WRITING_PROJECTS, GAMING, CINEMA, C
  * presentation, recovery and configuration. The sidebar sets it off under a rule, and a phone's Sections sheet gives it
  * a row of its own at the foot.
  */
-export const MANAGEMENT: readonly Section[] = [PROJECTS, AI_CHANGES, PUBLISH, TRASH, SETTINGS]
+const MANAGEMENT: readonly Section[] = [PROJECTS, AI_CHANGES, PUBLISH, TRASH, SETTINGS]
 
 /** A labelled group's dictionary key; the front page alone carries no label (#191). */
 export function groupKey(source: readonly Section[]) {
@@ -184,7 +202,7 @@ export function groupKey(source: readonly Section[]) {
  * section any more. Both pages keep every address: Stories are reached through Writing, Canon through World Logic's Integrity tab and
  * the canon block notice. They are listed here only so the workspace can still name the page the author is on.
  */
-export const UNLISTED: readonly Section[] = [STORIES, CANON]
+const UNLISTED: readonly Section[] = [STORIES, CANON]
 
 /** Whether a section is at this address: its own segment, or one of the others it owns. */
 export function owns(section: Section, segment: string) {

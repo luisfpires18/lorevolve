@@ -1,0 +1,256 @@
+/* ---------- Types ---------- */
+
+/* The types as one ruled panel: a hairline between rows, a wash under the pointer. */
+.types__list {
+  --types-pad: var(--space-4);
+  --types-step: 1.75rem;
+
+  list-style: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--raised) 60%, transparent);
+  box-shadow: var(--shadow-1);
+}
+
+.types__row {
+  position: relative;
+  padding: var(--space-3) var(--types-pad);
+  border-top: 1px solid var(--rule);
+  transition: background-color var(--duration-1) var(--ease);
+}
+
+.types__row:first-child {
+  border-top: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.types__row:last-child {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.types__row:hover {
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+/* A nested type steps in under its parent - one step a level, no further than six levels however deep the tree goes, so
+   a deep branch never pushes a row off a phone - hung from a rail with an elbow into its own medallion. The order and the
+   rail say where it hangs; a reader hears "inside" and the parent's path. */
+.types__row[data-depth]:not([data-depth='0']) {
+  padding-inline-start: calc(var(--types-pad) + var(--depth) * var(--types-step));
+  border-top-color: color-mix(in srgb, var(--rule) 55%, transparent);
+}
+
+.types__row[data-depth]:not([data-depth='0'])::before,
+.types__row[data-depth]:not([data-depth='0'])::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(
+    var(--types-pad) + var(--depth) * var(--types-step) - var(--types-step) * 0.55
+  );
+}
+
+/* The rail runs the full height of the row, so a run of siblings reads as one line down the branch. */
+.types__row[data-depth]:not([data-depth='0'])::before {
+  inset-block: 0;
+  border-inline-start: 1px solid var(--rule-strong);
+}
+
+.types__row[data-depth]:not([data-depth='0'])::after {
+  top: calc(var(--space-3) + 1.125rem);
+  width: calc(var(--types-step) * 0.45);
+  border-top: 1px solid var(--rule-strong);
+}
+
+/* The grip a type is reordered by on a wide screen (Product refinement 027): first on the row, quiet until pointed at, and
+   the only part of the row that drags - the rest stays text to select and buttons to press. A phone has no grip; it keeps
+   Up and Down on the row, and a wide screen keeps them in the row's menu instead. */
+.types__handle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  margin-inline-start: calc(-1 * var(--space-2));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.types__handle svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.types__handle:hover {
+  background: var(--hover-wash);
+  color: var(--ink);
+}
+
+.types__handle[aria-pressed='true'] {
+  background: var(--accent-wash);
+  color: var(--accent);
+  cursor: grabbing;
+}
+
+.types__handle[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.types__move,
+.types__moveitem {
+  display: none;
+}
+
+/* What is being carried stays in its place, washed and outlined; where it would land is a rule across the row - above the
+   sibling it would take the place of, or below that sibling's whole branch - never only a change of opacity. */
+.types__row[data-carried='true'] {
+  background: var(--accent-wash);
+  outline: 1px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+.types__row[data-drop='before'] {
+  box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.types__row[data-drop='after'] {
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+
+.types__list[data-reordering='true'] {
+  user-select: none;
+}
+
+/* Under the pointer: the type's grip, picture and name, and how many nested types travel with it. */
+.types__dragging {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* The overlay is sized to the grip it came from; the label takes its own width, on one line. */
+  width: max-content;
+  max-width: 24rem;
+  white-space: nowrap;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  box-shadow: var(--shadow-3);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--text-item);
+  cursor: grabbing;
+}
+
+.types__dragging svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+}
+
+.types__draggingnested {
+  font-family: var(--ui);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (min-width: 641px) {
+  .types__moveitem {
+    display: flex;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Only a type's grip: a scene's lore keeps its grip, having no Up and Down to fall back on. */
+  .types__head .types__handle {
+    display: none;
+  }
+
+  .types__move {
+    display: inline-flex;
+  }
+}
+
+/* Add child: quiet text like Up and Down on a wide row; on a phone, where a row's tools already take a line of their own,
+   it waits in the row's menu instead. Only one of the two is ever rendered, so a keyboard meets it once. */
+.types__addchilditem {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .types__addchild {
+    display: none;
+  }
+
+  .types__addchilditem {
+    display: flex;
+  }
+}
+
+/* Up and Down: quiet text beside the row's tools, never louder than Edit. */
+.types__move {
+  gap: 2px;
+}
+
+/* A phone: a smaller step that stops after four levels, and a row's tools always on a line of their own, so a deep row
+   wraps the same way a top-level one does instead of scattering its buttons. */
+/* A phone: the rows go edge to edge again, no panel round them, so a row's tools keep their one line. */
+@media (max-width: 640px) {
+  .types__list {
+    --types-pad: 0rem;
+    --types-step: 1rem;
+
+    border-inline: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .types__row,
+  .types__row:first-child,
+  .types__row:last-child {
+    border-radius: 0;
+  }
+
+  .types__row[data-depth]:not([data-depth='0']) {
+    padding-inline-start: calc(var(--types-pad) + min(var(--depth), 4) * var(--types-step));
+  }
+
+  .types__row[data-depth]:not([data-depth='0'])::before,
+  .types__row[data-depth]:not([data-depth='0'])::after {
+    inset-inline-start: calc(
+      var(--types-pad) + min(var(--depth), 4) * var(--types-step) - var(--types-step) * 0.55
+    );
+  }
+
+  .types__actions {
+    flex-basis: 100%;
+  }
+}
+
+/* A collapsed type reads as one line: its picture and name, how many entries use it, then Edit, Fields and the rest in
+   its menu. Nothing else is set out on every row; a type's settings are in its editor. */
+.types__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.types__name {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-family: var(--display);
+  font-size: 1.1875rem;
+  overflow-wrap: anywhere;
+}

@@ -1,11 +1,14 @@
 import { useId, useState, type ReactNode } from 'react'
-import { formatDateTime } from '../lib/dates'
 import type { LocalDraft } from '../lib/localDrafts'
 import { sameSave } from '../lib/useLocalDraft'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
+import { DisclosureButton } from './DisclosureButton'
+import { QuietNote } from './QuietNote'
+import { DateText } from './DateText'
 
-interface RecoveredDraftProps {
+export interface RecoveredDraftProps {
   /** What the copy is of, as it reads in a sentence: "this article", "this scene's manuscript". */
   what: string
   draft: LocalDraft
@@ -73,7 +76,7 @@ export function RecoveredDraft({
         <p className="recovery__text">
           {tx('entity.recovered.kept', {
             what,
-            time: <time dateTime={draft.savedAt}>{formatDateTime(draft.savedAt)}</time>,
+            time: <DateText value={draft.savedAt} withTime />,
           })}
         </p>
         {savedSince ? (
@@ -81,7 +84,7 @@ export function RecoveredDraft({
             {savedUpdatedAt ? (
               <>
                 {tx('entity.recovered.savedAgain', {
-                  time: <time dateTime={savedUpdatedAt}>{formatDateTime(savedUpdatedAt)}</time>,
+                  time: <DateText value={savedUpdatedAt} withTime />,
                 })}
               </>
             ) : (
@@ -89,38 +92,36 @@ export function RecoveredDraft({
             )}
           </p>
         ) : null}
-        <p className="recovery__hint">{t('entity.recovered.hint')}</p>
+        <QuietNote className="recovery__hint">{t('entity.recovered.hint')}</QuietNote>
       </div>
 
-      <div className="recovery__actions">
-        <button
-          className="button button--secondary"
-          type="button"
+      <div className="actions recovery__actions">
+        <Button
+          tone="secondary"
           onClick={onRecover}
           aria-describedby={bodyId}
           data-testid={`${testId}-recover`}
         >
           {t('entity.recovered.recover')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
+        </Button>
+        <Button
+          tone="secondary"
           onClick={discard}
           aria-describedby={bodyId}
           data-testid={`${testId}-discard`}
         >
           {t('entity.recovered.discard')}
-        </button>
-        <button
-          className="button button--secondary"
-          type="button"
-          aria-expanded={isShowing}
-          aria-controls={previewId}
-          onClick={() => setIsShowing((showing) => !showing)}
+        </Button>
+        <DisclosureButton
+          tone="secondary"
+          expanded={isShowing}
+          expandedLabel={t('entity.recovered.hide')}
+          controls={previewId}
+          onToggle={() => setIsShowing((showing) => !showing)}
           data-testid={`${testId}-preview-toggle`}
         >
-          {isShowing ? t('entity.recovered.hide') : t('entity.recovered.show')}
-        </button>
+          {t('entity.recovered.show')}
+        </DisclosureButton>
       </div>
 
       {isShowing ? (

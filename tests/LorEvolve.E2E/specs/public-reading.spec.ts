@@ -204,7 +204,10 @@ test.describe('reading a public universe', () => {
     await expect(
       profile.getByTestId('public-author-worlds').locator('.worldcard__name'),
     ).toHaveText([w.name])
-    await expect(profile.getByTestId('public-author-placeholder')).toBeVisible()
+    await expect(profile.getByTestId('public-author-avatar')).toHaveAttribute(
+      'data-avatar',
+      'monogram',
+    )
     await expect(reader.locator('.portal')).toHaveCount(1)
     await context.close()
   })
@@ -358,8 +361,10 @@ test.describe('reading a public universe', () => {
 
     const { context, page: reader } = await stranger(browser)
     await reader.goto(`/authors/${slugOf(author)}`)
-    await expect(reader.getByTestId('public-author-placeholder')).toBeVisible()
-    await expect(reader.getByTestId('public-author-avatar')).toHaveCount(0)
+    await expect(reader.getByTestId('public-author-avatar')).toHaveAttribute(
+      'data-avatar',
+      'monogram',
+    )
     await expect(reader.getByTestId('public-author-worlds').locator('.worldcard__name')).toHaveText(
       [w.name],
     )
@@ -382,6 +387,7 @@ test.describe('reading a public universe', () => {
     await reader.reload()
     const avatar = reader.getByTestId('public-author-avatar')
     await expect(avatar).toBeVisible()
+    await expect(avatar).toHaveAttribute('data-avatar', 'photo')
     await expect
       .poll(() => avatar.evaluate((image: HTMLImageElement) => image.naturalWidth))
       .toBeGreaterThan(0)
@@ -393,7 +399,10 @@ test.describe('reading a public universe', () => {
     await toggle.uncheck()
     await expect(toggle).not.toBeChecked()
     await reader.reload()
-    await expect(reader.getByTestId('public-author-placeholder')).toBeVisible()
+    await expect(reader.getByTestId('public-author-avatar')).toHaveAttribute(
+      'data-avatar',
+      'monogram',
+    )
     await context.close()
   })
 

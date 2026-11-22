@@ -1,61 +1,31 @@
-import { closeHistory } from '@tiptap/pm/history'
-import type { Editor } from '@tiptap/react'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { t, tn, useI18n } from '../i18n'
+import type { ReactNode } from 'react'
+import { t, useI18n } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-import { SaveAction } from './SaveAction'
-import { AtSign, FilePenLine, History, Info, LocateFixed, Pencil } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
-import { EditConflict, LatestText } from './EditConflict'
-import { LoreContext } from './LoreContext'
-import { findMentions, manuscriptDoc, plainMentions } from '../lore/mentions'
-import { MentionProse } from './MentionProse'
-import { ManuscriptWriter } from './ManuscriptWriter'
-import { NameLinker } from './NameLinker'
-import { ManuscriptHistory } from './ManuscriptHistory'
-import { ReviewComments } from './ReviewComments'
-import { describeSceneSuggestion } from '../stories/sceneDraft'
-import { RecoveredDraft } from './RecoveredDraft'
-import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
-import { useAuth } from '../auth/useAuth'
-import type { Chronology } from '../chronology/types'
-import { ApiError } from '../lib/api'
-import { isChangedElsewhere } from '../lib/editConflict'
-import { useLeaveGuard } from '../lib/leaveGuard'
-import { useLocalDraft } from '../lib/useLocalDraft'
-import { getSceneManuscript, MANUSCRIPT_CHANGED, saveSceneManuscript } from '../stories/api'
-import { sceneWhen } from '../stories/format'
+import { findMentions, plainMentions } from '../lore/mentions'
+import { ArticleHistory } from './lore/ArticleHistory'
 import {
-  MANUSCRIPT_MAX_LENGTH,
-  type Chapter,
-  type Scene,
-  type SceneManuscript,
-} from '../stories/types'
+  manuscriptHistoryWords,
+  manuscriptPanel,
+  useManuscriptRevisions,
+} from '../stories/manuscriptHistory'
+import type { Chronology } from '../chronology/types'
+import { sceneWhen } from '../stories/format'
+import { MANUSCRIPT_MAX_LENGTH, type Chapter, type Scene } from '../stories/types'
 import { EmptyState } from './EmptyState'
-import { numberFormat } from '../i18n/format'
-import { storyProjectPath } from '../projects/sections'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
-
-/** The manuscript as the API last confirmed it: what "unsaved" is measured against, and what the next save names. */
-interface Stored {
-  content: string
-  updatedAt: string | null
-  version: number
-}
-
-function storedOf(manuscript: SceneManuscript): Stored {
-  return {
-    content: manuscript.content,
-    updatedAt: manuscript.updatedAt,
-    version: manuscript.version,
-  }
-}
-
-const count = (value: number) => numberFormat({}, 'en').format(value)
+import { storedOf, useManuscriptState } from '../stories/useManuscriptState'
+import { useManuscriptLoad } from '../stories/useManuscriptLoad'
+import { useManuscriptRecovery } from '../stories/useManuscriptRecovery'
+import { useManuscriptSave } from '../stories/useManuscriptSave'
+import { useManuscriptActions } from '../stories/useManuscriptActions'
+import { ManuscriptHead } from './stories/ManuscriptHead'
+import { ManuscriptNotices } from './stories/ManuscriptNotices'
+import { ManuscriptBody } from './stories/ManuscriptBody'
+import { ManuscriptTools } from './stories/ManuscriptTools'
+import { SceneBeatList, SceneLore, SceneStamp } from './SceneContext'
+import { FactList } from './FactList'
+import { SaveBar } from './SaveAction'
+import { Announce } from './Announce'
+import { ReadGate } from './ReadGate'
 
 interface ManuscriptEditorProps {
   universeId: string
@@ -116,62 +86,28 @@ export function ManuscriptEditor({
 }: ManuscriptEditorProps) {
   useI18n() // Re-renders on a language change; the words are read through the module's t.
   const access = useUniverseAccess()
-  const sceneId = scene.id
-  const titleId = useId()
-  const statusId = useId()
-  const tooLongId = useId()
-  const recoveryId = useId()
-  const historyId = useId()
-  const contextId = useId()
+  const state = useManuscriptState({ universeId, scene })
+  const {
+    sceneId,
+    titleId,
+    statusId,
+    tooLongId,
+    recoveryId,
+    found,
+    historyId,
+    stored,
+    setStored,
+    draft,
+    setDraft,
+    load,
+    isHistoryOpen,
+    historyKey,
+    setHistoryKey,
+    announcement,
+  } = state
 
-  const { user } = useAuth()
-  const { found, keep, forget, discard, settle, failed } = useLocalDraft(
-    user ? { accountId: user.id, universeId, kind: 'manuscript', contentId: sceneId } : null,
-  )
-
-  const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-  const [stored, setStored] = useState<Stored>({ content: '', updatedAt: null, version: 0 })
-  const [draft, setDraft] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [saves, setSaves] = useState(0)
-  const [failure, setFailure] = useState<string | null>(null)
-  const [conflict, setConflict] = useState(false)
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  // On a phone the scene's planning folds behind Details, so the prose starts on the first screen. Wider, it is always shown.
-  const [isContextOpen, setIsContextOpen] = useState(false)
-  const [historyKey, setHistoryKey] = useState(0)
-  // Write is the editor, each mention a chip; Read shows the prose as a reader reads it, each mention a link.
-  const [isReading, setIsReading] = useState(false)
-  const [isLinking, setIsLinking] = useState(false)
-  const [announcement, setAnnouncement] = useState('')
-  const inFlight = useRef(false)
-  const editor = useRef<Editor | null>(null)
-  const shortcut = useRef<() => void>(() => {})
-  const focusEditor = () => editor.current?.commands.focus(null, { scrollIntoView: false })
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    getSceneManuscript(universeId, storyId, sceneId, controller.signal)
-      .then((manuscript) => {
-        setStored(storedOf(manuscript))
-        setDraft(manuscript.content)
-        setLoad({ kind: 'ready' })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setLoad(
-          error instanceof ApiError && error.status === 404
-            ? { kind: 'missing' }
-            : { kind: 'error', message: t('manuscript.editor.openFailed') },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, storyId, sceneId, reads])
+  useManuscriptLoad({ ...state, universeId, storyId })
+  const revisionStore = useManuscriptRevisions(universeId, storyId, sceneId)
 
   const isReady = load.kind === 'ready'
   const isDirty = isReady && draft !== stored.content
@@ -183,140 +119,12 @@ export function ManuscriptEditor({
   const isHeld = isReady && (offer !== null || found === undefined)
   const mentioned = isReady ? findMentions(draft) : []
 
-  // A copy identical to what is saved is nothing to recover: it goes without a word.
-  useEffect(() => {
-    if (isReady && found && found.content === stored.content) discard()
-  }, [isReady, found, stored.content, discard])
+  useManuscriptRecovery({ ...state, isReady, isDirty, isHeld, scene })
 
-  // The recovery copy follows the writing: kept while it differs from what is saved, let go once it does not.
-  useEffect(() => {
-    if (!isReady || isHeld) return
-    if (isDirty) {
-      keep(draft, stored.updatedAt)
-    } else {
-      forget()
-    }
-  }, [isReady, isHeld, isDirty, draft, stored.updatedAt, keep, forget])
+  const { save } = useManuscriptSave({ ...state, universeId, storyId, isDirty, isTooLong })
 
-  useLeaveGuard(isDirty ? t('manuscript.editor.unsaved', { title: scene.title }) : null, discard)
-
-  /** Saves the text as it stands, naming the stored manuscript's version it was written over. */
-  async function save(expectedVersion: number) {
-    if (inFlight.current || !isDirty || isTooLong) return
-
-    const content = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setConflict(false)
-
-    try {
-      const saved = await saveSceneManuscript(universeId, storyId, sceneId, {
-        content,
-        expectedVersion,
-      })
-      // Measured against what was sent, so anything typed while the save was in flight is still unsaved.
-      setStored(storedOf(saved))
-      setHistoryKey((key) => key + 1)
-      setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, MANUSCRIPT_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('manuscript.editor.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFailure(error.message)
-      } else {
-        setFailure(t('manuscript.editor.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-      // Save keeps the focus through a save (it is only aria-disabled). Should the focus have been let go anyway, rather
-      // than leave it nowhere, it goes back to the prose.
-      requestAnimationFrame(() => {
-        const active = document.activeElement
-        if (!active || active === document.body) focusEditor()
-      })
-    }
-  }
-
-  // Ctrl+S / Cmd+S saves from anywhere while a scene is open - the outline, the tools, or after Save has let go of the
-  // focus - and never opens the browser's "Save page". The listener reads the latest save through a ref, so it is
-  // added once rather than on every keystroke.
-  useEffect(() => {
-    shortcut.current = () => void save(stored.version)
-  })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
-
-  /** The names the author confirmed, made mentions as one edit: one undo step, unsaved until Save. */
-  function linkFromLore(next: string, count: number) {
-    setIsLinking(false)
-    if (!editor.current) return
-    editor.current
-      .chain()
-      .command(({ tr }) => {
-        closeHistory(tr)
-        return true
-      })
-      .setContent(manuscriptDoc(next))
-      .run()
-    focusEditor()
-    setAnnouncement(tn('manuscript.editor.linked', count, { n: count }))
-  }
-
-  function reread() {
-    setConflict(false)
-    setFailure(null)
-    setLoad({ kind: 'loading' })
-    setReads((current) => current + 1)
-  }
-
-  /**
-   * The author has seen the latest prose and keeps their own: it stays in the box, still unsaved, now measured against the
-   * latest - and the next save names the version they reviewed, so it is refused again if that moved on too.
-   */
-  function keepMine(latest: SceneManuscript) {
-    setStored(storedOf(latest))
-    setConflict(false)
-    setHistoryKey((key) => key + 1)
-    setAnnouncement(t('manuscript.editor.keptMine'))
-    requestAnimationFrame(() => editor.current?.commands.focus())
-  }
-
-  /** Lets this window's unsaved prose go for the latest. The conflict notice has already asked. */
-  function takeLatest() {
-    discard()
-    reread()
-  }
-
-  /** Puts the recovery copy in the box as unsaved writing. Saving it is still the author's to do. */
-  function recoverDraft() {
-    if (!offer) return
-    settle()
-    setDraft(offer.content)
-    setAnnouncement(t('manuscript.editor.recovered'))
-    requestAnimationFrame(() => editor.current?.commands.focus())
-  }
-
-  function discardDraft() {
-    discard()
-    setAnnouncement(t('manuscript.editor.discarded'))
-    requestAnimationFrame(() => editor.current?.commands.focus())
-  }
+  const { linkFromLore, reread, keepMine, takeLatest, recoverDraft, discardDraft } =
+    useManuscriptActions({ ...state, offer })
 
   const hasContext =
     sceneWhen(chronology, scene.chronology) !== null ||
@@ -328,6 +136,35 @@ export function ManuscriptEditor({
     .filter(Boolean)
     .join(' ')
 
+  const view = {
+    ...state,
+    universeId,
+    storyId,
+    scene,
+    chronology,
+    chapters,
+    access,
+    onEditScene,
+    onSuggestScene,
+    onSceneChanged,
+    onSceneSaved,
+    publication,
+    isDirty,
+    isTooLong,
+    isHeld,
+    offer,
+    mentioned,
+    hasContext,
+    describedBy,
+    save,
+    linkFromLore,
+    reread,
+    keepMine,
+    takeLatest,
+    recoverDraft,
+    discardDraft,
+  }
+
   return (
     <section
       className="manuscript__editor"
@@ -335,153 +172,52 @@ export function ManuscriptEditor({
       data-testid="manuscript-scene"
       data-title={scene.title}
     >
-      <header className="manuscript__head">
-        <p className="manuscript__where" data-testid="manuscript-where">
-          {where.container ? <>{where.container} · </> : null}
-          <span className="manuscript__position">{where.position}</span>
-        </p>
-
-        <div className="manuscript__titlerow">
-          <h3 className="manuscript__title" id={titleId} data-testid="manuscript-scene-title">
-            <bdi>{scene.title}</bdi>
-          </h3>
-
-          <div className="manuscript__tools rowtools">
-            {hasContext ? (
-              <button
-                className="button button--text manuscript__detailstoggle"
-                type="button"
-                aria-expanded={isContextOpen}
-                aria-controls={contextId}
-                onClick={() => setIsContextOpen((open) => !open)}
-                title={t('manuscript.editor.detailsTitle')}
-                data-testid="manuscript-details-toggle"
-              >
-                <ActionIcon icon={Info} />
-                <span className="visually-hidden">{t('manuscript.editor.detailsName')}</span>
-              </button>
-            ) : null}
-            {access.manageHistory && (stored.updatedAt !== null || isHistoryOpen) ? (
-              <button
-                className="button button--text"
-                type="button"
-                aria-expanded={isHistoryOpen}
-                aria-controls={historyId}
-                aria-describedby={titleId}
-                onClick={() => setIsHistoryOpen((open) => !open)}
-                data-testid="manuscript-history-toggle"
-              >
-                <ActionIcon icon={History} />
-                <span className="manuscript__toolname">{t('manuscript.editor.historyName')}</span>
-                <span className="manuscript__toolshort" aria-hidden="true">
-                  {t('manuscript.editor.historyShort')}
-                </span>
-              </button>
-            ) : null}
-            <LoreContext
-              universeId={universeId}
-              storyId={storyId}
-              scene={scene}
-              chronology={chronology}
-              mentions={mentioned}
-              onSceneSaved={onSceneSaved}
-              onSceneChanged={onSceneChanged}
-            />
-            <ReviewComments
-              universeId={universeId}
-              subject={{ kind: 'scene', storyId, sceneId: scene.id }}
-              subjectName={scene.title}
-              describeSuggestion={describeSceneSuggestion(chapters, chronology)}
-              onSuggestionAccepted={onSceneChanged}
-              onSuggest={() => onSuggestScene(scene)}
-            />
-            <ActionMenu
-              label={t('manuscript.editor.moreActions', { title: scene.title })}
-              triggerTestId="manuscript-scene-actions"
-            >
-              {access.editContent ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onEditScene(scene)}
-                  data-testid="manuscript-edit-scene"
-                >
-                  <ActionIcon icon={Pencil} />
-                  {t('manuscript.editor.editScene')}
-                </button>
-              ) : null}
-              {access.suggestChanges && !access.editContent ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => onSuggestScene(scene)}
-                  data-testid="manuscript-suggest-scene"
-                >
-                  <ActionIcon icon={FilePenLine} />
-                  {t('manuscript.editor.suggest')}
-                </button>
-              ) : null}
-              {access.editContent && scene.entities.some((entity) => !entity.isTrashed) ? (
-                <button
-                  className="actionmenu__item"
-                  type="button"
-                  onClick={() => {
-                    setIsReading(false)
-                    setIsLinking(true)
-                  }}
-                  data-testid="manuscript-link-names"
-                >
-                  <ActionIcon icon={AtSign} />
-                  {t('manuscript.editor.linkNames')}
-                </button>
-              ) : null}
-              <Link
-                className="actionmenu__item"
-                to={`${storyProjectPath(universeId, storyId)}#scene-${scene.id}`}
-                data-testid="manuscript-show-scene"
-              >
-                <ActionIcon icon={LocateFixed} />
-                {t('manuscript.editor.showInScenes')}
-              </Link>
-            </ActionMenu>
-          </div>
-        </div>
-
-        {hasContext ? (
-          <div
-            className="manuscript__context"
-            id={contextId}
-            data-open={isContextOpen ? 'true' : 'false'}
-          >
-            <SceneStamp
-              universeId={universeId}
-              chronology={chronology}
-              scene={scene}
-              testId="manuscript"
-            />
-            <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
-            <SceneBeatList beats={scene.beats} testId="manuscript" />
-          </div>
-        ) : null}
-      </header>
+      <ManuscriptHead
+        where={where}
+        titleId={titleId}
+        title={scene.title}
+        whereTestId="manuscript-where"
+        titleTestId="manuscript-scene-title"
+        tools={<ManuscriptTools {...view} />}
+        context={
+          hasContext ? (
+            <div id={state.contextId} hidden={state.isPhone && !state.isContextOpen}>
+              <FactList look="inline">
+                <SceneStamp
+                  universeId={universeId}
+                  chronology={chronology}
+                  scene={scene}
+                  testId="manuscript"
+                />
+                <SceneLore universeId={universeId} scene={scene} testId="manuscript" />
+                <SceneBeatList beats={scene.beats} testId="manuscript" />
+              </FactList>
+            </div>
+          ) : null
+        }
+      />
 
       {isHistoryOpen && access.manageHistory ? (
-        <ManuscriptHistory
-          id={historyId}
-          universeId={universeId}
-          storyId={storyId}
-          sceneId={sceneId}
+        <ArticleHistory
+          store={revisionStore}
+          words={manuscriptHistoryWords()}
+          renderVersion={(detail, revision) =>
+            detail.content === '' ? null : (
+              <div
+                className="recovery__preview recovery__prose prose"
+                role="region"
+                aria-label={t('manuscript.history.textOf', { number: revision.number })}
+                tabIndex={0}
+              >
+                {plainMentions(detail.content)}
+              </div>
+            )
+          }
+          testId="manuscript"
+          messageTestId="manuscript-history-message"
+          panel={manuscriptPanel(historyId, { isReady, recovered: Boolean(offer), isDirty })}
           reloadKey={historyKey}
           current={stored}
-          blocked={
-            !isReady
-              ? t('manuscript.editor.blocked.opening')
-              : offer
-                ? t('manuscript.editor.blocked.recovered')
-                : isDirty
-                  ? t('manuscript.editor.blocked.unsaved')
-                  : null
-          }
           onRestored={(restored) => {
             setStored(storedOf(restored))
             setDraft(restored.content)
@@ -491,215 +227,72 @@ export function ManuscriptEditor({
         />
       ) : null}
 
-      {load.kind === 'loading' ? (
-        <p className="notice" role="status" data-testid="manuscript-loading">
-          {t('manuscript.editor.opening')}
-        </p>
-      ) : null}
-
-      {load.kind === 'missing' ? (
-        <EmptyState
-          testId="manuscript-missing"
-          title={t('manuscript.editor.missing.title')}
-          hint={t('manuscript.editor.missing.hint')}
-        />
-      ) : null}
-
-      {load.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="manuscript-load-error">
-          <p>{load.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={reread}
-            data-testid="manuscript-retry"
-          >
-            {t('manuscript.editor.retry')}
-          </button>
-        </div>
-      ) : null}
-
-      {isReady ? (
-        <>
-          {offer && access.editContent ? (
-            <div id={recoveryId} className="manuscript__recovery">
-              <RecoveredDraft
-                what={t('manuscript.editor.recoveredWhat')}
-                draft={offer}
-                savedUpdatedAt={stored.updatedAt}
-                preview={
-                  offer.content === '' ? (
-                    <p className="entry__blank">{t('manuscript.editor.draftEmpty')}</p>
-                  ) : (
-                    <div
-                      className="recovery__prose prose"
-                      role="region"
-                      aria-label={t('manuscript.editor.draftText')}
-                      tabIndex={0}
-                    >
-                      {plainMentions(offer.content)}
-                    </div>
-                  )
+      <ReadGate
+        load={load}
+        loading={{ text: t('manuscript.editor.opening'), testId: 'manuscript-loading' }}
+        error={{
+          onRetry: reread,
+          retryLabel: t('manuscript.editor.retry'),
+          retryTestId: 'manuscript-retry',
+          testId: 'manuscript-load-error',
+        }}
+        missing={
+          <EmptyState
+            testId="manuscript-missing"
+            title={t('manuscript.editor.missing.title')}
+            hint={t('manuscript.editor.missing.hint')}
+          />
+        }
+      >
+        {() => (
+          <>
+            <ManuscriptNotices {...view} />
+            <ManuscriptBody {...view} />
+            {access.editContent ? (
+              <SaveBar
+                keyShortcuts
+                count={{
+                  id: tooLongId,
+                  used: draft.length,
+                  max: MANUSCRIPT_MAX_LENGTH,
+                  show: 'over',
+                  words: { tooLong: 'manuscript.editor.tooLong' },
+                  toolong: true,
+                  testId: 'manuscript-too-long',
+                }}
+                warning={
+                  state.failed && isDirty
+                    ? {
+                        text: t('manuscript.editor.noRecoveryCopy'),
+                        testId: 'manuscript-recovery-warning',
+                      }
+                    : null
                 }
-                onRecover={recoverDraft}
-                onDiscard={discardDraft}
-                testId="manuscript-recovery"
-              />
-            </div>
-          ) : null}
-
-          {conflict ? (
-            <div className="manuscript__conflict">
-              <EditConflict
-                what={t('manuscript.editor.conflictWhat')}
-                read={() => getSceneManuscript(universeId, storyId, sceneId)}
-                renderLatest={(latest) => (
-                  <LatestText label={t('manuscript.editor.latestLabel')}>
-                    {latest.content === '' ? (
-                      <p className="entry__blank">{t('manuscript.editor.latestEmpty')}</p>
-                    ) : (
-                      <div className="recovery__prose prose" dir="auto">
-                        {plainMentions(latest.content)}
-                      </div>
-                    )}
-                  </LatestText>
-                )}
-                onKeepMine={keepMine}
-                onUseLatest={takeLatest}
-                testId="manuscript-conflict"
-              />
-            </div>
-          ) : null}
-
-          {failure ? (
-            <p
-              className="form__message manuscript__failure"
-              role="alert"
-              data-testid="manuscript-error"
-            >
-              {failure}
-            </p>
-          ) : null}
-
-          {access.editContent ? (
-            <div
-              className="segmented manuscript__mode"
-              role="group"
-              aria-label={t('manuscript.editor.mode')}
-            >
-              <button
-                className="segmented__option"
-                type="button"
-                aria-pressed={!isReading}
-                onClick={() => setIsReading(false)}
-                data-testid="manuscript-mode-write"
+                save={{
+                  label: t('manuscript.editor.save'),
+                  isDirty,
+                  isSaving: state.isSaving,
+                  isBlocked: isTooLong,
+                  saves: state.saves,
+                  restingStatus:
+                    stored.updatedAt === null
+                      ? t('manuscript.editor.nothingSaved')
+                      : t('manuscript.editor.savedStatus'),
+                  statusId,
+                  statusTestId: 'manuscript-status',
+                  testId: 'manuscript-save',
+                  type: 'button',
+                  onSave: () => void save(stored.version),
+                }}
               >
-                {t('manuscript.editor.modeWrite')}
-              </button>
-              <button
-                className="segmented__option"
-                type="button"
-                aria-pressed={isReading}
-                onClick={() => setIsReading(true)}
-                data-testid="manuscript-mode-read"
-              >
-                {t('manuscript.editor.modeRead')}
-              </button>
-            </div>
-          ) : null}
+                {publication}
+              </SaveBar>
+            ) : null}
+          </>
+        )}
+      </ReadGate>
 
-          {isLinking && access.editContent && !isReading && !isHeld ? (
-            <NameLinker
-              universeId={universeId}
-              entities={scene.entities}
-              text={draft}
-              onLink={linkFromLore}
-              onClose={() => setIsLinking(false)}
-            />
-          ) : null}
-          {access.editContent && !isReading ? (
-            <ManuscriptWriter
-              universeId={universeId}
-              value={draft}
-              onChange={setDraft}
-              readOnly={isHeld}
-              label={t('manuscript.editor.writeLabel', { title: scene.title })}
-              placeholder={t('manuscript.editor.placeholder')}
-              describedBy={describedBy}
-              invalid={isTooLong}
-              onAnnounce={setAnnouncement}
-              onReady={(made) => {
-                editor.current = made
-              }}
-            />
-          ) : (
-            // Read, and a collaborator who only reads (ADR 0041 amendment): the prose as prose, each mention a link to its
-            // entry (issue 31).
-            <div
-              className="manuscript__text manuscript__read prose"
-              role="region"
-              aria-label={t('manuscript.editor.readLabel', { title: scene.title })}
-              tabIndex={0}
-              data-testid="manuscript-read"
-            >
-              {draft === '' ? (
-                <p className="entry__blank">{t('manuscript.editor.nothingYet')}</p>
-              ) : (
-                <MentionProse universeId={universeId} text={draft} />
-              )}
-            </div>
-          )}
-
-          {access.editContent ? (
-            <div className="manuscript__bar">
-              {isTooLong ? (
-                <p
-                  className="field__error manuscript__toolong"
-                  id={tooLongId}
-                  data-testid="manuscript-too-long"
-                >
-                  {t('manuscript.editor.tooLong', {
-                    used: count(draft.length),
-                    max: count(MANUSCRIPT_MAX_LENGTH),
-                  })}
-                </p>
-              ) : null}
-              {failed && isDirty ? (
-                <p
-                  className="recovery__warning"
-                  role="status"
-                  data-testid="manuscript-recovery-warning"
-                >
-                  {t('manuscript.editor.noRecoveryCopy')}
-                </p>
-              ) : null}
-              {publication ? <div className="manuscript__publication">{publication}</div> : null}
-              <SaveAction
-                label={t('manuscript.editor.save')}
-                isDirty={isDirty}
-                isSaving={isSaving}
-                isBlocked={isTooLong}
-                saves={saves}
-                restingStatus={
-                  stored.updatedAt === null
-                    ? t('manuscript.editor.nothingSaved')
-                    : t('manuscript.editor.savedStatus')
-                }
-                statusId={statusId}
-                statusTestId="manuscript-status"
-                testId="manuscript-save"
-                type="button"
-                onSave={() => void save(stored.version)}
-                keyShortcuts="Control+S Meta+S"
-              />
-            </div>
-          ) : null}
-        </>
-      ) : null}
-
-      <p className="visually-hidden" role="status" data-testid="manuscript-announcer">
-        {announcement}
-      </p>
+      <Announce testId="manuscript-announcer">{announcement}</Announce>
     </section>
   )
 }

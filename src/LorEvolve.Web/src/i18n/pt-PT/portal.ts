@@ -92,12 +92,6 @@ const portal: Dictionary['portal'] = {
       clear: 'Limpar a pesquisa e os filtros',
     },
     shown: 'A mostrar {shown} de {total} mundos',
-    more: {
-      error: 'Não foi possível carregar mais mundos.',
-      loading: 'A carregar mundos…',
-      retry: 'Tentar de novo',
-      show: 'Mostrar mais mundos',
-    },
     count: {
       partial: {
         one: 'A mostrar {shown} de {total} mundo',
@@ -128,19 +122,6 @@ const portal: Dictionary['portal'] = {
     retry: 'Tentar de novo',
     empty: 'Ainda não foi publicada aqui nenhuma lore nem história.',
     storyCta: 'Ler sobre esta história →',
-    shown: 'A mostrar {shown} de {total}',
-    loreMore: {
-      error: 'Não foi possível carregar mais lore.',
-      loading: 'A carregar…',
-      retry: 'Tentar de novo',
-      show: 'Mostrar mais lore',
-    },
-    storiesMore: {
-      error: 'Não foi possível carregar mais histórias.',
-      loading: 'A carregar…',
-      retry: 'Tentar de novo',
-      show: 'Mostrar mais histórias',
-    },
   },
   author: {
     missing: 'Este autor não está disponível.',
@@ -154,8 +135,6 @@ const portal: Dictionary['portal'] = {
     loadFailed: 'Não foi possível carregar estes mundos.',
     retry: 'Tentar de novo',
     loading: 'A abrir os seus mundos…',
-    moreLoading: 'A carregar…',
-    more: 'Mostrar mais mundos',
   },
   lore: {
     missing: 'Esta página não está disponível.',

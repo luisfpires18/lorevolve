@@ -1,27 +1,13 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
-import {
-  discardBackup,
-  MAX_BACKUP_BYTES,
-  refusalFrom,
-  restoreBackup,
-  RESTORE_EXPIRED,
-  validateBackup,
-  type BackupPreviewCounts,
-  type BackupRefusal,
-  type BackupValidation,
-} from '../backups/api'
-import { ApiError } from '../lib/api'
-import { formatDateTime } from '../lib/dates'
 import { useI18n } from '../i18n'
 import type { UniverseDetail } from '../universes/types'
-import { Field } from './Field'
-
-type Stage =
-  | { kind: 'choose' }
-  | { kind: 'checking'; percent: number | null }
-  | { kind: 'refused'; refusal: BackupRefusal }
-  | { kind: 'ready'; validation: BackupValidation }
-  | { kind: 'restoring'; validation: BackupValidation }
+import { restoreBackupActions } from '../backups/restoreBackupActions'
+import { useRestoreBackupState } from '../backups/useRestoreBackupState'
+import { RestoreChooseForm } from './backups/RestoreChooseForm'
+import { RestoreReadyForm } from './backups/RestoreReadyForm'
+import { Button } from './Button'
+import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 interface RestoreBackupProps {
   onCancel: () => void
@@ -44,157 +30,9 @@ interface RestoreBackupProps {
 export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
   const i18n = useI18n()
   const { t, tn } = i18n
-  const fileId = useId()
-  const [file, setFile] = useState<File | null>(null)
-  const [stage, setStage] = useState<Stage>({ kind: 'choose' })
-  const [chooseError, setChooseError] = useState<string | null>(null)
-  const [name, setName] = useState('')
-  const [nameError, setNameError] = useState<string | undefined>(undefined)
-  const [failure, setFailure] = useState<string | null>(null)
-
-  const fileInput = useRef<HTMLInputElement>(null)
-  const readyHeading = useRef<HTMLHeadingElement>(null)
-  const refusedHeading = useRef<HTMLHeadingElement>(null)
-  const upload = useRef<AbortController | null>(null)
-
-  // The token of a checked file nobody has restored yet, so leaving lets the server drop it.
-  const waiting = useRef<string | null>(null)
-
-  useEffect(
-    () => () => {
-      upload.current?.abort()
-      if (waiting.current) void discardBackup(waiting.current)
-    },
-    [],
-  )
-
-  useEffect(() => {
-    if (stage.kind === 'ready') readyHeading.current?.focus()
-    if (stage.kind === 'refused') refusedHeading.current?.focus()
-  }, [stage.kind])
-
-  function forgetWaiting() {
-    if (waiting.current) {
-      void discardBackup(waiting.current)
-      waiting.current = null
-    }
-  }
-
-  async function check(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setChooseError(null)
-
-    if (!file) {
-      setChooseError(t('admin.restore.chooseFirst'))
-      fileInput.current?.focus()
-      return
-    }
-
-    if (file.size > MAX_BACKUP_BYTES) {
-      setChooseError(t('admin.restore.tooLarge', { mb: MAX_BACKUP_BYTES / (1024 * 1024) }))
-      fileInput.current?.focus()
-      return
-    }
-
-    forgetWaiting()
-    const controller = new AbortController()
-    upload.current = controller
-    setStage({ kind: 'checking', percent: 0 })
-
-    try {
-      const validation = await validateBackup(file, {
-        signal: controller.signal,
-        onProgress: ({ ratio }) =>
-          setStage({
-            kind: 'checking',
-            percent: ratio === null || ratio >= 1 ? null : Math.round(ratio * 100),
-          }),
-      })
-
-      waiting.current = validation.token
-      setName(validation.preview.universeName)
-      setNameError(validation.preview.nameAvailable ? undefined : t('admin.restore.nameTaken'))
-      setFailure(null)
-      setStage({ kind: 'ready', validation })
-    } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        setStage({ kind: 'choose' })
-        return
-      }
-
-      const refusal = refusalFrom(error)
-      setStage({
-        kind: 'refused',
-        refusal: refusal ?? {
-          code: error instanceof ApiError ? error.code : null,
-          detail:
-            error instanceof ApiError && error.status === 413
-              ? t('admin.restore.serverTooLarge')
-              : error instanceof ApiError && error.status !== 0
-                ? error.message
-                : t('admin.restore.sendFailed'),
-          issues: [],
-          moreIssues: 0,
-        },
-      })
-    } finally {
-      upload.current = null
-    }
-  }
-
-  function chooseAnother() {
-    forgetWaiting()
-    setFile(null)
-    setFailure(null)
-    setNameError(undefined)
-    setStage({ kind: 'choose' })
-    requestAnimationFrame(() => fileInput.current?.focus())
-  }
-
-  async function restore(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (stage.kind !== 'ready') return
-
-    const validation = stage.validation
-    setFailure(null)
-    setNameError(undefined)
-    setStage({ kind: 'restoring', validation })
-
-    try {
-      const universe = await restoreBackup(validation.token, name.trim())
-      waiting.current = null
-      onRestored(universe)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.code === RESTORE_EXPIRED) {
-        waiting.current = null
-        setFile(null)
-        setStage({ kind: 'choose' })
-        setChooseError(error.message)
-        requestAnimationFrame(() => fileInput.current?.focus())
-        return
-      }
-
-      const refusal = refusalFrom(error)
-      if (refusal) {
-        waiting.current = null
-        setStage({ kind: 'refused', refusal })
-        return
-      }
-
-      setStage({ kind: 'ready', validation })
-
-      if (error instanceof ApiError && error.fieldErrors.name) {
-        setNameError(error.fieldErrors.name)
-        requestAnimationFrame(() => document.getElementById('restore-name')?.focus())
-      } else {
-        setFailure(
-          error instanceof ApiError && error.status !== 0
-            ? error.message
-            : t('admin.restore.restoreFailed'),
-        )
-      }
-    }
-  }
+  const state = useRestoreBackupState()
+  const { stage, refusedHeading } = state
+  const { check, chooseAnother, restore } = restoreBackupActions({ ...state, t, onRestored })
 
   const busy = stage.kind === 'checking' || stage.kind === 'restoring'
 
@@ -205,77 +43,10 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
       data-testid="restore-panel"
     >
       <h2 className="composer__title">{t('admin.restore.title')}</h2>
-      <p className="restore__lead">{t('admin.restore.lead')}</p>
+      <QuietNote className="restore__lead">{t('admin.restore.lead')}</QuietNote>
 
       {stage.kind === 'choose' || stage.kind === 'checking' ? (
-        <form className="form" onSubmit={check} noValidate>
-          <Field
-            label={t('admin.restore.file.label')}
-            hint={t('admin.restore.file.hint')}
-            id={fileId}
-            error={chooseError ? <span role="alert">{chooseError}</span> : undefined}
-          >
-            {(control) => (
-              <input
-                ref={fileInput}
-                id={control.id}
-                className="restore__file"
-                type="file"
-                accept=".zip,.json,application/zip,application/json"
-                aria-describedby={control['aria-describedby']}
-                aria-invalid={control['aria-invalid']}
-                disabled={busy}
-                onChange={(event) => {
-                  setFile(event.target.files?.[0] ?? null)
-                  setChooseError(null)
-                }}
-                data-testid="restore-file"
-              />
-            )}
-          </Field>
-
-          {stage.kind === 'checking' ? (
-            <div className="restore__progress" data-testid="restore-checking">
-              <div
-                className="progressbar"
-                role="progressbar"
-                aria-label={
-                  stage.percent === null
-                    ? t('admin.restore.progress.checkingLabel')
-                    : t('admin.restore.progress.uploadingLabel')
-                }
-                aria-valuemin={stage.percent === null ? undefined : 0}
-                aria-valuemax={stage.percent === null ? undefined : 100}
-                aria-valuenow={stage.percent ?? undefined}
-                aria-valuetext={stage.percent === null ? undefined : `${stage.percent}%`}
-                data-state={stage.percent === null ? 'working' : 'sending'}
-              >
-                <span
-                  className="progressbar__fill"
-                  style={stage.percent === null ? undefined : { width: `${stage.percent}%` }}
-                />
-              </div>
-              <p className="restore__stage" role="status">
-                {stage.percent === null
-                  ? t('admin.restore.progress.checking')
-                  : t('admin.restore.progress.uploading', { percent: stage.percent })}
-              </p>
-            </div>
-          ) : null}
-
-          <div className="form__actions">
-            <button className="button" type="submit" disabled={busy} data-testid="restore-check">
-              {stage.kind === 'checking' ? t('admin.restore.checkBusy') : t('admin.restore.check')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => (stage.kind === 'checking' ? upload.current?.abort() : onCancel())}
-            >
-              {t('admin.restore.cancel')}
-            </button>
-          </div>
-        </form>
+        <RestoreChooseForm {...state} busy={busy} check={check} onCancel={onCancel} />
       ) : null}
 
       {stage.kind === 'refused' ? (
@@ -283,7 +54,7 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
           <h3 className="restore__heading" ref={refusedHeading} tabIndex={-1}>
             {t('admin.restore.refused.heading')}
           </h3>
-          <p className="form__message">{stage.refusal.detail}</p>
+          <FormMessage role={null}>{stage.refusal.detail}</FormMessage>
           {stage.refusal.issues.length > 1 ? (
             <ul className="restore__issues" data-testid="restore-issues">
               {stage.refusal.issues.map((issue, index) => (
@@ -294,263 +65,29 @@ export function RestoreBackup({ onCancel, onRestored }: RestoreBackupProps) {
             </ul>
           ) : null}
           {stage.refusal.moreIssues > 0 ? (
-            <p className="restore__more">
+            <QuietNote size="ui" className="restore__more">
               {tn('admin.restore.refused.more', stage.refusal.moreIssues, {
                 n: stage.refusal.moreIssues,
               })}
-            </p>
+            </QuietNote>
           ) : null}
           <p className="restore__note">{t('admin.restore.refused.note')}</p>
-          <div className="form__actions">
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={chooseAnother}
-              data-testid="restore-choose-another"
-            >
+          <FormActions onCancel={onCancel} dismiss="close" inline>
+            <Button tone="secondary" onClick={chooseAnother} data-testid="restore-choose-another">
               {t('admin.restore.refused.chooseAnother')}
-            </button>
-            <button className="button button--secondary" type="button" onClick={onCancel}>
-              {t('admin.restore.refused.close')}
-            </button>
-          </div>
+            </Button>
+          </FormActions>
         </div>
       ) : null}
 
       {stage.kind === 'ready' || stage.kind === 'restoring' ? (
-        <form
-          className="form"
-          onSubmit={restore}
-          noValidate
-          aria-busy={stage.kind === 'restoring' || undefined}
-          data-testid="restore-preview"
-        >
-          <div className="restore__summary">
-            <h3 className="restore__heading" ref={readyHeading} tabIndex={-1}>
-              {t('admin.restore.ready.heading')}
-            </h3>
-            <dl className="restore__facts">
-              <div className="restore__fact">
-                <dt>{t('admin.restore.ready.universe')}</dt>
-                <dd data-testid="restore-universe-name">
-                  <bdi>{stage.validation.preview.universeName}</bdi>
-                </dd>
-              </div>
-              <div className="restore__fact">
-                <dt>{t('admin.restore.ready.backedUp')}</dt>
-                <dd>{formatDateTime(stage.validation.preview.generatedAt)}</dd>
-              </div>
-              <div className="restore__fact">
-                <dt>{t('admin.restore.ready.format')}</dt>
-                <dd>
-                  {t('admin.restore.ready.version', {
-                    version: stage.validation.preview.formatVersion,
-                  })}
-                </dd>
-              </div>
-              {summaryRows(stage.validation.preview.counts, i18n).map(([label, value]) => (
-                <div className="restore__fact" key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </div>
-              ))}
-            </dl>
-            {stage.validation.preview.isArchived ? (
-              <p className="restore__note">{t('admin.restore.ready.archived')}</p>
-            ) : null}
-          </div>
-
-          <Field
-            label={t('admin.restore.ready.nameLabel')}
-            name="restore-name"
-            required
-            maxLength={120}
-            dir="auto"
-            value={name}
-            error={nameError}
-            disabled={stage.kind === 'restoring'}
-            onChange={(event) => {
-              setName(event.target.value)
-              setNameError(undefined)
-            }}
-          />
-
-          {failure ? (
-            <p className="form__message" role="alert" data-testid="restore-failure">
-              {failure}
-            </p>
-          ) : null}
-
-          {stage.kind === 'restoring' ? <Restoring /> : null}
-
-          <div className="form__actions">
-            <button
-              className="button"
-              type="submit"
-              disabled={stage.kind === 'restoring'}
-              data-testid="restore-submit"
-            >
-              {stage.kind === 'restoring'
-                ? t('admin.restore.ready.submitBusy')
-                : t('admin.restore.ready.submit')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={stage.kind === 'restoring'}
-              onClick={chooseAnother}
-            >
-              {t('admin.restore.ready.chooseAnother')}
-            </button>
-          </div>
-        </form>
+        <RestoreReadyForm
+          {...state}
+          stage={stage}
+          restore={restore}
+          chooseAnother={chooseAnother}
+        />
       ) : null}
     </section>
-  )
-}
-
-/** What the backup holds, a line per part of a world, leaving out what it has none of. */
-function summaryRows(
-  counts: BackupPreviewCounts,
-  { t, tn }: ReturnType<typeof useI18n>,
-): [string, string][] {
-  const rows: [string, string][] = []
-  // The count is its own placeholder, grouped by the browser as it always was, not by the language.
-  const plural = (key: Parameters<typeof tn>[0], count: number) =>
-    tn(key, count, { n: count.toLocaleString() })
-
-  const lore = [
-    plural('admin.restore.counts.entry', counts.entries),
-    plural('admin.restore.counts.type', counts.entityTypes),
-    counts.relationships > 0
-      ? plural('admin.restore.counts.relationship', counts.relationships)
-      : null,
-    counts.timelineEntries > 0
-      ? plural('admin.restore.counts.moment', counts.timelineEntries)
-      : null,
-    counts.eras > 0 ? plural('admin.restore.counts.datePeriod', counts.eras) : null,
-    counts.articles > 0 ? plural('admin.restore.counts.article', counts.articles) : null,
-  ]
-  rows.push([t('admin.restore.summary.lore'), lore.filter(Boolean).join(', ')])
-
-  if (counts.images > 0) {
-    rows.push([
-      t('admin.restore.summary.pictures'),
-      plural('admin.restore.counts.picture', counts.images),
-    ])
-  }
-
-  if (counts.stories + counts.scenes > 0) {
-    rows.push([
-      t('admin.restore.summary.stories'),
-      [
-        plural('admin.restore.counts.story', counts.stories),
-        counts.chapters > 0 ? plural('admin.restore.counts.chapter', counts.chapters) : null,
-        plural('admin.restore.counts.scene', counts.scenes),
-        counts.plotArcs > 0 ? plural('admin.restore.counts.arc', counts.plotArcs) : null,
-        counts.beats > 0 ? plural('admin.restore.counts.beat', counts.beats) : null,
-        counts.manuscripts > 0
-          ? plural('admin.restore.counts.sceneWithProse', counts.manuscripts)
-          : null,
-      ]
-        .filter(Boolean)
-        .join(', '),
-    ])
-  }
-
-  if (counts.ideas + counts.ideasDeleted > 0) {
-    rows.push([
-      t('admin.restore.summary.ideas'),
-      [
-        plural('admin.restore.counts.idea', counts.ideas),
-        counts.ideasDeleted > 0
-          ? t('admin.restore.summary.recentlyDeleted', {
-              n: counts.ideasDeleted.toLocaleString(),
-            })
-          : null,
-      ]
-        .filter(Boolean)
-        .join(', '),
-    ])
-  }
-
-  if ((counts.ideaBoards ?? 0) > 0) {
-    rows.push([
-      t('admin.restore.summary.ideaBoards'),
-      plural('admin.restore.counts.board', counts.ideaBoards ?? 0),
-    ])
-  }
-
-  if (counts.worldRules > 0) {
-    rows.push([
-      t('admin.restore.summary.worldRules'),
-      plural('admin.restore.counts.worldRule', counts.worldRules),
-    ])
-  }
-
-  if ((counts.maps ?? 0) > 0) {
-    rows.push([
-      t('admin.restore.summary.maps'),
-      [
-        plural('admin.restore.counts.map', counts.maps ?? 0),
-        plural('admin.restore.counts.pin', counts.mapPins ?? 0),
-      ].join(', '),
-    ])
-  }
-
-  const history = counts.entryVersions + counts.articleVersions + counts.manuscriptVersions
-  if (history > 0) {
-    rows.push([
-      t('admin.restore.summary.versions'),
-      plural('admin.restore.counts.savedVersion', history),
-    ])
-  }
-
-  const trash = counts.entriesInTrash + counts.storyItemsInTrash + counts.worldRulesInTrash
-  if (trash > 0) {
-    rows.push([t('admin.restore.summary.trash'), plural('admin.restore.counts.item', trash)])
-  }
-
-  return rows
-}
-
-/**
- * The restore itself happens on the server, which says nothing until it is done, so this is no percentage: a moving bar
- * and the time so far, so a long restore of a universe with many pictures reads as working rather than stuck.
- */
-function Restoring() {
-  const { t, tx } = useI18n()
-  const [seconds, setSeconds] = useState(0)
-
-  useEffect(() => {
-    const started = Date.now()
-    const tick = window.setInterval(
-      () => setSeconds(Math.floor((Date.now() - started) / 1000)),
-      1000,
-    )
-    return () => window.clearInterval(tick)
-  }, [])
-
-  const elapsed = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-
-  return (
-    <div className="restore__progress" data-testid="restore-restoring">
-      <div
-        className="progressbar"
-        role="progressbar"
-        aria-label={t('admin.restore.restoring.label')}
-        data-state="working"
-      >
-        <span className="progressbar__fill" />
-      </div>
-      <p className="restore__stage">
-        {tx('admin.restore.restoring.stage', {
-          elapsed: <span aria-hidden="true">{elapsed}</span>,
-        })}
-      </p>
-      <p className="restore__stage" role="status">
-        {t('admin.restore.restoring.note')}
-      </p>
-    </div>
   )
 }

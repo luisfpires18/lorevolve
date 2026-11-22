@@ -1,0 +1,198 @@
+/* ---------- Page header ----------
+
+   `PageHeader`: crumb, the screen's h1, a lede, the actions at the far end, then local navigation
+   or a toolbar. The title is set in the display face on the page step of the scale; the lede is
+   metadata-sized and kept to a readable measure. On a phone the actions drop under the title. */
+
+.pageheader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.pageheader__crumb {
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+/* A crumb is a way back up, said quietly: muted until pointed at, underlined then. */
+.pageheader__crumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.pageheader__crumb a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* `Crumb`: the way back up, a step per link, set apart by a quiet separator. One item with the arrow is a back link. */
+.crumb {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+}
+
+.crumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.crumb a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.crumb__sep {
+  color: var(--muted);
+}
+
+/* A way back that reads as one: the arrow and the words, never a bare word. */
+.crumb--back a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.crumb--back svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.pageheader__main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+}
+
+.pageheader__text {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+/* A head with no title is its actions alone: at the far end on a desktop, where they sit beside a title, and at the start
+   on a phone, where they drop under it. */
+@media (min-width: 641px) {
+  .pageheader__main > .pageheader__actions:only-child {
+    margin-left: auto;
+  }
+}
+
+.pageheader__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--text-page);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: var(--title-tracking);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.pageheader__lede {
+  max-width: 62ch;
+  margin-top: var(--space-2);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* The one ornament: a fine gold rule with a small diamond near its start, under a document's title - an entry, a
+   universe's front page. Drawn as a mask over the accent, so it takes the theme's gold (or bronze) and nothing else;
+   decorative, part of no text. */
+.titlerule::after {
+  content: '';
+  display: block;
+  width: min(13rem, 70%);
+  height: 9px;
+  margin-top: var(--space-3);
+  background: var(--accent);
+  opacity: 0.85;
+  -webkit-mask: var(--titlerule-mask) no-repeat left center / 100% 100%;
+  mask: var(--titlerule-mask) no-repeat left center / 100% 100%;
+}
+
+:root {
+  --titlerule-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='208' height='9' viewBox='0 0 208 9'%3E%3Cdefs%3E%3ClinearGradient id='f' x1='0' x2='1'%3E%3Cstop offset='0' stop-opacity='1'/%3E%3Cstop offset='1' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 4.5h54' stroke='%23000'/%3E%3Cpath d='M70 4.5h138' stroke='url(%23f)'/%3E%3Cpath d='M62 0.5l4 4-4 4-4-4z'/%3E%3C/svg%3E");
+}
+
+/* A heading that opens a group of things - Overview's World, Writing and Keeping; the parts of an entry's form: the
+   display face in small tracked capitals, and a hairline running on to the end of the row. Kept to group headings so
+   that capitals stay rare. */
+.sectionrule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-4);
+  font-family: var(--display);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+}
+
+.sectionrule::after {
+  content: '';
+  flex: 1 1 auto;
+  min-width: 2rem;
+  height: 1px;
+  background: linear-gradient(to right, var(--rule-strong), transparent);
+}
+
+/* In the accent, smaller: the label over something read or filled in place - an entry's article, its form's parts. */
+.sectionrule--accent {
+  font-size: 0.8125rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+}
+
+.sectionrule--accent::after {
+  max-width: 6rem;
+  background: linear-gradient(to right, var(--accent-rule), transparent);
+}
+
+.pageheader__lede p {
+  margin: 0;
+}
+
+.pageheader__lede p + p {
+  margin-top: var(--space-2);
+}
+
+.pageheader__slot {
+  margin-top: var(--space-2);
+}
+
+/*
+ * A panel's head (`size="panel"`): the panel's name on the section rule with its lede under it, and its own action
+ * opposite them on the same line, dropping under them on a phone (#184). The room below is the section rule's (`space-4`).
+ */
+.pageheader--panel {
+  margin-bottom: var(--space-4);
+}
+
+.pageheader--panel .pageheader__main {
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.pageheader--panel .pageheader__text {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.pageheader--panel .sectionrule {
+  margin: 0;
+}
+
+.pageheader--panel .pageheader__lede {
+  margin-top: 0;
+}

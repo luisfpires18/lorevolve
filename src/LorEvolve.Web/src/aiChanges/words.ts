@@ -4,7 +4,7 @@ import {
   ProposalStatus,
   type ProposalStatusValue,
   type ProposalSummary,
-} from './api'
+} from './types'
 
 /** Getters, so each word is looked up in the current language when read, never frozen at import. */
 export const STATUS_WORDS: Record<ProposalStatusValue, string> = {

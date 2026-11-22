@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import { entityImageUrl } from '../lore/images'
 import type { EntityImageRef } from '../lore/types'
 import { TypeIcon } from './TypeIcon'
@@ -11,24 +12,36 @@ import { TypeIcon } from './TypeIcon'
  * which is what is read. The square is CSS, not the image, so a grid keeps its shape before a byte
  * has loaded. The thumbnail is the author's own square crop; the full picture lives on the entry.
  */
-export function EntityTile({
-  universeId,
-  entityId,
-  image,
-  typeIcon,
-  typeAccent,
-  className,
-  eager = false,
-}: {
-  universeId: string
-  entityId: string
-  image: EntityImageRef | null
-  typeIcon: string | null
-  typeAccent: string | null
-  className?: string
-  /** Above the fold: fetched at once and ahead of the rest, instead of lazily once laid out. */
-  eager?: boolean
-}) {
+export function EntityTile(
+  props:
+    | {
+        universeId: string
+        entityId: string
+        image: EntityImageRef | null
+        typeIcon: string | null
+        typeAccent: string | null
+        className?: string
+        /** Above the fold: fetched at once and ahead of the rest, instead of lazily once laid out. */
+        eager?: boolean
+      }
+    | {
+        /** Not an entry: a kind's own icon on the sunken paper, the shape an entry's tile has (Trash). */
+        icon: LucideIcon
+        className?: string
+      },
+) {
+  if ('icon' in props) {
+    const { icon: Icon, className } = props
+    return (
+      <span
+        className={['tile tile--blank', className].filter(Boolean).join(' ')}
+        aria-hidden="true"
+      >
+        <Icon className="tile__icon" strokeWidth={1.75} />
+      </span>
+    )
+  }
+  const { universeId, entityId, image, typeIcon, typeAccent, className, eager = false } = props
   const classes = ['tile', className].filter(Boolean).join(' ')
   const accent = typeAccent ? { ['--type-accent' as string]: typeAccent } : undefined
 

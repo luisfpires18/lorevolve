@@ -1,0 +1,62 @@
+/* ---------- Which types the Family Tree is offered for (Issue #37) ----------
+
+   A folded section at the foot of the page: the types enabled one by one, and the groups an author may enable as a
+   whole. Each group says the types it covers, so the effect of the switch is read before it is pressed. */
+
+.family__setup {
+  max-width: 62rem;
+  margin: 2rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.family__setup > summary {
+  width: fit-content;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.family__setupbody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.family__setupbody p {
+  margin: 0;
+}
+
+.family__setupbody .sectiontitle {
+  margin: 0 0 0.35rem;
+}
+
+.family__grouplist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.family__grouplist .check {
+  align-items: flex-start;
+}
+
+.family__grouplist input {
+  margin-top: 0.2rem;
+}
+
+.family__groupname {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.family__groupcovers {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}

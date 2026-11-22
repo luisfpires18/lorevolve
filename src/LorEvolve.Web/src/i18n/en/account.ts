@@ -88,7 +88,6 @@ const account = {
     uploadingPhoto: 'Uploading photo',
     workingText: '{label}…',
     uploadingText: 'Uploading… {percent}%',
-    cancel: 'Cancel',
   },
 }
 

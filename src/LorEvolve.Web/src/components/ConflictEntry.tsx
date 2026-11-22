@@ -8,8 +8,10 @@ import {
   SUBJECT_KIND_LABELS,
 } from '../canon/types'
 import type { CanonConflict, CanonConflictSubject } from '../canon/types'
-import { formatDate } from '../lib/dates'
-import { t, useI18n } from '../i18n'
+import { t, tx, useI18n } from '../i18n'
+import { Button } from './Button'
+import { QuietNote } from './QuietNote'
+import { DateText } from './DateText'
 
 interface Props {
   universeId: string
@@ -51,8 +53,8 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
           <span className="finding__status">{CONFLICT_STATUS_LABELS[conflict.status]}</span>
           <span className="finding__when">
             {isResolved && conflict.resolvedAt
-              ? t('review.conflict.resolvedOn', { date: formatDate(conflict.resolvedAt) })
-              : t('review.conflict.foundOn', { date: formatDate(conflict.createdAt) })}
+              ? tx('review.conflict.resolvedOn', { date: <DateText value={conflict.resolvedAt} /> })
+              : tx('review.conflict.foundOn', { date: <DateText value={conflict.createdAt} /> })}
           </span>
         </p>
 
@@ -72,20 +74,24 @@ export function ConflictEntry({ universeId, conflict, isBusy, onDismiss, onReope
 
         <div className="finding__tools">
           {isResolved ? (
-            <p className="finding__note">{t('review.conflict.closedNote')}</p>
+            <QuietNote className="finding__note" size="xs">
+              {t('review.conflict.closedNote')}
+            </QuietNote>
           ) : !access.editContent ? null : (
-            <button
-              className="button button--secondary button--sm"
-              type="button"
+            <Button
+              tone="secondary"
+              size="sm"
               disabled={isBusy}
               onClick={isDismissed ? onReopen : onDismiss}
               data-testid={`${isDismissed ? 'reopen' : 'dismiss'}-${conflict.id}`}
             >
               {isDismissed ? t('review.conflict.reopen') : t('review.conflict.dismiss')}
-            </button>
+            </Button>
           )}
           {isDismissed ? (
-            <p className="finding__note">{t('review.conflict.dismissedNote')}</p>
+            <QuietNote className="finding__note" size="xs">
+              {t('review.conflict.dismissedNote')}
+            </QuietNote>
           ) : null}
         </div>
       </div>

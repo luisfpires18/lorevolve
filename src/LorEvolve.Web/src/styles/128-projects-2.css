@@ -1,0 +1,267 @@
+/* The ⋯ rests on the picture, on a frosted chip so it reads on any picture, light or dark. */
+.shelfcard__menu {
+  position: absolute;
+  top: var(--space-2);
+  right: calc(var(--space-2) + 7px);
+  z-index: 2;
+}
+
+.shelfcard--console .shelfcard__menu {
+  top: calc(var(--handheld-pad) + 0.5rem);
+  right: calc(var(--handheld-grip) + 0.5rem);
+}
+
+.shelfcard--film .shelfcard__menu {
+  top: calc(var(--film-rail) + 0.5rem);
+  right: calc(var(--film-edge) + 0.5rem);
+}
+
+.shelfcard--comic .shelfcard__menu {
+  top: calc(var(--space-2) + 4px);
+  right: calc(var(--space-2) + 4px);
+}
+
+.shelfcard__menu .iconbutton {
+  background: color-mix(in oklab, var(--paper) 82%, transparent);
+  color: var(--ink);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(6px);
+}
+
+.shelfcard__empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.shelfcard__emptyicon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+/*
+ * The object is drawn above the card's link so its lift on hover never buries Add picture under it, and lets every
+ * press through to the link but the button's own.
+ */
+.handheld,
+.filmstrip,
+.comic,
+.book {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.shelfcard__add {
+  pointer-events: auto;
+}
+
+.shelfcard__text {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.shelfcard__meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.shelfcard__description {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/*
+ * The handheld: a moulded shell in the theme's ink-blue, a grip at each end with an analog stick, a pad on the left and
+ * four face buttons on the right, and the picture full-bleed on a glass screen in its black bezel. The shell stays dark
+ * in both themes, as the hardware would; a rim of light keeps its edge on a dark page.
+ */
+.shelfcard--console {
+  --handheld-pad: 0.7rem;
+  --handheld-grip: 17%;
+}
+
+.handheld {
+  --shell: color-mix(in oklab, var(--accent) 38%, black);
+  --shell-hi: color-mix(in oklab, var(--accent) 55%, #2a2f3a);
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--handheld-grip) 1fr var(--handheld-grip);
+  align-items: center;
+  padding: var(--handheld-pad) 0;
+  border-radius: 2.75rem / 50%;
+  background:
+    radial-gradient(
+      120% 90% at 50% -20%,
+      color-mix(in oklab, white 14%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--shell-hi), var(--shell));
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 22%, transparent),
+    inset 0 -3px 6px color-mix(in oklab, black 35%, transparent),
+    0 0 0 1px color-mix(in oklab, white 6%, transparent),
+    var(--shadow-2);
+  transition:
+    transform var(--duration-2) var(--ease),
+    box-shadow var(--duration-2) var(--ease);
+}
+
+.handheld__grip {
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  padding: 0.2rem 0;
+}
+
+/* An analog stick: a domed cap in its well. */
+.handheld__stick {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #4a4f5c, #15171d 70%);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, black 45%, transparent),
+    inset 0 1px 1px color-mix(in oklab, white 25%, transparent);
+}
+
+.handheld__dpad {
+  --key: #12141a;
+  width: 1.2rem;
+  height: 1.2rem;
+  background:
+    linear-gradient(var(--key), var(--key)) center / 100% 36% no-repeat,
+    linear-gradient(var(--key), var(--key)) center / 36% 100% no-repeat;
+  filter: drop-shadow(0 1px 0 color-mix(in oklab, white 18%, transparent));
+}
+
+/* Four face buttons in a diamond; one is lit in the accent. */
+.handheld__face {
+  display: grid;
+  grid-template-areas:
+    '. n .'
+    'w . e'
+    '. s .';
+  gap: 0.1rem;
+}
+
+.handheld__face > span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #12141a;
+  box-shadow: 0 1px 0 color-mix(in oklab, white 18%, transparent);
+}
+
+.handheld__face > span:nth-child(1) {
+  grid-area: n;
+}
+
+.handheld__face > span:nth-child(2) {
+  grid-area: e;
+  background: color-mix(in oklab, var(--accent) 45%, white);
+}
+
+.handheld__face > span:nth-child(3) {
+  grid-area: s;
+}
+
+.handheld__face > span:nth-child(4) {
+  grid-area: w;
+}
+
+.handheld__screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 0.45rem;
+  background: color-mix(in oklab, var(--accent) 16%, var(--paper));
+  box-shadow:
+    0 0 0 4px #0b0c10,
+    0 0 0 5px color-mix(in oklab, white 10%, transparent);
+}
+
+/* The glass: a faint sheen across the top left, over the picture. */
+.handheld__screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    125deg,
+    color-mix(in oklab, white 16%, transparent) 0%,
+    transparent 38%
+  );
+}
+
+/* The card's picture fills whichever frame the card puts it in. */
+.shelfcard img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The book: the cover, a spine shadow down its left edge and the page block showing on the right. */
+.book {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  padding-right: 7px;
+  transition: transform var(--duration-2) var(--ease);
+}
+
+.book::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 0;
+  bottom: 4px;
+  width: 8px;
+  border-radius: 0 2px 2px 0;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--ink) 85%, var(--paper)) 0 1px,
+    color-mix(in oklab, var(--ink) 60%, var(--paper)) 1px 2px
+  );
+}
+
+.book__cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 2px var(--radius-sm) var(--radius-sm) 2px;
+  background: linear-gradient(
+    150deg,
+    color-mix(in oklab, var(--accent) 30%, var(--raised)),
+    var(--raised)
+  );
+  box-shadow: var(--shadow-2);
+}
+
+.book__cover::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 1;
+  width: 14px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, black 40%, transparent),
+    color-mix(in oklab, white 10%, transparent) 55%,
+    color-mix(in oklab, black 20%, transparent)
+  );
+}

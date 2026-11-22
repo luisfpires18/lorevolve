@@ -1,0 +1,78 @@
+/*
+ * A scene or beat reached by a link is marked for a moment - the surface behind it and the accent on its edge - so the
+ * eye can tell which row the link meant. The mark fades rather than vanishing, unless motion is reduced. The row holds
+ * the focus by then, and the mark is what shows it. Its parts - the head, the date and point of view, and the folded
+ * summary, lore and beats - stand a small step apart, as a scene's lines always did.
+ */
+.types__row[id^='scene-'],
+.types__row[id^='scene-'] > [data-fold]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  transition:
+    background-color 700ms ease,
+    box-shadow 700ms ease;
+}
+
+.types__row:is([id^='scene-'], [id^='arc-']):focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .types__row[id^='scene-'] {
+    transition: none;
+  }
+}
+
+/* A lore reference: the type's icon and the entry's name, a real link to its page. One chip wherever a story or the
+   timeline names an entry - a scene's lore, a beat's, a moment's cast - quieter than the title it sits under. */
+.lorechip {
+  --type-ink: color-mix(in srgb, var(--type-accent, var(--muted)) 65%, var(--ink));
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 0.125rem var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+  color: var(--muted);
+  text-decoration: none;
+  transition:
+    color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease);
+}
+
+a.lorechip:hover,
+a.lorechip:focus-visible {
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+
+.lorechip__icon {
+  flex: none;
+  width: 0.95em;
+  height: 0.95em;
+  color: var(--type-ink);
+}
+
+.lorechip__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Named, so the author sees the scene still holds it; dashed and unlinked, so it does not read as a way in. */
+.lorechip--trashed {
+  border-style: dashed;
+  background: transparent;
+}
+
+.lorechip__note {
+  flex: none;
+}
+
+:root[data-theme='dark'] .lorechip {
+  --type-ink: color-mix(in srgb, var(--type-accent, var(--muted)) 50%, var(--ink));
+}

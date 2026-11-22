@@ -1,0 +1,211 @@
+/* ---------- Chronology ----------
+
+   A timeline is read down a spine, not across a table. The year sits out in the margin
+   like a running head, the moments hang off a single continuous rule, and the marker on
+   that rule says how the date is known: filled for a point the author is sure of, hollow
+   for one they are not, a bar for a span.
+
+   Moments with no date are cut loose below a broken rule. They belong to the world but
+   not to the order, and putting them on the spine would claim a place for them. */
+
+.chron__caution {
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-sm);
+  max-width: 62ch;
+}
+
+.chron__stream {
+  margin-top: 2rem;
+}
+
+.chron__group {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  column-gap: 2rem;
+}
+
+/* The year follows the moments it covers while they scroll, the way a running head
+   stays with its chapter. */
+.chron__year {
+  grid-column: 1;
+  align-self: start;
+  position: sticky;
+  top: 1.25rem;
+  margin: 0;
+  text-align: right;
+  font-weight: 400;
+}
+
+.chron__yearnum {
+  display: block;
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+
+  /* An era written by its full name can be longer than the margin is wide. */
+  overflow-wrap: anywhere;
+}
+
+.chron__yearnum--none {
+  color: var(--rule-strong);
+}
+
+.chron__era {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--ui);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.chron__moments {
+  grid-column: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--rule);
+}
+
+.chron__group--unplaced {
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+}
+
+.chron__aside {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  max-width: 52ch;
+}
+
+/* Broken, because the order these sit in is not a claim about when they happened. */
+.chron__moments--unplaced {
+  border-left-style: dashed;
+}
+
+.moment {
+  position: relative;
+  padding: 0 0 2.25rem 1.75rem;
+}
+
+/* Only the very last moment stops short. Trimming the last one of every run would break
+   the spine into a stack of separate rules between one year and the next. */
+.chron__group:last-child .moment:last-child {
+  padding-bottom: 0.5rem;
+}
+
+.moment__mark {
+  position: absolute;
+  left: -0.3125rem;
+  top: 0.5rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+/* Exact: a point, filled in. */
+.moment[data-kind='0'] .moment__mark {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+/* Range: a bar, because the moment occupies time rather than sitting at a point. */
+.moment[data-kind='2'] .moment__mark {
+  left: -0.1875rem;
+  top: 0.45rem;
+  width: 0.375rem;
+  height: 1.5rem;
+  border-radius: 0.1875rem;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.chron__moments--unplaced .moment__mark {
+  display: none;
+}
+
+.moment__stamp {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  margin: 0;
+}
+
+.moment__when {
+  font-family: var(--display);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.moment__kind {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+.moment__title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  margin: 0.15rem 0 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.moment__account {
+  margin: 0 0 0.6rem;
+  max-width: 62ch;
+  font-size: 0.95rem;
+}
+
+.moment__cast {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+
+/* A moment's facts and its ⋯ on one line; the menu is always there, quiet, never only on hover. */
+.moment__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.moment__head .moment__stamp {
+  margin-bottom: 0;
+}
+
+.moment__head .actionmenu {
+  margin-block: calc(-1 * var(--space-1));
+}
+
+/* The title opens the moment: a button that reads as the heading it is. */
+.moment__open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.moment__open:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* The participant filter needs room for a name, not for a two-word status. */
+.controls__filters .picker {
+  min-width: 15rem;
+}

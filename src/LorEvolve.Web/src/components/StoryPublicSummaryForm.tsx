@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
-import { useReturnFocus } from '../lib/returnFocus'
+import { useRef, useState } from 'react'
+import { useFormSave } from '../lib/useFormSave'
 import { saveStoryPublicSummary } from '../publishing/api'
 import { useI18n } from '../i18n'
 import { Drawer } from './Drawer'
@@ -30,99 +29,60 @@ export function StoryPublicSummaryForm({
   const { t } = useI18n()
   const field = useRef<HTMLTextAreaElement>(null)
   const [draft, setDraft] = useState(summary ?? '')
-  const [error, setError] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const form = useFormSave({
+    needChange: (fieldErrors, error) => fieldErrors.publicSummary ?? error.message,
+    failed: t('stories.summaryForm.failedSave'),
+  })
 
   const isDirty = draft.trim() !== (summary ?? '').trim()
 
-  useReturnFocus()
-
-  useEffect(() => {
-    field.current?.focus()
-  }, [])
-
-  async function save() {
-    setError(null)
-    setIsSaving(true)
-    try {
-      onSaved(await saveStoryPublicSummary(universeId, storyId, draft.trim() || null))
-    } catch (failure: unknown) {
-      setError(
-        failure instanceof ApiError
-          ? (failure.fieldErrors.publicSummary ?? failure.message)
-          : t('stories.summaryForm.failedSave'),
-      )
-    } finally {
-      setIsSaving(false)
-    }
+  function save() {
+    void form.save(async () =>
+      onSaved(await saveStoryPublicSummary(universeId, storyId, draft.trim() || null)),
+    )
   }
 
   return (
     <Drawer
+      initialFocus={field}
       testId="story-public-summary-form"
       titleId="story-public-summary-heading"
       eyebrow={t('stories.summaryForm.eyebrow')}
       title={<bdi>{title}</bdi>}
       isDirty={isDirty}
       leaveMessage={t('stories.summaryForm.leaveUnsaved')}
+      busy={form.isSaving}
       onClose={onClose}
-      onSubmit={() => void save()}
-      actions={(close) => (
-        <>
-          <button
-            className="button"
-            type="submit"
-            disabled={isSaving}
-            data-testid="save-story-public-summary"
-          >
-            {isSaving ? t('stories.summaryForm.saving') : t('stories.summaryForm.save')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-story-public-summary"
-          >
-            {t('stories.summaryForm.cancel')}
-          </button>
-        </>
-      )}
+      onSubmit={save}
+      message={form.message}
+      messageTestId="story-public-summary-error"
+      actions={{
+        submitLabel: t('stories.summaryForm.save'),
+        busyLabel: t('stories.summaryForm.saving'),
+        submitTestId: 'save-story-public-summary',
+        cancelTestId: 'cancel-story-public-summary',
+      }}
     >
-      {error ? (
-        <p className="form__message" role="alert" data-testid="story-public-summary-error">
-          {error}
-        </p>
-      ) : null}
-
       <Field
+        as="textarea"
         id="story-public-summary"
         label={t('stories.summaryForm.label')}
         hint={t('stories.summaryForm.hint')}
-      >
-        {(control) => (
-          <>
-            <textarea
-              {...control}
-              className="field__input field__input--area"
-              ref={field}
-              rows={5}
-              dir="auto"
-              maxLength={PUBLIC_SUMMARY_MAX}
-              aria-describedby={`${control['aria-describedby']} story-public-summary-count`}
-              aria-invalid={error ? true : undefined}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              data-testid="story-public-summary-input"
-            />
-            <p className="field__hint" id="story-public-summary-count">
-              {t('stories.summaryForm.count', {
-                count: draft.trim().length,
-                max: PUBLIC_SUMMARY_MAX,
-              })}
-            </p>
-          </>
-        )}
-      </Field>
+        ref={field}
+        rows={5}
+        dir="auto"
+        maxLength={PUBLIC_SUMMARY_MAX}
+        aria-invalid={form.message ? true : undefined}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        data-testid="story-public-summary-input"
+        count={{
+          used: draft.trim().length,
+          max: PUBLIC_SUMMARY_MAX,
+          show: 'always',
+          words: { tooLong: 'stories.summaryForm.count' },
+        }}
+      />
     </Drawer>
   )
 }

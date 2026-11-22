@@ -1,0 +1,81 @@
+/* ---------- Relations ----------
+
+  A relation is a sentence about the entry you are reading. The wording - "Child of", "Member of" -
+  is said once, as a small heading over the entries it gathers; each entry is a row with its tile,
+  its name in the display face, its type and status, and its notes. What can be done to a link is in
+  its ⋯ menu, so the rows read as information rather than as a row of controls.
+*/
+
+.relations {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  max-width: 52rem;
+}
+
+/* A QuietNote at the body size: its gap under the head and its measure. */
+.relations__quiet {
+  margin: var(--space-4) 0 0;
+  max-width: 52ch;
+}
+
+.relations__list,
+.relations__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.relations__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+}
+
+.relations__group > .sectiontitle,
+.knowledge__abouttitle {
+  margin: 0 0 var(--space-2);
+}
+
+.relations__editing {
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.relation {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: 0 var(--space-3);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.relations__rows > :first-child {
+  border-top: 0;
+}
+
+.relation__name {
+  font-family: var(--display);
+  font-size: var(--text-item);
+  line-height: 1.25;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.relation__name:hover,
+.relation__name:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.relation__notes {
+  margin: var(--space-2) 0 0;
+  max-width: 58ch;
+  font-size: var(--text-ui);
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}

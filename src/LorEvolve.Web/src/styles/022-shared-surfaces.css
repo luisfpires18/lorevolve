@@ -1,0 +1,286 @@
+/* ---------- Shared surfaces ----------
+
+   Patterns, not components: a class a screen puts on its own markup. Each task from 003 adopts the
+   ones its screens need; until then a screen's own rules still apply. */
+
+/* A raised card's surface, said once: a border, the medium radius, the raised ground and the first shadow step. A new
+   card joins this list; layout stays with each card. */
+.entitycard,
+.typecard,
+.plate,
+.doorway,
+.adminuser,
+.adminstat {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  box-shadow: var(--shadow-1);
+}
+
+/* The cards that read as paper take a faint top-down wash over the raised ground. */
+.entitycard,
+.typecard {
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 2.5%, transparent), transparent 55%),
+    var(--raised);
+}
+
+/* A card that is one link: under the pointer it rises a little and its edge warms; pressed, it settles. */
+.entitycard,
+.typecard,
+.plate,
+.doorway {
+  transition:
+    border-color var(--duration-1) var(--ease),
+    box-shadow var(--duration-2) var(--ease),
+    transform var(--duration-2) var(--ease);
+}
+
+@media (hover: hover) {
+  .entitycard:hover,
+  .typecard:hover,
+  .plate:hover,
+  .doorway:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--rule-strong));
+    box-shadow: var(--shadow-2);
+    transform: translateY(-2px);
+  }
+}
+
+.entitycard:active,
+.typecard:active,
+.plate:active,
+.doorway:active {
+  box-shadow: var(--shadow-1);
+  transform: none;
+  transition-duration: 80ms;
+}
+
+/* Asked for less motion, the cards stay put under the pointer; the edge and shadow still answer. */
+@media (prefers-reduced-motion: reduce) {
+  .entitycard:hover,
+  .typecard:hover,
+  .plate:hover,
+  .doorway:hover {
+    transform: none;
+  }
+}
+
+/* A row that opens as a whole: its title is the one link, stretched over the row, so the link's name stays the
+   title and nothing else in the row may be a control. The Ideas and World Rules lists. */
+.rowlink {
+  position: relative;
+  padding-inline: var(--space-3);
+  transition: background-color var(--duration-1) var(--ease);
+}
+
+.rowlink:hover {
+  background: var(--hover-wash);
+}
+
+.rowlink:active {
+  background: var(--press-wash);
+}
+
+.rowlink:has(.rowlink__target:focus-visible) {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* The lists' own rows are ruled edge to edge; as whole-row links they take the same inset the focus ring needs. */
+.idearow.rowlink,
+.rulerow.rowlink {
+  padding-inline: var(--space-3);
+}
+
+.rowlink__target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.rowlink__target:focus-visible {
+  outline: none;
+}
+
+/* Sticky status and actions for a document or a drawer: the status on the left, Cancel and Save
+   on the right, clear of a phone's home indicator. */
+.actionbar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule);
+  background: var(--raised);
+  box-shadow: var(--shadow-3);
+}
+
+/* A shape where content is about to be. Static: no shimmer. */
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+/* Things you open, in a grid that adds columns as the width allows (`CardGrid`): each card at least `--card-min` wide,
+   16.5rem unless a modifier says otherwise, or one card per line. */
+.cardgrid {
+  --card-min: 16.5rem;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cardgrid--min-13 {
+  --card-min: 13rem;
+}
+
+.cardgrid--min-14 {
+  --card-min: 14rem;
+}
+
+.cardgrid--min-15 {
+  --card-min: 15rem;
+}
+
+.cardgrid--min-16 {
+  --card-min: 16rem;
+}
+
+.cardgrid--min-17 {
+  --card-min: 17rem;
+}
+
+.cardgrid--rows {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cardgrid--gap-3 {
+  gap: var(--space-3);
+}
+
+.cardgrid--gap-5 {
+  gap: var(--space-5);
+}
+
+/* Placeholders appear only if the read takes longer than a moment, so a fast load never flashes them. */
+@keyframes skeleton-appear {
+  from {
+    visibility: hidden;
+  }
+
+  to {
+    visibility: visible;
+  }
+}
+
+/* Placeholder cards (`CardSkeleton`) wait 300 ms before they show, so a quick read never flashes them. */
+.cardskeleton {
+  animation: skeleton-appear 0s linear 300ms both;
+}
+
+/* Three slots across the list's own width: Previous at the start, the position truly centred, Next at the end. Both
+   buttons always render - disabled at the ends - so the position never moves with them or their labels.
+
+   The side tracks are `minmax(0, 1fr)`, not `1fr`: a bare `1fr` has an `auto` minimum, so a button wider than its half
+   grows its own track and pushes the position off centre. It did on CI's Linux fonts at 360px - "Previous" in DejaVu is
+   117px against a 109px half, 8.5px off. Equal tracks make the centre exact whatever the labels, fonts or theme; the
+   container query keeps the buttons inside their halves by dropping the decorative arrows where the pager is narrow. */
+.pager {
+  margin-top: 2.5rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  container-type: inline-size;
+}
+
+@container (max-width: 22rem) {
+  .pager .button__icon {
+    display: none;
+  }
+}
+
+.pager > :first-child {
+  justify-self: start;
+}
+
+.pager > :last-child {
+  justify-self: end;
+}
+
+.pager__position {
+  justify-self: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* `ShowMore`: the count, a line when the last read failed, and the button, in a centred column under a list that grows. */
+.showmore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+/* A button sits at the start by default (`.button`); a centred list centres it under the count. */
+.showmore--center > .button {
+  align-self: center;
+}
+
+.showmore--start {
+  align-items: flex-start;
+}
+
+.showmore__shown,
+.showmore__error {
+  margin: 0;
+  font-size: var(--text-ui);
+}
+
+.showmore__shown {
+  color: var(--portal-muted, var(--muted));
+}
+
+.showmore__error {
+  color: var(--danger);
+}
+
+/* A row reached by a link (useArrivalMark) is marked for a moment: the surface behind it and the accent on its edge, so
+   the eye can tell which row the link meant. The mark fades through each place's own transition, unless motion is
+   reduced there. The row holds the focus by then, and the mark is what shows it. */
+:is(.article, .types__row[id^='scene-'], .types__row[id^='arc-'])[data-arrived] {
+  background: var(--surface);
+  box-shadow:
+    inset 2px 0 0 var(--accent),
+    0 0 0 0.6rem var(--surface);
+}
+
+/* A count beside a heading's words (HeadingCount): quiet figures, or the scene's raised pill. */
+.headingcount {
+  font-variant-numeric: tabular-nums;
+}
+
+.headingcount[data-look='quiet'] {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.headingcount[data-look='pill'] {
+  margin-inline-start: 0.2rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--raised);
+}

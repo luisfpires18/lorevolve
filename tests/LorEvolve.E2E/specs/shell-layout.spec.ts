@@ -234,14 +234,14 @@ async function shape(page: Page): Promise<Shape> {
       gutter: parseFloat(getComputedStyle(root).getPropertyValue('--gutter')) * 16,
       canvas: box('.canvas') ?? box('.home__body'),
       search: box('.unisearch'),
-      header: box('.pageheader') ?? box('.entry__head') ?? box('.home__heading'),
+      header: box('.pageheader') ?? box('.entry__head'),
       title: box('h1'),
       entryMain: box('.entry__main'),
       entryRail: box('.entry__rail'),
       entryMedia: box('.entry__media'),
       article: box('.article__body'),
       tools: box('.entry__tools'),
-      canon: box('.entry__kind .canon'),
+      canon: box('.entry__kind .segmented--canon'),
       bar: box('.entry__bar'),
       entryGap: (() => {
         const layout = document.querySelector('.entry__layout')

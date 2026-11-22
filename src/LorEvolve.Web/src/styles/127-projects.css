@@ -1,0 +1,68 @@
+/* ---------- Projects (#139) ---------- */
+
+/* A sidebar group's head: the small muted capitals the type switcher's row labels use (#191). */
+.sidebar__grouphead {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Types: the Lore / Gaming switch and the game picker sit on one row above the tabs. */
+.types__context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.types__context .segmented {
+  align-self: flex-end;
+}
+
+/*
+ * Shelf cards (owner, 2026-11-17): the Creation pages draw what an author is making as the thing it will be, a game on a
+ * widescreen handheld, a film or series on a strip of film, a comic as an issue and a story as a book, in the shared
+ * `CardGrid`. The object carries the picture and is the one bold thing here; the title and status under it stay the
+ * app's quiet type, as a book's label would.
+ */
+.shelfcard {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.shelfcard__title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--text-item);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.shelfcard__link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The title's link covers the whole card, so the card is one target; the menu and Add picture sit above it. */
+.shelfcard__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--radius-md);
+}
+
+.shelfcard__link:focus-visible {
+  outline: none;
+}
+
+.shelfcard__link:focus-visible::after {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}

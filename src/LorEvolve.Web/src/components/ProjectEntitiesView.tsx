@@ -1,17 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
-import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { listProjectTypes } from '../projectEntities/api'
 import type { ProjectEntitySummary, ProjectEntityType } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
 import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { LoreCatalog, LoreCatalogSkeleton } from './LoreCatalog'
+import type { CrumbItem } from './Crumb'
 import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { useUniverseAccess } from '../universes/access'
 import { ProjectEntries } from './ProjectEntries'
 import { ProjectSchema } from './ProjectSchema'
 import { t, tx, useI18n } from '../i18n'
+import { Button } from './Button'
+import { buttonClass } from '../lib/buttonClass'
+import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
 
 /**
  * A project's Entities view (#196): its types as cards, one type's entries a page at a time, and the type editor as an
@@ -52,11 +58,11 @@ export function ProjectEntitiesView({
   // The entry a link from elsewhere named, carried to the list so that it opens on that row (#195).
   const entryId = params.get('entry')
   // The way back to the cards, said as Lore says it above a type: a quiet crumb over the screen's own name.
-  const back = (
-    <Link to={pathname} data-testid="project-entities-back">
-      {t('projects.entities.title')}
-    </Link>
-  )
+  const back: CrumbItem = {
+    to: pathname,
+    label: t('projects.entities.title'),
+    testId: 'project-entities-back',
+  }
 
   if (managing && typesHref) {
     // The old address keeps whatever else it carried, as every other project address does on its way to its view.
@@ -68,7 +74,7 @@ export function ProjectEntitiesView({
 
   if (managing) {
     return (
-      <div className="projectbody" data-testid="project-entities-manage">
+      <div data-testid="project-entities-manage">
         <ProjectSchema
           projectId={projectId}
           reloadKey={reloadKey}
@@ -81,7 +87,7 @@ export function ProjectEntitiesView({
 
   if (typeId) {
     return (
-      <div className="projectbody" data-testid="project-entities-type">
+      <div data-testid="project-entities-type">
         {/* Keyed by the type, so opening another card starts its own first page rather than carrying this one's. */}
         <ProjectEntries
           key={typeId}
@@ -144,7 +150,7 @@ function TypeCards({
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setTypes([])
-        setFailed(error instanceof Error ? error.message : t('projects.schema.failed'))
+        setFailed(errorText(error, t('projects.schema.failed')))
       })
     return () => controller.abort()
   }, [projectId, reloadKey])
@@ -159,10 +165,11 @@ function TypeCards({
   }
 
   return (
-    <section className="projects" data-testid="project-entity-types">
+    <Section testId="project-entity-types">
       {typesHref ? (
         // Lore's own page head: the screen's name, one line on what it holds, and New entry by type on the right.
         <PageHeader
+          level={2}
           title={t('projects.entities.title')}
           titleTestId="project-entities-title"
           lede={t('projects.entities.lede')}
@@ -170,7 +177,7 @@ function TypeCards({
             access.editContent && types.length > 0 ? (
               <ActionMenu
                 label={t('lore.page.newEntry')}
-                triggerClassName="button"
+                triggerClassName={buttonClass()}
                 triggerTestId="project-entities-new"
                 trigger={
                   <>
@@ -180,40 +187,37 @@ function TypeCards({
                 }
               >
                 {tree.ordered.map((node) => (
-                  <Link
+                  <ActionMenuItem
                     key={node.type.id}
-                    className="actionmenu__item"
                     to={`${pathname}?type=${node.type.id}&add=1`}
-                    data-testid={`project-entities-new-${node.type.id}`}
+                    testId={`project-entities-new-${node.type.id}`}
                   >
                     {tx('lore.page.newType', { type: <bdi>{node.type.name}</bdi> })}
-                  </Link>
+                  </ActionMenuItem>
                 ))}
               </ActionMenu>
             ) : null
           }
         />
       ) : (
-        <header className="projects__head">
-          <div className="projects__headtext">
-            <h2 className="sectionrule">{t('projects.entities.title')}</h2>
-            <p className="projects__lede">{t('projects.entities.lede')}</p>
-          </div>
-          <Link
-            to={`${pathname}?manage=types`}
-            className="button button--secondary"
-            data-testid="project-types-manage"
-          >
-            {t('projects.entities.manage')}
-          </Link>
-        </header>
+        <PageHeader
+          level={2}
+          size="panel"
+          title={t('projects.entities.title')}
+          lede={t('projects.entities.lede')}
+          actions={
+            <Button
+              tone="secondary"
+              to={`${pathname}?manage=types`}
+              data-testid="project-types-manage"
+            >
+              {t('projects.entities.manage')}
+            </Button>
+          }
+        />
       )}
 
-      {failed ? (
-        <p role="alert" data-testid="project-entity-types-failed">
-          {failed}
-        </p>
-      ) : null}
+      {failed ? <FormMessage testId="project-entity-types-failed">{failed}</FormMessage> : null}
 
       <div data-testid="project-entity-type-cards">
         {/* A project's types have no groups, so the catalog shows no "Browse by group" and never calls these two. */}
@@ -228,6 +232,6 @@ function TypeCards({
           countBranch={false}
         />
       </div>
-    </section>
+    </Section>
   )
 }

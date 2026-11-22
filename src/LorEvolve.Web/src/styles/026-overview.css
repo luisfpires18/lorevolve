@@ -1,0 +1,201 @@
+/* ---------- Overview ----------
+
+   A universe's contents page: its name at the document step, its opening line, then a doorway into
+   each part, grouped as the sidebar groups them. Doorways are cards - things you open - and lie in
+   a grid that adds columns as the width allows. */
+
+.overview .pageheader {
+  margin-bottom: var(--space-7);
+  padding-top: clamp(var(--space-4), 4vw, var(--space-8));
+}
+
+.overview .pageheader__title {
+  font-size: var(--text-document);
+  line-height: 1.05;
+}
+
+.overview__description {
+  max-width: 58ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.overview__meta {
+  font-size: var(--text-sm);
+}
+
+.contents + .contents,
+.contents + .contents__pair {
+  margin-top: var(--space-8);
+}
+
+/* The shorter groups two across once there is room. */
+.contents__pair {
+  display: grid;
+  gap: var(--space-8) var(--space-7);
+}
+
+@media (min-width: 1180px) {
+  .contents__pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.contents {
+  container-type: inline-size;
+}
+
+/* The world's parts as a small spread once there is room: three across, Lore - where most of a world lives - leading
+   at double width, so five doorways fill two rows instead of leaving one alone on a third. */
+@container (min-width: 46rem) {
+  .contents--worldBuilding .contents__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .contents--worldBuilding .contents__list > li:first-child {
+    grid-column: span 2;
+  }
+
+  .contents--worldBuilding .contents__list > li:first-child .doorway__name {
+    font-size: 1.75rem;
+  }
+}
+
+/* Between a phone and the spread, two across: Lore takes the whole first row, so the other four pair off beneath it. */
+@container (min-width: 29rem) and (max-width: 45.99rem) {
+  .contents--worldBuilding .contents__list > li:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.contents__pair > .contents {
+  margin-top: 0;
+}
+
+/* A doorway into a part of the world: a medallion with the part's icon, its name in the display face, what it holds,
+   and the way through at its foot. Raised and lit from above; under the pointer it rises and its edge warms. Review's
+   doorway (AI Changes) is upkeep, so it lies flatter: no fill until pointed at. */
+.doorway {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+  min-height: 10rem;
+  padding: var(--space-5);
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 3%, transparent), transparent 60%),
+    color-mix(in srgb, var(--raised) 92%, transparent);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* :where keeps this at one class, so the shared hover and press shadows still win over it. */
+.contents--management :where(.doorway) {
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .doorway:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--rule-strong));
+    background-color: var(--raised);
+  }
+}
+
+.doorway__medallion {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: var(--space-2);
+  border: 1px solid var(--accent-rule);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+}
+
+.doorway__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.doorway__name {
+  font-family: var(--display);
+  font-size: 1.3125rem;
+  line-height: 1.2;
+}
+
+.doorway__purpose {
+  max-width: 36ch;
+  font-size: var(--text-ui);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.doorway__go {
+  align-self: flex-end;
+  margin-top: auto;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  color: var(--muted);
+  transition:
+    border-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease);
+}
+
+.doorway__go svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (hover: hover) {
+  .doorway:hover .doorway__go {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+/* A phone: each doorway one compact row - the medallion, the name over what it holds, the way through. */
+@media (max-width: 640px) {
+  .doorway {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'medal name go'
+      'medal purpose go';
+    align-items: center;
+    gap: var(--space-1) var(--space-4);
+    min-height: 0;
+    padding: var(--space-4);
+  }
+
+  .doorway__medallion {
+    grid-area: medal;
+    margin: 0;
+  }
+
+  .doorway__name {
+    grid-area: name;
+    align-self: end;
+  }
+
+  .doorway__purpose {
+    grid-area: purpose;
+    align-self: start;
+  }
+
+  .doorway__go {
+    grid-area: go;
+    align-self: center;
+    margin: 0;
+  }
+
+  .contents--worldBuilding .contents__list > li:first-child .doorway__name {
+    font-size: 1.3125rem;
+  }
+}

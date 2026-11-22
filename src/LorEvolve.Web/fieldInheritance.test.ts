@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { ancestorsOf, withInheritedFields } from './src/lore/fieldInheritance.ts'
-import type { EntityType } from './src/lore/types.ts'
+import type { EntityType } from './src/lore/typeDefinitions.ts'
 
 const field = (id: string, displayOrder: number, sectionId: string | null = null) =>
   ({ id, name: id, displayOrder, sectionId }) as unknown as EntityType['fields'][number]

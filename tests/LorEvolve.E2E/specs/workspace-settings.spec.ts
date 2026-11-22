@@ -412,6 +412,18 @@ test.describe('Settings', () => {
       ).toHaveCount(0)
     }
 
+    // Keep it and Escape both put the question away and hand the focus back to Delete.
+    const deleteButton = advanced.getByTestId('delete-universe')
+    for (const keep of ['button', 'Escape'] as const) {
+      await deleteButton.click()
+      const confirm = advanced.getByRole('group', { name: /Delete .* permanently/ })
+      await expect(confirm).toBeVisible()
+      if (keep === 'button') await confirm.getByRole('button', { name: 'Keep it' }).click()
+      else await confirm.getByRole('button', { name: 'Keep it' }).press('Escape')
+      await expect(confirm).toBeHidden()
+      await expect(deleteButton).toBeFocused()
+    }
+
     await page.goto(`/app/universes/${w.id}/lore`)
     await page.goto(`/app/universes/${w.id}/settings?tab=data`)
     await page.goBack()

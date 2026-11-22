@@ -1,23 +1,21 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Search, UserSearch } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
+import { useEffect } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { UserSearch } from 'lucide-react'
 import { EmptyState } from './EmptyState'
 import { EntityPicker, type EntityChoice } from './EntityPicker'
-import { listFamilies } from '../familyTree/api'
-import type { FamilyDiscoveryPage } from '../familyTree/types'
 import { useI18n } from '../i18n'
-import { Field } from './Field'
+import { SearchField } from './SearchField'
+import { useDiscoveryReads } from '../familyTree/useDiscoveryReads'
+import { useDiscoverySearch } from '../familyTree/useDiscoverySearch'
+import { useDiscoveryState } from '../familyTree/useDiscoveryState'
+import { DiscoveryFamilies } from './familyTree/DiscoveryFamilies'
+import { DisclosureButton } from './DisclosureButton'
+import { QuietNote } from './QuietNote'
 
 /** What a family summary carries in history, so "Browse families" on its tree can come back to this search and page. */
 export interface FamiliesReturn {
   familiesFrom: string
 }
-
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; key: string; result: FamilyDiscoveryPage }
-  | { kind: 'error'; key: string }
 
 /**
  * The Family Tree's opening page: the families the universe already holds, found from its family links (ADR 0035
@@ -40,72 +38,31 @@ export function FamilyDiscovery({
   canEdit: boolean
   onChoose: (choice: EntityChoice | null) => void
 }) {
-  const { t, tn } = useI18n()
+  const { t } = useI18n()
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
   const navigate = useNavigate()
   const q = searchParams.get('q') ?? ''
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
 
-  const [text, setText] = useState(q)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-  const [isFinding, setIsFinding] = useState(false)
-  const pickerRef = useRef<HTMLDivElement>(null)
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const focusHeading = useRef(false)
-  const headingId = useId()
-  const searchId = useId()
-  const pickerId = useId()
+  const discoveryState = useDiscoveryState({ q })
+  const {
+    text,
+    setText,
+    setReads,
+    isFinding,
+    setIsFinding,
+    pickerRef,
+    headingRef,
+    focusHeading,
+    headingId,
+    searchId,
+    pickerId,
+  } = discoveryState
 
-  // The address leads: Back or Forward to another search puts its words back in the box. Adjusted while rendering, when
-  // the address's search changes, rather than in an effect.
-  const [shownQ, setShownQ] = useState(q)
-  if (shownQ !== q) {
-    setShownQ(q)
-    if (text.trim() !== q) setText(q)
-  }
+  useDiscoverySearch({ ...discoveryState, q, searchParams, setSearchParams })
 
-  // Typing settles for a moment before the address - and so the list - follows, on the first page, replacing the entry
-  // rather than leaving one per keystroke in the history.
-  useEffect(() => {
-    if (text.trim() === q) return
-    const timer = setTimeout(() => {
-      const next = new URLSearchParams(searchParams)
-      if (text.trim()) next.set('q', text.trim())
-      else next.delete('q')
-      next.delete('page')
-      setSearchParams(next, { replace: true })
-    }, 150)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [text, q, searchParams, setSearchParams])
-
-  const key = `${q}\u0000${page}\u0000${reads}`
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listFamilies(universeId, { q, page }, controller.signal)
-      .then((result) => setState({ kind: 'ready', key, result }))
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'error', key })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, q, page, key])
-
-  // The answer for another search or page is kept on screen while the next arrives, so the list does not jump.
-  const result = state.kind === 'ready' ? state.result : null
-  const isCurrent = state.kind !== 'loading' && state.key === key
-
-  useEffect(() => {
-    if (isCurrent && focusHeading.current) {
-      focusHeading.current = false
-      headingRef.current?.focus()
-    }
-  }, [isCurrent])
+  const { state, result, isCurrent } = useDiscoveryReads({ ...discoveryState, universeId, q, page })
 
   // Unfiltered and empty: no family exists yet, and choosing someone is the way to start one.
   const isEmpty = isCurrent && !!result && result.totalCount === 0 && !q
@@ -129,45 +86,25 @@ export function FamilyDiscovery({
     <div className="discovery" data-testid="family-discovery">
       {isEmpty ? null : (
         <div className="discovery__bar">
-          <Field
+          <SearchField
             label={t('places.discovery.searchLabel')}
             id={searchId}
             className="discovery__search"
-          >
-            {(control) => (
-              <span className="controls__searchfield">
-                <Search
-                  className="controls__searchicon"
-                  aria-hidden="true"
-                  focusable="false"
-                  strokeWidth={1.75}
-                />
-                <input
-                  {...control}
-                  className="field__input"
-                  type="search"
-                  name="q"
-                  placeholder={t('places.discovery.searchPlaceholder')}
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={text}
-                  onChange={(event) => setText(event.target.value)}
-                  data-testid="family-search"
-                />
-              </span>
-            )}
-          </Field>
-          <button
-            className="button button--secondary"
-            type="button"
-            aria-expanded={isFinding}
-            aria-controls={pickerId}
-            onClick={() => setIsFinding((open) => !open)}
+            placeholder={t('places.discovery.searchPlaceholder')}
+            value={text}
+            onChange={setText}
+            testId="family-search"
+          />
+          <DisclosureButton
+            tone="secondary"
+            icon={UserSearch}
+            expanded={isFinding}
+            controls={pickerId}
+            onToggle={() => setIsFinding((open) => !open)}
             data-testid="family-find-character"
           >
-            <ActionIcon icon={UserSearch} />
             {t('places.discovery.find')}
-          </button>
+          </DisclosureButton>
         </div>
       )}
 
@@ -195,110 +132,26 @@ export function FamilyDiscovery({
             placeholder={t('places.discovery.pickerPlaceholder')}
           />
           {isEmpty ? null : (
-            <p className="discovery__pickerhint">{t('places.discovery.pickerHint')}</p>
+            <QuietNote className="discovery__pickerhint">
+              {t('places.discovery.pickerHint')}
+            </QuietNote>
           )}
         </div>
       ) : null}
 
       {isEmpty ? null : (
-        <section className="discovery__families" aria-labelledby={headingId}>
-          <div className="discovery__head">
-            <h2 className="settings__heading" id={headingId} ref={headingRef} tabIndex={-1}>
-              {t('places.discovery.heading')}
-            </h2>
-            {result ? (
-              <p className="discovery__count" role="status" data-testid="family-count">
-                {result.totalCount === 0
-                  ? t('places.discovery.noMatch')
-                  : q
-                    ? tn('places.discovery.matches', result.totalCount, {
-                        n: result.totalCount,
-                        q,
-                      })
-                    : tn('places.discovery.count', result.totalCount, { n: result.totalCount })}
-              </p>
-            ) : null}
-          </div>
-
-          {state.kind === 'loading' && !result ? (
-            <p className="notice" role="status">
-              {t('places.discovery.finding')}
-            </p>
-          ) : null}
-
-          {state.kind === 'error' && isCurrent ? (
-            <div className="notice notice--error" role="alert" data-testid="family-discovery-error">
-              <p>{t('places.discovery.error')}</p>
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={() => setReads((current) => current + 1)}
-              >
-                {t('places.discovery.retry')}
-              </button>
-            </div>
-          ) : null}
-
-          {result && result.items.length > 0 ? (
-            <ul className="discovery__list" aria-busy={!isCurrent} data-testid="family-list">
-              {result.items.map((family) => (
-                <li key={family.focusEntityId}>
-                  <Link
-                    className="familycard"
-                    to={`/app/universes/${universeId}/family-tree/${family.focusEntityId}`}
-                    state={returnTo}
-                    data-testid="family-card"
-                  >
-                    <span className="familycard__names">
-                      {family.previewMembers.map((member, index) => (
-                        <span key={member.entityId}>
-                          {index > 0 ? ', ' : null}
-                          <bdi>{member.name}</bdi>
-                        </span>
-                      ))}
-                    </span>
-                    <span className="familycard__count" data-testid="family-card-count">
-                      {tn('places.discovery.members', family.memberCount, {
-                        n: family.memberCount,
-                      })}
-                    </span>
-                    <ChevronRight
-                      className="familycard__chevron"
-                      aria-hidden="true"
-                      focusable="false"
-                      strokeWidth={1.75}
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-
-          {result && result.totalPages > 1 ? (
-            <nav className="pager" aria-label={t('places.discovery.pages')}>
-              <button
-                className="button button--secondary"
-                type="button"
-                disabled={result.page <= 1}
-                onClick={() => goToPage(result.page - 1)}
-              >
-                {t('places.discovery.previous')}
-              </button>
-              <span className="pager__position">
-                {t('places.discovery.position', { page: result.page, total: result.totalPages })}
-              </span>
-              <button
-                className="button button--secondary"
-                type="button"
-                disabled={result.page >= result.totalPages}
-                onClick={() => goToPage(result.page + 1)}
-                data-testid="family-next-page"
-              >
-                {t('places.discovery.next')}
-              </button>
-            </nav>
-          ) : null}
-        </section>
+        <DiscoveryFamilies
+          universeId={universeId}
+          headingId={headingId}
+          headingRef={headingRef}
+          q={q}
+          state={state}
+          result={result}
+          isCurrent={isCurrent}
+          retry={() => setReads((current) => current + 1)}
+          returnTo={returnTo}
+          goToPage={goToPage}
+        />
       )}
     </div>
   )

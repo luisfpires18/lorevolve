@@ -1,0 +1,82 @@
+const timePeriods = {
+  title: 'Chronology',
+  lede: 'Choose how dates are written and ordered in this universe.',
+  heading: 'Date periods',
+  add: 'Add date period',
+  and: ' and ',
+  counts: {
+    moments: { one: '{n} moment', other: '{n} moments' },
+    years: { one: '{n} year on an entry', other: '{n} years on entries' },
+    scenes: { one: '{n} scene', other: '{n} scenes' },
+    entryEras: { one: '{n} era of an entry', other: '{n} eras of entries' },
+    periods: { one: '{n} relationship period', other: '{n} relationship periods' },
+    timelineMoments: { one: '{n} timeline moment', other: '{n} timeline moments' },
+    birthDeathYears: { one: '{n} birth or death year', other: '{n} birth or death years' },
+  },
+  usage: 'Dates {list}',
+  up: 'Up from 1',
+  down: 'Down to 1',
+  leaveGuard: 'The chronology has unsaved changes. Leave without saving them?',
+  moved: '{name} is now {position} of {total}.',
+  newCap: 'New date period',
+  newLower: 'new date period',
+  discardConfirm: 'Discard your changes to the chronology?',
+  needChange: 'Some date periods need a change before this can be saved.',
+  saveFailed: 'The chronology could not be saved.',
+  empty: {
+    saveToGoBack: 'Save to go back to plain numbered years.',
+    plain: 'This universe uses plain numbered years.',
+    hint: 'Add date periods if its timeline has named stretches of time with their own year numbers, such as Ages, reigns, dynasties, or before and after an event. They are optional.',
+  },
+  note: 'Every date in this universe names one of these periods. They run in the order listed, earliest first, and none has a set length. Remove them all to go back to plain numbered years.',
+  unplaced: {
+    lead: {
+      one: '{n} existing date doesn’t have a date period yet',
+      other: '{n} existing dates don’t have a date period yet',
+    },
+    rest: {
+      one: '({list}). It is still saved. LorEvolve doesn’t guess which period it belongs to, so until it is given one it sits apart on the timeline and Canon Integrity doesn’t compare it.',
+      other:
+        '({list}). They are still saved. LorEvolve doesn’t guess which period they belong to, so until each is given one they sit apart on the timeline and Canon Integrity doesn’t compare them.',
+    },
+  },
+  plainYear: {
+    lead: {
+      one: '{n} existing date is written as a plain year',
+      other: '{n} existing dates are written as a plain year',
+    },
+    rest: {
+      one: '({list}). Once you save, it stays saved, but LorEvolve won’t guess which period it belongs to: it sits apart on the timeline until it is given one.',
+      other:
+        '({list}). Once you save, they stay saved, but LorEvolve won’t guess which period they belong to: they sit apart on the timeline until each is given one.',
+    },
+  },
+  openTimeline: 'Open the timeline',
+  earliestFirst: 'Earliest first',
+  labelDefault: 'Label',
+  name: 'Name',
+  namePlaceholder: 'Insert a name',
+  shortLabel: 'Short label (optional)',
+  abbreviationPlaceholder: 'Insert an abbreviation',
+  abbreviationHint: 'Without one, dates are written with the full name.',
+  yearsCount: 'Years count',
+  countDown: {
+    spoken: 'Counting down: 3, 2, 1. ',
+    text: 'Year 1 is the last before the next period.',
+  },
+  countUp: {
+    spoken: 'Counting up: 1, 2, 3. ',
+    text: 'No set end.',
+  },
+  writeAs: 'Write dates as',
+  nothingDated: 'Nothing dated in it yet',
+  notSaved: 'New, not saved yet',
+  inUseTitle: 'In use. Move its dates to another period first.',
+  removeNamed: 'Delete {name}',
+  remove: 'Delete',
+  inUseHidden: 'In use. Move its dates to another date period before removing it.',
+  save: 'Save',
+  saved: 'Saved',
+}
+
+export default timePeriods

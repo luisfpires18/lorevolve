@@ -1,21 +1,19 @@
-import { useEffect, useId, useRef, useState } from 'react'
 import { FilePenLine } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ChangeList } from './EditConflict'
 import { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
-import { formatDateTime } from '../lib/dates'
 import type { Change } from '../lib/editConflict'
-import {
-  listSuggestions,
-  resolveSuggestion,
-  SUGGESTION_RESOLVED,
-  SUGGESTION_TARGET_CHANGED,
-  SuggestionStatus,
-  type Suggestion,
-  type SuggestionState,
-} from '../suggestions/api'
+import { SuggestionStatus, type SuggestionState } from '../suggestions/api'
 import { useUniverseAccess } from '../universes/access'
+import { newestFirst, type CHANGED_SINCE } from '../suggestions/suggestionList'
+import { useReviewSuggestionsState } from '../suggestions/useReviewSuggestionsState'
+import { useSuggestionReads } from '../suggestions/useSuggestionReads'
+import { reviewSuggestionsActions } from '../suggestions/reviewSuggestionsActions'
+import { SuggestionItem } from './suggestions/SuggestionItem'
+import { Button } from './Button'
+import { ShowMore } from './ShowMore'
+import { QuietNote } from './QuietNote'
+import { HeadingCount } from './HeadingCount'
+import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
 interface ReviewSuggestionsProps<T> {
   universeId: string
@@ -31,37 +29,6 @@ interface ReviewSuggestionsProps<T> {
   onAccepted: () => void
   /** Opens the content's own form to write a new suggestion. */
   onSuggest: () => void
-}
-
-type Feedback = { text: string; isError: boolean }
-
-/**
- * What has been read: every suggestion so far, and for each list whether older ones follow and where the next page starts
- * - the last one that list answered, whatever has been decided here since.
- */
-interface Loaded<T> {
-  items: Suggestion<T>[]
-  more: Record<SuggestionState, boolean>
-  after: Record<SuggestionState, string | null>
-}
-
-const STATES: SuggestionState[] = ['open', 'decided']
-
-const CHANGED_SINCE = {
-  entry: 'review.suggestions.changed.entry',
-  story: 'review.suggestions.changed.story',
-  scene: 'review.suggestions.changed.scene',
-} as const
-
-/** Newest first, then by id: the API's own order, kept when a decision moves one from a list to the other. */
-function newestFirst<T>(a: Suggestion<T>, b: Suggestion<T>) {
-  return a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt < b.createdAt ? 1 : -1
-}
-
-/** Adds what a page answered, each suggestion once, a newer read of one replacing the older. */
-function merged<T>(items: Suggestion<T>[], read: Suggestion<T>[]) {
-  const fresh = new Map(read.map((each) => [each.id, each]))
-  return [...items.filter((each) => !fresh.has(each.id)), ...read]
 }
 
 /**
@@ -82,305 +49,137 @@ export function ReviewSuggestions<T>({
 }: ReviewSuggestionsProps<T>) {
   const { t, tx } = useI18n()
   const access = useUniverseAccess()
-  const headingId = useId()
-  const [wanted, setWanted] = useState(active)
-  const [reads, setReads] = useState(0)
-  const [loaded, setLoaded] = useState<Loaded<T> | null>(null)
-  const [failed, setFailed] = useState(false)
-  const [reading, setReading] = useState<SuggestionState | null>(null)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [feedback, setFeedback] = useState<Feedback | null>(null)
-  const feedbackLine = useRef<HTMLParagraphElement>(null)
-
-  if (active && !wanted) setWanted(true)
-
-  useEffect(() => {
-    if (!wanted) return
-    const controller = new AbortController()
-
-    Promise.all(STATES.map((state) => listSuggestions<T>(path, state, null, controller.signal)))
-      .then(([open, decided]) => {
-        setLoaded({
-          items: merged(open.items, decided.items),
-          more: { open: open.hasMore, decided: decided.hasMore },
-          after: { open: open.items.at(-1)?.id ?? null, decided: decided.items.at(-1)?.id ?? null },
-        })
-        setFailed(false)
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true)
-      })
-
-    return () => controller.abort()
-  }, [path, wanted, reads])
-
-  /** The next page of one list, after the last one it answered. */
-  async function readMore(state: SuggestionState) {
-    if (!loaded) return
-    setReading(state)
-    try {
-      const page = await listSuggestions<T>(path, state, loaded.after[state])
-      setLoaded((current) =>
-        current === null
-          ? current
-          : {
-              items: merged(current.items, page.items),
-              more: { ...current.more, [state]: page.hasMore },
-              after: { ...current.after, [state]: page.items.at(-1)?.id ?? current.after[state] },
-            },
-      )
-    } catch {
-      setFeedback({ text: t('review.suggestions.readFailedFeedback'), isError: true })
-    } finally {
-      setReading(null)
-    }
-  }
-
-  // A decision moves its suggestion out of Open, taking the pressed button with it: the focus goes to what happened.
-  useEffect(() => {
-    if (feedback) feedbackLine.current?.focus()
-  }, [feedback])
-
-  async function decide(suggestion: Suggestion<T>, decision: 'accept' | 'reject') {
-    setFeedback(null)
-    setBusy(suggestion.id)
-    try {
-      const decided = await resolveSuggestion<T>(universeId, suggestion.id, decision)
-      setLoaded((current) =>
-        current === null ? current : { ...current, items: merged(current.items, [decided]) },
-      )
-      setFeedback({
-        text:
-          decision === 'accept'
-            ? t('review.suggestions.accepted')
-            : t('review.suggestions.rejected'),
-        isError: false,
-      })
-      if (decision === 'accept') onAccepted()
-    } catch (error: unknown) {
-      if (
-        error instanceof ApiError &&
-        (error.code === SUGGESTION_TARGET_CHANGED || error.code === SUGGESTION_RESOLVED)
-      ) {
-        // Someone saved the content or decided first: read again, so the list says which.
-        setFeedback({ text: error.message, isError: true })
-        setReads((count) => count + 1)
-      } else if (
-        decision === 'accept' &&
-        error instanceof ApiError &&
-        (error.status === 400 || error.status === 409)
-      ) {
-        setFeedback({
-          text: t('review.suggestions.cantAccept', { reason: error.message }),
-          isError: true,
-        })
-      } else {
-        setFeedback({
-          text:
-            decision === 'accept'
-              ? t('review.suggestions.acceptFailed')
-              : t('review.suggestions.rejectFailed'),
-          isError: true,
-        })
-      }
-    } finally {
-      setBusy(null)
-    }
-  }
+  const state = useReviewSuggestionsState<T>({ active })
+  const { headingId, loaded, failed, reading, busy, feedback, feedbackLine } = state
+  useSuggestionReads<T>({ ...state, path })
+  const { readMore, decide } = reviewSuggestionsActions<T>({
+    ...state,
+    universeId,
+    path,
+    t,
+    onAccepted,
+  })
 
   const items = [...(loaded?.items ?? [])].sort(newestFirst)
   const open = items.filter((each) => each.status === SuggestionStatus.Open)
   const decided = items.filter((each) => each.status !== SuggestionStatus.Open)
 
-  /** How many are listed, and a plus while older ones have not been read yet. */
-  const counted = (state: SuggestionState, count: number) =>
-    `${count}${loaded?.more[state] ? '+' : ''}`
-
   function moreButton(state: SuggestionState) {
-    return loaded?.more[state] ? (
-      <div>
-        <button
-          className="button button--text button--sm"
-          type="button"
-          disabled={reading !== null}
-          aria-busy={reading === state}
-          onClick={() => void readMore(state)}
-          data-testid={`suggestions-more-${state}`}
-        >
-          {t('review.suggestions.showMore')}
-        </button>
-      </div>
-    ) : null
-  }
-
-  function renderSuggestion(suggestion: Suggestion<T>) {
-    const isOpen = suggestion.status === SuggestionStatus.Open
-    const state =
-      suggestion.status === SuggestionStatus.Accepted
-        ? 'accepted'
-        : suggestion.status === SuggestionStatus.Rejected
-          ? 'rejected'
-          : 'open'
-
     return (
-      <li
-        className="reviewthread suggestion"
-        key={suggestion.id}
-        data-testid="suggestion"
-        data-status={state}
-        data-resolved={isOpen ? 'false' : 'true'}
-      >
-        <p className="reviewcomment__meta">
-          <span className="reviewcomment__author" data-testid="suggestion-author">
-            {suggestion.proposedByName === null ? (
-              t('review.suggestions.unknownAuthor')
-            ) : (
-              <bdi>{suggestion.proposedByName}</bdi>
-            )}
-          </span>
-          <time dateTime={suggestion.createdAt}>{formatDateTime(suggestion.createdAt)}</time>
-        </p>
-
-        {isOpen && suggestion.targetChanged ? (
-          <p className="callout callout--warning suggestion__note" data-testid="suggestion-changed">
-            {t(CHANGED_SINCE[what])}{' '}
-            {access.resolveSuggestions
-              ? t('review.suggestions.cantAcceptReject')
-              : t('review.suggestions.cantAcceptAgain')}
-          </p>
-        ) : null}
-
-        <ChangeList
-          changes={describe(suggestion.before, suggestion.proposed)}
-          sides={{
-            latest: t('review.suggestions.before'),
-            mine: t('review.suggestions.suggested'),
-          }}
-          empty={t('review.suggestions.noLongerShown')}
-          testId="suggestion"
-        />
-
-        {isOpen ? null : (
-          <p className="reviewthread__resolved" data-testid="suggestion-resolution">
-            {tx(
-              state === 'accepted'
-                ? 'review.suggestions.acceptedBy'
-                : 'review.suggestions.rejectedBy',
-              {
-                name:
-                  suggestion.resolvedByName === null ? (
-                    t('review.suggestions.unknownResolver')
-                  ) : (
-                    <bdi>{suggestion.resolvedByName}</bdi>
-                  ),
-              },
-            )}
-            {suggestion.resolvedAt ? <> · {formatDateTime(suggestion.resolvedAt)}</> : null}
-          </p>
-        )}
-
-        {isOpen && access.resolveSuggestions ? (
-          <div className="reviewthread__tools">
-            {suggestion.targetChanged ? null : (
-              <button
-                className="button button--sm"
-                type="button"
-                disabled={busy !== null}
-                onClick={() => void decide(suggestion, 'accept')}
-                data-testid="suggestion-accept"
-              >
-                {busy === suggestion.id
-                  ? t('review.suggestions.accepting')
-                  : t('review.suggestions.accept')}
-              </button>
-            )}
-            <button
-              className="button button--secondary button--sm"
-              type="button"
-              disabled={busy !== null}
-              onClick={() => void decide(suggestion, 'reject')}
-              data-testid="suggestion-reject"
-            >
-              {t('review.suggestions.reject')}
-            </button>
-          </div>
-        ) : null}
-      </li>
+      <ShowMore
+        align="start"
+        hasMore={Boolean(loaded?.more[state])}
+        status={reading === state ? 'loading' : 'idle'}
+        disabled={reading !== null}
+        onMore={() => void readMore(state)}
+        testId={`suggestions-more-${state}`}
+      />
     )
   }
 
   return (
     <>
       {feedback ? (
-        <p
-          className={feedback.isError ? 'form__message' : 'callout'}
-          role={feedback.isError ? 'alert' : 'status'}
-          tabIndex={-1}
-          ref={feedbackLine}
-          data-testid="suggestions-feedback"
-        >
-          {feedback.text}
-        </p>
+        feedback.isError ? (
+          <FormMessage tabIndex={-1} ref={feedbackLine} testId="suggestions-feedback">
+            {feedback.text}
+          </FormMessage>
+        ) : (
+          <Callout
+            look="callout"
+            as="p"
+            role="status"
+            ref={feedbackLine}
+            testId="suggestions-feedback"
+          >
+            {feedback.text}
+          </Callout>
+        )
       ) : null}
 
       {access.suggestChanges ? (
         <div>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
+          <Button
+            tone="secondary"
+            size="sm"
+            icon={FilePenLine}
             onClick={onSuggest}
             data-testid="suggestions-new"
           >
-            <ActionIcon icon={FilePenLine} />
             {t('review.suggestions.suggest')}
-          </button>
+          </Button>
         </div>
       ) : (
-        <p className="history__quiet" data-testid="suggestions-read-only">
+        <QuietNote className="history__quiet" size="ui" testId="suggestions-read-only">
           {t('review.suggestions.readOnly')}
-        </p>
+        </QuietNote>
       )}
 
       {failed ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('review.suggestions.readFailed')}
-        </p>
+        </QuietNote>
       ) : loaded === null ? (
-        <p className="history__quiet" role="status">
+        <QuietNote className="history__quiet" size="ui" role="status">
           {t('review.suggestions.opening')}
-        </p>
+        </QuietNote>
       ) : items.length === 0 && !loaded.more.open && !loaded.more.decided ? (
-        <p className="history__quiet" data-testid="suggestions-empty">
+        <QuietNote className="history__quiet" size="ui" testId="suggestions-empty">
           {t('review.suggestions.empty')}
-        </p>
+        </QuietNote>
       ) : (
         <>
           {open.length > 0 || loaded.more.open ? (
-            <section className="reviewsection" aria-labelledby={`${headingId}-open`}>
+            <section className="stack stack--3 reviewsection" aria-labelledby={`${headingId}-open`}>
               <h3 className="reviewsection__title" id={`${headingId}-open`}>
                 {tx('review.suggestions.open', {
-                  n: <span className="reviewsection__count">{counted('open', open.length)}</span>,
+                  n: <HeadingCount n={open.length} more={Boolean(loaded?.more.open)} />,
                 })}
               </h3>
-              <ol className="reviewsection__list" data-testid="suggestions-open">
-                {open.map(renderSuggestion)}
+              <ol
+                className="plainlist stack stack--4 reviewsection__list"
+                data-testid="suggestions-open"
+              >
+                {open.map((suggestion) => (
+                  <SuggestionItem
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                    what={what}
+                    describe={describe}
+                    access={access}
+                    busy={busy}
+                    decide={decide}
+                  />
+                ))}
               </ol>
               {moreButton('open')}
             </section>
           ) : null}
           {decided.length > 0 || loaded.more.decided ? (
-            <details className="reviewsection" data-testid="suggestions-decided-group">
+            <details
+              className="stack stack--3 reviewsection"
+              data-testid="suggestions-decided-group"
+            >
               <summary className="reviewsection__title">
                 {tx('review.suggestions.decided', {
-                  n: (
-                    <span className="reviewsection__count">
-                      {counted('decided', decided.length)}
-                    </span>
-                  ),
+                  n: <HeadingCount n={decided.length} more={Boolean(loaded?.more.decided)} />,
                 })}
               </summary>
-              <ol className="reviewsection__list" data-testid="suggestions-decided">
-                {decided.map(renderSuggestion)}
+              <ol
+                className="plainlist stack stack--4 reviewsection__list"
+                data-testid="suggestions-decided"
+              >
+                {decided.map((suggestion) => (
+                  <SuggestionItem
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                    what={what}
+                    describe={describe}
+                    access={access}
+                    busy={busy}
+                    decide={decide}
+                  />
+                ))}
               </ol>
               {moreButton('decided')}
             </details>

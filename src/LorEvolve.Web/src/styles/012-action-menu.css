@@ -1,0 +1,95 @@
+/* ---------- Action menu ----------
+
+   `ActionMenu`: a trigger (an ellipsis `.iconbutton` unless a screen passes its own) and a raised
+   panel of ordinary links and buttons. Under the trigger and pinned to its end, which is the one
+   direction a trailing menu can open without leaving the viewport. A destructive item goes last,
+   after a divider, in the danger colour with its icon - never its colour alone. */
+
+.actionmenu {
+  position: relative;
+  display: inline-flex;
+}
+
+.actionmenu__panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  max-width: calc(100vw - 2rem);
+  padding: var(--space-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+
+  /* Paper wherever it hangs from. Without this it inherits the rail's own near-white ink, and
+     near-white text on a near-white panel is no text at all. */
+  color: var(--ink);
+  box-shadow: var(--shadow-3);
+}
+
+/* Who or what the menu is about, before anything it offers to do to it. */
+.actionmenu__context {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* A link and a button that read as one list: left-aligned and full width, unlike a `.button`. */
+.actionmenu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-ui);
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: background-color var(--duration-1) var(--ease);
+}
+
+.actionmenu__item:hover:not(:disabled) {
+  background: var(--hover-wash);
+}
+
+.actionmenu__item:active:not(:disabled) {
+  background: var(--press-wash);
+}
+
+.actionmenu__item:focus-visible {
+  outline-offset: -2px;
+}
+
+.actionmenu__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actionmenu__item--danger {
+  color: var(--danger);
+}
+
+.actionmenu__divider {
+  height: 1px;
+  margin: var(--space-1) 0;
+  border: 0;
+  background: var(--rule);
+}
+
+@media (pointer: coarse) {
+  .actionmenu__item {
+    min-height: var(--control-touch);
+  }
+}

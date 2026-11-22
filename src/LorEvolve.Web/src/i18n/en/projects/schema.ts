@@ -1,0 +1,37 @@
+const projectsSchema = {
+  title: 'Types',
+  lede: 'The kinds of thing this project is made of.',
+  failed: "This project's types could not be read.",
+  empty: 'No types yet.',
+  emptyHint: 'A type is a kind of thing this project holds, such as a character or a location.',
+  starterOffer: 'Start with {types}?',
+  starterHint: 'A starting point. Rename them, delete them, or make your own.',
+  starterApply: 'Add these types',
+  starterApplying: 'Adding…',
+  fromTemplate: {
+    button: 'From a template',
+    title: 'New type from a template',
+    source: 'Template',
+    template: 'Template',
+    option: '{name} ({count} fields)',
+    copyHint: 'The game gets its own copy. Later changes to the template do not change it.',
+    nameHint: 'Leave empty to use the template name.',
+    detailsCreate: 'Check the highlighted field.',
+    failed: 'The type could not be created.',
+  },
+  iconHint:
+    'Optional, and only a picture: it marks the type on its card. Nothing is chosen for you from the name.',
+  parentHint:
+    'Organises the types: a nested type sits under its parent and has every field of the types above it.',
+  entryCount: {
+    one: '1 entry',
+    other: '{count} entries',
+  },
+  noEntries: 'No entries yet',
+  fields: 'Fields',
+  noFields: 'No fields yet.',
+  fieldOptions: 'Choices, one per line',
+  addField: 'Add field',
+}
+
+export default projectsSchema

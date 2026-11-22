@@ -1,10 +1,14 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { ApiError } from '../lib/api'
-import { useLeaveGuard } from '../lib/leaveGuard'
+import { useDiscardGuard } from '../lib/useDiscardGuard'
+import { useFormSave } from '../lib/useFormSave'
 import { getPublicName, setPublicName } from '../profile/api'
 import { PUBLIC_NAME_MAX } from '../publishing/types'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
+import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The account's public name: the "by …" on its published universes, and the only thing about the account the
@@ -18,8 +22,18 @@ export function PublicNameForm() {
   const [value, setValue] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    isSaving,
+    message: error,
+    save,
+  } = useFormSave({
+    needChange: null,
+    failed: t('account.publicName.saveFailed'),
+    refusal: (problem) =>
+      problem instanceof ApiError
+        ? (problem.fieldErrors.publicdisplayname ?? problem.message)
+        : false,
+  })
   const [done, setDone] = useState(false)
 
   useEffect(() => {
@@ -39,35 +53,21 @@ export function PublicNameForm() {
   }, [])
 
   const isDirty = loaded && !isSaving && value.trim() !== (saved ?? '')
-  useLeaveGuard(isDirty ? t('account.publicName.unsaved') : null)
+  useDiscardGuard(isDirty, t('account.publicName.unsaved'))
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setIsSaving(true)
-    setError(null)
     setDone(false)
-    try {
+    await save(async () => {
       const next = await setPublicName(value.trim() || null)
       setSaved(next)
       setValue(next ?? '')
       setDone(true)
-    } catch (problem: unknown) {
-      setError(
-        problem instanceof ApiError
-          ? (problem.fieldErrors.publicdisplayname ?? problem.message)
-          : t('account.publicName.saveFailed'),
-      )
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   if (loadFailed) {
-    return (
-      <p className="field__error" role="alert">
-        {t('account.publicName.loadFailed')}
-      </p>
-    )
+    return <FormMessage>{t('account.publicName.loadFailed')}</FormMessage>
   }
 
   return (
@@ -81,47 +81,34 @@ export function PublicNameForm() {
         label={t('account.publicName.label')}
         id={inputId}
         hint={t('account.publicName.hint')}
-        error={
-          error ? (
-            <span role="alert" data-testid="public-name-error">
-              {error}
-            </span>
-          ) : undefined
-        }
+        error={error || undefined}
+        announce
+        errorTestId="public-name-error"
+        name={null}
+        dir="auto"
+        maxLength={PUBLIC_NAME_MAX}
+        value={value}
+        disabled={!loaded}
+        onChange={(event) => {
+          setDone(false)
+          setValue(event.target.value)
+        }}
+        data-testid="public-name"
+      />
+      <FormActions
+        submitLabel={t('account.publicName.save')}
+        busy={isSaving}
+        busyLabel={t('account.publicName.saving')}
+        disabled={!loaded}
+        submitTestId="save-public-name"
+        inline
       >
-        {(control) => (
-          <input
-            id={control.id}
-            className="field__input"
-            dir="auto"
-            maxLength={PUBLIC_NAME_MAX}
-            value={value}
-            disabled={!loaded}
-            aria-describedby={control['aria-describedby']}
-            aria-invalid={control['aria-invalid']}
-            onChange={(event) => {
-              setDone(false)
-              setValue(event.target.value)
-            }}
-            data-testid="public-name"
-          />
-        )}
-      </Field>
-      <div className="form__actions">
-        <button
-          className="button"
-          type="submit"
-          disabled={isSaving || !loaded}
-          data-testid="save-public-name"
-        >
-          {isSaving ? t('account.publicName.saving') : t('account.publicName.save')}
-        </button>
         {done && !isDirty ? (
-          <p className="settings__saved" role="status" data-testid="public-name-saved">
+          <QuietNote tone="saved" role="status" testId="public-name-saved">
             {t('account.publicName.saved')}
-          </p>
+          </QuietNote>
         ) : null}
-      </div>
+      </FormActions>
     </form>
   )
 }

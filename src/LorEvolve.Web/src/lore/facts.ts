@@ -2,7 +2,7 @@ import { formatChronologyYear } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { formatDate } from '../lib/dates'
 import { t } from '../i18n'
-import { FieldKind } from './types'
+import { FieldKind } from './fieldKinds'
 
 /** What a field with nothing in it reads as. A dash, not a word, so it is the same in every language. */
 export const EMPTY_FACT = '—'

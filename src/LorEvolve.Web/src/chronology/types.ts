@@ -118,11 +118,3 @@ export interface ChronologyEraInput {
 export interface ChronologyInput {
   eras: ChronologyEraInput[]
 }
-
-/** The reckoning a universe has until its author names an era. */
-export const PLAIN_CHRONOLOGY: Chronology = {
-  eras: [],
-  unplacedMomentCount: 0,
-  unplacedYearCount: 0,
-  calendar: null,
-}

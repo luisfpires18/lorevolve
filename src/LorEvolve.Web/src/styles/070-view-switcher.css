@@ -1,0 +1,51 @@
+/* ---------- View switcher ----------
+
+   `.views`: the routed views of one object - Scenes | Plot | Manuscript, Article | Relations |
+   History. Links, not tabs, because each view has its own address - so Back, a reload and a shared
+   link all land where the reader was, and `aria-current` says which one that is without a
+   tablist's keyboard contract. Current is ink over a 2px accent rule; the rest are muted until
+   pointed at. One row on a phone: four views fit at 390px. Filters that are a choice on the page
+   rather than a place use `.segmented` instead. */
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-7);
+}
+
+.views__link {
+  margin-bottom: -1px;
+  padding: var(--space-2) 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition:
+    color var(--duration-1) var(--ease),
+    border-color var(--duration-1) var(--ease);
+}
+
+@media (max-width: 640px) {
+  .views {
+    column-gap: var(--space-3);
+  }
+}
+
+.views__link:hover,
+.views__link:focus-visible {
+  color: var(--ink);
+}
+
+.views__link[aria-current='page'] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+@media (pointer: coarse) {
+  .views__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-touch);
+  }
+}

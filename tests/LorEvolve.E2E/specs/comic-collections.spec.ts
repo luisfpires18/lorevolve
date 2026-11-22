@@ -52,7 +52,6 @@ async function collection(page: Page, kind: string, name: string) {
 }
 
 async function add(page: Page, collectionId: string, label: string) {
-  await page.getByTestId(`comic-collection-actions-${collectionId}`).click()
   await page.getByTestId(`comic-collection-entry-new-${collectionId}`).click()
   await page.getByTestId('comic-entry-drawer-node').selectOption({ label })
   await page.getByTestId('comic-entry-drawer-save').click()

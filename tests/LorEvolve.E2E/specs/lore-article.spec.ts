@@ -351,7 +351,7 @@ test.describe('lore article', () => {
     await expect(status).toHaveText('Unsaved changes')
 
     // Following a link asks, naming the entry; staying keeps the address and the text.
-    await page.locator('.entry__crumbs').getByRole('link', { name: 'Lore' }).click()
+    await page.locator('.crumb').getByRole('link', { name: 'Lore' }).click()
     await dismissConfirm(page, '“Gatewarden” has unsaved changes')
     await expect(page).toHaveURL(entryUrl)
     await expect(editor).toContainText('Saved words. And more.')
@@ -451,7 +451,7 @@ test.describe('lore article', () => {
     const article = page.getByTestId('article')
     const editor = page.getByTestId('lore-editor')
     const status = page.getByTestId('article-status')
-    const crumb = page.locator('.entry__crumbs').getByRole('link', { name: 'Lore' })
+    const crumb = page.locator('.crumb').getByRole('link', { name: 'Lore' })
 
     // Every question the page asks is counted and answered as the step says.
     const questions: string[] = []

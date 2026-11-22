@@ -1,0 +1,268 @@
+/* ---------- Family tree ----------
+
+   A family, drawn as generations rather than as a graph: grandparents and parents above, the entry
+   in focus and its siblings in the middle, children and grandchildren below. The lines are measured
+   from the cards and drawn behind them, and they are decoration: every connection is also written
+   out in words on the card it belongs to, so the tree reads the same without them.
+
+   A wide family scrolls sideways inside its own box, its generation labels pinned at the left so they
+   never scroll out of view. On a phone the generations stack instead - one column, every card whole,
+   no lines - because every connection is already written on its card. The page never scrolls sideways. */
+
+.family__picker {
+  max-width: 26rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+/* A tree's way back to the families it was opened from: the sidebar's quiet back link, at the head of the page. */
+.family__browse {
+  margin-top: var(--space-4);
+}
+
+/* Family discovery (035): the search and the second way in on one line, then the families as a list of plain summaries -
+   names and a size, one link each. No portraits and no miniature trees: the tree is one click further. */
+.discovery {
+  max-width: 62rem;
+}
+
+.discovery__bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  flex-wrap: wrap;
+  margin: 1.5rem 0 0;
+}
+
+.discovery__search {
+  flex: 1 1 18rem;
+  max-width: 30rem;
+}
+
+/* The second way in sits on the search field's line, not on its label's. */
+.discovery__bar > .button {
+  align-self: flex-end;
+}
+
+.discovery__picker {
+  max-width: 26rem;
+  margin: var(--space-4) 0 0;
+}
+
+.discovery__pickerhint {
+  margin: var(--space-2) 0 0;
+}
+
+.discovery__families {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.discovery__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.discovery__head .sectiontitle {
+  margin: 0;
+}
+
+.discovery__count {
+  margin: 0;
+}
+
+.discovery__list[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+/* One family: its names in the display face, its size beneath in small muted type, a chevron that says it opens. */
+.familycard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'names chevron'
+    'count chevron';
+  align-items: center;
+  align-content: center;
+  gap: 0.2rem var(--space-3);
+  height: 100%;
+  min-height: 4.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.familycard:hover {
+  border-color: var(--accent);
+}
+
+.familycard:hover .familycard__names {
+  text-decoration: underline;
+}
+
+.familycard__names {
+  grid-area: names;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.familycard__count {
+  grid-area: count;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.familycard__chevron {
+  grid-area: chevron;
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .discovery__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .discovery__bar > .button {
+    align-self: flex-start;
+  }
+}
+
+.family__loopnote {
+  max-width: 62rem;
+  margin-top: var(--space-4);
+}
+
+.family__loopnote p {
+  margin: 0;
+}
+
+.family__loop {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.family__note {
+  margin: 1rem 0 1.25rem;
+  font-size: 0.85rem;
+  max-width: 62ch;
+}
+
+.family__nokinds {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 62rem;
+}
+
+.family__nokinds p {
+  margin: 0;
+}
+
+/* The focal entry's authored family that defines no ancestry: a list of sentences apart from the tree. */
+.family__others {
+  max-width: 62rem;
+  margin: 1.5rem 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.family__otherlist {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.family__otherlist li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+.family__otherlabel {
+  color: var(--muted);
+}
+
+.family__otherlink {
+  padding: 0;
+  min-height: 0;
+  font-weight: 600;
+}
+
+.familylink__newkind {
+  align-self: flex-start;
+  margin-top: 0.35rem;
+}
+
+.familytree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.familytree__scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+}
+
+.familytree__canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+  min-width: max-content;
+  padding: 0.5rem 0.25rem 1rem;
+}
+
+.familytree__lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.familytree__line {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 1.25;
+}
+
+/* Adoptive connections are dashed, and anything that is not Canon yet is faded - the same distinction
+   the cards make in words. */
+.familytree__line[data-semantic='2'] {
+  stroke-dasharray: 5 4;
+}
+
+.familytree__line[data-canon='0'],
+.familytree__line[data-canon='1'] {
+  opacity: 0.4;
+}
+
+/* Recorded family that is not parentage: dotted, in the accent. A couple joined only by it, or the arcs of the member
+   pointed at; never words on a line - those are in the caption and the details. */
+.familytree__line[data-semantic='-1'] {
+  stroke: color-mix(in srgb, var(--accent) 70%, var(--rule-strong));
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}

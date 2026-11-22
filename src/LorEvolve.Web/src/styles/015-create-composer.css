@@ -1,0 +1,16 @@
+/* ---------- Create composer ---------- */
+
+.composer {
+  margin-top: 2rem;
+  padding: 1.75rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
+.composer__title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.25rem;
+  margin: 0 0 1.5rem;
+}

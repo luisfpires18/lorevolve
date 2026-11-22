@@ -1,0 +1,45 @@
+import type { Dictionary } from '../../en'
+
+const storiesSceneForm: Dictionary['stories']['sceneForm'] = {
+  leaveSuggestion: 'A tua sugestão para “{title}” não foi enviada. Sair sem a enviar?',
+  leaveUnsaved: '“{title}” tem alterações por guardar. Sair sem as guardar?',
+  leaveNew: 'Esta nova cena não foi criada. Sair sem a guardar?',
+  detailsToSend: 'Alguns detalhes precisam de uma alteração antes de a enviar.',
+  detailsToSave: 'Alguns detalhes precisam de uma alteração antes de a guardar.',
+  failedSend: 'Não foi possível enviar essa sugestão.',
+  failedSave: 'Não foi possível guardar essa cena.',
+  eyebrowSuggesting: 'A sugerir alterações a uma cena',
+  eyebrowEditing: 'A editar uma cena',
+  newTitle: 'Nova cena',
+  suggestingNote:
+    'Estás a sugerir alterações. A cena fica como está até o proprietário ou um Editor as aceitar.',
+  conflictNoun: 'cena',
+  titleLabel: 'Título',
+  titlePlaceholder: 'Insere um título',
+  chapterLabel: 'Capítulo',
+  chapterHintMove: 'Escolher outro capítulo move a cena para lá, no fim.',
+  chapterHintNew: 'A cena fica no fim dele.',
+  summaryLabel: 'Resumo',
+  summaryHint: 'O que acontece, em breves palavras.',
+  notesLabel: 'Notas',
+  notesHint: 'As tuas notas de planeamento. Só aparecem aqui.',
+  povLabel: 'Ponto de vista',
+  povPlaceholder: 'Qualquer pessoa ou coisa deste universo',
+  whenLegend: 'Quando no universo',
+  whenHint: 'Opcional. Quando esta cena acontece, não em que ponto é contada. Nunca a desloca.',
+  unreckoned:
+    'Situada como um simples ano, antes de este universo ter períodos de datas. Escolhe o período, ou limpa-o.',
+  clearWhen: 'Limpar quando',
+  loreLabel: 'Lore ligado',
+  loreHint: 'Lore relevante para esta cena. Ligar não diz nada sobre quem está presente.',
+  sending: 'A enviar…',
+  sendSuggestion: 'Enviar sugestão',
+  saving: 'A guardar…',
+  adding: 'A adicionar…',
+  save: 'Guardar',
+  add: 'Adicionar cena',
+  inTrash: '{name} (na reciclagem)',
+  anotherChapter: 'Outro capítulo',
+}
+
+export default storiesSceneForm

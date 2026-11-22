@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
+import { Announce } from './Announce'
+import { CharCount, type CharCountProps } from './CharCount'
 
 /** How long "Saved" stays on the button after a save, before it goes quiet again. */
 const SAVED_FOR_MS = 2000
 
-interface SaveActionProps {
+export interface SaveActionProps {
   /** The verb at rest: "Save changes", "Create idea", "Save chronology". */
   label: string
   isDirty: boolean
@@ -16,7 +19,7 @@ interface SaveActionProps {
   /** Bumped by the editor after each save the API confirmed; the button says "Saved" for a moment. */
   saves: number
   /** What the status says when nothing is unsaved and no save just happened: "Saved", "Not saved yet". */
-  restingStatus: string
+  restingStatus: ReactNode
   statusId: string
   statusTestId: string
   testId: string
@@ -67,13 +70,7 @@ export function SaveAction({
 
   return (
     <>
-      <span
-        className="visually-hidden"
-        id={statusId}
-        role="status"
-        data-state={state}
-        data-testid={statusTestId}
-      >
+      <Announce inline id={statusId} state={state} testId={statusTestId}>
         {isSaving
           ? t('entity.save.status.saving')
           : isDirty
@@ -81,9 +78,9 @@ export function SaveAction({
             : justSaved
               ? t('entity.save.status.saved')
               : restingStatus}
-      </span>
-      <button
-        className="button saveaction"
+      </Announce>
+      <Button
+        className="saveaction"
         type={type}
         aria-disabled={unavailable || undefined}
         aria-describedby={statusId}
@@ -108,7 +105,47 @@ export function SaveAction({
         ) : (
           label
         )}
-      </button>
+      </Button>
     </>
+  )
+}
+
+/**
+ * The foot of an explicit-save editor: the count against the limit, the warning that no recovery copy could be kept,
+ * the publication slot, and Save. `record` is the look of a saved record's editor (an idea, a board, a machine): the
+ * `editorbar` class and Save in `editorbar__actions`. Catalogue: `docs/design/ui-components.md`.
+ */
+export function SaveBar({
+  save,
+  count,
+  warning,
+  keyShortcuts,
+  record,
+  children,
+}: {
+  save: Omit<SaveActionProps, 'keyShortcuts'>
+  count?: CharCountProps
+  /** Passed only while it shows: a failed recovery copy with unsaved changes. */
+  warning?: { text: string; testId: string } | null
+  /** Where the editor takes Ctrl+S / Cmd+S. Left out where the editor has no shortcut. */
+  keyShortcuts?: boolean
+  record?: boolean
+  /** The publication control, between the warning and Save. */
+  children?: ReactNode
+}) {
+  const action = (
+    <SaveAction {...save} keyShortcuts={keyShortcuts ? 'Control+S Meta+S' : undefined} />
+  )
+  return (
+    <div className={record ? 'manuscript__bar editorbar' : 'manuscript__bar'}>
+      {count ? <CharCount {...count} /> : null}
+      {warning ? (
+        <p className="recovery__warning" role="status" data-testid={warning.testId}>
+          {warning.text}
+        </p>
+      ) : null}
+      {children ? <div className="manuscript__publication">{children}</div> : null}
+      {record ? <div className="actions editorbar__actions">{action}</div> : action}
+    </div>
   )
 }

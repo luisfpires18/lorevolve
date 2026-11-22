@@ -1,0 +1,111 @@
+/* ---------- Stories ----------
+
+   A story is narrative, not lore, so it borrows the timeline's typography without its spine: a
+   ruled list, read top to bottom in the order the author tells it. The scene's number carries that
+   order; where the scene happens in the world is a small stamp above its title and never a heading,
+   because nothing on the page is arranged by it. */
+
+/* Read by assistive technology, not drawn. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A story is a work, so its title leads in the display face and the facts follow it quietly. The whole row opens
+   the story through `.rowlink`: the title is the one link, stretched over the row, so the link's name stays the title. */
+.storyrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem 1.5rem;
+  align-items: baseline;
+  padding: var(--space-5) var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.storyrow__title {
+  font-family: var(--display);
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  line-height: 1.3;
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.storyrow__meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.storyrow__premise {
+  grid-column: 1 / -1;
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.9rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/*
+ * A story's header is shared by its three views and kept short, because on a phone every line of it sits between the
+ * author and the scenes, the plot or the prose: the title, one line of facts, the premise on Scenes alone, and then one
+ * bar holding the views and the story's own tools, drawn on the rule the current view underlines.
+ */
+.story .pageheader {
+  margin-bottom: 0;
+}
+
+/* While writing, the header steps back to one line - "Stories / The title" - over the views, with no line of facts. */
+.story--manuscript .pageheader {
+  flex-flow: row wrap;
+  align-items: baseline;
+  column-gap: var(--space-2);
+}
+
+.story--manuscript .pageheader__crumb {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.story--manuscript .pageheader__crumb::after {
+  content: '/';
+}
+
+/* The story's title, and a writing surface's place: each takes what its line leaves, so the tools beside it stay on that
+   line. */
+.story--manuscript .pageheader__main,
+.manuscript .entry__kind > .quietnote {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.story--manuscript .pageheader__slot {
+  flex: 1 1 100%;
+}
+
+/* The writing dominates: the story's title, and a scene's or a script part's name over its prose, at an item's size. */
+.story--manuscript .pageheader__title,
+.manuscript .entry__name {
+  font-size: var(--text-item);
+}
+
+.empty__actions {
+  margin-top: 1.25rem;
+}

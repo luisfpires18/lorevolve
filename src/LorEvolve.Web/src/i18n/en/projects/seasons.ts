@@ -1,0 +1,38 @@
+const projectsSeasons = {
+  title: 'Seasons',
+  lede: 'The seasons this series is told in, and the episodes in them.',
+  failed: "This project's seasons could not be read.",
+  empty: 'No seasons yet.',
+  emptyHint: 'A season groups episodes. A series that does not work that way can leave this empty.',
+  add: 'Add season',
+  name: 'Name',
+  summary: 'Summary',
+  saving: 'Adding…',
+  rename: 'Rename',
+  renameNamed: 'Rename {name}',
+  renameSave: 'Save',
+  delete: 'Delete season',
+  noEpisodes: 'No episodes yet.',
+  episodeCount: {
+    one: '1 episode',
+    other: '{count} episodes',
+  },
+  addEpisode: 'Add episode',
+  episodeTitle: 'Title',
+  synopsis: 'Synopsis',
+  deleteEpisode: 'Delete episode',
+  leaveEpisode: 'This episode has unsaved changes. Leave without saving them?',
+  leave: 'This season has unsaved changes. Leave without saving them?',
+  hasScript: 'Script, {count} characters',
+  noScript: 'No script yet',
+  openScript: 'Open script',
+  closeScript: 'Close script',
+  script: 'Script',
+  saveScript: 'Save',
+  savingScript: 'Saving…',
+  scriptStale:
+    'This episode was changed somewhere else. Nothing was overwritten: reopen it to see what it says now.',
+  moveToSeason: 'Move to',
+}
+
+export default projectsSeasons

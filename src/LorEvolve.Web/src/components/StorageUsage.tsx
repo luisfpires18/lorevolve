@@ -1,8 +1,9 @@
 import { useI18n } from '../i18n'
 import { formatBytes } from '../lib/bytes'
 import { getAccountStorage } from '../profile/api'
-import { useUsageLoad } from '../lib/useUsageLoad'
+import { useAsyncRead } from '../lib/useAsyncRead'
 import { UsageItem, UsageMeter } from './UsageItem'
+import { QuietNote } from './QuietNote'
 
 /**
  * Storage in the Profile's Usage section: how much of the account's allowance its pictures use (ADR 0042).
@@ -12,7 +13,7 @@ import { UsageItem, UsageMeter } from './UsageItem'
  */
 export function StorageUsage() {
   const { t } = useI18n()
-  const { load, retry } = useUsageLoad(getAccountStorage)
+  const { load, retry } = useAsyncRead(getAccountStorage)
 
   return (
     <UsageItem name={t('account.storage.name')} testId="usage-storage" load={load} onRetry={retry}>
@@ -39,7 +40,7 @@ export function StorageUsage() {
               </p>
             ) : null}
 
-            <p className="settings__note">{t('account.storage.note')}</p>
+            <QuietNote spacing="block">{t('account.storage.note')}</QuietNote>
           </>
         )
       }}

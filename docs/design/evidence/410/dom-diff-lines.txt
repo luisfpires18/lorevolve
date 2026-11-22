@@ -1,0 +1,457 @@
+## admin-backups-failed
+-<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 01:08 AM.</p>
++<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 01:25 AM.</p>
+## admin-backups-loading
+-<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 01:08 AM.</p>
++<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 01:25 AM.</p>
+## admin-user-missing
+-<div class="notice notice--error" role="alert">
+-<p>There is no account with this id.</p>
+-<button class="button button--secondary" type="button">Try again</button>
++<div class="empty" data-testid="admin-user-missing">
++<p class="empty__line">There is no account with this id.</p>
+## ai-change-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ai-change-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ai-change-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ai-changes-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ai-changes-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## canon-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## canon-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## category-shelf-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<div class="empty" data-testid="projects-failed">
+-<p class="empty__line">Your projects could not be read.</p>
+-</div>
+-<p class="visually-hidden" data-testid="shelf-announcement" role="status">
++<div class="notice notice--error" data-testid="projects-failed" role="alert">
++<p>Your projects could not be read.</p>
++<button class="button button--secondary" type="button">Try again</button>
++</div>
++<p aria-live="polite" class="visually-hidden" data-testid="shelf-announcement" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## connect-invalid
+-<p class="consent-card__intro" data-testid="consent-summary">This app wants <strong>read-only</strong> access to one of your universes: its lore entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the AI service behind it. Check who is asking before you approve.</p>
++<p class="consent-card__intro quietnote quietnote--ui" data-testid="consent-summary">This app wants <strong>read-only</strong> access to one of your universes: its lore entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the AI service behind it. Check who is asking before you approve.</p>
+-<p class="consent-card__footer">Signed in as <bdi>seedownermwmu8wct</bdi>. <a data-discover="true" href="/app/profile?tab=connected-apps#connected-apps">See connected apps</a>
++<p class="consent-card__footer quietnote quietnote--ui quietnote--wrap">Signed in as <bdi>seedownermwmu8wct</bdi>. <a data-discover="true" href="/app/profile?tab=connected-apps#connected-apps">See connected apps</a>
+## connect-loading
+-<p class="consent-card__intro" data-testid="consent-summary">This app wants <strong>read-only</strong> access to one of your universes: its lore entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the AI service behind it. Check who is asking before you approve.</p>
++<p class="consent-card__intro quietnote quietnote--ui" data-testid="consent-summary">This app wants <strong>read-only</strong> access to one of your universes: its lore entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the AI service behind it. Check who is asking before you approve.</p>
+-<p class="consent-card__footer">Signed in as <bdi>seedownermwmu8wct</bdi>. <a data-discover="true" href="/app/profile?tab=connected-apps#connected-apps">See connected apps</a>
++<p class="consent-card__footer quietnote quietnote--ui quietnote--wrap">Signed in as <bdi>seedownermwmu8wct</bdi>. <a data-discover="true" href="/app/profile?tab=connected-apps#connected-apps">See connected apps</a>
+## connect-no-access
+-<p class="consent-card__intro" data-testid="consent-summary">This app wants <strong>read-only</strong> access to one of your universes: its lore entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the AI service behind it. Check who is asking before you approve.</p>
++<p class="consent-card__intro quietnote quietnote--ui" data-testid="consent-summary">This app wants <strong>read-only</strong> access to one of your universes: its lore entries, relationships, stories, scene manuscripts and timeline. What it reads goes to the AI service behind it. Check who is asking before you approve.</p>
+-<input name="lorevolve_consent_token" style="" type="hidden" value="CfDJ8JVc_0YDxtpDjiJeqaiQ7TssqfazT90x8D2_tXmAuG3ZNvbrs3u_b6nYU4eNQLqtGOATasnEpme1mN5WAcmdk_wErbB_CxXeLEOyMWFUDfkfyF7z_p0-OY2JG9eFqYKmS-LHvZLV_mRZhARZ6sJYBk9WhyQWJxpn7jctFhskyPhYEeD40qAdaRL1uc1zCyAOVA">
++<input name="lorevolve_consent_token" style="" type="hidden" value="CfDJ8JVc_0YDxtpDjiJeqaiQ7TvfibWAca4Pr6_hhIH7YPWO_7XPEmLRQvtteSiHRAu70LzPTlGVHe814X6tosI_Y6V9wDWLUHlADF9K8DEnh8OJ3L8mgP4gHhVTrCdKiYd3mgojkbybNXFXWKcbNz5KTrPofTnxQqHqUiJNw4aT0-GWoKm1YPGyfE2UqYDtVWEN1g">
+-<p class="consent-card__footer">Signed in as <bdi>seedownermwmu8wct</bdi>. <a data-discover="true" href="/app/profile?tab=connected-apps#connected-apps">See connected apps</a>
++<p class="consent-card__footer quietnote quietnote--ui quietnote--wrap">Signed in as <bdi>seedownermwmu8wct</bdi>. <a data-discover="true" href="/app/profile?tab=connected-apps#connected-apps">See connected apps</a>
+## entity-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## entity-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## entity-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## explore-failed
+-<p class="visually-hidden" data-testid="explore-count" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="explore-count" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## explore-loading
+-<p class="visually-hidden" data-testid="explore-count" role="status">Finding worlds…</p>
++<p aria-live="polite" class="visually-hidden" data-testid="explore-count" role="status">Finding worlds…</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## family-tree-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## family-tree-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## game-entities-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<div class="empty" data-testid="game-entities-missing">
+-<p class="empty__line">This game is not in this universe.</p>
+-<p class="empty__hint">Go back to Game Entities and pick one of its games.</p>
+-<div class="empty__actions">
+-<a data-discover="true" data-testid="game-entities-back" href="/app/universes/<guid>/game-entities">Game Entities</a>
+-</div>
++<div class="notice notice--error" data-testid="game-project-failed" role="alert">
++<p>This project could not be read.</p>
++<button class="button button--secondary" type="button">Try again</button>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## game-entities-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="projects__lede">Reading your projects.</p>
++<p class="notice" role="status">Reading your projects.</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## game-entities-notfound
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## game-entity-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<div class="empty" data-testid="game-entities-missing">
+-<p class="empty__line">This game is not in this universe.</p>
+-<p class="empty__hint">Go back to Game Entities and pick one of its games.</p>
+-<div class="empty__actions">
+-<a data-discover="true" href="/app/universes/<guid>/game-entities">Game Entities</a>
+-</div>
++<div class="notice notice--error" data-testid="game-project-failed" role="alert">
++<p>This project could not be read.</p>
++<button class="button button--secondary" type="button">Try again</button>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## game-entity-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="projects__lede">Reading your projects.</p>
++<p class="notice" role="status">Reading your projects.</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## game-entity-notfound
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-board-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-board-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-board-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-boards-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-boards-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## idea-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ideas-deleted-notice
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="ideacapture__status" data-testid="idea-capture-status" role="status">
++<p class="ideacapture__status quietnote" data-testid="idea-capture-status" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ideas-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="ideacapture__status" data-testid="idea-capture-status" role="status">
++<p class="ideacapture__status quietnote" data-testid="idea-capture-status" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## ideas-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="ideacapture__status" data-testid="idea-capture-status" role="status">
++<p class="ideacapture__status quietnote" data-testid="idea-capture-status" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## lore-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## lore-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="visually-hidden" role="status">Reading the archive…</p>
++<p aria-live="polite" class="visually-hidden" role="status">Reading the archive…</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## map-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## map-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## map-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## maps-deleted
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="mapcard__meta" data-testid="map-pin-count">No pins yet · 900 × 600</p>
++<p class="mapcard__meta quietnote" data-testid="map-pin-count">No pins yet · 900 × 600</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## maps-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## maps-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## mass-create-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="visually-hidden" data-testid="mass-announcement" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="mass-announcement" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## mass-create-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="visually-hidden" data-testid="mass-announcement" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="mass-announcement" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## project-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<div class="empty" data-testid="project-failed">
+-<p class="empty__line">This project could not be read.</p>
++<div class="notice notice--error" data-testid="project-failed" role="alert">
++<p>This project could not be read.</p>
++<button class="button button--secondary" type="button">Try again</button>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## project-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="projects__lede">Reading this project.</p>
++<p class="notice" role="status">Reading this project.</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## project-notfound
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## projects-directory-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="form__message" data-testid="projects-failed" role="alert">Your projects could not be counted.</p>
++<div class="notice notice--error" data-testid="projects-failed" role="alert">
++<p>Your projects could not be counted.</p>
++<button class="button button--secondary" type="button">Try again</button>
++</div>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## projects-directory-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## projects-failed
+-<div class="empty" data-testid="projects-failed">
+-<p class="empty__line">Your projects could not be read.</p>
++<div class="notice notice--error" data-testid="projects-failed" role="alert">
++<p>Your projects could not be read.</p>
++<button class="button button--secondary" type="button">Try again</button>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## projects-loading
+-<p class="projects__lede">Reading your projects.</p>
++<p class="notice" role="status">Reading your projects.</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## stories-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="visually-hidden" data-testid="stories-announcement" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="stories-announcement" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## stories-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="visually-hidden" data-testid="stories-announcement" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="stories-announcement" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## story-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<div class="empty" data-testid="project-failed">
+-<p class="empty__line">This project could not be read.</p>
++<div class="notice notice--error" data-testid="project-failed" role="alert">
++<p>This project could not be read.</p>
++<button class="button button--secondary" type="button">Try again</button>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## story-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="projects__lede">Reading this project.</p>
++<p class="notice" role="status">Reading this project.</p>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## story-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## system-editor-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## system-editor-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## system-editor-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<div class="notice notice--error" data-testid="system-editor-unavailable" role="alert">
+-<p>This System no longer exists.</p>
++<div class="empty" data-testid="system-editor-unavailable">
++<p class="empty__line">This System no longer exists.</p>
++<div class="empty__actions">
++</div>
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## timeline-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## timeline-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## universe-publish-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## universe-publish-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## universe-types-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## universe-types-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## universes-failed
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## universes-loading
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## world-logic-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## world-rule-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## world-rule-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## world-rule-missing
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## world-rules-failed
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>
+## world-rules-loading
+-<p class="visually-hidden" data-testid="universe-search-announcer" role="status">
++<p aria-live="polite" class="visually-hidden" data-testid="universe-search-announcer" role="status">
+-<p class="sitefooter__heading" id="sitefooter-product">Product</p>
++<p class="quietnote sitefooter__heading" id="sitefooter-product">Product</p>

@@ -267,7 +267,7 @@ test.describe('family discovery', () => {
     await expect(cards(page)).toHaveCount(12)
     await expect(page.getByTestId('family-count')).toHaveText('13 families')
 
-    await page.getByTestId('family-next-page').click()
+    await page.getByTestId('family-pager-next').click()
     await expect(page).toHaveURL(/[?&]page=2/)
     await expect(cards(page)).toHaveText(['Pair 13 A, Pair 13 B2 members'])
     await expect(page.getByRole('heading', { name: 'Families in this universe' })).toBeFocused()

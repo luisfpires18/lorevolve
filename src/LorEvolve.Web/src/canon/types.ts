@@ -67,13 +67,6 @@ export const CONFLICT_STATUS_LABELS: Record<CanonConflictStatusValue, string> = 
   },
 }
 
-/** Actionable first. Resolved is evaluation's own state and reads last. */
-export const CONFLICT_STATUS_ORDER: CanonConflictStatusValue[] = [
-  CanonConflictStatus.Pending,
-  CanonConflictStatus.Dismissed,
-  CanonConflictStatus.Resolved,
-]
-
 /** Mirrors the backend enum. The kind of record a finding points at. */
 export const CanonSubjectKind = {
   Entity: 0,

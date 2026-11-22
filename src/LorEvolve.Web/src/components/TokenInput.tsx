@@ -1,7 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
-import { X } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { Field } from './Field'
+import { Token } from './Token'
 
 interface TokenInputProps {
   label: string
@@ -43,17 +43,13 @@ export function TokenInput({ label, name, placeholder, values, onChange }: Token
       {(control) => (
         <div className="tokens" data-testid={`${name}-tokens`}>
           {values.map((value) => (
-            <span className="token" key={value}>
+            <Token
+              key={value}
+              removeLabel={t('data.tokens.remove', { value })}
+              onRemove={() => onChange(values.filter((candidate) => candidate !== value))}
+            >
               {value}
-              <button
-                type="button"
-                className="token__remove"
-                aria-label={t('data.tokens.remove', { value })}
-                onClick={() => onChange(values.filter((candidate) => candidate !== value))}
-              >
-                <X aria-hidden="true" focusable="false" size={14} strokeWidth={1.75} />
-              </button>
-            </span>
+            </Token>
           ))}
           <input
             {...control}

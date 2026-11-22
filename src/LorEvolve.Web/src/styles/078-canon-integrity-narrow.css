@@ -1,0 +1,30 @@
+/* ---------- Canon integrity on a narrow screen ---------- */
+
+@media (max-width: 40rem) {
+  .finding {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.4rem;
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--rule);
+  }
+
+  .finding[data-severity='2'] {
+    border-left-color: var(--danger);
+  }
+
+  .finding__margin {
+    text-align: left;
+    padding-right: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  .finding__mark {
+    display: none;
+  }
+
+  .finding__rule {
+    margin-top: 0;
+  }
+}

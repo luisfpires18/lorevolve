@@ -1,36 +1,29 @@
-import { useCallback, useEffect, useState } from 'react'
-import { LoreArticle } from './ArticleView'
+import { useMemo } from 'react'
+import { EMPTY_FACT } from '../lore/facts'
 import { CanonBlockNotice } from './CanonBlockNotice'
 import { EmptyState } from './EmptyState'
-import { NameList } from './NameList'
 import { VersionActor } from './VersionActor'
-import { blockingFindingsOf } from '../canon/blocked'
-import type { CanonBlockingFinding } from '../canon/types'
-import { findEra, formatChronologyYear, formatSignedYear, withEraLabel } from '../chronology/format'
-import { EraLabelPosition, type Chronology } from '../chronology/types'
-import { ApiError } from '../lib/api'
-import { isChangedElsewhere } from '../lib/editConflict'
-import { ENTRY_CHANGED } from '../lore/api'
-import { formatDate, formatDateTime } from '../lib/dates'
-import { isEmptyDocument } from '../lore/document'
+import type { Chronology } from '../chronology/types'
 import {
   describeChanges,
   getRevision,
   imagesNotRestored,
-  isNotRestorable,
   listRevisions,
   mentionsImage,
   restoreRevision,
   RevisionKind,
-  type EntityRevisionDetail,
-  type EntityRevisionSummary,
-  type RevisionFieldValue,
 } from '../lore/revisions'
-import { CANON_LABELS, FieldKind } from '../lore/types'
-import { confirmAction } from '../lib/confirm'
-import { t, useI18n } from '../i18n'
+import { ENTRY_CHANGED } from '../lore/api'
+import { CANON_LABELS } from '../lore/types'
+import { useI18n } from '../i18n'
+import { useRevisionHistory } from '../lore/useRevisionHistory'
+import { Snapshot } from './lore/RevisionSnapshot'
+import { LoadError } from './LoadError'
+import { QuietNote } from './QuietNote'
+import { PanelHead } from './PanelHead'
+import { RevisionHistory } from './RevisionHistory'
 
-interface EntityHistoryProps {
+export interface EntityHistoryProps {
   universeId: string
   entityId: string
 
@@ -70,311 +63,104 @@ export function EntityHistory({
   onRestored,
 }: EntityHistoryProps) {
   const { t } = useI18n()
-  const [revisions, setRevisions] = useState<EntityRevisionSummary[]>([])
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [expanded, setExpanded] = useState<{ id: string; key: number } | null>(null)
-  const [opened, setOpened] = useState<EntityRevisionDetail | null>(null)
-  const [busyId, setBusyId] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
-  const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
-  const [reads, setReads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listRevisions(universeId, entityId, controller.signal)
-      .then((loaded) => {
-        setRevisions(loaded)
-        setStatus('ready')
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setStatus('error')
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, entityId, reloadKey, reads])
-
-  // A version stays open only for the history it was opened against. When a write moves
-  // the list underneath it, the expansion is stale rather than closed by an effect, so
-  // nothing is left showing a snapshot the list no longer explains.
-  const openId = expanded?.key === reloadKey ? expanded.id : null
-
-  const open = useCallback(
-    async (revisionId: string) => {
-      if (openId === revisionId) {
-        setExpanded(null)
-        setOpened(null)
-        return
-      }
-
-      setExpanded({ id: revisionId, key: reloadKey })
-      setOpened(null)
-      setMessage(null)
-
-      try {
-        setOpened(await getRevision(universeId, entityId, revisionId))
-      } catch {
-        setExpanded(null)
-        setMessage(t('entity.history.openFailed'))
-      }
-    },
-    [openId, reloadKey, universeId, entityId, t],
+  const store = useMemo(
+    () => ({
+      list: (signal: AbortSignal) => listRevisions(universeId, entityId, signal),
+      get: (revisionId: string) => getRevision(universeId, entityId, revisionId),
+      restore: (revisionId: string, version: number) =>
+        restoreRevision(universeId, entityId, revisionId, version),
+      changedCode: ENTRY_CHANGED,
+    }),
+    [universeId, entityId],
   )
-
-  // Said once, where a version is about to be put back and where the list is read - not on
-  // every row, and not at all for an entry that has never had a picture.
-  const carriesImages = mentionsImage(revisions)
-
-  async function restore(revision: EntityRevisionSummary) {
-    if (
-      !(await confirmAction({
+  const history = useRevisionHistory({
+    store,
+    reloadKey,
+    currentVersion,
+    onRestored,
+    onStale: onRestored,
+    gated: true,
+    words: {
+      openFailed: t('entity.history.openFailed'),
+      // Said once, where a version is about to be put back and where the list is read - not on every row, and not at
+      // all for an entry that has never had a picture.
+      confirm: (revision, all) => ({
         title: t('entity.history.restoreConfirm.title', { number: revision.number }),
         message: t('entity.history.restoreConfirm.message'),
-        details: carriesImages ? [imagesNotRestored()] : undefined,
+        details: mentionsImage(all) ? [imagesNotRestored()] : undefined,
         confirmLabel: t('entity.history.restoreConfirm.confirm'),
-      }))
-    ) {
-      return
-    }
-
-    setMessage(null)
-    setBlocked(null)
-    setBusyId(revision.id)
-
-    try {
-      await restoreRevision(universeId, entityId, revision.id, currentVersion)
-      onRestored()
-    } catch (error: unknown) {
-      const blocking = blockingFindingsOf(error)
-      if (blocking) {
-        setBlocked(blocking)
-      } else if (isChangedElsewhere(error, ENTRY_CHANGED)) {
-        setMessage(t('entity.history.changedElsewhere'))
-        onRestored()
-      } else if (isNotRestorable(error) || error instanceof ApiError) {
-        setMessage((error as ApiError).message)
-      } else {
-        setMessage(t('entity.history.restoreFailed'))
-      }
-    } finally {
-      setBusyId(null)
-    }
-  }
+      }),
+      changedElsewhere: t('entity.history.changedElsewhere'),
+      failed: t('entity.history.restoreFailed'),
+    },
+  })
+  const carriesImages = mentionsImage(history.revisions)
 
   return (
     <section className="history" aria-labelledby="history-heading">
-      <div className="history__head">
-        <h2 className="history__title" id="history-heading">
-          {t('entity.history.title')}
-        </h2>
-      </div>
+      <PanelHead
+        look="display"
+        className="history__head"
+        titleId="history-heading"
+        title={t('entity.history.title')}
+      />
 
-      <p className="history__quiet" data-testid="history-article-note">
+      <QuietNote className="history__quiet" size="ui" testId="history-article-note">
         {t('entity.history.articleNote')}
-      </p>
+      </QuietNote>
 
       {carriesImages ? (
-        <p className="history__quiet" data-testid="history-image-note">
+        <QuietNote className="history__quiet" size="ui" testId="history-image-note">
           {imagesNotRestored()}
-        </p>
+        </QuietNote>
       ) : null}
 
-      {blocked ? (
-        <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
+      {history.blocked ? (
+        <CanonBlockNotice universeId={universeId} findings={history.blocked} linkSubjects />
       ) : null}
 
-      {message ? (
-        <p className="form__message" role="alert" data-testid="history-error">
-          {message}
-        </p>
-      ) : null}
-
-      {status === 'loading' ? null : status === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{t('entity.history.readFailed')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => {
-              setStatus('loading')
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('entity.history.retry')}
-          </button>
-        </div>
-      ) : revisions.length === 0 ? (
-        <EmptyState testId="history-empty" title={t('entity.history.empty')} />
-      ) : (
-        <ol className="history__list" data-testid="history-list">
-          {revisions.map((revision, index) => (
-            <li className="version" key={revision.id} data-version={revision.number}>
-              <p className="version__when">
-                <time dateTime={revision.createdAt}>{formatDateTime(revision.createdAt)}</time>
-              </p>
-
-              <div className="version__body">
-                <p className="version__what" data-testid="version-what">
-                  {describeChanges(revision)}
-                  {index === 0 ? (
-                    <span className="version__now">{t('entity.history.nowShowing')}</span>
-                  ) : null}
-                </p>
-                <p className="version__meta">
-                  <span>{t('entity.history.version', { number: revision.number })}</span>
-                  <span>
-                    <bdi>{revision.name}</bdi>
-                  </span>
-                  <span>{CANON_LABELS[revision.canonStatus]}</span>
-                  <VersionActor name={revision.actorName} />
-                  {revision.kind === RevisionKind.Restored ? (
-                    <span>
-                      {t('entity.history.restoredVersion', {
-                        number:
-                          revisions.find(
-                            (candidate) => candidate.id === revision.restoredFromRevisionId,
-                          )?.number ?? '—',
-                      })}
-                    </span>
-                  ) : null}
-                </p>
-              </div>
-
-              <div className="version__tools">
-                <button
-                  className="button button--text button--sm"
-                  type="button"
-                  aria-expanded={openId === revision.id}
-                  onClick={() => void open(revision.id)}
-                  data-testid="version-view"
-                >
-                  {openId === revision.id ? t('entity.history.hide') : t('entity.history.view')}
-                </button>
-                {index > 0 ? (
-                  <button
-                    className="button button--text button--sm"
-                    type="button"
-                    disabled={busyId !== null}
-                    onClick={() => void restore(revision)}
-                    data-testid="version-restore"
-                  >
-                    {busyId === revision.id
-                      ? t('entity.history.restoring')
-                      : t('entity.history.restore')}
-                  </button>
-                ) : null}
-              </div>
-
-              {openId === revision.id ? (
-                <div className="version__snapshot" data-testid="version-snapshot">
-                  {opened === null || opened.id !== openId ? (
-                    <p className="history__quiet" role="status">
-                      {t('entity.history.opening')}
-                    </p>
-                  ) : (
-                    <Snapshot revision={opened} chronology={chronology} />
-                  )}
-                </div>
-              ) : null}
-            </li>
-          ))}
-        </ol>
-      )}
+      <RevisionHistory
+        history={history}
+        words={{
+          nowShowing: t('entity.history.nowShowing'),
+          restore: t('entity.history.restore'),
+          restoring: t('entity.history.restoring'),
+          snapshotOpening: t('entity.history.opening'),
+        }}
+        messageTestId="history-error"
+        reading={null}
+        failed={
+          <LoadError
+            message={t('entity.history.readFailed')}
+            onRetry={history.retry}
+            retryLabel={t('entity.history.retry')}
+          />
+        }
+        empty={<EmptyState testId="history-empty" title={t('entity.history.empty')} />}
+        describe={describeChanges}
+        meta={(revision) => (
+          <>
+            <span>{t('entity.history.version', { number: revision.number })}</span>
+            <span>
+              <bdi>{revision.name}</bdi>
+            </span>
+            <span>{CANON_LABELS[revision.canonStatus]}</span>
+            <VersionActor name={revision.actorName} />
+            {revision.kind === RevisionKind.Restored ? (
+              <span>
+                {t('entity.history.restoredVersion', {
+                  number:
+                    history.revisions.find(
+                      (candidate) => candidate.id === revision.restoredFromRevisionId,
+                    )?.number ?? EMPTY_FACT,
+                })}
+              </span>
+            ) : null}
+          </>
+        )}
+        renderDetail={(opened) => <Snapshot revision={opened} chronology={chronology} />}
+        restoreDisabled={history.busyId !== null}
+      />
     </section>
   )
-}
-
-/** One version read whole, in the same shapes the dossier uses for the live entry. */
-function Snapshot({
-  revision,
-  chronology,
-}: {
-  revision: EntityRevisionDetail
-  chronology: Chronology
-}) {
-  const { t, tx } = useI18n()
-  return (
-    <>
-      <h3 className="snapshot__name">
-        <bdi>{revision.name}</bdi>
-      </h3>
-      <p className="snapshot__kind">
-        <bdi>{revision.entityTypeName}</bdi> &middot; {CANON_LABELS[revision.canonStatus]}
-      </p>
-
-      {revision.aliases.length > 0 ? (
-        <p className="entry__aliases">
-          {tx('entity.history.alsoKnownAs', { names: <NameList names={revision.aliases} /> })}
-        </p>
-      ) : null}
-
-      {revision.summary ? <p className="entry__summary prose">{revision.summary}</p> : null}
-
-      {/* Only a version recorded before the article kept its own history holds a copy of it, and a restore never
-          applies that copy - so it is shown as what it is, and a version without one says nothing about the article. */}
-      {!isEmptyDocument(revision.content) ? (
-        <div className="snapshot__article" data-testid="version-article">
-          <p className="snapshot__articlenote">{t('entity.history.articleThen')}</p>
-          <LoreArticle content={revision.content} />
-        </div>
-      ) : null}
-
-      {revision.fields.length > 0 ? (
-        <dl className="facts">
-          {revision.fields.map((value) => (
-            <div className="facts__row" key={value.fieldDefinitionId}>
-              <dt className="facts__key">{value.name}</dt>
-              <dd className="facts__value prose">{renderRevisionFact(value, chronology)}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-
-      {revision.tags.length > 0 ? (
-        <p className="dossier__tags">
-          {revision.tags.map((tag) => (
-            <span className="chip" key={tag}>
-              {tag}
-            </span>
-          ))}
-        </p>
-      ) : null}
-    </>
-  )
-}
-
-/**
- * A stored value as it read then. Names come from the snapshot rather than a live lookup,
- * so a version still reads correctly once the field or the entry it pointed at is gone.
- */
-function renderRevisionFact(value: RevisionFieldValue, chronology: Chronology) {
-  switch (value.kind) {
-    case FieldKind.ShortText:
-    case FieldKind.LongText:
-      return value.text ?? '—'
-    case FieldKind.Number:
-      if (value.number === null) return '—'
-      if (value.eraId === null) return value.number
-      // An era that still exists is written the way it is written now. One since removed is
-      // written with the label the version remembered, which is all that is left of it.
-      if (findEra(chronology, value.eraId)) {
-        return formatChronologyYear(chronology, value.number, value.eraId)
-      }
-      return value.eraLabel
-        ? withEraLabel(formatSignedYear(value.number), value.eraLabel, EraLabelPosition.BeforeYear)
-        : value.number
-    case FieldKind.Boolean:
-      return value.boolean ? t('entity.fact.yes') : t('entity.fact.no')
-    case FieldKind.Date:
-      return value.date ? formatDate(value.date) : '—'
-    case FieldKind.Select:
-    case FieldKind.MultiSelect:
-      return value.optionValues.length > 0 ? value.optionValues.join(', ') : '—'
-    case FieldKind.EntityReference:
-      return value.referencedEntityName ?? '—'
-    default:
-      return '—'
-  }
 }

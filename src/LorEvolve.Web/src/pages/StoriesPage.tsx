@@ -1,31 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { ArrowDown, ArrowUp, Plus, Image as ImageIcon } from 'lucide-react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useI18n } from '../i18n'
-import { ActionIcon } from '../components/ActionIcon'
-import { ActionMenu } from '../components/ActionMenu'
 import { CoverDrawer } from '../components/CoverDrawer'
-import { ShelfCard, shelfStep } from '../components/ShelfCard'
 import { pictureUrl, projectCoverStore, storyCoverStore } from '../covers/api'
 import { ApiError } from '../lib/api'
 import { StoryForm } from '../components/StoryForm'
 import { listAllProjects } from '../projects/api'
 import { lifecycleLabel, projectRowPath, storyProjectPath } from '../projects/sections'
+import { focusCardMenu, withCover } from '../projects/shelfActions'
+import { shelfCoverChange } from '../projects/shelfCover'
+import { shelfNotices } from '../projects/shelfNotices'
 import { ProjectKind, type ProjectDetail } from '../projects/types'
 import { WRITING_PROJECTS, sectionLabel } from '../universes/sections'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { listStories, reorderStories } from '../stories/api'
 import { sceneCountLabel } from '../stories/format'
 import { STORY_STATUS_LABELS, type StorySummary } from '../stories/types'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-type LoadState =
-  | { kind: 'loading' }
-  | { kind: 'ready'; stories: StorySummary[]; others: ProjectDetail[] }
-  | { kind: 'error' }
+import { CardGrid } from '../components/CardGrid'
+import { ShelfCard, shelfStep } from '../components/ShelfCard'
+import { NewButton } from '../components/NewButton'
+import { ReadGate } from '../components/ReadGate'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /**
  * The stories told in this universe. A story is narrative an author writes with the lore - it draws
@@ -44,9 +42,22 @@ export default function StoriesPage() {
   const { universe } = useOutletContext<WorkspaceContext>()
   const navigate = useNavigate()
   const heading = sectionLabel(WRITING_PROJECTS)
-  useDocumentTitle(heading)
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
+  const read = useCallback(
+    (signal: AbortSignal) => {
+      // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.
+      const others = listAllProjects({ universeId: universe.id }, signal)
+        .then((projects) =>
+          projects.filter((project) => project.kind === ProjectKind.Writing && !project.storyId),
+        )
+        .catch((): ProjectDetail[] => [])
+      return Promise.all([listStories(universe.id, signal), others]).then(([stories, rest]) => ({
+        stories,
+        others: rest,
+      }))
+    },
+    [universe.id],
+  )
+  const { load: state, setLoad: setState, retry } = useAsyncRead(read)
   const [isCreating, setIsCreating] = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [moveError, setMoveError] = useState<string | null>(null)
@@ -56,7 +67,7 @@ export default function StoriesPage() {
   /** Moves one story one place, on screen first; the API's answer is the order kept, and a refusal puts it back. */
   async function move(story: StorySummary, by: -1 | 1) {
     if (state.kind !== 'ready' || isMoving.current) return
-    const before = state.stories
+    const before = state.value.stories
     const from = before.findIndex((candidate) => candidate.id === story.id)
     const to = from + by
     if (from < 0 || to < 0 || to >= before.length) return
@@ -65,50 +76,24 @@ export default function StoriesPage() {
     after.splice(to, 0, ...after.splice(from, 1))
     isMoving.current = true
     setMoveError(null)
-    setState({ kind: 'ready', stories: after, others: state.others })
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLElement>(`[data-story-id="${story.id}"] [data-testid="story-actions"]`)
-        ?.focus(),
-    )
+    setState({ kind: 'ready', value: { stories: after, others: state.value.others } })
+    focusCardMenu('data-story-id', story.id, 'story')
     try {
       const saved = await reorderStories(
         universe.id,
         after.map((candidate) => candidate.id),
       )
-      setState({ kind: 'ready', stories: saved, others: state.others })
+      setState({ kind: 'ready', value: { stories: saved, others: state.value.others } })
       setAnnouncement(
         t('stories.browse.moved', { title: story.title, n: to + 1, total: after.length }),
       )
     } catch (error: unknown) {
-      setState({ kind: 'ready', stories: before, others: state.others })
+      setState({ kind: 'ready', value: { stories: before, others: state.value.others } })
       setMoveError(error instanceof ApiError ? error.message : t('stories.browse.moveFailed'))
     } finally {
       isMoving.current = false
     }
   }
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    // The Writing projects that are not stories are additive: a refused read leaves the stories as they are.
-    const others = listAllProjects({ universeId: universe.id }, controller.signal)
-      .then((projects) =>
-        projects.filter((project) => project.kind === ProjectKind.Writing && !project.storyId),
-      )
-      .catch((): ProjectDetail[] => [])
-
-    Promise.all([listStories(universe.id, controller.signal), others])
-      .then(([stories, rest]) => setState({ kind: 'ready', stories, others: rest }))
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setState({ kind: 'error' })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, reads])
 
   return (
     <article className="stories">
@@ -117,54 +102,36 @@ export default function StoriesPage() {
         lede={t('stories.browse.lede')}
         actions={
           access.editContent ? (
-            <button
-              className="button"
-              type="button"
-              onClick={() => setIsCreating(true)}
-              data-testid="new-story"
-            >
-              <ActionIcon icon={Plus} />
+            <NewButton onClick={() => setIsCreating(true)} data-testid="new-story">
               {t('stories.browse.newStory')}
-            </button>
+            </NewButton>
           ) : undefined
         }
       />
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('stories.browse.reading')}
-        </p>
-      ) : null}
+      {/* The shelves sit below the notices, so the gate draws only the loading and failed lines here. */}
+      <ReadGate
+        load={state}
+        loading={{ text: t('stories.browse.reading') }}
+        error={{
+          message: t('stories.browse.loadError'),
+          onRetry: retry,
+          retryLabel: t('stories.browse.retry'),
+          testId: 'stories-load-error',
+        }}
+      >
+        {() => null}
+      </ReadGate>
 
-      {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="stories-load-error">
-          <p>{t('stories.browse.loadError')}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('stories.browse.retry')}
-          </button>
-        </div>
-      ) : null}
+      {shelfNotices(
+        { announcement, moveError },
+        { announcement: 'stories-announcement', moveError: 'stories-move-error' },
+      )}
 
-      <p className="visually-hidden" role="status" data-testid="stories-announcement">
-        {announcement}
-      </p>
-      {moveError ? (
-        <p className="form__message" role="alert" data-testid="stories-move-error">
-          {moveError}
-        </p>
-      ) : null}
-
-      {state.kind === 'ready' && state.stories.length > 0 ? (
+      {state.kind === 'ready' && state.value.stories.length > 0 ? (
         // Each story as a book on its shelf (owner, 2026-11-17); the Gaming page draws its games the same way.
-        <ul className="shelf" data-testid="story-list">
-          {state.stories.map((story, index) => (
+        <CardGrid min={15} gap={5} testId="story-list">
+          {state.value.stories.map((story, index, stories) => (
             <ShelfCard
               key={story.id}
               frame="book"
@@ -181,59 +148,26 @@ export default function StoriesPage() {
                   ? pictureUrl(storyCoverStore(universe.id, story.id), story.cover, 'card')
                   : null
               }
-              onAddPicture={access.editContent ? () => setCovering(story) : undefined}
               attrs={{
                 'data-testid': 'story-row',
                 'data-title': story.title,
                 'data-story-id': story.id,
               }}
-              menu={
-                access.editContent ? (
-                  <ActionMenu
-                    label={t('stories.browse.moreActions', { title: story.title })}
-                    triggerTestId="story-actions"
-                  >
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      onClick={() => setCovering(story)}
-                      data-testid="story-cover"
-                    >
-                      <ActionIcon icon={ImageIcon} />
-                      {t(
-                        story.cover
-                          ? 'projects.common.changePicture'
-                          : 'projects.common.addPicture',
-                      )}
-                    </button>
-                    {index > 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(story, -1)}
-                        data-testid="story-move-up"
-                      >
-                        <ActionIcon icon={ArrowUp} />
-                        {t('stories.browse.moveUp')}
-                      </button>
-                    ) : null}
-                    {index < state.stories.length - 1 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(story, 1)}
-                        data-testid="story-move-down"
-                      >
-                        <ActionIcon icon={ArrowDown} />
-                        {t('stories.browse.moveDown')}
-                      </button>
-                    ) : null}
-                  </ActionMenu>
-                ) : null
+              testPrefix="story"
+              menuLabel={
+                access.editContent
+                  ? t('stories.browse.moreActions', { title: story.title })
+                  : undefined
               }
+              onCover={access.editContent ? () => setCovering(story) : undefined}
+              move={{
+                first: index === 0,
+                last: index === stories.length - 1,
+                onMove: (step) => void move(story, step),
+              }}
             />
           ))}
-        </ul>
+        </CardGrid>
       ) : null}
 
       {covering ? (
@@ -242,26 +176,26 @@ export default function StoriesPage() {
           name={covering.title}
           cover={covering.cover ?? null}
           store={storyCoverStore(universe.id, covering.id)}
-          onChanged={(cover) => {
-            setCovering({ ...covering, cover })
+          onChanged={shelfCoverChange(covering, setCovering, (id, cover) =>
             setState((current) =>
               current.kind === 'ready'
                 ? {
-                    ...current,
-                    stories: current.stories.map((one) =>
-                      one.id === covering.id ? { ...one, cover } : one,
-                    ),
+                    kind: 'ready',
+                    value: {
+                      ...current.value,
+                      stories: withCover(current.value.stories, id, cover),
+                    },
                   }
                 : current,
-            )
-          }}
+            ),
+          )}
           onClose={() => setCovering(null)}
         />
       ) : null}
 
-      {state.kind === 'ready' && state.others.length > 0 ? (
-        <ul className="shelf" data-testid="writing-project-list">
-          {state.others.map((project) => (
+      {state.kind === 'ready' && state.value.others.length > 0 ? (
+        <CardGrid min={15} gap={5} testId="writing-project-list">
+          {state.value.others.map((project) => (
             <ShelfCard
               key={project.id}
               frame="book"
@@ -278,25 +212,21 @@ export default function StoriesPage() {
               attrs={{ 'data-testid': 'writing-project-row' }}
             />
           ))}
-        </ul>
+        </CardGrid>
       ) : null}
 
-      {state.kind === 'ready' && state.stories.length === 0 && state.others.length === 0 ? (
+      {state.kind === 'ready' &&
+      state.value.stories.length === 0 &&
+      state.value.others.length === 0 ? (
         <EmptyState
           testId="stories-empty"
           title={t('stories.browse.empty.title')}
           hint={t('stories.browse.empty.hint')}
           action={
             access.editContent ? (
-              <button
-                className="button"
-                type="button"
-                onClick={() => setIsCreating(true)}
-                data-testid="empty-new-story"
-              >
-                <ActionIcon icon={Plus} />
+              <NewButton onClick={() => setIsCreating(true)} data-testid="empty-new-story">
                 {t('stories.browse.empty.newStory')}
-              </button>
+              </NewButton>
             ) : undefined
           }
         />

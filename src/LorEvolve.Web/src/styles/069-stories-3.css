@@ -1,0 +1,16 @@
+.scenechron {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* Where the manuscript folds into one column, it sits directly under the story's bar, which already draws the rule
+   above it. */
+@media (max-width: 1100px) {
+  .story .manuscript {
+    margin-top: 0;
+  }
+}
+
+/* ---------- A story's views, and its plot ---------- */

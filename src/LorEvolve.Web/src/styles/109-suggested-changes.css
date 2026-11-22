@@ -1,0 +1,41 @@
+/* ---------- Suggested changes (045) ----------
+
+   Comments and suggestions share the review drawer as two tabs; each tab's panel lays its parts out as the drawer's body
+   does. A suggestion is a card like a thread: who and when, a caution once the content was saved since, its changed
+   fields "Before" above "Suggested", then how it was decided. */
+
+.reviewdrawer .tabs {
+  /* A scrolling row in the body's column would otherwise shrink to nothing once the threads overflow it. */
+  flex: none;
+  margin: 0;
+}
+
+.reviewdrawer .tabs__panel:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.suggestion .reviewcomment__meta,
+.suggestion .reviewthread__resolved,
+.suggestion .reviewthread__tools,
+.suggestion__note {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .entry__lenses .reviewtrigger__label,
+  .entry__tools .entry__toollabel,
+  .entry__tools .reviewtrigger__label,
+  .entry__tools .loretrigger__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}

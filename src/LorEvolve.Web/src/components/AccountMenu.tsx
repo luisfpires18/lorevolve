@@ -1,11 +1,10 @@
 import { useId, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { BookOpen, LogOut, ShieldCheck, Telescope, UserRound } from 'lucide-react'
 import { useAuth } from '../auth/useAuth'
 import { confirmLeaving } from '../lib/leaveGuard'
 import { useProfileImage } from '../profile/useProfileImage'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { Avatar } from './Avatar'
 import { ThemeSwitch } from './ThemeSwitch'
 import { LanguageSwitch } from './LanguageSwitch'
@@ -106,27 +105,23 @@ export function AccountMenu({
           <p className="accountmenu__grouplabel" id={goToId}>
             {t('account.menu.goTo')}
           </p>
-          <Link className="actionmenu__item" to="/app" data-testid="account-menu-workspace">
-            <ActionIcon icon={BookOpen} />
+          <ActionMenuItem icon={BookOpen} to="/app" testId="account-menu-workspace">
             {t('account.menu.workspace')}
-          </Link>
-          <Link className="actionmenu__item" to="/" data-testid="account-menu-explore">
-            <ActionIcon icon={Telescope} />
+          </ActionMenuItem>
+          <ActionMenuItem icon={Telescope} to="/" testId="account-menu-explore">
             {t('account.menu.explore')}
-          </Link>
+          </ActionMenuItem>
           {/* Only for an Admin (#40). Hiding it is courtesy; the server refuses the Admin API to anyone else. */}
           {user.isAdmin ? (
-            <Link className="actionmenu__item" to="/admin" data-testid="account-menu-admin">
-              <ActionIcon icon={ShieldCheck} />
+            <ActionMenuItem icon={ShieldCheck} to="/admin" testId="account-menu-admin">
               {t('account.menu.admin')}
-            </Link>
+            </ActionMenuItem>
           ) : null}
         </div>
 
-        <Link className="actionmenu__item" to="/app/profile" data-testid="account-menu-profile">
-          <ActionIcon icon={UserRound} />
+        <ActionMenuItem icon={UserRound} to="/app/profile" testId="account-menu-profile">
           {t('account.menu.profile')}
-        </Link>
+        </ActionMenuItem>
 
         {/* The one appearance choice, for the portal and the workspace alike (013). */}
         <div className="actionmenu__section">
@@ -135,17 +130,15 @@ export function AccountMenu({
         </div>
 
         {/* Stays open while it works, so "Signing out" is seen where the press was. */}
-        <button
-          className="actionmenu__item"
-          type="button"
+        <ActionMenuItem
+          icon={LogOut}
           disabled={busy}
           onClick={() => void signOut()}
-          data-keep-open
-          data-testid="account-menu-signout"
+          keepOpen
+          testId="account-menu-signout"
         >
-          <ActionIcon icon={LogOut} />
           {busy ? t('account.menu.signingOut') : t('account.menu.signOut')}
-        </button>
+        </ActionMenuItem>
 
         {/* Which LorEvolve is running, for anyone asked "what version are you on?". Read, never pressed. */}
         <p className="accountmenu__version" data-testid="account-menu-version">

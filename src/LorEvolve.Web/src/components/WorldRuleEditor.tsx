@@ -1,93 +1,20 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { SaveAction } from './SaveAction'
+import { useId } from 'react'
 import { Link } from 'react-router-dom'
-import { Trash2 } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
-import { Field } from './Field'
-import { WorldRuleCheckSection } from './WorldRuleCheckSection'
-import {
-  CHECK_ERROR_KEYS,
-  NO_CHECK,
-  checkDraftFrom,
-  checkInput,
-  sameCheck,
-  type CheckDraft,
-} from '../ruleValidation/checkDraft'
-import { ApiError } from '../lib/api'
-import { formatDateTime } from '../lib/dates'
 import { useLeaveGuard } from '../lib/leaveGuard'
-import type { WorldRuleCheck, WorldRuleValidation } from '../ruleValidation/types'
 import { WorldRuleValidationKind } from '../ruleValidation/types'
-import {
-  createWorldRule,
-  deleteWorldRule,
-  getWorldRule,
-  saveWorldRule,
-  WORLD_RULE_CHANGED,
-} from '../worldRules/api'
-import {
-  WORLD_RULE_DESCRIPTION_MAX_LENGTH,
-  WORLD_RULE_TITLE_MAX_LENGTH,
-  type WorldRuleDetail,
-} from '../worldRules/types'
+import { WORLD_RULE_DESCRIPTION_MAX_LENGTH, type WorldRuleDetail } from '../worldRules/types'
 import { EmptyState } from './EmptyState'
-import { confirmAction } from '../lib/confirm'
 import { t, useI18n } from '../i18n'
-import { numberFormat } from '../i18n/format'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready' } | { kind: 'missing' } | { kind: 'error'; message: string }
-
-/** What an author edits. */
-interface Fields {
-  title: string
-  description: string
-  check: CheckDraft
-}
-
-/** The rule as the API last confirmed it: what "unsaved" is measured against, what the next save names, and what its check finds. */
-interface Stored extends Fields {
-  updatedAt: string | null
-  validation: WorldRuleValidation | null
-  found: WorldRuleCheck | null
-}
-
-const EMPTY_STORED: Stored = {
-  title: '',
-  description: '',
-  check: NO_CHECK,
-  updatedAt: null,
-  validation: null,
-  found: null,
-}
-
-const count = (value: number) => numberFormat({}, 'en').format(value)
-
-function sameFields(a: Fields, b: Fields) {
-  return a.title === b.title && a.description === b.description && sameCheck(a.check, b.check)
-}
-
-function fieldsOf(stored: Stored): Fields {
-  return { title: stored.title, description: stored.description, check: stored.check }
-}
-
-function storedFrom(rule: WorldRuleDetail): Stored {
-  return {
-    title: rule.title,
-    description: rule.description,
-    check: checkDraftFrom(rule.validation),
-    updatedAt: rule.updatedAt,
-    validation: rule.validation,
-    found: rule.check,
-  }
-}
-
-/** The stored moment a stale save's refusal reports, when it carries one. */
-function storedMomentOf(problem: unknown) {
-  const updatedAt = (problem as { updatedAt?: unknown } | null)?.updatedAt
-  return typeof updatedAt === 'string' ? updatedAt : null
-}
+import { useWorldRuleState } from '../worldRules/useWorldRuleState'
+import { useWorldRuleReads } from '../worldRules/useWorldRuleReads'
+import { worldRuleActions } from '../worldRules/worldRuleActions'
+import { useSaveShortcut } from '../lib/useSaveShortcut'
+import { sameFields } from '../worldRules/ruleDraft'
+import { EditorHead } from './DocumentHead'
+import { EditorNotices } from './EditorNotices'
+import { WorldRuleForm } from './worldRules/WorldRuleForm'
+import { Announce } from './Announce'
+import { ReadGate } from './ReadGate'
 
 interface WorldRuleEditorProps {
   universeId: string
@@ -129,53 +56,22 @@ export function WorldRuleEditor({
   const titleId = useId()
   const descriptionId = useId()
   const statusId = useId()
-  const countId = useId()
 
   const isNew = ruleId === null
 
-  const [load, setLoad] = useState<LoadState>(isNew ? { kind: 'ready' } : { kind: 'loading' })
-  const [reads, setReads] = useState(0)
-  const [stored, setStored] = useState<Stored>(EMPTY_STORED)
-  const [draft, setDraft] = useState<Fields>(fieldsOf(EMPTY_STORED))
-  const [isSaving, setIsSaving] = useState(false)
-  const [saves, setSaves] = useState(0)
-  const [failure, setFailure] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [conflict, setConflict] = useState<{ updatedAt: string | null } | null>(null)
-  const [announcement, setAnnouncement] = useState(announceOnOpen ?? '')
-  const inFlight = useRef(false)
-  const titleInput = useRef<HTMLInputElement>(null)
-  const shortcut = useRef<() => void>(() => {})
-
-  useEffect(() => {
-    if (isNew) return
-    const controller = new AbortController()
-
-    getWorldRule(universeId, ruleId, controller.signal)
-      .then((rule) => {
-        const next = storedFrom(rule)
-        setStored(next)
-        setDraft(fieldsOf(next))
-        setLoad({ kind: 'ready' })
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setLoad(
-          error instanceof ApiError && error.status === 404
-            ? { kind: 'missing' }
-            : { kind: 'error', message: t('canon.editor.openFailed') },
-        )
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [isNew, universeId, ruleId, reads])
-
-  // A new rule starts in its title.
-  useEffect(() => {
-    if (isNew) titleInput.current?.focus()
-  }, [isNew])
+  const state = useWorldRuleState({ announceOnOpen })
+  const {
+    stored,
+    draft,
+    isSaving,
+    saves,
+    failure,
+    fieldErrors,
+    conflict,
+    announcement,
+    titleInput,
+  } = state
+  const { load, retry } = useWorldRuleReads({ ...state, universeId, ruleId })
 
   const isReady = load.kind === 'ready'
   const isDirty =
@@ -190,365 +86,100 @@ export function WorldRuleEditor({
   const name = draft.title.trim() || stored.title || t('canon.editor.thisRule')
   useLeaveGuard(isDirty ? t('canon.editor.unsaved', { name }) : null)
 
-  function edit(change: Partial<Omit<Fields, 'check'>>) {
-    setDraft((current) => ({ ...current, ...change }))
-    const changed = Object.keys(change)
-    if (changed.some((field) => fieldErrors[field])) {
-      setFieldErrors((current) => {
-        const next = { ...current }
-        for (const field of changed) delete next[field]
-        return next
-      })
-    }
-  }
-
-  function editCheck(change: Partial<CheckDraft>) {
-    setDraft((current) => ({ ...current, check: { ...current.check, ...change } }))
-    if (Object.values(CHECK_ERROR_KEYS).some((key) => fieldErrors[key])) {
-      setFieldErrors((current) => {
-        const next = { ...current }
-        for (const key of Object.values(CHECK_ERROR_KEYS)) delete next[key]
-        return next
-      })
-    }
-  }
-
-  async function save(expectedUpdatedAt: string | null) {
-    if (inFlight.current || !isDirty || isTooLong) return
-
-    if (draft.title.trim() === '') {
-      setFailure(null)
-      setFieldErrors({ title: t('canon.editor.titleRequired') })
-      titleInput.current?.focus()
-      return
-    }
-
-    const sent = draft
-    inFlight.current = true
-    setIsSaving(true)
-    setFailure(null)
-    setFieldErrors({})
-    setConflict(null)
-
-    const input = {
-      title: sent.title.trim(),
-      description: sent.description,
-      expectedUpdatedAt,
-      validation: checkInput(sent.check),
-    }
-
-    try {
-      if (isNew) {
-        onCreated(await createWorldRule(universeId, input))
-        return
-      }
-
-      const saved = await saveWorldRule(universeId, ruleId, input)
-      const next = storedFrom(saved)
-      setStored(next)
-      // What was sent is now saved - its title trimmed. Anything typed while the save was in flight is still unsaved, and
-      // stays.
-      setDraft((current) => (sameFields(current, sent) ? fieldsOf(next) : current))
-      setSaves((count) => count + 1)
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409 && error.code === WORLD_RULE_CHANGED) {
-        setConflict({ updatedAt: storedMomentOf(error.problem) })
-      } else if (error instanceof ApiError && error.status === 404) {
-        setFailure(t('canon.editor.saveGone'))
-      } else if (error instanceof ApiError && error.status === 400) {
-        setFieldErrors(error.fieldErrors)
-        setFailure(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('canon.editor.saveInvalid'),
-        )
-      } else {
-        setFailure(t('canon.editor.saveFailed'))
-      }
-    } finally {
-      inFlight.current = false
-      setIsSaving(false)
-    }
-  }
-
-  useEffect(() => {
-    shortcut.current = () => void save(stored.updatedAt)
+  const { edit, editCheck, save, reread, loadSavedVersion, remove } = worldRuleActions({
+    ...state,
+    retry,
+    universeId,
+    ruleId,
+    onCreated,
+    onDeleted,
+    tx,
+    isDirty,
+    isTooLong,
   })
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 's') {
-        event.preventDefault()
-        shortcut.current()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [])
-
-  function reread() {
-    setConflict(null)
-    setFailure(null)
-    setFieldErrors({})
-    setLoad({ kind: 'loading' })
-    setReads((current) => current + 1)
-  }
-
-  async function loadSavedVersion() {
-    if (
-      !(await confirmAction({
-        title: t('canon.editor.replace.title'),
-        message: t('canon.editor.replace.message'),
-        confirmLabel: t('canon.editor.replace.confirm'),
-        cancelLabel: t('canon.editor.replace.cancel'),
-        variant: 'destructive',
-      }))
-    ) {
-      return
-    }
-    reread()
-    setAnnouncement(t('canon.editor.savedLoaded'))
-  }
-
-  async function remove() {
-    if (isNew) return
-    const title = stored.title
-    setFailure(null)
-    const trashed = await confirmAction({
-      title: tx('canon.editor.trash.title', { title: <bdi>{title}</bdi> }),
-      message: isDirty ? t('canon.editor.trash.messageDirty') : t('canon.editor.trash.message'),
-      confirmLabel: t('canon.editor.trash.confirm'),
-      busyLabel: t('canon.editor.trash.busy'),
-      variant: isDirty ? 'destructive' : 'warning',
-      failure: (error) =>
-        error instanceof ApiError && error.status === 404
-          ? t('canon.editor.trash.gone')
-          : t('canon.editor.trash.failed'),
-      action: () => deleteWorldRule(universeId, ruleId),
-    })
-    if (trashed) onDeleted({ id: ruleId, title })
-  }
-
-  if (load.kind === 'loading') {
-    return (
-      <p className="notice" role="status" data-testid="world-rule-loading">
-        {t('canon.editor.opening')}
-      </p>
-    )
-  }
-
-  if (load.kind === 'missing') {
-    return (
-      <EmptyState
-        testId="world-rule-missing"
-        title={t('canon.editor.missing.title')}
-        hint={tx('canon.editor.missing.hint', {
-          trash: <Link to={trashPath}>{t('canon.editor.missing.openTrash')}</Link>,
-          rules: <Link to={listPath}>{t('canon.editor.missing.rules')}</Link>,
-        })}
-      />
-    )
-  }
-
-  if (load.kind === 'error') {
-    return (
-      <div className="notice notice--error" role="alert" data-testid="world-rule-load-error">
-        <p>{load.message}</p>
-        <button className="button button--secondary" type="button" onClick={reread}>
-          {t('canon.editor.retry')}
-        </button>
-      </div>
-    )
-  }
-
-  const nearLimit = draft.description.length > WORLD_RULE_DESCRIPTION_MAX_LENGTH * 0.9
+  // Ctrl+S and Cmd+S save the rule.
+  useSaveShortcut(() => void save(stored.updatedAt))
 
   return (
-    <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
-      <header className="rule__head">
-        <Link className="rule__back" to={listPath} data-testid="world-rule-back">
-          {t('canon.editor.back')}
-        </Link>
-        <div className="doc__titlerow">
-          <h1 className="rule__heading" id={headingId} data-testid="world-rule-heading">
-            {isNew ? t('canon.editor.newRule') : <bdi>{stored.title}</bdi>}
-          </h1>
-          {!isNew ? (
-            <ActionMenu
-              label={t('canon.editor.actions', { title: stored.title })}
-              triggerTestId="world-rule-actions"
-            >
-              <button
-                className="actionmenu__item actionmenu__item--danger"
-                type="button"
-                disabled={isSaving}
-                onClick={() => void remove()}
-                data-testid="world-rule-delete"
-              >
-                <ActionIcon icon={Trash2} />
-                {t('canon.editor.delete')}
-              </button>
-            </ActionMenu>
-          ) : null}
-        </div>
-        <p className="rule__lede">
-          {t('canon.editor.lede')}
-          {!isNew && stored.updatedAt ? (
-            <>
-              {' '}
-              {tx('canon.editor.lastSaved', {
-                time: <time dateTime={stored.updatedAt}>{formatDateTime(stored.updatedAt)}</time>,
-              })}
-            </>
-          ) : null}
-        </p>
-      </header>
-
-      {conflict ? (
-        <div className="manuscript__conflict" role="alert" data-testid="world-rule-conflict">
-          <p className="manuscript__conflicttext">{t('canon.editor.conflict')}</p>
-          <div className="manuscript__conflictactions">
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={isSaving}
-              onClick={() => void save(conflict.updatedAt)}
-              data-testid="world-rule-keep-mine"
-            >
-              {t('canon.editor.keepMine')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={isSaving}
-              onClick={loadSavedVersion}
-              data-testid="world-rule-load-saved"
-            >
-              {t('canon.editor.loadSaved')}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {failure ? (
-        <p className="form__message rule__failure" role="alert" data-testid="world-rule-error">
-          {failure}
-        </p>
-      ) : null}
-
-      <form
-        className="rule__form"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault()
-          void save(stored.updatedAt)
-        }}
-      >
-        <Field
-          label={t('canon.editor.title')}
-          id={titleId}
-          error={
-            fieldErrors.title ? (
-              <span data-testid="world-rule-title-error">{fieldErrors.title}</span>
-            ) : undefined
-          }
-        >
-          {(control) => (
-            <input
-              id={control.id}
-              ref={titleInput}
-              className="field__input field__input--title"
-              type="text"
-              dir="auto"
-              value={draft.title}
-              maxLength={WORLD_RULE_TITLE_MAX_LENGTH}
-              placeholder={t('canon.editor.titlePlaceholder')}
-              onChange={(event) => edit({ title: event.target.value })}
-              aria-invalid={control['aria-invalid']}
-              aria-describedby={control['aria-describedby']}
-              aria-required="true"
-              data-testid="world-rule-title"
-            />
-          )}
-        </Field>
-
-        <Field
-          label={t('canon.editor.description')}
-          hint={t('canon.editor.descriptionHint')}
-          id={descriptionId}
-          error={fieldErrors.description}
-        >
-          {(control) => (
-            <>
-              <textarea
-                id={control.id}
-                className="field__input field__input--area rule__description"
-                rows={8}
-                dir="auto"
-                value={draft.description}
-                placeholder={t('canon.editor.descriptionPlaceholder')}
-                spellCheck
-                onChange={(event) => edit({ description: event.target.value })}
-                aria-invalid={isTooLong || fieldErrors.description ? true : undefined}
-                aria-describedby={
-                  [control['aria-describedby'], nearLimit ? countId : null]
-                    .filter(Boolean)
-                    .join(' ') || undefined
-                }
-                data-testid="world-rule-description"
-              />
-              {nearLimit ? (
-                <p
-                  className={isTooLong ? 'field__error' : 'field__hint rule__count'}
-                  id={countId}
-                  data-testid="world-rule-description-count"
-                >
-                  {t(isTooLong ? 'canon.editor.countTooLong' : 'canon.editor.count', {
-                    used: count(draft.description.length),
-                    max: count(WORLD_RULE_DESCRIPTION_MAX_LENGTH),
-                  })}
-                </p>
-              ) : null}
-            </>
-          )}
-        </Field>
-
-        <WorldRuleCheckSection
-          universeId={universeId}
-          value={draft.check}
-          onChange={editCheck}
-          stored={stored.validation}
-          found={stored.found}
-          isDirty={isDirty}
-          errors={fieldErrors}
+    <ReadGate
+      load={load}
+      loading={{ text: t('canon.editor.opening'), testId: 'world-rule-loading' }}
+      error={{
+        message: t('canon.editor.openFailed'),
+        onRetry: reread,
+        retryLabel: t('canon.editor.retry'),
+        testId: 'world-rule-load-error',
+      }}
+      missing={
+        <EmptyState
+          testId="world-rule-missing"
+          title={t('canon.editor.missing.title')}
+          hint={tx('canon.editor.missing.hint', {
+            trash: <Link to={trashPath}>{t('canon.editor.missing.openTrash')}</Link>,
+            rules: <Link to={listPath}>{t('canon.editor.missing.rules')}</Link>,
+          })}
         />
+      }
+    >
+      {() => (
+        <article className="rule" aria-labelledby={headingId} data-testid="world-rule-editor">
+          <EditorHead
+            testIdPrefix="world-rule"
+            listPath={listPath}
+            listLabel={t('canon.editor.back')}
+            isNew={isNew}
+            title={stored.title}
+            newTitle={t('canon.editor.newRule')}
+            menuLabel={t('canon.editor.actions', { title: stored.title })}
+            deleteLabel={t('canon.editor.delete')}
+            onDelete={() => void remove()}
+            busy={isSaving}
+            titleId={headingId}
+            lede={t('canon.editor.lede')}
+            lastSavedKey="canon.editor.lastSaved"
+            updatedAt={stored.updatedAt}
+          />
 
-        <div className="manuscript__bar rule__bar">
-          <div className="rule__actions">
-            <SaveAction
-              label={isNew ? t('canon.editor.create') : t('canon.editor.save')}
-              isDirty={isDirty}
-              isSaving={isSaving}
-              isBlocked={isTooLong}
-              saves={saves}
-              restingStatus={
-                stored.updatedAt === null ? t('canon.editor.notSaved') : t('canon.editor.saved')
-              }
-              statusId={statusId}
-              statusTestId="world-rule-status"
-              testId="world-rule-save"
-              keyShortcuts="Control+S Meta+S"
-            />
-          </div>
-        </div>
-      </form>
+          <EditorNotices
+            testId="world-rule"
+            conflict={
+              conflict
+                ? {
+                    text: t('canon.editor.conflict'),
+                    onKeepMine: () => void save(conflict.updatedAt),
+                    keepLabel: t('canon.editor.keepMine'),
+                    onLoadSaved: () => void loadSavedVersion(),
+                    loadLabel: t('canon.editor.loadSaved'),
+                    busy: isSaving,
+                  }
+                : null
+            }
+            failure={failure}
+            failureClassName="rule__failure"
+          />
 
-      <p className="visually-hidden" role="status" data-testid="world-rule-announcer">
-        {announcement}
-      </p>
-    </article>
+          <WorldRuleForm
+            universeId={universeId}
+            isNew={isNew}
+            titleId={titleId}
+            descriptionId={descriptionId}
+            statusId={statusId}
+            stored={stored}
+            draft={draft}
+            fieldErrors={fieldErrors}
+            isDirty={isDirty}
+            isTooLong={isTooLong}
+            isSaving={isSaving}
+            saves={saves}
+            titleInput={titleInput}
+            edit={edit}
+            editCheck={editCheck}
+            save={save}
+          />
+
+          <Announce testId="world-rule-announcer">{announcement}</Announce>
+        </article>
+      )}
+    </ReadGate>
   )
 }

@@ -1,0 +1,136 @@
+/* ---------- Publishing one entry or story (Task 010) ----------
+
+   `ContentPublication`: the item's state as a pill - Private, Public, or Selected while its universe is private -
+   drawn like Settings' publication badge, but pressable, with a chevron that says it opens. The panel is the
+   `ActionMenu` panel, hung from the row the pill sits in rather than from the pill, and bounded by that row, so it
+   stays on a 360px screen wherever the pill has wrapped to. */
+
+.contentpub {
+  display: contents;
+}
+
+.contentpub__menu.actionmenu {
+  position: static;
+}
+
+.entry__bar,
+.pageheader__lede {
+  position: relative;
+}
+
+.contentpub__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2rem;
+  padding: 0 0.55rem 0 0.65rem;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-full);
+  background: var(--paper);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration-1) var(--ease);
+}
+
+.contentpub__trigger:hover {
+  background: var(--hover-wash);
+}
+
+.contentpub__trigger--public {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+/* Chosen, not yet seen: the accent's edge without its fill, dashed - the word says the rest. */
+.contentpub__trigger--selected {
+  border-style: dashed;
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.contentpub__icon,
+.contentpub__chevron {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.contentpub__chevron {
+  opacity: 0.7;
+}
+
+.contentpub__trigger[aria-expanded='true'] .contentpub__chevron {
+  transform: rotate(180deg);
+}
+
+.contentpub__panel {
+  top: calc(100% + var(--space-1));
+  width: min(22rem, 100%);
+}
+
+.contentpub--bar .contentpub__panel {
+  right: 0;
+  left: auto;
+}
+
+.contentpub--line .contentpub__panel {
+  right: auto;
+  left: 0;
+}
+
+.contentpub__context {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.contentpub__heading {
+  margin: 0;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.contentpub__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.contentpub__summary {
+  display: -webkit-box;
+  margin: var(--space-1) 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.contentpub__summarylabel {
+  font-weight: 600;
+}
+
+.contentpub__error {
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+@media (pointer: coarse) {
+  .contentpub__trigger {
+    min-height: var(--control-touch);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .contentpub__chevron {
+    transition: transform var(--duration-1) var(--ease);
+  }
+}

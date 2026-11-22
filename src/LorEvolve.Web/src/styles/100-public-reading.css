@@ -1,0 +1,42 @@
+/* ---------- Public reading (Task 011) ----------
+
+   The pages behind an Explore card, in the portal's own dark frame: a universe, one of its entries, one of its stories,
+   and an author. Reader pages, not workspace screens with the tools taken out - a cinematic hero, a reading column, serif
+   hierarchy, restrained metadata. Every authored string isolates its own direction; the chrome never flips. */
+
+.plink {
+  color: var(--portal-ink);
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--portal-ink-rgb) / 0.35);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.plink:hover {
+  text-decoration-color: currentcolor;
+}
+
+/* Not there, private, or never was: one page for all of them. */
+.pmissing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: min(100% - 2 * var(--portal-gutter), 40rem);
+  margin: 0 auto;
+  padding: clamp(3rem, 10vw, 7rem) 0;
+  text-align: center;
+}
+
+.pmissing__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.pmissing__hint {
+  margin: 0 0 var(--space-2);
+  color: var(--portal-muted);
+}

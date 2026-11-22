@@ -1,12 +1,14 @@
-import { useEffect, useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { MessageSquareWarning } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
+import { useFormSave } from '../lib/useFormSave'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
-import { useReturnFocus } from '../lib/returnFocus'
 import { FeedbackKind, sendFeedback, type FeedbackKindValue } from '../feedback/api'
+import { SegmentedField } from './SegmentedField'
+import { QuietNote } from './QuietNote'
 
 /**
  * Report a bug or ask for a feature, from any signed-in page: a small button at the window's corner opens a dialog, and what
@@ -55,38 +57,38 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
   const headingId = useId()
   const textId = useId()
   const { pathname } = useLocation()
-  useReturnFocus()
   const [kind, setKind] = useState<FeedbackKindValue>(FeedbackKind.Bug)
   const [text, setText] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [sending, setSending] = useState(false)
+  const {
+    isSaving: sending,
+    message: error,
+    setMessage: setError,
+    save,
+  } = useFormSave({
+    needChange: null,
+    failed: t('data.feedback.sendFailed'),
+    refusal: (failure) =>
+      failure instanceof ApiError
+        ? (Object.values(failure.fieldErrors)[0] ?? failure.message)
+        : false,
+  })
 
-  useEffect(() => {
-    document.getElementById(textId)?.focus()
-  }, [textId])
+  const textArea = useRef<HTMLTextAreaElement>(null)
 
   async function send() {
     if (text.trim() === '') {
       setError(t('data.feedback.describe'))
       return
     }
-    setSending(true)
-    setError(null)
-    try {
+    await save(async () => {
       await sendFeedback(kind, text.trim(), pathname)
       onSent()
-    } catch (failure: unknown) {
-      setError(
-        failure instanceof ApiError
-          ? (Object.values(failure.fieldErrors)[0] ?? failure.message)
-          : t('data.feedback.sendFailed'),
-      )
-      setSending(false)
-    }
+    })
   }
 
   return (
     <Drawer
+      initialFocus={textArea}
       testId="feedback-dialog"
       titleId={headingId}
       className="feedbackdialog"
@@ -97,50 +99,33 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
       onClose={onClose}
       onSubmit={() => void send()}
       busy={sending}
-      actions={(close) => (
-        <>
-          <button className="button" type="submit" disabled={sending} data-testid="feedback-send">
-            {sending ? t('data.feedback.sending') : t('data.feedback.send')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            disabled={sending}
-          >
-            {t('data.feedback.cancel')}
-          </button>
-        </>
-      )}
+      message={error}
+      messageTestId="feedback-error"
+      actions={{
+        submitLabel: t('data.feedback.send'),
+        busyLabel: t('data.feedback.sending'),
+        submitTestId: 'feedback-send',
+        lockCancel: true,
+      }}
     >
-      {error ? (
-        <p className="form__message" role="alert" data-testid="feedback-error">
-          {error}
-        </p>
-      ) : null}
-
-      <Field label={t('data.feedback.kindLabel')} group="fieldset" disabled={sending}>
-        <div className="segmented" role="group" aria-label={t('data.feedback.kindGroup')}>
-          <button
-            className="segmented__option"
-            type="button"
-            aria-pressed={kind === FeedbackKind.Bug}
-            onClick={() => setKind(FeedbackKind.Bug)}
-            data-testid="feedback-kind-bug"
-          >
-            {t('data.feedback.kindBug')}
-          </button>
-          <button
-            className="segmented__option"
-            type="button"
-            aria-pressed={kind === FeedbackKind.Feature}
-            onClick={() => setKind(FeedbackKind.Feature)}
-            data-testid="feedback-kind-feature"
-          >
-            {t('data.feedback.kindFeature')}
-          </button>
-        </div>
-      </Field>
+      <SegmentedField
+        label={t('data.feedback.kindLabel')}
+        disabled={sending}
+        options={[
+          {
+            value: FeedbackKind.Bug,
+            label: t('data.feedback.kindBug'),
+            testId: 'feedback-kind-bug',
+          },
+          {
+            value: FeedbackKind.Feature,
+            label: t('data.feedback.kindFeature'),
+            testId: 'feedback-kind-feature',
+          },
+        ]}
+        value={kind}
+        onChange={setKind}
+      />
 
       <Field
         label={
@@ -151,6 +136,7 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
         {() => (
           <>
             <textarea
+              ref={textArea}
               id={textId}
               className="field__input field__input--area"
               rows={6}
@@ -160,11 +146,11 @@ function FeedbackDialog({ onClose, onSent }: { onClose: () => void; onSent: () =
               onChange={(event) => setText(event.target.value)}
               data-testid="feedback-text"
             />
-            <p className="field__hint">
+            <QuietNote spacing="hint">
               {kind === FeedbackKind.Bug
                 ? t('data.feedback.hintBug')
                 : t('data.feedback.hintFeature')}
-            </p>
+            </QuietNote>
           </>
         )}
       </Field>

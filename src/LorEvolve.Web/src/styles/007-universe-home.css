@@ -1,0 +1,144 @@
+/* ---------- Universe home ---------- */
+
+.home {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+
+/* My workspace's bar (`WorkspaceLayout`): the brand, the workspace by name and its two places, Explore, the account.
+   Paper and a hairline like the rest of the workspace, not the portal's band: the two sides of LorEvolve stay two looks. */
+.workspacebar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  min-height: 4rem;
+  padding: 0 clamp(1.25rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--rule);
+}
+
+.workspacebar__brand {
+  flex: none;
+}
+
+.workspacebar__nav {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* The name of the side of LorEvolve this is: a caption set off from the brand by a hairline, quieter than the places
+   beside it, because it is where you are rather than somewhere to go. */
+.workspacebar__context {
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--rule-strong);
+  font-size: var(--text-sm);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.workspacebar__links {
+  display: flex;
+  align-self: stretch;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workspacebar__links li {
+  display: flex;
+}
+
+.workspacebar__link,
+.workspacebar__explore {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.workspacebar__link:hover,
+.workspacebar__explore:hover {
+  color: var(--ink);
+}
+
+/* The place you are in: a rule along the bar's foot as well as the ink, so it is never colour alone. */
+.workspacebar__link[aria-current='page'] {
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.workspacebar__link:focus-visible,
+.workspacebar__explore:focus-visible {
+  outline-offset: -2px;
+}
+
+.workspacebar__explore {
+  margin-left: auto;
+  align-self: stretch;
+}
+
+/* A phone: two rows on purpose rather than one that wraps by accident. The brand and the account across the top; My
+   workspace and its places on a row of their own beneath, each place a full-height target with its rule at the foot.
+   Explore leaves the bar - the account menu's "Go to" holds it, and the brand leads there too. */
+@media (max-width: 40rem) {
+  .workspacebar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'brand account'
+      'nav nav';
+    gap: 0 var(--space-3);
+    min-height: 0;
+    padding-top: max(var(--space-3), env(safe-area-inset-top));
+  }
+
+  .workspacebar__brand {
+    grid-area: brand;
+    justify-self: start;
+  }
+
+  .workspacebar .accountmenu {
+    grid-area: account;
+  }
+
+  .workspacebar__nav {
+    grid-area: nav;
+    min-height: var(--control-touch);
+    margin-top: var(--space-2);
+  }
+
+  .workspacebar__context {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  /* More places than a phone's width holds (Admin has four): the row scrolls inside itself, never the page. */
+  .workspacebar__links {
+    min-width: 0;
+    gap: var(--space-4);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .workspacebar__explore {
+    display: none;
+  }
+}
+
+.home__body {
+  flex: 1;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  /* The same side gutter as a universe's screens (#57), so the account screens and the Admin workspace start where
+     a universe's do at every width. */
+  padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) 4rem;
+}

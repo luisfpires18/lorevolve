@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
-import { useReturnFocus } from '../lib/returnFocus'
+import { useFormSave } from '../lib/useFormSave'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
+import { SectionTitle } from './Section'
 
 /**
  * A game type made from one of the universe's templates (#283). The game gets its own copy: nothing links it back, so
@@ -25,32 +25,17 @@ export function TypeFromTemplateDrawer({
   const { t } = useI18n()
   const [templateId, setTemplateId] = useState(templates[0]?.id ?? '')
   const [name, setName] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  useReturnFocus()
+  const form = useFormSave({
+    needChange: t('projects.schema.fromTemplate.detailsCreate'),
+    failed: t('projects.schema.fromTemplate.failed'),
+  })
+  const { fieldErrors, message, isSaving } = form
 
   async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setIsSaving(true)
-    try {
+    await form.save(async () => {
       await createProjectTypeFromTemplate(projectId, { templateId, name: name.trim() || null })
       onSaved()
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('projects.schema.fromTemplate.detailsCreate'),
-        )
-      } else {
-        setMessage(t('projects.schema.fromTemplate.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   return (
@@ -61,34 +46,22 @@ export function TypeFromTemplateDrawer({
       title={t('projects.schema.fromTemplate.title')}
       isDirty={name.trim() !== ''}
       leaveMessage={t('entityTypes.page.dialog.leaveNew')}
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <>
-          <button
-            className="button"
-            type="submit"
-            disabled={isSaving || !templateId}
-            data-testid="save-type-from-template"
-          >
-            {isSaving ? t('entityTypes.page.dialog.creating') : t('entityTypes.page.dialog.create')}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
-            {t('entityTypes.page.dialog.cancel')}
-          </button>
-        </>
-      )}
+      message={message}
+      messageTestId="type-from-template-error"
+      actions={{
+        submitLabel: t('entityTypes.page.dialog.create'),
+        busyLabel: t('entityTypes.page.dialog.creating'),
+        disabled: !templateId,
+        submitTestId: 'save-type-from-template',
+      }}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="type-from-template-error">
-          {message}
-        </p>
-      ) : null}
-
       <section className="drawer__group" aria-labelledby="type-from-template-source">
-        <h3 className="sectionrule sectionrule--accent" id="type-from-template-source">
+        <SectionTitle level={3} tone="rule-accent" id="type-from-template-source">
           {t('projects.schema.fromTemplate.source')}
-        </h3>
+        </SectionTitle>
         <Field
           label={t('projects.schema.fromTemplate.template')}
           id="type-from-template-select"

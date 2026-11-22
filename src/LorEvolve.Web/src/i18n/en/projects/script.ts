@@ -1,0 +1,27 @@
+const projectsScript = {
+  heading: 'Script',
+  outline: 'Parts of this project',
+  parts: 'Parts',
+  closeParts: 'Close parts',
+  choose: 'Choose a part',
+  position: '{level} {number} of {total}',
+  empty: 'Nothing to write in yet.',
+  emptyHint: 'Add parts in {link} first, then write each one here.',
+  structureLink: 'Structure',
+  noFormat: 'This project has no format yet.',
+  noFormatHint: 'Choose a format, then build its parts in {link}.',
+  writeLabel: 'Text of {name}',
+  readLabel: 'Text of {name}',
+  placeholder: 'Write this part. Type @ to mention Lore.',
+  nothingYet: 'Nothing written here yet.',
+  hasText: 'Has text',
+  save: 'Save changes',
+  saved: 'Saved',
+  nothingSaved: 'Not saved yet',
+  unsaved: '{name} has changes that are not saved.',
+  reload: 'Reload',
+  retry: 'Try again',
+  tooLong: 'Too long to save: {used} of {max} characters.',
+}
+
+export default projectsScript

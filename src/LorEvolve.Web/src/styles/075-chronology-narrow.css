@@ -1,0 +1,50 @@
+/* ---------- Chronology on a narrow screen ---------- */
+
+@media (max-width: 700px) {
+  .chron__group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chron__year {
+    grid-column: 1;
+    position: static;
+    text-align: left;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .chron__era {
+    margin-top: 0;
+  }
+
+  /* Here the year sits in a row beside its era's name, and the name wraps rather than the number. */
+  .chron__yearnum {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .chron__moments {
+    grid-column: 1;
+  }
+
+  .momentform__point,
+  .momentform__point--era {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .drawer__head,
+  .drawer__actions {
+    padding-left: var(--space-5);
+    padding-right: var(--space-5);
+  }
+
+  .drawer__actions {
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  }
+
+  .drawer__body {
+    padding: var(--space-5);
+  }
+}

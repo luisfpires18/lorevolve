@@ -1,0 +1,91 @@
+/* ---------- A refused write ----------
+
+   Not a failure banner. The draft underneath it is intact, and the only thing that did
+   not happen is the save, so this reads as a returned page with the objection written
+   beside it. */
+
+.refusal {
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--rule));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--danger) 5%, var(--raised));
+}
+
+.refusal__eyebrow {
+  margin: 0 0 0.3rem;
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+.refusal__title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.15rem;
+}
+
+.refusal__lede {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  max-width: 58ch;
+}
+
+.refusal__findings {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.refusal__finding {
+  padding-top: 0.9rem;
+  margin-top: 0.9rem;
+  border-top: 1px solid var(--rule);
+}
+
+.refusal__finding:first-child {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: 0;
+}
+
+.refusal__rule {
+  margin: 0;
+  font-size: var(--text-xs);
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.refusal__what {
+  margin: 0.15rem 0 0.3rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.refusal__account {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  max-width: 58ch;
+}
+
+.refusal__subjects {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.82rem;
+}
+
+.refusal__aside {
+  margin: 1rem 0 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.8rem;
+  color: var(--muted);
+  max-width: 62ch;
+}

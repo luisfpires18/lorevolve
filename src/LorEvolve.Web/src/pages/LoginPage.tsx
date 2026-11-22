@@ -2,10 +2,12 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
+import { FormMessage } from '../components/FormMessage'
 import { returnPath } from '../auth/returnPath'
 import { useAuth } from '../auth/useAuth'
 import { ApiError } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
 
 export default function LoginPage() {
   const { t, tx } = useI18n()
@@ -49,11 +51,7 @@ export default function LoginPage() {
       })}
     >
       <form className="form" onSubmit={handleSubmit} noValidate>
-        {message ? (
-          <p className="form__message" role="alert" data-testid="auth-error">
-            {message}
-          </p>
-        ) : null}
+        <FormMessage testId="auth-error">{message}</FormMessage>
 
         <Field
           label={t('auth.login.usernameOrEmail')}
@@ -80,9 +78,9 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-          {isSubmitting ? t('auth.login.submitting') : t('auth.login.submit')}
-        </button>
+        <Button busy={isSubmitting} busyLabel={t('auth.login.submitting')} type="submit">
+          {t('auth.login.submit')}
+        </Button>
       </form>
     </AuthLayout>
   )

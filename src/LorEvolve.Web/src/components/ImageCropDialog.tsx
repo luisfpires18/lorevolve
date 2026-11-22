@@ -1,26 +1,16 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react'
-import Cropper, { type Area } from 'react-easy-crop'
-import 'react-easy-crop/react-easy-crop.css'
-import { Check, X } from 'lucide-react'
-import { ApiError } from '../lib/api'
+import type { Area } from 'react-easy-crop'
 import type { ImageCrop } from '../lib/imageCrop'
-import { ActionIcon } from './ActionIcon'
-import { Field } from './Field'
+import { useDrawerGuard } from '../lib/drawerGuard'
 import { useReturnFocus } from '../lib/returnFocus'
 import { useI18n } from '../i18n'
-
-/**
- * How far the author may zoom out: to the picture exactly covering the square, and no further. With
- * the position kept inside the picture as well, the square can never hold an empty corner, so a
- * thumbnail is always picture edge to edge.
- */
-const MIN_ZOOM = 1
-
-/** How far the author may zoom in. Past this a thumbnail is cut from too few pixels to be worth it. */
-const MAX_ZOOM = 4
-
-/** Pixels the square moves per arrow key; Shift moves a fifth of that, which the cropper handles. */
-const KEYBOARD_STEP = 8
+import { CropperActions } from './CropperActions'
+import { CropperControls } from './CropperControls'
+import { CropperProgress } from './CropperProgress'
+import { CropperStage } from './CropperStage'
+import { cropDialogActions } from './cropDialogActions'
+import { fractionsOf } from './cropMath'
+import { QuietNote } from './QuietNote'
 
 /**
  * How far a save has got, as the caller reports it.
@@ -34,9 +24,6 @@ const KEYBOARD_STEP = 8
  * back to an indeterminate one rather than inventing a number.
  */
 export type SaveStage = { kind: 'sending'; ratio: number | null } | { kind: 'working' }
-
-/** What a caller that reports nothing is taken to be doing: server work, with no percentage. */
-const UNREPORTED: SaveStage = { kind: 'working' }
 
 /**
  * The cropper: the whole picture, a square over it, and the choice of which part the thumbnail
@@ -142,33 +129,17 @@ export function ImageCropDialog({
 
   const loading = !natural && !loadFailed
 
-  async function confirm() {
-    // The guard is the one that matters: a second press, an Enter on a still-focused button or a
-    // double tap cannot start a second upload, whatever the button's disabled state is doing.
-    if (!crop || saving) return
-
-    // Held from here, so the square that is submitted is the square that was on screen when the
-    // button was pressed. The stage below also makes the cropper inert, so it cannot move under
-    // an upload that has already been given its four numbers.
-    const submitted = crop
-
-    setStage(UNREPORTED)
-    setError(null)
-    try {
-      await onConfirm(submitted, setStage)
-    } catch (failure: unknown) {
-      setError(
-        failure instanceof ApiError
-          ? (failure.fieldErrors.file ?? failure.fieldErrors.crop ?? failure.message)
-          : t('account.crop.saveFailed'),
-      )
-      setStage(null)
-    }
-  }
-
-  function cancel() {
-    if (!saving) onCancel()
-  }
+  const { confirm, cancel } = cropDialogActions({
+    crop,
+    saving,
+    setStage,
+    setError,
+    onConfirm,
+    onCancel,
+    t,
+  })
+  // No backdrop close: a crop drag that ends outside the panel would close it.
+  const { dialogProps } = useDrawerGuard(false, '', cancel, () => saving)
 
   const percent =
     stage?.kind === 'sending' && stage.ratio !== null ? Math.round(stage.ratio * 100) : null
@@ -188,10 +159,8 @@ export function ImageCropDialog({
       ref={dialog}
       aria-labelledby={headingId}
       aria-describedby={hintId}
-      onCancel={(event) => {
-        event.preventDefault()
-        cancel()
-      }}
+      onKeyDown={dialogProps.onKeyDown}
+      onCancel={dialogProps.onCancel}
       data-testid="image-crop-dialog"
     >
       <div className="cropper__panel">
@@ -199,176 +168,59 @@ export function ImageCropDialog({
           <h2 className="cropper__title" id={headingId}>
             {title}
           </h2>
-          <p className="cropper__hint" id={hintId}>
+          <QuietNote className="cropper__hint" id={hintId}>
             {shownHint}
-          </p>
+          </QuietNote>
         </header>
 
-        {/* Inert, not merely unstyled, once a save starts: the crop that was submitted must not be
-            able to change underneath it, by drag, by wheel or by arrow key. `pointer-events` alone
-            would leave the square focusable and the keyboard still moving it. */}
-        <div className="cropper__stage" data-testid="image-crop-stage" inert={saving || undefined}>
-          {loadFailed ? (
-            <p className="cropper__status" role="alert">
-              {t('account.crop.loadFailed')}
-            </p>
-          ) : (
-            <Cropper
-              image={source}
-              crop={position}
-              zoom={zoom}
-              minZoom={MIN_ZOOM}
-              maxZoom={MAX_ZOOM}
-              aspect={aspect}
-              keyboardStep={KEYBOARD_STEP}
-              showGrid={false}
-              restrictPosition
-              disableAutomaticStylesInjection
-              onCropChange={setPosition}
-              onZoomChange={setZoom}
-              onCropAreaChange={(_, areaPixels) => setPixels(areaPixels)}
-              onMediaLoaded={(size) =>
-                setNatural({ width: size.naturalWidth, height: size.naturalHeight })
-              }
-              initialCroppedAreaPercentages={startingArea}
-              mediaProps={{ alt: '', onError: () => setLoadFailed(true) }}
-              cropperProps={{
-                role: 'group',
-                // Names the control, not the errand: the dialog's own title and hint already say
-                // whether this square becomes a card's portrait or an avatar.
-                'aria-label':
-                  frameLabel ??
-                  (aspect === 1 ? t('account.crop.thumbnailSquare') : t('account.crop.cardFrame')),
-                'aria-describedby': hintId,
-              }}
-            />
-          )}
-
-          {loading ? (
-            <p className="cropper__status" aria-live="polite">
-              {t('account.crop.loading')}
-            </p>
-          ) : null}
-        </div>
+        <CropperStage
+          source={source}
+          aspect={aspect}
+          frameLabel={frameLabel}
+          hintId={hintId}
+          position={position}
+          zoom={zoom}
+          startingArea={startingArea}
+          loadFailed={loadFailed}
+          loading={loading}
+          saving={saving}
+          setPosition={setPosition}
+          setZoom={setZoom}
+          setPixels={setPixels}
+          setNatural={setNatural}
+          setLoadFailed={setLoadFailed}
+        />
 
         <div className="cropper__controls">
-          <Field label={t('account.crop.zoom')} id={zoomId} className="cropper__zoom">
-            {(control) => (
-              <input
-                {...control}
-                type="range"
-                min={MIN_ZOOM}
-                max={MAX_ZOOM}
-                step={0.01}
-                value={zoom}
-                disabled={loading || loadFailed || saving}
-                onChange={(event) => setZoom(Number(event.target.value))}
-                data-testid="image-crop-zoom"
-              />
-            )}
-          </Field>
+          <CropperControls
+            zoomId={zoomId}
+            zoom={zoom}
+            loading={loading}
+            loadFailed={loadFailed}
+            saving={saving}
+            setZoom={setZoom}
+            source={source}
+            crop={crop}
+            aspect={aspect}
+            frameLabel={frameLabel}
+          />
 
-          <div className="cropper__previews" aria-hidden="true">
-            {frameLabel ? (
-              <>
-                <CroppedPicture
-                  className="cropper__preview"
-                  style={{ width: `${Math.min(3.25 * aspect, 9)}rem` }}
-                  source={source}
-                  crop={crop}
-                  testId="image-crop-preview"
-                />
-                <span className="cropper__caption">{frameLabel}</span>
-              </>
-            ) : aspect === 1 ? (
-              <>
-                <CroppedPicture
-                  className="cropper__preview"
-                  source={source}
-                  crop={crop}
-                  testId="image-crop-preview"
-                />
-                <CroppedPicture
-                  className="cropper__preview cropper__preview--round"
-                  source={source}
-                  crop={crop}
-                />
-                <span className="cropper__caption">{t('account.crop.thumbnailPreview')}</span>
-              </>
-            ) : (
-              <>
-                <CroppedPicture
-                  className="cropper__preview cropper__preview--wide"
-                  source={source}
-                  crop={crop}
-                  testId="image-crop-preview"
-                />
-                <span className="cropper__caption">{t('account.crop.cardPreview')}</span>
-              </>
-            )}
-          </div>
-
-          {stage === null ? null : (
-            <div className="cropper__progress" data-testid="image-crop-progress">
-              {/* Determinate while the browser can count the bytes, and indeterminate after -
-                  with aria-valuenow left off rather than frozen at 100, which would claim the
-                  save had finished. */}
-              <div
-                className="progressbar"
-                role="progressbar"
-                aria-label={percent === null ? shownWorking : t('account.crop.uploadingPhoto')}
-                aria-valuemin={percent === null ? undefined : 0}
-                aria-valuemax={percent === null ? undefined : 100}
-                aria-valuenow={percent ?? undefined}
-                aria-valuetext={percent === null ? undefined : `${percent}%`}
-                data-state={percent === null ? 'working' : 'sending'}
-                data-testid="image-crop-progressbar"
-              >
-                <span
-                  className="progressbar__fill"
-                  style={percent === null ? undefined : { width: `${percent}%` }}
-                />
-              </div>
-
-              {/* The words are the status, not the animation: a bar that only moves says nothing
-                  to a screen reader, and nothing at all with reduced motion. */}
-              <p className="cropper__stagetext" role="status" data-testid="image-crop-stagetext">
-                {percent === null
-                  ? t('account.crop.workingText', { label: shownWorking })
-                  : t('account.crop.uploadingText', { percent })}
-              </p>
-            </div>
-          )}
-
-          {error ? (
-            <p className="field__error" role="alert" data-testid="image-crop-error">
-              {error}
-            </p>
-          ) : null}
+          <CropperProgress
+            stage={stage}
+            percent={percent}
+            shownWorking={shownWorking}
+            error={error}
+          />
         </div>
 
-        <footer className="cropper__actions">
-          <button
-            className="button"
-            type="button"
-            disabled={!crop || saving}
-            onClick={() => void confirm()}
-            data-testid="image-crop-confirm"
-          >
-            <ActionIcon icon={Check} />
-            {savingLabel ?? confirmLabel}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            disabled={saving}
-            onClick={cancel}
-            data-testid="image-crop-cancel"
-          >
-            <ActionIcon icon={X} />
-            {t('account.crop.cancel')}
-          </button>
-        </footer>
+        <CropperActions
+          crop={crop}
+          saving={saving}
+          confirm={confirm}
+          cancel={cancel}
+          savingLabel={savingLabel}
+          confirmLabel={confirmLabel}
+        />
       </div>
     </dialog>
   )
@@ -413,25 +265,4 @@ export function CroppedPicture({
       ) : null}
     </span>
   )
-}
-
-/**
- * The cropper's square, in whole pixels of the picture, as fractions of that same picture. Whole
- * pixels in, so the server rounds each edge straight back onto them; clamped, so floating-point
- * noise can never push an edge past the picture.
- */
-function fractionsOf(area: Area, natural: { width: number; height: number }): ImageCrop {
-  const x = clamp(area.x / natural.width)
-  const y = clamp(area.y / natural.height)
-
-  return {
-    x,
-    y,
-    width: Math.min(area.width / natural.width, 1 - x),
-    height: Math.min(area.height / natural.height, 1 - y),
-  }
-}
-
-function clamp(value: number) {
-  return Math.min(1, Math.max(0, value))
 }

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { PageHeader } from './PageHeader'
+import { Section } from './Section'
 import { ViewChips } from './ViewChips'
 import { projectPath, projectSectionLabel, type ProjectSection } from '../projects/sections'
 import { t } from '../i18n'
@@ -17,7 +18,6 @@ export function ProjectShell({
   projectName,
   universe,
   sections,
-  story = false,
   facts,
   children,
 }: {
@@ -27,18 +27,17 @@ export function ProjectShell({
   universe: { id: string; name: string }
   sections: readonly ProjectSection[]
   /**
-   * A Story shown as a Writing Project (#194). Its page carries its own header and the same chips, so the shell draws
-   * no head of its own: two rows of the same links were double navigation.
+   * The project's facts line and summary, drawn under its name. A Story shown as a Writing Project (#194) passes none: its
+   * page carries its own header and the same chips, so the shell draws no head of its own, as two rows of the same links
+   * were double navigation.
    */
-  story?: boolean
-  /** The project's facts line and summary, drawn under its name. */
   facts?: { lede: ReactNode; summary: ReactNode }
   children: ReactNode
 }) {
   return (
-    <div className={story ? 'projectframe projectframe--story' : 'projectframe'}>
+    <>
       {facts ? (
-        <div className="projectframe__hero" data-testid="project-facts">
+        <Section testId="project-facts">
           <PageHeader
             title={<bdi>{projectName}</bdi>}
             titleTestId="project-name"
@@ -55,9 +54,9 @@ export function ProjectShell({
               testId: `projecttab-${section.segment}`,
             }))}
           />
-        </div>
+        </Section>
       ) : null}
       {children}
-    </div>
+    </>
   )
 }

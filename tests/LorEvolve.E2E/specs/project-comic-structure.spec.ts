@@ -92,9 +92,11 @@ for (const { format, root } of FORMATS) {
     await expect(outline.getByText('First')).toBeVisible()
     await expect(outline.getByText('Panel One')).toBeVisible()
 
-    // The Stories look (#377): a top part reads as an arc, a panel, with nothing under it, as a scene card.
-    await expect(rows.first().locator(':scope > section.plotarc')).toBeVisible()
-    await expect(outline.locator('li.scene', { hasText: 'Panel One' })).toBeVisible()
+    // A Types row each (#456): a top part folds the parts under it, a panel, with nothing under it, has no fold.
+    await expect(rows.first().getByTestId(`project-node-${rootId}-toggle`)).toBeVisible()
+    const panel = outline.locator('li.types__row', { hasText: 'Panel One' }).last()
+    await expect(panel).toBeVisible()
+    await expect(panel.locator('[data-testid$="-toggle"]')).toHaveCount(0)
     // The Volumes sit on the same page as the outline.
     await expect(page.getByTestId('comic-collections-volume')).toBeVisible()
   })

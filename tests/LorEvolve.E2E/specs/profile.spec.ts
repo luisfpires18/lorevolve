@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { openAccountMenu } from './support/account'
 import { png, type Rgb } from './support/png'
 import { colours, expectShows, expectSquareCovered } from './support/pixels'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * One journey through the account screen, and the one measurement a phone needs.
@@ -323,6 +324,7 @@ test.describe('profile', () => {
     // ---------- Removing falls back to the monogram ----------
 
     await page.getByTestId('profile-photo-remove').click()
+    await acceptConfirm(page)
 
     await expect(avatar).toHaveText(/^[A-Z]$/)
     await expect(page.getByTestId('profile-photo-pick')).toHaveText('Upload photo')

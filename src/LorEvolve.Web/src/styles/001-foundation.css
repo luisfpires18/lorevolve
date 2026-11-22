@@ -1,0 +1,274 @@
+/*
+  LorEvolve visual foundation.
+
+  A bound reference volume that is also a workbench. A graphite plate carries the wordmark, warm
+  paper carries the work, and what can be opened rises off the page - lighter as it rises, in both
+  schemes. One accent, an ink blue, for links, focus and "you are here"; the primary action is ink.
+  A world's own artwork, when its owner has given it one, sits in the upper page as atmosphere and
+  fades into the working surface; LorEvolve itself shows no stock pictures (ADR 0068). The design contract is
+  docs/design/LOREVOLVE_VISUAL_REFACTOR.md; its section 9.3 is this token sheet, section 22 the polish pass.
+
+  Tokens first, then the shared patterns every screen draws from (buttons, fields, menus, views,
+  rows, callouts, bars), then each screen. A screen's own rule may still carry a raw size or gap
+  from before the refactor: Tasks 003-007 move each screen onto the scale as they touch it.
+*/
+
+/*
+  The book face, served from this origin so every device reads the same serif (public/fonts, SIL Open Font
+  License beside the files). Latin and Latin Extended, weights 400 to 700; text shows in the next serif of
+  --display until it arrives, and any other script stays on that fallback.
+*/
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/literata-roman.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Literata';
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/literata-italic.woff2') format('woff2');
+}
+
+:root {
+  /* Surfaces: sunken, canvas, raised. Rising is lighter. */
+  --paper: #f2ede3;
+  --surface: #faf7f1;
+  --raised: #fffdf9;
+  --plate: #201f1d;
+  --plate-ink: #f0ece3;
+  --plate-muted: #a09a90;
+  /* The plate stays graphite in both schemes, so the accent on it is the lifted value
+     in both. Same accent, one step brighter - not a second accent. Named for the plate's
+     ink because `.plate`, the universe card, already owns `--plate-accent` locally. */
+  --plate-ink-accent: #93a6e6;
+
+  /* Ink. Text pairs are 4.5:1 or better on every surface. */
+  --ink: #191713;
+  --muted: #675f53;
+  --accent: #2e4795;
+  --danger: #96271f;
+  --warning: #8a5b12;
+
+  /* Lines. Hairlines separate; `--border-control` bounds a control at 3:1 or better (WCAG 1.4.11). */
+  --rule: #e2dacb;
+  --rule-strong: #b3a996;
+  --border-control: #8c8170;
+  /* The one ornamental line: a title's rule, a section heading's tail. Decorative only. */
+  --accent-rule: color-mix(in srgb, var(--accent) 40%, transparent);
+
+  /* Action and state. Ink fill means act; accent wash means here. */
+  --primary-bg: var(--ink);
+  --primary-ink: #fdfbf7;
+  --accent-wash: color-mix(in srgb, var(--accent) 10%, var(--raised));
+  --hover-wash: color-mix(in srgb, var(--ink) 6%, transparent);
+  --press-wash: color-mix(in srgb, var(--ink) 10%, transparent);
+  --focus-ring: var(--accent);
+
+  /* Atmosphere: how strongly a page's artwork shows through its veil, and what it fades into. */
+  --atmosphere-opacity: 0.32;
+  --atmosphere-veil: var(--surface);
+
+  /* Depth and shape */
+  --shadow-1: 0 1px 2px rgb(58 44 22 / 0.08);
+  --shadow-2: 0 6px 16px -6px rgb(58 44 22 / 0.22);
+  --shadow-3: 0 18px 44px -14px rgb(40 30 15 / 0.3);
+  --backdrop: rgb(0 0 0 / 0.45);
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 999px;
+
+  /* Type. The two large steps scale with the window between a phone's size and a laptop's. */
+  --display:
+    'Literata', 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --ui:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-ui: 0.875rem;
+  --text-body: 1rem;
+  --text-item: 1.125rem;
+  --text-section: 1.375rem;
+  --text-page: clamp(1.875rem, 1.45rem + 1.25vw, 2.625rem);
+  --text-document: clamp(2.25rem, 1.6rem + 2vw, 3.25rem);
+  --title-tracking: -0.012em;
+
+  /* Space and size */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 3rem;
+  --space-9: 4rem;
+  --control-sm: 2rem;
+  --control-md: 2.5rem;
+  --control-touch: 2.75rem;
+  --gutter: 2.5rem;
+  /* The widest a workspace screen's content box gets (#57). Past it the column's spare width is split evenly, so the
+     title, tabs, article and picture keep one relationship from a laptop to a wide monitor instead of hugging the left
+     edge of whatever is left. Below it the gutters are just the gutters. */
+  --canvas-max: 100rem;
+
+  /* Motion and layers */
+  --duration-1: 120ms;
+  --duration-2: 180ms;
+  --duration-3: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-drawer: 30;
+  --z-modal: 40;
+
+  color-scheme: light;
+}
+
+/* The one LorEvolve theme (013). `data-theme` on <html> is set before the first paint by index.html's bootstrap - the
+   saved choice, else the system's - and changed only by `lib/theme.ts`. The workspace reads these values; the portal
+   has its own layer below, driven by the same attribute. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] {
+  --paper: #151617;
+  --surface: #1b1d1f;
+  --raised: #24272a;
+  --plate: #0f1011;
+  --plate-ink: #e9e6e0;
+  --plate-muted: #8b8781;
+  --ink: #e9e6e0;
+  --muted: #9c988f;
+  --accent: #93a6e6;
+  --danger: #e39a93;
+  --warning: #e0b36b;
+  --rule: #34383c;
+  --rule-strong: #4a4e52;
+  --border-control: #72767b;
+  --accent-rule: color-mix(in srgb, var(--accent) 45%, transparent);
+
+  /* Calmer than the ink itself, so the primary is not the brightest object on every screen. */
+  --primary-bg: #d6d0c5;
+  --primary-ink: #17181a;
+  --accent-wash: color-mix(in srgb, var(--accent) 16%, var(--raised));
+  --hover-wash: color-mix(in srgb, var(--ink) 8%, transparent);
+  --press-wash: color-mix(in srgb, var(--ink) 13%, transparent);
+  --atmosphere-opacity: 0.44;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-2: 0 8px 20px -8px rgb(0 0 0 / 0.65);
+  --shadow-3: 0 22px 50px -14px rgb(0 0 0 / 0.75);
+}
+/* Page gutters: 20 on a phone, 24 on a tablet, 40 on a laptop, 48 from 1440. */
+@media (min-width: 1440px) {
+  :root {
+    --gutter: 3rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --gutter: 1.25rem;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--ui);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* First in the tab order on every screen and off screen until it has the focus: one press of
+   Enter and the keyboard is at the screen's own content instead of fifteen stops of chrome away.
+   Its target is the one `main` each layout draws (`MAIN_CONTENT_ID`). */
+.skiplink {
+  position: fixed;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: var(--z-modal);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--primary-bg);
+  color: var(--primary-ink);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skiplink:focus {
+  transform: none;
+  box-shadow: var(--shadow-3);
+}
+
+/* The landmark a skip lands on takes the focus without a ring drawn round the whole screen. */
+main:focus {
+  outline: none;
+}
+
+/* Prose an author wrote - a summary, a description, notes, the article, the manuscript. Each paragraph is laid out
+   and aligned in the direction of its own first letter, so an Arabic paragraph after an English one reads right to
+   left and keeps its full stop, numbers and Latin names where they were written. Nothing around it changes. Not
+   `dir="auto"`: that decides once, from the first paragraph, for all of them. Every textarea holds prose. */
+textarea,
+.prose,
+.manuscript__writer p,
+:is(.editor__surface, .article__body) :is(p, h1, h2, h3, h4, h5, h6) {
+  unicode-bidi: plaintext;
+}
+
+/* A block of prose is as wide as its longest line, up to its measure, and starts where LorEvolve's text starts. So a short
+   right-to-left summary sits under its title, where any summary sits, instead of at the far edge of a 62ch measure in
+   the middle of the page; one that wraps still fills the measure, its lines aligned to their own side. */
+.prose {
+  width: fit-content;
+}
+
+/* The LorEvolve symbol. One size rule per place it appears, and nothing else: no tile, no border,
+   no recolouring. The artwork is transparent, so whatever surface it sits on shows through. */
+.brandmark {
+  flex: none;
+  width: 2.15rem;
+  height: 2.15rem;
+  object-fit: contain;
+}
+
+/* Large, above the wordmark on the auth plate. Bounded by vw as well as rem so it does not
+   crowd the pitch text when the plate narrows. */
+.brandmark--plate {
+  display: block;
+  width: clamp(3.5rem, 7vw, 5.5rem);
+  height: auto;
+  margin: 0 0 1.5rem;
+}

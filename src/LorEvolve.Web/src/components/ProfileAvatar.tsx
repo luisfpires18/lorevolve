@@ -1,9 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Crop, ImageMinus, ImagePlus, ImageUp } from 'lucide-react'
 import type { ImageCrop } from '../lib/imageCrop'
 import {
-  IMAGE_ACCEPT,
-  IMAGE_MAX_BYTES,
   profileImageUrl,
   removeProfileImage,
   setProfileImage,
@@ -12,16 +8,11 @@ import {
 import type { ProfileImageRef } from '../profile/types'
 import { useProfileImage } from '../profile/useProfileImage'
 import { useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { Avatar } from './Avatar'
 import { ImageCropDialog, type SaveStage } from './ImageCropDialog'
-
-/**
- * What the cropper is open on. A file just picked is framed before anything is uploaded; a photo
- * already stored is reframed from its own original, which is never sent again.
- */
-type Framing =
-  { kind: 'file'; file: File } | { kind: 'stored'; image: ProfileImageRef; source: string }
+import { PictureActions } from './PictureActions'
+import { usePictureFraming } from '../lib/usePictureFraming'
+import { FormMessage } from './FormMessage'
 
 /**
  * The account's picture on the Profile screen: the circle, and the four things that can be done
@@ -42,43 +33,8 @@ export function ProfileAvatar({ name }: { name: string }) {
   const { t } = useI18n()
   const { image, changed } = useProfileImage()
 
-  const input = useRef<HTMLInputElement>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [framing, setFraming] = useState<Framing | null>(null)
-
-  // A picked file is shown from the browser's own copy of it, so nothing is uploaded to preview
-  // it. Derived from the file rather than held in state - it is a value, not an event - and
-  // released when the cropper closes either way.
-  const pickedFile = framing?.kind === 'file' ? framing.file : null
-  const pickedSource = useMemo(
-    () => (pickedFile ? URL.createObjectURL(pickedFile) : null),
-    [pickedFile],
-  )
-
-  useEffect(() => {
-    if (!pickedSource) return
-
-    return () => {
-      URL.revokeObjectURL(pickedSource)
-    }
-  }, [pickedSource])
-
-  function choose(file: File | undefined) {
-    // The picker is reset either way, so choosing the same file twice after a failure still fires
-    // a change event.
-    if (input.current) input.current.value = ''
-    if (!file) return
-
-    setError(null)
-
-    if (file.size > IMAGE_MAX_BYTES) {
-      setError(t('account.avatar.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
-      return
-    }
-
-    setFraming({ kind: 'file', file })
-  }
+  const { input, error, setError, busy, framing, setFraming, choose, remove } =
+    usePictureFraming<ProfileImageRef>({ tooBigKey: 'account.avatar.tooBig' })
 
   function reframe() {
     if (!image) return
@@ -108,88 +64,53 @@ export function ProfileAvatar({ name }: { name: string }) {
     setFraming(null)
   }
 
-  async function remove() {
-    setError(null)
-    setBusy(true)
-    try {
-      await removeProfileImage()
-      changed(null)
-    } catch {
-      setError(t('account.avatar.removeFailed'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // A picked file is framed from its object URL; a stored one from its own original.
-  const source = framing === null ? null : framing.kind === 'file' ? pickedSource : framing.source
-
   return (
     <div className="avatar" data-testid="profile-avatar-field">
       <Avatar image={image} name={name} className="avatar__photo" testId="profile-avatar" />
 
-      <div className="avatar__actions">
-        {/* The input comes first so the label can be styled from its state - focus and disabled
-            both travel forwards through a sibling selector and not backwards. */}
-        <input
-          ref={input}
-          id="profile-photo-input"
-          className="avatar__input"
-          type="file"
-          accept={IMAGE_ACCEPT}
-          disabled={busy}
-          onChange={(event) => choose(event.target.files?.[0])}
-          data-testid="profile-photo-input"
+      <div className="actions actions--tight avatar__actions">
+        <PictureActions
+          variant="avatar"
+          input={input}
+          inputId="profile-photo-input"
+          hasPicture={Boolean(image)}
+          busy={busy}
+          onFile={(file) => void choose(file)}
+          onReframe={reframe}
+          onRemove={() =>
+            void remove({
+              stored: true,
+              run: removeProfileImage,
+              done: () => changed(null),
+              failed: () => t('account.avatar.removeFailed'),
+            })
+          }
+          removeTone="secondary"
+          labels={{
+            add: t('account.avatar.upload'),
+            replace: t('account.avatar.replace'),
+            reframe: t('account.avatar.edit'),
+            remove: t('account.avatar.remove'),
+            removing: t('account.avatar.removing'),
+          }}
+          testIds={{
+            input: 'profile-photo-input',
+            pick: 'profile-photo-pick',
+            reframe: 'profile-photo-reframe',
+            remove: 'profile-photo-remove',
+          }}
         />
-
-        <label
-          className="button button--secondary avatar__pick"
-          htmlFor="profile-photo-input"
-          data-testid="profile-photo-pick"
-        >
-          <ActionIcon icon={image ? ImageUp : ImagePlus} />
-          {image ? t('account.avatar.replace') : t('account.avatar.upload')}
-        </label>
-
-        {image ? (
-          <>
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={busy}
-              onClick={reframe}
-              data-testid="profile-photo-reframe"
-            >
-              <ActionIcon icon={Crop} />
-              {t('account.avatar.edit')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              disabled={busy}
-              onClick={() => void remove()}
-              data-testid="profile-photo-remove"
-            >
-              <ActionIcon icon={ImageMinus} />
-              {busy ? t('account.avatar.removing') : t('account.avatar.remove')}
-            </button>
-          </>
-        ) : null}
       </div>
 
       <p className="avatar__hint">{t('account.avatar.hint')}</p>
 
-      {error ? (
-        <p className="field__error" role="alert" data-testid="profile-photo-error">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormMessage testId="profile-photo-error">{error}</FormMessage> : null}
 
-      {framing && source ? (
+      {framing ? (
         <ImageCropDialog
           // A new picture is a new cropper, never the last one's state carried over.
-          key={source}
-          source={source}
+          key={framing.source}
+          source={framing.source}
           initialCrop={framing.kind === 'stored' ? framing.image.crop : null}
           title={
             framing.kind === 'stored'

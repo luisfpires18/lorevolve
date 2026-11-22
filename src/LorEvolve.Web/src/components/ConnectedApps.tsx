@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
+import { useEffect, useRef, useState } from 'react'
+import { quietlyGone } from '../lib/errorText'
+import { useConfirmFocus } from '../lib/useConfirmFocus'
+import { useFormSave } from '../lib/useFormSave'
 import { t, tx, useI18n } from '../i18n'
-import { formatDate, formatDateTime } from '../lib/dates'
 import {
   ConnectedAppStatus,
   disconnectApp,
@@ -10,8 +11,14 @@ import {
   type ConnectedApp,
   type ConnectedAppStatusValue,
 } from '../mcp/api'
-
-type Load = { kind: 'loading' } | { kind: 'ready'; apps: ConnectedApp[] } | { kind: 'error' }
+import { Button } from './Button'
+import { ManageRow } from './ManageRow'
+import { Section } from './Section'
+import { Announce } from './Announce'
+import { QuietNote } from './QuietNote'
+import { useAsyncRead } from '../lib/useAsyncRead'
+import { ReadGate } from './ReadGate'
+import { DateText } from './DateText'
 
 const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
   get [ConnectedAppStatus.Active]() {
@@ -32,23 +39,9 @@ const STATUS_WORDS: Record<ConnectedAppStatusValue, string> = {
  */
 export function ConnectedApps() {
   const { t } = useI18n()
-  const [load, setLoad] = useState<Load>({ kind: 'loading' })
+  const { load, setLoad, retry } = useAsyncRead(listConnectedApps)
   const [announcement, setAnnouncement] = useState('')
   const headingRef = useRef<HTMLHeadingElement>(null)
-
-  function read(signal?: AbortSignal) {
-    listConnectedApps(signal)
-      .then((apps) => setLoad({ kind: 'ready', apps }))
-      .catch(() => {
-        if (!signal?.aborted) setLoad({ kind: 'error' })
-      })
-  }
-
-  useEffect(() => {
-    const controller = new AbortController()
-    read(controller.signal)
-    return () => controller.abort()
-  }, [])
 
   // Arriving from Connect to AI's link lands on this section.
   useEffect(() => {
@@ -60,7 +53,7 @@ export function ConnectedApps() {
   function removed(app: ConnectedApp) {
     setLoad((current) =>
       current.kind === 'ready'
-        ? { kind: 'ready', apps: current.apps.filter((one) => one.id !== app.id) }
+        ? { kind: 'ready', value: current.value.filter((one) => one.id !== app.id) }
         : current,
     )
     setAnnouncement(
@@ -73,222 +66,201 @@ export function ConnectedApps() {
   }
 
   return (
-    <section
-      className="profile__public connectedapps"
+    <Section
+      className="connectedapps"
       id="connected-apps"
-      aria-labelledby="profile-connected-heading"
-      data-testid="connected-apps"
+      title={t('data.connectedApps.title')}
+      titleId="profile-connected-heading"
+      titleProps={{ ref: headingRef, tabIndex: -1 }}
+      testId="connected-apps"
     >
-      <h2
-        className="profile__subtitle"
-        id="profile-connected-heading"
-        ref={headingRef}
-        tabIndex={-1}
+      <QuietNote spacing="block">{t('data.connectedApps.note')}</QuietNote>
+
+      <ReadGate
+        load={load}
+        loading={{ text: t('data.connectedApps.loading'), className: 'usage__status' }}
+        error={{
+          message: t('data.connectedApps.loadFailed'),
+          onRetry: retry,
+          retryLabel: t('data.connectedApps.retry'),
+          retrySize: 'sm',
+          testId: 'connected-apps-error',
+        }}
       >
-        {t('data.connectedApps.title')}
-      </h2>
-      <p className="settings__note">{t('data.connectedApps.note')}</p>
+        {(apps) =>
+          apps.length === 0 ? (
+            <QuietNote className="connectedapps__empty" size="ui" testId="connected-apps-empty">
+              {t('data.connectedApps.empty')}
+            </QuietNote>
+          ) : (
+            <ul className="connectedapps__list">
+              {apps.map((app) => (
+                <ConnectedAppRow key={app.id} app={app} onRemoved={() => removed(app)} />
+              ))}
+            </ul>
+          )
+        }
+      </ReadGate>
 
-      {load.kind === 'loading' ? (
-        <p className="usage__status" role="status">
-          {t('data.connectedApps.loading')}
-        </p>
-      ) : load.kind === 'error' ? (
-        <div className="form__message" role="alert" data-testid="connected-apps-error">
-          <p>{t('data.connectedApps.loadFailed')}</p>
-          <button
-            className="button button--secondary button--sm"
-            type="button"
-            onClick={() => read()}
-          >
-            {t('data.connectedApps.retry')}
-          </button>
-        </div>
-      ) : load.apps.length === 0 ? (
-        <p className="connectedapps__empty" data-testid="connected-apps-empty">
-          {t('data.connectedApps.empty')}
-        </p>
-      ) : (
-        <ul className="connectedapps__list">
-          {load.apps.map((app) => (
-            <ConnectedAppRow key={app.id} app={app} onRemoved={() => removed(app)} />
-          ))}
-        </ul>
-      )}
-
-      <p className="visually-hidden" role="status" data-testid="connected-apps-announcer">
-        {announcement}
-      </p>
-    </section>
+      <Announce testId="connected-apps-announcer">{announcement}</Announce>
+    </Section>
   )
 }
 
 function ConnectedAppRow({ app: listed, onRemoved }: { app: ConnectedApp; onRemoved: () => void }) {
   const { t } = useI18n()
   const [app, setApp] = useState(listed)
-  const [stopping, setStopping] = useState(false)
   const [stopped, setStopped] = useState(false)
-  const id = useId()
   const [confirming, setConfirming] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // Two saves with their own busy state that may overlap. The row shows one error, as one shared line did: starting
+  // either clears it, and the save that failed last is the one shown.
+  const [failedLast, setFailedLast] = useState<'removal' | 'reader'>('removal')
+  const removal = useFormSave({
+    needChange: null,
+    failed: '',
+    refusal: () => {
+      setFailedLast('removal')
+      return t('data.connectedApps.disconnectFailed')
+    },
+  })
+  const reader = useFormSave({
+    needChange: null,
+    failed: '',
+    refusal: () => {
+      setFailedLast('reader')
+      return t('data.connectedApps.readerFailed')
+    },
+  })
+  const busy = removal.isSaving
+  const stopping = reader.isSaving
   const confirm = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
-  const wasConfirming = useRef(false)
+  useConfirmFocus(confirming, confirm, button)
 
-  useEffect(() => {
-    if (confirming) {
-      wasConfirming.current = true
-      confirm.current?.focus()
-    } else if (wasConfirming.current) {
-      wasConfirming.current = false
-      button.current?.focus()
-    }
-  }, [confirming])
-
-  async function disconnect() {
-    setBusy(true)
-    setError(null)
-    try {
-      await disconnectApp(app.id)
-      onRemoved()
-    } catch (problem: unknown) {
-      // Already gone, disconnected in another tab, is what was asked for.
-      if (problem instanceof ApiError && problem.status === 404) {
-        onRemoved()
-        return
+  function disconnect() {
+    reader.setMessage(null)
+    return removal.save(async () => {
+      try {
+        await disconnectApp(app.id)
+      } catch (problem: unknown) {
+        // Already gone, disconnected in another tab, is what was asked for.
+        if (!quietlyGone(problem)) throw problem
       }
-      setError(t('data.connectedApps.disconnectFailed'))
-      setBusy(false)
-    }
+      onRemoved()
+    })
   }
 
-  async function stop() {
-    setStopping(true)
-    setError(null)
-    try {
+  function stop() {
+    removal.setMessage(null)
+    return reader.save(async () => {
       await stopProposals(app.id)
       setApp({ ...app, canPropose: false, canProposeSchema: false })
       setStopped(true)
-    } catch {
-      setError(t('data.connectedApps.readerFailed'))
-    } finally {
-      setStopping(false)
-    }
+    })
   }
 
   return (
-    <li className="connectedapps__row" data-testid="connected-app" data-status={app.status}>
-      <div className="connectedapps__who">
-        <p className="connectedapps__name">
-          <bdi>{app.clientName}</bdi>
-        </p>
-        <p className="connectedapps__meta">
-          {app.verifiedHost
-            ? tx('data.connectedApps.publishedBy', { host: <bdi>{app.verifiedHost}</bdi> })
-            : t('data.connectedApps.unverified')}
-          {' · '}
-          {app.canPropose ? t('data.connectedApps.creator') : t('data.connectedApps.reader')}
-        </p>
-        <p className="connectedapps__meta">
-          {tx('data.connectedApps.reads', { universe: <bdi>{app.universeName}</bdi> })}
-        </p>
-        <p className="connectedapps__meta">
-          {t('data.connectedApps.connectedOn', { date: formatDate(app.createdAt) })}
-          {' · '}
-          {app.lastUsedAt
-            ? t('data.connectedApps.lastUsed', { date: formatDateTime(app.lastUsedAt) })
-            : t('data.connectedApps.neverUsed')}
-        </p>
-        <p
-          className={
-            app.status === ConnectedAppStatus.Active
-              ? 'connectedapps__status'
-              : 'connectedapps__status connectedapps__status--off'
-          }
-          data-testid="connected-app-status"
-        >
-          {STATUS_WORDS[app.status]}
-        </p>
-      </div>
-      <div className="connectedapps__controls">
-        {app.canPropose ? (
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => void stop()}
-            disabled={busy || stopping}
-            aria-label={t('data.connectedApps.makeReaderLabel', {
+    <ManageRow
+      flush
+      start
+      testId="connected-app"
+      data={{ 'data-status': app.status }}
+      whoClassName="connectedapps__who"
+      name={app.clientName}
+      meta={
+        <>
+          <QuietNote className="managerow__meta" wrap>
+            {app.verifiedHost
+              ? tx('data.connectedApps.publishedBy', { host: <bdi>{app.verifiedHost}</bdi> })
+              : t('data.connectedApps.unverified')}
+            {' · '}
+            {app.canPropose ? t('data.connectedApps.creator') : t('data.connectedApps.reader')}
+          </QuietNote>
+          <QuietNote className="managerow__meta" wrap>
+            {tx('data.connectedApps.reads', { universe: <bdi>{app.universeName}</bdi> })}
+          </QuietNote>
+          <QuietNote className="managerow__meta" wrap>
+            {tx('data.connectedApps.connectedOn', { date: <DateText value={app.createdAt} /> })}
+            {' · '}
+            {app.lastUsedAt
+              ? tx('data.connectedApps.lastUsed', {
+                  date: <DateText value={app.lastUsedAt} withTime />,
+                })
+              : t('data.connectedApps.neverUsed')}
+          </QuietNote>
+          <p
+            className={
+              app.status === ConnectedAppStatus.Active
+                ? 'connectedapps__status'
+                : 'connectedapps__status connectedapps__status--off'
+            }
+            data-testid="connected-app-status"
+          >
+            {STATUS_WORDS[app.status]}
+          </p>
+        </>
+      }
+      controlsClassName="connectedapps__controls"
+      controls={
+        <>
+          {app.canPropose ? (
+            <Button
+              tone="secondary"
+              onClick={() => void stop()}
+              disabled={busy || stopping}
+              aria-label={t('data.connectedApps.makeReaderLabel', {
+                client: app.clientName,
+                universe: app.universeName,
+              })}
+              data-testid="stop-app-proposals"
+            >
+              {stopping ? t('data.connectedApps.changing') : t('data.connectedApps.makeReader')}
+            </Button>
+          ) : null}
+          <Button
+            tone="danger-quiet"
+            ref={button}
+            onClick={() => setConfirming(true)}
+            disabled={busy || confirming}
+            aria-label={t('data.connectedApps.disconnectLabel', {
               client: app.clientName,
               universe: app.universeName,
             })}
-            data-testid="stop-app-proposals"
+            data-testid="disconnect-app"
           >
-            {stopping ? t('data.connectedApps.changing') : t('data.connectedApps.makeReader')}
-          </button>
-        ) : null}
-        <button
-          ref={button}
-          className="button button--secondary button--danger-quiet"
-          type="button"
-          onClick={() => setConfirming(true)}
-          disabled={busy || confirming}
-          aria-label={t('data.connectedApps.disconnectLabel', {
-            client: app.clientName,
-            universe: app.universeName,
-          })}
-          data-testid="disconnect-app"
-        >
-          {t('data.connectedApps.disconnect')}
-        </button>
-      </div>
-      {confirming ? (
-        <div
-          className="settings__confirm connectedapps__confirm"
-          role="group"
-          aria-labelledby={`${id}-confirm`}
-          tabIndex={-1}
-          ref={confirm}
-          data-testid="disconnect-app-confirm"
-        >
-          <p className="settings__confirmtitle" id={`${id}-confirm`}>
-            {tx('data.connectedApps.confirmTitle', {
-              client: <bdi>{app.clientName}</bdi>,
-              universe: <bdi>{app.universeName}</bdi>,
-            })}
-          </p>
-          <p className="settings__note">{t('data.connectedApps.confirmNote')}</p>
-          <div className="form__actions">
-            <button
-              className="button button--danger"
-              type="button"
-              onClick={() => void disconnect()}
-              disabled={busy}
-              data-testid="confirm-disconnect-app"
-            >
-              {busy ? t('data.connectedApps.disconnecting') : t('data.connectedApps.disconnect')}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setConfirming(false)}
-              disabled={busy}
-            >
-              {t('data.connectedApps.keep')}
-            </button>
-          </div>
-        </div>
-      ) : null}
+            {t('data.connectedApps.disconnect')}
+          </Button>
+        </>
+      }
+      remove={
+        confirming
+          ? {
+              className: 'connectedapps__confirm',
+              title: tx('data.connectedApps.confirmTitle', {
+                client: <bdi>{app.clientName}</bdi>,
+                universe: <bdi>{app.universeName}</bdi>,
+              }),
+              note: t('data.connectedApps.confirmNote'),
+              submitLabel: t('data.connectedApps.disconnect'),
+              busyLabel: t('data.connectedApps.disconnecting'),
+              keepLabel: t('data.connectedApps.keep'),
+              busy,
+              onConfirm: () => void disconnect(),
+              onKeep: () => setConfirming(false),
+              panelRef: confirm,
+              testId: 'disconnect-app-confirm',
+              submitTestId: 'confirm-disconnect-app',
+            }
+          : null
+      }
+      error={failedLast === 'reader' ? reader.message : removal.message}
+      errorClassName="connectedapps__error"
+    >
       {stopped ? (
-        <p className="connectedapps__meta" role="status" data-testid="app-proposals-stopped">
+        <QuietNote className="managerow__meta" wrap role="status" testId="app-proposals-stopped">
           {t('data.connectedApps.stopped')}
-        </p>
+        </QuietNote>
       ) : null}
-      {error ? (
-        <p className="form__message connectedapps__error" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </li>
+    </ManageRow>
   )
 }

@@ -86,6 +86,9 @@ test.describe('Types: Lore and Gaming', () => {
     await page.goto(types)
     await page.getByTestId('types-context-gaming').click()
     await expect(page.getByTestId('types-game')).toBeVisible()
+    // One title: the page's own. The game's types panel adds buttons, not a second head (#412).
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+    await expect(page.getByRole('heading', { name: 'Entity types' })).toHaveCount(0)
     const first = (await page.getByTestId('types-game').inputValue()) === a.id ? a : b
     const second = first === a ? b : a
     const [firstType, secondType] = first === a ? [typeA, typeB] : [typeB, typeA]

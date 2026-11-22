@@ -9,6 +9,8 @@ import {
   type ValidationTerm,
   type ValidationTermKindValue,
 } from '../ruleValidation/types'
+import { FormActions } from './FormActions'
+import { NewButton } from './NewButton'
 
 interface ValidationTermSelectProps {
   universeId: string
@@ -158,15 +160,14 @@ export function ValidationTermSelect({
               ))}
             </select>
             {!isAdding ? (
-              <button
+              <NewButton
+                tone="secondary"
                 ref={newButton}
-                className="button button--secondary"
-                type="button"
                 onClick={open}
                 data-testid={`${testId}-new`}
               >
                 {t('canon.termSelect.new', { word })}
-              </button>
+              </NewButton>
             ) : null}
           </div>
 
@@ -176,7 +177,8 @@ export function ValidationTermSelect({
               id={nameId}
               className="termselect__new"
               data-testid={`${testId}-adding`}
-              error={nameError ? <span role="alert">{nameError}</span> : undefined}
+              error={nameError || undefined}
+              announce
             >
               {(nameControl) => (
                 <>
@@ -196,20 +198,14 @@ export function ValidationTermSelect({
                       aria-describedby={nameControl['aria-describedby']}
                       data-testid={`${testId}-name`}
                     />
-                    <button
-                      className="button"
-                      type="button"
-                      disabled={isCreating}
-                      onClick={() => void create()}
-                      data-testid={`${testId}-add`}
-                    >
-                      {isCreating
-                        ? t('canon.termSelect.adding')
-                        : t('canon.termSelect.add', { word })}
-                    </button>
-                    <button className="button button--secondary" type="button" onClick={cancel}>
-                      {t('canon.termSelect.cancel')}
-                    </button>
+                    <FormActions
+                      submitLabel={t('canon.termSelect.add', { word })}
+                      busy={isCreating}
+                      busyLabel={t('canon.termSelect.adding')}
+                      onSubmit={() => void create()}
+                      submitTestId={`${testId}-add`}
+                      onCancel={cancel}
+                    />
                   </div>
                 </>
               )}

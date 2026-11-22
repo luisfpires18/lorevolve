@@ -63,7 +63,6 @@ const review: Dictionary['review'] = {
       one: '{n} já aplicada',
       other: '{n} já aplicadas',
     },
-    showMore: 'Mostrar mais',
   },
   aiChange: {
     opening: 'A abrir…',
@@ -112,10 +111,10 @@ const review: Dictionary['review'] = {
       none: 'Nenhuma alteração selecionada.',
       selected: { one: '{n} selecionada.', other: '{n} selecionadas.' },
       selectAll: 'Selecionar todas as que podem ser aplicadas',
-      applying: 'A aplicar',
+      applying: 'A aplicar…',
       approveSelected: 'Aprovar selecionadas',
       approveCount: { one: 'Aprovar {n}', other: 'Aprovar {n}' },
-      rejecting: 'A rejeitar',
+      rejecting: 'A rejeitar…',
       rejectSelected: 'Rejeitar selecionadas',
       rejectAll: 'Rejeitar tudo',
       withdraw: 'Retirar esta proposta',
@@ -185,7 +184,6 @@ const review: Dictionary['review'] = {
       canon: 'Estado de cânone',
       saving: 'A guardar…',
       save: 'Guardar',
-      cancel: 'Cancelar',
     },
   },
   comments: {
@@ -205,7 +203,6 @@ const review: Dictionary['review'] = {
     },
     drawer: {
       eyebrow: 'Revisão',
-      close: 'Fechar',
     },
     leave: {
       title: 'O teu comentário não foi publicado. Sair sem o publicar?',
@@ -224,8 +221,7 @@ const review: Dictionary['review'] = {
     resolvedBy: 'Resolvido por {name}',
     reply: 'Responder',
     replyPost: 'Responder',
-    posting: 'A publicar',
-    cancel: 'Cancelar',
+    posting: 'A publicar…',
     reopen: 'Reabrir',
     resolve: 'Resolver',
     newComment: 'Novo comentário',
@@ -244,7 +240,6 @@ const review: Dictionary['review'] = {
     cantAccept: 'Esta sugestão não pode ser aceite. {reason}',
     acceptFailed: 'O LorEvolve não conseguiu aceitar essa sugestão. Tenta novamente.',
     rejectFailed: 'O LorEvolve não conseguiu rejeitar essa sugestão. Tenta novamente.',
-    showMore: 'Mostrar mais',
     unknownAuthor: 'Autor desconhecido',
     unknownResolver: 'Autor desconhecido',
     changed: {
@@ -259,7 +254,7 @@ const review: Dictionary['review'] = {
     noLongerShown: 'O LorEvolve já não consegue mostrar estas alterações.',
     acceptedBy: 'Aceite por {name}',
     rejectedBy: 'Rejeitada por {name}',
-    accepting: 'A aceitar',
+    accepting: 'A aceitar…',
     accept: 'Aceitar',
     reject: 'Rejeitar',
     suggest: 'Sugerir alterações',

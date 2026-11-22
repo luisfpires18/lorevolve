@@ -4,13 +4,14 @@ import { useI18n } from '../i18n'
 import { networkFailure } from '../lib/api'
 import { returnPath } from './returnPath'
 import { useAuth } from './useAuth'
+import { Button } from '../components/Button'
+import { Callout } from '../components/Callout'
+import { SessionPending } from '../components/SessionPending'
 
 /** Held while the session probe is in flight, so no screen paints before it settles. */
-function SessionPending() {
+function SessionProbe() {
   const { t } = useI18n()
-  return (
-    <div className="session-pending" role="status" aria-label={t('auth.routes.checkingSession')} />
-  )
+  return <SessionPending label={t('auth.routes.checkingSession')} />
 }
 
 /** The session probe could not reach LorEvolve, so whether the author is signed in is unknown: offer a retry. */
@@ -18,12 +19,12 @@ function SessionUnreachable({ onRetry }: { onRetry: () => void }) {
   const { t } = useI18n()
   return (
     <div className="session-pending session-pending--unreachable">
-      <div className="notice notice--error" role="alert">
+      <Callout look="notice" tone="error" role="alert">
         <p>{networkFailure()}</p>
-        <button className="button button--secondary" type="button" onClick={onRetry}>
+        <Button tone="secondary" onClick={onRetry}>
           {t('auth.routes.retry')}
-        </button>
-      </div>
+        </Button>
+      </Callout>
     </div>
   )
 }
@@ -33,7 +34,7 @@ export function RequireAuth() {
   const { user, isLoading, isUnreachable, retry } = useAuth()
   const location = useLocation()
 
-  if (isLoading) return <SessionPending />
+  if (isLoading) return <SessionProbe />
   if (!user && isUnreachable) return <SessionUnreachable onRetry={retry} />
   if (!user)
     return (
@@ -57,7 +58,7 @@ export function RequireGuest() {
   const { user, isLoading } = useAuth()
   const location = useLocation()
 
-  if (isLoading) return <SessionPending />
+  if (isLoading) return <SessionProbe />
   if (user) return <Navigate to={returnPath(location.state)} replace />
   return <Outlet />
 }
@@ -70,7 +71,7 @@ export function RequireAdmin() {
   const { user, isLoading, isUnreachable, retry } = useAuth()
   const location = useLocation()
 
-  if (isLoading) return <SessionPending />
+  if (isLoading) return <SessionProbe />
   if (!user && isUnreachable) return <SessionUnreachable onRetry={retry} />
   if (!user)
     return (

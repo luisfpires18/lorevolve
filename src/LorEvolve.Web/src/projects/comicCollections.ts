@@ -71,3 +71,6 @@ export const removeComicEntry = (universeId: string, id: string, nodeId: string)
 
 export const moveComicEntry = (universeId: string, id: string, nodeId: string, place: number) =>
   post(`${base(universeId)}/${id}/entries/${nodeId}/move`, { place })
+
+/** What the edit drawer is for: a new collection of one kind, or an existing one. */
+export type Editing = { kind: ComicCollectionKind; collection: ComicCollection | null }

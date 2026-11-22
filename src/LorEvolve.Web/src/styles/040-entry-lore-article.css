@@ -1,0 +1,157 @@
+/* ---------- Entry: the lore article ----------
+
+   A page in the author's reference book. The name leads, set large in the display face; above it,
+   quietly, where it lives - "Lore / Character" - and how settled it is. Under it one bar: the entry's
+   three views, and what can be done to it, Edit first and everything that only manages it in ⋯.
+   Then the page itself: the article at a reading measure, and beside it the picture and the facts,
+   the way a reference volume sets an infobox. */
+
+.entry {
+  --entry-accent: var(--accent);
+}
+
+/* On an entry the crumb is one word beside the type, inside the header, so it reads as the entry's
+   own metadata rather than as a line hovering above the page. */
+.entry__kind .crumb::after {
+  content: '\2009/\2009';
+  color: var(--muted);
+}
+
+/* Where the entry says what it is: the crumb back to the lore, the type (itself a link to that type's
+   list), and the Canon control at the far end. One line on a desktop, two on a phone. */
+.entry__kind {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Scoped: the canon look is also the relation and family-connection forms' status control, where it is an
+   ordinary field and must not be pushed anywhere. */
+.entry__kind .segmented--canon {
+  align-self: center;
+  margin-left: auto;
+}
+
+.entry__type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.entry__type:hover {
+  text-decoration: underline;
+}
+
+.entry__typeicon {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  color: color-mix(in srgb, var(--type-accent, var(--muted)) 65%, var(--ink));
+}
+
+.entry__typepick {
+  width: auto;
+  max-width: 14rem;
+}
+
+.entry__name {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-document);
+  line-height: 1.05;
+  letter-spacing: var(--title-tracking);
+  margin: var(--space-3) 0 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* The name as a document title while the form is open: ruled, not boxed, in the name's own size. */
+.entry__nameinput {
+  width: 100%;
+  max-width: 46rem;
+  margin-top: var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--border-control);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--text-document);
+  line-height: 1.2;
+  padding: 0 0 var(--space-1);
+}
+
+.entry__nameinput:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 0 var(--accent);
+}
+
+.entry__aliases {
+  margin: var(--space-2) 0 0;
+}
+
+.entry__summary {
+  margin: var(--space-3) 0 0;
+  max-width: 58ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.entry__summaryinput {
+  width: 100%;
+  max-width: 46rem;
+  margin-top: var(--space-4);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.6;
+  padding: 0.5rem 0.75rem;
+  resize: vertical;
+}
+
+.entry__summaryinput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* One bar under the identity: the entry's three views on the left, and what can be done to the entry
+   itself on the right. The story page's bar, which is the same idea one screen over. */
+.entry__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  margin-top: var(--space-6);
+  border-bottom: 1px solid var(--rule);
+}
+
+.entry__lenses {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Article, Progression, Relations, History and the comments button: one row at 390px only with the
+   phone's tighter gaps, in the widest font a phone draws them in (DejaVu). */
+@media (max-width: 640px) {
+  .entry__lenses {
+    gap: var(--space-2);
+  }
+}
+
+.entry__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+}

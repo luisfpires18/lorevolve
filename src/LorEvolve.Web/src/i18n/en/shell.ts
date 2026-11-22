@@ -1,6 +1,8 @@
 /** App shell: routes and error screens, workspace bar, skip link, brand, shared dialogs and menus, API fallback errors (#101). */
 const shell = {
   app: {
+    loadFailed: 'Could not load this.',
+    tryAgain: 'Try again',
     screenPending: 'Loading this screen',
     sectionPending: 'Opening…',
     crashed: {
@@ -8,6 +10,24 @@ const shell = {
       generic: 'Something went wrong on this page. Reload to try again.',
       reload: 'Reload',
     },
+  },
+  crumb: {
+    label: 'Breadcrumb',
+  },
+  fields: {
+    required: '(required)',
+  },
+  pager: {
+    label: 'Pagination',
+    previous: 'Previous',
+    next: 'Next',
+    position: 'Page {page} of {total}',
+  },
+  showMore: {
+    label: 'Show more',
+    loading: 'Loading…',
+    error: 'More could not be loaded.',
+    shown: 'Showing {shown} of {total}',
   },
   workspace: {
     screen: {
@@ -35,7 +55,36 @@ const shell = {
     hint: 'Your role in this shared universe does not include it. {back}',
     back: 'Back to the overview',
   },
+  actions: {
+    cancel: 'Cancel',
+    close: 'Close',
+    done: 'Done',
+    discard: 'Discard changes',
+    save: 'Save',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    moveEarlier: 'Move earlier',
+    moveLater: 'Move later',
+    moveUpNamed: 'Move {name} up',
+    moveDownNamed: 'Move {name} down',
+    moveEarlierNamed: 'Move {name} earlier',
+    moveLaterNamed: 'Move {name} later',
+    earlier: 'Earlier',
+    later: 'Later',
+    view: 'View',
+    hide: 'Hide',
+  },
+  zoom: {
+    label: 'Zoom',
+    in: 'Zoom in',
+    out: 'Zoom out',
+  },
   confirm: {
+    removePicture: {
+      title: 'Remove this picture?',
+      message: 'It is deleted for good. You can add another one at any time.',
+      confirm: 'Remove picture',
+    },
     cancel: 'Cancel',
     failed: 'That could not be done. Try again.',
     discard: {

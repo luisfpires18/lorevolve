@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { WorldRuleEditor } from '../components/WorldRuleEditor'
 import { t, useI18n } from '../i18n'
-import { formatDate } from '../lib/dates'
 import { useUniverseAccess } from '../universes/access'
-import { getWorldRule } from '../worldRules/api'
-import type { WorldRuleDetail } from '../worldRules/types'
 import type { WorkspaceContext } from './UniverseWorkspace'
 import type { WorldRulesListNotice } from './WorldRulesPage'
+import { WorldRuleReading } from '../components/worldRules/WorldRuleReading'
 
 /** What the page that just created a rule says to the page that opens it. */
 interface WorldRuleOpenNotice {
@@ -59,98 +57,5 @@ export default function WorldRulePage({ isNew = false }: { isNew?: boolean }) {
         void navigate(listPath, { state: { deleted: rule } satisfies WorldRulesListNotice })
       }
     />
-  )
-}
-
-type Reading =
-  | { kind: 'loading' }
-  | { kind: 'ready'; rule: WorldRuleDetail }
-  | { kind: 'missing' }
-  | { kind: 'error'; message: string }
-
-function WorldRuleReading({
-  universeId,
-  ruleId,
-  listPath,
-}: {
-  universeId: string
-  ruleId: string
-  listPath: string
-}) {
-  useI18n() // re-renders when the language changes
-  const [state, setState] = useState<Reading>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getWorldRule(universeId, ruleId, controller.signal)
-      .then((rule) => setState({ kind: 'ready', rule }))
-      .catch((problem: unknown) => {
-        if (controller.signal.aborted) return
-        const status = (problem as { status?: number }).status
-        setState(
-          status === 404
-            ? { kind: 'missing' }
-            : {
-                kind: 'error',
-                message: problem instanceof Error ? problem.message : t('canon.rule.readFailed'),
-              },
-        )
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId, ruleId, reads])
-
-  return (
-    <article className="rule" data-testid="world-rule-reading">
-      <header className="rule__head">
-        <Link className="rule__back" to={listPath} data-testid="world-rule-back">
-          {t('canon.rule.back')}
-        </Link>
-        <h1 className="rule__heading" data-testid="world-rule-heading">
-          {state.kind === 'ready' ? <bdi>{state.rule.title}</bdi> : t('canon.rule.heading')}
-        </h1>
-      </header>
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rule.opening')}
-        </p>
-      ) : null}
-      {state.kind === 'missing' ? (
-        <p className="notice" data-testid="world-rule-missing">
-          {t('canon.rule.missing')}
-        </p>
-      ) : null}
-      {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert">
-          <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((count) => count + 1)
-            }}
-          >
-            {t('canon.rule.retry')}
-          </button>
-        </div>
-      ) : null}
-      {state.kind === 'ready' ? (
-        <>
-          {state.rule.description ? (
-            <p className="rule__reading prose" data-testid="world-rule-text">
-              {state.rule.description}
-            </p>
-          ) : (
-            <p className="notice">{t('canon.rule.noDescription')}</p>
-          )}
-          <p className="rule__meta">
-            {t('canon.rule.lastChanged', { date: formatDate(state.rule.updatedAt) })}
-          </p>
-        </>
-      ) : null}
-    </article>
   )
 }

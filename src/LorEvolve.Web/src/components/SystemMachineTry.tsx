@@ -5,6 +5,9 @@ import { t, useI18n } from '../i18n'
 import { evaluateSystemMachine } from '../worldLogic/api'
 import { markText, type GuardMarkValue } from '../worldLogic/markText'
 import type { SystemMachineTryResult } from '../worldLogic/types'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
+import { SectionTitle } from './Section'
 
 const m = 'canon.worldLogic.systems.machine'
 
@@ -71,7 +74,7 @@ export function SystemMachineTry({
 
   return (
     <section className="machinepanel__group" data-testid="machine-try">
-      <h2 className="sectionrule">{t(`${m}.try.title`)}</h2>
+      <SectionTitle tone="rule">{t(`${m}.try.title`)}</SectionTitle>
       <EntityPicker
         label={t(`${m}.try.entry`)}
         universeId={universeId}
@@ -79,11 +82,9 @@ export function SystemMachineTry({
         onChange={choose}
       />
       {failed ? (
-        <p className="form__message" role="alert" data-testid="machine-try-failed">
-          {t(`${m}.try.failed`)}
-        </p>
+        <FormMessage testId="machine-try-failed">{t(`${m}.try.failed`)}</FormMessage>
       ) : null}
-      <p className="field__hint" role="status" data-testid="machine-try-result">
+      <QuietNote spacing="hint" role="status" testId="machine-try-result">
         {entry && result ? (
           result.value === null ? (
             t(`${m}.try.outside`)
@@ -91,7 +92,7 @@ export function SystemMachineTry({
             <bdi>{t(`${m}.try.value`, { value: result.value })}</bdi>
           )
         ) : null}
-      </p>
+      </QuietNote>
     </section>
   )
 }

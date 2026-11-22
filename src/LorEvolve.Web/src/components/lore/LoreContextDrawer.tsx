@@ -1,0 +1,242 @@
+import { useId, useRef, useState, type KeyboardEvent } from 'react'
+import { Drawer } from '../Drawer'
+import { useI18n } from '../../i18n'
+import { useUniverseAccess } from '../../universes/access'
+import type { LoreContextProps } from '../LoreContext'
+import { useLoreContextLinks } from '../../lore/useLoreContextLinks'
+import { LoreContextRow } from './LoreContextRow'
+import { LoreContextMentioned } from './LoreContextMentioned'
+import { LorePreview } from './LorePreview'
+import { Announce } from '../Announce'
+import { SearchField } from '../SearchField'
+import { FormMessage } from '../FormMessage'
+import { QuietNote } from '../QuietNote'
+import { SectionTitle } from '../Section'
+
+/**
+ * A link or unlink is the scene's whole save, sent over the scene exactly as stored with only its lore changed, and naming
+ * the version the page holds (ADR 0043). If anyone saved the scene since, the API refuses it and nothing is overwritten;
+ * the story is read again and the author can try once more over what is there now. Nothing is shown as linked until the
+ * API says so.
+ */
+export function LoreContextDrawer({
+  universeId,
+  storyId,
+  scene,
+  chronology,
+  mentions,
+  onSceneSaved,
+  onSceneChanged,
+  onClose,
+}: LoreContextProps & { onClose: () => void }) {
+  const { t, tn, tx } = useI18n()
+  const access = useUniverseAccess()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const search = useRef<HTMLInputElement>(null)
+  const linkedHeading = useRef<HTMLHeadingElement>(null)
+  const headingId = useId()
+  const searchId = useId()
+  const resultsId = useId()
+
+  const [preview, setPreview] = useState<{ id: string; from: string } | null>(null)
+
+  const {
+    query,
+    setQuery,
+    term,
+    results,
+    searchFailed,
+    isSearching,
+    busy,
+    message,
+    announcement,
+    mentioned,
+    references,
+    linked,
+    linkedIds,
+    setLink,
+  } = useLoreContextLinks({
+    universeId,
+    storyId,
+    scene,
+    mentions,
+    onSceneSaved,
+    onSceneChanged,
+    dialog,
+    linkedHeading,
+  })
+
+  function openPreview(id: string, from: string) {
+    setPreview({ id, from })
+  }
+
+  function closePreview() {
+    const from = preview?.from
+    setPreview(null)
+    requestAnimationFrame(() => {
+      const back = from
+        ? dialog.current?.querySelector<HTMLElement>(`[data-preview-from="${from}"]`)
+        : null
+      ;(back ?? search.current)?.focus()
+    })
+  }
+
+  /** Up and Down move between the results, and from the search box into them. */
+  function moveThrough(event: KeyboardEvent<HTMLElement>) {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+    const buttons = Array.from(
+      dialog.current?.querySelectorAll<HTMLElement>('[data-result-name]') ?? [],
+    )
+    if (buttons.length === 0) return
+    event.preventDefault()
+    const at = buttons.indexOf(document.activeElement as HTMLElement)
+    const next =
+      event.key === 'ArrowDown' ? Math.min(at + 1, buttons.length - 1) : at <= 0 ? -1 : at - 1
+    if (next < 0) search.current?.focus()
+    else buttons[next].focus()
+  }
+
+  return (
+    <Drawer
+      initialFocus={search}
+      testId="lore-context"
+      titleId={headingId}
+      className="lorecontext"
+      dialogRef={dialog}
+      eyebrow={t('lore.context.drawerEyebrow')}
+      title={<bdi>{scene.title}</bdi>}
+      // In the head, which never scrolls: an absolutely placed span in the body could stretch the dialog.
+      context={<Announce testId="lore-context-announcer">{announcement}</Announce>}
+      // Nothing in the drawer is ever unsaved, so it closes without asking; Escape and the backdrop still go through the guard.
+      busy={busy !== null}
+      onClose={onClose}
+      closeTestId="lore-context-close"
+    >
+      {message ? <FormMessage testId="lore-context-error">{message}</FormMessage> : null}
+
+      {preview ? (
+        <LorePreview
+          universeId={universeId}
+          entityId={preview.id}
+          chronology={chronology}
+          isLinked={linkedIds.has(preview.id)}
+          canLink={access.editContent}
+          busy={busy !== null}
+          onLink={(row, link) => void setLink(row, link)}
+          onBack={closePreview}
+        />
+      ) : (
+        <>
+          <section
+            className="stack stack--3 lorecontext__group"
+            aria-labelledby={`${headingId}-linked`}
+          >
+            <SectionTitle
+              level={3}
+              tone="rule-accent"
+              id={`${headingId}-linked`}
+              ref={linkedHeading}
+              tabIndex={-1}
+            >
+              {t('lore.context.inScenePick')}
+            </SectionTitle>
+            {linked.length === 0 ? (
+              <QuietNote size="body" testId="lore-context-none">
+                {access.editContent ? t('lore.context.noneEditable') : t('lore.context.none')}
+              </QuietNote>
+            ) : (
+              <ul className="relations__rows" data-testid="lore-context-linked-list">
+                {linked.map((row) => (
+                  <LoreContextRow
+                    key={row.id}
+                    row={row}
+                    from="linked"
+                    universeId={universeId}
+                    linkedIds={linkedIds}
+                    busy={busy}
+                    access={access}
+                    setLink={setLink}
+                    openPreview={openPreview}
+                    moveThrough={moveThrough}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <LoreContextMentioned
+            universeId={universeId}
+            headingId={headingId}
+            mentioned={mentioned}
+            references={references}
+            linkedIds={linkedIds}
+            busy={busy}
+            access={access}
+            setLink={setLink}
+            openPreview={openPreview}
+          />
+
+          <section
+            className="stack stack--3 lorecontext__group"
+            aria-labelledby={`${headingId}-find`}
+          >
+            <SectionTitle level={3} tone="rule-accent" id={`${headingId}-find`}>
+              {t('lore.context.find')}
+            </SectionTitle>
+            <SearchField
+              hideLabel
+              id={searchId}
+              label={t('lore.context.searchLabel')}
+              inputRef={search}
+              placeholder={t('lore.context.searchPlaceholder')}
+              value={query}
+              onChange={setQuery}
+              onKeyDown={moveThrough}
+              aria-controls={resultsId}
+              testId="lore-context-search"
+            />
+            <div id={resultsId}>
+              <Announce>
+                {isSearching
+                  ? t('lore.context.searching')
+                  : results
+                    ? results.length === 0
+                      ? t('lore.context.noMatches')
+                      : tn('lore.context.matches', results.length, { n: results.length })
+                    : ''}
+              </Announce>
+              {searchFailed ? (
+                <FormMessage testId="lore-context-search-error" role={null}>
+                  {t('lore.context.searchFailed')}
+                </FormMessage>
+              ) : term !== '' && !results ? (
+                <QuietNote size="body">{t('lore.context.searchingNote')}</QuietNote>
+              ) : results && results.length === 0 ? (
+                <QuietNote size="body" testId="lore-context-no-results">
+                  {tx('lore.context.nothingMatches', { term: <bdi>{term}</bdi> })}
+                </QuietNote>
+              ) : results ? (
+                <ul className="relations__rows" data-testid="lore-context-results">
+                  {results.map((row) => (
+                    <LoreContextRow
+                      key={row.id}
+                      row={row}
+                      from="result"
+                      universeId={universeId}
+                      linkedIds={linkedIds}
+                      busy={busy}
+                      access={access}
+                      setLink={setLink}
+                      openPreview={openPreview}
+                      moveThrough={moveThrough}
+                    />
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </section>
+        </>
+      )}
+    </Drawer>
+  )
+}

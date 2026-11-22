@@ -97,8 +97,11 @@ test.describe('Project sections', () => {
     await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-schema-offer')).toBeVisible()
     await expect(page.getByTestId('project-entries')).toHaveCount(0)
+    // The project's name is the screen's one h1; the panel heads under it are h2 (#412).
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
     await page.getByTestId('projecttab-types').click()
     await expect(page.getByTestId('project-schema')).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
     // Headed as the universe Types page's Gaming view is: its title, and a lede naming this game.
     await expect(page.getByTestId('project-types-title')).toHaveText('Types')
     await expect(page.getByTestId('project-schema')).toContainText(

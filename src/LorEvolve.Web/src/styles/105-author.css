@@ -1,0 +1,71 @@
+/* ---------- An author ---------- */
+
+.pauthor {
+  width: min(100% - 2 * var(--portal-gutter), var(--portal-width));
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 4rem) 0 var(--space-9);
+}
+
+.pauthor__head {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  padding-bottom: clamp(1.5rem, 3vw, 2.5rem);
+  border-bottom: 1px solid var(--portal-line);
+}
+
+/* The chosen photo's square, or the name's first letter in a ring - never an invented face. */
+.pauthor__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: clamp(5.5rem, 12vw, 8rem);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--portal-raised), var(--portal-surface) 75%);
+  box-shadow:
+    0 0 0 1px var(--portal-line-strong),
+    0 0 0 6px rgb(var(--portal-accent-rgb) / 0.08);
+}
+
+.pauthor__avatar img.pauthor__photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pauthor__photo--blank {
+  color: rgb(var(--portal-ink-rgb) / 0.78);
+  font-family: var(--display);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  line-height: 1;
+}
+
+.pauthor__text {
+  min-width: 0;
+}
+
+.pauthor__name {
+  margin: 0 0 var(--space-2);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2rem, 1.3rem + 2.6vw, 3.25rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.pauthor__count {
+  margin: 0;
+  color: var(--portal-muted);
+}
+
+@media (max-width: 30rem) {
+  .pauthor__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

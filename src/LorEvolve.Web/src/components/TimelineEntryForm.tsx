@@ -1,156 +1,18 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { Field } from './Field'
-import { ChronologyPointFields, type ChronologyPointPart } from './ChronologyPointFields'
-import { EntityMultiPicker, EntityPicker, type EntityChoice } from './EntityPicker'
+import { EntityPicker } from './EntityPicker'
 import { CanonBlockNotice } from './CanonBlockNotice'
-import { ValidationTermSelect } from './ValidationTermSelect'
-import { blockingFindingsOf } from '../canon/blocked'
-import type { CanonBlockingFinding } from '../canon/types'
 import { hasCalendar, namesEras } from '../chronology/format'
 import type { Chronology } from '../chronology/types'
 import { t, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
-import { payloadKey } from '../lib/drawerGuard'
 import { Drawer } from './Drawer'
-import {
-  CANON_LABELS,
-  CANON_ORDER,
-  CanonStatus,
-  type CanonStatusValue,
-  CANON_KEYS,
-} from '../lore/types'
-import { ValidationTermKind } from '../ruleValidation/types'
 import { useValidationTerms } from '../ruleValidation/useValidationTerms'
-import { listStories } from '../stories/api'
-import type { StorySummary } from '../stories/types'
-import { createTimelineEntry, updateTimelineEntry } from '../timeline/api'
-import {
-  DATE_KIND_HINTS,
-  DATE_KIND_LABELS,
-  DATE_KIND_ORDER,
-  DateKind,
-  type DateKindValue,
-  type TimelineEntry,
-  type TimelineStoryLink,
-  DATE_KIND_KEYS,
-} from '../timeline/types'
-
-/**
- * The draft holds every component as a string. An empty number input is genuinely empty
- * rather than zero, and a year of 0 stays distinct from no year at all. An empty era is no
- * era chosen yet.
- */
-interface MomentDraft {
-  title: string
-  description: string
-  canonStatus: CanonStatusValue
-  dateKind: DateKindValue
-  startYear: string
-  startMonth: string
-  startDay: string
-  endYear: string
-  endMonth: string
-  endDay: string
-  startEraId: string
-  endEraId: string
-  eraLabel: string
-  entities: EntityChoice[]
-  /** The validation details, each chosen on its own: an event kind and a method by id, and a participant. */
-  eventKindId: string
-  methodId: string
-  participant: EntityChoice | null
-  /** The stories it is linked to. One in the Trash stays in the set, marked, so a save never drops it quietly. */
-  stories: TimelineStoryLink[]
-}
-
-/** The six chronology boxes, named so one handler can serve all of them. */
-type ComponentKey = 'startYear' | 'startMonth' | 'startDay' | 'endYear' | 'endMonth' | 'endDay'
-
-type EraKey = 'startEraId' | 'endEraId'
-
-/** The field error keys a refused save's details carry, as the API client lowercases them. */
-const DETAIL_ERROR_KEYS = {
-  eventKind: 'validation.eventkindid',
-  method: 'validation.methodid',
-  participant: 'validation.participantentityid',
-} as const
-
-const EMPTY: MomentDraft = {
-  title: '',
-  description: '',
-  canonStatus: CanonStatus.Idea,
-  dateKind: DateKind.Exact,
-  startYear: '',
-  startMonth: '',
-  startDay: '',
-  endYear: '',
-  endMonth: '',
-  endDay: '',
-  startEraId: '',
-  endEraId: '',
-  eraLabel: '',
-  entities: [],
-  eventKindId: '',
-  methodId: '',
-  participant: null,
-  stories: [],
-}
-
-function numberText(value: number | null) {
-  return value === null ? '' : String(value)
-}
-
-function draftFrom(entry: TimelineEntry): MomentDraft {
-  const details = entry.validation
-
-  return {
-    title: entry.title,
-    description: entry.description ?? '',
-    canonStatus: entry.canonStatus,
-    dateKind: entry.date.kind,
-    startYear: numberText(entry.date.startYear),
-    // A custom calendar's month is held by its id; a simple month by its number.
-    startMonth: entry.date.startMonthId ?? numberText(entry.date.startMonth),
-    startDay: numberText(entry.date.startDay),
-    endYear: numberText(entry.date.endYear),
-    endMonth: entry.date.endMonthId ?? numberText(entry.date.endMonth),
-    endDay: numberText(entry.date.endDay),
-    startEraId: entry.date.startEraId ?? '',
-    endEraId: entry.date.endEraId ?? '',
-    eraLabel: entry.date.eraLabel ?? '',
-    // A participant in the Trash keeps its place in the set - the form posts every id back,
-    // so dropping it here would delete the participation on the next save. It is labelled
-    // instead, so the author can see why it is not clickable anywhere else.
-    entities: entry.entities.map((link) => ({
-      id: link.entityId,
-      name: link.isTrashed ? t('time.momentForm.entityInTrash', { name: link.name }) : link.name,
-    })),
-    eventKindId: details?.eventKind?.id ?? '',
-    methodId: details?.method?.id ?? '',
-    participant: details?.participant
-      ? {
-          id: details.participant.entityId,
-          name: details.participant.isTrashed
-            ? t('time.momentForm.participantInTrash', { name: details.participant.name })
-            : details.participant.name,
-        }
-      : null,
-    stories: entry.stories,
-  }
-}
-
-/** An empty box is no claim at all; anything unreadable is left for the API to refuse. */
-function toNumber(value: string): number | null {
-  const trimmed = value.trim()
-  if (trimmed === '') return null
-  const parsed = Number(trimmed)
-  return Number.isFinite(parsed) ? Math.trunc(parsed) : null
-}
-
-function trimmed(value: string) {
-  const text = value.trim()
-  return text === '' ? null : text
-}
+import { DateKind, type TimelineEntry, type TimelineStoryLink } from '../timeline/types'
+import { inputOf } from '../timeline/momentDraft'
+import { useMomentFormState } from '../timeline/useMomentFormState'
+import { momentFormActions } from '../timeline/momentFormActions'
+import { MomentBasics } from './timeline/MomentBasics'
+import { MomentDating } from './timeline/MomentDating'
+import { MomentDetails } from './timeline/MomentDetails'
+import { StoryLinks } from './timeline/StoryLinks'
 
 interface TimelineEntryFormProps {
   universeId: string
@@ -178,43 +40,6 @@ interface TimelineEntryFormProps {
  * Validation details sit folded at the foot (ADR 0034): an ordinary moment never needs them, and nothing in them is filled in
  * from the title, the description or who took part.
  */
-/**
- * The draft as the save sends it: a kind carries only its own date parts, a universe with eras no free label, and a
- * universe with a custom calendar its months by id rather than by number.
- */
-function inputOf(draft: MomentDraft, reckonsInEras: boolean, custom: boolean) {
-  const isDatedKind = draft.dateKind !== DateKind.Unknown
-  const isRangeKind = draft.dateKind === DateKind.Range
-
-  return {
-    title: draft.title.trim(),
-    description: trimmed(draft.description),
-    canonStatus: draft.canonStatus,
-    dateKind: draft.dateKind,
-    startYear: toNumber(draft.startYear),
-    startMonth: custom ? null : toNumber(draft.startMonth),
-    startMonthId: custom ? trimmed(draft.startMonth) : null,
-    startDay: toNumber(draft.startDay),
-    endYear: toNumber(draft.endYear),
-    endMonth: custom ? null : toNumber(draft.endMonth),
-    endMonthId: custom ? trimmed(draft.endMonth) : null,
-    endDay: toNumber(draft.endDay),
-    // A universe with eras has no free-text label; one without has no eras to send.
-    eraLabel: reckonsInEras ? null : trimmed(draft.eraLabel),
-    startEraId: reckonsInEras && isDatedKind ? trimmed(draft.startEraId) : null,
-    endEraId: reckonsInEras && isRangeKind ? trimmed(draft.endEraId) : null,
-    entityIds: draft.entities.map((choice) => choice.id),
-    // Always sent whole, a story in the Trash included; an empty list unlinks every story.
-    storyIds: draft.stories.map((story) => story.storyId),
-    // Always sent whole: all three empty removes the details.
-    validation: {
-      eventKindId: trimmed(draft.eventKindId),
-      methodId: trimmed(draft.methodId),
-      participantEntityId: draft.participant?.id ?? null,
-    },
-  }
-}
-
 export function TimelineEntryForm({
   universeId,
   entry,
@@ -223,18 +48,25 @@ export function TimelineEntryForm({
   onClose,
   onSaved,
 }: TimelineEntryFormProps) {
-  const { tx } = useI18n()
-  const title = useRef<HTMLInputElement>(null)
-  // What the drawer opened on - the moment as stored, or the blank form - which the draft is measured against.
-  const [initial] = useState<MomentDraft>(() =>
-    entry ? draftFrom(entry) : { ...EMPTY, stories: initialStories },
-  )
-  const [draft, setDraft] = useState<MomentDraft>(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [blocked, setBlocked] = useState<CanonBlockingFinding[] | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [detailsOpen, setDetailsOpen] = useState(() => entry?.validation != null)
+  useI18n()
+  const reckonsInEras = namesEras(chronology)
+  const custom = hasCalendar(chronology)
+  const state = useMomentFormState({
+    entry,
+    initialStories,
+    measure: (of) => inputOf(of, reckonsInEras, custom),
+  })
+  const {
+    title,
+    isDirty,
+    draft,
+    fieldErrors,
+    message,
+    blocked,
+    isSaving,
+    detailsOpen,
+    setDetailsOpen,
+  } = state
   const {
     terms,
     failed: termsFailed,
@@ -242,136 +74,24 @@ export function TimelineEntryForm({
     reload: reloadTerms,
   } = useValidationTerms(universeId)
 
-  const reckonsInEras = namesEras(chronology)
-  const custom = hasCalendar(chronology)
-
-  const isDirty =
-    payloadKey(inputOf(draft, reckonsInEras, custom)) !==
-    payloadKey(inputOf(initial, reckonsInEras, custom))
-  useEffect(() => {
-    // Left alone, the browser hands the focus to the scrolling body, which then wears a
-    // focus ring across the whole panel. The title is where the writing starts anyway.
-    title.current?.focus()
-  }, [])
-
-  function edit(change: Partial<MomentDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
-  function setComponent(key: ComponentKey | EraKey, value: string) {
-    setDraft((current) => ({ ...current, [key]: value }))
-  }
-
-  /** A kind only carries its own components, so the others are dropped as it changes. */
-  function chooseKind(dateKind: DateKindValue) {
-    if (dateKind === DateKind.Unknown) {
-      edit({
-        dateKind,
-        startYear: '',
-        startMonth: '',
-        startDay: '',
-        endYear: '',
-        endMonth: '',
-        endDay: '',
-        startEraId: '',
-        endEraId: '',
-      })
-    } else if (dateKind === DateKind.Range) {
-      edit({ dateKind })
-    } else {
-      edit({ dateKind, endYear: '', endMonth: '', endDay: '', endEraId: '' })
-    }
-  }
-
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setBlocked(null)
-    setIsSaving(true)
-
-    const input = inputOf(draft, reckonsInEras, custom)
-
-    try {
-      if (entry) {
-        await updateTimelineEntry(universeId, entry.id, input)
-      } else {
-        await createTimelineEntry(universeId, input)
-      }
-      onSaved()
-    } catch (error: unknown) {
-      // The gate's refusal is its own thing: the draft below is intact and the only
-      // useful thing to say is what disagreed with it.
-      const blocking = blockingFindingsOf(error)
-      if (blocking) {
-        setBlocked(blocking)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        if (Object.values(DETAIL_ERROR_KEYS).some((key) => error.fieldErrors[key])) {
-          setDetailsOpen(true)
-        }
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('time.momentForm.needChange'),
-        )
-      } else {
-        setMessage(t('time.momentForm.saveFailed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { edit, setComponent, chooseKind, save } = momentFormActions({
+    ...state,
+    universeId,
+    entry,
+    onSaved,
+    reckonsInEras,
+    custom,
+  })
 
   const isRange = draft.dateKind === DateKind.Range
   const isDated = draft.dateKind !== DateKind.Unknown
   const detailCount = [draft.eventKindId, draft.methodId, draft.participant].filter(Boolean).length
 
-  function point(
-    prefix: 'start' | 'end',
-    yearLabel: string,
-    errors: {
-      era: string | undefined
-      year: string | undefined
-      month: string | undefined
-      day: string | undefined
-    },
-  ) {
-    const keys: Record<ChronologyPointPart, ComponentKey | EraKey> =
-      prefix === 'start'
-        ? { eraId: 'startEraId', year: 'startYear', month: 'startMonth', day: 'startDay' }
-        : { eraId: 'endEraId', year: 'endYear', month: 'endMonth', day: 'endDay' }
-
-    return (
-      <ChronologyPointFields
-        chronology={chronology}
-        ids={{
-          eraId: `moment-${keys.eraId}`,
-          year: `moment-${keys.year}`,
-          month: `moment-${keys.month}`,
-          day: `moment-${keys.day}`,
-        }}
-        eraLabel={
-          prefix === 'start'
-            ? isRange
-              ? t('time.momentForm.startsInPeriod')
-              : t('time.momentForm.datePeriod')
-            : t('time.momentForm.endsInPeriod')
-        }
-        yearLabel={yearLabel}
-        value={{
-          eraId: draft[keys.eraId],
-          year: draft[keys.year],
-          month: draft[keys.month],
-          day: draft[keys.day],
-        }}
-        onChange={(part, next) => setComponent(keys[part], next)}
-        errors={{ eraId: errors.era, year: errors.year, month: errors.month, day: errors.day }}
-      />
-    )
-  }
-
   return (
     <Drawer
+      // Left alone, the browser hands the focus to the scrolling body, which then wears a
+      // focus ring across the whole panel. The title is where the writing starts anyway.
+      initialFocus={title}
       testId="moment-form"
       titleId="moment-heading"
       // A new moment's title already says so; the eyebrow names only what is being edited.
@@ -383,165 +103,39 @@ export function TimelineEntryForm({
           ? t('time.momentForm.leaveGuardEdit', { title: entry.title })
           : t('time.momentForm.leaveGuardNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <>
-          <button className="button" type="submit" disabled={isSaving} data-testid="save-moment">
-            {isSaving
-              ? entry
-                ? t('time.momentForm.saving')
-                : t('time.momentForm.adding')
-              : entry
-                ? t('time.momentForm.save')
-                : t('time.momentForm.create')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-moment"
-          >
-            {t('time.momentForm.cancel')}
-          </button>
-        </>
-      )}
-    >
-      {blocked ? (
-        <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
-      ) : null}
-
-      {message ? (
-        <p className="form__message" role="alert" data-testid="moment-error">
-          {message}
-        </p>
-      ) : null}
-
-      <Field label={t('time.momentForm.title')} id="moment-title" error={fieldErrors.title}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            ref={title}
-            type="text"
-            dir="auto"
-            placeholder={t('time.momentForm.titlePlaceholder')}
-            value={draft.title}
-            onChange={(event) => edit({ title: event.target.value })}
-            data-testid="moment-title"
-          />
-        )}
-      </Field>
-
-      <Field
-        label={t('time.momentForm.description')}
-        id="moment-description"
-        error={fieldErrors.description}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={3}
-            placeholder={t('time.momentForm.descriptionPlaceholder')}
-            value={draft.description}
-            onChange={(event) => edit({ description: event.target.value })}
-            data-testid="moment-description"
-          />
-        )}
-      </Field>
-
-      <Field label={t('time.momentForm.status')} group>
-        {(control) => (
-          <div className="canon" {...control}>
-            {CANON_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="canon__step"
-                aria-pressed={draft.canonStatus === option}
-                onClick={() => edit({ canonStatus: option })}
-                data-testid={`moment-canon-${CANON_KEYS[option]}`}
-              >
-                {CANON_LABELS[option]}
-              </button>
-            ))}
-          </div>
-        )}
-      </Field>
-
-      <Field
-        label={t('time.momentForm.when')}
-        group
-        hint={DATE_KIND_HINTS[draft.dateKind]}
-        error={fieldErrors.datekind}
-      >
-        {(control) => (
-          <div className="segmented" {...control}>
-            {DATE_KIND_ORDER.map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="segmented__option"
-                aria-pressed={draft.dateKind === option}
-                onClick={() => chooseKind(option)}
-                data-testid={`moment-kind-${DATE_KIND_KEYS[option]}`}
-              >
-                {DATE_KIND_LABELS[option]}
-              </button>
-            ))}
-          </div>
-        )}
-      </Field>
-
-      {isDated ? (
-        <>
-          {point('start', isRange ? t('time.momentForm.startsInYear') : t('time.momentForm.year'), {
-            era: fieldErrors.starteraid,
-            year: fieldErrors.startyear,
-            month: fieldErrors.startmonth,
-            day: fieldErrors.startday,
-          })}
-
-          {isRange
-            ? point('end', t('time.momentForm.endsInYear'), {
-                era: fieldErrors.enderaid,
-                year: fieldErrors.endyear,
-                month: fieldErrors.endmonth,
-                day: fieldErrors.endday,
-              })
-            : null}
-        </>
-      ) : null}
-
-      {reckonsInEras ? (
-        draft.eraLabel ? (
-          <p className="field__hint" data-testid="moment-old-label">
-            {tx('time.momentForm.oldLabel', { label: <bdi>{draft.eraLabel}</bdi> })}
-          </p>
+      notice={
+        blocked ? (
+          <CanonBlockNotice universeId={universeId} findings={blocked} linkSubjects />
         ) : null
-      ) : (
-        <Field
-          label={t('time.momentForm.yearLabel')}
-          id="moment-era"
-          hint={t('time.momentForm.yearLabelHint')}
-          error={fieldErrors.eralabel}
-        >
-          {(control) => (
-            <input
-              {...control}
-              className="field__input"
-              type="text"
-              placeholder={t('time.momentForm.optional')}
-              value={draft.eraLabel}
-              onChange={(event) => edit({ eraLabel: event.target.value })}
-              data-testid="moment-era"
-            />
-          )}
-        </Field>
-      )}
+      }
+      message={message}
+      messageTestId="moment-error"
+      actions={{
+        submitLabel: entry ? t('time.momentForm.save') : t('time.momentForm.create'),
+        busyLabel: entry ? t('time.momentForm.saving') : t('time.momentForm.adding'),
+        submitTestId: 'save-moment',
+        cancelTestId: 'cancel-moment',
+      }}
+    >
+      <MomentBasics title={title} draft={draft} edit={edit} fieldErrors={fieldErrors} />
 
-      <EntityMultiPicker
+      <MomentDating
+        chronology={chronology}
+        reckonsInEras={reckonsInEras}
+        draft={draft}
+        edit={edit}
+        setComponent={setComponent}
+        chooseKind={chooseKind}
+        fieldErrors={fieldErrors}
+        isRange={isRange}
+        isDated={isDated}
+      />
+
+      <EntityPicker
+        multiple
         label={t('time.momentForm.entities')}
         hint={t('time.momentForm.entitiesHint')}
         universeId={universeId}
@@ -557,188 +151,20 @@ export function TimelineEntryForm({
         error={fieldErrors.storyids}
       />
 
-      <details
-        className="moment__details"
-        open={detailsOpen}
-        onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
-        data-testid="moment-validation"
-      >
-        <summary data-testid="moment-validation-toggle">
-          {t('time.momentForm.details')}
-          {detailCount > 0 ? (
-            <span className="moment__detailscount">
-              {' '}
-              {t('time.momentForm.detailsSet', { n: detailCount })}
-            </span>
-          ) : (
-            <span className="moment__detailscount"> {t('time.momentForm.detailsOptional')}</span>
-          )}
-        </summary>
-
-        <div className="moment__detailsbody">
-          <p className="field__hint">{t('time.momentForm.detailsHint')}</p>
-
-          {termsFailed ? (
-            <p className="form__message" role="alert">
-              {t('time.momentForm.termsFailed')}{' '}
-              <button
-                className="button button--secondary button--sm"
-                type="button"
-                onClick={reloadTerms}
-              >
-                {t('time.momentForm.tryAgain')}
-              </button>
-            </p>
-          ) : null}
-
-          <ValidationTermSelect
-            universeId={universeId}
-            kind={ValidationTermKind.EventKind}
-            label={t('time.momentForm.eventKind')}
-            terms={terms}
-            value={draft.eventKindId}
-            selectedName={
-              entry?.validation?.eventKind?.id === draft.eventKindId
-                ? entry.validation.eventKind.name
-                : null
-            }
-            emptyLabel={t('time.momentForm.eventKindNone')}
-            onChange={(eventKindId) => edit({ eventKindId })}
-            onCreated={addTerm}
-            error={fieldErrors[DETAIL_ERROR_KEYS.eventKind]}
-            testId="moment-event-kind"
-          />
-
-          <ValidationTermSelect
-            universeId={universeId}
-            kind={ValidationTermKind.Method}
-            label={t('time.momentForm.method')}
-            terms={terms}
-            value={draft.methodId}
-            selectedName={
-              entry?.validation?.method?.id === draft.methodId ? entry.validation.method.name : null
-            }
-            emptyLabel={t('time.momentForm.methodNone')}
-            onChange={(methodId) => edit({ methodId })}
-            onCreated={addTerm}
-            error={fieldErrors[DETAIL_ERROR_KEYS.method]}
-            testId="moment-method"
-          />
-
-          <EntityPicker
-            label={t('time.momentForm.participant')}
-            universeId={universeId}
-            value={draft.participant}
-            onChange={(participant) => edit({ participant })}
-            placeholder={t('time.momentForm.participantPlaceholder')}
-            error={fieldErrors[DETAIL_ERROR_KEYS.participant]}
-          />
-        </div>
-      </details>
+      <MomentDetails
+        universeId={universeId}
+        entry={entry}
+        draft={draft}
+        edit={edit}
+        fieldErrors={fieldErrors}
+        detailsOpen={detailsOpen}
+        setDetailsOpen={setDetailsOpen}
+        detailCount={detailCount}
+        terms={terms}
+        termsFailed={termsFailed}
+        addTerm={addTerm}
+        reloadTerms={reloadTerms}
+      />
     </Drawer>
-  )
-}
-
-/**
- * The stories a moment matters to: each linked one as a token with Remove, and a choice of the universe's other live stories to
- * add. The story list is read once, when the drawer opens - a universe holds a handful of stories and the list is unpaged for
- * that reason - and the linked ones are named from the moment itself, so showing them never waits on it. A story in the Trash
- * stays linked and says so; it is never offered.
- */
-function StoryLinks({
-  universeId,
-  value,
-  onChange,
-  error,
-}: {
-  universeId: string
-  value: TimelineStoryLink[]
-  onChange: (stories: TimelineStoryLink[]) => void
-  error?: string
-}) {
-  useI18n()
-  const selectId = useId()
-  const [stories, setStories] = useState<StorySummary[] | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    listStories(universeId, controller.signal)
-      .then(setStories)
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true)
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [universeId])
-
-  const linked = new Set(value.map((story) => story.storyId))
-  const offered = (stories ?? []).filter((story) => !linked.has(story.id))
-
-  return (
-    <Field
-      id={selectId}
-      className="storylinks"
-      label={t('time.momentForm.stories')}
-      hint={t('time.momentForm.storiesHint')}
-      error={error}
-      data-testid="moment-stories"
-    >
-      {(control) => (
-        <>
-          {value.length > 0 ? (
-            <ul className="storylinks__list">
-              {value.map((story) => (
-                <li className="token" key={story.storyId} data-testid="moment-story">
-                  <bdi>{story.title}</bdi>
-                  {story.isTrashed ? (
-                    <span className="token__note"> {t('time.momentForm.storyInTrash')}</span>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="token__remove"
-                    aria-label={t('time.momentForm.unlink', { title: story.title })}
-                    onClick={() => onChange(value.filter((one) => one.storyId !== story.storyId))}
-                    data-testid={`moment-story-remove-${story.title}`}
-                  >
-                    &times;
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <select
-            {...control}
-            className="field__input field__input--select"
-            value=""
-            disabled={stories === null || offered.length === 0}
-            onChange={(event) => {
-              const story = offered.find((one) => one.id === event.target.value)
-              if (story)
-                onChange([...value, { storyId: story.id, title: story.title, isTrashed: false }])
-            }}
-            data-testid="moment-story-add"
-          >
-            <option value="">
-              {failed
-                ? t('time.momentForm.storiesFailed')
-                : stories === null
-                  ? t('time.momentForm.readingStories')
-                  : offered.length === 0
-                    ? stories.length === 0
-                      ? t('time.momentForm.noStories')
-                      : t('time.momentForm.allLinked')
-                    : t('time.momentForm.linkStory')}
-            </option>
-            {offered.map((story) => (
-              <option key={story.id} value={story.id}>
-                {story.title}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
-    </Field>
   )
 }

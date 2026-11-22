@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { listEntityMapPins, mapPath } from '../maps/api'
-import type { EntityMapPin } from '../maps/types'
-
-type LoadState = { kind: 'loading' } | { kind: 'ready'; pins: EntityMapPin[] } | { kind: 'error' }
+import { useAsyncRead } from '../lib/useAsyncRead'
+import { SectionTitle } from './Section'
 
 /**
  * Where an entry is on the maps (issue #52): one link per map it is pinned on, each opening that map on its pin. An entry
@@ -15,25 +14,21 @@ type LoadState = { kind: 'loading' } | { kind: 'ready'; pins: EntityMapPin[] } |
  */
 export function LoreOnMaps({ universeId, entityId }: { universeId: string; entityId: string }) {
   const { t, tx } = useI18n()
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
+  const read = useCallback(
+    (signal: AbortSignal) => listEntityMapPins(universeId, entityId, signal),
+    [universeId, entityId],
+  )
+  const { load: state } = useAsyncRead(read)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    listEntityMapPins(universeId, entityId, controller.signal)
-      .then((pins) => setState({ kind: 'ready', pins }))
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [universeId, entityId])
-
-  if (state.kind !== 'ready' || state.pins.length === 0) return null
+  if (state.kind !== 'ready' || state.value.length === 0) return null
 
   return (
-    <div className="rail__block" data-testid="entry-maps">
-      <h2 className="rail__heading">{t('lore.onMaps.heading')}</h2>
-      <ul className="entrymaps" data-testid="entry-maps-list">
-        {state.pins.map((pin) => (
+    <div className="stack stack--2" data-testid="entry-maps">
+      <SectionTitle level={2} tone="label">
+        {t('lore.onMaps.heading')}
+      </SectionTitle>
+      <ul className="plainlist stack stack--2" data-testid="entry-maps-list">
+        {state.value.map((pin) => (
           <li key={pin.pinId}>
             <Link
               className="entrymaps__link"

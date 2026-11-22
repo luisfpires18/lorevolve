@@ -1,7 +1,7 @@
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { IdeaEditor } from '../components/IdeaEditor'
 import { Quoted } from '../components/NameList'
-import type { IdeasListNotice } from '../components/IdeasBrowser'
+import type { RecordListNotice } from '../components/ideas/RecordListPage'
 import { useI18n } from '../i18n'
 import type { WorkspaceContext } from './UniverseWorkspace'
 
@@ -40,11 +40,11 @@ export default function IdeaPage({ inUniverse = false, isNew = false }: IdeaPage
       onCreated={(idea) =>
         void navigate(listPath, {
           replace: true,
-          state: { created: { id: idea.id, title: idea.title } } satisfies IdeasListNotice,
+          state: { created: { id: idea.id, title: idea.title } } satisfies RecordListNotice,
         })
       }
       onDeleted={(idea) =>
-        void navigate(listPath, { state: { deleted: idea } satisfies IdeasListNotice })
+        void navigate(listPath, { state: { deleted: idea } satisfies RecordListNotice })
       }
     />
   )

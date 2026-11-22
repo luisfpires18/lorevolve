@@ -1,0 +1,72 @@
+/* ---------- Restore a backup ---------- */
+
+/* The composer's shape, and a measure: a preview is read, not scanned across a wide display. */
+.restore {
+  max-width: 44rem;
+}
+
+/* Doubled with `.quietnote` because this sheet loads before 021, so the size wins. */
+.quietnote.restore__lead {
+  margin: -0.75rem 0 1.5rem;
+  font-size: 0.925rem;
+}
+
+/* A native file input, so the keyboard, a screen reader and dropping a file on it all work as the
+   platform makes them work. Only its size and its button are brought in line with the rest. */
+.restore__file {
+  max-width: 100%;
+  font: inherit;
+  font-size: 0.925rem;
+  color: var(--ink);
+}
+
+.restore__file::file-selector-button {
+  margin-right: 0.9rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border-control);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.restore__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 28rem;
+}
+
+.restore__stage,
+.restore__note,
+.restore__more {
+  margin: 0;
+}
+
+.restore__heading {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.1rem;
+  margin: 0 0 0.9rem;
+}
+
+.restore__refused {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.restore__refused .restore__heading {
+  margin: 0;
+}
+
+/* Long and unbroken text - a name in another script, a pasted path - wraps inside the panel. */
+.restore__issues {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}

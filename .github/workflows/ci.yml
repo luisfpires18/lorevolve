@@ -108,7 +108,7 @@ jobs:
       - name: Version rule
         run: npm test
 
-      # No web source file over 300 lines; lineLimit.allow.json only shrinks (#380).
+      # No web source file over 300 lines, with no exceptions (#380).
       - name: Line limit
         run: npm run lines
 

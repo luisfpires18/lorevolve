@@ -1,0 +1,189 @@
+/* ---------- The picture, whole ----------
+
+   `ImageViewer`: the original on a dark neutral ground in either scheme, so light and dark artwork
+   both keep their edges, fitted inside the window with room for its name and Close above it. */
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  border: 0;
+  background: transparent;
+  color: #f0ece3;
+  overflow: hidden;
+}
+
+.viewer[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.viewer::backdrop {
+  background: rgb(14 14 15 / 0.95);
+}
+
+.viewer__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+
+.viewer__title {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--display);
+  font-size: var(--text-item);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer__close {
+  background: rgb(255 255 255 / 0.1);
+  color: #f0ece3;
+}
+
+.viewer__close:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.2);
+  color: #fff;
+}
+
+.viewer__close:focus-visible {
+  outline-color: #f0ece3;
+}
+
+.viewer__stage {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  place-items: center;
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.viewer__image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(100dvh - 4.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  object-fit: contain;
+  outline: 1px solid rgb(255 255 255 / 0.12);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .viewer[open] {
+    animation: viewer-in 160ms var(--ease);
+  }
+}
+
+@keyframes viewer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Nothing behind the picture scrolls while it is open. */
+html:has(.viewer[open]) {
+  overflow: hidden;
+}
+
+/* The square the cards will show, at a size worth judging a crop by. Sized in CSS, so nothing reflows as it loads. */
+.imagefield__preview {
+  flex: none;
+  width: 8rem;
+  height: 8rem;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
+/* An Image field's picture keeps the shape it was cropped to, up to a modest size. */
+.imagefield__preview--field {
+  width: auto;
+  height: auto;
+  max-width: 12rem;
+  max-height: 9rem;
+  object-fit: contain;
+}
+
+.entry__fieldimage {
+  margin: 0 0 var(--space-3);
+}
+
+/* The cropped copy keeps the shape it was cut to, whatever the original measured. */
+.entry__fieldimage img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  margin-top: var(--space-1);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+.imagefield__preview--blank {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.imagefield__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+/* The picture's verbs as a column beside it, each the same width, Remove last. */
+.imagefield__actions {
+  display: flex;
+  flex: 0 1 13rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  min-width: 11rem;
+}
+
+.imagefield__actions .button {
+  align-self: stretch;
+  justify-content: flex-start;
+}
+
+/* The real input is replaced by its own label, which is the only way to style a file picker.
+   It stays in the accessibility tree and reachable from the keyboard rather than hidden with
+   display:none, which would take it out of both. */
+.imagefield__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.imagefield__pick {
+  cursor: pointer;
+}
+
+.imagefield__input:focus-visible + .imagefield__pick,
+.imagefield__pick:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.imagefield__input:disabled + .imagefield__pick {
+  opacity: 0.6;
+  cursor: default;
+}

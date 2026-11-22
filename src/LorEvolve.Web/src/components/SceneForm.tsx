@@ -1,30 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChangeList, EditConflict } from './EditConflict'
-import { ChronologyPointFields, type ChronologyPointPart } from './ChronologyPointFields'
-import { EntityMultiPicker, EntityPicker } from './EntityPicker'
+import type { ChronologyPointPart } from './ChronologyPointFields'
 import { hasCalendar, namesEras } from '../chronology/format'
-import { isChangedElsewhere } from '../lib/editConflict'
 import type { Chronology } from '../chronology/types'
-import { ApiError } from '../lib/api'
-import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
+import { useDraftForm } from '../lib/useDraftForm'
 import { Drawer } from './Drawer'
-import { Field } from './Field'
 import { useI18n } from '../i18n'
-import { createScene, getScene, SCENE_CHANGED, updateScene } from '../stories/api'
-import { suggestSceneChanges } from '../suggestions/api'
-import { unchaptered } from '../stories/format'
-import { chapterChoices } from '../stories/structure'
-import { SceneBeatsField } from './SceneBeatsField'
+import { getScene } from '../stories/api'
 import { beatKey } from '../stories/beats'
-import {
-  draftFrom,
-  EMPTY_POINT,
-  inputOf,
-  sceneChangesIn,
-  type SceneDraft,
-} from '../stories/sceneDraft'
+import { draftFrom, inputOf, sceneChangesIn, type SceneDraft } from '../stories/sceneDraft'
 import type { Chapter, PlotArc, Scene } from '../stories/types'
+import { useSceneSave } from '../stories/useSceneSave'
+import { SceneFormFields } from './stories/SceneFormFields'
+import { Callout } from './Callout'
 
 interface SceneFormProps {
   universeId: string
@@ -75,34 +63,26 @@ export function SceneForm({
   // What the drawer opened on - the scene as stored, or the blank form in its chapter - which the draft is measured
   // against, and the version its save names. Its chapter, point of view, date and lore all count, and so does the order
   // the lore was picked in: it is kept and shown that way. After a refused save the author may adopt the latest they reviewed instead (ADR 0043).
-  const [base, setBase] = useState(() => ({
-    draft: draftFrom(scene, chapterId),
-    version: scene?.version,
-  }))
-  const initial = base.draft
-  const [draft, setDraft] = useState<SceneDraft>(() =>
-    startWithBeat && !suggesting
-      ? { ...initial, beats: [...initial.beats, { key: beatKey(), title: '', note: '' }] }
-      : initial,
-  )
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [conflict, setConflict] = useState(false)
-  const saveButton = useRef<HTMLButtonElement>(null)
-
   const reckonsInEras = namesEras(chronology)
   const custom = hasCalendar(chronology)
+  const loreOrder = (of: SceneDraft) => of.entities.map((choice) => choice.id).join(' ')
+  const { draft, setDraft, setInitial, edit, isDirty } = useDraftForm(
+    () => draftFrom(scene, chapterId),
+    {
+      measure: (of) => ({ ...inputOf(of, reckonsInEras, custom), loreOrder: loreOrder(of) }),
+      start: (initial) =>
+        startWithBeat && !suggesting
+          ? { ...initial, beats: [...initial.beats, { key: beatKey(), title: '', note: '' }] }
+          : initial,
+    },
+  )
+  const [version, setVersion] = useState(scene?.version)
+  const [conflict, setConflict] = useState(false)
+  const saveButton = useRef<HTMLButtonElement>(null)
   const hasPoint = Object.values(draft.point).some((part) => part.trim() !== '')
 
   // A plain year written before the universe had date periods has no period to show in the picker.
   const unreckoned = reckonsInEras && scene?.chronology != null && scene.chronology.eraId === null
-
-  const loreOrder = (of: SceneDraft) => of.entities.map((choice) => choice.id).join(' ')
-  const isDirty =
-    payloadKey(inputOf(draft, reckonsInEras, custom)) !==
-      payloadKey(inputOf(initial, reckonsInEras, custom)) || loreOrder(draft) !== loreOrder(initial)
-  useReturnFocus()
 
   useEffect(() => {
     const beat = startWithBeat
@@ -125,59 +105,24 @@ export function SceneForm({
   /** The latest saved scene against the form, in the form's own words. */
   const sceneChanges = sceneChangesIn(chapters, chronology, arcs)
 
-  function edit(change: Partial<SceneDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
-
   function setPart(part: ChronologyPointPart, value: string) {
     setDraft((current) => ({ ...current, point: { ...current.point, [part]: value } }))
   }
 
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    setConflict(false)
-    setIsSaving(true)
-
-    const input = inputOf(draft, reckonsInEras, custom)
-
-    try {
-      if (suggesting && scene && onSuggested) {
-        await suggestSceneChanges(universeId, storyId, scene.id, {
-          ...input,
-          expectedVersion: base.version,
-        })
-        onSuggested()
-        return
-      }
-      const saved = scene
-        ? await updateScene(universeId, storyId, scene.id, {
-            ...input,
-            expectedVersion: base.version,
-          })
-        : await createScene(universeId, storyId, input)
-      onSaved(saved)
-    } catch (error: unknown) {
-      if (isChangedElsewhere(error, SCENE_CHANGED)) {
-        setConflict(true)
-      } else if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : suggesting
-              ? t('stories.sceneForm.detailsToSend')
-              : t('stories.sceneForm.detailsToSave'),
-        )
-      } else {
-        setMessage(
-          suggesting ? t('stories.sceneForm.failedSend') : t('stories.sceneForm.failedSave'),
-        )
-      }
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const { save, fieldErrors, message, isSaving } = useSceneSave({
+    universeId,
+    storyId,
+    scene,
+    suggesting,
+    onSuggested,
+    onSaved,
+    version,
+    draft,
+    reckonsInEras,
+    custom,
+    setConflict,
+    t,
+  })
 
   return (
     <Drawer
@@ -200,52 +145,35 @@ export function SceneForm({
             ? t('stories.sceneForm.leaveUnsaved', { title: scene.title })
             : t('stories.sceneForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <>
-          <button
-            ref={saveButton}
-            className="button"
-            type="submit"
-            disabled={isSaving || (suggesting && !isDirty)}
-            data-testid="save-scene"
-          >
-            {suggesting
-              ? isSaving
-                ? t('stories.sceneForm.sending')
-                : t('stories.sceneForm.sendSuggestion')
-              : isSaving
-                ? scene
-                  ? t('stories.sceneForm.saving')
-                  : t('stories.sceneForm.adding')
-                : scene
-                  ? t('stories.sceneForm.save')
-                  : t('stories.sceneForm.add')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            data-testid="cancel-scene"
-          >
-            {t('stories.sceneForm.cancel')}
-          </button>
-        </>
-      )}
+      notice={
+        suggesting ? (
+          <Callout look="callout" as="p" testId="scene-suggesting">
+            {t('stories.sceneForm.suggestingNote')}
+          </Callout>
+        ) : null
+      }
+      message={message}
+      messageTestId="scene-error"
+      actions={{
+        submitLabel: suggesting
+          ? t('stories.sceneForm.sendSuggestion')
+          : scene
+            ? t('stories.sceneForm.save')
+            : t('stories.sceneForm.add'),
+        busyLabel: suggesting
+          ? t('stories.sceneForm.sending')
+          : scene
+            ? t('stories.sceneForm.saving')
+            : t('stories.sceneForm.adding'),
+        disabled: suggesting && !isDirty,
+        submitTestId: 'save-scene',
+        submitRef: saveButton,
+        cancelTestId: 'cancel-scene',
+      }}
     >
-      {suggesting ? (
-        <p className="callout" data-testid="scene-suggesting">
-          {t('stories.sceneForm.suggestingNote')}
-        </p>
-      ) : null}
-
-      {message ? (
-        <p className="form__message" role="alert" data-testid="scene-error">
-          {message}
-        </p>
-      ) : null}
-
       {conflict && scene ? (
         <EditConflict
           what={t('stories.sceneForm.conflictNoun')}
@@ -255,12 +183,14 @@ export function SceneForm({
           )}
           onKeepMine={(latest) => {
             // The form stays as typed, measured against the latest; the next save names the version reviewed.
-            setBase({ draft: draftFrom(latest, null), version: latest.version })
+            setInitial(draftFrom(latest, null))
+            setVersion(latest.version)
             setConflict(false)
             requestAnimationFrame(() => saveButton.current?.focus())
           }}
           onUseLatest={(latest) => {
-            setBase({ draft: draftFrom(latest, null), version: latest.version })
+            setInitial(draftFrom(latest, null))
+            setVersion(latest.version)
             setDraft(draftFrom(latest, null))
             setConflict(false)
             requestAnimationFrame(() => title.current?.focus())
@@ -270,158 +200,21 @@ export function SceneForm({
         />
       ) : null}
 
-      <Field id="scene-title" label={t('stories.sceneForm.titleLabel')} error={fieldErrors.title}>
-        {(control) => (
-          <input
-            {...control}
-            className="field__input"
-            ref={title}
-            type="text"
-            dir="auto"
-            placeholder={t('stories.sceneForm.titlePlaceholder')}
-            value={draft.title}
-            onChange={(event) => edit({ title: event.target.value })}
-            data-testid="scene-title-input"
-          />
-        )}
-      </Field>
-
-      {chapters.length > 0 ? (
-        <Field
-          id="scene-chapter"
-          label={t('stories.sceneForm.chapterLabel')}
-          hint={
-            scene ? t('stories.sceneForm.chapterHintMove') : t('stories.sceneForm.chapterHintNew')
-          }
-          error={fieldErrors.chapterid}
-        >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={draft.chapterId}
-              onChange={(event) => edit({ chapterId: event.target.value })}
-              data-testid="scene-chapter-select"
-            >
-              <option value="">{unchaptered()}</option>
-              {chapterChoices(arcs, chapters).map((choice) => (
-                <option key={choice.id} value={choice.id}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-      ) : null}
-
-      <Field
-        id="scene-summary"
-        label={t('stories.sceneForm.summaryLabel')}
-        hint={t('stories.sceneForm.summaryHint')}
-        error={fieldErrors.summary}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={3}
-            value={draft.summary}
-            onChange={(event) => edit({ summary: event.target.value })}
-            data-testid="scene-summary-input"
-          />
-        )}
-      </Field>
-
-      {/* A suggestion never changes a scene's beats: the API takes none from one. */}
-      {suggesting ? null : (
-        <SceneBeatsField
-          beats={draft.beats}
-          onChange={(beats) => edit({ beats })}
-          errors={fieldErrors}
-        />
-      )}
-
-      <Field
-        id="scene-notes"
-        label={t('stories.sceneForm.notesLabel')}
-        hint={t('stories.sceneForm.notesHint')}
-        error={fieldErrors.notes}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input field__input--area"
-            rows={4}
-            value={draft.notes}
-            onChange={(event) => edit({ notes: event.target.value })}
-            data-testid="scene-notes-input"
-          />
-        )}
-      </Field>
-
-      <div data-testid="scene-pov-field">
-        <EntityPicker
-          label={t('stories.sceneForm.povLabel')}
-          universeId={universeId}
-          value={draft.pov}
-          onChange={(pov) => edit({ pov })}
-          placeholder={t('stories.sceneForm.povPlaceholder')}
-          error={fieldErrors.poventityid}
-        />
-      </div>
-
-      <Field
-        group="fieldset"
-        className="scenechron"
-        label={t('stories.sceneForm.whenLegend')}
-        hint={t('stories.sceneForm.whenHint')}
-      >
-        <ChronologyPointFields
-          chronology={chronology}
-          ids={{
-            eraId: 'scene-eraId',
-            year: 'scene-year',
-            month: 'scene-month',
-            day: 'scene-day',
-          }}
-          value={draft.point}
-          onChange={setPart}
-          errors={{
-            eraId: fieldErrors['chronology.eraid'],
-            year: fieldErrors['chronology.year'],
-            month: fieldErrors['chronology.month'],
-            day: fieldErrors['chronology.day'],
-          }}
-        />
-
-        {unreckoned ? (
-          <p className="field__hint" data-testid="scene-unreckoned">
-            {t('stories.sceneForm.unreckoned')}
-          </p>
-        ) : null}
-
-        {hasPoint ? (
-          <button
-            className="button button--secondary button--sm scenechron__clear"
-            type="button"
-            onClick={() => edit({ point: EMPTY_POINT })}
-            data-testid="scene-chronology-clear"
-          >
-            {t('stories.sceneForm.clearWhen')}
-          </button>
-        ) : null}
-      </Field>
-
-      <div data-testid="scene-lore-field">
-        <EntityMultiPicker
-          label={t('stories.sceneForm.loreLabel')}
-          hint={t('stories.sceneForm.loreHint')}
-          universeId={universeId}
-          value={draft.entities}
-          onChange={(entities) => edit({ entities })}
-          error={fieldErrors.entityids}
-        />
-      </div>
+      <SceneFormFields
+        universeId={universeId}
+        scene={scene}
+        chapters={chapters}
+        arcs={arcs}
+        chronology={chronology}
+        suggesting={suggesting}
+        title={title}
+        draft={draft}
+        fieldErrors={fieldErrors}
+        hasPoint={hasPoint}
+        unreckoned={unreckoned}
+        edit={edit}
+        setPart={setPart}
+      />
     </Drawer>
   )
 }

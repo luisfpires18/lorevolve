@@ -2,88 +2,17 @@ import { useId } from 'react'
 import { Link, useSearchParams, type To } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { useI18n } from '../i18n'
-import type { EntityTypeGroup } from '../lore/types'
-import { branchIds, type TreeType, type TypeNode, type TypeTree } from '../lore/typeTree'
-import { TypeIcon } from './TypeIcon'
+import type { EntityTypeGroup } from '../lore/typeDefinitions'
+import type { TypeTree } from '../lore/typeTree'
+import { listedEntries, TypeCard, type CatalogType } from './lore/LoreTypeCard'
+import { Button } from './Button'
+import { CardGrid } from './CardGrid'
+import { CardSkeleton } from './CardSkeleton'
+import { QuietNote } from './QuietNote'
+import { ViewChips } from './ViewChips'
 
 /** How many card shapes stand in for the catalog while the types are read. */
 const SKELETON_CARDS = 6
-
-/**
- * What a card reads of a type. A lore type has it as it is; a project's own type (#144) is the same card, its entry count
- * read as `listedEntityCount`, so a game's Entities screen is this catalog rather than a second one.
- */
-export type CatalogType = TreeType & {
-  description: string | null
-  icon: string | null
-  accentColor: string | null
-  listedEntityCount: number
-}
-
-/**
- * The entries a type's card counts: what the type's list shows when the card is opened - its own and those of every type
- * nested beneath it, neither in the Trash nor archived. Summed from each type's `listedEntityCount`, which the universe's
- * types list already carries, so no card makes a request of its own.
- */
-function listedEntries(node: TypeNode<CatalogType>, byId: Map<string, TypeNode<CatalogType>>) {
-  let count = 0
-  for (const id of branchIds(node)) count += byId.get(id)?.type.listedEntityCount ?? 0
-  return count
-}
-
-function TypeCard({ node, count, href }: { node: TypeNode<CatalogType>; count: number; href: To }) {
-  const { t, tn, tx } = useI18n()
-  const nameId = useId()
-  const detailsId = useId()
-  const { type } = node
-  const entries =
-    count === 0 ? t('lore.catalog.noEntries') : tn('lore.catalog.entries', count, { n: count })
-  const above = node.path.slice(0, -1)
-  const nested = node.children.length
-  return (
-    <Link
-      className="typecard"
-      to={href}
-      aria-labelledby={nameId}
-      aria-describedby={detailsId}
-      style={type.accentColor ? { ['--type-accent' as string]: type.accentColor } : undefined}
-      data-testid="lore-type-card"
-      data-type-name={type.name}
-    >
-      <span className="typecard__icon">
-        <TypeIcon iconKey={type.icon} />
-      </span>
-      <span className="typecard__body">
-        {/* A long name is cut after two lines on the card; the whole of it is the link's name and its tooltip. */}
-        <span className="typecard__name" id={nameId} title={type.name}>
-          <bdi>{type.name}</bdi>
-        </span>
-        <span className="typecard__details" id={detailsId}>
-          {above.length > 0 ? (
-            <span className="typecard__path">
-              {tx('lore.catalog.inPath', {
-                path: <bdi>{above.map((ancestor) => ancestor.name).join(' › ')}</bdi>,
-              })}
-            </span>
-          ) : null}
-          {type.description ? (
-            <span className="typecard__description">
-              <bdi>{type.description}</bdi>
-            </span>
-          ) : null}
-          <span className="typecard__meta" data-testid="lore-type-card-count">
-            {nested > 0
-              ? t('lore.catalog.entriesWithNested', {
-                  entries: entries,
-                  nested: tn('lore.catalog.nestedTypes', nested, { n: nested }),
-                })
-              : entries}
-          </span>
-        </span>
-      </span>
-    </Link>
-  )
-}
 
 /**
  * Lore's front page (Issue #60): every type of the universe as a card, in the hierarchy's order, and above them a small
@@ -145,7 +74,7 @@ export function LoreCatalog({
   }
 
   return (
-    <section className="lorecatalog" aria-labelledby={headingId} data-testid="lore-catalog">
+    <section className="stack stack--4" aria-labelledby={headingId} data-testid="lore-catalog">
       <h2 className="visually-hidden" id={headingId}>
         {t('lore.catalog.heading')}
       </h2>
@@ -155,52 +84,38 @@ export function LoreCatalog({
           <span className="lorecatalog__browselabel" aria-hidden="true">
             {t('lore.catalog.browseLabel')}
           </span>
-          <div
-            className="lorecatalog__groups"
-            role="group"
-            aria-label={t('lore.catalog.browseGroups')}
-            data-testid="lore-browse-groups"
-          >
-            <button
-              className="lorecatalog__group"
-              type="button"
-              aria-pressed={browsing === null}
-              onClick={() => onBrowse(null)}
-              data-testid="lore-browse-all"
-            >
-              {t('lore.catalog.allTypes')}
-              <span className="lorecatalog__groupcount" aria-hidden="true">
-                {tree.ordered.length}
-              </span>
-            </button>
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                className="lorecatalog__group"
-                type="button"
-                aria-pressed={browsing?.id === group.id}
-                onClick={() => onBrowse(group.id)}
-                data-testid="lore-browse-group"
-                data-group-name={group.name}
-              >
-                <Layers
-                  className="lorecatalog__groupicon"
-                  aria-hidden="true"
-                  focusable="false"
-                  strokeWidth={1.75}
-                />
-                <bdi>{group.name}</bdi>
-                <span className="visually-hidden"> {t('lore.catalog.groupSuffix')}</span>
-                <span className="lorecatalog__groupcount" aria-hidden="true">
-                  {group.typeIds.length}
-                </span>
-              </button>
-            ))}
-          </div>
+          <ViewChips
+            label={t('lore.catalog.browseGroups')}
+            testId="lore-browse-groups"
+            items={[
+              {
+                pressed: browsing === null,
+                onSelect: () => onBrowse(null),
+                label: t('lore.catalog.allTypes'),
+                count: tree.ordered.length,
+                testId: 'lore-browse-all',
+              },
+              ...groups.map((group) => ({
+                pressed: browsing?.id === group.id,
+                onSelect: () => onBrowse(group.id),
+                label: <bdi>{group.name}</bdi>,
+                icon: Layers,
+                hiddenSuffix: t('lore.catalog.groupSuffix'),
+                count: group.typeIds.length,
+                testId: 'lore-browse-group',
+                data: { 'data-group-name': group.name },
+              })),
+            ]}
+          />
         </div>
       ) : null}
 
-      <p className="lorecatalog__status" role="status" data-testid="lore-catalog-status">
+      <QuietNote
+        className="lorecatalog__status"
+        size="ui"
+        testId="lore-catalog-status"
+        role="status"
+      >
         {browsing ? (
           <>
             {shown.length === 0 ? (
@@ -229,10 +144,10 @@ export function LoreCatalog({
             {tn('lore.catalog.types', shown.length, { n: shown.length })}
           </span>
         )}
-      </p>
+      </QuietNote>
 
       {shown.length > 0 ? (
-        <ul className="lorecatalog__grid" data-testid="lore-type-cards">
+        <CardGrid min={16} className="lorecatalog__grid" testId="lore-type-cards">
           {shown.map((node) => {
             const isOpen = expanded.has(node.type.id)
             const Chevron = isOpen ? ChevronDown : ChevronRight
@@ -250,9 +165,10 @@ export function LoreCatalog({
                 />
                 {/* Inside the card's lower corner, beside the link rather than in it: a button can't sit in a link. */}
                 {expandable ? (
-                  <button
-                    className="button button--text button--sm lorecatalog__expand"
-                    type="button"
+                  <Button
+                    tone="text"
+                    size="sm"
+                    className="lorecatalog__expand"
                     aria-expanded={isOpen}
                     onClick={() => toggle(node.type.id)}
                     data-testid="lore-type-expand"
@@ -268,12 +184,12 @@ export function LoreCatalog({
                   >
                     <Chevron aria-hidden="true" focusable="false" strokeWidth={1.75} />
                     <span aria-hidden="true">{node.children.length}</span>
-                  </button>
+                  </Button>
                 ) : null}
               </li>
             )
           })}
-        </ul>
+        </CardGrid>
       ) : null}
     </section>
   )
@@ -283,21 +199,14 @@ export function LoreCatalog({
 export function LoreCatalogSkeleton() {
   const { t } = useI18n()
   return (
-    <div className="lorecatalog" data-testid="lore-catalog-loading">
-      <p className="visually-hidden" role="status">
-        {t('lore.catalog.reading')}
-      </p>
-      <ul className="lorecatalog__grid" aria-hidden="true">
-        {Array.from({ length: SKELETON_CARDS }, (_, index) => (
-          <li className="typecard typecard--skeleton" key={index}>
-            <span className="skeleton typecard__icon" />
-            <span className="typecard__body">
-              <span className="skeleton skeletoncard__line" />
-              <span className="skeleton skeletoncard__line skeletoncard__line--short" />
-            </span>
-          </li>
-        ))}
-      </ul>
+    <div className="stack stack--4" data-testid="lore-catalog-loading">
+      <CardSkeleton
+        shape="icon"
+        min={16}
+        className="lorecatalog__grid"
+        count={SKELETON_CARDS}
+        announce={t('lore.catalog.reading')}
+      />
     </div>
   )
 }

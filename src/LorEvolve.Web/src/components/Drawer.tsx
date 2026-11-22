@@ -1,6 +1,28 @@
-import { useEffect, useRef } from 'react'
-import type { KeyboardEvent, MouseEvent, ReactNode, RefObject, SyntheticEvent } from 'react'
-import { useDrawerGuard } from '../lib/drawerGuard'
+import { useEffect, useRef, useState } from 'react'
+import type { ComponentProps, ReactNode, RefObject, SyntheticEvent } from 'react'
+import { DrawerLockContext, useDrawerGuard } from '../lib/drawerGuard'
+import { useReturnFocus } from '../lib/returnFocus'
+import { FormActions } from './FormActions'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
+
+/** The Save and Cancel footer's own props; Drawer sets `onCancel` (the guarded close) and `busy`. */
+type DrawerFooter = Pick<
+  ComponentProps<typeof FormActions>,
+  | 'submitLabel'
+  | 'busyLabel'
+  | 'disabled'
+  | 'submitTestId'
+  | 'submitRef'
+  | 'cancelTestId'
+  | 'lockCancel'
+  | 'onDelete'
+  | 'deleteLabel'
+  | 'deleteTestId'
+> & {
+  /** False: the submit gets no busy state (only `disabled`), while the panel still locks on `busy`. */
+  showBusy?: boolean
+}
 
 type DrawerProps = {
   /** data-testid on the dialog. */
@@ -10,7 +32,7 @@ type DrawerProps = {
   title: ReactNode
   /** Drawn only when truthy. */
   eyebrow?: ReactNode
-  /** After the title inside the header; the caller writes its own `p.drawer__context`. */
+  /** After the title inside the header; the caller passes a `QuietNote` with `className="drawer__context"`. */
   context?: ReactNode
   /** Extra dialog classes, after `drawer`. */
   className?: string
@@ -20,24 +42,42 @@ type DrawerProps = {
   isDirty?: boolean
   /** The guard's question when `isDirty`. */
   leaveMessage?: string
-  /** Read at event time: true swallows Escape, cancel and a backdrop press. */
+  /** Read at event time: true locks the drawer as `busy` does, for a flag React has not rendered yet. */
   isLocked?: () => boolean
+  /** Focused right after the dialog opens: a ref, or a selector inside the dialog. Absent: the browser's choice. */
+  initialFocus?: RefObject<HTMLElement | null> | string
+  /** False: the caller puts the focus back itself. Default: the opener gets it back on close. */
+  returnFocus?: boolean
   /** Present: the panel is a form. Drawer prevents the default and stops the event first. */
   onSubmit?: () => void
   noValidate?: boolean
   /** `body` makes `.drawer__body` the form and draws the footer inside it. */
   submitFrom?: 'panel' | 'body'
+  /** A save in flight: `aria-busy`, and Escape, the backdrop and Cancel do nothing until it ends. */
   busy?: boolean
   /** For callers that read the dialog. */
   dialogRef?: RefObject<HTMLDialogElement | null>
-  /** Inside `footer.drawer__actions`; `close` is the guarded close, for Cancel. */
-  actions: (close: () => void) => ReactNode
+  /**
+   * Inside `footer.drawer__actions`. A function: drawn as it returns, `close` is the guarded close, for Cancel. An
+   * object: the Save and Cancel footer, `FormActions` with `busy` and the guarded Cancel. Absent: a Close button.
+   */
+  actions?: ((close: () => void) => ReactNode) | DrawerFooter
+  /** The Close button's test id, when `actions` is absent. */
+  closeTestId?: string
+  /** A refused save's line, drawn with FormMessage; nothing when empty. */
+  message?: string | null
+  messageTestId?: string
+  /** `top` (the default): after `notice`, before the children. `end`: after the children. */
+  messageAt?: 'top' | 'end'
+  /** Above the message: the suggesting, canon-block or changed-elsewhere notice. */
+  notice?: ReactNode
   children: ReactNode
 }
 
 /**
- * The drawer shell: the modal `dialog`, its head, body and actions, and the guarded Escape and backdrop. A caller keeps
- * its own focus effect and `useReturnFocus`; React runs this effect first, so the dialog is open by the time it focuses.
+ * The drawer shell: the modal `dialog`, its head, body and actions, the guarded Escape and backdrop, the lock while a
+ * save is in flight, and the focus: `initialFocus` on open, the opener again on close. React runs this effect before a
+ * caller's, so a caller's own later focus move still wins.
  */
 export function Drawer({
   testId,
@@ -51,35 +91,36 @@ export function Drawer({
   isDirty = false,
   leaveMessage = '',
   isLocked,
+  initialFocus,
+  returnFocus = true,
   onSubmit,
   noValidate,
   submitFrom = 'panel',
   busy,
   dialogRef,
   actions,
+  closeTestId,
+  message,
+  messageTestId,
+  messageAt = 'top',
+  notice,
   children,
 }: DrawerProps) {
   const ownRef = useRef<HTMLDialogElement>(null)
   const dialog = dialogRef ?? ownRef
-  const { close, dialogProps } = useDrawerGuard(isDirty, leaveMessage, onClose)
+  const locked = () => Boolean(busy) || Boolean(isLocked?.())
+  const { close, dialogProps } = useDrawerGuard(isDirty, leaveMessage, onClose, locked)
+  useReturnFocus(returnFocus)
+  const [firstFocus] = useState(() => initialFocus)
 
   useEffect(() => {
     dialog.current?.showModal()
-  }, [dialog])
-
-  const guardedProps = {
-    onKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
-      if (isLocked?.() && event.key === 'Escape') event.preventDefault()
-      else dialogProps.onKeyDown(event)
-    },
-    onCancel(event: SyntheticEvent<HTMLDialogElement>) {
-      if (isLocked?.()) event.preventDefault()
-      else dialogProps.onCancel(event)
-    },
-    onClick(event: MouseEvent<HTMLDialogElement>) {
-      if (!isLocked?.()) dialogProps.onClick(event)
-    },
-  }
+    const target =
+      typeof firstFocus === 'string'
+        ? dialog.current?.querySelector<HTMLElement>(firstFocus)
+        : firstFocus?.current
+    target?.focus()
+  }, [dialog, firstFocus])
 
   function submit(event: SyntheticEvent) {
     event.preventDefault()
@@ -90,7 +131,11 @@ export function Drawer({
 
   const header = (
     <header className="drawer__head">
-      {eyebrow ? <p className="drawer__eyebrow">{eyebrow}</p> : null}
+      {eyebrow ? (
+        <QuietNote className="drawer__eyebrow" size="xs">
+          {eyebrow}
+        </QuietNote>
+      ) : null}
       <h2 className="drawer__title" id={titleId}>
         {title}
       </h2>
@@ -98,7 +143,24 @@ export function Drawer({
     </header>
   )
   const bodyClass = bodyClassName ? `drawer__body ${bodyClassName}` : 'drawer__body'
-  const footer = <footer className="drawer__actions">{actions(() => void close())}</footer>
+  const line = message ? <FormMessage testId={messageTestId}>{message}</FormMessage> : null
+  const body = (
+    <>
+      {notice}
+      {messageAt === 'top' ? line : null}
+      {children}
+      {messageAt === 'end' ? line : null}
+    </>
+  )
+
+  function footerOf(guarded: () => void) {
+    if (typeof actions === 'function') return actions(guarded)
+    if (!actions)
+      return <FormActions onCancel={guarded} dismiss="close" cancelTestId={closeTestId} />
+    const { showBusy = true, ...props } = actions
+    return <FormActions {...props} {...(showBusy ? { busy } : null)} onCancel={guarded} />
+  }
+  const footer = <footer className="actions drawer__actions">{footerOf(() => void close())}</footer>
 
   let panel: ReactNode
   if (onSubmit && submitFrom === 'body') {
@@ -106,7 +168,7 @@ export function Drawer({
       <div className="drawer__panel" aria-busy={busy}>
         {header}
         <form className={bodyClass} onSubmit={submit} noValidate={noValidate}>
-          {children}
+          {body}
           {footer}
         </form>
       </div>
@@ -115,7 +177,7 @@ export function Drawer({
     panel = (
       <form className="drawer__panel" aria-busy={busy} onSubmit={submit} noValidate={noValidate}>
         {header}
-        <div className={bodyClass}>{children}</div>
+        <div className={bodyClass}>{body}</div>
         {footer}
       </form>
     )
@@ -123,7 +185,7 @@ export function Drawer({
     panel = (
       <div className="drawer__panel" aria-busy={busy}>
         {header}
-        <div className={bodyClass}>{children}</div>
+        <div className={bodyClass}>{body}</div>
         {footer}
       </div>
     )
@@ -134,10 +196,10 @@ export function Drawer({
       className={className ? `drawer ${className}` : 'drawer'}
       ref={dialog}
       aria-labelledby={titleId}
-      {...guardedProps}
+      {...dialogProps}
       data-testid={testId}
     >
-      {panel}
+      <DrawerLockContext.Provider value={Boolean(busy)}>{panel}</DrawerLockContext.Provider>
     </dialog>
   )
 }

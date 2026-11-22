@@ -1,0 +1,22 @@
+/* ---------- Review comments (043) ----------
+
+   A quiet button beside a subject's views or tools, and the threads in the moment drawer. Below 640px, in the entry's
+   views line and a scene's tool row, the button is its icon alone, keeping its whole name for assistive technology and
+   as its tooltip; the story's line of facts wraps and keeps the word. A thread is a column of
+   comments, replies set in under a rule; resolved threads fold away under their own heading. */
+
+/* The owner's private note (issue 23): one tall box and its save under it, inside the shared drawer. */
+.privatenote__text {
+  min-height: 16rem;
+  resize: vertical;
+  font-family: var(--font-prose, inherit);
+  line-height: 1.6;
+}
+
+.privatenote__bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}

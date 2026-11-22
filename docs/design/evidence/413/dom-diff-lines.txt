@@ -1,0 +1,335 @@
+## admin-backups
+-<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 06:48 PM.</p>
+-<ul class="adminstats" data-testid="admin-stats">
++<p class="settings__note" data-testid="admin-generated">Counted Nov 19, 2026, 06:36 PM.</p>
++<ul class="cardgrid cardgrid--min-13" data-testid="admin-stats">
+-<ul class="adminstats" data-testid="admin-untracked">
++<ul class="cardgrid cardgrid--min-13" data-testid="admin-untracked">
+## admin-main
+-<ul class="adminstats" data-testid="admin-stats">
++<ul class="cardgrid cardgrid--min-13" data-testid="admin-stats">
+-<ul class="adminstats" data-testid="admin-untracked">
++<ul class="cardgrid cardgrid--min-13" data-testid="admin-untracked">
+## admin-users
+-<ul class="adminusers" data-testid="admin-user-grid">
++<ul class="cardgrid cardgrid--min-15" data-testid="admin-user-grid">
+## comic-arcs
+-<p class="chapter__meta">Story arc</p>
++<p class="chapter__meta quietnote">Story arc</p>
+## comic-structure
+-<p class="plotarc__meta">Issue</p>
++<p class="plotarc__meta quietnote">Issue</p>
+-<p class="chapter__meta">Page</p>
++<p class="chapter__meta quietnote">Page</p>
+-<p class="chapter__meta">Page</p>
++<p class="chapter__meta quietnote">Page</p>
+-<p class="plotarc__meta">Issue</p>
++<p class="plotarc__meta quietnote">Issue</p>
+## family-discovery
+-<ul aria-busy="false" class="discovery__list" data-testid="family-list">
++<ul aria-busy="false" class="cardgrid cardgrid--gap-3 cardgrid--min-17 discovery__list" data-testid="family-list">
+## family-member
+-<span aria-hidden="true" class="familydetails__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile familydetails__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="familydetails__title">
++<div class="entityrow__body">
+-<p class="familydetails__kind">
++<p class="entityrow__meta">
+## film-structure
+-<p class="plotarc__meta">Act</p>
++<p class="plotarc__meta quietnote">Act</p>
+-<p class="chapter__meta">Sequence</p>
++<p class="chapter__meta quietnote">Sequence</p>
+-<p class="chapter__meta">Scene</p>
++<p class="chapter__meta quietnote">Scene</p>
+-<p class="chapter__meta">Scene</p>
++<p class="chapter__meta quietnote">Scene</p>
+-<p class="plotarc__meta">Act</p>
++<p class="plotarc__meta quietnote">Act</p>
+## game-entries-loading
+-<p class="projectcard__meta">Loading</p>
++<p aria-live="polite" class="visually-hidden" role="status">Loading</p>
++<ul aria-hidden="true" class="cardgrid cardskeleton lore__grid">
++<li class="skeletoncard">
++<span class="skeleton skeletoncard__tile">
++</span>
++<span class="skeletoncard__lines">
++<span class="skeleton skeletoncard__line">
++</span>
++<span class="skeleton skeletoncard__line skeletoncard__line--short">
++</span>
++</span>
++</li>
++<li class="skeletoncard">
++<span class="skeleton skeletoncard__tile">
++</span>
++<span class="skeletoncard__lines">
++<span class="skeleton skeletoncard__line">
++</span>
++<span class="skeleton skeletoncard__line skeletoncard__line--short">
++</span>
++</span>
++</li>
++<li class="skeletoncard">
++<span class="skeleton skeletoncard__tile">
++</span>
++<span class="skeletoncard__lines">
++<span class="skeleton skeletoncard__line">
++</span>
++<span class="skeleton skeletoncard__line skeletoncard__line--short">
++</span>
++</span>
++</li>
++<li class="skeletoncard">
++<span class="skeleton skeletoncard__tile">
++</span>
++<span class="skeletoncard__lines">
++<span class="skeleton skeletoncard__line">
++</span>
++<span class="skeleton skeletoncard__line skeletoncard__line--short">
++</span>
++</span>
++</li>
++<li class="skeletoncard">
++<span class="skeleton skeletoncard__tile">
++</span>
++<span class="skeletoncard__lines">
++<span class="skeleton skeletoncard__line">
++</span>
++<span class="skeleton skeletoncard__line skeletoncard__line--short">
++</span>
++</span>
++</li>
++<li class="skeletoncard">
++<span class="skeleton skeletoncard__tile">
++</span>
++<span class="skeletoncard__lines">
++<span class="skeleton skeletoncard__line">
++</span>
++<span class="skeleton skeletoncard__line skeletoncard__line--short">
+## game-types
+-<ul class="lorecatalog__grid" data-testid="lore-type-cards">
++<ul class="cardgrid cardgrid--min-16 lorecatalog__grid" data-testid="lore-type-cards">
+## game-types-loading
+-<ul aria-hidden="true" class="lorecatalog__grid">
++<ul aria-hidden="true" class="cardgrid cardgrid--min-16 lorecatalog__grid">
+## lore-context
+-<span aria-hidden="true" class="relation__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta">
++<p class="entityrow__meta">
+-<span aria-hidden="true" class="relation__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta" data-testid="lore-context-mention-state">
++<p class="entityrow__meta" data-testid="lore-context-mention-state">
+-<span aria-hidden="true" class="relation__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta">
++<p class="entityrow__meta">
+## lore-context-mentions
+-<span aria-hidden="true" class="relation__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta">
++<p class="entityrow__meta">
+-<span aria-hidden="true" class="relation__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta" data-testid="lore-context-mention-state">
++<p class="entityrow__meta" data-testid="lore-context-mention-state">
+## lore-entries-loading
+-<ul aria-hidden="true" class="cardgrid lore__skeleton">
++<ul aria-hidden="true" class="cardgrid cardskeleton lore__grid">
+## lore-preview
+-<span aria-hidden="true" class="lorepreview__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta">
++<p class="entityrow__meta">
+## lore-relations
+-<span aria-hidden="true" class="relation__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
++<span aria-hidden="true" class="entityrow__tile tile tile--blank" data-testid="entity-portrait-blank" style="--type-accent: #4f6bd6;">
+-<div class="relation__body">
++<div class="entityrow__body">
+-<p class="relation__meta">
++<p class="entityrow__meta">
+## lore-types
+-<ul class="lorecatalog__grid" data-testid="lore-type-cards">
++<ul class="cardgrid cardgrid--min-16 lorecatalog__grid" data-testid="lore-type-cards">
+## lore-types-hover
+-<ul class="lorecatalog__grid" data-testid="lore-type-cards">
++<ul class="cardgrid cardgrid--min-16 lorecatalog__grid" data-testid="lore-type-cards">
+## lore-types-loading
+-<ul aria-hidden="true" class="lorecatalog__grid">
++<ul aria-hidden="true" class="cardgrid cardgrid--min-16 lorecatalog__grid">
+## overview
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+## overview-hover
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+## overview-management-hover
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+-<ul class="contents__list">
++<ul class="cardgrid cardgrid--min-14 contents__list">
+## projects-account
+-<li class="storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="1" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="1" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="4" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="4" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="2" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="2" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="3" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="3" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="3" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="3" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="1" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="1" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="3" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="3" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="0" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="2" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="2" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+-<li class="storyrow" data-kind="4" data-project-id="<guid>" data-testid="projects-item">
+-<a class="storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
++<li class="rowlink storyrow" data-kind="4" data-project-id="<guid>" data-testid="projects-item">
++<a class="rowlink__target storyrow__title" data-discover="true" data-testid="projects-row-<guid>" href="/app/universes/<guid>/projects/<guid>">
+## projects-universe
+-<ul class="lorecatalog__grid lorecatalog__grid--rows" data-testid="projects-directory-cards">
++<ul class="cardgrid cardgrid--gap-3 cardgrid--rows lorecatalog__grid" data-testid="projects-directory-cards">
+## series-structure
+-<p class="plotarc__meta">Season</p>
++<p class="plotarc__meta quietnote">Season</p>
+-<p class="chapter__meta">Episode</p>
++<p class="chapter__meta quietnote">Episode</p>
+-<p class="chapter__meta">Scene</p>
++<p class="chapter__meta quietnote">Scene</p>
+-<p class="chapter__meta">Episode</p>
++<p class="chapter__meta quietnote">Episode</p>
+-<p class="plotarc__meta">Season</p>
++<p class="plotarc__meta quietnote">Season</p>
+## type-fields-open
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-gaming
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-lore
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-relations
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-relations-edit
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-templates
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-term-rename
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## types-terms
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
++<span class="types__actions">
++</span>
+## universes
+-<ul class="plates" data-testid="universe-grid">
++<ul class="cardgrid cardgrid--gap-5" data-testid="universe-grid">
+## universes-hover
+-<ul class="plates" data-testid="universe-grid">
++<ul class="cardgrid cardgrid--gap-5" data-testid="universe-grid">

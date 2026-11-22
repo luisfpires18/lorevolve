@@ -401,7 +401,7 @@ test.describe('content recovery', () => {
     // Leaving by choice is a choice: asked once, and the copy goes with the text.
     await typeAtEnd(tab, ' Abandoned.')
     await expect.poll(() => copyTexts(tab)).toContain('Abandoned.')
-    await tab.locator('.entry__crumbs').getByRole('link', { name: 'Lore' }).click()
+    await tab.locator('.crumb').getByRole('link', { name: 'Lore' }).click()
     await acceptConfirm(tab, 'has unsaved changes')
     await tab.waitForURL(new RegExp(`/universes/${universeId}/lore[?]type=[0-9a-f-]+$`))
     // The address changes before the Lore list replaces the entry; until it does, the entry's guard still holds the

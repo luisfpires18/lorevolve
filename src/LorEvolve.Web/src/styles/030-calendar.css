@@ -1,0 +1,141 @@
+/* ---------- Calendar ----------
+
+   Below the date periods, under its own heading and rule: the mode as a two-way segmented choice, then - only for a
+   custom calendar - the months. A month is one dense row, not a card: its place, Name, Short name, Days, then the three
+   row tools, with its use in small type underneath. Twenty months stay a list to scan rather than a wall of panels. Under
+   46rem the fields wrap - Name across, Short name beside Days - and the tools stay on the row, still 44px under a finger. */
+
+.calendar {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rule);
+}
+
+.calendar__mode {
+  margin-bottom: var(--space-3);
+}
+
+.calendar__mode .segmented {
+  align-self: flex-start;
+}
+
+.months {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.month {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.25rem 0.75rem;
+  padding: 0.6rem 0.75rem 0.5rem;
+}
+
+.month + .month {
+  border-top: 1px solid var(--rule);
+}
+
+.month__ordinal {
+  align-self: center;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  text-align: end;
+}
+
+.month__fields {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) 6.5rem;
+  gap: 0.5rem 0.75rem;
+}
+
+.month__days .field__input {
+  font-variant-numeric: tabular-nums;
+}
+
+.month__tools {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.month__use {
+  grid-column: 2 / -1;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* The column names are said once, over the first month, as a table's header would be. Every input keeps its own label
+   for assistive technology; only the repeats leave the screen. */
+@media (min-width: 46.0625rem) {
+  .month + .month .month__fields .field__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.month--reading {
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  align-items: baseline;
+}
+
+.month--reading .month__use {
+  grid-column: auto;
+}
+
+.month__readname {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 46rem) {
+  .month {
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .month__ordinal {
+    align-self: start;
+    padding-top: 1.6rem;
+  }
+
+  .month__fields {
+    grid-template-columns: minmax(0, 1fr) 5.5rem;
+  }
+
+  .month__fields > .field:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .month__tools {
+    grid-column: 2;
+    justify-content: flex-end;
+    margin-top: -0.25rem;
+  }
+
+  .month__use {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+  }
+
+  .month--reading {
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  }
+
+  .month--reading .month__use {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}

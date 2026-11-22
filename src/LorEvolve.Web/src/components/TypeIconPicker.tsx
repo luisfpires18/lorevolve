@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Check } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { TYPE_ICONS, typeIconLabel } from '../lore/typeIcons'
@@ -21,11 +21,15 @@ export function TypeIconPicker({
   onChange,
   disabled = false,
   testId,
+  hint,
+  error,
 }: {
   value: string | null
   onChange: (key: string | null) => void
   disabled?: boolean
   testId?: string
+  hint?: ReactNode
+  error?: ReactNode
 }) {
   const { t } = useI18n()
   const name = useId()
@@ -44,6 +48,8 @@ export function TypeIconPicker({
       className="iconpicker"
       disabled={disabled}
       data-testid={testId}
+      hint={hint}
+      error={error}
     >
       <div className="iconpicker__grid">
         {choices.map((choice) => {

@@ -1,13 +1,17 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
-import { EntityTile } from './EntityTile'
-import { StatusBadge } from './StatusBadge'
+import { EntityRow } from './EntityRow'
+import { CanonBadge } from './CanonBadge'
 import { useDrawerGuard } from '../lib/drawerGuard'
 import { linkSentence, type FamilyReading } from '../familyTree/reading'
 import { POSITION_LABELS, type FamilyTree } from '../familyTree/types'
 import { CANON_LABELS, CanonStatus } from '../lore/types'
 import { useI18n } from '../i18n'
+import { Button } from './Button'
+import { IconButton } from './IconButton'
+import { QuietNote } from './QuietNote'
+import { SectionTitle } from './Section'
 
 /** Where the tree stops drawing lines and the details become a sheet: the tree's own phone width. */
 const SHEET_QUERY = '(max-width: 640px)'
@@ -135,40 +139,39 @@ export function FamilyMemberDetails({
     >
       <div className="familydetails__panel">
         <header className="familydetails__head">
-          <EntityTile
+          <EntityRow
             universeId={universeId}
             entityId={node.entityId}
             image={node.image}
             typeIcon={node.entityTypeIcon}
             typeAccent={node.entityTypeAccentColor}
-            className="familydetails__tile"
+            tileClassName="familydetails__tile"
+            name={
+              <h2 className="familydetails__name" id={headingId} ref={heading} tabIndex={-1}>
+                <bdi>{node.name}</bdi>
+              </h2>
+            }
+            meta={
+              <>
+                <bdi>{node.entityTypeName}</bdi>
+                <CanonBadge status={node.canonStatus} />
+              </>
+            }
           />
-          <div className="familydetails__title">
-            <h2 className="familydetails__name" id={headingId} ref={heading} tabIndex={-1}>
-              <bdi>{node.name}</bdi>
-            </h2>
-            <p className="familydetails__kind">
-              <bdi>{node.entityTypeName}</bdi>
-              <StatusBadge step={node.canonStatus} label={CANON_LABELS[node.canonStatus]} />
-            </p>
-          </div>
-          <button
-            className="iconbutton familydetails__close"
-            type="button"
+          <IconButton
+            icon={X}
+            label={t('places.memberDetails.close')}
+            className="familydetails__close"
             onClick={close}
-            aria-label={t('places.memberDetails.close')}
-            title={t('places.memberDetails.close')}
             data-testid="family-details-close"
-          >
-            <X aria-hidden="true" focusable="false" strokeWidth={1.75} />
-          </button>
+          />
         </header>
 
         <div className="familydetails__body">
           <section aria-labelledby={`${headingId}-place`}>
-            <h3 className="familydetails__heading" id={`${headingId}-place`}>
+            <SectionTitle level={3} tone="label" size="xs" id={`${headingId}-place`}>
               {t('places.memberDetails.inFamily')}
-            </h3>
+            </SectionTitle>
             <ul className="familydetails__list" data-testid="family-details-place">
               {isFocal ? <li>{t('places.memberDetails.focal')}</li> : null}
               {member?.relations.flatMap((relation) =>
@@ -208,11 +211,13 @@ export function FamilyMemberDetails({
           </section>
 
           <section aria-labelledby={`${headingId}-other`}>
-            <h3 className="familydetails__heading" id={`${headingId}-other`}>
+            <SectionTitle level={3} tone="label" size="xs" id={`${headingId}-other`}>
               {t('places.memberDetails.other')}
-            </h3>
+            </SectionTitle>
             {authored.length === 0 ? (
-              <p className="familydetails__note">{t('places.memberDetails.noneRecorded')}</p>
+              <QuietNote className="familydetails__note">
+                {t('places.memberDetails.noneRecorded')}
+              </QuietNote>
             ) : (
               <>
                 <ul className="familydetails__list" data-testid="family-details-other">
@@ -238,27 +243,28 @@ export function FamilyMemberDetails({
                     )
                   })}
                 </ul>
-                <p className="familydetails__note">{t('places.memberDetails.otherNote')}</p>
+                <QuietNote className="familydetails__note">
+                  {t('places.memberDetails.otherNote')}
+                </QuietNote>
               </>
             )}
           </section>
         </div>
 
-        <footer className="familydetails__actions">
-          <Link className="button button--secondary" to={entryPath(node.entityId)}>
+        <footer className="actions familydetails__actions">
+          <Button tone="secondary" to={entryPath(node.entityId)}>
             {t('places.memberDetails.openEntry')}
-          </Link>
+          </Button>
           {isFocal ? null : (
-            <button
-              className="button button--text"
-              type="button"
+            <Button
+              tone="text"
               onClick={() => {
                 onClose()
                 onFocus(node.entityId)
               }}
             >
               {t('places.memberDetails.showFamily')}
-            </button>
+            </Button>
           )}
         </footer>
       </div>

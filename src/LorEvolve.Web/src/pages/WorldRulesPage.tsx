@@ -1,19 +1,17 @@
-import { useEffect, useId, useState } from 'react'
+import { useCallback, useId } from 'react'
 import { useUniverseAccess } from '../universes/access'
-import { Plus } from 'lucide-react'
 import { Link, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
-import { ActionIcon } from '../components/ActionIcon'
 import { Quoted } from '../components/NameList'
 import { t, useI18n } from '../i18n'
-import { formatDate } from '../lib/dates'
 import { listWorldRules } from '../worldRules/api'
-import type { WorldRulePage } from '../worldRules/types'
-import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; page: WorldRulePage } | { kind: 'error'; message: string }
+import { NewButton } from '../components/NewButton'
+import { ReadGate } from '../components/ReadGate'
+import { WorldRulesList } from '../components/worldRules/WorldRulesList'
+import { Callout } from '../components/Callout'
+import { useAsyncRead } from '../lib/useAsyncRead'
+import { pageParam } from '../lib/queryParams'
 
 /** What a rule's editor says it did before handing back to the list. */
 export interface WorldRulesListNotice {
@@ -40,37 +38,18 @@ export default function WorldRulesPage() {
   const basePath = `/app/universes/${universe.id}/world-rules`
   const trashPath = `/app/universes/${universe.id}/trash`
 
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [reads, setReads] = useState(0)
+  const read = useCallback(
+    (signal: AbortSignal) => listWorldRules(universe.id, page, signal),
+    [universe.id, page],
+  )
+  const { load: state, retry } = useAsyncRead(read)
 
   // A deletion reported by the editor that sent the author here.
   const notice = (location.state as WorldRulesListNotice | null)?.deleted ?? null
 
-  useEffect(() => {
-    const controller = new AbortController()
-
-    listWorldRules(universe.id, page, controller.signal)
-      .then((result) => setState({ kind: 'ready', page: result }))
-      .catch(() => {
-        if (controller.signal.aborted) return
-        setState({ kind: 'error', message: t('canon.rules.readFailed') })
-      })
-
-    return () => {
-      controller.abort()
-    }
-  }, [universe.id, page, reads])
-
   function goToPage(next: number) {
-    setParams((current) => {
-      const updated = new URLSearchParams(current)
-      if (next <= 1) updated.delete('page')
-      else updated.set('page', String(next))
-      return updated
-    })
+    setParams((current) => pageParam(current, 'page', next))
   }
-
-  const result = state.kind === 'ready' ? state.page : null
 
   return (
     <section className="rules" aria-labelledby={headingId} data-testid="world-rules">
@@ -80,135 +59,43 @@ export default function WorldRulesPage() {
         lede={t('canon.rules.lede')}
         actions={
           access.editContent ? (
-            <Link className="button" to={`${basePath}/new`} data-testid="new-world-rule">
-              <ActionIcon icon={Plus} />
+            <NewButton to={`${basePath}/new`} data-testid="new-world-rule">
               {t('canon.rules.newRule')}
-            </Link>
+            </NewButton>
           ) : undefined
         }
       />
 
       {notice ? (
-        <div className="notice rules__notice" data-testid="world-rules-deleted-notice">
+        <Callout look="notice" className="rules__notice" testId="world-rules-deleted-notice">
           <p role="status">
             {tx('canon.rules.deleted', {
               title: <Quoted text={notice.title} />,
               restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
             })}
           </p>
-        </div>
+        </Callout>
       ) : null}
 
-      {state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('canon.rules.loading')}
-        </p>
-      ) : null}
-
-      {state.kind === 'error' ? (
-        <div className="notice notice--error" role="alert" data-testid="world-rules-load-error">
-          <p>{state.message}</p>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => {
-              setState({ kind: 'loading' })
-              setReads((current) => current + 1)
-            }}
-          >
-            {t('canon.rules.retry')}
-          </button>
-        </div>
-      ) : null}
-
-      {result && result.items.length > 0 ? (
-        <ul className="rulelist" data-testid="world-rule-list">
-          {result.items.map((rule) => (
-            <li
-              className="rulerow rowlink"
-              key={rule.id}
-              data-testid="world-rule-row"
-              data-title={rule.title}
-            >
-              <Link
-                className="rulerow__title rowlink__target"
-                to={`${basePath}/${rule.id}`}
-                data-testid="world-rule-open"
-              >
-                <bdi>{rule.title}</bdi>
-              </Link>
-              {rule.excerpt ? (
-                <p className="rulerow__excerpt" dir="auto" data-testid="world-rule-excerpt">
-                  {rule.excerpt}
-                  {rule.isExcerptShortened ? '…' : null}
-                </p>
-              ) : null}
-              <p className="rulerow__meta">
-                {rule.hasCheck ? (
-                  <span className="rulerow__check" data-testid="world-rule-has-check">
-                    {t('canon.rules.checked')}
-                  </span>
-                ) : null}
-                {tx('canon.rules.updated', {
-                  time: <time dateTime={rule.updatedAt}>{formatDate(rule.updatedAt)}</time>,
-                })}
-              </p>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {result && result.items.length === 0 && result.totalCount === 0 ? (
-        <EmptyState
-          testId="world-rules-empty"
-          title={t('canon.rules.empty.title')}
-          hint={t('canon.rules.empty.hint')}
-          action={
-            access.editContent ? (
-              <Link className="button" to={`${basePath}/new`} data-testid="empty-new-world-rule">
-                <ActionIcon icon={Plus} />
-                {t('canon.rules.emptyNewRule')}
-              </Link>
-            ) : undefined
-          }
-        />
-      ) : null}
-
-      {result && result.items.length === 0 && result.totalCount > 0 ? (
-        <EmptyState
-          testId="world-rules-page-empty"
-          title={t('canon.rules.pageEmpty.title')}
-          action={
-            <button className="button button--secondary" type="button" onClick={() => goToPage(1)}>
-              {t('canon.rules.pageEmpty.first')}
-            </button>
-          }
-        />
-      ) : null}
-
-      {result && result.totalPages > 1 ? (
-        <nav className="pager" aria-label={t('canon.rules.pagination')}>
-          <button
-            className="button button--secondary"
-            type="button"
-            disabled={result.page <= 1}
-            onClick={() => goToPage(result.page - 1)}
-          >
-            {t('canon.rules.previous')}
-          </button>
-          <span className="pager__position">
-            {t('canon.rules.position', { page: result.page, totalPages: result.totalPages })}
-          </span>
-          <button
-            className="button button--secondary"
-            type="button"
-            disabled={result.page >= result.totalPages}
-            onClick={() => goToPage(result.page + 1)}
-          >
-            {t('canon.rules.next')}
-          </button>
-        </nav>
-      ) : null}
+      <ReadGate
+        load={state}
+        loading={{ text: t('canon.rules.loading') }}
+        error={{
+          message: t('canon.rules.readFailed'),
+          onRetry: retry,
+          retryLabel: t('canon.rules.retry'),
+          testId: 'world-rules-load-error',
+        }}
+      >
+        {(result) => (
+          <WorldRulesList
+            result={result}
+            basePath={basePath}
+            canCreate={access.editContent}
+            onPage={goToPage}
+          />
+        )}
+      </ReadGate>
     </section>
   )
 }

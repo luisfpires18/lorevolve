@@ -1,0 +1,36 @@
+const adminUser = {
+  notFound: 'There is no account with this id.',
+  all: 'All users',
+  opening: 'Opening the account…',
+  publicName: 'Public name: {name}',
+  beforeRecords: 'Before records began',
+  account: {
+    heading: 'Account',
+    id: 'User ID',
+    email: 'Email',
+    role: 'Platform role',
+    status: 'Status',
+    blockedSince: 'Blocked since {time}',
+    blockedSinceUnknown: 'Blocked since an unknown time',
+    active: 'Active',
+    owned: 'Universes owned',
+    shared: 'Universes shared with them',
+    storage: 'Storage',
+    storageValue: '{used} used of {quota}',
+    created: 'Account created',
+    subscription: 'Subscription',
+  },
+  signIn: {
+    heading: 'Sign-in and access',
+    last: 'Last sign-in',
+    failed: 'Wrong passwords since then',
+    lockout: 'Sign-in lockout',
+    lockedUntil: 'Locked until {time}',
+    lockoutNone: 'None',
+    apps: 'Connected AI apps',
+    appsUsed: 'AI apps last used',
+    appsNever: 'Never',
+  },
+}
+
+export default adminUser

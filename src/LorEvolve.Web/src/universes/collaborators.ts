@@ -40,7 +40,6 @@ export interface AcceptedInvitation {
 
 /** The 409 an address with a live invitation gets: the invitation is named, not duplicated. */
 export const INVITATION_PENDING = 'invitation_pending'
-export const INVITATION_NOT_FOUND = 'invitation_not_found'
 export const INVITATION_OTHER_ACCOUNT = 'invitation_other_account'
 export const INVITATION_EXPIRED = 'invitation_expired'
 

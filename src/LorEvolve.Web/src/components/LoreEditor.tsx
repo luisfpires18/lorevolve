@@ -49,10 +49,6 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
   )
   const [error, setError] = useState<string | undefined>()
 
-  useEffect(() => {
-    input.current?.focus()
-  }, [])
-
   useEffect(
     () => () => {
       editor.commands.focus()
@@ -76,21 +72,15 @@ function LinkDrawer({ editor, onClose }: { editor: Editor; onClose: () => void }
 
   return (
     <Drawer
+      initialFocus={input}
+      // The editor takes the focus back itself when the drawer closes.
+      returnFocus={false}
       testId="lore-link"
       titleId="lore-link-title"
       title={t('lore.editor.link')}
       onClose={onClose}
       onSubmit={apply}
-      actions={(close) => (
-        <>
-          <button className="button" type="submit">
-            {t('lore.editor.linkApply')}
-          </button>
-          <button className="button button--secondary" type="button" onClick={close}>
-            {t('lore.editor.linkCancel')}
-          </button>
-        </>
-      )}
+      actions={{ submitLabel: t('lore.editor.linkApply') }}
     >
       <Field
         label={t('lore.editor.linkPrompt')}

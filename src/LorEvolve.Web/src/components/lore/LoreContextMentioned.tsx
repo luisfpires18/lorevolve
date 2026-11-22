@@ -1,0 +1,133 @@
+import { EntityRow } from '../EntityRow'
+import { useI18n } from '../../i18n'
+import type { SceneLoreReference } from '../../stories/types'
+import type { Mention } from '../../lore/mentions'
+import type { useUniverseAccess } from '../../universes/access'
+import { Button } from '../Button'
+import { FormMessage } from '../FormMessage'
+import { SectionTitle } from '../Section'
+
+/** The prose's @ mentions, each once, with its entry's name now, a preview, and Add to this scene's Lore. */
+export function LoreContextMentioned({
+  universeId,
+  headingId,
+  mentioned,
+  references,
+  linkedIds,
+  busy,
+  access,
+  setLink,
+  openPreview,
+}: {
+  universeId: string
+  headingId: string
+  mentioned: Mention[]
+  references: Map<string, SceneLoreReference> | 'failed' | null
+  linkedIds: Set<string>
+  busy: string | null
+  access: ReturnType<typeof useUniverseAccess>
+  setLink: (row: { id: string; name: string }, link: boolean) => Promise<void>
+  openPreview: (id: string, from: string) => void
+}) {
+  const { t, tx } = useI18n()
+  return (
+    <>
+      {mentioned.length > 0 ? (
+        <section
+          className="stack stack--3 lorecontext__group"
+          aria-labelledby={`${headingId}-mentioned`}
+          data-testid="lore-context-mentions"
+        >
+          <SectionTitle level={3} tone="rule-accent" id={`${headingId}-mentioned`}>
+            {t('lore.context.mentioned')}
+          </SectionTitle>
+          {references === 'failed' ? (
+            <FormMessage testId="lore-context-mentions-error" role={null}>
+              {t('lore.context.mentionedFailed')}
+            </FormMessage>
+          ) : (
+            <ul className="relations__rows">
+              {mentioned.map((mention) => {
+                const reference =
+                  references instanceof Map ? references.get(mention.entityId) : undefined
+                const known = references instanceof Map
+                const live = reference !== undefined && !reference.isTrashed
+                const isLinked = linkedIds.has(mention.entityId)
+                const name = reference?.name ?? mention.name
+                const key = `mention-${mention.entityId}`
+                return (
+                  <li
+                    className="relation lorecontext__row"
+                    key={mention.entityId}
+                    data-testid="lore-context-mention"
+                    data-name={name}
+                  >
+                    <EntityRow
+                      universeId={universeId}
+                      entityId={mention.entityId}
+                      image={live ? reference.image : null}
+                      typeIcon={reference?.entityTypeIcon ?? null}
+                      typeAccent={reference?.entityTypeAccentColor ?? null}
+                      name={
+                        live ? (
+                          <button
+                            className="relation__name lorecontext__name"
+                            type="button"
+                            onClick={() => openPreview(mention.entityId, key)}
+                            data-preview-from={key}
+                            aria-label={t('lore.context.previewPick', { name })}
+                            data-testid="lore-context-mention-preview"
+                          >
+                            <bdi>{name}</bdi>
+                          </button>
+                        ) : (
+                          <span className="relation__name lorecontext__name--trashed">
+                            <bdi>{name}</bdi>
+                          </span>
+                        )
+                      }
+                      metaTestId="lore-context-mention-state"
+                      meta={
+                        !known ? (
+                          t('lore.context.reading')
+                        ) : reference === undefined ? (
+                          t('lore.context.notInLore')
+                        ) : reference.isTrashed ? (
+                          t('lore.context.inTheTrash')
+                        ) : (
+                          <>
+                            <bdi>{reference.entityTypeName}</bdi>
+                            {reference.name !== mention.name ? (
+                              <span>
+                                {tx('lore.context.writtenAs', {
+                                  name: <bdi>{mention.name}</bdi>,
+                                })}
+                              </span>
+                            ) : null}
+                            {isLinked ? <span>{t('lore.context.inSceneLore')}</span> : null}
+                          </>
+                        )
+                      }
+                    />
+                    {access.editContent && live && !isLinked ? (
+                      <Button
+                        tone="text"
+                        className="lorecontext__action"
+                        aria-disabled={busy !== null}
+                        aria-label={t('lore.context.addLabel', { name })}
+                        onClick={() => void setLink({ id: mention.entityId, name }, true)}
+                        data-testid="lore-context-mention-link"
+                      >
+                        {t('lore.context.add')}
+                      </Button>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      ) : null}
+    </>
+  )
+}

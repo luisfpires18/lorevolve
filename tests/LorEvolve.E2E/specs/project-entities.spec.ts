@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue #144: a project defines its own types and holds its own entries.
@@ -88,7 +89,7 @@ test.describe('Project entities', () => {
     // A type's fields open from its row, as on the universe's Types screen.
     await types.getByRole('button', { name: 'Fields of Map' }).click()
     await expect(types).toContainText('Supported players')
-    await expect(types).toContainText('Several choices')
+    await expect(types).toContainText('Choose several')
     await expect(page.getByTestId('project-schema-offer')).toHaveCount(0)
     await page.getByTestId('projecttab-entities').click()
 
@@ -103,7 +104,7 @@ test.describe('Project entities', () => {
     await page.getByTestId('project-entry-add').click()
     await page.getByTestId('project-entry-new-name').fill('Saltflats')
 
-    const players = page.locator('[data-testid^="project-entry-value-"]').first()
+    const players = page.getByRole('group', { name: /Supported players/ })
     await players.getByText('4', { exact: true }).click()
 
     await page.getByTestId('project-entry-new-save').click()
@@ -129,6 +130,7 @@ test.describe('Project entities', () => {
     const item = types.locator('> li', { hasText: 'Item' }).first().locator('.types__head')
     await item.getByRole('button', { name: /More actions/ }).click()
     await item.getByRole('button', { name: 'Delete type' }).click()
+    await acceptConfirm(page)
     await expect(types).not.toContainText('Item')
 
     // A type still used by an entry is not deleted: the refusal is shown rather than the entry losing its type.

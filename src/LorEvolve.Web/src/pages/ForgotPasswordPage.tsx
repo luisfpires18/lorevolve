@@ -4,6 +4,8 @@ import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
+import { Callout } from '../components/Callout'
 
 /**
  * Forgot password (#69). The answer is the same whether or not the address has an account, so the page never says
@@ -44,9 +46,9 @@ export default function ForgotPasswordPage() {
       footer={<Link to="/login">{t('auth.forgot.back')}</Link>}
     >
       {sentTo ? (
-        <p className="callout" role="status" data-testid="forgot-sent">
+        <Callout look="callout" as="p" role="status" testId="forgot-sent">
           {tx('auth.forgot.sent', { email: <bdi>{sentTo}</bdi> })}
-        </p>
+        </Callout>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
           <Field
@@ -61,9 +63,9 @@ export default function ForgotPasswordPage() {
             onChange={(event) => setEmail(event.target.value)}
           />
 
-          <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? t('auth.forgot.submitting') : t('auth.forgot.submit')}
-          </button>
+          <Button busy={isSubmitting} busyLabel={t('auth.forgot.submitting')} type="submit">
+            {t('auth.forgot.submit')}
+          </Button>
         </form>
       )}
     </AuthLayout>

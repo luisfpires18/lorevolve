@@ -1,0 +1,206 @@
+/* ---------- The article: reading, writing, its history ---------- */
+
+.article__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  max-width: calc(62ch + 2.5rem);
+  margin-bottom: 0.75rem;
+}
+
+.article__title {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+/* Arriving at the article from a search result: the mark says where, as a scene's does, so the heading
+   the focus moved to needs no ring of its own. Clear of the narrow screen's sticky bar when scrolled to. */
+.article {
+  scroll-margin-top: 1rem;
+  transition:
+    background-color 700ms ease,
+    box-shadow 700ms ease;
+}
+
+.article__title:focus {
+  outline: none;
+}
+
+@media (max-width: 860px) {
+  .article {
+    scroll-margin-top: 4.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .article {
+    transition: none;
+  }
+}
+
+/* Not written yet: said once, with the one way to begin - a quiet sheet at the article's measure, never
+   larger than the entry it belongs to. */
+.article__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: calc(62ch + 2.5rem);
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.article__emptyline {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--text-section);
+  line-height: 1.25;
+}
+
+.article__emptyhint {
+  margin: 0 0 var(--space-2);
+  color: var(--muted);
+}
+
+.article__note {
+  margin: -0.25rem 0 1rem;
+  max-width: 52ch;
+  font-size: 0.85rem;
+}
+
+/* Save stays in reach however far down a long article the author is: the bar holds to the bottom of the screen, over
+   the writing, at the writing's own measure. The entry's actions step aside while it is shown. */
+.article__bar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  max-width: calc(62ch + 2.5rem);
+  padding: 0.75rem 0;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  background: var(--raised);
+}
+
+.article__status {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.article__status[data-state='dirty'],
+.article__status[data-state='saving'] {
+  color: var(--ink);
+}
+
+.article__actions {
+  margin-left: auto;
+}
+
+.article__failure {
+  max-width: 62ch;
+  margin: 0 0 1rem;
+}
+
+/* Saved somewhere else while being edited (ADR 0043): the notice, then the latest version on request. Stacked at every
+   width, so a phone reads the comparison as easily as a desk. */
+.editconflict {
+  --callout-tone: var(--warning);
+  max-width: 62ch;
+  margin: 0 0 var(--space-4);
+}
+
+.editconflict__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.editconflict__text,
+.editconflict__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+}
+
+.editconflict__hint {
+  color: var(--muted);
+}
+
+.editconflict__actions {
+  margin-top: 0.7rem;
+}
+
+.editconflict__review {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+.editconflict__heading {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.editconflict__latesttext {
+  max-height: 18rem;
+  overflow: auto;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.changelist {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.changelist__row {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.changelist__label {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.changelist__value {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.5rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.changelist__side {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* The writing surface gives a phone most of its height rather than a fixed strip. */
+.article__editing .editor__surface {
+  min-height: clamp(16rem, 55dvh, 32rem);
+}
+
+.article__history {
+  margin-top: 1.5rem;
+}
+
+.article__history .history__list {
+  margin-top: 0.75rem;
+}

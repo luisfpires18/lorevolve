@@ -2,19 +2,22 @@ import { useId, type KeyboardEvent } from 'react'
 import { DndContext, MouseSensor, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
-import { FoldToggle } from './FoldToggle'
-import { LoreReference } from './LoreReference'
-import { LoreReorderHandle } from './LoreReorderHandle'
+import { DisclosureButton } from './DisclosureButton'
+import { EntityRow } from './EntityRow'
+import { Fact } from './Fact'
+import { FactList } from './FactList'
+import { TypeReorderHandle } from './TypeReorderHandle'
 import { useFold } from './fold'
 import type { Chronology } from '../chronology/types'
 import { sceneWhen } from '../stories/format'
 import type { Scene, SceneBeat, SceneLoreReference } from '../stories/types'
+import { HeadingCount } from './HeadingCount'
 
 /*
  * What a scene refers to, drawn the same way wherever a scene is shown - its card on the Scenes view and its page on the
- * Manuscript view - so the two cannot drift apart. The scene form edits the date, the point of view, the lore and the
- * beats; the one edit made here is the order of the lore, dragged on the card. `testId` names the surface, so each keeps
- * its own test ids.
+ * Manuscript view - so the two cannot drift apart. Each part is one or two Facts; the caller holds them in a FactList.
+ * The scene form edits the date, the point of view, the lore and the beats; the one edit made here is the order of the
+ * lore, dragged on the card. `testId` names the surface, so each keeps its own test ids.
  */
 
 type Surface = 'scene' | 'manuscript'
@@ -39,37 +42,35 @@ export function SceneStamp({
   if (!when && !scene.pov) return null
 
   return (
-    <div className="scene__stamp">
+    <>
       {when ? (
-        <span className="scene__when" data-testid={`${testId}-when`}>
+        <Fact name={t('stories.scene.when')} valueTestId={`${testId}-when`}>
           {/* The story's timeline: this scene among its other dated scenes and the moments linked to the story. */}
           <Link
-            className="scene__whenlink"
             to={`/app/universes/${universeId}/timeline?story=${scene.storyId}`}
             aria-label={t('stories.scene.timelineLink', { when: when.text })}
             data-testid={`${testId}-timeline`}
           >
             {when.text}
           </Link>
-          {when.placed ? null : (
-            <span className="scene__unplaced">{t('stories.scene.noPeriod')}</span>
-          )}
-        </span>
+          {when.placed ? null : t('stories.scene.noPeriod')}
+        </Fact>
       ) : null}
       {scene.pov ? (
-        <span className="scene__pov" data-testid={`${testId}-pov`}>
-          <span className="scene__label">{t('stories.scene.pov')}</span>
-          <LoreReference universeId={universeId} reference={scene.pov} portrait />
-        </span>
+        <Fact name={t('stories.scene.pov')} valueTestId={`${testId}-pov`}>
+          <ul className="relations__rows">
+            <LoreRow universeId={universeId} reference={scene.pov} />
+          </ul>
+        </Fact>
       ) : null}
-    </div>
+    </>
   )
 }
 
 /**
  * The lore the scene links, each a way to the entry's own page - or named and unlinked while it is in the Trash. All of
  * it, always, in the order the author put it in. Where `onReorder` is given - the scene's card, for an author who may
- * edit - each chip carries a grip: a mouse drags it, the arrow keys move it one place, and either way the whole order
+ * edit - each row carries a grip: a mouse drags it, the arrow keys move it one place, and either way the whole order
  * goes back to the scene.
  */
 export function SceneLore({
@@ -99,30 +100,36 @@ export function SceneLore({
   }
 
   const list = (
-    <ul className="scene__lore" aria-labelledby={labelId} data-testid={`${testId}-lore`}>
+    <ul className="relations__rows" aria-labelledby={labelId} data-testid={`${testId}-lore`}>
       {entities.map((reference, index) => (
-        <LoreChip
+        <LoreRow
           key={reference.entityId}
           universeId={universeId}
           reference={reference}
-          draggable={Boolean(onReorder)}
-          onKey={(event) => {
-            const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-            const on = event.key === 'ArrowRight' || event.key === 'ArrowDown'
-            if (!back && !on) return
-            event.preventDefault()
-            move(index, index + (back ? -1 : 1))
-          }}
+          onKey={
+            onReorder
+              ? (event) => {
+                  const back = event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                  const on = event.key === 'ArrowRight' || event.key === 'ArrowDown'
+                  if (!back && !on) return
+                  event.preventDefault()
+                  move(index, index + (back ? -1 : 1))
+                }
+              : undefined
+          }
         />
       ))}
     </ul>
   )
 
   return (
-    <div className="scene__refs scene__refs--lore">
-      <span className="scene__label" id={labelId}>
-        {t('stories.scene.lore')} <span className="scene__count">{entities.length}</span>
-      </span>
+    <Fact
+      name={
+        <span id={labelId}>
+          {t('stories.scene.lore')} <HeadingCount n={entities.length} look="pill" />
+        </span>
+      }
+    >
       {onReorder ? (
         <DndContext
           sensors={sensors}
@@ -143,38 +150,73 @@ export function SceneLore({
       ) : (
         list
       )}
-    </div>
+    </Fact>
   )
 }
 
-/** One chip in the list: the entry, and the grip it is moved by where the list can be reordered. */
-function LoreChip({
+/**
+ * One linked entry, as Lore draws a linked entry: its tile and its name, a real link to the entry's own page; an entry in
+ * the Trash is named but not linked, because it has no page to open while it is there. With `onKey` it carries the grip
+ * it is moved by.
+ */
+function LoreRow({
   universeId,
   reference,
-  draggable,
   onKey,
 }: {
   universeId: string
   reference: SceneLoreReference
-  draggable: boolean
-  onKey: (event: KeyboardEvent<HTMLButtonElement>) => void
+  onKey?: (event: KeyboardEvent<HTMLButtonElement>) => void
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: reference.entityId, disabled: !draggable })
+  const { t } = useI18n()
+  const { setNodeRef } = useDroppable({ id: reference.entityId, disabled: !onKey })
+  const name = <bdi>{reference.name}</bdi>
 
   return (
-    <li ref={draggable ? setNodeRef : undefined} data-over={isOver ? 'true' : undefined}>
-      {draggable ? (
-        <LoreReorderHandle id={reference.entityId} name={reference.name} onKey={onKey} />
+    <li
+      ref={onKey ? setNodeRef : undefined}
+      className="relation"
+      data-testid={reference.isTrashed ? 'lore-reference-trashed' : 'lore-reference'}
+    >
+      <EntityRow
+        universeId={universeId}
+        entityId={reference.entityId}
+        // A trashed entry's picture is not served, so it is drawn as its type's tile instead.
+        image={reference.isTrashed ? null : reference.image}
+        typeIcon={reference.entityTypeIcon}
+        typeAccent={reference.entityTypeAccentColor}
+        name={
+          reference.isTrashed ? (
+            <span className="relation__name">{name}</span>
+          ) : (
+            <Link
+              className="relation__name"
+              to={`/app/universes/${universeId}/lore/${reference.entityId}`}
+              title={reference.entityTypeName}
+            >
+              {name}
+            </Link>
+          )
+        }
+        meta={reference.isTrashed ? t('lore.reference.inTrash') : undefined}
+      />
+      {onKey ? (
+        <TypeReorderHandle
+          id={reference.entityId}
+          name={reference.name}
+          label={t('stories.picks.reorder', { name: reference.name })}
+          testId={`lore-reorder-${reference.name}`}
+          onKey={onKey}
+        />
       ) : null}
-      <LoreReference universeId={universeId} reference={reference} />
     </li>
   )
 }
 
 /**
- * The scene's beats, in order (ADR 0070): each step a line, its note under it. Nothing when it has none - a scene needs no
- * beat. Folded like the rest of a story, so a scene of twenty beats stays one line until it is asked for. Edited in the
- * scene's own drawer.
+ * The scene's beats, in order (ADR 0070): each step a fact, its note beside it. Nothing when it has none - a scene needs
+ * no beat. Folded like the rest of a story, so a scene of twenty beats stays one line until it is asked for. Edited in
+ * the scene's own drawer.
  */
 export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: Surface }) {
   const { t } = useI18n()
@@ -187,33 +229,47 @@ export function SceneBeatList({ beats, testId }: { beats: SceneBeat[]; testId: S
   } = useFold<HTMLDivElement>()
   if (beats.length === 0) return null
 
+  const label = t('stories.scene.beatsFoldLabel')
   return (
-    <div className="scene__refs scene__refs--beats" ref={foldRef}>
-      <span className="scene__label" id={labelId}>
-        <FoldToggle
-          open={foldOpen}
-          onToggle={setFoldOpen}
-          controls={foldBodyId}
-          label={t('stories.scene.beatsFoldLabel')}
-          testId={`${testId}-beats-toggle`}
-        />
-        {t('stories.scene.beats')} <span className="scene__count">{beats.length}</span>
-      </span>
-      <ol
+    <Fact
+      ref={foldRef}
+      name={
+        <span id={labelId}>
+          <DisclosureButton
+            tone="text"
+            size="sm"
+            expanded={foldOpen}
+            controls={foldBodyId}
+            aria-label={
+              foldOpen
+                ? t('stories.page.fold.collapseLabel', { label })
+                : t('stories.page.fold.expandLabel', { label })
+            }
+            title={foldOpen ? t('stories.page.fold.collapse') : t('stories.page.fold.expand')}
+            onToggle={() => setFoldOpen(!foldOpen)}
+            expandedLabel={t('stories.page.fold.collapse')}
+            data-testid={`${testId}-beats-toggle`}
+          >
+            {t('stories.page.fold.expand')}
+          </DisclosureButton>{' '}
+          {t('stories.scene.beats')} <HeadingCount n={beats.length} look="pill" />
+        </span>
+      }
+    >
+      <FactList
+        look="inline"
         id={foldBodyId}
-        className="scene__beats"
         aria-labelledby={labelId}
         hidden={!foldOpen}
         data-fold={foldBodyId}
-        data-testid={`${testId}-beats`}
+        testId={`${testId}-beats`}
       >
         {beats.map((beat) => (
-          <li key={beat.id} className="scene__beat" data-testid={`${testId}-beat`}>
-            <bdi className="scene__beattitle">{beat.title}</bdi>
-            {beat.note ? <span className="scene__beatnote">{beat.note}</span> : null}
-          </li>
+          <Fact key={beat.id} name={<bdi>{beat.title}</bdi>} testId={`${testId}-beat`}>
+            {beat.note}
+          </Fact>
         ))}
-      </ol>
-    </div>
+      </FactList>
+    </Fact>
   )
 }

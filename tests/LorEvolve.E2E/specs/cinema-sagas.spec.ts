@@ -65,10 +65,10 @@ test('sagas hold phases of films and series in an order that persists, and a row
 
   const first = page
     .getByTestId('cinema-sagas')
-    .locator('section')
+    .locator('[data-testid^="saga-"]')
     .filter({ hasText: 'First saga' })
-  await first.locator('[data-testid^="saga-actions-"]').click()
-  await page.locator('[data-testid^="saga-phase-new-"]:visible').click()
+    .first()
+  await first.locator('[data-testid^="saga-phase-new-"]').click()
   await group(page, 'Opening phase')
 
   await addTo(page, film, 'First saga / Opening phase')

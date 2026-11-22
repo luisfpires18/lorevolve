@@ -1,22 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Pencil } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { entityImageUrl, fieldImageUrl } from '../lore/images'
 import { getProjectEntity } from '../projectEntities/api'
 import type { ProjectEntityDetail } from '../projectEntities/types'
-import { ApiError } from '../lib/api'
-import { formatDate } from '../lib/dates'
+import { isNotFoundOrForbidden, useAsyncRead } from '../lib/useAsyncRead'
 import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
-import { ActionIcon } from './ActionIcon'
 import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
-import { TypeIcon } from './TypeIcon'
-
-type LoadState =
-  | { kind: 'ready'; for: string; entity: ProjectEntityDetail }
-  | { kind: 'missing'; for: string }
-  | { kind: 'failed'; for: string; message: string }
+import { Button } from './Button'
+import { Crumb } from './Crumb'
+import { EntryHead, EntryTypeLink } from './EntryHead'
+import { EntryBar, EntryDates, EntryLayout } from './lore/EntryFrame'
+import { ReadGate } from './ReadGate'
+import { QuietNote } from './QuietNote'
 
 /**
  * The one detail screen of a project's entry (#286), the same for every type: its name, type, picture and full
@@ -39,198 +37,159 @@ export function ProjectEntityDetailView({
   gameHref: string
 }) {
   useI18n()
-  const [state, setState] = useState<LoadState | null>(null)
-  // Bumped after an edit: the entry is read again, so every part of the screen shows what was saved (#287).
-  const [reloadKey, setReloadKey] = useState(0)
   const access = useUniverseAccess()
   const [editing, setEditing] = useState(false)
-  const read = state !== null && state.for === entityId ? state : null
+  const read = useCallback(
+    (signal: AbortSignal) => getProjectEntity(projectId, entityId, signal),
+    [projectId, entityId],
+  )
+  // The API decides access: a missing id, another project's entry or no access all answer 404 or 403. A re-read (after
+  // an edit, #287, or Try again) keeps the screen until it answers, and a failure shows instead of the old entry.
+  const { load, refresh } = useAsyncRead<ProjectEntityDetail>(read, {
+    missing: isNotFoundOrForbidden,
+    failed: t('projects.gameEntities.entity.failed'),
+    key: entityId,
+    keepOnFailure: false,
+  })
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getProjectEntity(projectId, entityId, controller.signal)
-      .then((entity) => setState({ kind: 'ready', for: entityId, entity }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        // The API decides access: a missing id, another project's entry or no access all answer 404 or 403.
-        if (error instanceof ApiError && (error.status === 404 || error.status === 403)) {
-          setState({ kind: 'missing', for: entityId })
-        } else {
-          setState({
-            kind: 'failed',
-            for: entityId,
-            message:
-              error instanceof Error ? error.message : t('projects.gameEntities.entity.failed'),
-          })
-        }
-      })
-    return () => controller.abort()
-  }, [projectId, entityId, reloadKey])
-
-  if (read === null) {
-    return (
-      <p className="projects__lede" data-testid="game-entity-loading">
-        {t('projects.gameEntities.entity.loading')}
-      </p>
-    )
-  }
-
-  if (read.kind === 'missing') {
-    return (
-      <EmptyState
-        title={t('projects.gameEntities.entity.notFound')}
-        hint={t('projects.gameEntities.entity.notFoundHint')}
-        action={<Link to={gameHref}>{t('projects.gameEntities.entity.backToGame')}</Link>}
-        testId="game-entity-missing"
-      />
-    )
-  }
-
-  if (read.kind === 'failed') {
-    return (
-      <p role="alert" data-testid="game-entity-failed">
-        {read.message}
-      </p>
-    )
-  }
-
-  const { entity } = read
-  // The entry's own picture leads, as on a Lore entry's page; without one, the first Image field's picture (the server
-  // returns fieldImages in the type's field order, archived fields left out).
-  const portrait = entity.image
-  const fieldImage = portrait ? null : (entity.fieldImages[0] ?? null)
-  const picture = portrait
-    ? {
-        src: entityImageUrl(
-          universeId,
-          entity.id,
-          portrait,
-          portrait.hasDisplay ? 'display' : 'original',
-        ),
-        width: portrait.width,
-        height: portrait.height,
-      }
-    : fieldImage
-      ? {
-          src: fieldImageUrl(universeId, entity.id, fieldImage, 'crop'),
-          width: fieldImage.width,
-          height: fieldImage.height,
-        }
-      : null
-  const typeHref = `${gameHref}?type=${entity.entityTypeId}&entry=${entity.id}`
-
-  // Lore's entry page, read side (#286): the same head, bar, picture, facts and dates, with this project's crumbs.
   return (
-    <article
-      className="entry"
-      style={
-        entity.entityTypeAccentColor
-          ? { ['--entry-accent' as string]: entity.entityTypeAccentColor }
-          : undefined
+    <ReadGate
+      load={load}
+      loading={{ text: t('projects.gameEntities.entity.loading'), testId: 'game-entity-loading' }}
+      error={{ onRetry: refresh, testId: 'game-entity-failed' }}
+      missing={
+        <EmptyState
+          title={t('projects.gameEntities.entity.notFound')}
+          hint={t('projects.gameEntities.entity.notFoundHint')}
+          action={<Link to={gameHref}>{t('projects.gameEntities.entity.backToGame')}</Link>}
+          testId="game-entity-missing"
+        />
       }
-      data-testid="game-entity-page"
     >
-      <header className="entry__head">
-        <div className="entry__kind">
-          <nav className="entry__crumbs" aria-label={t('entity.page.head.breadcrumb')}>
-            <Link to={gameHref} data-testid="game-entity-crumb-game">
-              <bdi>{gameName}</bdi>
-            </Link>
-          </nav>
-          {/* Back to this entry's own type, with its row marked as the list marks a named entry (#195). */}
-          <Link
-            className="entry__type"
-            to={typeHref}
+      {(entity) => {
+        // The entry's own picture leads, as on a Lore entry's page; without one, the first Image field's picture (the server
+        // returns fieldImages in the type's field order, archived fields left out).
+        const portrait = entity.image
+        const fieldImage = portrait ? null : (entity.fieldImages[0] ?? null)
+        const picture = portrait
+          ? {
+              src: entityImageUrl(
+                universeId,
+                entity.id,
+                portrait,
+                portrait.hasDisplay ? 'display' : 'original',
+              ),
+              width: portrait.width,
+              height: portrait.height,
+            }
+          : fieldImage
+            ? {
+                src: fieldImageUrl(universeId, entity.id, fieldImage, 'crop'),
+                width: fieldImage.width,
+                height: fieldImage.height,
+              }
+            : null
+        const typeHref = `${gameHref}?type=${entity.entityTypeId}&entry=${entity.id}`
+
+        // Lore's entry page, read side (#286): the same head, bar, picture, facts and dates, with this project's crumbs.
+        return (
+          <article
+            className="entry"
             style={
               entity.entityTypeAccentColor
-                ? { ['--type-accent' as string]: entity.entityTypeAccentColor }
+                ? { ['--entry-accent' as string]: entity.entityTypeAccentColor }
                 : undefined
             }
-            data-testid="game-entity-crumb-type"
+            data-testid="game-entity-page"
           >
-            <TypeIcon iconKey={entity.entityTypeIcon} className="entry__typeicon" />
-            <bdi>{entity.entityTypeName}</bdi>
-          </Link>
-        </div>
-        <h1 className="entry__name titlerule" data-testid="game-entity-title">
-          <bdi>{entity.name}</bdi>
-        </h1>
-        {entity.summary ? (
-          <p className="entry__summary prose" data-testid="game-entity-description">
-            {entity.summary}
-          </p>
-        ) : (
-          <p className="entry__summary projectcard__meta" data-testid="game-entity-no-description">
-            {t('projects.gameEntities.entity.noDescription')}
-          </p>
-        )}
-      </header>
-
-      {access.editContent ? (
-        <div className="entry__bar">
-          <div className="entry__lenses" />
-          <div className="entry__tools">
-            <button
-              className="button button--secondary"
-              type="button"
-              onClick={() => setEditing(true)}
-              data-testid="project-entity-edit"
+            <EntryHead
+              crumb={
+                <Crumb
+                  items={[
+                    {
+                      to: gameHref,
+                      label: <bdi>{gameName}</bdi>,
+                      testId: 'game-entity-crumb-game',
+                    },
+                  ]}
+                />
+              }
+              // Back to this entry's own type, with its row marked as the list marks a named entry (#195).
+              type={
+                <EntryTypeLink
+                  to={typeHref}
+                  accent={entity.entityTypeAccentColor}
+                  icon={entity.entityTypeIcon}
+                  name={entity.entityTypeName}
+                  testId="game-entity-crumb-type"
+                />
+              }
+              name={<bdi>{entity.name}</bdi>}
+              nameTestId="game-entity-title"
             >
-              <ActionIcon icon={Pencil} />
-              {t('projects.gameEntities.entity.edit')}
-            </button>
-          </div>
-        </div>
-      ) : null}
+              {entity.summary ? (
+                <p className="entry__summary prose" data-testid="game-entity-description">
+                  {entity.summary}
+                </p>
+              ) : (
+                <QuietNote spacing="flush" testId="game-entity-no-description">
+                  {t('projects.gameEntities.entity.noDescription')}
+                </QuietNote>
+              )}
+            </EntryHead>
 
-      <div
-        className="entry__layout"
-        data-picture={picture ? 'true' : 'false'}
-        data-shape={picture ? pictureShape(picture) : undefined}
-      >
-        {picture ? (
-          <figure className="entry__media">
-            <img
-              src={picture.src}
-              width={picture.width}
-              height={picture.height}
-              alt={t('projects.gameEntities.entity.imageAlt', { name: entity.name })}
-              decoding="async"
-              data-testid="game-entity-image"
-            />
-          </figure>
-        ) : null}
+            {access.editContent ? (
+              <EntryBar
+                tools={
+                  <Button
+                    tone="secondary"
+                    icon={Pencil}
+                    onClick={() => setEditing(true)}
+                    data-testid="project-entity-edit"
+                  >
+                    {t('projects.gameEntities.entity.edit')}
+                  </Button>
+                }
+              />
+            ) : null}
 
-        <div className="entry__main">
-          <ProjectEntityFields
-            projectId={projectId}
-            universeId={universeId}
-            detail={entity}
-            editing={editing}
-            onEditingChange={setEditing}
-            onSaved={() => setReloadKey((key) => key + 1)}
-          />
-        </div>
+            <EntryLayout picture={picture}>
+              {picture ? (
+                <figure className="entry__media">
+                  <img
+                    src={picture.src}
+                    width={picture.width}
+                    height={picture.height}
+                    alt={t('projects.gameEntities.entity.imageAlt', { name: entity.name })}
+                    decoding="async"
+                    data-testid="game-entity-image"
+                  />
+                </figure>
+              ) : null}
 
-        <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
-          {picture ? null : (
-            <p className="projectcard__meta" data-testid="game-entity-no-image">
-              {t('projects.gameEntities.entity.noImage')}
-            </p>
-          )}
-          <p className="rail__meta">
-            {t('entity.page.rail.created', { date: formatDate(entity.createdAt) })}
-            <br />
-            {t('entity.page.rail.lastChanged', { date: formatDate(entity.updatedAt) })}
-          </p>
-        </aside>
-      </div>
-    </article>
+              <div className="entry__main">
+                <ProjectEntityFields
+                  projectId={projectId}
+                  universeId={universeId}
+                  detail={entity}
+                  editing={editing}
+                  onEditingChange={setEditing}
+                  onSaved={refresh}
+                />
+              </div>
+
+              <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
+                {picture ? null : (
+                  <QuietNote spacing="flush" testId="game-entity-no-image">
+                    {t('projects.gameEntities.entity.noImage')}
+                  </QuietNote>
+                )}
+                <EntryDates createdAt={entity.createdAt} updatedAt={entity.updatedAt} />
+              </aside>
+            </EntryLayout>
+          </article>
+        )
+      }}
+    </ReadGate>
   )
-}
-
-/** Lore's own rule for how the picture sits beside the facts. */
-function pictureShape(image: { width: number; height: number }) {
-  const ratio = image.width / image.height
-  return ratio > 1.25 ? 'landscape' : ratio < 0.9 ? 'portrait' : 'square'
 }

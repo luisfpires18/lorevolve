@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import { useI18n } from '../i18n'
 import { listEntityRelationships } from '../relationships/api'
 import { Validity, type RelationshipView } from '../relationships/types'
+import { LoadingNote } from './LoadingNote'
+import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
 
 /**
  * The relations of one entry that hold in one of its eras (Issues #18, #44), as the relationships list reads them for that era:
@@ -37,19 +40,11 @@ export function EraRelations({
   const views = read?.eraId === eraId ? read.views : null
 
   if (views === null) {
-    return (
-      <p className="muted" role="status">
-        {t('time.eraRelations.reading')}
-      </p>
-    )
+    return <LoadingNote>{t('time.eraRelations.reading')}</LoadingNote>
   }
 
   if (views === 'failed') {
-    return (
-      <p className="form__message" role="alert">
-        {t('time.eraRelations.failed')}
-      </p>
-    )
+    return <FormMessage>{t('time.eraRelations.failed')}</FormMessage>
   }
 
   const holding = views.filter((view) => view.validity !== Validity.Unplaced)
@@ -58,8 +53,10 @@ export function EraRelations({
   if (views.length === 0) return null
 
   return (
-    <div className="rail__block" data-testid="era-relations">
-      <h4 className="rail__heading">{t('time.eraRelations.heading')}</h4>
+    <div className="stack stack--2" data-testid="era-relations">
+      <SectionTitle level={4} tone="label">
+        {t('time.eraRelations.heading')}
+      </SectionTitle>
       {holding.length > 0 ? (
         <RelationRows universeId={universeId} views={holding} testId="era-relations-holding" />
       ) : null}
@@ -91,7 +88,7 @@ function RelationRows({
     <ul className="eracovers" data-testid={testId}>
       {views.map((view) => (
         <li key={view.id} data-testid={`era-relation-${view.relatedEntityName}`}>
-          <span className="muted">
+          <span>
             <bdi>{view.label}</bdi>{' '}
           </span>
           <Link to={`/app/universes/${universeId}/lore/${view.relatedEntityId}`}>

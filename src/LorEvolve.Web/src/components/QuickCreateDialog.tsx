@@ -1,24 +1,18 @@
-import { useEffect, useId, useRef, useState } from 'react'
 import type { Chronology } from '../chronology/types'
 import { useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
-import { payloadKey } from '../lib/drawerGuard'
-import { emptyValue, valuedFields } from '../lore/document'
-import { createEntity, listEntities, listEntityTypeGroups, listEntityTypes } from '../lore/api'
-import { withInheritedFields } from '../lore/fieldInheritance'
-import { branchIds, buildTypeTree } from '../lore/typeTree'
-import {
-  CanonStatus,
-  type EntitySummary,
-  type EntityType,
-  type FieldValueInput,
-} from '../lore/types'
+import { emptyValue } from '../lore/document'
 import type { EntityChoice } from './EntityPicker'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
 import { FieldInput } from './FieldInputs'
+import { useQuickCreate } from '../lore/useQuickCreate'
+import { Button } from './Button'
+import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
+import { Callout } from './Callout'
 
-interface Props {
+export interface Props {
   universeId: string
   /** What was typed in the picker: the new entry's name to start from. */
   initialName: string
@@ -31,17 +25,6 @@ interface Props {
   /** An entry that was already there, picked instead of making a second. */
   onChooseExisting: (choice: EntityChoice) => void
   onCancel: () => void
-}
-
-type Types = { kind: 'loading' } | { kind: 'ready'; eligible: EntityType[] } | { kind: 'error' }
-
-const SIMILAR_LIMIT = 5
-
-/** Two names that a person would take for the same one: the same letters, or one the start of the other. */
-function looksLike(a: string, b: string) {
-  const x = a.trim().toLocaleLowerCase()
-  const y = b.trim().toLocaleLowerCase()
-  return x !== '' && y !== '' && (x === y || x.startsWith(y) || y.startsWith(x))
 }
 
 /**
@@ -65,170 +48,29 @@ export function QuickCreateDialog({
   onCancel,
 }: Props) {
   const { t } = useI18n()
-  const nameId = useId()
-  const headingId = useId()
-  const typeId = useId()
-  const [types, setTypes] = useState<Types>({ kind: 'loading' })
-  const [name, setName] = useState(initialName.trim())
-  const [chosenTypeId, setChosenTypeId] = useState<string>('')
-  const [values, setValues] = useState<Record<string, FieldValueInput>>({})
-  const [similar, setSimilar] = useState<EntitySummary[]>([])
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  // A create on its way. Read synchronously, so a second press, Escape or a press on the backdrop in the same instant as
-  // Create is still refused: the request is out and its answer decides what happens next, not the author.
-  const sending = useRef(false)
-  // Gone - closed by leaving the page while a create was out. Its late answer then chooses nothing.
-  const gone = useRef(false)
-  const messageRef = useRef<HTMLParagraphElement>(null)
-
-  // A type taken because it was the only one is not a change the author made.
-  const takenTypeId =
-    types.kind === 'ready' && types.eligible.length === 1 ? types.eligible[0].id : ''
-  const isDirty =
-    payloadKey({ name: name.trim(), chosenTypeId, values }) !==
-    payloadKey({ name: initialName.trim(), chosenTypeId: takenTypeId, values: {} })
-  useEffect(() => {
-    document.getElementById(nameId)?.focus()
-  }, [nameId])
-
-  // Set again on every mount: development's double mount runs the cleanup once in between.
-  useEffect(() => {
-    gone.current = false
-    return () => {
-      gone.current = true
-    }
-  }, [])
-
-  // A refusal or a failure takes the focus to what it says, since the button that was pressed was disabled under it.
-  useEffect(() => {
-    if (message) messageRef.current?.focus()
-  }, [message])
-
-  // The types as they are now, read when the form opens: a group's members today, never its name.
-  useEffect(() => {
-    const controller = new AbortController()
-    Promise.all([
-      listEntityTypes(universeId, controller.signal),
-      entityTypeGroupId ? listEntityTypeGroups(universeId, controller.signal) : null,
-    ])
-      .then(([all, groups]) => {
-        const tree = buildTypeTree(all)
-        const target = entityTypeId ? tree.byId.get(entityTypeId) : undefined
-        // A type limit takes its nested types too (Issue #61): the type and its branch, in the hierarchy's order.
-        const members = entityTypeId
-          ? target
-            ? branchIds(target)
-            : new Set<string>()
-          : entityTypeGroupId
-            ? new Set(groups?.find((group) => group.id === entityTypeGroupId)?.typeIds ?? [])
-            : null
-        const eligible = (entityTypeId ? tree.ordered.map((node) => node.type) : all).filter(
-          (type) => !members || members.has(type.id),
-        )
-        // Each with the fields it inherits, so a required one above it is asked for too.
-        setTypes({
-          kind: 'ready',
-          eligible: eligible.map((type) => withInheritedFields(type, all)),
-        })
-        // One type to choose from is no choice: it is taken, never asked again.
-        if (eligible.length === 1) setChosenTypeId(eligible[0].id)
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setTypes({ kind: 'error' })
-      })
-    return () => controller.abort()
-  }, [universeId, entityTypeId, entityTypeGroupId])
-
-  // Entries already here under a name like this one, among those the picker would offer. Advice only: a second entry of
-  // the same name is allowed, and what this shows can change before Create is pressed.
-  useEffect(() => {
-    const search = name.trim()
-    if (!search) return
-    const controller = new AbortController()
-    const timer = setTimeout(() => {
-      listEntities(
-        universeId,
-        {
-          search,
-          entityTypeId,
-          includeDescendants: true,
-          entityTypeGroupId,
-          canonStatus: null,
-          tag: null,
-          page: 1,
-        },
-        controller.signal,
-      )
-        .then((page) =>
-          setSimilar(
-            page.items.filter((item) => looksLike(item.name, search)).slice(0, SIMILAR_LIMIT),
-          ),
-        )
-        .catch(() => {
-          /* Advice that could not be read is simply not given. */
-        })
-    }, 250)
-    return () => {
-      clearTimeout(timer)
-      controller.abort()
-    }
-  }, [universeId, name, entityTypeId, entityTypeGroupId])
-
-  // Cleared name, no advice: what was found for an earlier name is not shown for none.
-  const shownSimilar = name.trim() ? similar : []
-  const eligible = types.kind === 'ready' ? types.eligible : []
-  const chosenType = eligible.find((type) => type.id === chosenTypeId) ?? null
-  // Only what the type requires, from its active fields: an archived field is in no form.
-  const required = chosenType?.fields.filter((definition) => definition.isRequired) ?? []
-
-  async function create() {
-    if (sending.current) return
-    if (!chosenType) {
-      setFieldErrors({ entitytypeid: t('lore.quickCreate.chooseKind') })
-      setMessage(null)
-      return
-    }
-
-    sending.current = true
-    setIsSaving(true)
-    setMessage(null)
-    setFieldErrors({})
-
-    try {
-      const created = await createEntity(universeId, {
-        entityTypeId: chosenType.id,
-        name: name.trim(),
-        summary: null,
-        canonStatus: CanonStatus.Idea,
-        aliases: [],
-        tags: [],
-        // Every active field, as the full form sends them: what was filled in here, the rest at its default.
-        fields: valuedFields(chosenType.fields).map(
-          (definition) => values[definition.id] ?? emptyValue(definition),
-        ),
-      })
-      // Exactly the entry the server made, from its answer. Nothing is chosen for a form that has already gone.
-      if (!gone.current)
-        onCreated({ id: created.id, name: created.name, typeName: created.entityTypeName })
-    } catch (error: unknown) {
-      sending.current = false
-      if (gone.current) return
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('lore.quickCreate.detailsNeedChange'),
-        )
-      } else {
-        setMessage(t('lore.quickCreate.failed'))
-      }
-    } finally {
-      if (!gone.current) setIsSaving(false)
-    }
-  }
+  const {
+    nameId,
+    headingId,
+    typeId,
+    types,
+    name,
+    setName,
+    chosenTypeId,
+    setChosenTypeId,
+    values,
+    setValues,
+    fieldErrors,
+    setFieldErrors,
+    message,
+    isSaving,
+    sending,
+    messageRef,
+    isDirty,
+    shownSimilar,
+    eligible,
+    required,
+    create,
+  } = useQuickCreate({ universeId, initialName, entityTypeId, entityTypeGroupId, onCreated })
 
   return (
     <Drawer
@@ -246,37 +88,22 @@ export function QuickCreateDialog({
       busy={isSaving}
       onSubmit={() => void create()}
       actions={(close) => (
-        <>
-          <button
-            className="button"
-            type="submit"
-            disabled={isSaving || eligible.length === 0}
-            data-testid="quick-create-submit"
-          >
-            {isSaving ? t('lore.quickCreate.creating') : t('lore.quickCreate.create')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={close}
-            disabled={isSaving}
-            data-testid="quick-create-cancel"
-          >
-            {t('lore.quickCreate.cancel')}
-          </button>
-        </>
+        <FormActions
+          submitLabel={t('lore.quickCreate.create')}
+          busy={isSaving}
+          busyLabel={t('lore.quickCreate.creating')}
+          disabled={eligible.length === 0}
+          submitTestId="quick-create-submit"
+          onCancel={close}
+          lockCancel
+          cancelTestId="quick-create-cancel"
+        />
       )}
     >
       {message ? (
-        <p
-          className="form__message"
-          role="alert"
-          tabIndex={-1}
-          ref={messageRef}
-          data-testid="quick-create-error"
-        >
+        <FormMessage testId="quick-create-error" tabIndex={-1} ref={messageRef}>
           {message}
-        </p>
+        </FormMessage>
       ) : null}
 
       <p className="quickcreate__pending" role="status" data-testid="quick-create-pending">
@@ -299,11 +126,13 @@ export function QuickCreateDialog({
         />
 
         {shownSimilar.length > 0 ? (
-          <div
-            className="callout callout--warning quickcreate__similar"
-            data-testid="quick-create-similar"
+          <Callout
+            look="callout"
+            tone="warning"
+            className="quickcreate__similar"
+            testId="quick-create-similar"
+            title={t('lore.quickCreate.similarTitle')}
           >
-            <p className="callout__title">{t('lore.quickCreate.similarTitle')}</p>
             <p>{t('lore.quickCreate.similarBody')}</p>
             <ul className="quickcreate__matches">
               {shownSimilar.map((item) => (
@@ -314,9 +143,9 @@ export function QuickCreateDialog({
                       <bdi>{item.entityTypeName}</bdi>
                     </span>
                   </span>
-                  <button
-                    className="button button--secondary button--sm"
-                    type="button"
+                  <Button
+                    tone="secondary"
+                    size="sm"
                     onClick={() =>
                       onChooseExisting({
                         id: item.id,
@@ -331,29 +160,25 @@ export function QuickCreateDialog({
                     data-testid={`quick-create-use-${item.name}`}
                   >
                     {t('lore.quickCreate.useThis')}
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
-          </div>
+          </Callout>
         ) : null}
 
         {types.kind === 'loading' ? (
-          <p className="field__hint" role="status">
+          <QuietNote spacing="hint" role="status">
             {t('lore.quickCreate.readingTypes')}
-          </p>
+          </QuietNote>
         ) : types.kind === 'error' ? (
-          <p className="form__message" role="alert">
-            {t('lore.quickCreate.typesFailed')}
-          </p>
+          <FormMessage>{t('lore.quickCreate.typesFailed')}</FormMessage>
         ) : eligible.length === 0 ? (
-          <p className="form__message" role="alert" data-testid="quick-create-no-types">
-            {t('lore.quickCreate.noTypes')}
-          </p>
+          <FormMessage testId="quick-create-no-types">{t('lore.quickCreate.noTypes')}</FormMessage>
         ) : eligible.length === 1 ? (
-          <p className="quickcreate__type" data-testid="quick-create-type">
+          <QuietNote className="quickcreate__type" size="ui" wrap testId="quick-create-type">
             {t('lore.quickCreate.typeFixed')} <bdi>{eligible[0].name}</bdi>
-          </p>
+          </QuietNote>
         ) : (
           <Field
             label={t('lore.quickCreate.typeLabel')}

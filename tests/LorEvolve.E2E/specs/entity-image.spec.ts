@@ -4,6 +4,7 @@ import { chooseLoreType } from './support/lore'
 import { png, type Rgb } from './support/png'
 import { colours, expectShows, expectSquareCovered } from './support/pixels'
 import { entryNames } from './support/zip'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * The parts of an entry's picture only a browser can prove.
@@ -195,6 +196,7 @@ test.describe('an entry with a picture', () => {
 
     await page.getByTestId('edit-entity').click()
     await page.getByTestId('entity-image-remove').click()
+    await acceptConfirm(page)
     await expect(page.getByTestId('entity-image-preview')).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Cancel' }).click()

@@ -123,7 +123,7 @@ test.describe('Lore: the type row again, without All', () => {
     await expect(page.getByRole('link', { name: 'All', exact: true })).toHaveCount(0)
     await expect(row(page)).toHaveCount(0)
     await expect(cards(page)).toHaveCount(0)
-    await expect(page.locator('.lore__skeleton')).toHaveCount(0)
+    await expect(page.locator('.cardskeleton')).toHaveCount(0)
     await expect(page.getByTestId('lore-filters-toggle')).toHaveCount(0)
     await expect(page.getByTestId('lore-filters')).toBeHidden()
     await expect(page.getByTestId('lore-select')).toHaveCount(0)

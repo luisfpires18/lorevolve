@@ -61,7 +61,6 @@ const review = {
       one: '{n} already applied',
       other: '{n} already applied',
     },
-    showMore: 'Show more',
   },
   aiChange: {
     opening: 'Opening…',
@@ -110,10 +109,10 @@ const review = {
       none: 'No changes selected.',
       selected: { one: '{n} selected.', other: '{n} selected.' },
       selectAll: 'Select all that can be applied',
-      applying: 'Applying',
+      applying: 'Applying…',
       approveSelected: 'Approve selected',
       approveCount: { one: 'Approve {n}', other: 'Approve {n}' },
-      rejecting: 'Rejecting',
+      rejecting: 'Rejecting…',
       rejectSelected: 'Reject selected',
       rejectAll: 'Reject all',
       withdraw: 'Withdraw this proposal',
@@ -183,7 +182,6 @@ const review = {
       canon: 'Canon status',
       saving: 'Saving…',
       save: 'Save',
-      cancel: 'Cancel',
     },
   },
   comments: {
@@ -203,7 +201,6 @@ const review = {
     },
     drawer: {
       eyebrow: 'Review',
-      close: 'Close',
     },
     leave: {
       title: "Your comment hasn't been posted. Leave without posting it?",
@@ -222,8 +219,7 @@ const review = {
     resolvedBy: 'Resolved by {name}',
     reply: 'Reply',
     replyPost: 'Reply',
-    posting: 'Posting',
-    cancel: 'Cancel',
+    posting: 'Posting…',
     reopen: 'Reopen',
     resolve: 'Resolve',
     newComment: 'New comment',
@@ -242,7 +238,6 @@ const review = {
     cantAccept: 'This suggestion can’t be accepted. {reason}',
     acceptFailed: 'LorEvolve couldn’t accept that suggestion. Try again.',
     rejectFailed: 'LorEvolve couldn’t reject that suggestion. Try again.',
-    showMore: 'Show more',
     unknownAuthor: 'Unknown author',
     unknownResolver: 'Unknown author',
     changed: {
@@ -257,7 +252,7 @@ const review = {
     noLongerShown: 'LorEvolve can’t show these changes anymore.',
     acceptedBy: 'Accepted by {name}',
     rejectedBy: 'Rejected by {name}',
-    accepting: 'Accepting',
+    accepting: 'Accepting…',
     accept: 'Accept',
     reject: 'Reject',
     suggest: 'Suggest changes',

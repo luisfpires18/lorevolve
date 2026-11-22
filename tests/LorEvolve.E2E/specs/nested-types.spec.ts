@@ -129,7 +129,7 @@ test.describe('Lore with nested types', () => {
     await expect(row(page)).toHaveCount(0)
     // No panel asks, no entry card, no skeleton, no Filters, no Select, no All - only the way to choose.
     await expect(page.getByTestId('lore-choose')).toHaveCount(0)
-    await expect(page.locator('.lore__skeleton')).toHaveCount(0)
+    await expect(page.locator('.cardskeleton')).toHaveCount(0)
     await expect(cards(page)).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'All', exact: true })).toHaveCount(0)
     await expect(page.getByTestId('lore-filters-toggle')).toHaveCount(0)

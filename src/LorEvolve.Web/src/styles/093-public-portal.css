@@ -1,0 +1,118 @@
+/* ---------- The public portal (ADR 0036) ----------
+
+   A second visual world beside the workspace, in the same application. The workspace is paper under a
+   graphite plate; the portal is night under a panorama - dark in either scheme, because it is a place to
+   look at other people's artwork, and artwork reads truest on a quiet dark ground. Composition follows the
+   owner's portal reference: a solid bar with the search in it, a compact panoramic band holding the title
+   and the category row, then a wide grid of dark card panels, the artwork bleeding into each.
+
+   Scoped, not global: `.portal` redefines the shared tokens for everything inside it, so the shared
+   patterns (buttons, notices, empty states, menus) draw dark here without a second set of components,
+   and nothing outside it changes. The derived tokens are redeclared too, because a custom property that
+   reads another is resolved where it is declared (`:root`), not where it is used. `--portal-*` are the
+   portal's own few values; everything else is the LorEvolve scale. */
+
+/* The bar's colour is declared on the root, not on `.portal`, so the page behind a portal page can take it (below). */
+:root {
+  --portal-bar-bg: #0e1115;
+}
+
+:root[data-theme='light'] {
+  --portal-bar-bg: #ece6da;
+}
+
+/* Behind a portal page, the page is the bar's colour rather than the workspace's paper: iOS 26 Safari tints its status
+   area and the overscroll from the page, so the top reads as one band with the bar (#28). */
+body:has(.portal) {
+  background: var(--portal-bar-bg);
+}
+
+.portal {
+  --portal-bg: #0b0d10;
+  --portal-surface: #15181d;
+  --portal-card: #13161b;
+  --portal-raised: #1d2025;
+  --portal-ink: #f1ece3;
+  --portal-muted: #aba59b;
+  /* Channels (013): the portal's few colours as RGB triplets, so every translucent ink, shade and drop below follows
+     the theme. Dark here; the light values are the block after this one. */
+  --portal-ink-rgb: 241 236 227;
+  --portal-shade-rgb: 9 11 14;
+  --portal-panel-rgb: 19 22 27;
+  --portal-accent-rgb: 163 179 236;
+  --portal-drop-rgb: 0 0 0;
+  --portal-glow-rgb: 0 0 0;
+  --portal-line: rgb(var(--portal-ink-rgb) / 0.1);
+  --portal-line-strong: rgb(var(--portal-ink-rgb) / 0.24);
+  --portal-width: 92rem;
+  --portal-gutter: clamp(1rem, 2.5vw, 2rem);
+  --portal-radius: 0.75rem;
+
+  --paper: var(--portal-surface);
+  --surface: var(--portal-bg);
+  --raised: var(--portal-raised);
+  --plate: #07080a;
+  --plate-ink: var(--portal-ink);
+  --plate-muted: var(--portal-muted);
+  --ink: var(--portal-ink);
+  --muted: var(--portal-muted);
+  --accent: #a3b3ec;
+  --danger: #eea197;
+  --warning: #e0b36b;
+  --rule: var(--portal-line);
+  --rule-strong: var(--portal-line-strong);
+  --border-control: #767a81;
+  --primary-bg: var(--portal-ink);
+  --primary-ink: #111214;
+  --accent-rule: color-mix(in srgb, var(--accent) 45%, transparent);
+  --accent-wash: color-mix(in srgb, var(--accent) 16%, var(--portal-raised));
+  --hover-wash: rgb(var(--portal-ink-rgb) / 0.08);
+  --press-wash: rgb(var(--portal-ink-rgb) / 0.13);
+  --focus-ring: var(--accent);
+  --shadow-1: 0 1px 2px rgb(var(--portal-drop-rgb) / 0.5);
+  --shadow-2: 0 8px 20px -8px rgb(var(--portal-drop-rgb) / 0.7);
+  --shadow-3: 0 22px 50px -14px rgb(var(--portal-drop-rgb) / 0.8);
+
+  color-scheme: dark;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--portal-bg);
+  color: var(--portal-ink);
+}
+
+/* The portal in the light (013): still the portal - image-led, serif, atmospheric - on warm parchment rather than
+   night. Pictures fade into paper instead of into black, the ink is warm graphite, lines are the ink at low alpha,
+   and the workspace's accent and danger values carry over because they already pass on paper. Not the workspace's
+   look: no workspace cards or plate, the portal's own panels and radii stay. */
+:root[data-theme='light'] .portal {
+  --portal-bg: #f3eee5;
+  --portal-surface: #e9e2d5;
+  --portal-card: #faf7f1;
+  --portal-raised: #fffdf9;
+  --portal-ink: #1f1c18;
+  --portal-muted: #5f574b;
+  --portal-ink-rgb: 31 28 24;
+  --portal-shade-rgb: 243 238 229;
+  --portal-panel-rgb: 250 247 241;
+  --portal-accent-rgb: 46 71 149;
+  --portal-drop-rgb: 64 46 20;
+  --portal-glow-rgb: 250 246 238;
+
+  --plate: #201f1d;
+  --accent: #2e4795;
+  --danger: #96271f;
+  --warning: #8a5b12;
+  --border-control: #8c8170;
+  --primary-ink: #fdfbf7;
+  --shadow-1: 0 1px 2px rgb(58 44 22 / 0.08);
+  --shadow-2: 0 6px 16px -6px rgb(58 44 22 / 0.22);
+  --shadow-3: 0 18px 44px -14px rgb(40 30 15 / 0.3);
+
+  color-scheme: light;
+}
+
+.portal ::selection {
+  background: rgb(var(--portal-accent-rgb) / 0.36);
+  color: var(--portal-ink);
+}

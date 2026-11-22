@@ -1,4 +1,10 @@
 import type { Dictionary } from '../en'
+import placesPositions from './places/positions'
+import placesDiscovery from './places/discovery'
+import placesFamilyPage from './places/familyPage'
+import placesMapForm from './places/mapForm'
+import placesCalibration from './places/calibration'
+import placesMapPage from './places/mapPage'
 
 /** Maps and family trees: their pages, pins, calibration and the kinds a family link can have (#103). */
 const places: Dictionary['places'] = {
@@ -37,40 +43,7 @@ const places: Dictionary['places'] = {
     openEntry: 'Abrir entrada',
     showFamily: 'Mostrar esta família',
   },
-  positions: {
-    grandparents: {
-      one: 'Avô ou avó',
-      many: 'Avós',
-    },
-    parents: {
-      one: 'Progenitor',
-      many: 'Progenitores',
-    },
-    siblings: {
-      one: 'Irmão ou irmã',
-      many: 'Irmãos',
-    },
-    children: {
-      one: 'Filho ou filha',
-      many: 'Filhos',
-    },
-    grandchildren: {
-      one: 'Neto ou neta',
-      many: 'Netos',
-    },
-    auntsUncles: {
-      one: 'Tio ou tia',
-      many: 'Tios',
-    },
-    cousins: {
-      one: 'Primo ou prima',
-      many: 'Primos',
-    },
-    niecesNephews: {
-      one: 'Sobrinho ou sobrinha',
-      many: 'Sobrinhos',
-    },
-  },
+  positions: placesPositions,
   reading: {
     hidden: 'uma entrada oculta',
     parent: 'Progenitor {word}',
@@ -107,7 +80,6 @@ const places: Dictionary['places'] = {
       'Listada com a família tal como a escreveste. Não coloca ninguém na árvore e não implica nenhum outro familiar.',
     creating: 'A adicionar…',
     create: 'Adicionar tipo',
-    cancel: 'Cancelar',
   },
   linkForm: {
     leave: 'Esta ligação familiar ainda não foi adicionada. Sair sem a guardar?',
@@ -132,42 +104,8 @@ const places: Dictionary['places'] = {
     statusGroup: 'Estado da ligação',
     saving: 'A adicionar…',
     add: 'Adicionar ligação',
-    cancel: 'Cancelar',
   },
-  discovery: {
-    searchLabel: 'Pesquisar famílias por membro',
-    searchPlaceholder: 'Qualquer nome da família',
-    find: 'Encontrar uma personagem',
-    noneTitle: 'Ainda não há famílias registadas.',
-    noneHintEditor:
-      'Uma família aparece aqui quando duas pessoas estão ligadas por um tipo com significado familiar. Escolhe alguém para registar a primeira ligação dessa pessoa.',
-    noneHint:
-      'Uma família aparece aqui quando duas pessoas estão ligadas por um tipo com significado familiar.',
-    whose: 'De quem é a família?',
-    pickerPlaceholder: 'Pesquisar neste universo',
-    pickerHint: 'Abre a árvore de qualquer pessoa, mesmo sem família registada.',
-    heading: 'Famílias neste universo',
-    noMatch: 'Nenhuma família tem um membro com esse nome.',
-    matches: {
-      one: '{n} família inclui “{q}”.',
-      other: '{n} famílias incluem “{q}”.',
-    },
-    count: {
-      one: '{n} família',
-      other: '{n} famílias',
-    },
-    finding: 'A procurar famílias…',
-    error: 'Não foi possível ler as famílias.',
-    retry: 'Tentar novamente',
-    members: {
-      one: '{n} membro',
-      other: '{n} membros',
-    },
-    pages: 'Páginas de famílias',
-    previous: 'Anterior',
-    position: 'Página {page} de {total}',
-    next: 'Seguinte',
-  },
+  discovery: placesDiscovery,
   treeView: {
     rows: {
       grandparents: 'Avós',
@@ -187,40 +125,7 @@ const places: Dictionary['places'] = {
     legendNote:
       'Os filhos pendem da linha entre os progenitores. Lado a lado e unidos: progenitores de um filho, ou família registada numa só geração. Linhas esbatidas e anéis tracejados marcam o que ainda não é Cânone. Abre o olho junto a um retrato para ver os detalhes dessa pessoa, com todas as ligações escritas por extenso.',
   },
-  familyPage: {
-    title: 'Árvore genealógica',
-    lede: 'Progenitores, avós, irmãos, tios, primos, sobrinhos, filhos e netos, deduzidos das ligações que registaste. Só conta um tipo de relação a que tenhas dado um significado familiar.',
-    browse: 'Explorar famílias',
-    shownFor: 'Família mostrada para',
-    whose: 'De quem é a família?',
-    pickerPlaceholder: 'Pesquisar neste universo',
-    noTypes:
-      'Nenhum tipo de lore está ativado para a árvore genealógica. Podes ativar um tipo ao criá-lo, em {link}, ou ativar um grupo de tipos em Tipos na árvore genealógica, abaixo.',
-    noTypesLink: 'Tipos → Tipos de lore',
-    noKinds:
-      'A árvore genealógica precisa de um tipo de relação familiar: “progenitor de”, “tio de”, “casado com”. Um tipo não significa nada para a árvore até lhe dares um significado familiar, seja qual for o nome. Cria um aqui, ou dá um significado a um tipo existente em {link}.',
-    noKindsLink: 'Tipos → Tipos de relação',
-    newKind: 'Novo tipo de relação familiar',
-    loading: 'A deduzir esta família…',
-    missingTitle: 'Essa entrada não está aqui.',
-    missingHint:
-      'Pode ter sido movida para a reciclagem, eliminada, ou pertencer a outro universo. {link}',
-    missingLink: 'Voltar ao lore',
-    error: 'Não foi possível ler esta árvore genealógica.',
-    retry: 'Tentar novamente',
-    typeNotEnabled:
-      'O tipo desta entrada, {type}, não está atualmente ativado para a árvore genealógica. A família registada continua a ser mostrada aqui.',
-    loopTitle: 'Estas ligações andam em círculo',
-    loopBody:
-      'Ninguém aqui pode ser colocado acima dos outros, por isso a árvore abaixo mostra-os onde pode. Nada foi alterado: abre as entradas e corrige ou remove uma das ligações.',
-    note: 'Os familiares são deduzidos das próprias ligações de progenitor, sempre que esta página é aberta. Nada nela é guardado como ligação própria, e ser irmão ou irmã aqui significa apenas partilhar um progenitor que alguém registou, e nada mais. A outra família que registaste, como um cônjuge ou um tutor, aparece nos detalhes de cada pessoa e é mostrada enquanto apontas ou focas essa pessoa; um cônjuge fica ao lado. Não coloca ninguém numa geração.',
-    othersHeading: 'Outras relações',
-    othersNote:
-      'Relações de {name} que não são familiares. Não fazem parte da árvore acima. {link}',
-    othersLink: 'Todas as relações',
-    relationshipStatus: 'Relação: {status}',
-    add: 'Adicionar ligação familiar',
-  },
+  familyPage: placesFamilyPage,
   maps: {
     tabMaps: 'Mapas',
     tabInteractive: 'Mapa interativo',
@@ -245,49 +150,7 @@ const places: Dictionary['places'] = {
     soonTitle: 'O mapa interativo vem aí.',
     soonHint: 'Planeado, ainda não construído.',
   },
-  mapForm: {
-    leaveNew: 'Este mapa ainda não foi criado. Sair sem o criar?',
-    leaveChanges: 'Há alterações por guardar. Sair sem as guardar?',
-    tooLarge: 'As imagens têm de ter {size} ou menos.',
-    nameMissing: 'Dá um nome ao mapa.',
-    fileMissing: 'Escolhe uma imagem do mapa.',
-    pinsMissing: 'Diz o que acontece aos marcadores que já estão no mapa.',
-    fieldErrors: 'Alguns detalhes precisam de uma alteração antes de se poder guardar.',
-    failed: 'Não foi possível guardar isso.',
-    headingNew: 'Novo mapa',
-    headingDetails: 'Detalhes do mapa',
-    headingReplace: 'Substituir a imagem',
-    name: 'Nome',
-    namePlaceholder: 'Insere um nome',
-    description: 'Descrição',
-    descriptionHint: 'O que este mapa mostra, numa ou duas linhas. Opcional.',
-    imageNew: 'Imagem do mapa',
-    imageReplace: 'Nova imagem',
-    imageHint:
-      'Um JPEG, PNG ou WebP até {size}. O original é guardado tal como está; o visualizador mostra uma cópia ajustada ao ecrã.',
-    chosen: '{name} · {size}',
-    pinsLegend: 'Os marcadores que já estão neste mapa',
-    noPins:
-      'Este mapa não tem marcadores, por isso nada corre risco. Escolhe qualquer uma das opções.',
-    pinsPlaced: {
-      one: '{n} marcador foi colocado na imagem atual. Uma nova imagem pode pô-lo noutro sítio.',
-      other:
-        '{n} marcadores foram colocados na imagem atual. Uma nova imagem pode pô-los noutro sítio.',
-    },
-    scaleNote:
-      'A escala foi medida na imagem atual e acompanha-a. Define-a de novo na nova antes de pedires distâncias.',
-    keep: '{lead}, e marca cada um como a aguardar revisão. Abre cada marcador para verificar o lugar dele na nova imagem e guarda para confirmar.',
-    keepLead: 'Mantém os marcadores onde estão',
-    remove: '{lead} As entradas de lore que eles representavam não são afetadas.',
-    removeLead: 'Remove todos os marcadores.',
-    uploading: 'A carregar… {percent}%',
-    uploaded: 'Carregado. A preparar o mapa…',
-    saving: 'A guardar…',
-    createMap: 'Criar mapa',
-    saveDetails: 'Guardar',
-    replacePicture: 'Substituir imagem',
-    cancel: 'Cancelar',
-  },
+  mapForm: placesMapForm,
   pinForm: {
     leaveChanges: '“{title}” tem alterações por guardar. Sair sem as guardar?',
     leaveNew: 'Este marcador ainda não foi colocado. Sair sem o colocar?',
@@ -318,115 +181,17 @@ const places: Dictionary['places'] = {
     saving: 'A guardar…',
     save: 'Guardar',
     place: 'Colocar marcador',
-    cancel: 'Cancelar',
   },
-  calibration: {
-    removeTitle: 'Remover a escala?',
-    removeMessage:
-      'Deixa de ser possível medir distâncias neste mapa até ser calibrado de novo. Os marcadores não são afetados.',
-    removeConfirm: 'Remover escala',
-    scale: 'Escala',
-    summary:
-      'Dois pontos estão a {distance} de distância, por isso um píxel da imagem equivale a cerca de {perPixel} {unit}. As distâncias pedidas a uma aplicação de IA ligada são linhas retas nesta imagem, segundo esta escala.',
-    noneEditor:
-      'Ainda sem escala. Marca dois pontos e diz a que distância estão um do outro, e uma aplicação de IA ligada consegue medir distâncias em linha reta entre marcadores.',
-    none: 'Ainda sem escala. Não é possível medir distâncias neste mapa.',
-    setAgain: 'Definir a escala de novo',
-    set: 'Definir a escala',
-    remove: 'Remover escala',
-    firstMissing: 'Marca o primeiro ponto.',
-    secondMissing: 'Marca o segundo ponto.',
-    distanceInvalid: 'Um número acima de zero.',
-    unitMissing: 'Indica a unidade: km, milhas, léguas, dias de viagem.',
-    fieldErrors: 'Verifica os pontos e a distância.',
-    failed: 'Não foi possível guardar a escala.',
-    formTitle: 'Definir a escala',
-    formIntro:
-      'Clica no mapa duas vezes para marcar dois pontos cuja distância conheces, ou escreve onde estão. Depois diz a que distância estão um do outro, na unidade própria do teu universo.',
-    pointA: 'Ponto A',
-    pointANot: 'Ponto A (não marcado)',
-    pointB: 'Ponto B',
-    pointBNot: 'Ponto B (não marcado)',
-    across: 'Na horizontal',
-    down: 'Na vertical',
-    distance: 'Distância',
-    unit: 'Unidade',
-    unitPlaceholder: 'Insere uma unidade',
-    saving: 'A guardar…',
-    save: 'Guardar',
-    cancel: 'Cancelar',
-  },
+  calibration: placesCalibration,
   viewer: {
     stage: 'Mapa: {name}',
     pinReview: '{title} (posição a aguardar revisão)',
-    zoom: 'Zoom',
-    zoomIn: 'Aumentar',
-    zoomOut: 'Reduzir',
     fit: 'Ajustar o mapa inteiro',
     hint: 'Arrasta para deslocar e usa a roda para ampliar. Com o mapa em foco, as setas deslocam, mais e menos ampliam, e 0 ajusta o mapa inteiro. Tab chega a cada marcador; Enter seleciona-o.',
     hintPlacing:
       'Arrasta para deslocar e usa a roda para ampliar. Com o mapa em foco, as setas deslocam, mais e menos ampliam, e 0 ajusta o mapa inteiro. Tab chega a cada marcador; Enter seleciona-o. Ao colocar um marcador: clica no mapa onde ele fica, ou prime Enter para o colocar ao centro.',
   },
-  mapPage: {
-    moveFailed: 'Não foi possível mover o marcador.',
-    removePinTitle: 'Eliminar o marcador {pin}?',
-    removePinLore: 'A entrada de lore que ele representa não é afetada.',
-    removePinOnly: 'Só o marcador desaparece.',
-    removePinConfirm: 'Eliminar marcador',
-    deleteTitle: 'Eliminar o mapa {map}?',
-    deleteMessage:
-      'O mapa e os respetivos marcadores são eliminados definitivamente. Os mapas não vão para a reciclagem. As entradas de lore que os marcadores representam não são afetadas.',
-    pinCount: {
-      one: '{n} marcador',
-      other: '{n} marcadores',
-    },
-    deleteConfirm: 'Eliminar mapa',
-    loading: 'A desenrolar o mapa…',
-    missingTitle: 'Esse mapa não está aqui.',
-    missingHint: 'Pode ter sido eliminado. {link}',
-    missingLink: 'Voltar aos mapas',
-    error: 'Não foi possível abrir o mapa.',
-    retry: 'Tentar novamente',
-    crumb: 'Mapas',
-    placingButton: 'A colocar um marcador…',
-    addPin: 'Adicionar marcador',
-    moreActions: 'Mais ações para {name}',
-    editDetails: 'Editar detalhes',
-    replacePicture: 'Substituir imagem',
-    deleteMap: 'Eliminar mapa',
-    reviewEditor: {
-      one: 'Um marcador foi colocado numa imagem anterior deste mapa. Abre-o para verificar o lugar dele na nova imagem e guarda para confirmar.',
-      other:
-        '{n} marcadores foram colocados numa imagem anterior deste mapa. Abre cada um para verificar o lugar dele na nova imagem e guarda para confirmar.',
-    },
-    reviewViewer: {
-      one: 'Um marcador foi colocado numa imagem anterior deste mapa. O lugar dele é mostrado como era.',
-      other:
-        '{n} marcadores foram colocados numa imagem anterior deste mapa. Os lugares deles são mostrados como eram.',
-    },
-    calibrating:
-      'A definir a escala: clica no mapa para marcar o ponto A, depois o ponto B, ou escreve onde estão ao lado do mapa.',
-    placing: 'Clica no mapa onde o marcador fica, ou {position}.',
-    typePosition: 'escreve a posição dele',
-    cancel: 'Cancelar',
-    markerA: 'A',
-    markerB: 'B',
-    panel: 'Marcadores e escala',
-    pinReview: 'Posição a aguardar revisão',
-    pinTrashed: 'A entrada que este marcador representava está na reciclagem.',
-    openEntry: 'Abrir {name}',
-    entryType: '· {type}',
-    annotation: 'Uma anotação, sem ligação a nenhuma entrada.',
-    position: '{x}% na horizontal · {y}% na vertical',
-    editPin: 'Editar',
-    removePin: 'Eliminar',
-    pins: 'Marcadores',
-    noPinsEditor:
-      'Ainda sem marcadores. Adiciona um para assinalar um lugar e abrir o lore dele a partir do mapa.',
-    noPins: 'Ainda sem marcadores neste mapa.',
-    awaitingReview: '· a aguardar revisão',
-    listType: '· {type}',
-  },
+  mapPage: placesMapPage,
 }
 
 export default places

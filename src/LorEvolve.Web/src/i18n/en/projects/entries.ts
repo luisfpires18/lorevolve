@@ -1,0 +1,31 @@
+const projectsEntries = {
+  searchPlaceholder: 'Search by name',
+  noMatch: 'No entries match.',
+  noMatchHint: 'Change or clear the search to see more.',
+  nested: 'Include nested types',
+  title: 'Entries',
+  failed: "This project's entries could not be read.",
+  empty: 'Nothing of this type yet.',
+  emptyHint: 'Add an entry to make the first one.',
+  needsType: 'Make a type first.',
+  needsTypeHint: 'An entry is of a type, so this project needs at least one.',
+  typeMissing: 'This type is not in this project.',
+  typeMissingHint: 'It may have been deleted. Go back to all types to choose another.',
+  ofType: 'Type',
+  add: 'Add entry',
+  name: 'Name',
+  summary: 'Summary',
+  saving: 'Saving…',
+  delete: 'Move to Trash',
+  trash: {
+    title: 'Move “{name}” to the Trash?',
+    message:
+      'Nothing is erased. It leaves this list, and you can restore it from the Trash at any time.',
+  },
+  leaveEdited: 'This entry has unsaved changes. Leave without saving them?',
+  leaveNew: 'This entry has not been created. Leave without creating it?',
+  canon: 'In the lore: {name}',
+  values: 'Fields',
+}
+
+export default projectsEntries

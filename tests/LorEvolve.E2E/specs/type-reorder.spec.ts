@@ -278,6 +278,7 @@ test.describe('reordering types on a wide screen', () => {
     const writes = orderWrites(page)
     const notice = page.getByTestId('types-notice')
     const grip = page.getByTestId('reorder-Technic Runes')
+    await expect(notice).toBeHidden() // no status yet: the empty box does not show
 
     // Escape puts it back: nothing sent, nothing moved.
     await grip.focus()

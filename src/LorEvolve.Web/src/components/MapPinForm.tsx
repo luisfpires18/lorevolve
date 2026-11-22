@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
-import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
+import { QuietNote } from './QuietNote'
+import { useRef } from 'react'
+import { useDraftForm } from '../lib/useDraftForm'
+import { useFormSave } from '../lib/useFormSave'
 import { Drawer } from './Drawer'
 import { Field } from './Field'
+import { PercentField } from './PercentField'
 import { createPin, DUPLICATE_LINK_CODE, updatePin } from '../maps/api'
 import {
   MAP_NAME_MAX_LENGTH,
@@ -62,31 +63,25 @@ function inputOf(draft: PinDraft): MapPinInput {
 export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: MapPinFormProps) {
   const { t } = useI18n()
   const titleInput = useRef<HTMLInputElement>(null)
-  const [initial] = useState<PinDraft>(() => ({
-    title: pin?.title ?? '',
-    note: pin?.note ?? '',
-    xPercent: percent(pin?.x ?? at?.x ?? 0.5),
-    yPercent: percent(pin?.y ?? at?.y ?? 0.5),
-    lore:
-      pin?.lore && !pin.lore.isTrashed && pin.lore.name
-        ? { id: pin.lore.id, name: pin.lore.name, typeName: pin.lore.typeName ?? undefined }
-        : null,
-  }))
-  const [draft, setDraft] = useState<PinDraft>(initial)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-
-  const isDirty = payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial))
-  useReturnFocus()
-
-  useEffect(() => {
-    titleInput.current?.focus()
-  }, [])
-
-  function edit(change: Partial<PinDraft>) {
-    setDraft((current) => ({ ...current, ...change }))
-  }
+  const { draft, setDraft, edit, isDirty } = useDraftForm<PinDraft>(
+    () => ({
+      title: pin?.title ?? '',
+      note: pin?.note ?? '',
+      xPercent: percent(pin?.x ?? at?.x ?? 0.5),
+      yPercent: percent(pin?.y ?? at?.y ?? 0.5),
+      lore:
+        pin?.lore && !pin.lore.isTrashed && pin.lore.name
+          ? { id: pin.lore.id, name: pin.lore.name, typeName: pin.lore.typeName ?? undefined }
+          : null,
+    }),
+    { measure: inputOf },
+  )
+  const form = useFormSave({
+    needChange: (_fieldErrors, error) =>
+      error.code === DUPLICATE_LINK_CODE ? error.message : t('places.pinForm.fieldErrors'),
+    failed: t('places.pinForm.failed'),
+  })
+  const { fieldErrors, setFieldErrors, setMessage, message, isSaving } = form
 
   async function save() {
     setMessage(null)
@@ -104,83 +99,46 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
       return
     }
 
-    setIsSaving(true)
-    try {
+    await form.save(async () => {
       const saved = pin
         ? await updatePin(universeId, mapId, pin.id, input)
         : await createPin(universeId, mapId, input)
       onSaved(saved)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          error.code === DUPLICATE_LINK_CODE
-            ? error.message
-            : Object.keys(error.fieldErrors).length === 0
-              ? error.message
-              : t('places.pinForm.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.pinForm.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-    }
+    })
   }
 
   const trashed = pin?.lore?.isTrashed === true
 
   return (
     <Drawer
+      initialFocus={titleInput}
       testId="map-pin-form"
       titleId="map-pin-heading"
       eyebrow={pin ? t('places.pinForm.eyebrowEdit') : t('places.pinForm.eyebrowNew')}
       title={pin ? <bdi>{pin.title}</bdi> : t('places.pinForm.title')}
       context={
         pin && !pin.placedOnCurrentImage ? (
-          <p className="drawer__context" data-testid="map-pin-review-note">
+          <QuietNote size="ui" wrap className="drawer__context" testId="map-pin-review-note">
             {t('places.pinForm.reviewNote')}
-          </p>
+          </QuietNote>
         ) : null
       }
       isDirty={isDirty}
       leaveMessage={
         pin ? t('places.pinForm.leaveChanges', { title: pin.title }) : t('places.pinForm.leaveNew')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <>
-          <button
-            className="button"
-            type="submit"
-            disabled={isSaving}
-            aria-busy={isSaving || undefined}
-            data-testid="map-pin-save"
-          >
-            {isSaving
-              ? t('places.pinForm.saving')
-              : pin
-                ? t('places.pinForm.save')
-                : t('places.pinForm.place')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => close()}
-            disabled={isSaving}
-          >
-            {t('places.pinForm.cancel')}
-          </button>
-        </>
-      )}
+      message={message}
+      messageTestId="map-pin-error"
+      actions={{
+        submitLabel: pin ? t('places.pinForm.save') : t('places.pinForm.place'),
+        busyLabel: t('places.pinForm.saving'),
+        submitTestId: 'map-pin-save',
+        lockCancel: true,
+      }}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="map-pin-error">
-          {message}
-        </p>
-      ) : null}
-
       <EntityPicker
         label={t('places.pinForm.lore')}
         universeId={universeId}
@@ -195,9 +153,9 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
         placeholder={t('places.pinForm.lorePlaceholder')}
         error={fieldErrors.entityid}
       />
-      <p className="field__hint">
+      <QuietNote spacing="hint">
         {trashed ? t('places.pinForm.loreHintTrashed') : t('places.pinForm.loreHint')}
-      </p>
+      </QuietNote>
 
       <Field id="map-pin-title" label={t('places.pinForm.titleLabel')} error={fieldErrors.title}>
         {(control) => (
@@ -216,67 +174,38 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
       </Field>
 
       <Field
+        as="textarea"
         id="map-pin-note"
         label={t('places.pinForm.note')}
         hint={t('places.pinForm.noteHint')}
         error={fieldErrors.note}
-      >
-        {(control) => (
-          <textarea
-            {...control}
-            className="field__input"
-            dir="auto"
-            rows={3}
-            maxLength={MAP_NOTE_MAX_LENGTH}
-            value={draft.note}
-            onChange={(event) => edit({ note: event.target.value })}
-            data-testid="map-pin-note-input"
-          />
-        )}
-      </Field>
+        dir="auto"
+        rows={3}
+        maxLength={MAP_NOTE_MAX_LENGTH}
+        value={draft.note}
+        onChange={(event) => edit({ note: event.target.value })}
+        data-testid="map-pin-note-input"
+      />
 
-      <Field
-        group="fieldset"
-        className="mappinform__position"
+      <PercentField
         label={t('places.pinForm.position')}
         hint={t('places.pinForm.positionHint')}
         error={[fieldErrors.x, fieldErrors.y].filter(Boolean).join(' ') || undefined}
-      >
-        <div className="mappinform__coords">
-          <label className="mappinform__coord">
-            <span>{t('places.pinForm.across')}</span>
-            <input
-              className="field__input"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              max={100}
-              step={0.01}
-              value={draft.xPercent}
-              onChange={(event) => edit({ xPercent: event.target.value })}
-              aria-invalid={fieldErrors.x ? true : undefined}
-              data-testid="map-pin-x-input"
-            />
-            <span aria-hidden="true">%</span>
-          </label>
-          <label className="mappinform__coord">
-            <span>{t('places.pinForm.down')}</span>
-            <input
-              className="field__input"
-              type="number"
-              inputMode="decimal"
-              min={0}
-              max={100}
-              step={0.01}
-              value={draft.yPercent}
-              onChange={(event) => edit({ yPercent: event.target.value })}
-              aria-invalid={fieldErrors.y ? true : undefined}
-              data-testid="map-pin-y-input"
-            />
-            <span aria-hidden="true">%</span>
-          </label>
-        </div>
-      </Field>
+        across={{
+          label: t('places.pinForm.across'),
+          value: draft.xPercent,
+          onChange: (xPercent) => edit({ xPercent }),
+          invalid: Boolean(fieldErrors.x),
+          testId: 'map-pin-x-input',
+        }}
+        down={{
+          label: t('places.pinForm.down'),
+          value: draft.yPercent,
+          onChange: (yPercent) => edit({ yPercent }),
+          invalid: Boolean(fieldErrors.y),
+          testId: 'map-pin-y-input',
+        }}
+      />
     </Drawer>
   )
 }

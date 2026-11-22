@@ -47,7 +47,7 @@ async function setCover(page: Page, file: string) {
   await drawer.getByTestId('cover-input').setInputFiles(picture(file))
   await page.getByTestId('image-crop-confirm').click()
   await expect(drawer.getByTestId('cover-card')).toBeVisible()
-  await drawer.getByRole('button', { name: 'Done' }).click()
+  await drawer.getByRole('button', { name: 'Close' }).click()
   await expect(drawer).toHaveCount(0)
 }
 

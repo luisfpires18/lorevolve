@@ -1,0 +1,9 @@
+@media (max-width: 640px) {
+  .storyrow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .storyrow__meta {
+    justify-content: flex-start;
+  }
+}

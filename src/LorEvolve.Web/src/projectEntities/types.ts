@@ -1,4 +1,7 @@
-import type { EntityImageRef, FieldImageRef, FieldImageShapeValue } from '../lore/types'
+import type { EntityImageRef, FieldImageRef, FieldValue, FieldValueInput } from '../lore/types'
+import type { FieldImageShapeValue } from '../lore/fieldKinds'
+
+export type { FieldValue, FieldValueInput } from '../lore/types'
 
 /**
  * A project's own schema and entries (#144).
@@ -74,18 +77,6 @@ export type ProjectFieldInput = {
   imageShape?: FieldImageShapeValue | null
 }
 
-/** One value a save sends. Only the member the field's kind uses is filled in; the rest stay null. */
-export type FieldValueInput = {
-  fieldDefinitionId: string
-  text: string | null
-  number: number | null
-  boolean: boolean | null
-  date: string | null
-  optionIds: string[] | null
-  referencedEntityId: string | null
-  eraId: string | null
-}
-
 export type ProjectEntityInput = {
   entityTypeId: string
   name: string
@@ -108,23 +99,6 @@ export type ProjectEntitySummary = {
   updatedAt: string
   /** The entry's own picture, as a Lore card shows it (#286). */
   image: EntityImageRef | null
-}
-
-/** One value as the API reads it back. */
-export type FieldValue = {
-  fieldDefinitionId: string
-  name: string
-  kind: FieldKindValue
-  text: string | null
-  number: number | null
-  boolean: boolean | null
-  date: string | null
-  optionIds: string[]
-  optionValues: string[]
-  referencedEntityId: string | null
-  referencedEntityName: string | null
-  referencedEntityIsTrashed: boolean
-  eraId: string | null
 }
 
 export type ProjectEntityDetail = {

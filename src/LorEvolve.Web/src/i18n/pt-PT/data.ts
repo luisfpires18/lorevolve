@@ -17,7 +17,6 @@ const data: Dictionary['data'] = {
     sendFailed: 'Não foi possível enviar. Tenta novamente.',
     title: 'Comunicar um erro ou pedir uma funcionalidade',
     kindLabel: 'Do que se trata?',
-    kindGroup: 'Do que se trata?',
     kindBug: 'Erro',
     kindFeature: 'Pedido de funcionalidade',
     textBug: 'O que correu mal?',
@@ -26,9 +25,8 @@ const data: Dictionary['data'] = {
       'O que fizeste, o que esperavas e o que aconteceu em vez disso. A página em que estás é enviada junto.',
     hintFeature:
       'O que te permitiria fazer e onde o usarias. A página em que estás é enviada junto.',
-    sending: 'A enviar',
+    sending: 'A enviar…',
     send: 'Enviar',
-    cancel: 'Cancelar',
   },
   connectedApps: {
     status: {
@@ -54,14 +52,14 @@ const data: Dictionary['data'] = {
     lastUsed: 'Última utilização em {date}',
     neverUsed: 'Ainda não utilizada',
     makeReaderLabel: 'Tornar {client} Leitor de {universe}',
-    changing: 'A alterar',
+    changing: 'A alterar…',
     makeReader: 'Tornar Leitor',
     disconnectLabel: 'Desligar {client} de {universe}',
     disconnect: 'Desligar',
     confirmTitle: 'Desligar {client} de {universe}?',
     confirmNote:
       'A aplicação perde o acesso de imediato. Manténs a sessão iniciada no LorEvolve, e as tuas outras ligações continuam a funcionar. Podes ligá-la de novo mais tarde.',
-    disconnecting: 'A desligar',
+    disconnecting: 'A desligar…',
     keep: 'Manter',
     stopped:
       'Agora é Leitor: continua a poder ler, mas já não pode propor alterações. O que já propôs só pode ser rejeitado.',
@@ -159,12 +157,6 @@ const data: Dictionary['data'] = {
       title: 'A reciclagem está vazia.',
       hint: 'Tudo o que removeres do teu lore, das tuas histórias ou das tuas regras do mundo fica aqui à espera.',
     },
-    pager: {
-      label: 'Paginação',
-      previous: 'Anterior',
-      position: 'Página {page} de {total}',
-      next: 'Seguinte',
-    },
     bar: {
       hint: 'Seleciona linhas nesta página para as eliminar para sempre.',
       selected: '{n} selecionados',
@@ -172,7 +164,6 @@ const data: Dictionary['data'] = {
       deleteNone: 'Eliminar para sempre',
       selectPage: 'Selecionar página',
       clear: 'Limpar seleção',
-      done: 'Concluído',
     },
     publish: {
       titleVisible: 'Restaurar {name} volta a torná-la pública.',
@@ -188,14 +179,12 @@ const data: Dictionary['data'] = {
       restoreVisible: 'Restaurar e publicar',
       restoreHidden: 'Restaurar, manter selecionada',
       restorePrivate: 'Restaurar como privada',
-      cancel: 'Cancelar',
     },
     erase: {
       title: 'Eliminar para sempre {kind} {name}?',
       cannotUndo: 'Isto não pode ser desfeito. Fica eliminado para sempre.',
       deleting: 'A eliminar…',
       delete: 'Eliminar para sempre',
-      cancel: 'Cancelar',
     },
     bulk: {
       title: {
@@ -207,7 +196,6 @@ const data: Dictionary['data'] = {
       cannotUndo: 'Isto não pode ser desfeito. Fica tudo eliminado para sempre.',
       deleting: 'A eliminar…',
       delete: 'Eliminar para sempre',
-      cancel: 'Cancelar',
     },
   },
 }

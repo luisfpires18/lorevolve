@@ -1,47 +1,30 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Image as ImageIcon, Plus } from 'lucide-react'
-import { Link, useOutletContext, useSearchParams } from 'react-router-dom'
-import { ActionIcon } from '../components/ActionIcon'
-import { ActionMenu } from '../components/ActionMenu'
-import { CinemaSagas } from '../components/CinemaSagas'
-import { ComicCollections } from '../components/ComicCollections'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
 import { CoverDrawer } from '../components/CoverDrawer'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { ShelfCard, shelfStep, type ShelfFrame } from '../components/ShelfCard'
 import { pictureUrl, projectCoverStore } from '../covers/api'
+import {
+  formatLabel,
+  kindLabel,
+  lifecycleLabel,
+  newProjectPath,
+  projectRowPath,
+} from '../projects/sections'
 import { t, useI18n } from '../i18n'
-import { ApiError } from '../lib/api'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
-import { listAllProjects, reorderProjects } from '../projects/api'
-import { formatLabel, kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
-import { type ProjectDetail, type ProjectKindValue } from '../projects/types'
+import type { ProjectKindValue } from '../projects/types'
 import { useUniverseAccess } from '../universes/access'
 import { sectionLabel, type Section } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-type LoadState =
-  { kind: 'loading' } | { kind: 'ready'; projects: ProjectDetail[] } | { kind: 'failed' }
-
-/**
- * A second view a shelf can switch to: Sagas and Phases on Cinema (#289), Story Arcs and Events on Comic (#296).
- */
-const VIEWS = {
-  sagas: {
-    words: 'sagas',
-    second: 'sagasView',
-    testId: 'cinema',
-    secondTestId: 'cinema-view-sagas',
-    Body: CinemaSagas,
-  },
-  arcs: {
-    words: 'comics',
-    second: 'collectionsView',
-    testId: 'comic',
-    secondTestId: 'comic-view-collections',
-    Body: ComicCollections,
-  },
-} as const
+import { shelfActions, withCover } from '../projects/shelfActions'
+import { shelfCoverChange } from '../projects/shelfCover'
+import { shelfNotices } from '../projects/shelfNotices'
+import { VIEWS } from '../projects/shelfViews'
+import { useShelfState } from '../projects/useShelfState'
+import { CardGrid } from '../components/CardGrid'
+import { ViewLinks } from '../components/ViewLinks'
+import { NewButton } from '../components/NewButton'
+import { ReadGate } from '../components/ReadGate'
 
 /**
  * One Creation category's projects, each drawn as the thing it will be (owner, 2026-11-17): Gaming on a handheld,
@@ -70,95 +53,18 @@ export default function CategoryShelfPage({
   const access = useUniverseAccess()
   const { universe } = useOutletContext<WorkspaceContext>()
   const heading = sectionLabel(section)
-  useDocumentTitle(heading)
   const [params] = useSearchParams()
   const views = view ? VIEWS[view] : null
   const showView = view !== undefined && params.get('view') === view
-  const [state, setState] = useState<LoadState>({ kind: 'loading' })
-  const [announcement, setAnnouncement] = useState('')
-  const [moveError, setMoveError] = useState<string | null>(null)
-  const [covering, setCovering] = useState<ProjectDetail | null>(null)
-  const isMoving = useRef(false)
+  const shelf = useShelfState(universe.id, kinds)
+  const { state, setState, announcement, moveError, covering, setCovering } = shelf
 
-  useEffect(() => {
-    const controller = new AbortController()
-    listAllProjects({ universeId: universe.id }, controller.signal)
-      .then((projects) =>
-        setState({
-          kind: 'ready',
-          projects: projects.filter((project) => kinds.includes(project.kind)),
-        }),
-      )
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'failed' })
-      })
-    return () => controller.abort()
-  }, [universe.id, kinds])
-
-  /** The card of the same kind next to this one, the way it would move, or -1 at the end of its kind. */
-  function neighbour(list: ProjectDetail[], from: number, by: -1 | 1) {
-    for (let at = from + by; at >= 0 && at < list.length; at += by) {
-      if (list[at].kind === list[from].kind) return at
-    }
-    return -1
-  }
-
-  /** Moves one project past its neighbour of the same kind, on screen first; a refusal puts it back. */
-  async function move(project: ProjectDetail, by: -1 | 1) {
-    if (state.kind !== 'ready' || isMoving.current) return
-    const before = state.projects
-    const from = before.findIndex((candidate) => candidate.id === project.id)
-    const to = from < 0 ? -1 : neighbour(before, from, by)
-    if (to < 0) return
-
-    const after = [...before]
-    after[from] = before[to]
-    after[to] = before[from]
-    const ofKind = after.filter((candidate) => candidate.kind === project.kind)
-    isMoving.current = true
-    setMoveError(null)
-    setState({ kind: 'ready', projects: after })
-    requestAnimationFrame(() =>
-      document
-        .querySelector<HTMLElement>(
-          `[data-project-id="${project.id}"] [data-testid="shelf-actions"]`,
-        )
-        ?.focus(),
-    )
-    try {
-      const saved = await reorderProjects(
-        universe.id,
-        project.kind,
-        ofKind.map((candidate) => candidate.id),
-      )
-      setState({
-        kind: 'ready',
-        projects: saved.filter((candidate) => kinds.includes(candidate.kind)),
-      })
-      setAnnouncement(
-        t('projects.shelf.moved', {
-          name: project.name,
-          n: ofKind.findIndex((candidate) => candidate.id === project.id) + 1,
-          total: ofKind.length,
-        }),
-      )
-    } catch (error: unknown) {
-      setState({ kind: 'ready', projects: before })
-      setMoveError(error instanceof ApiError ? error.message : t('projects.shelf.moveFailed'))
-    } finally {
-      isMoving.current = false
-    }
-  }
+  const { neighbour, move } = shelfActions({ ...shelf, universe, kinds })
 
   const newProject = (
-    <Link
-      className="button"
-      to={`/app/projects/new?universeId=${universe.id}&kind=${kinds[0]}`}
-      data-testid="projects-page-new"
-    >
-      <ActionIcon icon={Plus} />
+    <NewButton to={newProjectPath(universe.id, kinds[0])} data-testid="projects-page-new">
       {t('projects.nav.new')}
-    </Link>
+    </NewButton>
   )
 
   return (
@@ -170,57 +76,56 @@ export default function CategoryShelfPage({
       />
 
       {views ? (
-        <nav
-          className="views"
-          aria-label={t(`projects.${views.words}.viewsLabel`)}
-          data-testid={`${views.testId}-views`}
-        >
-          <Link
-            className="views__link"
-            to="?"
-            aria-current={showView ? undefined : 'page'}
-            data-testid={`${views.testId}-view-projects`}
-          >
-            {t(`projects.${views.words}.projectsView`)}
-          </Link>
-          <Link
-            className="views__link"
-            to={`?view=${view}`}
-            aria-current={showView ? 'page' : undefined}
-            data-testid={views.secondTestId}
-          >
-            {t(`projects.${views.words}.${views.second}` as 'projects.sagas.sagasView')}
-          </Link>
-        </nav>
+        <ViewLinks
+          label={t(`projects.${views.words}.viewsLabel`)}
+          testId={`${views.testId}-views`}
+          items={[
+            {
+              to: '?',
+              label: t(`projects.${views.words}.projectsView`),
+              current: !showView,
+              testId: `${views.testId}-view-projects`,
+            },
+            {
+              to: `?view=${view}`,
+              label: t(`projects.${views.words}.${views.second}` as 'projects.sagas.sagasView'),
+              current: showView,
+              testId: views.secondTestId,
+            },
+          ]}
+        />
       ) : null}
 
       {views && showView ? <views.Body universeId={universe.id} /> : null}
 
-      {!showView && state.kind === 'loading' ? (
-        <p className="notice" role="status">
-          {t('projects.list.loading')}
-        </p>
-      ) : null}
-
-      {!showView && state.kind === 'failed' ? (
-        <EmptyState title={t('projects.list.failed')} testId="projects-failed" />
-      ) : null}
-
-      <p className="visually-hidden" role="status" data-testid="shelf-announcement">
-        {announcement}
-      </p>
-      {moveError ? (
-        <p className="form__message" role="alert" data-testid="shelf-move-error">
-          {moveError}
-        </p>
-      ) : null}
-
-      {!showView && state.kind === 'ready' && state.projects.length > 0 ? (
-        <ul
-          className={frame === 'console' || frame === 'film' ? 'shelf shelf--wide' : 'shelf'}
-          data-testid="projects-list"
+      {/* The cards sit below the notices, so the gate draws only the loading and failed lines here. */}
+      {!showView ? (
+        <ReadGate
+          load={state}
+          loading={{ text: t('projects.list.loading') }}
+          error={{
+            message: t('projects.list.failed'),
+            onRetry: shelf.retry,
+            testId: 'projects-failed',
+          }}
         >
-          {state.projects.map((project, index) => (
+          {() => null}
+        </ReadGate>
+      ) : null}
+
+      {shelfNotices(
+        { announcement, moveError },
+        { announcement: 'shelf-announcement', moveError: 'shelf-move-error' },
+      )}
+
+      {!showView && state.kind === 'ready' && state.value.length > 0 ? (
+        // A handheld and a strip of film lie on their side, so their grid has wider places.
+        <CardGrid
+          min={frame === 'console' || frame === 'film' ? 17 : 15}
+          gap={5}
+          testId="projects-list"
+        >
+          {state.value.map((project, index, projects) => (
             <ShelfCard
               key={project.id}
               frame={frame}
@@ -244,62 +149,26 @@ export default function CategoryShelfPage({
                   : null
               }
               openTestId={`projects-row-${project.id}`}
-              onAddPicture={access.editContent ? () => setCovering(project) : undefined}
               attrs={{
                 'data-testid': 'projects-item',
                 'data-project-id': project.id,
                 'data-kind': String(project.kind),
               }}
-              menu={
-                access.editContent ? (
-                  <ActionMenu
-                    label={t('projects.common.more', { name: project.name })}
-                    triggerTestId="shelf-actions"
-                  >
-                    <button
-                      className="actionmenu__item"
-                      type="button"
-                      onClick={() => setCovering(project)}
-                      data-testid="shelf-cover"
-                    >
-                      <ActionIcon icon={ImageIcon} />
-                      {t(
-                        project.cover
-                          ? 'projects.common.changePicture'
-                          : 'projects.common.addPicture',
-                      )}
-                    </button>
-                    {neighbour(state.projects, index, -1) >= 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(project, -1)}
-                        data-testid="shelf-move-up"
-                      >
-                        <ActionIcon icon={ArrowUp} />
-                        {t('projects.common.moveUp')}
-                      </button>
-                    ) : null}
-                    {neighbour(state.projects, index, 1) >= 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        onClick={() => void move(project, 1)}
-                        data-testid="shelf-move-down"
-                      >
-                        <ActionIcon icon={ArrowDown} />
-                        {t('projects.common.moveDown')}
-                      </button>
-                    ) : null}
-                  </ActionMenu>
-                ) : null
+              menuLabel={
+                access.editContent ? t('projects.common.more', { name: project.name }) : undefined
               }
+              onCover={access.editContent ? () => setCovering(project) : undefined}
+              move={{
+                first: neighbour(projects, index, -1) < 0,
+                last: neighbour(projects, index, 1) < 0,
+                onMove: (step) => void move(project, step),
+              }}
             />
           ))}
-        </ul>
+        </CardGrid>
       ) : null}
 
-      {!showView && state.kind === 'ready' && state.projects.length === 0 ? (
+      {!showView && state.kind === 'ready' && state.value.length === 0 ? (
         <EmptyState
           title={t(empty)}
           hint={t('projects.list.emptyCategoryHint')}
@@ -314,19 +183,13 @@ export default function CategoryShelfPage({
           name={covering.name}
           cover={covering.cover ?? null}
           store={projectCoverStore(covering.id, covering.kind)}
-          onChanged={(cover) => {
-            setCovering({ ...covering, cover })
+          onChanged={shelfCoverChange(covering, setCovering, (id, cover) =>
             setState((current) =>
               current.kind === 'ready'
-                ? {
-                    kind: 'ready',
-                    projects: current.projects.map((one) =>
-                      one.id === covering.id ? { ...one, cover } : one,
-                    ),
-                  }
+                ? { kind: 'ready', value: withCover(current.value, id, cover) }
                 : current,
-            )
-          }}
+            ),
+          )}
           onClose={() => setCovering(null)}
         />
       ) : null}

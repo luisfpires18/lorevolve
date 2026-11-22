@@ -1,0 +1,157 @@
+/* ---------- Forms ----------
+
+   One field: a label, an optional hint, a boxed control, an error under it. The box is raised
+   paper with a `--border-control` edge (3:1 against what it sits on, in both schemes); focus is
+   the accent edge plus a soft accent halo, and an error is said in words under the field as well
+   as drawn in the edge. Textareas keep `unicode-bidi: plaintext` from the prose rule above. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.form__message {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--text-ui);
+}
+
+/* A quiet link tucked under a field, such as Forgot your password? under the sign-in password. */
+.form__aside {
+  margin: -1rem 0 0;
+  font-size: var(--text-ui);
+}
+
+.field__label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+/* A field that keeps its parent's stack: its parts sit in the parent's flow and spacing, as they did before they
+   were one field. Its group, `.field__stack`, stacks with the same gap. */
+.field--flow {
+  display: contents;
+  gap: inherit;
+  align-items: inherit;
+}
+
+.field__stack {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  align-items: inherit;
+}
+
+/* A field with its label beside the control, in one row: a sort or page size select in a toolbar. */
+.field--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.field--inline > .field__label {
+  margin-bottom: 0;
+  font-size: var(--text-ui);
+  white-space: nowrap;
+}
+
+.field--inline > .field__input {
+  width: auto;
+  min-width: 5rem;
+}
+
+/* A hidden label is absolute, placed by an ancestor far outside the field; at that ancestor's corner it cannot hang
+   below a scrolling drawer and make the drawer itself scroll a few pixels. */
+.field > .field__label.visually-hidden {
+  top: 0;
+  left: 0;
+}
+
+.field__input {
+  width: 100%;
+  min-height: var(--control-md);
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: 1.4;
+  transition:
+    border-color var(--duration-1) var(--ease),
+    box-shadow var(--duration-1) var(--ease);
+}
+
+.field__input::placeholder {
+  color: var(--muted);
+}
+
+.field__input:hover:not(:disabled, :focus) {
+  border-color: var(--ink);
+}
+
+/* The accent edge and a halo of the accent: a ring round the box, keyboard or pointer alike. */
+.field__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.field__input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field__input:disabled {
+  background: var(--paper);
+  color: color-mix(in srgb, var(--ink) 55%, transparent);
+  cursor: not-allowed;
+}
+
+.field__input--area {
+  resize: vertical;
+  line-height: 1.6;
+  padding: 0.6rem 0.75rem;
+}
+
+/* Three rows is a paragraph on a desktop and a keyhole on a phone, where the same text
+   wraps to eight or nine lines. The box is given a height worth writing in; it is still
+   resizable. */
+@media (max-width: 640px) {
+  .field__input--area,
+  .entry__summaryinput {
+    min-height: 8rem;
+  }
+}
+
+.field__input--select {
+  padding-inline: 0.5rem;
+}
+
+/* A document's title as its field: the author's words in the display face at a heading's size, so an idea or a rule
+   is written as a page with a title, not filled in as a form with a name. Still boxed: it is plainly editable. */
+.field__input--title {
+  font-family: var(--display);
+  font-size: var(--text-section);
+  line-height: 1.25;
+}
+
+.field__error {
+  margin: var(--space-2) 0 0;
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+}
+
+/* A touch shows each control's own pressed state, not the browser's generic flash over it. */
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}

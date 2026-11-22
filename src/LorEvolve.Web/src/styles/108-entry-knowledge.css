@@ -1,0 +1,144 @@
+/* ---------- Entry: knowledge (issue 15) ----------
+
+   What an entry knows, in the stories' order, as rows under "Known from the start" and each story's title; the readings
+   the list can give are small marks after the place, never a colour that claims a verdict. */
+.knowledge__abouthead {
+  margin-top: var(--space-6);
+}
+
+.knowledge__abouttitle {
+  margin: 0;
+}
+
+.knowledge__row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.knowledge__statement {
+  grid-column: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.knowledge__meta {
+  grid-column: 1;
+  margin: 0;
+  font-size: var(--text-ui);
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.knowledge__issue {
+  padding: 0.0625rem var(--space-2);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.knowledge__tools {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+}
+
+/* The name above a fixed value that is shown, not chosen: it looks like a field label and names no control. */
+.knowledge__fixedlabel {
+  display: block;
+  margin: 1em 0 0.4rem;
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.knowledge__fixed {
+  margin: 0 0 var(--space-3);
+  font-weight: 500;
+}
+
+.reviewsection__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-ui);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+summary.reviewsection__title {
+  cursor: pointer;
+}
+
+details.reviewsection > .reviewsection__list {
+  margin-top: var(--space-3);
+}
+
+.reviewthread {
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.reviewthread[data-resolved='true'] {
+  border-style: dashed;
+}
+
+.reviewcomment--reply {
+  margin-left: var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--rule);
+}
+
+.reviewcomment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+
+.reviewcomment__author {
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.reviewcomment__body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reviewthread__resolved {
+  margin: var(--space-3) 0 0;
+}
+
+.reviewthread__reply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.reviewthread__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.reviewthread__tools:empty {
+  display: none;
+}

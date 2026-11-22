@@ -1,3 +1,4 @@
+import { createContext } from 'react'
 import type { KeyboardEvent, MouseEvent, SyntheticEvent } from 'react'
 import { confirmDiscard } from './confirm'
 import { useLeaveGuard } from './leaveGuard'
@@ -27,11 +28,20 @@ export function payloadKey(payload: object) {
  * Escape is taken on its key press rather than from the dialog's `cancel` event: a browser may refuse to let a second
  * `cancel` in a row be prevented, and would then close the dialog under a form it still holds. A key press whose default
  * something inside already took - a picker closing its list - is left alone.
+ *
+ * `isLocked`, read at event time, is true while a save is in flight: Escape and `cancel` are swallowed, and `close` and
+ * a backdrop press do nothing, so the drawer never unmounts under its own save.
  */
-export function useDrawerGuard(isDirty: boolean, message: string, onClose: () => void) {
+export function useDrawerGuard(
+  isDirty: boolean,
+  message: string,
+  onClose: () => void,
+  isLocked?: () => boolean,
+) {
   useLeaveGuard(isDirty ? message : null, onClose)
 
   async function close() {
+    if (isLocked?.()) return
     if (isDirty && !(await confirmDiscard())) return
     onClose()
   }
@@ -54,3 +64,6 @@ export function useDrawerGuard(isDirty: boolean, message: string, onClose: () =>
 
   return { close, dialogProps }
 }
+
+/** True inside a drawer while its save is in flight; `FormActions` disables Cancel then. */
+export const DrawerLockContext = createContext(false)

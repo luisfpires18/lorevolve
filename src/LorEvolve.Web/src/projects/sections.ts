@@ -199,6 +199,11 @@ export function projectPath(projectId: string, segment: string, universeId: stri
   return segment ? `${base}/${segment}` : base
 }
 
+/** The New project screen, for one universe and, when the author came from a shelf, that shelf's kind. */
+export function newProjectPath(universeId: string, kind?: ProjectDetail['kind']) {
+  return `/app/projects/new?universeId=${universeId}${kind === undefined ? '' : `&kind=${kind}`}`
+}
+
 /**
  * A story's address, as the view of its Writing Project (#194). The story's page and the screens beside it link here
  * directly rather than through the old story address, because a redirect between two routes would start the story's

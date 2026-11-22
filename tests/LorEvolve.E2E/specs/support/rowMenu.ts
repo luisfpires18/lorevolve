@@ -3,7 +3,8 @@ import { expect, type Locator, type Page } from '@playwright/test'
 /**
  * The Story workspace's secondary verbs live in each row's ⋯ menu: a scene's moves and Delete, a chapter's
  * (its arc moves too), an arc's, the story's own Edit and Delete, and the open manuscript's Edit scene and Show in Scenes. These
- * helpers open the right menu for the item a spec names, so a spec says what it does rather than where it lives.
+ * helpers open the right menu for the item a spec names, so a spec says what it does rather than where it lives. An
+ * arc's and a chapter's Edit sit on the row itself, as a Types row's do (#456): those are pressed without a menu.
  *
  * Not a spec.
  */
@@ -15,6 +16,9 @@ const MENUS: [RegExp, string][] = [
   [/^manuscript-(edit|show)-scene$/, 'manuscript-scene-actions'],
 ]
 
+/** The verbs on the row itself, not in its menu. */
+const ON_ROW = /^(arc|chapter)-edit$/
+
 /** The ⋯ trigger that holds `item`. */
 export function menuTrigger(scope: Locator | Page, item: string) {
   const menu = MENUS.find(([pattern]) => pattern.test(item))?.[1]
@@ -24,6 +28,7 @@ export function menuTrigger(scope: Locator | Page, item: string) {
 
 /** Opens the menu that holds `item` inside `scope` and waits for the item. */
 export async function openMenuFor(scope: Locator | Page, item: string) {
+  if (ON_ROW.test(item)) return
   const trigger = menuTrigger(scope, item)
   if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click()
   await expect(scope.getByTestId(item).first()).toBeVisible()

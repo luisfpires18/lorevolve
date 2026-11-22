@@ -1,22 +1,20 @@
-import { useEffect, useState } from 'react'
-import { Link, Navigate, useOutletContext } from 'react-router-dom'
+import { useCallback } from 'react'
+import { Section } from '../components/Section'
+import { Navigate, useOutletContext } from 'react-router-dom'
 import { EmptyState } from '../components/EmptyState'
 import { PageHeader } from '../components/PageHeader'
 import { listAllProjects } from '../projects/api'
-import { formatLabel, kindLabel, lifecycleLabel, projectRowPath } from '../projects/sections'
+import { newProjectPath, projectRowPath } from '../projects/sections'
+import { projectMetaSpans } from '../projects/projectMeta'
 import { ProjectKind, type ProjectDetail, type ProjectKindValue } from '../projects/types'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { t, useI18n } from '../i18n'
-import { sectionLabel, type Section } from '../universes/sections'
+import { sectionLabel, type Section as WorkspaceSection } from '../universes/sections'
 import type { WorkspaceContext } from './UniverseWorkspace'
-
-/**
- * What was read, and what it was read for. Keeping the request's own key beside the result is what lets the screen say
- * "loading" for a filter it has not read yet without setting state inside the effect: the answer is derived in render
- * from whether the key still matches.
- */
-type LoadState =
-  { kind: 'ready'; for: string; projects: ProjectDetail[] } | { kind: 'failed'; for: string }
+import { NewButton } from '../components/NewButton'
+import { ReadGate } from '../components/ReadGate'
+import { LinkRow } from '../components/LinkRow'
+import { useTitleDetail } from '../lib/useTitleDetail'
+import { useAsyncRead } from '../lib/useAsyncRead'
 
 /** The empty wording of a category list, named by its first kind; Series reads as Cinema, like Film. */
 function categoryEmpty(kind: ProjectKindValue) {
@@ -44,41 +42,63 @@ export default function ProjectsPage({
   /** Only these kinds: the sidebar's Writing, Gaming, Cinema, Comic and Game Entities open this list narrowed (#272). */
   kinds?: readonly ProjectKindValue[]
   /** The sidebar section this list is the page of, which names it. */
-  section?: Section
+  section?: WorkspaceSection
   /** Where a row opens. Game Entities opens a game's directory instead of its project page (#284). */
   rowPath?: (project: ProjectDetail) => string
 }) {
   useI18n()
   const workspace = useOutletContext<WorkspaceContext | undefined>()
   const universeId = inUniverse ? workspace?.universe.id : undefined
-  const requested = universeId ?? 'all'
-  const [state, setState] = useState<LoadState | null>(null)
 
   const heading = section ? sectionLabel(section) : t('projects.list.title')
-  useDocumentTitle(heading)
+  // A list that is a section's own page (Game Entities) leads the tab with that section, as its entries lead with the game.
+  useTitleDetail(section ? heading : null)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198).
-    listAllProjects(universeId ? { universeId } : {}, controller.signal)
-      .then((projects) => setState({ kind: 'ready', for: requested, projects }))
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ kind: 'failed', for: requested })
-      })
-    return () => controller.abort()
-  }, [universeId, requested])
+  // Every page, not the first: this screen is where the projects the sidebar leaves out are found (#198). The
+  // workspace remounts per universe, so `universeId` is the whole key and a new read never shows another's list.
+  const read = useCallback(
+    (signal: AbortSignal) => listAllProjects(universeId ? { universeId } : {}, signal),
+    [universeId],
+  )
+  const { load, retry } = useAsyncRead(read)
 
-  if (state === null || state.for !== requested) {
-    return <p className="projects__lede">{t('projects.list.loading')}</p>
+  // The head is drawn above every state: its title is static, so there is nothing to wait for.
+  const head = (
+    <PageHeader
+      title={heading}
+      lede={t('projects.list.lede')}
+      actions={
+        /*
+         * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put
+         * a new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click
+         * away from any row here.
+         */
+        universeId ? (
+          <NewButton to={newProjectPath(universeId, kinds?.[0])} data-testid="projects-page-new">
+            {t('projects.nav.new')}
+          </NewButton>
+        ) : null
+      }
+    />
+  )
+
+  // The gate draws the loading and the failed line under the head.
+  if (load.kind !== 'ready') {
+    return (
+      <>
+        {head}
+        <ReadGate
+          load={load}
+          loading={{ text: t('projects.list.loading') }}
+          error={{ message: t('projects.list.failed'), onRetry: retry, testId: 'projects-failed' }}
+        >
+          {() => null}
+        </ReadGate>
+      </>
+    )
   }
 
-  if (state.kind === 'failed') {
-    return <EmptyState title={t('projects.list.failed')} testId="projects-failed" />
-  }
-
-  const shown = kinds
-    ? state.projects.filter((project) => kinds.includes(project.kind))
-    : state.projects
+  const shown = kinds ? load.value.filter((project) => kinds.includes(project.kind)) : load.value
 
   // One game is no choice: go straight to it. `replace` keeps Back from landing on a picker that would bounce again.
   if (rowPath !== projectRowPath && shown.length === 1) {
@@ -86,28 +106,9 @@ export default function ProjectsPage({
   }
 
   return (
-    <section className="projects" data-testid="projects-page">
+    <Section testId="projects-page">
       {/* The head every other workspace screen uses, so Projects reads as one of them (#184). */}
-      <PageHeader
-        title={heading}
-        lede={t('projects.list.lede')}
-        actions={
-          /*
-           * Only inside a universe: a project belongs to exactly one, so the account-level list has no universe to put
-           * a new project in and does not pretend otherwise (#172). The universe's own Projects screen is one click
-           * away from any row here.
-           */
-          universeId ? (
-            <Link
-              className="button"
-              to={`/app/projects/new?universeId=${universeId}${kinds ? `&kind=${kinds[0]}` : ''}`}
-              data-testid="projects-page-new"
-            >
-              {t('projects.nav.new')}
-            </Link>
-          ) : null
-        }
-      />
+      {head}
 
       {shown.length === 0 ? (
         <EmptyState
@@ -116,37 +117,28 @@ export default function ProjectsPage({
           testId="projects-empty"
         />
       ) : (
-        <ul className="storylist" data-testid="projects-list">
+        <ul className="idealist" data-testid="projects-list">
           {shown.map((project) => (
-            <li
-              className="storyrow"
+            <LinkRow
+              look="story"
               key={project.id}
-              data-testid="projects-item"
+              to={rowPath(project)}
+              title={project.name}
+              titleTestId={`projects-row-${project.id}`}
+              excerpt={project.summary}
+              testId="projects-item"
               data-project-id={project.id}
               data-kind={project.kind}
-            >
-              <Link
-                className="storyrow__title"
-                to={rowPath(project)}
-                data-testid={`projects-row-${project.id}`}
-              >
-                <bdi>{project.name}</bdi>
-              </Link>
-              <p className="storyrow__meta">
-                <span>{kindLabel(project.kind)}</span>
-                {project.format ? (
-                  <span data-testid="project-row-format">{formatLabel(project.format)}</span>
-                ) : null}
-                <span>{lifecycleLabel(project.lifecycle)}</span>
-                {inUniverse ? null : <span>{project.universe.name}</span>}
-              </p>
-              {project.summary ? (
-                <p className="storyrow__premise prose">{project.summary}</p>
-              ) : null}
-            </li>
+              meta={
+                <>
+                  {projectMetaSpans(project, 'project-row-format')}
+                  {inUniverse ? null : <span>{project.universe.name}</span>}
+                </>
+              }
+            />
           ))}
         </ul>
       )}
-    </section>
+    </Section>
   )
 }

@@ -1,0 +1,133 @@
+/* ---------- Tiptap ---------- */
+
+/* The box hugs the measure its text is set to - the 62ch below, plus the surface's own padding -
+   rather than drawing a metre of empty panel around a narrow column of prose now that the canvas
+   fills the workspace. Below that width there is nothing to cap, so a phone is unaffected. */
+.editor {
+  max-width: calc(62ch + 2.5rem);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+}
+
+/* One box for the whole editor: the accent edge and halo every field shows, while the writing surface holds the
+   focus - its own outline is off, so without this the article editor had no visible focus at all. */
+.editor:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.editor__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.4rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.editor__tool {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.55rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.editor__tool:hover {
+  color: var(--ink);
+}
+
+.editor__tool[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.editor__surface {
+  min-height: 18rem;
+  padding: 1.25rem;
+  outline: none;
+}
+
+.editor__surface:focus {
+  outline: none;
+}
+
+/* Shared prose styling for the editor surface and the read-only article. The white space and wrapping rules are the
+   ones ProseMirror sets on the editor: the read-only article is drawn without it (ArticleView), so an author's double
+   space, a run of newlines and an unbroken long word all read the same on both. */
+.editor__surface,
+.article__body {
+  font-family: var(--display);
+  font-size: 1.125rem;
+  line-height: 1.72;
+  /* 62 characters, and never past the 600px the entry's columns are built around: Literata's wider figures put 62ch
+     at 620px. */
+  max-width: min(62ch, 37.5rem);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.editor__surface > * + *,
+.article__body > * + * {
+  margin-top: 1rem;
+}
+
+.editor__surface h1,
+.editor__surface h2,
+.editor__surface h3,
+.article__body h1,
+.article__body h2,
+.article__body h3 {
+  font-family: var(--display);
+  font-weight: 400;
+  line-height: 1.25;
+  margin-top: 2rem;
+}
+
+.editor__surface h2,
+.article__body h2 {
+  font-size: 1.5rem;
+}
+
+.editor__surface h3,
+.article__body h3 {
+  font-size: 1.2rem;
+}
+
+.editor__surface blockquote,
+.article__body blockquote {
+  margin-left: 0;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--entry-accent, var(--rule-strong));
+  color: var(--muted);
+  font-style: italic;
+}
+
+.editor__surface ul,
+.editor__surface ol,
+.article__body ul,
+.article__body ol {
+  padding-left: 1.4rem;
+}
+
+.editor__surface li + li,
+.article__body li + li {
+  margin-top: 0.35rem;
+}
+
+/* A list item is one paragraph in the stored document; its own paragraph spacing would put a blank
+   line between every bullet. */
+.editor__surface li > p,
+.article__body li > p {
+  margin: 0;
+}
+
+.editor__surface p.is-editor-empty:first-child::before {
+  content: 'Write the lore.';
+  color: var(--muted);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

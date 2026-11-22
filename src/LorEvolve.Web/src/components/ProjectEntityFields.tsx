@@ -13,7 +13,12 @@ import type { WorkspaceContext } from '../pages/UniverseWorkspace'
 import { t, useI18n } from '../i18n'
 import { Drawer } from './Drawer'
 import { EntityImageField } from './EntityImageField'
-import { ProjectEntryForm } from './ProjectEntries'
+import { ProjectEntryForm } from './ProjectEntryForm'
+import { errorText } from '../lib/errorText'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
+import { Fact } from './Fact'
+import { FactList } from './FactList'
 
 /**
  * An entry's field values (#287), in its own type's order and read from its own game's types, so a same-named type of
@@ -41,6 +46,9 @@ export function ProjectEntityFields({
   // undefined while reading; null when the read failed, which leaves the stored values and no Edit.
   const [type, setType] = useState<ProjectEntityType | null | undefined>(undefined)
   const [failed, setFailed] = useState<string | null>(null)
+  // The edit form inside the drawer reports these, so the drawer guards and locks.
+  const [entryDirty, setEntryDirty] = useState(false)
+  const [entrySaving, setEntrySaving] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -59,7 +67,7 @@ export function ProjectEntityFields({
   return (
     <section data-testid="game-entity-fields">
       {rows.length > 0 ? (
-        <dl className="facts">
+        <FactList>
           {rows.map((row) => {
             const shown =
               row.kind === FieldKind.Image
@@ -68,49 +76,46 @@ export function ProjectEntityFields({
                   ? renderFact(row.value, chronology)
                   : EMPTY_FACT
             return (
-              <div className="facts__row" key={row.id} data-testid={`game-entity-field-${row.id}`}>
-                <dt className="facts__key">
-                  <bdi>{row.name}</bdi>
-                </dt>
-                <dd className="facts__value prose">
-                  {row.image ? (
-                    <img
-                      className="tile"
-                      src={fieldImageUrl(universeId, detail.id, row.image, 'crop')}
-                      width={row.image.width}
-                      height={row.image.height}
-                      alt={t('projects.gameEntities.entity.fieldImageAlt', { name: row.name })}
-                    />
-                  ) : shown === null || shown === EMPTY_FACT ? (
-                    <span className="projectcard__meta">
-                      {t('projects.gameEntities.entity.noValue')}
-                    </span>
-                  ) : (
-                    shown
-                  )}
-                </dd>
-              </div>
+              <Fact
+                name={<bdi>{row.name}</bdi>}
+                key={row.id}
+                testId={`game-entity-field-${row.id}`}
+                valueClassName="prose"
+              >
+                {row.image ? (
+                  <img
+                    className="tile"
+                    src={fieldImageUrl(universeId, detail.id, row.image, 'crop')}
+                    width={row.image.width}
+                    height={row.image.height}
+                    alt={t('projects.gameEntities.entity.fieldImageAlt', { name: row.name })}
+                  />
+                ) : shown === null || shown === EMPTY_FACT ? (
+                  <QuietNote as="span">{t('projects.gameEntities.entity.noValue')}</QuietNote>
+                ) : (
+                  shown
+                )}
+              </Fact>
             )
           })}
-        </dl>
+        </FactList>
       ) : (
-        <p className="projectcard__meta" data-testid="game-entity-no-fields">
+        <QuietNote spacing="flush" testId="game-entity-no-fields">
           {t('projects.gameEntities.entity.noFields')}
-        </p>
+        </QuietNote>
       )}
       {editing && type ? (
         <Drawer
           testId="project-entity-edit-drawer"
           titleId="project-entity-edit-title"
           title={t('projects.gameEntities.entity.editTitle')}
+          isDirty={entryDirty}
+          leaveMessage={t('projects.entries.leaveEdited')}
+          busy={entrySaving}
           onClose={() => setEditing(false)}
           actions={() => null}
         >
-          {failed ? (
-            <p role="alert" data-testid="project-entity-edit-failed">
-              {failed}
-            </p>
-          ) : null}
+          {failed ? <FormMessage testId="project-entity-edit-failed">{failed}</FormMessage> : null}
           {/* The entry's own picture, edited as a Lore entry's is: Lore's control and its routes (#286). */}
           <section className="entryform__section">
             <EntityImageField
@@ -134,17 +139,15 @@ export function ProjectEntityFields({
               setFailed(notice)
               onSaved()
             }}
-            onFailed={(error) =>
-              setFailed(error instanceof Error ? error.message : t('projects.entries.failed'))
-            }
+            onFailed={(error) => setFailed(errorText(error, t('projects.entries.failed')))}
             onCancel={() => setEditing(false)}
+            onDirtyChange={setEntryDirty}
+            onSavingChange={setEntrySaving}
           />
         </Drawer>
       ) : null}
       {failed && !editing ? (
-        <p role="alert" data-testid="project-entity-edit-notice">
-          {failed}
-        </p>
+        <FormMessage testId="project-entity-edit-notice">{failed}</FormMessage>
       ) : null}
     </section>
   )

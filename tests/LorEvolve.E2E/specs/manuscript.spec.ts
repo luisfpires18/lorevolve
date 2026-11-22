@@ -731,6 +731,11 @@ test.describe('manuscript', () => {
         // The outline folds away, and the prose takes the column.
         await expect(toggle).toBeVisible()
         await expect(list).toBeHidden()
+        // Above the prose, so changing scene never means scrolling past it.
+        const toggleBox = (await toggle.boundingBox())!
+        expect(toggleBox.y + toggleBox.height, `outline at ${width}px`).toBeLessThanOrEqual(
+          editorBox.y,
+        )
         expect(editorBox.width, `editor width at ${width}px`).toBeGreaterThanOrEqual(
           Math.min(width - 96, measure - 1),
         )
@@ -753,12 +758,12 @@ test.describe('manuscript', () => {
           .poll(() => page.evaluate(() => document.activeElement?.getAttribute('data-testid')))
           .toBe('manuscript-outline-toggle')
       } else {
-        // Beside the prose, not above it.
+        // Beside the prose, in the entry layout's rail, not above it.
         await expect(toggle).toBeHidden()
         await expect(list).toBeVisible()
         const outlineBox = (await page.getByTestId('manuscript-outline').boundingBox())!
-        expect(outlineBox.x + outlineBox.width, `outline at ${width}px`).toBeLessThanOrEqual(
-          editorBox.x,
+        expect(outlineBox.x, `outline at ${width}px`).toBeGreaterThanOrEqual(
+          editorBox.x + editorBox.width,
         )
         for (const link of await list.getByTestId('manuscript-outline-scene').all()) {
           const box = (await link.boundingBox())!

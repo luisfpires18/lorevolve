@@ -2,8 +2,11 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AuthLayout } from '../components/AuthLayout'
 import { Field } from '../components/Field'
+import { FormMessage } from '../components/FormMessage'
 import { ApiError, apiFetch } from '../lib/api'
 import { useI18n } from '../i18n'
+import { Button } from '../components/Button'
+import { Callout } from '../components/Callout'
 
 /**
  * The page a password reset email opens (#69): `/reset-password#user=&token=`, the token in the fragment so it never
@@ -65,21 +68,21 @@ export default function ResetPasswordPage() {
       footer={<Link to="/login">{t('auth.reset.back')}</Link>}
     >
       {done ? (
-        <p className="callout" role="status" data-testid="reset-done">
+        <Callout look="callout" as="p" role="status" testId="reset-done">
           {tx('auth.reset.done', { link: <Link to="/login">{t('auth.reset.doneSignIn')}</Link> })}
-        </p>
+        </Callout>
       ) : linkMissing ? (
-        <p className="callout" role="status" data-testid="reset-link-missing">
+        <Callout look="callout" as="p" role="status" testId="reset-link-missing">
           {tx('auth.reset.linkMissing', {
             link: <Link to="/forgot-password">{t('auth.reset.linkMissingAsk')}</Link>,
           })}
-        </p>
+        </Callout>
       ) : (
         <form className="form" onSubmit={handleSubmit} noValidate>
           {message ? (
-            <p className="form__message" role="alert" data-testid="auth-error">
+            <FormMessage testId="auth-error">
               {message} <Link to="/forgot-password">{t('auth.reset.askAgain')}</Link>
-            </p>
+            </FormMessage>
           ) : null}
 
           <Field
@@ -105,9 +108,9 @@ export default function ResetPasswordPage() {
             onChange={(event) => setConfirmPassword(event.target.value)}
           />
 
-          <button className="button" type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
-            {isSubmitting ? t('auth.reset.submitting') : t('auth.reset.submit')}
-          </button>
+          <Button busy={isSubmitting} busyLabel={t('auth.reset.submitting')} type="submit">
+            {t('auth.reset.submit')}
+          </Button>
         </form>
       )}
     </AuthLayout>

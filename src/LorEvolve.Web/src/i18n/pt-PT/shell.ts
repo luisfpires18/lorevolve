@@ -3,6 +3,8 @@ import type { Dictionary } from '../en'
 /** O invólucro da aplicação: rotas e ecrãs de erro, barra do espaço de trabalho, marca, diálogos e menus partilhados (#101). */
 const shell: Dictionary['shell'] = {
   app: {
+    loadFailed: 'Não foi possível carregar isto.',
+    tryAgain: 'Tentar novamente',
     screenPending: 'A carregar este ecrã',
     sectionPending: 'A abrir…',
     crashed: {
@@ -11,6 +13,24 @@ const shell: Dictionary['shell'] = {
       generic: 'Algo correu mal nesta página. Recarrega para tentar de novo.',
       reload: 'Recarregar',
     },
+  },
+  crumb: {
+    label: 'Caminho de navegação',
+  },
+  fields: {
+    required: '(obrigatório)',
+  },
+  pager: {
+    label: 'Paginação',
+    previous: 'Anterior',
+    next: 'Seguinte',
+    position: 'Página {page} de {total}',
+  },
+  showMore: {
+    label: 'Mostrar mais',
+    loading: 'A carregar…',
+    error: 'Não foi possível carregar mais.',
+    shown: 'A mostrar {shown} de {total}',
   },
   workspace: {
     screen: {
@@ -38,7 +58,36 @@ const shell: Dictionary['shell'] = {
     hint: 'O teu papel neste universo partilhado não a inclui. {back}',
     back: 'Voltar à vista geral',
   },
+  actions: {
+    cancel: 'Cancelar',
+    close: 'Fechar',
+    done: 'Concluído',
+    discard: 'Descartar alterações',
+    save: 'Guardar',
+    moveUp: 'Mover para cima',
+    moveDown: 'Mover para baixo',
+    moveEarlier: 'Mover para antes',
+    moveLater: 'Mover para depois',
+    moveUpNamed: 'Mover {name} para cima',
+    moveDownNamed: 'Mover {name} para baixo',
+    moveEarlierNamed: 'Mover {name} para antes',
+    moveLaterNamed: 'Mover {name} para depois',
+    earlier: 'Antes',
+    later: 'Depois',
+    view: 'Ver',
+    hide: 'Ocultar',
+  },
+  zoom: {
+    label: 'Zoom',
+    in: 'Ampliar',
+    out: 'Reduzir',
+  },
   confirm: {
+    removePicture: {
+      title: 'Remover esta imagem?',
+      message: 'É apagada de vez. Podes adicionar outra quando quiseres.',
+      confirm: 'Remover imagem',
+    },
     cancel: 'Cancelar',
     failed: 'Não foi possível fazer isso. Tenta de novo.',
     discard: {

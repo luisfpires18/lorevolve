@@ -1,0 +1,75 @@
+/* ---------- Recovered drafts ----------
+
+   A recovery copy is offered, never applied: a rule beside it in the accent, like a note in a margin, rather than a
+   warning. What it says is in words - whether the saved text has moved on since is a sentence, not a colour. */
+
+.recovery {
+  --callout-tone: var(--accent);
+  max-width: 62ch;
+  margin: 0 0 var(--space-5);
+}
+
+.recovery__title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.recovery__text {
+  margin: 0.35rem 0 0;
+  font-size: 0.925rem;
+  overflow-wrap: anywhere;
+}
+
+.recovery__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+}
+
+.recovery__actions {
+  margin-top: 0.75rem;
+}
+
+/* The copy, read before choosing: bounded, so a long one never pushes the choice off the screen. */
+.recovery__preview {
+  margin-top: 0.9rem;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+.recovery__preview .article__body {
+  max-width: none;
+}
+
+.recovery__prose {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--display);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.recovery__warning {
+  flex: 1 1 100%;
+  order: -1;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.snapshot__article {
+  margin: 1rem 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule);
+}
+
+.snapshot__articlenote {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+}

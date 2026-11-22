@@ -31,11 +31,6 @@ export function CoverDrawer({
       title={<bdi>{name}</bdi>}
       eyebrow={t(`${store.words}.upload`)}
       onClose={onClose}
-      actions={(close) => (
-        <button className="button button--secondary" type="button" onClick={close}>
-          {t('projects.common.done')}
-        </button>
-      )}
     >
       <UniverseArtworkField
         universeId={universeId}

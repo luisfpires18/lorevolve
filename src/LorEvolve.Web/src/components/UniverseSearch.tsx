@@ -1,23 +1,11 @@
-import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
-import { plainExcerpt } from '../lore/mentions'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { useI18n } from '../i18n'
-import { confirmLeaving } from '../lib/leaveGuard'
-import { resultContext, resultPath, searchQuery, searchUniverse } from '../search/api'
-import {
-  SEARCH_FIELD_LABELS,
-  SEARCH_KIND_LABELS,
-  type SearchResponse,
-  type SearchResult,
-} from '../search/types'
-
-/** How long typing has to pause before a search is sent. Short enough to feel immediate, long enough not to send every key. */
-const DEBOUNCE_MS = 200
-
-/** A search that has come back, for the query it was sent for. Nothing else is ever shown as its results. */
-type Settled =
-  { query: string; kind: 'ready'; response: SearchResponse } | { query: string; kind: 'error' }
+import { useUniverseSearchState } from '../search/useUniverseSearchState'
+import { useUniverseSearchFetch } from '../search/useUniverseSearchFetch'
+import { universeSearchActions } from '../search/universeSearchActions'
+import { UniverseSearchList } from './search/UniverseSearchList'
+import { Announce } from './Announce'
+import { useKeepListInView } from './entityPickerList'
 
 /**
  * The persistent search bar of a universe (ADR 0031): a combobox whose popup lists what the universe's recorded content
@@ -38,50 +26,25 @@ type Settled =
  * already open - the same address with another anchor - leaves nothing and asks nothing.
  */
 export function UniverseSearch({ universeId }: { universeId: string }) {
-  const { t, tn, tx } = useI18n()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const baseId = useId()
-  const inputId = `${baseId}input`
-  const listId = `${baseId}list`
-  const hintId = `${baseId}hint`
-  const optionId = (index: number) => `${baseId}option${index}`
-
-  const input = useRef<HTMLInputElement>(null)
-  const [text, setText] = useState('')
-  const [settled, setSettled] = useState<Settled | null>(null)
-  const [attempt, setAttempt] = useState(0)
-  const [opened, setOpened] = useState('')
-
-  // Held as the location the list was opened at, not a boolean, so arriving anywhere else - a result, a link, Back -
-  // closes it without an effect chasing the address.
-  const [openAt, setOpenAt] = useState<string | null>(null)
-  const isOpen = openAt === location.key
-
-  // The highlighted option belongs to one query: typing anything else lets go of it.
-  const [active, setActive] = useState<{ query: string; index: number } | null>(null)
-
-  const query = searchQuery(text)
-
-  useEffect(() => {
-    if (query === '') return
-
-    const controller = new AbortController()
-    const timer = window.setTimeout(() => {
-      searchUniverse(universeId, query, controller.signal)
-        .then((response) => setSettled({ query, kind: 'ready', response }))
-        .catch(() => {
-          // Replaced by a newer search, or the bar went away: nothing failed.
-          if (controller.signal.aborted) return
-          setSettled({ query, kind: 'error' })
-        })
-    }, DEBOUNCE_MS)
-
-    return () => {
-      window.clearTimeout(timer)
-      controller.abort()
-    }
-  }, [universeId, query, attempt])
+  const { t, tn } = useI18n()
+  const state = useUniverseSearchState()
+  const {
+    inputId,
+    listId,
+    hintId,
+    optionId,
+    input,
+    text,
+    setText,
+    settled,
+    attempt,
+    setSettled,
+    opened,
+    isOpen,
+    active,
+    query,
+  } = state
+  useUniverseSearchFetch({ universeId, query, attempt, setSettled })
 
   const current = settled !== null && settled.query === query ? settled : null
   const response = current?.kind === 'ready' ? current.response : null
@@ -103,10 +66,7 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
     active !== null && active.query === query && active.index < results.length ? active.index : -1
 
   // The highlighted option is kept in view as the arrows walk past the edge of the list.
-  useEffect(() => {
-    if (activeIndex < 0) return
-    document.getElementById(`${baseId}option${activeIndex}`)?.scrollIntoView({ block: 'nearest' })
-  }, [activeIndex, baseId])
+  useKeepListInView(optionId(activeIndex), activeIndex >= 0, activeIndex)
 
   const announcement = !isOpen
     ? opened
@@ -124,98 +84,14 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
             )
           : ''
 
-  /** Shows the list here, and lets go of what was said about the last result opened: it is not news any more. */
-  function openList() {
-    setOpenAt(location.key)
-    setOpened('')
-  }
-
-  async function open(result: SearchResult, by: 'keyboard' | 'pointer') {
-    const to = resultPath(universeId, result)
-    const next = new URL(to, window.location.origin)
-    const samePage =
-      next.pathname === window.location.pathname && next.search === window.location.search
-
-    // Another page is a way out of this one: the leave question first, as a link asks it. Staying changes nothing here.
-    if (!samePage && !(await confirmLeaving())) return
-
-    setOpenAt(null)
-    setOpened(
-      t('lore.search.opened', { kind: SEARCH_KIND_LABELS[result.kind], title: result.title }),
-    )
-
-    // A tap has done its work: letting go of the box puts a phone's keyboard away. A key press keeps the focus here, so the
-    // next search or the next result is one key away.
-    if (by === 'pointer') input.current?.blur()
-
-    // The very address already open is replaced rather than stacked, so the history never holds the same place twice.
-    void navigate(to, { replace: samePage && next.hash === window.location.hash })
-  }
-
-  function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    // An input method still composing a word owns these keys.
-    if (event.nativeEvent.isComposing) return
-
-    switch (event.key) {
-      case 'ArrowDown':
-      case 'ArrowUp': {
-        event.preventDefault()
-        if (!isOpen) {
-          openList()
-          if (results.length > 0) setActive({ query, index: 0 })
-          return
-        }
-        if (results.length === 0) return
-
-        const last = results.length - 1
-        const index =
-          event.key === 'ArrowDown'
-            ? activeIndex < 0 || activeIndex === last
-              ? 0
-              : activeIndex + 1
-            : activeIndex <= 0
-              ? last
-              : activeIndex - 1
-        setActive({ query, index })
-        return
-      }
-
-      case 'Enter': {
-        if (!showList) return
-        event.preventDefault()
-        void open(results[activeIndex < 0 ? 0 : activeIndex], 'keyboard')
-        return
-      }
-
-      case 'Escape': {
-        // Handled here either way, so the browser's own search box never clears itself behind the list's back.
-        if (isOpen && query !== '') {
-          event.preventDefault()
-          setOpenAt(null)
-        } else if (text !== '') {
-          event.preventDefault()
-          setText('')
-          setOpened('')
-        }
-        return
-      }
-
-      case 'Tab':
-        setOpenAt(null)
-        return
-    }
-  }
-
-  /** The list closes when the focus leaves the bar - for the page, not for the list's own Try again. */
-  function onBlur(event: FocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget)) setOpenAt(null)
-  }
-
-  function retry() {
-    setSettled(null)
-    setAttempt((count) => count + 1)
-    input.current?.focus()
-  }
+  const { openList, open, onKeyDown, onBlur, retry } = universeSearchActions({
+    ...state,
+    universeId,
+    t,
+    results,
+    showList,
+    activeIndex,
+  })
 
   return (
     <div className="unisearch" role="search" onBlur={onBlur} data-testid="universe-search">
@@ -254,102 +130,21 @@ export function UniverseSearch({ universeId }: { universeId: string }) {
       <p className="visually-hidden" id={hintId}>
         {t('lore.search.hint')}
       </p>
-      <p className="visually-hidden" role="status" data-testid="universe-search-announcer">
-        {announcement}
-      </p>
+      <Announce testId="universe-search-announcer">{announcement}</Announce>
 
-      {/* Pressing anywhere in the panel keeps the focus in the box, so a click lands before the box can close it. */}
-      <div
-        className="unisearch__panel"
-        hidden={!isOpen}
-        onMouseDown={(event) => event.preventDefault()}
-        data-testid="universe-search-panel"
-      >
-        {status === 'idle' ? <p className="unisearch__note">{t('lore.search.idle')}</p> : null}
-
-        {status === 'searching' ? (
-          <p className="unisearch__note" data-testid="universe-search-searching">
-            {t('lore.search.searching')}
-          </p>
-        ) : null}
-
-        {status === 'empty' ? (
-          <p className="unisearch__note" data-testid="universe-search-empty">
-            {tx('lore.search.empty', { query: <span dir="auto">{query}</span> })}
-          </p>
-        ) : null}
-
-        {status === 'error' ? (
-          <div className="unisearch__note unisearch__failure" data-testid="universe-search-error">
-            <p>{t('lore.search.unreachable')}</p>
-            <button className="button button--secondary" type="button" onClick={retry}>
-              {t('lore.search.retry')}
-            </button>
-          </div>
-        ) : null}
-
-        <ul
-          className="unisearch__list"
-          id={listId}
-          role="listbox"
-          aria-label={t('lore.search.results')}
-          hidden={!showList}
-          data-testid="universe-search-results"
-        >
-          {showList
-            ? results.map((result, index) => {
-                const context = resultContext(result)
-                const where = SEARCH_FIELD_LABELS[result.matchedIn]
-
-                return (
-                  <li
-                    key={`${result.kind}:${result.id}`}
-                    id={optionId(index)}
-                    className="unisearch__option"
-                    role="option"
-                    aria-selected={index === activeIndex}
-                    data-kind={result.kind}
-                    data-testid="universe-search-result"
-                    onClick={() => void open(result, 'pointer')}
-                  >
-                    <span className="unisearch__kind">{SEARCH_KIND_LABELS[result.kind]}</span>
-                    <span className="unisearch__body">
-                      <span className="unisearch__title" dir="auto">
-                        {result.title}
-                      </span>
-                      {context ? (
-                        <span className="unisearch__context" dir="auto">
-                          {context}
-                        </span>
-                      ) : null}
-                      {result.excerpt ? (
-                        <span className="unisearch__excerpt">
-                          {where ? <span className="unisearch__where">{where}</span> : null}
-                          <span className="unisearch__excerpttext" dir="auto">
-                            {/* A manuscript excerpt may hold a mention, cut or whole: read as its name (issue 31). */}
-                            {result.excerpt.map((part, at) =>
-                              part.isMatch ? (
-                                <mark key={at}>{plainExcerpt(part.text)}</mark>
-                              ) : (
-                                <span key={at}>{plainExcerpt(part.text)}</span>
-                              ),
-                            )}
-                          </span>
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                )
-              })
-            : null}
-        </ul>
-
-        {showList && response?.hasMore ? (
-          <p className="unisearch__more" data-testid="universe-search-more">
-            {t('lore.search.more')}
-          </p>
-        ) : null}
-      </div>
+      <UniverseSearchList
+        isOpen={isOpen}
+        status={status}
+        query={query}
+        retry={retry}
+        listId={listId}
+        showList={showList}
+        results={results}
+        optionId={optionId}
+        activeIndex={activeIndex}
+        open={open}
+        response={response}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import type { ChronologyValue } from '../chronology/types'
-import type { FieldKindValue } from '../lore/types'
+import type { FieldKindValue } from '../lore/fieldKinds'
 import type { RevisionKindValue } from '../lore/revisions'
 
 /**

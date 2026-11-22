@@ -59,3 +59,6 @@ commit subjects start with `[FEAT]`, `[FIX]`, `[CONFIG]`, `[DOCS]` or `[TEST]`.
 - Modular monolith. No generic Repository/Service layers over EF Core.
 - Backend is feature-oriented: `src/LorEvolve.Api/Features/<Feature>/`.
 - No secrets in committed configuration.
+- Reuse UI, always. Never write new design or UI code when an existing component can do the job: reuse it, or
+  extend it with a prop. Create a new component only when nothing existing can reasonably be adapted, and make it
+  reusable from the start. The catalogue is `docs/design/ui-components.md`.

@@ -1,23 +1,9 @@
-import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight } from 'lucide-react'
-import { LoreArticle } from '../components/ArticleView'
-import { PortalError, PortalMissing } from '../components/PortalMissing'
-import {
-  getPublicLore,
-  getPublicUniverse,
-  worldPath,
-  type PublicLoreDetail,
-  type PublicUniverse,
-} from '../portal/api'
-import { useWorkspaceLink } from '../portal/useWorkspaceLink'
-import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { useCallback } from 'react'
+import { useParams } from 'react-router-dom'
+import { getPublicLore, getPublicUniverse } from '../portal/api'
 import { useI18n } from '../i18n'
-
-type LoadState =
-  | { key: string; kind: 'ready'; world: PublicUniverse; entry: PublicLoreDetail }
-  | { key: string; kind: 'missing' }
-  | { key: string; kind: 'error' }
+import { PublicReadGate } from '../components/portal/PublicReadGate'
+import { Entry } from '../components/portal/PublicLore'
 
 /**
  * One published lore entry at `/worlds/{world}/lore/{entry}` (Task 011): a reference page, not the entry editor with its
@@ -32,116 +18,21 @@ type LoadState =
 export default function PublicLorePage() {
   const { t } = useI18n()
   const { slug = '', loreSlug = '' } = useParams<{ slug: string; loreSlug: string }>()
-  const key = `${slug}/${loreSlug}`
-  const [attempt, setAttempt] = useState(0)
-  const [state, setState] = useState<LoadState | null>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    Promise.all([
-      getPublicUniverse(slug, controller.signal),
-      getPublicLore(slug, loreSlug, controller.signal),
-    ])
-      .then(([world, entry]) => setState({ key, kind: 'ready', world, entry }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return
-        setState({ key, kind: (error as { status?: number }).status === 404 ? 'missing' : 'error' })
-      })
-    return () => {
-      controller.abort()
-    }
-  }, [slug, loreSlug, key, attempt])
-
-  const current = state?.key === key ? state : null
-
-  if (current?.kind === 'missing') {
-    return <PortalMissing title={t('portal.lore.missing')} testId="lore-missing" />
-  }
-
-  if (current?.kind === 'error') {
-    return <PortalError onRetry={() => setAttempt((value) => value + 1)} />
-  }
-
-  if (!current) {
-    return (
-      <div className="pread" role="status" aria-label={t('portal.lore.opening')}>
-        <div className="pread__skeleton" />
-      </div>
-    )
-  }
-
-  return <Entry world={current.world} entry={current.entry} />
-}
-
-function Entry({ world, entry }: { world: PublicUniverse; entry: PublicLoreDetail }) {
-  const { t, tx } = useI18n()
-  useDocumentTitle(entry.name, world.name)
-  const owner = useWorkspaceLink(world.slug, { lore: entry.slug })
+  const read = useCallback(
+    (signal: AbortSignal) =>
+      Promise.all([getPublicUniverse(slug, signal), getPublicLore(slug, loreSlug, signal)]),
+    [slug, loreSlug],
+  )
 
   return (
-    <article className="pread plore" data-testid="public-lore">
-      <nav className="pcrumbs" aria-label={t('portal.lore.breadcrumb')}>
-        <ol>
-          <li>
-            <Link
-              className="pcrumbs__back"
-              to={worldPath(world.slug)}
-              data-testid="public-lore-world"
-            >
-              <ArrowLeft aria-hidden="true" size={16} strokeWidth={1.75} />
-              <bdi>{world.name}</bdi>
-            </Link>
-          </li>
-          <li aria-current="page">{t('portal.lore.crumb')}</li>
-        </ol>
-      </nav>
-
-      <header className="pread__head">
-        <p className="pread__eyebrow" data-testid="public-lore-type">
-          <bdi>{entry.typeName}</bdi>
-        </p>
-        <h1 className="pread__title" dir="auto">
-          <bdi>{entry.name}</bdi>
-        </h1>
-        {entry.summary ? (
-          <p className="pread__lede" dir="auto" data-testid="public-lore-summary">
-            {entry.summary}
-          </p>
-        ) : null}
-        {owner?.entityId ? (
-          <Link
-            className="pread__edit"
-            to={`/app/universes/${owner.universeId}/lore/${owner.entityId}`}
-            data-testid="edit-in-workspace"
-          >
-            {t('portal.lore.edit')}
-            <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.75} />
-          </Link>
-        ) : null}
-      </header>
-
-      <div className="plore__body" data-picture={entry.thumbnailUrl ? 'true' : 'false'}>
-        {entry.thumbnailUrl ? (
-          <figure className="plore__figure">
-            <img
-              src={entry.thumbnailUrl}
-              alt={entry.name}
-              width={320}
-              height={320}
-              decoding="async"
-            />
-          </figure>
-        ) : null}
-        <div className="plore__article" data-testid="public-lore-article">
-          {entry.article ? <LoreArticle content={entry.article} /> : null}
-        </div>
-      </div>
-
-      <footer className="pread__foot">
-        <Link className="plink" to={worldPath(world.slug)}>
-          {tx('portal.lore.moreFrom', { world: <bdi>{world.name}</bdi> })}
-        </Link>
-      </footer>
-    </article>
+    <PublicReadGate
+      readKey={`${slug}/${loreSlug}`}
+      read={read}
+      missing={{ title: t('portal.lore.missing'), testId: 'lore-missing' }}
+      skeleton="page"
+      opening={t('portal.lore.opening')}
+    >
+      {([world, entry]) => <Entry world={world} entry={entry} />}
+    </PublicReadGate>
   )
 }

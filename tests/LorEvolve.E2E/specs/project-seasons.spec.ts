@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue #145: a project holds seasons, and episodes with their scripts.
@@ -331,9 +332,10 @@ test.describe('Project seasons', () => {
     await page.getByTestId('project-episode-new-save').click()
     await expect(season).toContainText('Pilot')
 
-    const seasonHead = season.locator('.projectcard__head').first()
+    const seasonHead = season.locator('.types__head').first()
     await seasonHead.getByRole('button', { name: /More actions/ }).click()
     await seasonHead.getByRole('button', { name: 'Delete season' }).click()
+    await acceptConfirm(page)
 
     await expect(page.getByTestId('project-seasons-failed')).toBeVisible()
     await expect(page.getByTestId('project-season-list')).toContainText('Season 1')
@@ -342,16 +344,18 @@ test.describe('Project seasons', () => {
     const episode = season.locator('ol > li').first()
     await episode.getByRole('button', { name: /More actions/ }).click()
     await episode.getByRole('button', { name: 'Delete episode' }).click()
+    await acceptConfirm(page)
     await expect(season).toContainText('No episodes yet.')
 
     const head = page
       .getByTestId('project-season-list')
       .locator('> li')
       .first()
-      .locator('.projectcard__head')
+      .locator('.types__head')
       .first()
     await head.getByRole('button', { name: /More actions/ }).click()
     await head.getByRole('button', { name: 'Delete season' }).click()
+    await acceptConfirm(page)
 
     await expect(page.getByTestId('project-seasons-empty')).toBeVisible()
   })

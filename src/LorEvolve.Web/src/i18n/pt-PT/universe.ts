@@ -1,4 +1,7 @@
 import type { Dictionary } from '../en'
+import universeSettings from './universe/settings'
+import universeConnect from './universe/connect'
+import universePublish from './universe/publish'
 
 /** A universe's own settings, its card and list, collaborators, artwork and what it publishes (#105). */
 const universe: Dictionary['universe'] = {
@@ -52,7 +55,6 @@ const universe: Dictionary['universe'] = {
     colourClear: 'Sem cor',
     colourHintSet: 'Assinala este universo no teu espaço de trabalho.',
     colourHintUnset: 'Sem cor: o universo usa a do próprio LorEvolve.',
-    cancel: 'Cancelar',
   },
   publicDetails: {
     leave: 'Os detalhes públicos têm alterações por guardar. Sair sem as guardar?',
@@ -60,7 +62,8 @@ const universe: Dictionary['universe'] = {
     saveFailed: 'Não foi possível guardar os detalhes públicos.',
     summary: 'Resumo público',
     summaryHint:
-      'Algumas frases para o cartão do mundo e a página pública, até {max} caracteres. A descrição acima nunca é publicada. {length}/{max}',
+      'Algumas frases para o cartão do mundo e a página pública, até {max} caracteres. A descrição acima nunca é publicada.',
+    summaryCount: '{used}/{max}',
     category: 'Categoria',
     categoryChoose: 'Escolher uma categoria',
     genres: 'Géneros',
@@ -98,148 +101,13 @@ const universe: Dictionary['universe'] = {
     emptyFilteredHint: 'Experimenta outra palavra, ou limpa a pesquisa.',
     emptyHint: 'Começa um, e tudo o que inventares ficará ligado a ele.',
     emptyNew: 'Novo universo',
-    pagination: 'Paginação',
-    previous: 'Anterior',
-    page: 'Página {page} de {total}',
-    next: 'Seguinte',
   },
-  settings: {
-    tabs: {
-      general: 'Geral',
-      appearance: 'Aparência',
-      collaborators: 'Colaboradores',
-      data: 'Dados',
-      advanced: 'Avançadas',
-    },
-    exportFailed: 'Não foi possível preparar esse ficheiro.',
-    changeFailed: 'Não foi possível alterar isso.',
-    deleteFailed: 'Não foi possível eliminar isso.',
-    title: 'Definições',
-    lede: 'O nome, a cor, os colaboradores, as cópias de segurança e o arquivo deste universo.',
-    tabsLabel: 'Definições',
-    details: 'Detalhes',
-    detailsSaved: 'Guardado.',
-    detailsSave: 'Guardar',
-    detailsSaving: 'A guardar…',
-    colour: 'Cor',
-    colourNote:
-      'O modo claro ou escuro é escolhido para todo o LorEvolve no menu da tua conta, não por universo.',
-    colourSaved: 'Guardada.',
-    colourSave: 'Guardar',
-    colourSaving: 'A guardar…',
-    backup: 'Cópia de segurança',
-    backupNote:
-      'Um único ficheiro deste universo que o LorEvolve consegue restaurar: o lore, os tipos e campos, os artigos, as relações, a linha do tempo, as histórias e cenas, os mapas, as regras do mundo, as ideias, as tuas notas privadas, a reciclagem, as versões guardadas e todas as imagens tal como as carregaste. Sem dados da conta, colaboradores ou comentários, e sem indicar se é público: um universo restaurado é sempre privado.',
-    backupPreparing: 'A preparar a cópia de segurança',
-    backupDownload: 'Transferir cópia de segurança',
-    readableNote:
-      'Uma exportação legível é o mesmo universo em páginas Markdown, uma por entrada, história, cena e mapa, com as imagens ao lado, para ler em qualquer editor ou guardar. Não inclui a reciclagem nem as versões guardadas, e o LorEvolve não consegue restaurar a partir dela.',
-    readablePreparing: 'A preparar a exportação',
-    readableDownload: 'Transferir exportação legível',
-    exportSaved: 'Guardado como {name}.',
-    restore: 'Restaurar',
-    restoreNote:
-      'Uma cópia de segurança é restaurada como um novo universo ao lado deste, nunca por cima dele.',
-    restoreLink: 'Restaurar uma cópia de segurança',
-    restoreHeading: 'Restaurar',
-    archiveHeading: 'Arquivo',
-    archivedNote: 'Este universo está arquivado. Restaurá-lo devolve-o à tua lista de ativos.',
-    archiveNote:
-      'Arquivar guarda tudo e tira o universo da tua lista de ativos. Não altera se o universo é público.',
-    stillPublic:
-      '{still} Arquivar não tira um universo do portal público. {link} para remover a sua página pública.',
-    stillPublicLead: 'Continua público.',
-    stillPublicLink: 'Torna-o privado em Publicação',
-    archiveConfirmPublic: 'Arquivar {name}? Continua público.',
-    archiveConfirm: 'Arquivar {name}?',
-    archiveConfirmPublicNote:
-      'Arquivar apenas o tira da tua lista de ativos. A página pública, o lugar em Explorar e tudo o que publicaste nele continuam disponíveis para qualquer pessoa até o tornares privado em Publicação.',
-    archiveConfirmUnknownNote:
-      'O LorEvolve não conseguiu verificar se este universo é público. Arquivar nunca altera isso: se for público, continua público até o tornares privado em Publicação.',
-    archiving: 'A arquivar',
-    archiveKeepPublic: 'Arquivar, manter público',
-    archiveConfirmButton: 'Arquivar universo',
-    makePrivateFirst: 'Torna-o privado primeiro',
-    archiveCancel: 'Cancelar',
-    restoreUniverse: 'Restaurar universo',
-    archiveUniverse: 'Arquivar universo',
-    deleteHeading: 'Eliminar universo',
-    deleteNote:
-      'Eliminar remove este universo e tudo o que ele contém, para sempre. Não há como desfazer, nem reciclagem para ele.',
-    deleteNotePublic:
-      'Eliminar remove este universo e tudo o que ele contém, para sempre. Não há como desfazer, nem reciclagem para ele. A página pública desaparece com ele.',
-    deleteIdeasNote:
-      'As tuas ideias sobre ele são mantidas: pertencem à tua conta, por isso ficam em Ideias sem universo, e só se perdem as referências ao conteúdo deste universo.',
-    deleteConfirm: 'Eliminar {name} para sempre?',
-    deleteConfirmButton: 'Eliminar para sempre',
-    deleteKeep: 'Manter',
-    deleteButton: 'Eliminar universo…',
-    deleteNeedsArchive: 'Para eliminar este universo, arquiva-o primeiro.',
-  },
-  connect: {
-    title: 'Ligar uma aplicação de IA',
-    heading: 'Ligar uma aplicação de IA',
-    connecting: 'A ligar',
-    approve: 'Aprovar',
-    deny: 'Recusar',
-    goBack: 'Voltar à aplicação',
-    noAccount: 'Não tens acesso ao universo que esta aplicação pediu.',
-    noAccountNote: 'Nada foi ligado. Voltar diz à aplicação que o pedido não foi aprovado.',
-    introReadOnly: 'só de leitura',
-    intro:
-      'Esta aplicação quer acesso {readOnly} a um dos teus universos: as entradas do lore, as relações, as histórias, os manuscritos das cenas e a linha do tempo. O que ler vai para o serviço de IA por trás dela. Confirma quem está a pedir antes de aprovares.',
-    introProposals:
-      'Esta aplicação quer acesso {readOnly} a um dos teus universos: as entradas do lore, as relações, as histórias, os manuscritos das cenas e a linha do tempo. O que ler vai para o serviço de IA por trás dela. Confirma quem está a pedir antes de aprovares. Pede também para propor alterações que revês, o que podes permitir abaixo.',
-    signedIn: 'Sessão iniciada como {name}. {link}',
-    connectedApps: 'Ver aplicações ligadas',
-    checking: 'A verificar este pedido…',
-    invalid: 'Este pedido de ligação não é válido, por isso nada foi ligado.',
-    invalidNote: 'Recomeça a partir da tua aplicação de IA.',
-    checkFailed:
-      'O LorEvolve não conseguiu verificar este pedido. Recarrega a página para tentar novamente.',
-    appSection: 'A aplicação',
-    appLabel: 'Aplicação',
-    verified:
-      'Os detalhes são publicados por {host}, e o LorEvolve obteve-os de lá. O nome é o que esse site indica.',
-    unverified:
-      'O LorEvolve não consegue confirmar quem fez esta aplicação. Registou-se sozinha e escolheu o próprio nome. Aprova apenas se acabaste de adicionar o LorEvolve a uma aplicação em que confias.',
-    returnTo: 'Depois de decidires, o navegador volta a {host}.',
-    loopback:
-      'Esta aplicação corre no teu próprio dispositivo. Qualquer programa neste computador podia usar esse endereço, por isso aprova apenas se iniciaste isto a partir de uma aplicação neste computador.',
-    universeSection: 'O universo',
-    universeLabel: 'Universo',
-    youAre: {
-      owner:
-        'O teu papel aqui é Proprietário. A aplicação recebe o teu acesso a este universo e a nenhum outro.',
-      editor:
-        'O teu papel aqui é Editor. A aplicação recebe o teu acesso a este universo e a nenhum outro.',
-      reviewer:
-        'O teu papel aqui é Revisor. A aplicação recebe o teu acesso a este universo e a nenhum outro.',
-      viewer:
-        'O teu papel aqui é Leitor. A aplicação recebe o teu acesso a este universo e a nenhum outro.',
-    },
-    canDoSection: 'O que pode fazer',
-    readOnlyAccess: 'Acesso só de leitura a',
-    cannotWrite: 'Não pode criar, editar nem eliminar nada.',
-    notesSection: 'Antes de aprovares',
-    noteService:
-      'O que a aplicação lê vai para o serviço de IA por trás dela, que o trata segundo os seus próprios termos. Manuscritos longos podem ocupar muito do contexto da aplicação, por isso ela lê-os uma secção de cada vez.',
-    noteStays:
-      'A aplicação continua ligada até a desligares em Perfil, Aplicações ligadas, ou até deixares de ter acesso a este universo.',
-    levelSection: 'Nível de acesso',
-    proposeUnavailable:
-      'A aplicação pediu também para propor alterações. O teu papel aqui só permite ler, por isso recebe acesso de Leitor.',
-    level: 'Nível de acesso',
-    levelReaderName: 'Leitor',
-    levelReader: '{level}: {app} apenas lê este universo',
-    levelCreatorName: 'Criador',
-    levelCreator: '{level}: propõe também conteúdo novo e alterado para reveres',
-    creatorCan:
-      'Um Criador pode enviar entradas do lore, artigos, relações, histórias, cenas, texto, enredo, acontecimentos da linha do tempo, regras do mundo e, se fores o proprietário deste universo, as tuas ideias para as Alterações da IA pendentes no LorEvolve, em teu nome. As remoções vão apenas para a reciclagem, e um campo é sempre apenas arquivado. Nada muda até tu, ou o proprietário do universo ou um Editor, o aprovar aí. Podes voltar a torná-lo Leitor em Aplicações ligadas.',
-    creatorCanSchema:
-      'Um Criador pode enviar entradas do lore, artigos, relações, histórias, cenas, texto, enredo, acontecimentos da linha do tempo, regras do mundo, tipos de entrada, campos e grupos e, se fores o proprietário deste universo, as tuas ideias para as Alterações da IA pendentes no LorEvolve, em teu nome. As remoções vão apenas para a reciclagem, e um campo é sempre apenas arquivado. Nada muda até tu, ou o proprietário do universo ou um Editor, o aprovar aí. Podes voltar a torná-lo Leitor em Aplicações ligadas.',
-  },
+  settings: universeSettings,
+  connect: universeConnect,
   collab: {
+    revokeConfirm: 'Revogar convite',
+    revokeMessage: 'A ligação que recebeu deixa de funcionar. Podes convidar de novo.',
+    revokeTitle: 'Revogar o convite para {email}?',
     loadFailed: 'Não foi possível ler os colaboradores.',
     inviteHeading: 'Convidar alguém',
     inviteNote: 'Convida alguém para trabalhar neste universo.',
@@ -294,120 +162,7 @@ const universe: Dictionary['universe'] = {
     artwork: 'Ilustração',
     publicDisplayName: 'O teu nome público',
   },
-  publish: {
-    loadFailed: 'Não foi possível carregar os detalhes públicos.',
-    title: 'Publicação',
-    lede: 'Controla como este universo aparece no portal público do LorEvolve.',
-    retry: 'Tentar novamente',
-    loading: 'A carregar os detalhes públicos…',
-    saveFirst:
-      'Guarda primeiro os detalhes públicos: um universo é publicado com o que está guardado.',
-    checkFailed: 'Não foi possível verificar. Tenta novamente.',
-    published: 'Publicado. Este universo já pode aparecer no portal público.',
-    publishFailed: 'Não foi possível publicar. Tenta novamente.',
-    madePrivate: 'Tornado privado. A página pública deixou de estar disponível.',
-    privateFailed: 'Não foi possível torná-lo privado. Tenta novamente.',
-    viewPublic: 'Ver mundo público',
-    makePrivate: 'Tornar privado',
-    publishWorld: 'Publicar mundo',
-    status: 'Estado',
-    badgePublic: 'Público',
-    badgePrivate: 'Privado',
-    visiblePublic: 'Este universo está visível no portal do LorEvolve.',
-    visiblePrivate: 'Este universo só está visível no teu espaço de trabalho.',
-    address: 'Endereço público',
-    checklist: 'O que a publicação exige',
-    needed: ' - em falta',
-    done: ' - feito',
-    notYet: 'Ainda não publicado',
-    confirm: {
-      title: 'Publicar {name}?',
-      anyone: 'Qualquer pessoa poderá ver:',
-      titleLabel: 'Título',
-      summary: 'Resumo público',
-      artwork: 'Ilustração',
-      artworkValue: 'O cartão, como se mostra abaixo',
-      category: 'Categoria',
-      genres: 'Géneros',
-      basedOn: 'Baseado em obras de',
-      basedOnValue: '{creator} ({work})',
-      curator: 'Com curadoria no LorEvolve de',
-      author: 'Autor',
-      notPublished: 'Não publicado:',
-      staysPrivate:
-        'Qualquer entrada do lore, história, cena, texto de cena ou arco de enredo que não tenhas publicado onde foi escrito, as notas, as ideias, a linha do tempo, as regras do mundo, as relações, o Cânone, a reciclagem, e tudo o resto que editas no espaço de trabalho.',
-      publishing: 'A publicar',
-      publish: 'Publicar mundo',
-      keepPrivate: 'Manter privado',
-    },
-    unpublish: {
-      title: 'Tornar {name} privado?',
-      note: 'A página pública e o lugar em Explorar deixam de estar disponíveis de imediato. Os detalhes públicos ficam aqui, e o endereço é mantido para quando o publicares de novo.',
-      working: 'A tornar privado',
-      confirm: 'Tornar privado',
-      keep: 'Manter público',
-    },
-    ready:
-      'Está aqui tudo o que um cartão público precisa. Publicar mundo, no topo da página, torna-o público.',
-    detailsSection: 'Detalhes públicos',
-    artworkSection: 'Ilustração',
-    authorSection: 'Autor',
-    author: {
-      curated: 'Com curadoria no LorEvolve de {name}, baseado em obras de {creator}.',
-      publishedAs: 'Publicado como {name}.',
-      change: 'Alterar o teu nome público',
-      none: 'Ainda não tens nome público. {link} - é mostrado como autor do que publicares; o teu nome de utilizador e o teu email nunca são.',
-      noneLink: 'Escolhe um no teu perfil',
-    },
-    contentSection: 'Conteúdo publicado',
-    contentNote:
-      'Publicar este universo não publica as entradas do lore nem as histórias: cada uma é publicada na sua própria página, e só é vista enquanto este universo for público.',
-    lore: 'Lore',
-    loreCount: '{n} públicas',
-    viewLore: 'Ver lore',
-    stories: 'Histórias',
-    storiesCount: '{n} públicas',
-    viewStories: 'Ver histórias',
-    selected: {
-      loreLabel: 'Lore:',
-      none: 'nenhuma entrada está selecionada para publicação, por isso nenhuma passa a ser pública com o mundo.',
-      alsoPublic: 'Também pública:',
-      some: {
-        one: 'a entrada do lore que selecionaste antes para publicação.',
-        other: 'as {n} entradas do lore que selecionaste antes para publicação.',
-      },
-      more: 'E mais {n}.',
-      again:
-        'Quando o mundo for público, a página de cada entrada permite torná-la privada de novo.',
-    },
-    everything: {
-      nothingPublished: 'Nada de novo foi publicado: já estava tudo público.',
-      publishedSentence: 'Publicado: {lore}, {stories} e {scenes}.',
-      publishedLore: { one: '{n} entrada do lore', other: '{n} entradas do lore' },
-      publishedStories: { one: '{n} história', other: '{n} histórias' },
-      publishedScenes: { one: '{n} cena', other: '{n} cenas' },
-      checkFailed: 'Não foi possível verificar. Tenta novamente.',
-      publishFailed: 'Não foi possível publicar. Tenta novamente.',
-      note: 'Ou publica de uma só vez tudo o que está terminado: todas as entradas do lore em Cânone e todas as histórias Concluídas, com as respetivas cenas e o texto. O lore em Ideia e Rascunho, as histórias por terminar e os arcos de enredo continuam privados.',
-      open: 'Publicar tudo',
-      nothingTitle: 'Nada de novo para publicar',
-      title: 'Publicar tudo o que está terminado?',
-      allPublic:
-        'Todas as entradas do lore em Cânone e todas as histórias Concluídas já são públicas.',
-      anyone: 'Qualquer pessoa poderá ler:',
-      loreHeading: { one: '{n} entrada do lore', other: '{n} entradas do lore' },
-      storiesHeading: { one: '{n} história', other: '{n} histórias' },
-      storyScenes: { one: '{n} cena e o respetivo texto', other: '{n} cenas e o respetivo texto' },
-      skipped: 'Ignoradas:',
-      skippedNote:
-        'estas histórias Concluídas precisam primeiro de um resumo público, na página de cada história.',
-      publishing: 'A publicar',
-      confirm: 'Publicar tudo',
-      close: 'Fechar',
-      keepPrivate: 'Manter privado',
-      again: 'A página de cada entrada e de cada história permite torná-la privada de novo.',
-    },
-  },
+  publish: universePublish,
 }
 
 export default universe

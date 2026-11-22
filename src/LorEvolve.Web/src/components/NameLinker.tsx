@@ -3,6 +3,9 @@ import { useI18n } from '../i18n'
 import { getEntity } from '../lore/api'
 import { findNames, linkNames, type NameSource } from '../lore/mentions'
 import type { SceneLoreReference } from '../stories/types'
+import { Button } from './Button'
+import { FormActions } from './FormActions'
+import { QuietNote } from './QuietNote'
 
 /**
  * "Link names from this scene's Lore" (ADR 0058 amendment): finds where the prose names an entry of the scene's Lore in
@@ -84,7 +87,7 @@ export function NameLinker({
         </p>
       ) : (
         <>
-          <p className="recovery__hint">{t('lore.nameLinker.hint')}</p>
+          <QuietNote className="recovery__hint">{t('lore.nameLinker.hint')}</QuietNote>
           <ul className="namelinker__list">
             {rows.map((row) => (
               <li key={key(row)}>
@@ -121,26 +124,21 @@ export function NameLinker({
           </ul>
         </>
       )}
-      <div className="recovery__actions">
+      <div className="actions recovery__actions">
         {rows.length > 0 ? (
-          <button
-            className="button"
-            type="button"
+          <Button
             disabled={chosen.length === 0}
             onClick={() => onLink(linkNames(text, chosen), chosen.length)}
             data-testid="name-linker-apply"
           >
             {tn('lore.nameLinker.apply', chosen.length, { n: chosen.length })}
-          </button>
+          </Button>
         ) : null}
-        <button
-          className="button button--text"
-          type="button"
-          onClick={onClose}
-          data-testid="name-linker-close"
-        >
-          {rows.length > 0 ? t('lore.nameLinker.cancel') : t('lore.nameLinker.close')}
-        </button>
+        <FormActions
+          onCancel={onClose}
+          dismiss={rows.length > 0 ? 'cancel' : 'close'}
+          cancelTestId="name-linker-close"
+        />
       </div>
     </section>
   )

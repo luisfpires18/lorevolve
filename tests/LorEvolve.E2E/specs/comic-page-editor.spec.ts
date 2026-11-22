@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { png } from './support/png'
+import { acceptConfirm } from './support/confirm'
 
 /**
  * Issue #295: the Comic page and panel editor. A one-shot page with three panels: every script field saved and read
@@ -118,6 +119,7 @@ test('a page edits three panels, holds page and panel art, and keeps the script 
   await expect(page.getByTestId(`field-image-${panels[0]}-preview`)).toBeVisible()
 
   await page.getByTestId(`field-image-${panels[0]}-remove`).click()
+  await acceptConfirm(page)
   await expect(page.getByTestId(`comic-art-placeholder-${panels[0]}`)).toBeVisible()
 
   await page.reload()

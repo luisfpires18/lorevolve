@@ -1,0 +1,32 @@
+/* ---------- Explore: the head ----------
+
+   The title, one line of support and the category row, on the page's own ground with a hairline beneath: no picture
+   (ADR 0068). The worlds' own artwork, on the cards below, is the only imagery on the page. */
+.explore-hero {
+  padding: clamp(2.5rem, 5vw, 4rem) 0 clamp(1.5rem, 2.5vw, 2rem);
+  border-bottom: 1px solid var(--portal-line);
+}
+
+.explore-hero__inner {
+  width: min(100% - 2 * var(--portal-gutter), var(--portal-width));
+  margin: 0 auto;
+}
+
+.explore-hero__title {
+  margin: 0 0 var(--space-2);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(2rem, 1.3rem + 2.2vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.explore-hero__lede {
+  max-width: 38rem;
+  margin: 0 0 clamp(1.5rem, 3vw, 2.25rem);
+  color: rgb(var(--portal-ink-rgb) / 0.88);
+  font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem);
+  line-height: 1.5;
+  text-wrap: pretty;
+}

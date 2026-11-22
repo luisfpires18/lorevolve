@@ -1,49 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
-import { ApiError } from '../lib/api'
-import { formatBytes } from '../lib/bytes'
-import { payloadKey } from '../lib/drawerGuard'
-import { useReturnFocus } from '../lib/returnFocus'
 import { Drawer } from './Drawer'
-import { Field } from './Field'
-import type { UploadProgress } from '../lib/upload'
-import {
-  createMap,
-  MAP_IMAGE_ACCEPT,
-  MAP_IMAGE_MAX_BYTES,
-  replaceMapImage,
-  updateMapDetails,
-} from '../maps/api'
-import { MAP_NAME_MAX_LENGTH, type MapDetail, type ReplacePinsPolicy } from '../maps/types'
 import { useI18n } from '../i18n'
-
-interface MapDraft {
-  name: string
-  description: string
-}
-
-type MapFormProps =
-  | { mode: 'new'; universeId: string; onClose: () => void; onSaved: (map: MapDetail) => void }
-  | {
-      mode: 'details'
-      universeId: string
-      map: MapDetail
-      onClose: () => void
-      onSaved: (map: MapDetail) => void
-    }
-  | {
-      mode: 'replace'
-      universeId: string
-      map: MapDetail
-      onClose: () => void
-      onSaved: (map: MapDetail) => void
-    }
-
-function inputOf(draft: MapDraft) {
-  return {
-    name: draft.name.trim(),
-    description: draft.description.trim() === '' ? null : draft.description.trim(),
-  }
-}
+import { mapFormActions } from '../maps/mapFormActions'
+import { useMapFormState } from '../maps/useMapFormState'
+import type { MapFormProps } from '../maps/mapDraft'
+import { MAP_NAME_MAX_LENGTH } from '../maps/types'
+import { NameNoteFields } from './NameNoteFields'
+import { MapFormPicture } from './MapFormPicture'
+import { MapFormReplace } from './MapFormReplace'
+import { QuietNote } from './QuietNote'
 
 /**
  * Three small forms in the one drawer: a new map (its picture and details in one request), a map's details (saved over
@@ -52,95 +16,25 @@ function inputOf(draft: MapDraft) {
  * is shown whole, so there is nothing to choose but the file.
  */
 export function MapForm(props: MapFormProps) {
-  const { t, tn, tx } = useI18n()
+  const { t } = useI18n()
   const { universeId, onClose, onSaved } = props
   const map = props.mode === 'new' ? null : props.map
-  const firstInput = useRef<HTMLInputElement>(null)
-  const [initial] = useState<MapDraft>(() => ({
-    name: map?.name ?? '',
-    description: map?.description ?? '',
-  }))
-  const [draft, setDraft] = useState<MapDraft>(initial)
-  const [file, setFile] = useState<File | null>(null)
-  const [pins, setPins] = useState<ReplacePinsPolicy | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-  const [message, setMessage] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [progress, setProgress] = useState<UploadProgress | null>(null)
+  const state = useMapFormState({ props, map })
+  const {
+    firstInput,
+    draft,
+    setDraft,
+    file,
+    pins,
+    setPins,
+    fieldErrors,
+    message,
+    isSaving,
+    progress,
+    isDirty,
+  } = state
 
-  const isDirty =
-    props.mode === 'replace'
-      ? file !== null || pins !== null
-      : payloadKey(inputOf(draft)) !== payloadKey(inputOf(initial)) || file !== null
-  useReturnFocus()
-
-  useEffect(() => {
-    firstInput.current?.focus()
-  }, [])
-
-  function choose(chosen: File | undefined) {
-    setFieldErrors((current) => ({ ...current, file: '' }))
-    if (!chosen) {
-      setFile(null)
-      return
-    }
-    if (chosen.size > MAP_IMAGE_MAX_BYTES) {
-      setFile(null)
-      setFieldErrors((current) => ({
-        ...current,
-        file: t('places.mapForm.tooLarge', { size: formatBytes(MAP_IMAGE_MAX_BYTES) }),
-      }))
-      return
-    }
-    setFile(chosen)
-  }
-
-  async function save() {
-    setMessage(null)
-    setFieldErrors({})
-    const details = inputOf(draft)
-
-    if (props.mode !== 'replace' && details.name === '') {
-      setFieldErrors({ name: t('places.mapForm.nameMissing') })
-      return
-    }
-    if (props.mode !== 'details' && !file) {
-      setFieldErrors({ file: t('places.mapForm.fileMissing') })
-      return
-    }
-    if (props.mode === 'replace' && !pins) {
-      setFieldErrors({ pins: t('places.mapForm.pinsMissing') })
-      return
-    }
-
-    setIsSaving(true)
-    try {
-      const saved =
-        props.mode === 'new'
-          ? await createMap(universeId, { ...details, file: file! }, setProgress)
-          : props.mode === 'details'
-            ? await updateMapDetails(universeId, props.map.id, {
-                ...details,
-                expectedVersion: props.map.version,
-              })
-            : await replaceMapImage(universeId, props.map.id, file!, pins!, setProgress)
-      onSaved(saved)
-    } catch (error: unknown) {
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors)
-        setMessage(
-          Object.keys(error.fieldErrors).length === 0
-            ? error.message
-            : t('places.mapForm.fieldErrors'),
-        )
-      } else {
-        setMessage(t('places.mapForm.failed'))
-      }
-    } finally {
-      setIsSaving(false)
-      setProgress(null)
-    }
-  }
+  const { choose, save } = mapFormActions({ ...state, props, universeId, onSaved, t })
 
   const heading =
     props.mode === 'new'
@@ -152,6 +46,7 @@ export function MapForm(props: MapFormProps) {
 
   return (
     <Drawer
+      initialFocus={firstInput}
       testId="map-form"
       titleId="map-form-heading"
       eyebrow={map ? <bdi>{map.name}</bdi> : null}
@@ -160,174 +55,69 @@ export function MapForm(props: MapFormProps) {
       leaveMessage={
         props.mode === 'new' ? t('places.mapForm.leaveNew') : t('places.mapForm.leaveChanges')
       }
+      busy={isSaving}
       onClose={onClose}
       onSubmit={() => void save()}
-      actions={(close) => (
-        <>
-          <button
-            className="button"
-            type="submit"
-            disabled={isSaving}
-            aria-busy={isSaving || undefined}
-            data-testid="map-form-save"
-          >
-            {isSaving
-              ? t('places.mapForm.saving')
-              : props.mode === 'new'
-                ? t('places.mapForm.createMap')
-                : props.mode === 'details'
-                  ? t('places.mapForm.saveDetails')
-                  : t('places.mapForm.replacePicture')}
-          </button>
-          <button
-            className="button button--secondary"
-            type="button"
-            onClick={() => close()}
-            disabled={isSaving}
-          >
-            {t('places.mapForm.cancel')}
-          </button>
-        </>
-      )}
+      message={message}
+      messageTestId="map-form-error"
+      actions={{
+        submitLabel:
+          props.mode === 'new'
+            ? t('places.mapForm.createMap')
+            : props.mode === 'details'
+              ? t('places.mapForm.saveDetails')
+              : t('places.mapForm.replacePicture'),
+        busyLabel: t('places.mapForm.saving'),
+        submitTestId: 'map-form-save',
+        lockCancel: true,
+      }}
     >
-      {message ? (
-        <p className="form__message" role="alert" data-testid="map-form-error">
-          {message}
-        </p>
-      ) : null}
-
       {props.mode !== 'replace' ? (
-        <>
-          <Field id="map-name" label={t('places.mapForm.name')} error={fieldErrors.name}>
-            {(control) => (
-              <input
-                {...control}
-                className="field__input"
-                ref={firstInput}
-                type="text"
-                dir="auto"
-                maxLength={MAP_NAME_MAX_LENGTH}
-                placeholder={t('places.mapForm.namePlaceholder')}
-                value={draft.name}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, name: event.target.value }))
-                }
-                data-testid="map-name-input"
-              />
-            )}
-          </Field>
-
-          <Field
-            id="map-description"
-            label={t('places.mapForm.description')}
-            hint={t('places.mapForm.descriptionHint')}
-            error={fieldErrors.description}
-          >
-            {(control) => (
-              <textarea
-                {...control}
-                className="field__input"
-                dir="auto"
-                rows={3}
-                value={draft.description}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, description: event.target.value }))
-                }
-                data-testid="map-description-input"
-              />
-            )}
-          </Field>
-        </>
+        <NameNoteFields
+          idPrefix="map"
+          labels={{ name: t('places.mapForm.name'), note: t('places.mapForm.description') }}
+          placeholder={t('places.mapForm.namePlaceholder')}
+          hint={t('places.mapForm.descriptionHint')}
+          rows={3}
+          nameMaxLength={MAP_NAME_MAX_LENGTH}
+          value={{ name: draft.name, note: draft.description }}
+          onChange={(part, value) =>
+            setDraft((current) =>
+              part === 'name' ? { ...current, name: value } : { ...current, description: value },
+            )
+          }
+          errors={{ name: fieldErrors.name, note: fieldErrors.description }}
+          testIds={{ name: 'map-name-input', note: 'map-description-input' }}
+          nameRef={firstInput}
+        />
       ) : null}
 
       {props.mode !== 'details' ? (
-        <Field
-          id="map-file"
-          label={
-            props.mode === 'new' ? t('places.mapForm.imageNew') : t('places.mapForm.imageReplace')
-          }
-          hint={t('places.mapForm.imageHint', { size: formatBytes(MAP_IMAGE_MAX_BYTES) })}
-          error={fieldErrors.file}
-        >
-          {(control) => (
-            <>
-              <input
-                {...control}
-                className="field__input mapform__file"
-                ref={props.mode === 'replace' ? firstInput : undefined}
-                type="file"
-                accept={MAP_IMAGE_ACCEPT}
-                onChange={(event) => choose(event.target.files?.[0])}
-                data-testid="map-file-input"
-              />
-              {file ? (
-                <p className="field__hint" data-testid="map-file-chosen">
-                  {tx('places.mapForm.chosen', {
-                    name: <bdi>{file.name}</bdi>,
-                    size: formatBytes(file.size),
-                  })}
-                </p>
-              ) : null}
-            </>
-          )}
-        </Field>
+        <MapFormPicture
+          mode={props.mode}
+          firstInput={firstInput}
+          choose={choose}
+          file={file}
+          fieldErrors={fieldErrors}
+        />
       ) : null}
 
       {props.mode === 'replace' ? (
-        <Field
-          group="fieldset"
-          label={t('places.mapForm.pinsLegend')}
-          hint={
-            pinCount === 0
-              ? t('places.mapForm.noPins')
-              : tn('places.mapForm.pinsPlaced', pinCount, { n: pinCount })
-          }
-          error={fieldErrors.pins}
-        >
-          {map?.calibration ? (
-            <p className="field__hint" data-testid="map-replace-scale-note">
-              {t('places.mapForm.scaleNote')}
-            </p>
-          ) : null}
-          <label className="mapform__choice">
-            <input
-              type="radio"
-              name="map-pins"
-              value="keep"
-              checked={pins === 'keep'}
-              onChange={() => setPins('keep')}
-              data-testid="map-replace-keep"
-            />
-            <span>
-              {tx('places.mapForm.keep', {
-                lead: <strong>{t('places.mapForm.keepLead')}</strong>,
-              })}
-            </span>
-          </label>
-          <label className="mapform__choice">
-            <input
-              type="radio"
-              name="map-pins"
-              value="remove"
-              checked={pins === 'remove'}
-              onChange={() => setPins('remove')}
-              data-testid="map-replace-remove"
-            />
-            <span>
-              {tx('places.mapForm.remove', {
-                lead: <strong>{t('places.mapForm.removeLead')}</strong>,
-              })}
-            </span>
-          </label>
-        </Field>
+        <MapFormReplace
+          map={map}
+          pinCount={pinCount}
+          pins={pins}
+          setPins={setPins}
+          fieldErrors={fieldErrors}
+        />
       ) : null}
 
       {progress ? (
-        <p className="field__hint" role="status" data-testid="map-upload-progress">
+        <QuietNote spacing="hint" role="status" testId="map-upload-progress">
           {progress.ratio !== null && progress.ratio < 1
             ? t('places.mapForm.uploading', { percent: Math.round(progress.ratio * 100) })
             : t('places.mapForm.uploaded')}
-        </p>
+        </QuietNote>
       ) : null}
     </Drawer>
   )

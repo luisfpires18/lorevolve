@@ -1,0 +1,236 @@
+/* ---------- Controls ---------- */
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin: 2.5rem 0 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.controls__search {
+  flex: 1 1 18rem;
+  max-width: 30rem;
+}
+
+.searchfield {
+  position: relative;
+  display: block;
+}
+
+.searchfield__icon {
+  position: absolute;
+  top: 50%;
+  left: 0.8rem;
+  width: 1.0625rem;
+  height: 1.0625rem;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.searchfield__input {
+  padding-left: 2.5rem;
+}
+
+/* Room at the end for the trailing control (Lore's Exact toggle). */
+.searchfield--trailing .searchfield__input {
+  padding-right: 6.75rem;
+}
+
+/* `.segmented`: a choice among two to four values on this screen, `aria-pressed` on each - not a
+   place (that is `.views`). A sunken track; the chosen value is raised paper in ink. */
+/* Report a bug or ask for a feature: a quiet pill at the window's foot corner, above the content, on every signed-in page. */
+.feedbackbutton {
+  position: fixed;
+  right: max(var(--space-4), env(safe-area-inset-right));
+  bottom: calc(max(var(--space-4), env(safe-area-inset-bottom)) + var(--feedback-lift, 0px));
+  z-index: var(--z-sticky);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--raised) 92%, transparent);
+  box-shadow: var(--shadow-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.feedbackbutton:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.feedbackbutton svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.feedbackbutton__thanks {
+  position: fixed;
+  right: max(var(--space-4), env(safe-area-inset-right));
+  bottom: calc(
+    max(var(--space-4), env(safe-area-inset-bottom)) + 3.5rem + var(--feedback-lift, 0px)
+  );
+  z-index: var(--z-sticky);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  box-shadow: var(--shadow-2);
+  font-size: var(--text-sm);
+}
+
+/* A save bar stuck across the foot (an entry's or a drawer's `.actionbar`, the manuscript's bar) owns the corner the
+   pill sits in, Save included: the pill rises above it. */
+body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions) {
+  --feedback-lift: calc(var(--control-touch) + var(--space-3));
+}
+
+/* On a phone the pill shrinks to its icon, out of the way of the page's own buttons. */
+@media (max-width: 640px) {
+  .feedbackbutton span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .feedbackbutton {
+    width: 2.75rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  /* A phone's foot holds one thing (ADR 0028): while the page keeps its own control there - a save bar, or the fixed
+     "New …" of Lore and a story - the pill leaves. Feedback stays a tap away on every other screen. */
+  body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions, .lore__create)
+    .feedbackbutton,
+  body:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions, .lore__create)
+    .feedbackbutton__thanks {
+    display: none;
+  }
+}
+
+.feedbackdialog fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.feedbackreports {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedbackreport {
+  padding: var(--space-4);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  background: var(--raised);
+}
+
+.feedbackreport__meta {
+  margin: 0 0 var(--space-2);
+}
+
+.feedbackreport__text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-self: flex-end;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.segmented__option {
+  min-height: calc(var(--control-sm) - 4px);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-ui);
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-1) var(--ease),
+    color var(--duration-1) var(--ease);
+}
+
+.segmented__option:hover {
+  color: var(--ink);
+}
+
+.segmented__option[aria-pressed='true'] {
+  background: var(--raised);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow:
+    var(--shadow-1),
+    0 0 0 1px var(--rule);
+}
+
+.segmented__option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The canon look (`CanonStatusPicker`): how settled something is, each step with its glyph and word, a
+   step smaller than a plain choice. Never the ink fill, which would make the status louder than the name. */
+.segmented--canon {
+  flex-wrap: nowrap;
+}
+
+/* `:where` keeps this at one class, so the touch rule's 2.75rem (080) still wins under a finger. */
+:where(.segmented--canon) .segmented__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  min-height: 1.75rem;
+  font-size: var(--text-sm);
+}
+
+.segmented--canon .segmented__option[data-canon]::before {
+  content: '';
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1.5px solid currentcolor;
+  border-radius: var(--radius-full);
+}
+
+.segmented--canon .segmented__option[data-canon='1']::before {
+  background: linear-gradient(90deg, currentcolor 50%, transparent 50%);
+}
+
+.segmented--canon .segmented__option[data-canon='2']::before {
+  background: currentcolor;
+}
+
+.segmented--canon .segmented__option:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

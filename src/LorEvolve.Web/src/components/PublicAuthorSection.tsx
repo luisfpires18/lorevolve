@@ -5,6 +5,11 @@ import { useProfileImage } from '../profile/useProfileImage'
 import { getPublicAuthorSettings, setPublicAuthorPhoto } from '../publishing/api'
 import type { PublicAuthorSettings } from '../publishing/types'
 import { useI18n } from '../i18n'
+import { Announce } from './Announce'
+import { CheckField } from './CheckField'
+import { SectionTitle } from './Section'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
 
 /**
  * The Profile's view of the account's public author page (ADR 0037): where it is, whether anyone can see it, and the
@@ -38,11 +43,7 @@ export function PublicAuthorSection() {
   }, [photoKey, t])
 
   if (!settings) {
-    return message ? (
-      <p className="form__message" role="alert">
-        {message}
-      </p>
-    ) : null
+    return message ? <FormMessage>{message}</FormMessage> : null
   }
 
   async function toggle(isPublic: boolean) {
@@ -64,9 +65,9 @@ export function PublicAuthorSection() {
 
   return (
     <div className="profile__author" data-testid="public-author-settings">
-      <h3 className="profile__subtitle">{t('portal.authorSection.title')}</h3>
+      <SectionTitle level={3}>{t('portal.authorSection.title')}</SectionTitle>
       {settings.authorSlug && settings.hasPublicWorld ? (
-        <p className="settings__note">
+        <QuietNote spacing="block">
           {tx('portal.authorSection.readersFind', {
             link: (
               <Link to={authorPath(settings.authorSlug)} data-testid="view-author-page">
@@ -74,40 +75,30 @@ export function PublicAuthorSection() {
               </Link>
             ),
           })}
-        </p>
+        </QuietNote>
       ) : (
-        <p className="settings__note" data-testid="author-page-hidden">
+        <QuietNote spacing="block" testId="author-page-hidden">
           {settings.authorSlug
             ? t('portal.authorSection.hiddenAgain')
             : t('portal.authorSection.hiddenFirst')}
-        </p>
+        </QuietNote>
       )}
 
-      <label className="check" htmlFor={photoId}>
-        <input
-          id={photoId}
-          type="checkbox"
-          checked={pending ?? settings.photoIsPublic}
-          disabled={busy || !settings.hasPhoto}
-          onChange={(event) => void toggle(event.target.checked)}
-          aria-describedby={`${photoId}-hint`}
-          data-testid="public-photo-toggle"
-        />
-        <span>{t('portal.authorSection.showPhoto')}</span>
-      </label>
-      <p className="field__hint" id={`${photoId}-hint`}>
-        {settings.hasPhoto
-          ? t('portal.authorSection.photoHintHas')
-          : t('portal.authorSection.photoHintNone')}
-      </p>
-      {message ? (
-        <p className="form__message" role="alert">
-          {message}
-        </p>
-      ) : null}
-      <p className="visually-hidden" role="status">
-        {announcement}
-      </p>
+      <CheckField
+        id={photoId}
+        label={t('portal.authorSection.showPhoto')}
+        hint={
+          settings.hasPhoto
+            ? t('portal.authorSection.photoHintHas')
+            : t('portal.authorSection.photoHintNone')
+        }
+        checked={pending ?? settings.photoIsPublic}
+        disabled={busy || !settings.hasPhoto}
+        onChange={(checked) => void toggle(checked)}
+        testId="public-photo-toggle"
+      />
+      {message ? <FormMessage>{message}</FormMessage> : null}
+      <Announce>{announcement}</Announce>
     </div>
   )
 }

@@ -14,6 +14,9 @@ import {
   type WorldRuleCheck,
   type WorldRuleValidation,
 } from '../ruleValidation/types'
+import { Button } from './Button'
+import { QuietNote } from './QuietNote'
+import { FormMessage } from './FormMessage'
 
 interface WorldRuleCheckSectionProps {
   universeId: string
@@ -57,52 +60,54 @@ export function WorldRuleCheckSection({
       data-testid="world-rule-check-section"
     >
       <legend className="rule__legend">{t('canon.check.legend')}</legend>
-      <p className="field__hint" id={hintId}>
+      <QuietNote spacing="flush" id={hintId}>
         {t('canon.check.hint')}
-      </p>
+      </QuietNote>
 
-      <div className="rule__choices">
-        <label className="check">
-          <input
-            type="radio"
-            name={radioName}
-            checked={!isLimit}
-            onChange={() => onChange({ kind: WorldRuleValidationKind.None })}
-            data-testid="world-rule-check-none"
-          />
-          <span>{t('canon.check.none')}</span>
-        </label>
-        <label className="check">
-          <input
-            type="radio"
-            name={radioName}
-            checked={isLimit}
-            onChange={() =>
-              onChange({ kind: WorldRuleValidationKind.MaxOccurrencesPerParticipantAndMethod })
-            }
-            data-testid="world-rule-check-limit"
-          />
-          <span>{t('canon.check.limit')}</span>
-        </label>
-      </div>
-
-      {errors[CHECK_ERROR_KEYS.kind] ? (
-        <p className="field__error">{errors[CHECK_ERROR_KEYS.kind]}</p>
-      ) : null}
+      <Field
+        group
+        hideLabel
+        className="field--flow"
+        label={t('canon.check.legend')}
+        error={errors[CHECK_ERROR_KEYS.kind]}
+      >
+        {(group) => (
+          <div className="rule__choices" {...group}>
+            <label className="check">
+              <input
+                type="radio"
+                name={radioName}
+                checked={!isLimit}
+                onChange={() => onChange({ kind: WorldRuleValidationKind.None })}
+                data-testid="world-rule-check-none"
+              />
+              <span>{t('canon.check.none')}</span>
+            </label>
+            <label className="check">
+              <input
+                type="radio"
+                name={radioName}
+                checked={isLimit}
+                onChange={() =>
+                  onChange({ kind: WorldRuleValidationKind.MaxOccurrencesPerParticipantAndMethod })
+                }
+                data-testid="world-rule-check-limit"
+              />
+              <span>{t('canon.check.limit')}</span>
+            </label>
+          </div>
+        )}
+      </Field>
 
       {isLimit ? (
         <div className="rule__checkfields" data-testid="world-rule-check-fields">
           {failed ? (
-            <p className="form__message rule__checkwide" role="alert">
+            <FormMessage className="rule__checkwide">
               {t('canon.check.termsFailed')}{' '}
-              <button
-                className="button button--secondary button--sm"
-                type="button"
-                onClick={reload}
-              >
+              <Button tone="secondary" size="sm" onClick={reload}>
                 {t('canon.check.retry')}
-              </button>
-            </p>
+              </Button>
+            </FormMessage>
           ) : null}
 
           <ValidationTermSelect
@@ -260,12 +265,14 @@ function CheckState({
       ) : null}
 
       {found.notCanonMoments > 0 ? (
-        <p className="rulecheck__note">
+        <QuietNote className="rulecheck__note">
           {tn('canon.check.notCanon', found.notCanonMoments, { n: found.notCanonMoments })}
-        </p>
+        </QuietNote>
       ) : null}
 
-      {isDirty ? <p className="rulecheck__note">{t('canon.check.lastSaved')}</p> : null}
+      {isDirty ? (
+        <QuietNote className="rulecheck__note">{t('canon.check.lastSaved')}</QuietNote>
+      ) : null}
     </div>
   )
 }

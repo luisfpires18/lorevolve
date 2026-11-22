@@ -1,0 +1,82 @@
+/* ---------- Auth canvas ---------- */
+
+.auth {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+}
+
+.auth__plate {
+  background: var(--plate);
+  color: var(--plate-ink);
+  padding: clamp(2rem, 5vw, 4.5rem);
+  display: flex;
+  align-items: flex-end;
+}
+
+.auth__mark {
+  max-width: 26ch;
+}
+
+.auth__rule {
+  display: block;
+  width: 4.5rem;
+  height: 1px;
+  background: var(--plate-muted);
+  margin: 2rem 0 1.5rem;
+}
+
+.auth__pitch {
+  margin: 0;
+  color: var(--plate-muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-width: 34ch;
+}
+
+.auth__panel {
+  background: var(--surface);
+  padding: clamp(2rem, 5vw, 4.5rem);
+  display: flex;
+  align-items: center;
+}
+
+.auth__form {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.auth__heading {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-page);
+  line-height: 1.1;
+  letter-spacing: var(--title-tracking);
+  margin: 0;
+}
+
+.auth__intro {
+  margin: 0.5rem 0 2.75rem;
+  color: var(--muted);
+}
+
+.auth__footer {
+  margin: 2rem 0 0;
+  color: var(--muted);
+  font-size: 0.925rem;
+}
+
+.invite__role {
+  margin: -1.75rem 0 var(--space-6);
+  color: var(--muted);
+  max-width: 34rem;
+}
+
+.auth__heading:focus {
+  outline: none;
+}
+
+.auth__heading:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}

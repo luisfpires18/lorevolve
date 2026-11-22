@@ -1,0 +1,152 @@
+import type { Dictionary } from '../../en'
+
+const entityTypesFields: Dictionary['entityTypes']['fields'] = {
+  targetAnyIn: 'qualquer tipo em {name}',
+  targetGroup: 'um grupo',
+  targetAny: 'qualquer tipo de lore',
+  required: 'Obrigatório',
+  optional: 'Opcional',
+  linksTo: 'Liga a {target}',
+  canonMeaning: 'Cânone: {meaning}',
+  archiveHides: 'As entradas de {name} deixam de o mostrar.',
+  archiveNoValues:
+    'Nenhuma entrada tem ainda um valor para ele. Podes restaurá-lo quando quiseres.',
+  archiveKeepsValues: {
+    one: '{n} entrada mantém o seu valor, e restaurar o campo recupera-o.',
+    other: '{n} entradas mantêm os seus valores, e restaurar o campo recupera-os.',
+  },
+  archiveRequired: 'Enquanto estiver arquivado, podes guardar entradas sem ele.',
+  archiveCanonMeaning:
+    'As verificações de cânone deixam de o ler como {meaning} até o restaurares.',
+  archiveCanonLinks: 'As verificações de cânone deixam de ler as suas ligações até o restaurares.',
+  archiveTitle: 'Arquivar “{name}”?',
+  archiveConfirm: 'Arquivar campo',
+  archived: 'Campo “{name}” arquivado. Está em Campos arquivados, com todos os seus dados.',
+  archiveFailed: 'Não foi possível arquivar esse campo.',
+  restoredOptional:
+    'Campo “{name}” restaurado como opcional. Preenche-o onde falta e volta a torná-lo obrigatório.',
+  restored: 'Campo “{name}” restaurado com os seus valores.',
+  restoreFailed: 'Não foi possível restaurar esse campo.',
+  usedInHistory:
+    'Versões antigas de entradas ainda usam este campo, por isso não pode ser eliminado. Arquiva-o para o esconder e manter esse histórico.',
+  deleteTitle: 'Eliminar definitivamente o campo “{name}”?',
+  deleteMessage: 'Nenhuma entrada tem um valor para ele. Não é possível desfazer.',
+  deleteConfirm: 'Eliminar campo',
+  deleted: 'Campo “{name}” eliminado.',
+  deleteFailed: 'Não foi possível eliminar esse campo.',
+  archiveInstead: 'Arquivar em vez disso',
+  showEntries: 'Mostrar entradas de {name}',
+  openTrash: 'Abrir a Reciclagem',
+  editField: 'Editar {name}',
+  edit: 'Editar',
+  moreActions: 'Mais ações para {name}',
+  archiveField: 'Arquivar campo',
+  deleteField: 'Eliminar campo',
+  inheritedNote: 'De {owner}. Todas as entradas de {type} têm estes campos; edita-os em {again}.',
+  inheritedLabel: 'Campos que {type} herda de {owner}',
+  emptyInherited: 'Ainda sem campos próprios.',
+  empty: 'Ainda sem campos personalizados.',
+  listLabel: 'Campos de {name}',
+  listNoSectionLabel: 'Campos de {name} sem secção',
+  startsCollapsed: 'Começa recolhida',
+  sectionListLabel: '{section}: campos de {type}',
+  sectionEmpty: 'Ainda sem campos nesta secção.',
+  add: 'Adicionar campo',
+  sections: 'Secções',
+  archivedSummary: 'Campos arquivados ({n})',
+  archivedLede:
+    'As entradas de {name} não mostram estes campos. O LorEvolve guarda os seus valores e recupera-os quando restauras um campo.',
+  archivedLabel: 'Campos arquivados de {name}',
+  previouslyRequired: 'Antes obrigatório',
+  noValues: 'Sem valores',
+  valuesIn: 'Valores em {entries}',
+  restoreField: 'Restaurar {name}',
+  restore: 'Restaurar',
+  deleteForGood: 'Eliminar {name} definitivamente',
+  delete: 'Eliminar',
+  restoreOptional: 'Restaurar como opcional',
+  restoreShowEntries: 'Mostrar entradas de {name}',
+  sectionsSaved: 'Secções de {name} guardadas.',
+  addedNotice: 'Campo “{name}” adicionado.',
+  savedNotice: 'Campo “{name}” guardado.',
+  entries: {
+    one: '{n} entrada',
+    other: '{n} entradas',
+  },
+  inUse: {
+    one: 'Este campo tem um valor em 1 entrada. Arquiva-o para o esconder sem perder os dados.',
+    other: 'Este campo tem valores em {n} entradas. Arquiva-o para o esconder sem perder os dados.',
+  },
+  inUseAllTrashed: {
+    one: 'Este campo tem um valor em 1 entrada, que está na Reciclagem. Arquiva-o para o esconder sem perder os dados.',
+    other:
+      'Este campo tem valores em {n} entradas, todas na Reciclagem. Arquiva-o para o esconder sem perder os dados.',
+  },
+  inUseSomeTrashed: {
+    other:
+      'Este campo tem valores em {n} entradas, {trashed} delas na Reciclagem. Arquiva-o para o esconder sem perder os dados.',
+  },
+  leaveEdit: 'As tuas alterações a “{name}” não foram guardadas. Sair sem as guardar?',
+  leaveNew: 'Este campo não foi adicionado. Sair sem o guardar?',
+  keptMine:
+    'As tuas alterações foram mantidas. Guardar agora substitui o que outra pessoa guardou por tudo o que este painel mostra.',
+  nameRequired: 'Dá um nome ao campo.',
+  optionsRequired: 'Adiciona pelo menos uma opção.',
+  targetRequired: 'Escolhe aquilo a que este campo pode ligar.',
+  changedMeanwhile:
+    'Alguém alterou este campo depois de o abrires. Nada foi guardado, e as tuas alterações continuam aqui.',
+  detailsSave: 'Alguns detalhes precisam de uma alteração antes de este campo poder ser guardado.',
+  detailsAdd: 'Alguns detalhes precisam de uma alteração antes de este campo poder ser adicionado.',
+  saveFailed: 'Não foi possível guardar esse campo.',
+  addFailed: 'Não foi possível adicionar esse campo.',
+  dialogEyebrow: 'Campos de {name}',
+  editTitle: 'Editar campo',
+  addTitle: 'Adicionar campo',
+  savedNow: 'Guardado agora',
+  savedNowSummary: '{name}: {summary}',
+  savedNowArchived: '{name}: {summary}. Arquivado.',
+  useSaved: 'Usar as definições guardadas',
+  keepMine: 'Manter as minhas alterações',
+  fieldName: 'Nome do campo',
+  kind: 'Tipo de campo',
+  kindLockedHeld: {
+    one: '{n} entrada já tem um valor, por isso o tipo de campo não pode mudar. Adiciona um novo campo para outro tipo.',
+    other:
+      '{n} entradas já têm valores, por isso o tipo de campo não pode mudar. Adiciona um novo campo para outro tipo.',
+  },
+  kindLockedHistory:
+    'Versões antigas de entradas registaram valores aqui, por isso o tipo de campo não pode mudar. Adiciona um novo campo para outro tipo.',
+  options: 'Opções, separadas por vírgulas',
+  optionsHint: 'Não podes remover uma opção que uma entrada use.',
+  canLinkTo: 'Pode ligar a',
+  chooseTarget: 'Escolhe aquilo a que pode ligar…',
+  anyLoreType: 'Qualquer tipo de lore',
+  optgroupGroups: 'Grupos',
+  groupOption: '{name} (grupo)',
+  optgroupTypes: 'Tipos',
+  targetHintNone:
+    'Escolhe um tipo, um grupo ou qualquer tipo de lore. O LorEvolve nunca adivinha a partir do nome do campo.',
+  targetHintAny: 'Pode ligar a qualquer entrada deste universo.',
+  targetHintGroup:
+    'Pode ligar a entradas cujo tipo está neste grupo no momento em que crias a ligação.',
+  targetHintType: 'Pode ligar a entradas deste tipo e de qualquer tipo aninhado por baixo dele.',
+  targetNarrowHint:
+    'O LorEvolve recusa uma escolha mais restrita enquanto uma entrada ligar a algo que ela não permitiria, e nunca apaga uma ligação para a fazer caber.',
+  canonMeaningLabel: 'Significado de cânone',
+  none: 'Nenhum',
+  semanticHint:
+    'Lido pelas regras de Integridade do Cânone, nunca adivinhado a partir do nome do campo. A maioria dos campos não precisa de nenhum.',
+  defaultText: 'Texto predefinido',
+  imageShape: 'Forma do recorte',
+  imageShapeHint:
+    'O enquadramento a que cada imagem deste campo é recortada. Livre mantém a forma da própria imagem.',
+  defaultHint: 'Opcional. As novas entradas começam com este texto, e podes alterá-lo aí.',
+  requiredLabel: 'Obrigatório',
+  requiredHint:
+    'Todas as entradas de {name} vão precisar de um valor. Se algumas ainda não tiverem um, o LorEvolve diz quantas e não altera nada.',
+  saving: 'A guardar…',
+  saveChanges: 'Guardar',
+  adding: 'A adicionar…',
+}
+
+export default entityTypesFields

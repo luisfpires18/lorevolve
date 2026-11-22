@@ -1,22 +1,15 @@
 import { useId, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ImagePlus, Pencil, Trash } from 'lucide-react'
-import { ActionIcon } from './ActionIcon'
-import { ActionMenu } from './ActionMenu'
-import { ImageViewer } from './ImageViewer'
-import { ApiError } from '../lib/api'
-import { confirmAction } from '../lib/confirm'
-import { IMAGE_ACCEPT, IMAGE_MAX_BYTES } from '../lib/imageCrop'
-import {
-  addAppearanceImage,
-  appearanceDisplayUrl,
-  appearanceImageUrl,
-  orderAppearanceImages,
-  removeAppearanceImage,
-} from '../progression/api'
+import { ImagePlus } from 'lucide-react'
+import { appearanceImageUrl } from '../progression/api'
 import type { Appearance, AppearanceImage } from '../progression/types'
 import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
+import { useAppearanceImages } from '../lore/useAppearanceImages'
+import { AppearanceGallery } from './lore/AppearanceGallery'
+import { FormMessage } from './FormMessage'
+import { ImageViewer } from './ImageViewer'
+import { ItemRow } from './progression/ItemRow'
+import { ProgressionSection } from './progression/ProgressionSection'
 
 /**
  * An entry's appearances on the main profile (Issue #43): each look's label, notes, gallery and what it belongs to. Pictures are
@@ -45,59 +38,39 @@ export function AppearanceList({
   onPicturesChanged: () => void
 }) {
   useI18n()
-  const access = useUniverseAccess()
-
-  if (appearances.length === 0 && !access.editContent) return null
 
   return (
-    <section
-      className="progitems"
-      aria-labelledby="appearance-list-heading"
-      data-testid="appearance-list"
+    <ProgressionSection
+      kind="appearance"
+      title={t('progression.appearanceList.heading')}
+      addLabel={t('progression.appearanceList.add')}
+      addIcon={ImagePlus}
+      empty={t('progression.appearanceList.empty')}
+      count={appearances.length}
+      busy={busy}
+      onAdd={onAdd}
     >
-      <div className="progression__head">
-        <h3 className="rail__heading" id="appearance-list-heading">
-          {t('progression.appearanceList.heading')}
-        </h3>
-        {access.editContent ? (
-          <button
-            className="button button--secondary button--sm"
-            type="button"
-            onClick={onAdd}
-            disabled={busy}
-            data-testid="add-appearance"
-          >
-            <ActionIcon icon={ImagePlus} />
-            {t('progression.appearanceList.add')}
-          </button>
-        ) : null}
-      </div>
-      {appearances.length === 0 ? (
-        <p className="muted">{t('progression.appearanceList.empty')}</p>
-      ) : (
-        <ul className="progitems__list">
-          {appearances.map((appearance, index) => (
-            <AppearanceItem
-              key={appearance.id}
-              canMoveEarlier={index > 0}
-              canMoveLater={index < appearances.length - 1}
-              onMove={(by) => onMove(appearance, by)}
-              universeId={universeId}
-              entityId={entityId}
-              appearance={appearance}
-              busy={busy}
-              onEdit={() => onEdit(appearance)}
-              onRemove={() => onRemove(appearance)}
-              onPicturesChanged={onPicturesChanged}
-            />
-          ))}
-        </ul>
-      )}
-    </section>
+      {appearances.map((appearance, index) => (
+        <AppearanceRow
+          key={appearance.id}
+          canMoveEarlier={index > 0}
+          canMoveLater={index < appearances.length - 1}
+          onMove={(by) => onMove(appearance, by)}
+          universeId={universeId}
+          entityId={entityId}
+          appearance={appearance}
+          busy={busy}
+          onEdit={() => onEdit(appearance)}
+          onRemove={() => onRemove(appearance)}
+          onPicturesChanged={onPicturesChanged}
+        />
+      ))}
+    </ProgressionSection>
   )
 }
 
-function AppearanceItem({
+/** One appearance on the shared row, with its own picture uploads and viewer. */
+function AppearanceRow({
   canMoveEarlier,
   canMoveLater,
   onMove,
@@ -120,296 +93,67 @@ function AppearanceItem({
   onRemove: () => void
   onPicturesChanged: () => void
 }) {
-  useI18n()
   const access = useUniverseAccess()
   const inputId = useId()
-  const [working, setWorking] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const { working, message, locked, add, move, remove } = useAppearanceImages({
+    universeId,
+    entityId,
+    appearance,
+    busy,
+    onPicturesChanged,
+  })
   const [viewing, setViewing] = useState<AppearanceImage | null>(null)
-  const locked = busy || working !== null
-
-  async function run(status: string, action: () => Promise<unknown>) {
-    setMessage(null)
-    setWorking(status)
-    try {
-      await action()
-    } catch (error: unknown) {
-      setMessage(
-        error instanceof ApiError ? error.message : t('progression.appearanceList.saveFailed'),
-      )
-    } finally {
-      setWorking(null)
-      onPicturesChanged()
-    }
-  }
-
-  async function add(files: FileList | null) {
-    const chosen = [...(files ?? [])]
-    if (chosen.length === 0 || locked) return
-    const tooBig = chosen.find((file) => file.size > IMAGE_MAX_BYTES)
-    if (tooBig) {
-      setMessage(t('progression.appearanceList.tooBig', { mb: IMAGE_MAX_BYTES / (1024 * 1024) }))
-      return
-    }
-    await run(
-      chosen.length === 1
-        ? t('progression.appearanceList.addingOne')
-        : t('progression.appearanceList.addingMany', { n: chosen.length }),
-      async () => {
-        for (const file of chosen)
-          await addAppearanceImage(universeId, entityId, appearance.id, file)
-      },
-    )
-  }
-
-  async function move(image: AppearanceImage, by: number) {
-    const ids = appearance.images.map((one) => one.id)
-    const from = ids.indexOf(image.id)
-    const to = from + by
-    if (to < 0 || to >= ids.length) return
-    ;[ids[from], ids[to]] = [ids[to], ids[from]]
-    await run(t('progression.appearanceList.moving'), () =>
-      orderAppearanceImages(universeId, entityId, appearance.id, ids),
-    )
-  }
-
-  async function remove(image: AppearanceImage, index: number) {
-    if (
-      !(await confirmAction({
-        title: t('progression.appearanceList.deleteTitle', {
-          index: index + 1,
-          name: appearance.label,
-        }),
-        message: t('progression.appearanceList.deleteMessage'),
-        confirmLabel: t('progression.appearanceList.deletePicture'),
-        variant: 'destructive',
-      }))
-    ) {
-      return
-    }
-    await run(t('progression.appearanceList.deleting'), () =>
-      removeAppearanceImage(universeId, entityId, appearance.id, image.id),
-    )
-  }
 
   const facts = [
     {
-      term: t('progression.appearanceList.stages'),
+      name: t('progression.appearanceList.stages'),
       value: appearance.eras.map((era) => era.name).join(', '),
       testId: 'appearance-eras',
     },
     {
-      term: t('progression.appearanceList.aLookOf'),
+      name: t('progression.appearanceList.aLookOf'),
       value: appearance.forms.map((form) => form.name).join(', '),
       testId: 'appearance-forms',
     },
   ].filter((fact) => fact.value !== '')
 
   return (
-    <li className="progitems__item" data-testid={`appearance-${appearance.label}`}>
-      <div className="progitems__head">
-        <h4 className="progitems__name">
-          <bdi>{appearance.label}</bdi>
-        </h4>
-        {access.editContent ? (
-          <ActionMenu
-            label={t('progression.appearanceList.actions', { name: appearance.label })}
-            triggerTestId={`appearance-actions-${appearance.label}`}
-          >
-            <button
-              className="actionmenu__item"
-              type="button"
-              disabled={locked}
-              onClick={onEdit}
-              data-testid="edit-appearance"
-            >
-              <ActionIcon icon={Pencil} />
-              {t('progression.appearanceList.edit')}
-            </button>
-            {canMoveEarlier ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                disabled={locked}
-                onClick={() => onMove(-1)}
-              >
-                <ActionIcon icon={ArrowUp} />
-                {t('progression.appearanceList.moveEarlier')}
-              </button>
-            ) : null}
-            {canMoveLater ? (
-              <button
-                className="actionmenu__item"
-                type="button"
-                disabled={locked}
-                onClick={() => onMove(1)}
-              >
-                <ActionIcon icon={ArrowDown} />
-                {t('progression.appearanceList.moveLater')}
-              </button>
-            ) : null}
-            <button
-              className="actionmenu__item actionmenu__item--danger"
-              type="button"
-              disabled={locked}
-              onClick={onRemove}
-              data-testid="remove-appearance"
-            >
-              <ActionIcon icon={Trash} />
-              {t('progression.appearanceList.remove')}
-            </button>
-          </ActionMenu>
-        ) : null}
-      </div>
-      {appearance.notes ? <p className="progitems__description prose">{appearance.notes}</p> : null}
-
-      {message ? (
-        <p className="form__message" role="alert" data-testid="appearance-message">
-          {message}
-        </p>
-      ) : null}
-
-      {appearance.images.length > 0 ? (
-        <ol
-          className="gallery"
-          aria-label={t('progression.appearanceList.gallery', { name: appearance.label })}
-          data-testid="appearance-gallery"
-        >
-          {appearance.images.map((image, index) => {
-            const name = t('progression.appearanceList.pictureName', {
-              name: appearance.label,
-              index: index + 1,
-              total: appearance.images.length,
-            })
-            return (
-              <li className="gallery__item" key={image.id}>
-                <button
-                  className="gallery__open"
-                  type="button"
-                  onClick={() => setViewing(image)}
-                  aria-label={t('progression.appearanceList.view', { name })}
-                >
-                  <img
-                    className="gallery__thumb"
-                    decoding="async"
-                    src={appearanceDisplayUrl(universeId, entityId, appearance.id, image)}
-                    alt=""
-                    // The picture's own shape: the square thumbnail cut wide and tall pictures down to their middle.
-                    width={image.width}
-                    height={image.height}
-                    loading="lazy"
-                  />
-                </button>
-                {access.editContent ? (
-                  <ActionMenu
-                    label={t('progression.appearanceList.pictureActions', { name })}
-                    triggerTestId={`picture-actions-${index + 1}`}
-                  >
-                    {index > 0 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        disabled={locked}
-                        onClick={() => void move(image, -1)}
-                      >
-                        <ActionIcon icon={ArrowLeft} />
-                        {t('progression.appearanceList.moveEarlier')}
-                      </button>
-                    ) : null}
-                    {index < appearance.images.length - 1 ? (
-                      <button
-                        className="actionmenu__item"
-                        type="button"
-                        disabled={locked}
-                        onClick={() => void move(image, 1)}
-                      >
-                        <ActionIcon icon={ArrowRight} />
-                        {t('progression.appearanceList.moveLater')}
-                      </button>
-                    ) : null}
-                    <button
-                      className="actionmenu__item actionmenu__item--danger"
-                      type="button"
-                      disabled={locked}
-                      onClick={() => void remove(image, index)}
-                      data-testid="remove-picture"
-                    >
-                      <ActionIcon icon={Trash} />
-                      {t('progression.appearanceList.deletePicture')}
-                    </button>
-                  </ActionMenu>
-                ) : null}
-              </li>
-            )
-          })}
-        </ol>
-      ) : null}
-
-      {access.editContent ? (
-        <div className="gallery__add">
-          <input
-            id={inputId}
-            className="imagefield__input"
-            type="file"
-            accept={IMAGE_ACCEPT}
-            multiple
-            aria-disabled={locked || undefined}
-            onChange={(event) => {
-              const input = event.currentTarget
-              void add(input.files).then(() => {
-                input.value = ''
-              })
-            }}
-            data-testid="appearance-picture-input"
-          />
-          <label className="button button--secondary button--sm imagefield__pick" htmlFor={inputId}>
-            <ActionIcon icon={ImagePlus} />
-            {t('progression.appearanceList.addPictures')}
-          </label>
-          {working ? (
-            <span className="muted" role="status">
-              {working}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
-      {facts.length > 0 || appearance.scenes.length > 0 ? (
-        <dl className="progitems__facts">
-          {facts.map((fact) => (
-            <div key={fact.term}>
-              <dt>{fact.term}</dt>
-              <dd data-testid={fact.testId}>{fact.value}</dd>
-            </div>
-          ))}
-          {appearance.scenes.length > 0 ? (
-            <div>
-              <dt>{t('progression.appearanceList.seenIn')}</dt>
-              <dd>
-                <ul className="eracovers">
-                  {appearance.scenes.map((scene) => (
-                    <li key={scene.id}>
-                      {scene.isTrashed ? (
-                        <span>
-                          {t('progression.appearanceList.sceneInTrash', { title: scene.title })}
-                        </span>
-                      ) : (
-                        <Link
-                          to={`/app/universes/${universeId}/stories/${scene.storyId}#scene-${scene.id}`}
-                        >
-                          {scene.title}
-                        </Link>
-                      )}
-                      <span className="muted"> · {scene.storyTitle}</span>
-                    </li>
-                  ))}
-                </ul>
-              </dd>
-            </div>
-          ) : null}
-        </dl>
-      ) : null}
-
+    <ItemRow
+      kind="appearance"
+      name={appearance.label}
+      description={appearance.notes}
+      universeId={universeId}
+      first={!canMoveEarlier}
+      last={!canMoveLater}
+      busy={locked}
+      canEdit={access.editContent}
+      words={{
+        actions: t('progression.appearanceList.actions', { name: appearance.label }),
+        edit: t('progression.appearanceList.edit'),
+        remove: t('progression.appearanceList.remove'),
+        scenes: t('progression.appearanceList.seenIn'),
+        sceneInTrash: (title) => t('progression.appearanceList.sceneInTrash', { title }),
+      }}
+      facts={facts}
+      scenes={appearance.scenes}
+      onEdit={onEdit}
+      onMove={onMove}
+      onRemove={onRemove}
+    >
+      {message ? <FormMessage testId="appearance-message">{message}</FormMessage> : null}
+      <AppearanceGallery
+        universeId={universeId}
+        entityId={entityId}
+        appearance={appearance}
+        access={access}
+        inputId={inputId}
+        working={working}
+        locked={locked}
+        add={add}
+        move={move}
+        remove={remove}
+        setViewing={setViewing}
+      />
       {viewing ? (
         <ImageViewer
           src={appearanceImageUrl(universeId, entityId, appearance.id, viewing.id, 'original')}
@@ -419,6 +163,6 @@ function AppearanceItem({
           onClose={() => setViewing(null)}
         />
       ) : null}
-    </li>
+    </ItemRow>
   )
 }

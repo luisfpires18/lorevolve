@@ -1,30 +1,13 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-  type MutableRefObject,
-} from 'react'
-import { Maximize, ZoomIn, ZoomOut } from 'lucide-react'
-import {
-  BOARD_CARD_KIND_KEYS,
-  BOARD_CARD_KIND_LABELS,
-  BoardCardKind,
-  cardName,
-  readingOrder,
-  type BoardCard,
-  type BoardConnection,
-} from '../ideas/boards'
-import { fitView, usePanZoom, ZOOM_STEP } from '../lib/usePanZoom'
+import { useRef, useState, type MutableRefObject } from 'react'
+import { readingOrder, type BoardCard, type BoardConnection } from '../ideas/boards'
+import type { BoardSelection } from '../ideas/boardSelection'
+import { cardKeyDown, stageKeyDown } from '../ideas/boardCanvasKeys'
+import { itemDrag } from '../lib/canvasDrag'
+import { fitView, usePanZoom } from '../lib/usePanZoom'
 import { useI18n } from '../i18n'
-
-/** What is chosen on a board: one card, one line, or nothing. */
-export type BoardSelection = { kind: 'card'; id: string } | { kind: 'line'; id: string } | null
-
-const PAN_STEP = 48
-const MOVE_STEP = 10
-const BIG_MOVE_STEP = 50
+import { BoardCardButton } from './ideas/BoardCardButton'
+import { BoardLines } from './ideas/BoardLines'
+import { CanvasStage } from './CanvasStage'
 
 interface IdeaBoardCanvasProps {
   title: string
@@ -65,48 +48,16 @@ export function IdeaBoardCanvas({
 }: IdeaBoardCanvasProps) {
   const { t } = useI18n()
   const stage = useRef<HTMLDivElement>(null)
-  const hintId = useId()
   const [dragging, setDragging] = useState<{ id: string; x: number; y: number } | null>(null)
   // The same, for the release to read: a state updater is no place to tell the editor.
   const dropAt = useRef<{ id: string; x: number; y: number } | null>(null)
 
-  const { view, setView, size, zoomAbout, toLayer, beginItemDrag, stageHandlers } = usePanZoom(
-    stage,
-    {
-      limits: () => ({ min: 0.1, max: 3 }),
-      initial: (stageSize) => fitView(cards, stageSize),
-      onTap: () => onSelect(null),
-    },
-  )
-
-  useEffect(() => {
-    centreRef.current = () => {
-      const rect = stage.current!.getBoundingClientRect()
-      return toLayer(rect.left + rect.width / 2, rect.top + rect.height / 2)
-    }
+  const panZoom = usePanZoom(stage, {
+    limits: () => ({ min: 0.1, max: 3 }),
+    initial: (stageSize) => fitView(cards, stageSize),
+    onTap: () => onSelect(null),
   })
-
-  // A chosen card out of view - just added, or chosen in the list - is brought to the middle of it.
-  useEffect(() => {
-    if (selected?.kind !== 'card' || size.width === 0) return
-    const card = cards.find((each) => each.id === selected.id)
-    if (!card) return
-    const left = view.x + card.x * view.scale
-    const top = view.y + card.y * view.scale
-    const inView =
-      left >= 0 &&
-      top >= 0 &&
-      left + card.width * view.scale <= size.width &&
-      top + card.height * view.scale <= size.height
-    if (inView) return
-    setView((current) => ({
-      ...current,
-      x: size.width / 2 - (card.x + card.width / 2) * current.scale,
-      y: size.height / 2 - (card.y + card.height / 2) * current.scale,
-    }))
-    // Only a new choice moves the view: the author's own panning is never undone.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected])
+  const { view, setView, size, zoomAbout, beginItemDrag } = panZoom
 
   function press(card: BoardCard) {
     if (connecting && connecting !== card.id) onConnectTo(card.id)
@@ -114,90 +65,35 @@ export function IdeaBoardCanvas({
   }
 
   function cardDrag(card: BoardCard) {
-    return {
-      onMove: (_x: number, _y: number, dx: number, dy: number) => {
-        if (readOnly || connecting) return
-        dropAt.current = { id: card.id, x: card.x + dx / view.scale, y: card.y + dy / view.scale }
-        setDragging(dropAt.current)
+    return itemDrag({
+      id: card.id,
+      x: card.x,
+      y: card.y,
+      scale: view.scale,
+      dropAt,
+      setDragging,
+      place: (x, y) => (readOnly || connecting ? null : { x, y }),
+      onDrop: (x, y) => {
+        onMoveCard(card.id, x, y)
+        onSelect({ kind: 'card', id: card.id })
       },
-      onEnd: (moved: boolean) => {
-        const drop = dropAt.current
-        dropAt.current = null
-        setDragging(null)
-        if (moved && drop?.id === card.id) {
-          onMoveCard(card.id, drop.x, drop.y)
-          onSelect({ kind: 'card', id: card.id })
-        } else if (!moved) {
-          press(card)
-        }
-      },
-      onCancel: () => {
-        dropAt.current = null
-        setDragging(null)
-      },
-    }
+      onPress: () => press(card),
+    })
   }
 
-  function onCardKeyDown(event: KeyboardEvent<HTMLButtonElement>, card: BoardCard) {
-    const step = event.shiftKey ? BIG_MOVE_STEP : MOVE_STEP
-    const moves: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
-    }
-    const move = moves[event.key]
-    if (move && !readOnly) {
-      event.preventDefault()
-      event.stopPropagation()
-      onMoveCard(card.id, card.x + move[0], card.y + move[1])
-      onSelect({ kind: 'card', id: card.id })
-      // Moving a card can move it in the reading order, and so in the page: the focus follows it there.
-      requestAnimationFrame(() =>
-        stage.current?.querySelector<HTMLElement>(`[data-card-id="${card.id}"]`)?.focus(),
-      )
-    } else if (event.key === 'Escape' && (connecting || selected)) {
-      event.preventDefault()
-      onSelect(null)
-    }
-  }
+  // The handlers read `stage` on a key press, never during render.
+  // oxlint-disable-next-line react/refs
+  const onCardKeyDown = cardKeyDown({ stage, readOnly, connecting, selected, onMoveCard, onSelect })
 
-  function onStageKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.target !== event.currentTarget) return
-    const about = { x: size.width / 2, y: size.height / 2 }
-    switch (event.key) {
-      case 'ArrowLeft':
-        setView((current) => ({ ...current, x: current.x + PAN_STEP }))
-        break
-      case 'ArrowRight':
-        setView((current) => ({ ...current, x: current.x - PAN_STEP }))
-        break
-      case 'ArrowUp':
-        setView((current) => ({ ...current, y: current.y + PAN_STEP }))
-        break
-      case 'ArrowDown':
-        setView((current) => ({ ...current, y: current.y - PAN_STEP }))
-        break
-      case '+':
-      case '=':
-        zoomAbout(ZOOM_STEP, about.x, about.y)
-        break
-      case '-':
-      case '_':
-        zoomAbout(1 / ZOOM_STEP, about.x, about.y)
-        break
-      case '0':
-        setView(fitView(cards, size))
-        break
-      case 'Escape':
-        if (!selected && !connecting) return
-        onSelect(null)
-        break
-      default:
-        return
-    }
-    event.preventDefault()
-  }
+  const onStageKeyDown = stageKeyDown({
+    cards,
+    selected,
+    connecting,
+    onSelect,
+    size,
+    setView,
+    zoomAbout,
+  })
 
   const placed = cards.map((card) =>
     dragging?.id === card.id ? { ...card, x: dragging.x, y: dragging.y } : card,
@@ -206,174 +102,44 @@ export function IdeaBoardCanvas({
   const drawOrder = new Map(cards.map((card, index) => [card.id, index]))
 
   return (
-    <div className="boardcanvas" data-connecting={connecting ? true : undefined}>
-      <div
-        className="boardcanvas__stage"
-        ref={stage}
-        role="group"
-        aria-label={t('ideas.canvas.board', { title: title || t('ideas.canvas.newBoard') })}
-        aria-describedby={hintId}
-        tabIndex={0}
-        data-testid="board-stage"
-        data-scale={view.scale.toFixed(4)}
-        {...stageHandlers}
-        onKeyDown={onStageKeyDown}
-      >
-        <div
-          className="boardcanvas__layer"
-          style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})` }}
-          data-testid="board-layer"
-        >
-          <svg className="boardcanvas__lines" width="1" height="1" aria-hidden="true">
-            {connections.map((line) => {
-              const from = byId.get(line.fromCardId)
-              const to = byId.get(line.toCardId)
-              if (!from || !to) return null
-              const x1 = from.x + from.width / 2
-              const y1 = from.y + from.height / 2
-              const x2 = to.x + to.width / 2
-              const y2 = to.y + to.height / 2
-              const isSelected = selected?.kind === 'line' && selected.id === line.id
-              return (
-                <g
-                  key={line.id}
-                  className="boardline"
-                  data-selected={isSelected || undefined}
-                  data-testid="board-line"
-                  data-line-id={line.id}
-                  onPointerDown={(event) =>
-                    beginItemDrag(event, {
-                      onMove: () => {},
-                      onEnd: (moved) => {
-                        if (!moved) onSelect({ kind: 'line', id: line.id })
-                      },
-                    })
-                  }
-                >
-                  <line className="boardline__hit" x1={x1} y1={y1} x2={x2} y2={y2} />
-                  <line className="boardline__stroke" x1={x1} y1={y1} x2={x2} y2={y2} />
-                  {line.label ? (
-                    <text className="boardline__label" x={(x1 + x2) / 2} y={(y1 + y2) / 2}>
-                      {line.label}
-                    </text>
-                  ) : null}
-                </g>
-              )
-            })}
-          </svg>
+    <CanvasStage
+      stage={stage}
+      panZoom={panZoom}
+      items={cards}
+      label={t('ideas.canvas.board', { title: title || t('ideas.canvas.newBoard') })}
+      testId="board"
+      layerTestId="board-layer"
+      connecting={connecting}
+      onKeyDown={onStageKeyDown}
+      fitLabel={t('ideas.canvas.fit')}
+      hint={t('ideas.canvas.hint')}
+      hintConnecting={t('ideas.canvas.hintConnecting')}
+      centreRef={centreRef}
+      focus={selected?.kind === 'card' ? cards.find((each) => each.id === selected.id) : undefined}
+      focusOn={selected}
+    >
+      <BoardLines
+        connections={connections}
+        byId={byId}
+        selected={selected}
+        beginItemDrag={beginItemDrag}
+        onSelect={onSelect}
+      />
 
-          {readingOrder(placed).map((card) => {
-            const isSelected = selected?.kind === 'card' && selected.id === card.id
-            const name = cardName(card)
-            const kind = BOARD_CARD_KIND_LABELS[card.kind]
-            return (
-              <button
-                key={card.id}
-                type="button"
-                className="boardcard"
-                style={{
-                  left: `${card.x}px`,
-                  top: `${card.y}px`,
-                  width: `${card.width}px`,
-                  height: `${card.height}px`,
-                  zIndex: drawOrder.get(card.id),
-                }}
-                aria-label={t(card.isGone ? 'ideas.canvas.cardGone' : 'ideas.canvas.card', {
-                  kind,
-                  name,
-                })}
-                aria-pressed={isSelected}
-                data-kind={BOARD_CARD_KIND_KEYS[card.kind]}
-                data-gone={card.isGone || undefined}
-                data-connecting-from={connecting === card.id || undefined}
-                data-dragging={dragging?.id === card.id || undefined}
-                data-testid="board-card"
-                data-card-id={card.id}
-                data-name={name}
-                onPointerDown={(event) => beginItemDrag(event, cardDrag(card))}
-                onClick={(event) => {
-                  // A pointer press is handled on release; the keyboard's Enter and Space land here.
-                  if (event.detail === 0) press(card)
-                }}
-                onKeyDown={(event) => onCardKeyDown(event, card)}
-              >
-                <span className="boardcard__kind" aria-hidden="true">
-                  {card.kind === BoardCardKind.Entity && card.entityTypeName
-                    ? card.entityTypeName
-                    : kind}
-                </span>
-                {card.kind === BoardCardKind.Note ? (
-                  <span className="boardcard__text" aria-hidden="true">
-                    {card.text || (
-                      <span className="boardcard__empty">{t('ideas.canvas.emptyNote')}</span>
-                    )}
-                  </span>
-                ) : (
-                  <>
-                    <span className="boardcard__name" aria-hidden="true">
-                      <bdi>{name}</bdi>
-                    </span>
-                    {card.excerpt ? (
-                      <span className="boardcard__excerpt" aria-hidden="true">
-                        {card.excerpt}
-                      </span>
-                    ) : null}
-                  </>
-                )}
-                {card.isGone ? (
-                  <span className="boardcard__gone" aria-hidden="true">
-                    {card.kind === BoardCardKind.Idea
-                      ? t('ideas.canvas.deletedIdea')
-                      : t('ideas.canvas.inTrash')}
-                  </span>
-                ) : null}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div
-        className="mapviewer__controls boardcanvas__controls"
-        role="group"
-        aria-label={t('ideas.canvas.zoom')}
-      >
-        <button
-          className="iconbutton"
-          type="button"
-          aria-label={t('ideas.canvas.zoomIn')}
-          title={t('ideas.canvas.zoomIn')}
-          onClick={() => zoomAbout(ZOOM_STEP, size.width / 2, size.height / 2)}
-          data-testid="board-zoom-in"
-        >
-          <ZoomIn aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-        <button
-          className="iconbutton"
-          type="button"
-          aria-label={t('ideas.canvas.zoomOut')}
-          title={t('ideas.canvas.zoomOut')}
-          onClick={() => zoomAbout(1 / ZOOM_STEP, size.width / 2, size.height / 2)}
-          data-testid="board-zoom-out"
-        >
-          <ZoomOut aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-        <button
-          className="iconbutton"
-          type="button"
-          aria-label={t('ideas.canvas.fit')}
-          title={t('ideas.canvas.fit')}
-          onClick={() => setView(fitView(cards, size))}
-          data-testid="board-fit"
-        >
-          <Maximize aria-hidden="true" focusable="false" strokeWidth={1.75} />
-        </button>
-      </div>
-
-      <p className="visually-hidden" id={hintId}>
-        {t('ideas.canvas.hint')}
-        {connecting ? ` ${t('ideas.canvas.hintConnecting')}` : ''}
-      </p>
-    </div>
+      {readingOrder(placed).map((card) => (
+        <BoardCardButton
+          key={card.id}
+          card={card}
+          selected={selected}
+          connecting={connecting}
+          dragging={dragging}
+          drawOrder={drawOrder}
+          beginItemDrag={beginItemDrag}
+          cardDrag={cardDrag}
+          press={press}
+          onCardKeyDown={onCardKeyDown}
+        />
+      ))}
+    </CanvasStage>
   )
 }

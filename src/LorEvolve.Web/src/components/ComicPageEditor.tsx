@@ -1,64 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ImageOff } from 'lucide-react'
 import { ActionIcon } from './ActionIcon'
 import { Field } from './Field'
+import { ScriptField } from './projectEntities/ScriptPartFields'
 import { FieldImageInput } from './FieldImageInput'
-import { ApiError } from '../lib/api'
+import { PictureWithFallback } from './PictureWithFallback'
 import type { FieldImageRef } from '../lore/types'
 import { nodeImageApi } from '../projectEntities/nodeImages'
-import {
-  getNode,
-  NODE_CHANGED,
-  saveNode,
-  PANEL_SCRIPT,
-  scriptOf,
-  type PanelScript,
-  type ProjectNodeDetail,
-  type ProjectNodeSummary,
-} from '../projectEntities/structure'
+import { PANEL_SCRIPT, type ProjectNodeSummary } from '../projectEntities/structure'
+import { nodeChangedCode, useNodeEdit } from '../projectEntities/useNodeEdit'
 import { t } from '../i18n'
 import { useUniverseAccess } from '../universes/access'
-
-const SCRIPT_ROWS: Record<(typeof PANEL_SCRIPT)[number], number> = {
-  dialogue: 4,
-  caption: 2,
-  sfx: 2,
-  notes: 3,
-}
-
-/** One textarea of a panel's script, labelled and with its placeholder. */
-export function ScriptField({
-  part,
-  value,
-  onChange,
-  testId,
-  readOnly = false,
-}: {
-  part: (typeof PANEL_SCRIPT)[number]
-  value: string
-  onChange: (value: string) => void
-  testId: string
-  readOnly?: boolean
-}) {
-  return (
-    <Field label={t(`projects.structure.panel.${part}`)}>
-      {(control) => (
-        <textarea
-          {...control}
-          className="field__input"
-          rows={SCRIPT_ROWS[part]}
-          maxLength={4000}
-          readOnly={readOnly}
-          value={value}
-          placeholder={t(`projects.structure.panel.${part}Placeholder`)}
-          onChange={(event) => onChange(event.target.value)}
-          data-testid={testId}
-        />
-      )}
-    </Field>
-  )
-}
-
+import { Button } from './Button'
+import { FormMessage } from './FormMessage'
+import { QuietNote } from './QuietNote'
+import { Section } from './Section'
 /**
  * A page's or panel's picture (#295), on the image field control: free crop, replace, recrop, remove. With no picture,
  * or one that fails to load, a placeholder holds its place; the script never depends on it.
@@ -77,10 +33,9 @@ export function ComicArt({
   onChanged: (image: FieldImageRef | null) => void
 }) {
   const canEdit = useUniverseAccess().editContent
-  const [broken, setBroken] = useState(false)
   const placeholder = (
     <span
-      className="imagefield__preview imagefield__preview--blank comicart__placeholder"
+      className="imagefield__preview imagefield__preview--blank"
       data-testid={`comic-art-placeholder-${nodeId}`}
     >
       <ActionIcon icon={ImageOff} />
@@ -91,14 +46,14 @@ export function ComicArt({
   if (!canEdit)
     return (
       <figure className="imagefield__row" data-testid={`comic-art-readonly-${nodeId}`}>
-        {image && !broken ? (
-          <img
+        {image ? (
+          <PictureWithFallback
             className="imagefield__preview imagefield__preview--field"
             src={nodeImageApi(projectId, nodeId).url(image, 'crop')}
             alt={label}
             width={image.width}
             height={image.height}
-            onError={() => setBroken(true)}
+            fallback={placeholder}
           />
         ) : (
           placeholder
@@ -130,21 +85,47 @@ export function ComicArt({
 export function ComicPageEditor({
   projectId,
   panels,
+  onDirtyChange,
+  onSavingChange,
 }: {
   projectId: string
   panels: ProjectNodeSummary[]
+  /** Any card unsaved, or saving: the drawer guards and locks for them. */
+  onDirtyChange: (dirty: boolean) => void
+  onSavingChange: (saving: boolean) => void
 }) {
+  const [states, setStates] = useState<Record<string, { dirty: boolean; saving: boolean }>>({})
+  const report = useCallback((id: string, dirty: boolean, saving: boolean) => {
+    setStates((current) => ({ ...current, [id]: { dirty, saving } }))
+  }, [])
+  const live = panels.map((panel) => states[panel.id])
+  const [anyDirty, anySaving] = [live.some((one) => one?.dirty), live.some((one) => one?.saving)]
+  useEffect(() => {
+    onDirtyChange(anyDirty)
+    onSavingChange(anySaving)
+  }, [anyDirty, anySaving, onDirtyChange, onSavingChange])
+
   return (
-    <section className="comicpage" data-testid="comic-page-editor">
-      <h3 className="sectionrule">{t('projects.structure.panel.panels')}</h3>
+    <Section
+      level={3}
+      title={t('projects.structure.panel.panels')}
+      titleProps={{ tone: 'rule' }}
+      testId="comic-page-editor"
+    >
       {panels.length === 0 ? (
-        <p className="projects__lede">{t('projects.structure.panel.none')}</p>
+        <QuietNote spacing="flush">{t('projects.structure.panel.none')}</QuietNote>
       ) : (
         panels.map((panel, index) => (
-          <PanelCard key={panel.id} projectId={projectId} panelId={panel.id} number={index + 1} />
+          <PanelCard
+            key={panel.id}
+            projectId={projectId}
+            panelId={panel.id}
+            number={index + 1}
+            report={report}
+          />
         ))
       )}
-    </section>
+    </Section>
   )
 }
 
@@ -152,75 +133,40 @@ function PanelCard({
   projectId,
   panelId,
   number,
+  report,
 }: {
   projectId: string
   panelId: string
   number: number
+  report: (id: string, dirty: boolean, saving: boolean) => void
 }) {
-  const [node, setNode] = useState<ProjectNodeDetail | null>(null)
-  const [body, setBody] = useState('')
-  const [script, setScript] = useState<PanelScript>({
-    dialogue: '',
-    caption: '',
-    sfx: '',
-    notes: '',
-  })
-  const [saving, setSaving] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
+  const edit = useNodeEdit(projectId, panelId, nodeChangedCode)
+  const { node, draft, setDraft } = edit
+  const saving = edit.isSaving
+  const status = edit.changed ? t('projects.structure.changed') : edit.message
   const canEdit = useUniverseAccess().editContent
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getNode(projectId, panelId, controller.signal)
-      .then((read) => {
-        setNode(read)
-        setBody(read.body ?? '')
-        setScript(scriptOf(read))
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted)
-          setStatus(error instanceof Error ? error.message : t('projects.structure.failed'))
-      })
-    return () => controller.abort()
-  }, [projectId, panelId])
-
   const testId = (part: string) => `comic-panel-${panelId}-${part}`
+  const isDirty = !saving && edit.isDirty
+  useEffect(() => {
+    report(panelId, isDirty, saving)
+  }, [report, panelId, isDirty, saving])
 
   function save() {
     if (!node || saving || !canEdit) return
-    setSaving(true)
-    setStatus(null)
-    saveNode(projectId, node.id, {
-      title: node.title,
-      summary: node.summary,
-      body: body || null,
-      expectedVersion: node.version,
-      dialogue: script.dialogue || null,
-      caption: script.caption || null,
-      sfx: script.sfx || null,
-      notes: script.notes || null,
+    // The drafts stay as typed; the card shows the saved node and says so.
+    void edit.save({ body: draft.body, script: draft.script }, (saved) => {
+      edit.setNode(saved)
+      edit.setMessage(t('projects.structure.panel.saved'))
     })
-      .then((saved) => {
-        setNode(saved)
-        setStatus(t('projects.structure.panel.saved'))
-      })
-      .catch((error: unknown) =>
-        setStatus(
-          error instanceof ApiError && error.code === NODE_CHANGED
-            ? t('projects.structure.changed')
-            : error instanceof Error
-              ? error.message
-              : t('projects.structure.failed'),
-        ),
-      )
-      .finally(() => setSaving(false))
   }
 
   return (
-    <article className="comicpage__panel" data-testid={`comic-panel-${panelId}`}>
-      <h4 className="comicpage__title">
-        {node?.title ?? `${t('projects.structure.levels.panel')} ${number}`}
-      </h4>
+    <Section
+      level={4}
+      title={node?.title ?? `${t('projects.structure.levels.panel')} ${number}`}
+      testId={`comic-panel-${panelId}`}
+    >
       {node ? (
         <>
           <ComicArt
@@ -228,43 +174,35 @@ function PanelCard({
             nodeId={node.id}
             label={t('projects.structure.art.panelArt')}
             image={node.image}
-            onChanged={(image) => setNode({ ...node, image })}
+            onChanged={(image) => edit.setNode({ ...node, image })}
           />
-          <Field label={t('projects.structure.panel.visualDescription')}>
-            {(control) => (
-              <textarea
-                {...control}
-                className="field__input"
-                rows={3}
-                readOnly={!canEdit}
-                value={body}
-                placeholder={t('projects.structure.panel.visualPlaceholder')}
-                onChange={(event) => setBody(event.target.value)}
-                data-testid={testId('visual')}
-              />
-            )}
-          </Field>
+          <Field
+            as="textarea"
+            label={t('projects.structure.panel.visualDescription')}
+            rows={3}
+            readOnly={!canEdit}
+            value={draft.body}
+            placeholder={t('projects.structure.panel.visualPlaceholder')}
+            onChange={(event) => setDraft({ ...draft, body: event.target.value })}
+            data-testid={testId('visual')}
+          />
           {PANEL_SCRIPT.map((part) => (
             <ScriptField
               key={part}
               part={part}
-              value={script[part]}
-              onChange={(value) => setScript({ ...script, [part]: value })}
+              value={draft.script[part]}
+              onChange={(value) =>
+                setDraft({ ...draft, script: { ...draft.script, [part]: value } })
+              }
               testId={testId(part)}
               readOnly={!canEdit}
             />
           ))}
-          <div className="comicpage__actions">
+          <div className="actions">
             {canEdit ? (
-              <button
-                className="button"
-                type="button"
-                disabled={saving}
-                onClick={save}
-                data-testid={testId('save')}
-              >
-                {saving ? t('projects.structure.saving') : t('projects.structure.panel.save')}
-              </button>
+              <Button disabled={saving} onClick={save} data-testid={testId('save')}>
+                {saving ? t('projects.structure.saving') : t('shell.actions.save')}
+              </Button>
             ) : null}
             {status ? (
               <span role="status" data-testid={testId('status')}>
@@ -274,8 +212,8 @@ function PanelCard({
           </div>
         </>
       ) : status ? (
-        <p role="alert">{status}</p>
+        <FormMessage>{status}</FormMessage>
       ) : null}
-    </article>
+    </Section>
   )
 }

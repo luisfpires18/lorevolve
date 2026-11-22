@@ -1,0 +1,102 @@
+/* ---------- Touch ----------
+
+   LorEvolve leans on quiet controls: an Edit that is text on paper, a remove that is a small
+   cross inside a token, an editor toolbar of one-word buttons. With a mouse that reads as
+   restraint. Under a finger a twenty-pixel target is a miss, and the miss lands on the
+   link next to it.
+
+   So this block raises hit areas where the primary pointer is coarse, and only there -
+   a mouse-driven screen keeps the typography it was designed with. Sizes are grown from
+   padding and a minimum height rather than from font size, so nothing is restyled, and
+   these rules deliberately leave prose links alone: a 44px line box inside a paragraph
+   would break the paragraph. */
+
+@media (pointer: coarse) {
+  .token {
+    padding: 0.2rem 0.15rem 0.2rem 0.5rem;
+  }
+
+  /* The cross is small on purpose; the area around it does not have to be. */
+  .token__remove {
+    justify-content: center;
+    min-width: var(--control-touch);
+    min-height: var(--control-touch);
+    padding: 0;
+  }
+
+  .editor__tool,
+  .segmented__option {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .segmented__option {
+    min-width: 2.75rem;
+  }
+
+  .picker__option {
+    min-height: 2.75rem;
+    align-items: center;
+  }
+
+  .iconpicker__choice {
+    min-height: 2.75rem;
+  }
+
+  .accountmenu__trigger,
+  .sidebar__link,
+  .rail__toggle {
+    min-height: 2.75rem;
+    display: flex;
+    align-items: center;
+  }
+
+  /* The avatar is 32px wide; the target around it is not. */
+  .accountmenu__trigger {
+    min-width: var(--control-touch);
+    justify-content: center;
+  }
+
+  .rail__mark {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tokens__input {
+    min-height: 2.5rem;
+  }
+
+  /* Stacked one under another in a list, these are the easiest links in the product to
+     mis-tap: the neighbour is one line away. Padding separates the hit boxes without
+     changing a single type size. */
+  .crumb a,
+  .relation__name,
+  .finding__subjects a {
+    display: inline-block;
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+  }
+
+  .sidebar__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--control-touch);
+  }
+
+  .colourfield__picker {
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+
+  /* Cast members and relation ends sit in lists rather than in sentences, so they can
+     take the room a finger needs without disturbing a line of prose. */
+  .lorechip {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+}
