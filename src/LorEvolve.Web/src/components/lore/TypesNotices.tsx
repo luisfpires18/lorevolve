@@ -1,6 +1,6 @@
 import { useI18n } from '../../i18n'
 import type { EntityType } from '../../lore/typeDefinitions'
-import { Callout } from '../Callout'
+import { StatusNotice } from '../Callout'
 import { LoadError } from '../LoadError'
 
 /** Above the Lore types: a failure with Retry when the list could not be read, and the status line. */
@@ -36,9 +36,9 @@ export function TypesNotices({
         />
       ) : null}
 
-      <Callout look="notice" className="types__notice" testId="types-notice">
-        <p role="status">{notice}</p>
-      </Callout>
+      <StatusNotice className="types__notice" testId="types-notice">
+        {notice}
+      </StatusNotice>
     </>
   )
 }

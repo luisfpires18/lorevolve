@@ -1,4 +1,5 @@
-import type { ReactNode, Ref } from 'react'
+import type { ReactNode, Ref, RefObject } from 'react'
+import { Callout } from './Callout'
 
 /**
  * The red line under a form: a refused save, a failed load. Renders nothing when there is nothing to say. `role`
@@ -40,5 +41,30 @@ export function FormMessage({
     >
       {children}
     </Tag>
+  )
+}
+
+/**
+ * What an action said: a refused one as the red line, a done one as a status callout. Both take the focus through
+ * `line`; nothing is drawn without feedback.
+ */
+export function FeedbackLine({
+  feedback,
+  line,
+  testId,
+}: {
+  feedback: { text: string; isError: boolean } | null
+  line: RefObject<HTMLParagraphElement | null>
+  testId: string
+}) {
+  if (!feedback) return null
+  return feedback.isError ? (
+    <FormMessage tabIndex={-1} ref={line} testId={testId}>
+      {feedback.text}
+    </FormMessage>
+  ) : (
+    <Callout look="callout" as="p" role="status" ref={line} testId={testId}>
+      {feedback.text}
+    </Callout>
   )
 }

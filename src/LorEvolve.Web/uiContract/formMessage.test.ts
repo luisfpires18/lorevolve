@@ -28,11 +28,8 @@ const handWritten = (source: string) =>
 // An action's feedback pair drawn by hand: a ternary on `isError` (not an `isError?:` type) choosing the line.
 const pairsFeedback = (source: string) => /\bisError\s*\?\s*[(<]/.test(source)
 
-// Files that draw their own feedback pair.
-const FEEDBACK_PAIRS = [
-  'src/components/ReviewSuggestions.tsx',
-  'src/components/aiChanges/AiChangeNotices.tsx',
-]
+// Files that draw their own feedback pair. FeedbackLine is the part.
+const FEEDBACK_PAIRS = ['src/components/FormMessage.tsx']
 
 test('the form message guard catches a hand-written line, template-built classes included', () => {
   assert.ok(handWritten('<p className="form__message" role="alert">{m}</p>'))

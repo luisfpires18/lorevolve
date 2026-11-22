@@ -39,7 +39,7 @@ const ERROR_BLOCKS = new Map<string, string>([
 ])
 
 // Files that draw a `notice` box with role="status" themselves. LoadingNote is the part; a create or delete notice is
-// a `Callout` holding a `<p role="status">`.
+// `StatusNotice` or `OutcomeNotice` (in `Callout.tsx`).
 const STATUS_NOTICES = new Map<string, string>([
   ['src/components/LoadingNote.tsx', 'the part'],
   ['src/components/ideas/BoardToolbar.tsx', 'a connect prompt with Cancel, not a loading line'],
@@ -121,15 +121,8 @@ const drawsProgressBar: Guard = (source) =>
 // Files that draw a progress bar or a meter. ProgressBar is the part.
 const PROGRESS_BARS = new Set(['src/components/ProgressBar.tsx'])
 
-// Files that draw a confirmation or an outcome line themselves.
-const NOTICE_LINES = new Set([
-  'src/components/TypeFields.tsx',
-  'src/components/ideas/RecordListPage.tsx',
-  'src/components/lore/TypesNotices.tsx',
-  'src/components/trash/TrashNotices.tsx',
-  'src/pages/MapsPage.tsx',
-  'src/pages/WorldRulesPage.tsx',
-])
+// Files that draw a confirmation or an outcome line themselves. StatusNotice and OutcomeNotice are the parts.
+const NOTICE_LINES = new Set(['src/components/Callout.tsx'])
 
 function check(guard: Guard, files: string[], allowed: Set<string> | Map<string, string>) {
   const found = files.filter((file) => guard(read(file)))

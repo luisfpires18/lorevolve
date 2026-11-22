@@ -14,7 +14,7 @@ import type { termManagerActions } from '../../ruleValidation/termManagerActions
 import { Button } from '../Button'
 import { FormActions } from '../FormActions'
 import { TypeRow } from '../TypeRow'
-import { QuietNote } from '../QuietNote'
+import { ReadingNote } from '../QuietNote'
 
 /** One kind's terms, each with its use, Rename and Delete, and the rename row in its place. */
 export function TermGroup({
@@ -45,9 +45,7 @@ export function TermGroup({
         {TERM_KIND_PLURALS[kind]}
       </h3>
       {group.length === 0 ? (
-        <QuietNote size="body" className="relations__quiet">
-          {t('canon.terms.none')}
-        </QuietNote>
+        <ReadingNote>{t('canon.terms.none')}</ReadingNote>
       ) : (
         <ul className="types__list" aria-labelledby={groupId}>
           {group.map((term) =>

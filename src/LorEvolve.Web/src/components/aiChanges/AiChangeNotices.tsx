@@ -4,7 +4,7 @@ import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useAiChangeState } from '../../aiChanges/useAiChangeState'
 import { QuietNote } from '../QuietNote'
 import { DateText } from '../DateText'
-import { FormMessage } from '../FormMessage'
+import { FeedbackLine } from '../FormMessage'
 import { Callout } from '../Callout'
 
 /** What stands above the decision: the note while open, pictures still to hand over, a block, read-only, and the feedback. */
@@ -72,23 +72,7 @@ export function AiChangeNotices({
         </QuietNote>
       ) : null}
 
-      {feedback ? (
-        feedback.isError ? (
-          <FormMessage tabIndex={-1} ref={feedbackLine} testId="ai-change-feedback">
-            {feedback.text}
-          </FormMessage>
-        ) : (
-          <Callout
-            look="callout"
-            as="p"
-            role="status"
-            ref={feedbackLine}
-            testId="ai-change-feedback"
-          >
-            {feedback.text}
-          </Callout>
-        )
-      ) : null}
+      <FeedbackLine feedback={feedback} line={feedbackLine} testId="ai-change-feedback" />
     </>
   )
 }

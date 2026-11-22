@@ -57,13 +57,7 @@ test('a settings note and a saved line are drawn by QuietNote', () => {
 const STAYS: Record<string, string[]> = {
   entry__blank: [],
   projectcard__meta: [],
-  relations__quiet: [
-    'src/components/KnowledgeView.tsx',
-    'src/components/RelationshipTypeManager.tsx',
-    'src/components/knowledge/RecordList.tsx',
-    'src/components/relationships/RelationsList.tsx',
-    'src/components/ruleValidation/TermGroup.tsx',
-  ],
+  relations__quiet: ['src/components/QuietNote.tsx'],
   field__hint: [
     'src/components/CharCount.tsx',
     'src/components/CheckField.tsx',

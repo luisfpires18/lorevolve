@@ -1,5 +1,7 @@
 import { useEffect, useImperativeHandle, useRef } from 'react'
 import type { ReactNode, Ref } from 'react'
+import { Link } from 'react-router-dom'
+import type { Outcome } from '../lib/outcome'
 
 interface CalloutProps {
   /** `notice`: the muted line with the page's gap (`.notice`). `callout`: the tinted box (`.callout`). */
@@ -69,5 +71,52 @@ export function Callout({
       {children}
       {actions ? <div className="actions callout__actions">{actions}</div> : null}
     </Tag>
+  )
+}
+
+/**
+ * A confirmation after a create or delete: a notice holding one status line. Always drawn, so a caller that keeps an
+ * empty live region mounted gets one; callers that show it only sometimes keep their own condition.
+ */
+export function StatusNotice({
+  className,
+  testId,
+  children,
+}: {
+  className: string
+  testId: string
+  children?: ReactNode
+}) {
+  return (
+    <Callout look="notice" className={className} testId={testId}>
+      <p role="status">{children}</p>
+    </Callout>
+  )
+}
+
+/** What a restore or delete in a list just did, and the way to what it touched. Takes the focus when it shows. */
+export function OutcomeNotice({
+  outcome,
+  className,
+  messageTestId,
+  linkTestId,
+}: {
+  outcome: Outcome | null
+  className: string
+  messageTestId: string
+  linkTestId?: string
+}) {
+  if (!outcome) return null
+  return (
+    <Callout look="notice" className={className} focusOnShow={outcome}>
+      <p role="status" data-testid={messageTestId}>
+        {outcome.text}
+      </p>
+      {outcome.link ? (
+        <Link to={outcome.link.to} data-testid={linkTestId}>
+          {outcome.link.label}
+        </Link>
+      ) : null}
+    </Callout>
   )
 }

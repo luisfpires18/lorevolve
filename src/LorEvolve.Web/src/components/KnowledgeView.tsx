@@ -9,7 +9,7 @@ import { RecordForm } from './knowledge/RecordForm'
 import { NewButton } from './NewButton'
 import { LoadError } from './LoadError'
 import { PanelHead } from './PanelHead'
-import { QuietNote } from './QuietNote'
+import { ReadingNote } from './QuietNote'
 import { FormMessage } from './FormMessage'
 
 interface KnowledgeViewProps {
@@ -104,9 +104,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
           ) : null
         }
       />
-      <QuietNote size="body" className="relations__quiet">
-        {tx('ai.knowledge.lede', { name: <bdi>{entityName}</bdi> })}
-      </QuietNote>
+      <ReadingNote>{tx('ai.knowledge.lede', { name: <bdi>{entityName}</bdi> })}</ReadingNote>
 
       {message ? <FormMessage testId="knowledge-error">{message}</FormMessage> : null}
 
@@ -118,9 +116,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
           testId="knowledge-load-error"
         />
       ) : isLoading ? (
-        <QuietNote size="body" className="relations__quiet" role="status">
-          {t('ai.knowledge.reading')}
-        </QuietNote>
+        <ReadingNote role="status">{t('ai.knowledge.reading')}</ReadingNote>
       ) : (
         <>
           <RecordList
