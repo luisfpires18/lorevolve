@@ -284,7 +284,8 @@ public static class ProjectEntityImport
             var optionIds = from.Kind is EntityFieldKind.Select or EntityFieldKind.MultiSelect
                 ? field.Select(value => value.Option?.Value)
                     .OfType<string>()
-                    .Select(text => target.Options.FirstOrDefault(option => option.Value == text)?.Id)
+                    .Select(text => target.Options.FirstOrDefault(
+                        option => string.Equals(option.Value, text, StringComparison.OrdinalIgnoreCase))?.Id)
                     .OfType<Guid>()
                     .ToList()
                 : null;

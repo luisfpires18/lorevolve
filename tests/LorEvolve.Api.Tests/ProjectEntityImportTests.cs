@@ -51,7 +51,7 @@ public sealed class ProjectEntityImportTests(LorEvolveApiFactory factory) : ICla
         var gamePower = await GameField(client, project.Id, gameRune.Id, new("Power", EntityFieldKind.Number));
         var gameHero = await ProjectEntityTests.NewType(client, project.Id, "Hero");
         var gameTitle = await GameField(client, project.Id, gameHero.Id, new("title", EntityFieldKind.ShortText));
-        var gameRank = await GameField(client, project.Id, gameHero.Id, new("Rank", EntityFieldKind.Select, null, ["Novice", "Master"]));
+        var gameRank = await GameField(client, project.Id, gameHero.Id, new("Rank", EntityFieldKind.Select, null, ["novice", "MASTER"]));
         var gameBaseRune = await GameField(client, project.Id, gameHero.Id, new("Base rune", EntityFieldKind.EntityReference));
         var entry = await ProjectEntityTests.NewEntry(client, project.Id, gameHero.Id, "Aria in the game");
 
@@ -67,7 +67,8 @@ public sealed class ProjectEntityImportTests(LorEvolveApiFactory factory) : ICla
         Assert.Equal(entry.Version + 1, result.Entity.Version);
 
         Assert.Equal("Wanderer", Value(result.Entity, gameTitle).Text);
-        Assert.Equal(["Master"], Value(result.Entity, gameRank).OptionValues);
+        // Options match by text ignoring case, as option values are unique ignoring case.
+        Assert.Equal(["MASTER"], Value(result.Entity, gameRank).OptionValues);
 
         // The rune is the project's own entry, made as a copy that points back at Ember, with its power.
         var copyId = Value(result.Entity, gameBaseRune).ReferencedEntityId!.Value;
