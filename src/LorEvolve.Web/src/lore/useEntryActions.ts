@@ -1,8 +1,8 @@
 import { emptyValue, valuedFields } from './document'
 import { blockingFindingsOf } from '../canon/blocked'
 import { isChangedElsewhere } from '../lib/editConflict'
-import { deleteEntity, ENTRY_CHANGED, getEntity, updateEntity } from './api'
 import type { CanonStatusValue } from './types'
+import { useEntrySource } from './entrySource'
 import { confirmAction } from '../lib/confirm'
 import { useI18n } from '../i18n'
 import { draftFromDetail } from './entryDraft'
@@ -19,7 +19,6 @@ export function useEntryActions({
   setBlocked,
   runSave,
   selectedType,
-  universe,
   entityId,
   detail,
   setDetail,
@@ -27,12 +26,12 @@ export function useEntryActions({
   navigate,
 }: ReturnType<typeof useEntryState> &
   ReturnType<typeof useEntryLoad> & {
-    universe: { id: string }
     entityId: string | undefined
     isEditing: boolean
     navigate: NavigateFunction
   }) {
   const { t } = useI18n()
+  const entrySource = useEntrySource()
   const isNew = entityId === undefined
 
   /**
@@ -56,18 +55,22 @@ export function useEntryActions({
     await runSave(async () => {
       try {
         const definitions = selectedType?.fields ?? []
-        const saved = await updateEntity(universe.id, entityId, {
-          entityTypeId: updated.entityTypeId,
-          name: updated.name,
-          summary: updated.summary.trim() ? updated.summary.trim() : null,
-          canonStatus: next,
-          aliases: updated.aliases,
-          tags: updated.tags,
-          fields: valuedFields(definitions).map(
-            (definition) => updated.fields[definition.id] ?? emptyValue(definition),
-          ),
-          expectedVersion: detail?.version,
-        })
+        const saved = await entrySource.save(
+          entityId,
+          {
+            entityTypeId: updated.entityTypeId,
+            name: updated.name,
+            summary: updated.summary.trim() ? updated.summary.trim() : null,
+            canonStatus: next,
+            aliases: updated.aliases,
+            tags: updated.tags,
+            fields: valuedFields(definitions).map(
+              (definition) => updated.fields[definition.id] ?? emptyValue(definition),
+            ),
+            expectedVersion: detail?.version,
+          },
+          detail,
+        )
         setDetail(saved)
         setDraft(draftFromDetail(saved))
         setHistoryKey((key) => key + 1)
@@ -77,10 +80,10 @@ export function useEntryActions({
         const blocking = blockingFindingsOf(error)
         if (blocking) {
           setBlocked(blocking)
-        } else if (isChangedElsewhere(error, ENTRY_CHANGED) && entityId !== undefined) {
+        } else if (isChangedElsewhere(error, entrySource.changedCode) && entityId !== undefined) {
           // Nothing unsaved is at stake here: the page reads the entry as it now is, and the author chooses again.
           try {
-            const latest = await getEntity(universe.id, entityId)
+            const latest = await entrySource.get(entityId)
             setDetail(latest)
             setDraft(draftFromDetail(latest))
             setHistoryKey((key) => key + 1)
@@ -108,9 +111,9 @@ export function useEntryActions({
       busyLabel: t('entity.page.trash.busy'),
       variant: 'warning',
       failure: t('entity.page.trash.failed'),
-      action: () => deleteEntity(universe.id, entityId),
+      action: () => entrySource.remove(entityId),
     })
-    if (trashed) await navigate(`/app/universes/${universe.id}/trash`, { replace: true })
+    if (trashed) await navigate(entrySource.href.afterRemove, { replace: true })
   }
   return { changeCanon, moveToTrash }
 }

@@ -11,6 +11,7 @@ import { LoadError } from '../LoadError'
 import { ReadGate } from '../ReadGate'
 import { CardSkeleton } from '../CardSkeleton'
 import { Callout } from '../Callout'
+import { useEntrySource } from '../../lore/entrySource'
 type Entries = ReturnType<typeof useLoreEntries>
 type Selection = ReturnType<typeof useLoreSelection>
 
@@ -23,13 +24,11 @@ export function LoreStatus({
   typesFailed,
   retry,
   trashedNotice,
-  universe,
   massCreated,
   refreshTypes,
   view,
   children,
 }: {
-  universe: ReturnType<typeof useWorkspaceTypes>['universe']
   massCreated: number | null
   refreshTypes: ReturnType<typeof useWorkspaceTypes>['refreshTypes']
   view: LoadState
@@ -37,13 +36,13 @@ export function LoreStatus({
 } & Pick<Entries, 'types' | 'typesFailed' | 'retry'> &
   Pick<Selection, 'trashedNotice'>) {
   const { t, tn, tx } = useI18n()
+  const entrySource = useEntrySource()
   return (
     <>
       {trashedNotice ? (
         <p className="lore__created" role="status" data-testid="lore-trashed">
           <ActionIcon icon={Check} />
-          {trashedNotice}{' '}
-          <Link to={`/app/universes/${universe.id}/trash`}>{t('lore.page.openTrash')}</Link>
+          {trashedNotice} <Link to={entrySource.href.afterRemove}>{t('lore.page.openTrash')}</Link>
         </p>
       ) : null}
 
@@ -71,9 +70,7 @@ export function LoreStatus({
       {types !== null && types.length === 0 ? (
         <Callout look="notice" as="p" testId="lore-no-types">
           {tx('lore.page.noTypes', {
-            link: (
-              <Link to={`/app/universes/${universe.id}/types`}>{t('lore.page.noTypesLink')}</Link>
-            ),
+            link: <Link to={entrySource.href.types}>{t('lore.page.noTypesLink')}</Link>,
           })}
         </Callout>
       ) : null}

@@ -12,10 +12,10 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { UniverseCapabilities } from '../../universes/access'
 import type { EntityType } from '../../lore/typeDefinitions'
 import { QuietNote } from '../QuietNote'
+import { useEntrySource } from '../../lore/entrySource'
 
 /** The entry's identity: the crumb, its type, its Canon status, its name, aliases and summary, read or edited. */
 export function EntryHeader({
-  universe,
   access,
   isNew,
   types,
@@ -30,7 +30,6 @@ export function EntryHeader({
   selectedType,
   changeCanon,
 }: {
-  universe: { id: string }
   access: UniverseCapabilities
   isNew: boolean
   types: EntityType[]
@@ -46,6 +45,7 @@ export function EntryHeader({
   changeCanon: (next: CanonStatusValue) => Promise<void>
 }) {
   const { t, tx } = useI18n()
+  const entrySource = useEntrySource()
   return (
     <EntryHead
       crumb={
@@ -53,7 +53,7 @@ export function EntryHeader({
         <Crumb
           items={[
             {
-              to: `/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`,
+              to: entrySource.href.list(detail?.entityTypeId ?? draft.entityTypeId),
               label: t('entity.page.head.lore'),
             },
           ]}
@@ -80,7 +80,7 @@ export function EntryHeader({
         ) : (
           // Back to the Lore list at this entry's type, by the type's id.
           <EntryTypeLink
-            to={`/app/universes/${universe.id}/lore?type=${detail?.entityTypeId ?? draft.entityTypeId}`}
+            to={entrySource.href.list(detail?.entityTypeId ?? draft.entityTypeId)}
             accent={selectedType?.accentColor}
             icon={selectedType?.icon ?? null}
             name={detail?.entityTypeName ?? selectedType?.name}

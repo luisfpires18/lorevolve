@@ -7,6 +7,7 @@ import type { EntityDetail } from '../../lore/types'
 import { useI18n } from '../../i18n'
 import type { UniverseCapabilities } from '../../universes/access'
 import { Button } from '../Button'
+import { useEntrySource } from '../../lore/entrySource'
 
 /** The tools on the entry itself: publication, Edit or Suggest, Family tree, the private note and the menu. */
 export function EntryTools({
@@ -31,6 +32,7 @@ export function EntryTools({
   startSuggesting: () => void
 }) {
   const { t } = useI18n()
+  const entrySource = useEntrySource()
   return (
     <>
       {/* Whether the entry is public, said in a word, and the way to change it - before Edit, because it is
@@ -106,7 +108,7 @@ export function EntryTools({
           {access.editContent ? (
             <ActionMenuItem
               icon={Copy}
-              to={`/app/universes/${universe.id}/lore/new?from=${entityId}`}
+              to={`${entrySource.href.create()}?from=${entityId}`}
               testId="duplicate-entity"
             >
               {t('entity.page.tools.duplicate')}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { listEntities, readLorePageSize } from './api'
+import { readLorePageSize } from './api'
 import type { CanonStatusValue, EntitySort } from './types'
 import type { EntityTypeGroup } from './typeDefinitions'
 import {
@@ -16,6 +16,7 @@ import type { SetURLSearchParams } from 'react-router-dom'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { changed } from '../lib/queryParams'
+import { useEntrySource } from './entrySource'
 
 /** Groups that could not be read: none to offer, one stable list. */
 const EMPTY_GROUPS: EntityTypeGroup[] = []
@@ -24,7 +25,6 @@ const EMPTY_GROUPS: EntityTypeGroup[] = []
 export function useLoreEntries({
   typesRead,
   groupsRead,
-  universe,
   setParams,
   typeParam,
   groupParam,
@@ -38,7 +38,6 @@ export function useLoreEntries({
 }: {
   typesRead: ReturnType<typeof useWorkspaceTypes>['entryTypes']
   groupsRead: ReturnType<typeof useWorkspaceTypes>['groups']
-  universe: { id: string }
   setParams: SetURLSearchParams
   typeParam: string | null
   groupParam: string | null
@@ -50,6 +49,7 @@ export function useLoreEntries({
   page: number
   addressFilters: ReturnType<typeof readFieldFilters>
 }) {
+  const entrySource = useEntrySource()
   // The types and groups come with the universe (`useWorkspaceTypes`). A failed read of the types is not a universe without
   // any: `types` stays unknown, so nothing below reads the failure as "no types" or takes a chosen type out of the address
   // as one that does not exist (#58).
@@ -137,8 +137,7 @@ export function useLoreEntries({
       (signal: AbortSignal) =>
         entityTypeId === null && entityTypeGroupId === null
           ? undefined
-          : listEntities(
-              universe.id,
+          : entrySource.list(
               {
                 search: settledSearch,
                 entityTypeId,
@@ -157,7 +156,7 @@ export function useLoreEntries({
       // fieldFilters is read through its key: a fresh array of the same filters is not a new list.
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [
-        universe.id,
+        entrySource,
         settledSearch,
         exact,
         sort,

@@ -1,7 +1,6 @@
 import { ChangeList, EditConflict } from '../EditConflict'
 import type { CanonBlockingFinding } from '../../canon/types'
 import { CanonBlockNotice } from '../CanonBlockNotice'
-import { getEntity } from '../../lore/api'
 import type { EntityDetail } from '../../lore/types'
 import { useI18n } from '../../i18n'
 import type { Draft } from '../../lore/entryDraft'
@@ -11,6 +10,7 @@ import type { Chronology } from '../../chronology/types'
 import { Announce } from '../Announce'
 import { FormMessage } from '../FormMessage'
 import { Callout } from '../Callout'
+import { useEntrySource } from '../../lore/entrySource'
 
 /** What the entry has to say under its bar: a Canon block, a message, a sent suggestion, a conflict, and the announcer. */
 export function EntryNotices({
@@ -49,6 +49,7 @@ export function EntryNotices({
   takeLatest: (latest: EntityDetail) => void
 }) {
   const { t } = useI18n()
+  const entrySource = useEntrySource()
   return (
     <>
       {blocked ? (
@@ -68,7 +69,7 @@ export function EntryNotices({
       {conflict && isEditing && !isNew && entityId !== undefined ? (
         <EditConflict
           what={t('entity.page.conflictWhat')}
-          read={() => getEntity(universe.id, entityId)}
+          read={() => entrySource.get(entityId)}
           renderLatest={(latest) => (
             <ChangeList changes={entryChanges(latest, draft, types, chronology, detail)} />
           )}
