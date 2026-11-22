@@ -1,0 +1,210 @@
+/* Workspace redesign (#562): the core kit as plain CSS. One block per part. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-ui);
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--text-body);
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: var(--r-control);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+svg.lucide {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 1.75;
+  flex: none;
+}
+
+/* Button: primary (the accent, once per screen), secondary, quiet */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: var(--control-h);
+  padding: 0 var(--s3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-control);
+  background: var(--bg-raised);
+  color: var(--text);
+  font: 500 var(--text-ui) / 1 var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--fast) var(--ease),
+    border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+
+.btn:hover {
+  background: var(--bg-hover);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--primary:hover {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+.btn--quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.btn--icon {
+  width: var(--control-h);
+  padding: 0;
+}
+
+/* Field: label above, control, hint below */
+.field {
+  display: grid;
+  gap: var(--s1);
+}
+
+.field__label {
+  font-size: var(--text-ui);
+  font-weight: 500;
+}
+
+.field__hint {
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.input {
+  width: 100%;
+  min-height: var(--control-h);
+  padding: var(--s2) var(--s3);
+  border: 1px solid var(--line-control);
+  border-radius: var(--r-control);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  caret-color: var(--accent-text);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+textarea.input {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+/* Segmented: a small set of exclusive choices */
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--bg-subtle);
+}
+
+.segmented__item {
+  height: calc(var(--control-h) - 6px);
+  padding: 0 var(--s3);
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font: 500 var(--text-ui) / 1 var(--font-ui);
+  cursor: pointer;
+}
+
+.segmented__item[aria-pressed='true'] {
+  background: var(--bg-raised);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+/* Tabs: routed views of one thing */
+.tabs {
+  display: flex;
+  gap: var(--s4);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.tabs__item {
+  padding: var(--s2) 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: var(--text-ui);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tabs__item[aria-current='page'] {
+  border-bottom-color: var(--accent-text);
+  color: var(--text);
+}
+
+/* Stamp: the one place a state is shown */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem;
+  padding: 0 var(--s2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-badge);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.stamp--ok {
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  color: var(--success);
+}
+
+.stamp--warn {
+  border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+  color: var(--warning);
+}

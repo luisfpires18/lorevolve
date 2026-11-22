@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Workspace redesign mock (#562)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="kit.css" />
+    <link rel="stylesheet" href="kit-data.css" />
+    <link rel="stylesheet" href="shell.css" />
+    <link rel="stylesheet" href="pages.css" />
+  </head>
+  <body>
+    <!-- Mock only. The world and every name in it are invented for this page. -->
+    <div class="app" id="app">
+      <aside class="sidebar" id="sidebar">
+        <button class="switcher" type="button" aria-label="Switch universe">
+          <span class="seal" aria-hidden="true">L</span>
+          <span class="switcher__name">Low Tide Reckoning</span>
+          <i data-lucide="chevrons-up-down"></i>
+        </button>
+        <nav aria-label="Sections">
+          <a class="navitem" href="#overview"><i data-lucide="house"></i>Overview</a>
+          <h2 class="navgroup">World building</h2>
+          <a class="navitem" href="#lore"><i data-lucide="book-open"></i>Lore</a>
+          <a class="navitem" href="#lore"><i data-lucide="shapes"></i>Types</a>
+          <a class="navitem" href="#lore"><i data-lucide="network"></i>Family Tree</a>
+          <a class="navitem" href="#lore"><i data-lucide="map"></i>Maps</a>
+          <a class="navitem" href="#lore"><i data-lucide="hourglass"></i>Timeline</a>
+          <a class="navitem" href="#lore"><i data-lucide="scale"></i>World Logic</a>
+          <a class="navitem" href="#lore"><i data-lucide="lightbulb"></i>Ideas</a>
+          <h2 class="navgroup">Creation</h2>
+          <a class="navitem" href="#lore"><i data-lucide="pen-line"></i>Writing</a>
+          <a class="navitem" href="#lore"><i data-lucide="gamepad-2"></i>Gaming</a>
+          <h2 class="navgroup">Management</h2>
+          <a class="navitem" href="#lore"><i data-lucide="sparkles"></i>AI Changes</a>
+          <a class="navitem" href="#lore"><i data-lucide="globe"></i>Publish</a>
+          <a class="navitem" href="#lore"><i data-lucide="trash-2"></i>Trash</a>
+        </nav>
+        <div class="sidebar__foot">
+          <a class="navitem" href="#overview"><i data-lucide="circle-user"></i>Account</a>
+          <button class="btn btn--quiet btn--icon" type="button" id="theme" aria-label="Switch theme">
+            <i data-lucide="sun-moon"></i>
+          </button>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <button class="btn btn--quiet btn--icon topbar__menu" type="button" id="menu" aria-label="Open sections">
+            <i data-lucide="menu"></i>
+          </button>
+          <nav class="crumbs" aria-label="Breadcrumb" id="crumbs"></nav>
+          <button class="search" type="button" aria-label="Search this universe">
+            <i data-lucide="search"></i><span>Search this universe</span><kbd>Ctrl K</kbd>
+          </button>
+          <div class="topbar__actions" id="actions"></div>
+        </header>
+        <main id="screen"></main>
+      </div>
+    </div>
+
+    <template id="t-lore" data-nav="Lore">
+      <div data-slot="crumbs"><b>Lore</b></div>
+      <div data-slot="actions">
+        <button class="btn btn--primary" type="button" data-go="#new"><i data-lucide="plus"></i><span>New entry</span></button>
+      </div>
+      <section class="page">
+        <div class="page__head">
+          <h1 class="page__title">Lore</h1>
+          <span class="page__count">187 entries</span>
+        </div>
+        <div class="toolbar">
+          <div class="segmented" role="group" aria-label="Type">
+            <button class="segmented__item" type="button" aria-pressed="true">All</button>
+            <button class="segmented__item" type="button" aria-pressed="false">Character</button>
+            <button class="segmented__item" type="button" aria-pressed="false">Settlement</button>
+            <button class="segmented__item wide" type="button" aria-pressed="false">Organization</button>
+          </div>
+          <button class="btn btn--quiet" type="button">More types<i data-lucide="chevron-down"></i></button>
+          <div class="toolbar__end">
+            <button class="btn" type="button"><i data-lucide="arrow-down-up"></i>Last changed</button>
+            <button class="btn btn--icon" type="button" aria-label="Show as cards"><i data-lucide="layout-grid"></i></button>
+          </div>
+        </div>
+        <table class="table">
+          <colgroup>
+            <col />
+            <col class="wide" style="width: 11rem" />
+            <col style="width: 6.5rem" />
+            <col class="wide" style="width: 8rem" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th class="wide">Type</th>
+              <th>Canon</th>
+              <th class="wide">Last changed</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="pager">
+          <span>1 to 9 of 187</span>
+          <span>
+            <button class="btn btn--icon" type="button" aria-label="Previous page" disabled><i data-lucide="chevron-left"></i></button>
+            <button class="btn btn--icon" type="button" aria-label="Next page"><i data-lucide="chevron-right"></i></button>
+          </span>
+        </div>
+      </section>
+    </template>
+
+    <template id="t-new" data-nav="Lore" data-under="t-lore">
+      <div class="backdrop" data-go="#lore"></div>
+      <form class="drawer" aria-label="New entry">
+        <div class="drawer__head">
+          New entry
+          <button class="btn btn--quiet btn--icon" type="button" data-go="#lore" aria-label="Close"><i data-lucide="x"></i></button>
+        </div>
+        <div class="drawer__body">
+          <label class="field">
+            <span class="field__label">Name</span>
+            <input class="input" type="text" placeholder="Insert a name" />
+          </label>
+          <label class="field">
+            <span class="field__label">Type</span>
+            <select class="input">
+              <option>Character</option>
+              <option>Settlement</option>
+              <option>Organization</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="field__label">Summary</span>
+            <textarea class="input" placeholder="Insert one or two sentences"></textarea>
+            <span class="field__hint">Shown under the name and in search results.</span>
+          </label>
+          <div class="field">
+            <span class="field__label">Canon</span>
+            <div class="segmented" role="group" aria-label="Canon">
+              <button class="segmented__item" type="button" aria-pressed="true">Canon</button>
+              <button class="segmented__item" type="button" aria-pressed="false">Draft</button>
+            </div>
+          </div>
+        </div>
+        <div class="drawer__foot">
+          <button class="btn" type="button" data-go="#lore">Cancel</button>
+          <button class="btn btn--primary" type="button" data-go="#entry">Create entry</button>
+        </div>
+      </form>
+    </template>
+
+    <template id="t-entry" data-nav="Lore">
+      <div data-slot="crumbs"><a href="#lore">Lore</a><span>/</span><span>Character</span><span>/</span><b>Ysolde Marrenhal</b></div>
+      <div data-slot="actions">
+        <button class="btn btn--icon" type="button" aria-label="More actions"><i data-lucide="ellipsis"></i></button>
+        <button class="btn btn--primary" type="button"><i data-lucide="pencil"></i><span>Edit</span></button>
+      </div>
+      <article class="detail">
+        <div class="detail__doc">
+          <h1 class="detail__title">Ysolde Marrenhal</h1>
+          <p class="detail__summary">Keeper of the Slack-Tide Lantern and the last of the Harrowmere pilots.</p>
+          <nav class="tabs" aria-label="Views">
+            <a class="tabs__item" href="#entry" aria-current="page">Article</a>
+            <a class="tabs__item" href="#entry">Relationships</a>
+            <a class="tabs__item" href="#entry">Timeline</a>
+            <a class="tabs__item" href="#entry">History</a>
+          </nav>
+          <div class="prose">
+            <p>
+              Ysolde learned the channel from her mother, who learned it from the lamp. At slack tide the water over the
+              shoals lies flat and tells a pilot nothing, so the Compact forbids a light there; a lit lantern draws
+              boats onto the sand.
+            </p>
+            <p>
+              She broke that rule once, in the winter the Skell Landing fleet came home late, and has kept the lantern
+              ever since as the price of it.
+            </p>
+          </div>
+        </div>
+        <aside class="detail__side" aria-label="Details">
+          <img class="detail__picture" src="https://picsum.photos/seed/harbor-lantern-keeper/640/480" alt="" />
+          <dl class="props">
+            <dt>Type</dt>
+            <dd>Character</dd>
+            <dt>Canon</dt>
+            <dd><span class="stamp stamp--ok">Canon</span></dd>
+            <dt>Also called</dt>
+            <dd>The Lamp Widow</dd>
+            <dt>Home</dt>
+            <dd><a class="link" href="#entry">Harrowmere</a></dd>
+            <dt>Belongs to</dt>
+            <dd><a class="link" href="#entry">The Lamplighters' Compact</a></dd>
+          </dl>
+          <h2 class="side__title">Appears in</h2>
+          <dl class="props">
+            <dt>Story</dt>
+            <dd><a class="link" href="#entry">The Late Fleet</a>, 3 scenes</dd>
+            <dt>Timeline</dt>
+            <dd><a class="link" href="#entry">The winter of the late fleet</a></dd>
+          </dl>
+        </aside>
+      </article>
+    </template>
+
+    <template id="t-overview" data-nav="Overview">
+      <div data-slot="crumbs"><b>Overview</b></div>
+      <div data-slot="actions">
+        <button class="btn btn--primary" type="button" data-go="#new"><i data-lucide="plus"></i><span>New entry</span></button>
+      </div>
+      <section class="overview">
+        <div class="overview__main">
+          <div>
+            <h1 class="page__title">Low Tide Reckoning</h1>
+            <p class="detail__summary">A drowned coast where the tide keeps the law and the lamplighters keep the tide.</p>
+          </div>
+          <div>
+            <h2 class="block__title">Waiting for you</h2>
+            <table class="table">
+              <colgroup>
+                <col />
+                <col style="width: 7.5rem" />
+              </colgroup>
+              <tbody>
+                <tr>
+                  <td>2 changes proposed by AI</td>
+                  <td><a class="link" href="#lore">Review</a></td>
+                </tr>
+                <tr>
+                  <td>1 contradiction in Canon: two birth years for Corwin Thatchlow</td>
+                  <td><a class="link" href="#entry">Resolve</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h2 class="block__title">Continue</h2>
+            <table class="table">
+              <colgroup>
+                <col />
+                <col class="wide" style="width: 9rem" />
+                <col class="wide" style="width: 8rem" />
+              </colgroup>
+              <tbody id="recent"></tbody>
+            </table>
+          </div>
+        </div>
+        <aside aria-label="In this universe">
+          <h2 class="block__title">In this universe</h2>
+          <dl class="props">
+            <dt>Lore</dt>
+            <dd><a class="link" href="#lore">187 entries</a></dd>
+            <dt>Timeline</dt>
+            <dd><a class="link" href="#lore">42 moments</a></dd>
+            <dt>Maps</dt>
+            <dd><a class="link" href="#lore">3 maps</a></dd>
+            <dt>Ideas</dt>
+            <dd><a class="link" href="#lore">26 ideas</a></dd>
+            <dt>Writing</dt>
+            <dd><a class="link" href="#lore">2 projects</a></dd>
+            <dt>Gaming</dt>
+            <dd><a class="link" href="#lore">1 project</a></dd>
+          </dl>
+        </aside>
+      </section>
+    </template>
+
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="mock.js"></script>
+  </body>
+</html>

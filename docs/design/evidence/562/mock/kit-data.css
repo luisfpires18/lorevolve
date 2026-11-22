@@ -1,0 +1,133 @@
+/* Workspace redesign (#562): kit parts that hold data. */
+/* Table: fixed columns, one row per thing */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--text-ui);
+}
+
+.table th {
+  padding: var(--s2) var(--s3);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  font-weight: 500;
+  text-align: left;
+}
+
+.table td {
+  height: var(--touch-h);
+  padding: var(--s1) var(--s3);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.table__name {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-width: 0;
+  font-weight: 500;
+}
+
+.table__name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table__muted {
+  color: var(--text-muted);
+}
+
+.thumb {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--r-badge);
+  background: var(--bg-selected);
+  object-fit: cover;
+}
+
+/* Drawer: a short task beside the page */
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 40;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: min(27.5rem, 100vw);
+  border-left: 1px solid var(--line);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-raised);
+}
+
+.drawer__head,
+.drawer__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s3) var(--s5);
+}
+
+.drawer__head {
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.drawer__body {
+  display: grid;
+  align-content: start;
+  gap: var(--s4);
+  padding: var(--s5);
+  overflow-y: auto;
+}
+
+.drawer__foot {
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--backdrop);
+}
+
+/* Properties: label and value pairs beside a document */
+.props {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: var(--s2) var(--s3);
+  margin: 0;
+  font-size: var(--text-ui);
+}
+
+.props dt {
+  color: var(--text-muted);
+}
+
+.props dd {
+  margin: 0;
+  min-width: 0;
+}
+
+/* A link inside content is ink with an underline: the accent stays for where you are and the main action. */
+.link {
+  text-decoration: underline;
+  text-decoration-color: var(--line-control);
+  text-underline-offset: 3px;
+}
+
+.link:hover {
+  text-decoration-color: currentColor;
+}

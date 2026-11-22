@@ -1,0 +1,97 @@
+/* Workspace redesign (#562): the proposed token set. Light is white and purple, dark is crimson and black.
+   Every pair used for text is measured in docs/design/workspace-redesign.md. */
+:root {
+  color-scheme: light;
+
+  /* Surfaces, lowest to highest */
+  --bg: #ffffff;
+  --bg-subtle: #f7f6fa;
+  --bg-raised: #ffffff;
+  --bg-hover: #f1eff6;
+  --bg-selected: #ece6fb;
+  --backdrop: rgb(23 20 31 / 0.4);
+
+  /* Lines */
+  --line: #e7e4ef;
+  --line-strong: #cfcadb;
+  --line-control: #8a8499;
+
+  /* Text */
+  --text: #17141f;
+  --text-muted: #5d586b;
+  --text-faint: #6f6a7e;
+
+  /* The one accent: where you are, and the main action. Nothing else uses it. */
+  --accent: #6d28d9;
+  --accent-hover: #5b21b6;
+  --accent-text: #6d28d9;
+  --on-accent: #ffffff;
+
+  /* States */
+  --danger: #b42318;
+  --warning: #8a5300;
+  --success: #17754b;
+
+  --shadow-raised: 0 12px 32px -12px rgb(23 20 31 / 0.22), 0 2px 6px -2px rgb(23 20 31 / 0.1);
+
+  /* Type: three UI sizes and two titles */
+  --font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-read: 'Literata', Georgia, serif;
+  --text-meta: 0.75rem;
+  --text-ui: 0.8125rem;
+  --text-body: 0.875rem;
+  --text-title: 1.25rem;
+  --text-document: 1.75rem;
+
+  /* Space: one 4px scale */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+
+  /* Shape: badges 4, controls 6, panels 8 */
+  --r-badge: 4px;
+  --r-control: 6px;
+  --r-panel: 8px;
+
+  --control-h: 2rem;
+  --touch-h: 2.75rem;
+  --sidebar-w: 15rem;
+  --topbar-h: 3.25rem;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --fast: 120ms;
+  --slow: 220ms;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0a0a0b;
+  --bg-subtle: #101012;
+  --bg-raised: #17171a;
+  --bg-hover: #1b1b1f;
+  --bg-selected: #2b1218;
+  --backdrop: rgb(0 0 0 / 0.6);
+
+  --line: #232327;
+  --line-strong: #35353b;
+  --line-control: #6e6e78;
+
+  --text: #f3f2f2;
+  --text-muted: #a5a3a8;
+  --text-faint: #8c8a90;
+
+  --accent: #c8102e;
+  --accent-hover: #de1f3e;
+  --accent-text: #ff6b83;
+  --on-accent: #ffffff;
+
+  --danger: #ff8a7a;
+  --warning: #e7b35a;
+  --success: #5fcf9a;
+
+  --shadow-raised: 0 16px 40px -12px rgb(0 0 0 / 0.8), 0 2px 6px -2px rgb(0 0 0 / 0.6);
+}
