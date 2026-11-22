@@ -4,7 +4,8 @@
 // that calls both useLocalDraft and useFormSave builds a record editor by hand. Only `ideas/useRecordEditor.ts` does;
 // the hooks already on useDraftedEditor (`ideas/useIdeaDraft.ts`, the board's draft step) call neither. A read is
 // `useAsyncRead` (I38): a component or hook file that makes its own AbortController is a hand-written read. A project
-// node is saved through `projectEntities/useNodeEdit.ts` (I39). The lists below only shrink, and a stale entry fails.
+// node is saved through `projectEntities/useNodeEdit.ts` (I39). The Lore entry list, page and form read, write and link
+// an entry through `lore/entrySource.ts` (#551). The lists below only shrink, and a stale entry fails.
 // Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
@@ -170,5 +171,80 @@ test('a project node is saved only through useNodeEdit', () => {
     sourceFiles.filter((file) => savesNode(read(file))),
     ['src/projectEntities/useNodeEdit.ts'],
     'save the node through projectEntities/useNodeEdit',
+  )
+})
+
+// The Lore entry list, page and form (#551). Not `lore/entrySource.ts`, where the calls and addresses live.
+const entryScreen = (file: string) =>
+  /^src\/components\/lore\/[^/]+\.tsx$/.test(file) ||
+  /^src\/lore\/useEntry[^/]*\.ts$/.test(file) ||
+  ['src/lore/useLoreEntries.ts', 'src/pages/EntityPage.tsx', 'src/pages/LorePage.tsx'].includes(
+    file,
+  )
+
+const entryApi = (source: string) =>
+  /\b(getEntity|listEntities|createEntity|updateEntity|deleteEntity|ENTRY_CHANGED)\b/.test(
+    code(source),
+  )
+
+// A hand-built `/lore` or `/types` address of a universe.
+const entryAddress = (source: string) => /universes\/\$\{[^}]*\}\/(lore|types)\b/.test(code(source))
+
+// Lore-only files the source does not reach. Only shrinks.
+const ENTRY_SOURCE_EXCEPTIONS = new Set([
+  'src/components/lore/ArchivedFields.tsx',
+  'src/components/lore/EntryHeader.tsx',
+  'src/components/lore/EntryNotices.tsx',
+  'src/components/lore/EntryTools.tsx',
+  'src/components/lore/FieldBlockedNote.tsx',
+  'src/components/lore/LorePreview.tsx',
+  'src/components/lore/LoreResults.tsx',
+  'src/components/lore/LoreStatus.tsx',
+  'src/components/lore/LoreTypeRow.tsx',
+  'src/lore/useEntryActions.ts',
+  'src/lore/useEntryLoad.ts',
+  'src/lore/useEntrySave.ts',
+  'src/lore/useEntryState.ts',
+  'src/lore/useLoreEntries.ts',
+  'src/pages/EntityPage.tsx',
+  'src/pages/LorePage.tsx',
+])
+
+test('the entry source guard catches an entry call or a hand-built entry address, however it is written', () => {
+  assert.ok(entryApi('await getEntity(universe.id, id)'))
+  assert.ok(entryApi('listEntities (\n  universeId,'))
+  assert.ok(entryApi("import { ENTRY_CHANGED } from './api'"))
+  assert.ok(!entryApi('getEntityArticle(universe.id, id)'))
+  assert.ok(!entryApi('entrySource.get(id)'))
+  assert.ok(!entryApi('// getEntity( lives in entrySource'))
+  assert.ok(entryAddress('`/app/universes/${universe.id}/lore?type=${id}`'))
+  assert.ok(entryAddress('`/app/universes/${universeId}/lore/${id}`'))
+  assert.ok(entryAddress('`/app/universes/${universe.id}/types`'))
+  assert.ok(!entryAddress("from '../../lore/api'"))
+  assert.ok(!entryAddress('`/app/universes/${universe.id}/trash`'))
+  assert.ok(!entryAddress('`${entryPath}/relations`'))
+  assert.ok(!entryAddress('entrySource.href.list(typeId)'))
+  assert.ok(entryScreen('src/lore/useEntrySave.ts'))
+  assert.ok(entryScreen('src/components/lore/EntryTools.tsx'))
+  assert.ok(!entryScreen('src/lore/entrySource.ts'))
+  assert.ok(!entryScreen('src/components/LoreCatalog.tsx'))
+  assert.ok(!entryScreen('src/lore/useQuickCreate.ts'))
+})
+
+test('the Lore entry screens read, write and link an entry only through the entry source', () => {
+  const found = sourceFiles.filter((file) => {
+    if (!entryScreen(file)) return false
+    const source = read(file)
+    return entryApi(source) || entryAddress(source)
+  })
+  assert.deepEqual(
+    found.filter((file) => !ENTRY_SOURCE_EXCEPTIONS.has(file)),
+    [],
+    'read, write and link the entry through lore/entrySource',
+  )
+  assert.deepEqual(
+    [...ENTRY_SOURCE_EXCEPTIONS].filter((file) => !found.includes(file)),
+    [],
+    'stale allowlist entry: remove it',
   )
 })
