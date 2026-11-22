@@ -193,21 +193,9 @@ const entryAddress = (source: string) => /universes\/\$\{[^}]*\}\/(lore|types)\b
 // Lore-only files the source does not reach. Only shrinks.
 const ENTRY_SOURCE_EXCEPTIONS = new Set([
   'src/components/lore/ArchivedFields.tsx',
-  'src/components/lore/EntryHeader.tsx',
-  'src/components/lore/EntryNotices.tsx',
-  'src/components/lore/EntryTools.tsx',
   'src/components/lore/FieldBlockedNote.tsx',
   'src/components/lore/LorePreview.tsx',
-  'src/components/lore/LoreResults.tsx',
-  'src/components/lore/LoreStatus.tsx',
   'src/components/lore/LoreTypeRow.tsx',
-  'src/lore/useEntryActions.ts',
-  'src/lore/useEntryLoad.ts',
-  'src/lore/useEntrySave.ts',
-  'src/lore/useEntryState.ts',
-  'src/lore/useLoreEntries.ts',
-  'src/pages/EntityPage.tsx',
-  'src/pages/LorePage.tsx',
 ])
 
 test('the entry source guard catches an entry call or a hand-built entry address, however it is written', () => {

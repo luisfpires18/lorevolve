@@ -25,6 +25,7 @@ import { useEntryForm } from '../lore/useEntryForm'
 import { useArrivalMark } from '../lib/useArrivalMark'
 import { useEntrySave } from '../lore/useEntrySave'
 import { useEntryActions } from '../lore/useEntryActions'
+import { useEntrySource } from '../lore/entrySource'
 
 /**
  * One entry, under one header, at three addresses.
@@ -42,11 +43,18 @@ import { useEntryActions } from '../lore/useEntryActions'
  * Nothing about any of this reads the entry's type. A Character, a Location and a type an author invented
  * this morning are the same screen.
  */
-export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
+export default function EntityPage({
+  view = 'article',
+  entityId: given,
+}: {
+  view?: EntryView
+  entityId?: string
+}) {
   // An entry and a new one are the same screen at two addresses, so moving between them keeps this page. That is what lets
   // a create land on the entry it made with everything it said still on screen. Opening a new form - from an entry's
   // Duplicate, or from a copy of another - starts afresh instead: the form is new, so nothing of the last page may be in it.
-  const { entityId } = useParams<{ entityId: string }>()
+  const params = useParams<{ entityId: string }>()
+  const entityId = given ?? params.entityId
   const [searchParams] = useSearchParams()
   const isNew = entityId === undefined
   const from = searchParams.get('from')
@@ -55,14 +63,14 @@ export default function EntityPage({ view = 'article' }: { view?: EntryView }) {
     setForm({ isNew, from, key: isNew ? form.key + 1 : form.key })
   }
 
-  return <EntityScreen key={form.key} view={view} />
+  return <EntityScreen key={form.key} view={view} entityId={entityId} />
 }
 
-function EntityScreen({ view }: { view: EntryView }) {
+function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | undefined }) {
   const { t, tx } = useI18n()
   const { universe, chronology, entryTypes: typesFound } = useWorkspaceTypes()
   const access = useUniverseAccess()
-  const { entityId } = useParams<{ entityId: string }>()
+  const entrySource = useEntrySource()
   const navigate = useNavigate()
   const location = useLocation()
   // A new entry opened from a Lore type (`lore/new?type=<id>`) starts in that type; the author can
@@ -88,7 +96,7 @@ function EntityScreen({ view }: { view: EntryView }) {
   // shows Relations, and coming forward again finds the form exactly as it was left.
   const isEditing = isFormOpen && view === 'article'
   const suggesting = isEditing && isSuggesting && !isNew
-  const entryPath = `/app/universes/${universe.id}/lore/${entityId}`
+  const entryPath = entrySource.href.entry(entityId ?? '')
   const base = {
     ...state,
     universe,
@@ -134,11 +142,7 @@ function EntityScreen({ view }: { view: EntryView }) {
         testId="entity-no-types"
         title={t('entity.page.noTypes.title')}
         hint={t('entity.page.noTypes.hint')}
-        action={
-          <Button to={`/app/universes/${universe.id}/types`}>
-            {t('entity.page.noTypes.action')}
-          </Button>
-        }
+        action={<Button to={entrySource.href.types}>{t('entity.page.noTypes.action')}</Button>}
       />
     )
   }
@@ -179,9 +183,7 @@ function EntityScreen({ view }: { view: EntryView }) {
                       ),
                     })
                   : t('entity.page.missing.withoutTrash')}{' '}
-                <Link to={`/app/universes/${universe.id}/lore`}>
-                  {t('entity.page.missing.back')}
-                </Link>
+                <Link to={entrySource.href.list()}>{t('entity.page.missing.back')}</Link>
               </>
             }
           />

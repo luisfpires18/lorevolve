@@ -11,6 +11,7 @@ import type { useLoreLinks } from '../../lore/useLoreLinks'
 import type { useLoreSelection } from '../../lore/useLoreSelection'
 import { Button } from '../Button'
 import { NewButton } from '../NewButton'
+import { useEntrySource } from '../../lore/entrySource'
 
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
@@ -42,6 +43,7 @@ export function LoreResults({
   Pick<Links, 'goToPage' | 'clearedSearch'> &
   Pick<Selection, 'isSelecting' | 'selectedIds' | 'toggle'>) {
   const { t, tx } = useI18n()
+  const entrySource = useEntrySource()
   return (
     <>
       {chosenName && result && result.items.length > 0 ? (
@@ -50,6 +52,7 @@ export function LoreResults({
           universeId={universe.id}
           items={result.items}
           card={(entity, index) => ({
+            href: entrySource.href.entry(entity.id),
             eager: index < 8,
             selection: isSelecting
               ? { checked: selectedIds.has(entity.id), onToggle: () => toggle(entity.id) }
@@ -84,9 +87,7 @@ export function LoreResults({
               ? tx('lore.page.emptyGroupNoTypes', {
                   name: <bdi>{selectedGroup.name}</bdi>,
                   link: (
-                    <Link to={`/app/universes/${universe.id}/types`}>
-                      {t('lore.page.emptyGroupTypesLink')}
-                    </Link>
+                    <Link to={entrySource.href.types}>{t('lore.page.emptyGroupTypesLink')}</Link>
                   ),
                 })
               : tx('lore.page.emptyGroupNoEntries', { name: <bdi>{selectedGroup.name}</bdi> })

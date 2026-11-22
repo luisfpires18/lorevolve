@@ -4,7 +4,7 @@ import type { PendingFieldImage } from '../components/FieldImageInput'
 import type { CanonBlockingFinding } from '../canon/types'
 import type { EntityDetail } from './types'
 import type { CopySource, Draft } from './entryDraft'
-import { ENTRY_CHANGED } from './api'
+import { useEntrySource } from './entrySource'
 import { blockingFindingsOf } from '../canon/blocked'
 import { t } from '../i18n'
 import { isChangedElsewhere } from '../lib/editConflict'
@@ -12,6 +12,7 @@ import { useFormSave } from '../lib/useFormSave'
 
 /** Every state and shared ref of the entry screen, as one object, with the focus a refused save asks for. */
 export function useEntryState({ isNew }: { isNew: boolean }) {
+  const entrySource = useEntrySource()
   const [source, setSource] = useState<CopySource | null>(null)
   const [sourceStatus, setSourceStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading')
   const [copyArticle, setCopyArticle] = useState(false)
@@ -54,7 +55,7 @@ export function useEntryState({ isNew }: { isNew: boolean }) {
         setBlocked(blocking)
         return true
       }
-      if (isChangedElsewhere(error, ENTRY_CHANGED)) {
+      if (isChangedElsewhere(error, entrySource.changedCode)) {
         setConflict(true)
         return true
       }
