@@ -141,3 +141,12 @@ export function LinkRow({
     </li>
   )
 }
+
+/** The list that holds rule rows (`LinkRow look="rule"`): a machine group's rows, an opened System's rules. */
+export function RuleList({ testId, children }: { testId?: string; children: ReactNode }) {
+  return (
+    <ul className="rulelist" data-testid={testId}>
+      {children}
+    </ul>
+  )
+}

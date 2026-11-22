@@ -6,9 +6,8 @@ import type { useMachinePanelState } from '../../worldLogic/useMachinePanelState
 import type { machinePanelActions } from '../../worldLogic/machinePanelActions'
 import { m } from '../../worldLogic/machinePanelTypes'
 import { NewButton } from '../NewButton'
-import { FormActions } from '../FormActions'
-import { SectionTitle } from '../Section'
-import { LinkRow } from '../LinkRow'
+import { MachineGroup } from '../SystemMachineTry'
+import { LinkRow, RuleList } from '../LinkRow'
 
 type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
@@ -27,10 +26,21 @@ export function MachineStates({
     rowError: (item: string) => ReactNode
   }) {
   return (
-    <section className="machinepanel__group">
-      <SectionTitle tone="rule">{t(`${m}.states`)}</SectionTitle>
+    <MachineGroup
+      title={t(`${m}.states`)}
+      add={
+        <NewButton
+          tone="secondary"
+          disabled={draft.states.length >= MACHINE_MAX_STATES}
+          onClick={() => setOpen({ kind: 'state', id: null, place: newStatePlace() })}
+          data-testid="machine-add-state"
+        >
+          {t(`${m}.addState`)}
+        </NewButton>
+      }
+    >
       {draft.states.length > 0 ? (
-        <ul className="rulelist" data-testid="machine-state-rows">
+        <RuleList testId="machine-state-rows">
           {draft.states.map((state) => {
             const count = counts.get(state.id) ?? 0
             return (
@@ -63,18 +73,8 @@ export function MachineStates({
               />
             )
           })}
-        </ul>
+        </RuleList>
       ) : null}
-      <FormActions inline>
-        <NewButton
-          tone="secondary"
-          disabled={draft.states.length >= MACHINE_MAX_STATES}
-          onClick={() => setOpen({ kind: 'state', id: null, place: newStatePlace() })}
-          data-testid="machine-add-state"
-        >
-          {t(`${m}.addState`)}
-        </NewButton>
-      </FormActions>
-    </section>
+    </MachineGroup>
   )
 }

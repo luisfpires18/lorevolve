@@ -4,7 +4,7 @@ import { useUniverseAccess } from '../../universes/access'
 import { getSystem } from '../../worldLogic/api'
 import type { SystemSummary } from '../../worldLogic/types'
 import { useReadOnOpen } from '../../lib/useReadOnOpen'
-import { LinkRow } from '../LinkRow'
+import { LinkRow, RuleList } from '../LinkRow'
 import { Button } from '../Button'
 import { Callout } from '../Callout'
 import { DisclosurePanel } from '../DisclosurePanel'
@@ -68,7 +68,7 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
         testId="world-logic-system-rules"
       >
         {detail && detail.rules.length > 0 ? (
-          <ul className="rulelist">
+          <RuleList>
             {detail.rules.map((rule) => (
               <LinkRow
                 look="rule"
@@ -89,7 +89,7 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
                 }
               />
             ))}
-          </ul>
+          </RuleList>
         ) : null}
 
         {detail && detail.rules.length === 0 ? (
