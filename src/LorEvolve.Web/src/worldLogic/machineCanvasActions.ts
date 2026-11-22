@@ -1,5 +1,6 @@
 import type { Dispatch, KeyboardEvent, MutableRefObject, RefObject, SetStateAction } from 'react'
 import { fitView, ZOOM_STEP, type usePanZoom } from '../lib/usePanZoom'
+import { itemDrag } from '../lib/canvasDrag'
 import type { Point } from './machine'
 import type { SystemMachineState } from './types'
 import type { MachineSelection } from '../components/SystemMachineCanvas'
@@ -43,28 +44,17 @@ export function machineCanvasActions({
   }
 
   function stateDrag(state: SystemMachineState) {
-    return {
-      onMove: (_x: number, _y: number, dx: number, dy: number) => {
-        if (connecting) return
-        dropAt.current = {
-          id: state.id,
-          x: Math.round(state.x + dx / view.scale),
-          y: Math.round(state.y + dy / view.scale),
-        }
-        setDragging(dropAt.current)
-      },
-      onEnd: (moved: boolean) => {
-        const drop = dropAt.current
-        dropAt.current = null
-        setDragging(null)
-        if (moved && drop?.id === state.id) onMove(state.id, drop.x, drop.y)
-        else if (!moved) press(state)
-      },
-      onCancel: () => {
-        dropAt.current = null
-        setDragging(null)
-      },
-    }
+    return itemDrag({
+      id: state.id,
+      x: state.x,
+      y: state.y,
+      scale: view.scale,
+      dropAt,
+      setDragging,
+      place: (x, y) => (connecting ? null : { x: Math.round(x), y: Math.round(y) }),
+      onDrop: (x, y) => onMove(state.id, x, y),
+      onPress: () => press(state),
+    })
   }
 
   function handleDrag(state: SystemMachineState) {

@@ -7,6 +7,7 @@ import {
 import type { SystemMachineState } from '../../worldLogic/types'
 import type { usePanZoom } from '../../lib/usePanZoom'
 import type { MachineSelection } from '../SystemMachineCanvas'
+import { CanvasLine } from '../CanvasStage'
 
 /** The canvas's drawing: the arrowheads, one line per transition, and the line being drawn from a handle. */
 export function MachineLines({
@@ -50,31 +51,19 @@ export function MachineLines({
       {lines.map(({ transition, start, end }) => {
         const isSelected = selected?.kind === 'transition' && selected.id === transition.id
         return (
-          <g
+          <CanvasLine
             key={transition.id}
-            className="boardline"
-            data-selected={isSelected || undefined}
-            data-testid="machine-line"
-            data-transition-id={transition.id}
-            onPointerDown={(event) =>
-              beginItemDrag(event, {
-                onMove: () => {},
-                onEnd: (moved) => {
-                  if (!moved) onOpen({ kind: 'transition', id: transition.id })
-                },
-              })
-            }
-          >
-            <line className="boardline__hit" x1={start.x} y1={start.y} x2={end.x} y2={end.y} />
-            <line
-              className="boardline__stroke"
-              x1={start.x}
-              y1={start.y}
-              x2={end.x}
-              y2={end.y}
-              markerEnd={`url(#${isSelected ? `${headId}-selected` : headId})`}
-            />
-          </g>
+            x1={start.x}
+            y1={start.y}
+            x2={end.x}
+            y2={end.y}
+            selected={isSelected}
+            testId="machine-line"
+            data={{ 'data-transition-id': transition.id }}
+            beginItemDrag={beginItemDrag}
+            onPress={() => onOpen({ kind: 'transition', id: transition.id })}
+            markerEnd={`url(#${isSelected ? `${headId}-selected` : headId})`}
+          />
         )
       })}
       {pendingFrom && pending ? (
