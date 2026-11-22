@@ -40,7 +40,6 @@ const UNDEFINED_TODAY = new Map<string, string>([
   ['contents__heading', '#248'],
   ['entitycard__tile', '#248'],
   ['entry__article', '#248'],
-  ['entry__fieldimages', '#252'],
   ['era__body', '#248'],
   ['era__run', '#248'],
   ['eranav', '#248'],

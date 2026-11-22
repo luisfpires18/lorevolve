@@ -143,6 +143,7 @@ export function ProjectEntityFields({
             onCancel={() => setEditing(false)}
             onDirtyChange={setEntryDirty}
             onSavingChange={setEntrySaving}
+            onImageChanged={onSaved}
           />
         </Drawer>
       ) : null}

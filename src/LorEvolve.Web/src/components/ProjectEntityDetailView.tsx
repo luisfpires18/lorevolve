@@ -1,14 +1,16 @@
 import { useCallback, useState } from 'react'
-import { Pencil } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Pencil, Trash } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { entityImageUrl, fieldImageUrl } from '../lore/images'
-import { getProjectEntity } from '../projectEntities/api'
+import { confirmDelete } from '../lib/confirm'
+import { deleteProjectEntity, getProjectEntity } from '../projectEntities/api'
 import type { ProjectEntityDetail } from '../projectEntities/types'
 import { isNotFoundOrForbidden, useAsyncRead } from '../lib/useAsyncRead'
 import { useUniverseAccess } from '../universes/access'
 import { t, useI18n } from '../i18n'
 import { EmptyState } from './EmptyState'
 import { ProjectEntityFields } from './ProjectEntityFields'
+import { ActionMenu, ActionMenuItem } from './ActionMenu'
 import { Button } from './Button'
 import { Crumb } from './Crumb'
 import { EntryHead, EntryTypeLink } from './EntryHead'
@@ -38,6 +40,7 @@ export function ProjectEntityDetailView({
 }) {
   useI18n()
   const access = useUniverseAccess()
+  const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
   const read = useCallback(
     (signal: AbortSignal) => getProjectEntity(projectId, entityId, signal),
@@ -141,14 +144,42 @@ export function ProjectEntityDetailView({
             {access.editContent ? (
               <EntryBar
                 tools={
-                  <Button
-                    tone="secondary"
-                    icon={Pencil}
-                    onClick={() => setEditing(true)}
-                    data-testid="project-entity-edit"
-                  >
-                    {t('projects.gameEntities.entity.edit')}
-                  </Button>
+                  <>
+                    <Button
+                      tone="secondary"
+                      icon={Pencil}
+                      onClick={() => setEditing(true)}
+                      data-testid="project-entity-edit"
+                    >
+                      {t('projects.gameEntities.entity.edit')}
+                    </Button>
+                    <ActionMenu
+                      label={t('projects.common.more', { name: entity.name })}
+                      triggerTestId="project-entity-actions"
+                    >
+                      <ActionMenuItem
+                        icon={Trash}
+                        tone="danger"
+                        testId="project-entity-delete"
+                        onClick={() =>
+                          void confirmDelete(
+                            {
+                              title: t('projects.entries.trash.title', { name: entity.name }),
+                              message: t('projects.entries.trash.message'),
+                              confirmLabel: t('projects.entries.delete'),
+                              variant: 'warning',
+                            },
+                            () =>
+                              deleteProjectEntity(projectId, entity.id).then(() =>
+                                navigate(gameHref),
+                              ),
+                          )
+                        }
+                      >
+                        {t('projects.entries.delete')}
+                      </ActionMenuItem>
+                    </ActionMenu>
+                  </>
                 }
               />
             ) : null}
