@@ -5,6 +5,7 @@ import {
   createEntity,
   deleteEntity,
   ENTRY_CHANGED,
+  bulkTrashEntities,
   getEntity,
   listEntities,
   updateEntity,
@@ -23,6 +24,14 @@ export type EntrySource = {
   /** `detail` is the entry as opened: a source whose input holds more than the form edits reads the rest from it. */
   save(id: string, input: EntityInput, detail: EntityDetail | null): Promise<EntityDetail>
   remove(id: string): Promise<void>
+  /** Several entries at once, all or nothing: both go to the universe's Trash (#551). */
+  removeMany(ids: string[]): Promise<void>
+  /** Copies a lore entity's values onto the entry (a project's entries only). Absent: the source offers no import. */
+  importLore?(
+    id: string,
+    loreEntityId: string,
+    expectedVersion: number | null,
+  ): Promise<{ detail: EntityDetail; imported: string[]; skipped: string[]; copied: string[] }>
   /** The 409 code of a save over a newer version. */
   changedCode: string
   href: {
@@ -43,6 +52,7 @@ export function loreSource(universeId: string): EntrySource {
     create: (input) => createEntity(universeId, input),
     save: (id, input) => updateEntity(universeId, id, input),
     remove: (id) => deleteEntity(universeId, id),
+    removeMany: (ids) => bulkTrashEntities(universeId, ids).then(() => undefined),
     changedCode: ENTRY_CHANGED,
     href: entryHrefs(
       lore,

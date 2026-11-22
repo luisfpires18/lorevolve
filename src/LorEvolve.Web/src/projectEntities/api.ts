@@ -1,6 +1,7 @@
 import { apiFetch } from '../lib/api'
 import type {
   ProjectEntityDetail,
+  ProjectEntityImport,
   ProjectEntityInput,
   ProjectEntityPage,
   ProjectEntityType,
@@ -81,6 +82,8 @@ export function listProjectEntities(
     q?: string
     sort?: string
     includeDescendants?: boolean
+    exact?: boolean
+    fields?: string[]
   },
 ) {
   const params = new URLSearchParams()
@@ -91,6 +94,8 @@ export function listProjectEntities(
     if (page.q) params.set('q', page.q)
     if (page.sort) params.set('sort', page.sort)
     if (page.includeDescendants) params.set('includeDescendants', 'true')
+    if (page.exact && page.q) params.set('exact', 'true')
+    for (const field of page.fields ?? []) params.append('field', field)
   }
   const query = params.toString() ? `?${params.toString()}` : ''
   return apiFetch<ProjectEntityPage>(`${base(projectId)}/entities${query}`, { signal })
@@ -116,4 +121,25 @@ export function saveProjectEntity(projectId: string, entityId: string, input: Pr
 
 export function deleteProjectEntity(projectId: string, entityId: string) {
   return apiFetch<void>(`${base(projectId)}/entities/${entityId}`, { method: 'DELETE' })
+}
+
+/** Copies a lore entity's values onto the entry; the lore entity itself is only read. */
+export function importLoreEntity(
+  projectId: string,
+  entityId: string,
+  loreEntityId: string,
+  expectedVersion: number | null,
+) {
+  return apiFetch<ProjectEntityImport>(`${base(projectId)}/entities/${entityId}/import-lore`, {
+    method: 'POST',
+    body: JSON.stringify({ loreEntityId, expectedVersion }),
+  })
+}
+
+/** Moves several of the project's entries to the universe's Trash together, all or nothing. */
+export function bulkTrashProjectEntities(projectId: string, entityIds: string[]) {
+  return apiFetch<{ trashed: number }>(`${base(projectId)}/entities/bulk-trash`, {
+    method: 'POST',
+    body: JSON.stringify({ entityIds }),
+  })
 }

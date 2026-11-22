@@ -84,3 +84,13 @@ public sealed record ProjectEntitySummary(
 
 /// <summary>One page of a project's entries and the total of every entry that matches the same filters (#557).</summary>
 public sealed record ProjectEntityPage(IReadOnlyList<ProjectEntitySummary> Items, int TotalCount);
+
+/// <summary>Import a lore entry's field values into a project entry. <paramref name="ExpectedVersion"/> is the entry's edit version the form was opened at.</summary>
+public sealed record ImportLoreRequest(Guid LoreEntityId, int? ExpectedVersion = null);
+
+/// <summary>The entry after an import, the fields that were filled, the ones that matched nothing or were refused, and the project entries made as copies of linked lore entries.</summary>
+public sealed record ImportLoreResult(
+    EntityDetail? Entity,
+    IReadOnlyList<string> Imported,
+    IReadOnlyList<string> Skipped,
+    IReadOnlyList<string> Copied);

@@ -117,14 +117,8 @@ const LORE_ONLY = [
   'duplicate-entity',
   'suggest-entity',
   "'entity.page.form.noteArticle'",
-  // A test id keeps its double quotes, so "lore-select" is not lore-selectbar.
   '"mass-create"',
   '<GroupSwitcher',
-  '"lore-exact"',
-  '<LoreFieldFilters',
-  '"lore-select"',
-  '<LoreSelectBar',
-  '"lore-trashed"',
   '"lore-mass-created"',
 ]
 // Comments cut out, their line breaks kept, so "the 12 lines above" counts the file's own lines.
@@ -198,8 +192,8 @@ test('the Lore-only gate fails on an ungated part and passes a gated one', () =>
   assert.deepEqual(ungated('{!isLore && <CanonBadge />}'), ['<CanonBadge'])
   assert.deepEqual(ungated('{!isLore && (\n  <CanonBadge />'), ['<CanonBadge'])
   assert.deepEqual(ungated('if (isLore) return null\nreturn <PrivateNotes />'), ['<PrivateNotes'])
-  assert.deepEqual(ungated('{isLore ? <A /> : <LoreSelectBar />}'), ['<LoreSelectBar'])
-  assert.deepEqual(ungated('{isLore ? <LoreSelectBar /> : <A />}'), [])
+  assert.deepEqual(ungated('{isLore ? <A /> : <GroupSwitcher />}'), ['<GroupSwitcher'])
+  assert.deepEqual(ungated('{isLore ? <GroupSwitcher /> : <A />}'), [])
   assert.deepEqual(ungated('<CanonBadge /> {isLore && <A />}'), ['<CanonBadge'])
 })
 

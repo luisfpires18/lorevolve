@@ -292,12 +292,12 @@ test.describe('Game entity fields', () => {
       expect(loreCalls, base).toEqual([])
     }
 
-    // Delete lands on the list's address.
+    // Move to Trash lands on the universe's Trash, as a lore entry's does.
     await page.goto(`${games}/${second.id}`)
     await page.getByTestId('entity-actions').click()
     await page.getByTestId('trash-entity').click()
-    await acceptConfirm(page, 'Keep the Bold')
-    await expect(page).toHaveURL(games)
+    await acceptConfirm(page, 'Move this entry to the Trash?')
+    await expect(page).toHaveURL(`/app/universes/${world.id}/trash`)
 
     expect(bad4xx).toEqual([])
     expect(loreCalls).toEqual([])

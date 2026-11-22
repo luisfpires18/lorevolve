@@ -101,6 +101,14 @@ export type ProjectEntitySummary = {
   image: EntityImageRef | null
 }
 
+/** What importing a lore entity did: the entry now, the fields filled, the ones left out, and the lore entries copied into the project. */
+export type ProjectEntityImport = {
+  entity: ProjectEntityDetail
+  imported: string[]
+  skipped: string[]
+  copied: string[]
+}
+
 /** One page of a project's entries and the total of every entry that matches the same filters (#557). */
 export type ProjectEntityPage = { items: ProjectEntitySummary[]; totalCount: number }
 

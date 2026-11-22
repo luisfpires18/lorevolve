@@ -1,4 +1,5 @@
 import { Copy, FilePenLine, Network, Pencil } from 'lucide-react'
+import { ImportLoreEntity } from './ImportLoreEntity'
 import { ActionMenuItem } from '../ActionMenu'
 import { RowMenu } from '../RowMenu'
 import { PrivateNotes } from '../PrivateNotes'
@@ -20,6 +21,7 @@ export function EntryTools({
   moveToTrash,
   startEditing,
   startSuggesting,
+  importLore,
   isLore,
 }: {
   universe: { id: string }
@@ -31,13 +33,13 @@ export function EntryTools({
   moveToTrash: () => Promise<void>
   startEditing: () => void
   startSuggesting: () => void
+  importLore: (loreEntityId: string, loreName: string) => Promise<void>
   /** A project entry (#551): Edit and Delete only. */
   isLore: boolean
 }) {
   const { t } = useI18n()
   const entrySource = useEntrySource()
-  // A project entry has no Trash: an editor deletes it for good.
-  const canRemove = isLore ? access.manageTrash : access.editContent
+  const canRemove = access.manageTrash
   return (
     <>
       {/* Whether the entry is public, said in a word, and the way to change it - before Edit, because it is
@@ -74,6 +76,9 @@ export function EntryTools({
           <span className="entry__toollabel">{t('entity.page.tools.suggestLabel')}</span>
         </Button>
       ) : null}
+      {access.editContent && entrySource.importLore && detail ? (
+        <ImportLoreEntity universeId={universe.id} disabled={isSaving} onImport={importLore} />
+      ) : null}
       {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
                   already holding a family link - never decided by what the type is called (ADR 0040).
                   Its icon alone on a phone, still named, so the tools keep to one line. */}
@@ -106,7 +111,7 @@ export function EntryTools({
           divided
           onRemove={canRemove ? () => void moveToTrash() : undefined}
           busy={isSaving}
-          removeLabel={isLore ? t('entity.page.tools.moveToTrash') : t('projects.entries.delete')}
+          removeLabel={t('entity.page.tools.moveToTrash')}
           removeTestId="trash-entity"
         >
           {/* A new entry filled from this one, to change before it is created (Issue #27). */}

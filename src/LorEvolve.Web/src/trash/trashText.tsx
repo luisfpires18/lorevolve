@@ -17,6 +17,12 @@ export function whereItWas(item: TrashItem) {
           {item.entityTypeName ? <bdi>{item.entityTypeName}</bdi> : null}
           {item.entityTypeName && item.canonStatus !== null ? ' · ' : null}
           {item.canonStatus === null ? null : CANON_LABELS[item.canonStatus]}
+          {item.projectName ? (
+            <>
+              {' · '}
+              <bdi>{item.projectName}</bdi>
+            </>
+          ) : null}
         </>
       )
     case TrashKind.Story:

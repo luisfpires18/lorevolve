@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useOutletContext, useSearchParams } from 'react-router-dom'
+import type { WorkspaceContext } from './UniverseWorkspace'
 import { LoreCatalogSkeleton } from '../components/LoreCatalog'
 import { ProjectSchema } from '../components/ProjectSchema'
 import { ReadGate } from '../components/ReadGate'
@@ -39,10 +40,13 @@ export function ProjectLore({
   const { t } = useI18n()
   const [params] = useSearchParams()
   const { hash } = useLocation()
+  // A project's entries go to their universe's Trash, the one Lore's entries go to.
+  const universeId = useOutletContext<WorkspaceContext | undefined>()?.universe.id
+  const trashHref = universeId ? `/app/universes/${universeId}/trash` : base
   // Built from three strings, so a read keyed on the source never runs again on a render and an edit is kept.
   const source = useMemo(
-    () => projectSource(projectId, base, typesHref),
-    [projectId, base, typesHref],
+    () => projectSource(projectId, base, typesHref, trashHref),
+    [projectId, base, typesHref, trashHref],
   )
   const read = useCallback(
     (signal: AbortSignal) => listProjectTypes(projectId, signal),

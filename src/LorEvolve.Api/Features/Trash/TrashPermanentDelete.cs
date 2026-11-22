@@ -340,7 +340,7 @@ internal static class TrashPermanentDelete
         // 1. Every row, as exactly the kind it was selected as, in this universe, in the Trash. Ids are distinct per kind, so a
         //    count says whether all of them are. Nothing is written until every kind has answered.
         var resolves =
-            await Resolve(db.Entities.Where(row => row.UniverseId == universeId && row.DeletedAt != null && entries.Contains(row.Id)), entries)
+            await Resolve(db.Entities.IgnoreQueryFilters().Where(row => row.UniverseId == universeId && row.DeletedAt != null && entries.Contains(row.Id)), entries)
             && await Resolve(db.Stories.Where(row => row.UniverseId == universeId && row.DeletedAt != null && stories.Contains(row.Id)), stories)
             && await Resolve(db.Chapters.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && chapters.Contains(row.Id)), chapters)
             && await Resolve(db.Scenes.Where(row => row.Story!.UniverseId == universeId && row.DeletedAt != null && scenes.Contains(row.Id)), scenes)
@@ -411,7 +411,7 @@ internal static class TrashPermanentDelete
             await ForgetFindingsAsync(db, universeId, CanonSubjectKind.Entity, entries, cancellationToken);
             await ForgetFindingsAsync(db, universeId, CanonSubjectKind.Relationship, relationshipIds, cancellationToken);
 
-            await db.Entities.Where(entity => entries.Contains(entity.Id)).ExecuteDeleteAsync(cancellationToken);
+            await db.Entities.IgnoreQueryFilters().Where(entity => entries.Contains(entity.Id)).ExecuteDeleteAsync(cancellationToken);
         }
 
         // A story's cover goes with it in the cascade; its objects are swept after the commit.
