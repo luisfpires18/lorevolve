@@ -12,7 +12,7 @@ import { NewButton } from './NewButton'
 import { LoadingNote } from './LoadingNote'
 import { PanelHead } from './PanelHead'
 import { FormMessage } from './FormMessage'
-import { QuietNote } from './QuietNote'
+import { QuietNote, ReadingNote } from './QuietNote'
 
 export function RelationshipTypeManager({ universeId }: { universeId: string }) {
   useI18n() // Re-render when the language changes; the module's `t` reads the new one.
@@ -101,9 +101,7 @@ export function RelationshipTypeManager({ universeId }: { universeId: string }) 
       {isAdding ? form : null}
 
       {types.length === 0 && !isAdding ? (
-        <QuietNote size="body" className="relations__quiet" testId="reltypes-empty">
-          {t('relationships.types.empty')}
-        </QuietNote>
+        <ReadingNote testId="reltypes-empty">{t('relationships.types.empty')}</ReadingNote>
       ) : (
         <ul className="types__list" data-testid="relationship-type-list">
           {types.map((type) => {

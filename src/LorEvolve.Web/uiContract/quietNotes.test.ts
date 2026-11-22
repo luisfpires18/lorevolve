@@ -31,6 +31,13 @@ test('the quiet note guard catches a hand-written line, template-built classes i
   assert.ok(writes("<p className={ok ? 'muted' : 'settings__saved'}>{m}</p>", 'settings__saved'))
   assert.ok(!writes('<QuietNote spacing="block">{m}</QuietNote>', 'settings__note'))
   assert.ok(!writes('<p className="settings__notes">{m}</p>', 'settings__note'))
+  assert.ok(
+    writes(
+      '<QuietNote size="body" className="relations__quiet">{m}</QuietNote>',
+      'relations__quiet',
+    ),
+  )
+  assert.ok(!writes('<ReadingNote testId="x">{m}</ReadingNote>', 'relations__quiet'))
 })
 
 test('a settings note and a saved line are drawn by QuietNote', () => {
@@ -46,10 +53,11 @@ test('a settings note and a saved line are drawn by QuietNote', () => {
 // Still hand-written, each for a reason a QuietNote would change: the three hints below carry a class of their own whose
 // sheet loads before `.field__hint`, so the margin they end up with comes from that rule; CharCount and the shared
 // Field and CheckField draw the hint class for good; a hint after a segmented control takes the `.segmented +`
-// margin; EraRelations styles a `summary`, which QuietNote cannot be.
+// margin; EraRelations styles a `summary`, which QuietNote cannot be. `relations__quiet` is `ReadingNote`'s own class.
 const STAYS: Record<string, string[]> = {
   entry__blank: [],
   projectcard__meta: [],
+  relations__quiet: ['src/components/QuietNote.tsx'],
   field__hint: [
     'src/components/CharCount.tsx',
     'src/components/CheckField.tsx',
@@ -68,7 +76,7 @@ test('the other quiet lines only stay where the list says', () => {
     assert.deepEqual(
       found.filter((file) => !allowed.includes(file)),
       [],
-      `${token}: use QuietNote, or Field hint under a control`,
+      `${token}: use QuietNote or ReadingNote, or Field hint under a control`,
     )
     assert.deepEqual(
       allowed.filter((file) => !found.includes(file)),

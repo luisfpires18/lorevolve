@@ -9,7 +9,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { NewButton } from '../components/NewButton'
 import { ReadGate } from '../components/ReadGate'
 import { WorldRulesList } from '../components/worldRules/WorldRulesList'
-import { Callout } from '../components/Callout'
+import { StatusNotice } from '../components/Callout'
 import { useAsyncRead } from '../lib/useAsyncRead'
 import { pageParam } from '../lib/queryParams'
 
@@ -67,14 +67,12 @@ export default function WorldRulesPage() {
       />
 
       {notice ? (
-        <Callout look="notice" className="rules__notice" testId="world-rules-deleted-notice">
-          <p role="status">
-            {tx('canon.rules.deleted', {
-              title: <Quoted text={notice.title} />,
-              restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
-            })}
-          </p>
-        </Callout>
+        <StatusNotice className="rules__notice" testId="world-rules-deleted-notice">
+          {tx('canon.rules.deleted', {
+            title: <Quoted text={notice.title} />,
+            restore: <Link to={trashPath}>{t('canon.rules.restoreLink')}</Link>,
+          })}
+        </StatusNotice>
       ) : null}
 
       <ReadGate

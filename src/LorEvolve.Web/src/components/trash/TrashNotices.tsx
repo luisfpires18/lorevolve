@@ -1,10 +1,9 @@
 import { t } from '../../i18n'
-import { Link } from 'react-router-dom'
 import { CanonBlockNotice } from '../CanonBlockNotice'
 import type { WorkspaceContext } from '../../pages/UniverseWorkspace'
 import type { useTrashState } from '../../trash/useTrashState'
 import { ReadGate } from '../ReadGate'
-import { Callout } from '../Callout'
+import { OutcomeNotice } from '../Callout'
 
 /** What stands above the list: a refused restore's findings, what a restore did, loading, and a failed read. */
 export function TrashNotices({
@@ -24,18 +23,12 @@ export function TrashNotices({
       ) : null}
 
       {/* The row that was restored leaves the list, taking the focus with it: the focus goes to what happened instead. */}
-      {outcome ? (
-        <Callout look="notice" className="trash__outcome" focusOnShow={outcome}>
-          <p role="status" data-testid="trash-message">
-            {outcome.text}
-          </p>
-          {outcome.link ? (
-            <Link to={outcome.link.to} data-testid="trash-open">
-              {outcome.link.label}
-            </Link>
-          ) : null}
-        </Callout>
-      ) : null}
+      <OutcomeNotice
+        outcome={outcome}
+        className="trash__outcome"
+        messageTestId="trash-message"
+        linkTestId="trash-open"
+      />
 
       {/* The list itself is drawn below the notices. */}
       <ReadGate

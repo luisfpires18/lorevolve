@@ -52,3 +52,20 @@ export function QuietNote({
     </Tag>
   )
 }
+
+/** A quiet line in a reading panel (relations, knowledge, rule terms): the body-size note with its panel spacing. */
+export function ReadingNote({
+  children,
+  testId,
+  role,
+}: {
+  children: ReactNode
+  testId?: string
+  role?: 'status'
+}) {
+  return (
+    <QuietNote size="body" className="relations__quiet" testId={testId} role={role}>
+      {children}
+    </QuietNote>
+  )
+}
