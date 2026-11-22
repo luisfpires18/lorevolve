@@ -6,6 +6,7 @@ import {
   FieldKind,
   type FieldKindValue,
   type ProjectEntityDetail,
+  type ProjectEntityPage,
   type ProjectEntitySummary,
   type ProjectEntityType,
   type ProjectField,
@@ -99,14 +100,14 @@ export function asEntrySummary(row: ProjectEntitySummary): EntitySummary {
   return { ...row, canonStatus: 1, isArchived: false, aliases: [], tags: [], articleExcerpt: null }
 }
 
-/** One page of `items`, cut here (#551 pick 1). A page past the end has no items and the real totals. */
-export function pageOf(items: EntitySummary[], page: number, size: number): EntityPage {
+/** The server's page as the Lore list reads one (#557). A page past the end has no items and the real totals. */
+export function asEntryPage(found: ProjectEntityPage, page: number, size: number): EntityPage {
   return {
-    items: items.slice((page - 1) * size, page * size),
+    items: found.items.map(asEntrySummary),
     page,
     pageSize: size,
-    totalCount: items.length,
-    totalPages: Math.ceil(items.length / size),
+    totalCount: found.totalCount,
+    totalPages: Math.ceil(found.totalCount / size),
   }
 }
 

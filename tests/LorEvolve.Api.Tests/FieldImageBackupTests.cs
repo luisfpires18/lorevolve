@@ -95,8 +95,8 @@ public sealed class FieldImageBackupTests(LorEvolveApiFactory factory) : IClassF
         Assert.Equal(FieldImageShape.Free, restoredFields["Sketch"].ImageShape);
 
         var restoredProject = (await client.GetFromJsonAsync<List<ProjectDetail>>($"/api/projects?universeId={restored.Id}"))!.Single();
-        var restoredScout = (await client.GetFromJsonAsync<List<ProjectEntitySummary>>($"/api/projects/{restoredProject.Id}/entities"))!
-            .Single(each => each.Name == "Scout").Id;
+        var restoredScout = (await client.GetFromJsonAsync<ProjectEntityPage>($"/api/projects/{restoredProject.Id}/entities"))!
+            .Items.Single(each => each.Name == "Scout").Id;
         var scoutDetail = (await client.GetFromJsonAsync<EntityDetail>($"/api/projects/{restoredProject.Id}/entities/{restoredScout}"))!;
         var scoutOriginal = await client.GetAsync($"/api/universes/{restored.Id}/entities/{restoredScout}/image/{scoutDetail.Image!.AssetId}/original");
         Assert.Equal(HttpStatusCode.OK, scoutOriginal.StatusCode);

@@ -580,7 +580,7 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
 
     // ---------- helpers ----------
 
-    private static async Task<ProjectDetail> NewProject(HttpClient client, Guid universeId, string name)
+    internal static async Task<ProjectDetail> NewProject(HttpClient client, Guid universeId, string name)
     {
         var response = await client.PostAsJsonAsync(
             "/api/projects",
@@ -675,8 +675,8 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal(2, onePage.Count);
         Assert.Equal(newest.Take(2).Select(entry => entry.Id), onePage.Select(entry => entry.Id));
 
-        var ofType = (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
-            $"/api/projects/{project.Id}/entities?typeId={maps.Id}&recent=true"))!;
+        var ofType = (await client.GetFromJsonAsync<ProjectEntityPage>(
+            $"/api/projects/{project.Id}/entities?typeId={maps.Id}&recent=true"))!.Items;
         Assert.Equal(["Cairn"], ofType.Select(entry => entry.Name));
     }
 
@@ -831,24 +831,24 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
     }
 
     private static async Task<List<string>> Names(HttpClient client, Guid projectId, string query) =>
-        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>($"/api/projects/{projectId}/entities?{query}"))!
-            .Select(entry => entry.Name)
+        (await client.GetFromJsonAsync<ProjectEntityPage>($"/api/projects/{projectId}/entities?{query}"))!
+            .Items.Select(entry => entry.Name)
             .ToList();
 
     private static async Task<List<ProjectEntitySummary>> Recent(HttpClient client, Guid projectId, int take) =>
-        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
-            $"/api/projects/{projectId}/entities?recent=true&skip=0&take={take}"))!;
+        (await client.GetFromJsonAsync<ProjectEntityPage>(
+            $"/api/projects/{projectId}/entities?recent=true&skip=0&take={take}"))!.Items.ToList();
 
-    private static async Task<List<ProjectEntitySummary>> Page(
+    internal static async Task<List<ProjectEntitySummary>> Page(
         HttpClient client,
         Guid projectId,
         Guid typeId,
         int skip,
         int take) =>
-        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
-            $"/api/projects/{projectId}/entities?typeId={typeId}&skip={skip}&take={take}"))!;
+        (await client.GetFromJsonAsync<ProjectEntityPage>(
+            $"/api/projects/{projectId}/entities?typeId={typeId}&skip={skip}&take={take}"))!.Items.ToList();
 
-    private static async Task<ProjectEntityTypeResponse> NewType(HttpClient client, Guid projectId, string name)
+    internal static async Task<ProjectEntityTypeResponse> NewType(HttpClient client, Guid projectId, string name)
     {
         var response = await client.PostAsJsonAsync(
             $"/api/projects/{projectId}/entity-types",
@@ -868,7 +868,7 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         return (await response.Content.ReadFromJsonAsync<ProjectEntityTypeResponse>())!;
     }
 
-    private static async Task<EntityDetail> NewEntry(
+    internal static async Task<EntityDetail> NewEntry(
         HttpClient client,
         Guid projectId,
         Guid typeId,
@@ -883,11 +883,11 @@ public sealed class ProjectEntityTests(LorEvolveApiFactory factory) : IClassFixt
         return (await response.Content.ReadFromJsonAsync<EntityDetail>())!;
     }
 
-    private static async Task<List<ProjectEntitySummary>> Entries(HttpClient client, Guid projectId, Guid? typeId = null) =>
-        (await client.GetFromJsonAsync<List<ProjectEntitySummary>>(
+    internal static async Task<List<ProjectEntitySummary>> Entries(HttpClient client, Guid projectId, Guid? typeId = null) =>
+        (await client.GetFromJsonAsync<ProjectEntityPage>(
             typeId is { } id
                 ? $"/api/projects/{projectId}/entities?typeId={id}"
-                : $"/api/projects/{projectId}/entities"))!;
+                : $"/api/projects/{projectId}/entities"))!.Items.ToList();
 
     private static async Task<T> Put<T>(HttpClient client, string path, object request)
     {

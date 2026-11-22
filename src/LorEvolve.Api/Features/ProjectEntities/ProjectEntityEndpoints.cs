@@ -31,7 +31,7 @@ public static class ProjectEntityEndpoints
     /// <summary>
     /// The most rows one read of the list returns, and what a caller that sends no <c>take</c> gets (#196). High enough
     /// that no project an author has built by hand is cut short, low enough that one request is always bounded; the
-    /// web client reads a page at a time well under it.
+    /// web client reads one page at a time with the total of the matching entries (#557).
     /// </summary>
     public const int ListMaxTake = 500;
 
@@ -168,7 +168,7 @@ public static class ProjectEntityEndpoints
             .ToListAsync(cancellationToken);
 
         _ = project;
-        return Results.Ok(rows);
+        return Results.Ok(new ProjectEntityPage(rows, await matching.CountAsync(cancellationToken)));
     }
 
     private static async Task<IResult> GetAsync(

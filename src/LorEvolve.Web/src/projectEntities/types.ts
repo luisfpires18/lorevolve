@@ -101,6 +101,9 @@ export type ProjectEntitySummary = {
   image: EntityImageRef | null
 }
 
+/** One page of a project's entries and the total of every entry that matches the same filters (#557). */
+export type ProjectEntityPage = { items: ProjectEntitySummary[]; totalCount: number }
+
 export type ProjectEntityDetail = {
   id: string
   name: string

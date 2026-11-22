@@ -2,7 +2,7 @@ import { apiFetch } from '../lib/api'
 import type {
   ProjectEntityDetail,
   ProjectEntityInput,
-  ProjectEntitySummary,
+  ProjectEntityPage,
   ProjectEntityType,
   ProjectFieldInput,
   ProjectTemplate,
@@ -70,7 +70,7 @@ export function deleteProjectField(projectId: string, typeId: string, fieldId: s
   })
 }
 
-/** The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196). */
+/** One page of a project's entries, or of one type's, and the total that match (#196, #557). */
 export function listProjectEntities(
   projectId: string,
   typeId?: string,
@@ -93,7 +93,7 @@ export function listProjectEntities(
     if (page.includeDescendants) params.set('includeDescendants', 'true')
   }
   const query = params.toString() ? `?${params.toString()}` : ''
-  return apiFetch<ProjectEntitySummary[]>(`${base(projectId)}/entities${query}`, { signal })
+  return apiFetch<ProjectEntityPage>(`${base(projectId)}/entities${query}`, { signal })
 }
 
 export function getProjectEntity(projectId: string, entityId: string, signal?: AbortSignal) {

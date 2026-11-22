@@ -156,12 +156,12 @@ test.describe('Project entry list', () => {
       await expect(page.getByTestId('mass-create')).toHaveCount(0)
       await expect(page.getByTestId('lore-browse-groups')).toHaveCount(0)
 
-      // The type's list: one read of the project's entries, with none of Lore's list parts.
+      // The type's list: one page of the project's entries, with none of Lore's list parts.
       const read = page.waitForResponse((response) => {
         const url = new URL(response.url())
         return (
           url.pathname === `/api/projects/${game.id}/entities` &&
-          url.searchParams.get('take') === '500' &&
+          `${url.searchParams.get('skip')}/${url.searchParams.get('take')}` === '0/12' &&
           url.searchParams.get('includeDescendants') === 'true' &&
           url.searchParams.get('sort') === 'updated'
         )

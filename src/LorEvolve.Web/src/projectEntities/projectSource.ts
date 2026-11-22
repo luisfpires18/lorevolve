@@ -9,31 +9,30 @@ import {
   PROJECT_ENTRY_CHANGED,
   saveProjectEntity,
 } from './api'
-import { asEntryDetail, asEntrySummary, pageOf } from './fieldDefinition'
+import { asEntryDetail, asEntryPage } from './fieldDefinition'
 import type { ProjectEntityInput } from './types'
 
-/** The most rows one list read asks for: `ProjectEntityEndpoints.ListMaxTake`. */
-const PROJECT_LIST_TAKE = 500
 /** The longest name search the list endpoint takes. */
 const PROJECT_SEARCH_MAX = 200
+/** The largest `skip` the API binds (`int`), as the Lore server caps its own offset: a huge page lands on the last. */
+const PROJECT_SKIP_MAX = 2147483647
 
 /** A project's entries, drawn by the Lore list and entry page (#551). Its list is at `base`; Delete lands there. */
 export function projectSource(projectId: string, base: string, types: string): EntrySource {
   return {
     kind: 'project',
     get: (id, signal) => getProjectEntity(projectId, id, signal).then(asEntryDetail),
-    // shortcut: one read of up to 500 rows, cut into pages here (#551 pick 1); past 500 only search reaches the rest.
-    // Upgrade to the API's skip/take and a count when a project nears it.
-    list: (query, signal) =>
-      listProjectEntities(projectId, query.entityTypeId ?? undefined, signal, {
-        skip: 0,
-        take: PROJECT_LIST_TAKE,
+    // One page per read, with the server's total (#557).
+    list: (query, signal) => {
+      const size = query.pageSize ?? ENTITY_PAGE_SIZE
+      return listProjectEntities(projectId, query.entityTypeId ?? undefined, signal, {
+        skip: Math.min((query.page - 1) * size, PROJECT_SKIP_MAX),
+        take: size,
         q: query.search.trim().slice(0, PROJECT_SEARCH_MAX) || undefined,
         sort: query.sort ?? 'updated',
         includeDescendants: query.includeDescendants,
-      }).then((rows) =>
-        pageOf(rows.map(asEntrySummary), query.page, query.pageSize ?? ENTITY_PAGE_SIZE),
-      ),
+      }).then((found) => asEntryPage(found, query.page, size))
+    },
     create: (input) =>
       createProjectEntity(projectId, projectInput(input, null)).then(asEntryDetail),
     save: (id, input, detail) =>
