@@ -135,10 +135,19 @@ const codeLines = (source: string) =>
     .split('\n')
 // A gate is `isLore` in a JSX condition that opens a branch (`{isLore ? (`, `isLore && <X`) or an early return
 // (`if (!isLore) return`). A line that only declares, destructures or reads it as a value (`isLore: boolean`,
-// `isLore,`, `isLore = true`, `const x = isLore ? a : b`, `label={isLore ? a : b}`) gates nothing.
-const INLINE_GATE = /\bisLore\b.*(\?|&&)\s*</
-const OPEN_GATE = /\bisLore\b.*(\?|&&)\s*\(\s*$/
-const RETURN_GATE = /\bif\s*\(\s*!?isLore\b[^)]*\)\s*return\b/
+// `isLore,`, `isLore = true`, `const x = isLore ? a : b`, `label={isLore ? a : b}`) gates nothing, and neither
+// does `!isLore`, which draws the branch for a project.
+const INLINE_GATE = /(?<!!)\bisLore\b.*?(\?|&&)\s*</
+const OPEN_GATE = /(?<!!)\bisLore\b.*(\?|&&)\s*\(\s*$/
+const RETURN_GATE = /\bif\s*\(\s*!isLore\s*\)\s*return\b/
+/** A gate on the marker's own line: the marker sits in the branch after `?` or `&&`, not past a `:` into the else. */
+function inlineGated(line: string, marker: string) {
+  const gate = INLINE_GATE.exec(line)
+  if (!gate) return false
+  const branch = line.slice(gate.index + gate[0].length - 1)
+  const at = branch.indexOf(marker)
+  return at >= 0 && !branch.slice(0, at).includes(':')
+}
 /** The branch a gate line opens is still open at the end of `text`: its `(` is never closed on the way. */
 function stillOpen(text: string) {
   let depth = 1
@@ -151,7 +160,7 @@ function stillOpen(text: string) {
 /** A marker passes with a gate on its own line, an early return above it, or a branch opened in the 12 lines above
  * and still open at the marker: a nearby branch that closed first gates nothing. */
 function gated(lines: string[], at: number, marker: string) {
-  if (INLINE_GATE.test(lines[at])) return true
+  if (inlineGated(lines[at], marker)) return true
   const before = lines[at].slice(0, lines[at].indexOf(marker))
   for (let from = at - 1; from >= Math.max(0, at - 12); from--) {
     if (RETURN_GATE.test(lines[from])) return true
@@ -185,6 +194,13 @@ test('the Lore-only gate fails on an ungated part and passes a gated one', () =>
   assert.deepEqual(ungated('{isLore ? (\n  <A />\n) : null}\n<CanonBadge />'), ['<CanonBadge'])
   assert.deepEqual(ungated('{isLore ? (\n  <div>\n    <CanonBadge />'), [])
   assert.deepEqual(ungated('{isLore && x ? (\n  <A onClick={() => f(y)} />\n  <CanonBadge />'), [])
+  assert.deepEqual(ungated('{!isLore ? (\n  <CanonBadge />'), ['<CanonBadge'])
+  assert.deepEqual(ungated('{!isLore && <CanonBadge />}'), ['<CanonBadge'])
+  assert.deepEqual(ungated('{!isLore && (\n  <CanonBadge />'), ['<CanonBadge'])
+  assert.deepEqual(ungated('if (isLore) return null\nreturn <PrivateNotes />'), ['<PrivateNotes'])
+  assert.deepEqual(ungated('{isLore ? <A /> : <LoreSelectBar />}'), ['<LoreSelectBar'])
+  assert.deepEqual(ungated('{isLore ? <LoreSelectBar /> : <A />}'), [])
+  assert.deepEqual(ungated('<CanonBadge /> {isLore && <A />}'), ['<CanonBadge'])
 })
 
 test('the entry page and the list draw their Lore-only parts only for a Lore source', () => {
