@@ -79,6 +79,10 @@ export function universeProjectRoutes() {
         element={asSection('projects', <GameEntitiesPage />)}
       />
       <Route
+        path="game-entities/:projectId/new"
+        element={asSection('projects', <GameEntityPage isNew />)}
+      />
+      <Route
         path="game-entities/:projectId/:entityId"
         element={asSection('projects', <GameEntityPage />)}
       />

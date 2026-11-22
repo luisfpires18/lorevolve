@@ -42,6 +42,8 @@ export type EntryFormProps = {
   selectedType: EntityType | null
   formSections: { ungrouped: FieldDefinition[]; groups: SectionGroup<FieldDefinition>[] }
   quickCreate: QuickCreateOptions | null
+  /** A project entry (#551) has no aliases or tags. */
+  isLore: boolean
 }
 
 /** The entry's form: the copy panel, the picture, names and tags, and the type's fields by section. */
@@ -67,6 +69,7 @@ export function EntryForm(props: EntryFormProps) {
     setHistoryKey,
     selectedType,
     formSections,
+    isLore,
   } = props
   const { t, tx } = useI18n()
   const isNew = entityId === undefined
@@ -116,25 +119,27 @@ export function EntryForm(props: EntryFormProps) {
         </section>
       )}
 
-      <section className="entryform__section">
-        <SectionTitle tone="rule-accent" className="entryform__heading">
-          {t('entity.page.form.namesAndTags')}
-        </SectionTitle>
-        <TokenInput
-          label={t('entity.page.form.aliases')}
-          name="aliases"
-          placeholder={t('entity.page.form.aliasesPlaceholder')}
-          values={draft.aliases}
-          onChange={(aliases) => setDraft({ ...draft, aliases })}
-        />
-        <TokenInput
-          label={t('entity.page.form.tags')}
-          name="tags"
-          placeholder={t('entity.page.form.tagsPlaceholder')}
-          values={draft.tags}
-          onChange={(tags) => setDraft({ ...draft, tags })}
-        />
-      </section>
+      {isLore ? (
+        <section className="entryform__section">
+          <SectionTitle tone="rule-accent" className="entryform__heading">
+            {t('entity.page.form.namesAndTags')}
+          </SectionTitle>
+          <TokenInput
+            label={t('entity.page.form.aliases')}
+            name="aliases"
+            placeholder={t('entity.page.form.aliasesPlaceholder')}
+            values={draft.aliases}
+            onChange={(aliases) => setDraft({ ...draft, aliases })}
+          />
+          <TokenInput
+            label={t('entity.page.form.tags')}
+            name="tags"
+            placeholder={t('entity.page.form.tagsPlaceholder')}
+            values={draft.tags}
+            onChange={(tags) => setDraft({ ...draft, tags })}
+          />
+        </section>
+      ) : null}
 
       {(selectedType?.fields.length ?? 0) > 0 ? (
         <section className="entryform__section">

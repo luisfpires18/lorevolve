@@ -39,6 +39,7 @@ export function useEntryForm({
   view,
   navigate,
   entryPath,
+  isLore,
 }: ReturnType<typeof useEntryState> &
   ReturnType<typeof useEntryLoad> & {
     types: EntityType[]
@@ -48,6 +49,8 @@ export function useEntryForm({
     view: EntryView
     navigate: NavigateFunction
     entryPath: string
+    /** A project entry (#551): no Quick Create and no Family tree. */
+    isLore: boolean
   }) {
   const { t } = useI18n()
   const isSectionOpen = (section: FieldSection) =>
@@ -78,13 +81,14 @@ export function useEntryForm({
   // a suggestion writes nothing until it is accepted, so it must not make an entry on the side.
   const quickCreate = useMemo(
     () =>
-      access.editContent && !isSuggesting
+      isLore && access.editContent && !isSuggesting
         ? { chronology, keepHint: t('entity.page.keepLinkHint') }
         : null,
-    [access.editContent, isSuggesting, chronology, t],
+    [isLore, access.editContent, isSuggesting, chronology, t],
   )
 
   const offersFamilyTree =
+    isLore &&
     !!detail &&
     (detail.hasFamilyConnections ||
       !!types.find((type) => type.id === detail.entityTypeId)?.familyTreeOffered)

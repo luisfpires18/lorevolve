@@ -133,36 +133,10 @@ test('the Lore-only gate fails on an ungated part and passes a gated one', () =>
 })
 
 test('the entry page draws its Lore-only parts only for a Lore entry', () => {
-  // Today's ungated parts, until the project source lands (#551 C2). Only shrinks.
-  const EXCEPTIONS = [
-    'src/pages/EntityPage.tsx <EntryViewsNav',
-    'src/components/lore/EntryHeader.tsx <CanonStatusPicker',
-    'src/components/lore/EntryHeader.tsx <CanonBadge',
-    'src/components/lore/EntryHeader.tsx entry-aliases',
-    'src/components/lore/EntryTools.tsx <ContentPublication',
-    'src/components/lore/EntryTools.tsx <PrivateNotes',
-    'src/components/lore/EntryTools.tsx family-tree/',
-    'src/components/lore/EntryTools.tsx duplicate-entity',
-    'src/components/lore/EntryTools.tsx suggest-entity',
-    'src/components/lore/EntryNotices.tsx <CanonBlockNotice',
-    'src/components/lore/EntryForm.tsx <TokenInput',
-    'src/components/lore/EntryArticleView.tsx <LoreOnMaps',
-    'src/components/lore/EntryArticleView.tsx <EntityArticleSection',
-    'src/components/lore/EntryArticleView.tsx <TagList',
-  ]
   const found = LORE_ONLY_FILES.flatMap((file) =>
     ungated(read(file)).map((marker) => `${file} ${marker}`),
   )
-  assert.deepEqual(
-    found.filter((hit) => !EXCEPTIONS.includes(hit)),
-    [],
-    'gate it with isLore',
-  )
-  assert.deepEqual(
-    EXCEPTIONS.filter((hit) => !found.includes(hit)),
-    [],
-    'stale exception: remove it',
-  )
+  assert.deepEqual(found, [], 'gate it with isLore')
   const code = LORE_ONLY_FILES.map((file) => codeLines(read(file)).join('\n')).join('\n')
   assert.deepEqual(
     LORE_ONLY.filter((marker) => !code.includes(marker)),

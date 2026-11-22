@@ -10,9 +10,13 @@ import {
   updateEntity,
 } from './api'
 import type { EntityDetail, EntityInput, EntityPage, EntityQuery } from './types'
+import type { EntityType } from './typeDefinitions'
+import type { Chronology } from '../chronology/types'
 
 /** Where the entry screens read and write an entry, and the addresses they link to (#551). Lore is one source. */
 export type EntrySource = {
+  /** Lore draws everything; a project entry has no Canon status, article, views, notes, publication or Trash (#551). */
+  kind: 'lore' | 'project'
   get(id: string, signal?: AbortSignal): Promise<EntityDetail>
   list(query: EntityQuery, signal?: AbortSignal): Promise<EntityPage>
   create(input: EntityInput): Promise<EntityDetail>
@@ -33,21 +37,39 @@ export type EntrySource = {
 export function loreSource(universeId: string): EntrySource {
   const lore = `/app/universes/${universeId}/lore`
   return {
+    kind: 'lore',
     get: (id, signal) => getEntity(universeId, id, signal),
     list: (query, signal) => listEntities(universeId, query, signal),
     create: (input) => createEntity(universeId, input),
     save: (id, input) => updateEntity(universeId, id, input),
     remove: (id) => deleteEntity(universeId, id),
     changedCode: ENTRY_CHANGED,
-    href: {
-      list: (typeId) => (typeId == null ? lore : `${lore}?type=${typeId}`),
-      entry: (id) => `${lore}/${id}`,
-      create: (typeId) => (typeId == null ? `${lore}/new` : `${lore}/new?type=${typeId}`),
-      types: `/app/universes/${universeId}/types`,
-      afterRemove: `/app/universes/${universeId}/trash`,
-    },
+    href: entryHrefs(
+      lore,
+      `/app/universes/${universeId}/types`,
+      `/app/universes/${universeId}/trash`,
+    ),
   }
 }
+
+/** An entry list's addresses under `base`; the type id is encoded. */
+export function entryHrefs(base: string, types: string, afterRemove: string): EntrySource['href'] {
+  const typed = (path: string, typeId?: string | null) =>
+    typeId == null ? path : `${path}?type=${encodeURIComponent(typeId)}`
+  return {
+    list: (typeId) => typed(base, typeId),
+    entry: (id) => `${base}/${id}`,
+    create: (typeId) => typed(`${base}/new`, typeId),
+    types,
+    afterRemove,
+  }
+}
+
+/** The types and chronology a mounted source's entries are of. Null: the universe's. */
+export const EntryTypesContext = createContext<{
+  entryTypes: EntityType[]
+  chronology: Chronology
+} | null>(null)
 
 /** Mounted by a screen that draws another source's entries (C2). */
 export const EntrySourceContext = createContext<EntrySource | null>(null)

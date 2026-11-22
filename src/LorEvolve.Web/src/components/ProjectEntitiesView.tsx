@@ -85,6 +85,10 @@ export function ProjectEntitiesView({
     )
   }
 
+  // New entry by type opens the Lore entry page's create (#551); the old `&add=1` address lands there too.
+  const newHref = (type: string) => `${pathname}/new?type=${encodeURIComponent(type)}`
+  if (typeId && params.get('add') === '1') return <Navigate to={newHref(typeId)} replace />
+
   if (typeId) {
     return (
       <div data-testid="project-entities-type">
@@ -98,7 +102,7 @@ export function ProjectEntitiesView({
           reloadKey={reloadKey}
           crumb={back}
           entryHref={entryHref}
-          startAdding={params.get('add') === '1'}
+          newHref={newHref(typeId)}
         />
       </div>
     )
@@ -189,7 +193,7 @@ function TypeCards({
                 {tree.ordered.map((node) => (
                   <ActionMenuItem
                     key={node.type.id}
-                    to={`${pathname}?type=${node.type.id}&add=1`}
+                    to={`${pathname}/new?type=${encodeURIComponent(node.type.id)}`}
                     testId={`project-entities-new-${node.type.id}`}
                   >
                     {tx('lore.page.newType', { type: <bdi>{node.type.name}</bdi> })}

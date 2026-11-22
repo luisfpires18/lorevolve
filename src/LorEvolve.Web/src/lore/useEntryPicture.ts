@@ -14,18 +14,21 @@ export function useEntryPicture({
   isEditing,
   chosenPicture,
   isViewing,
+  isLore,
 }: ReturnType<typeof useEntryState> & {
   universe: { id: string }
   entityId: string | undefined
   view: EntryView
   isNew: boolean
   isEditing: boolean
+  /** A project entry (#551) has no Progression, so no stage pictures are read. */
+  isLore: boolean
 }) {
   // Which picture the article shows: the main one, or a stage's (Progression), chosen above it.
   const stagePictures = useStagePictures(
     universe.id,
     entityId ?? '',
-    view === 'article' && !isNew && !!detail?.hasProgression,
+    isLore && view === 'article' && !isNew && !!detail?.hasProgression,
   )
   const stagePicture =
     (chosenPicture?.entityId === entityId &&

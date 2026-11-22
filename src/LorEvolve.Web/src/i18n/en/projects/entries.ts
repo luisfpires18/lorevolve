@@ -16,11 +16,12 @@ const projectsEntries = {
   name: 'Name',
   summary: 'Summary',
   saving: 'Saving…',
-  delete: 'Move to Trash',
+  delete: 'Delete',
+  deleting: 'Deleting…',
+  deleteFailed: 'This entry could not be deleted.',
   trash: {
-    title: 'Move “{name}” to the Trash?',
-    message:
-      'Nothing is erased. It leaves this list, and you can restore it from the Trash at any time.',
+    title: 'Delete “{name}”?',
+    message: 'It is erased for good and cannot be restored.',
   },
   leaveEdited: 'This entry has unsaved changes. Leave without saving them?',
   leaveNew: 'This entry has not been created. Leave without creating it?',

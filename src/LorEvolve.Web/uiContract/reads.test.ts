@@ -79,7 +79,6 @@ const HAND_READS = new Set([
   'src/components/MomentPick.tsx',
   'src/components/NameLinker.tsx',
   'src/components/ProjectEntitiesView.tsx',
-  'src/components/ProjectEntityFields.tsx',
   'src/components/PublicAuthorSection.tsx',
   'src/components/PublicNameForm.tsx',
   'src/components/RelationshipTypeManager.tsx',

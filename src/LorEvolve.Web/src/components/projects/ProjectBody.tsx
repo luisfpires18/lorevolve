@@ -2,7 +2,6 @@ import { ComicCollections } from '../ComicCollections'
 import { EmptyState } from '../EmptyState'
 import { ProjectEntitiesView } from '../ProjectEntitiesView'
 import { ProjectSchema } from '../ProjectSchema'
-import { ProjectEntityDetailView } from '../ProjectEntityDetailView'
 import { ProjectOutline } from '../ProjectOutline'
 import { ProjectScript } from '../ProjectScript'
 import { ProjectSeasons } from '../ProjectSeasons'
@@ -11,12 +10,14 @@ import { ProjectKind, type ProjectDetail } from '../../projects/types'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { useUniverseAccess } from '../../universes/access'
+import { ProjectEntryPage } from '../../pages/ProjectEntryPage'
 
-/** An entry's own screen, or the section's panels. */
+/** An entry's own screen (the Lore entry page, #551), a new entry's, or the section's panels. */
 export function ProjectBody({
   project,
   section,
   entryId,
+  creating,
   entitiesPath,
   typesPath,
   access,
@@ -26,6 +27,8 @@ export function ProjectBody({
   project: ProjectDetail
   section: ReturnType<typeof projectSections>[number]
   entryId: string | undefined
+  /** `entities/new?type=`: a new entry. */
+  creating: boolean
   entitiesPath: string
   typesPath: string | undefined
   access: ReturnType<typeof useUniverseAccess>
@@ -34,15 +37,13 @@ export function ProjectBody({
 }) {
   useI18n()
 
-  return entryId ? (
+  return entryId || creating ? (
     <div>
-      <ProjectEntityDetailView
-        key={entryId}
+      <ProjectEntryPage
         projectId={project.id}
-        universeId={project.universe.id}
+        base={entitiesPath}
+        typesHref={typesPath ?? `${entitiesPath}?manage=types`}
         entityId={entryId}
-        gameName={project.name}
-        gameHref={entitiesPath}
       />
     </div>
   ) : (
