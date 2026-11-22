@@ -141,27 +141,22 @@ test('the guards catch a hand-written stage, line, zoom group and drag', () => {
 test('the stage, its lines, its zoom group and the card drag are the shared parts', () => {
   only(
     tsxFiles.filter((file) => drawsStage(read(file))),
-    [
-      c('IdeaBoardCanvas'),
-      c('SystemMachineCanvas'),
-      c('ideas/BoardLines'),
-      c('worldLogic/MachineLines'),
-    ],
+    [c('CanvasStage')],
     'use CanvasStage and CanvasLine',
   )
   only(
     tsxFiles.filter((file) => drawsStroke(read(file))),
-    [c('ideas/BoardLines'), c('worldLogic/MachineLines')],
+    [c('CanvasStage'), c('worldLogic/MachineLines')],
     'use CanvasLine (the dashed pending line in MachineLines is the one stroke of its own)',
   )
   only(
     tsxFiles.filter((file) => drawsBoardZoom(read(file))),
-    [c('IdeaBoardCanvas'), c('SystemMachineCanvas')],
+    [c('CanvasStage')],
     'use CanvasStage',
   )
   only(
     sourceFiles.filter((file) => writesDrop(read(file))),
-    ['src/lib/canvasDrag.ts', c('IdeaBoardCanvas'), 'src/worldLogic/machineCanvasActions.ts'],
+    ['src/lib/canvasDrag.ts'],
     'drag a card with itemDrag (lib/canvasDrag.ts)',
   )
 })

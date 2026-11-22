@@ -1,6 +1,7 @@
 import type { BoardCard, BoardConnection } from '../../ideas/boards'
 import type { BoardSelection } from '../../ideas/boardSelection'
 import type { usePanZoom } from '../../lib/usePanZoom'
+import { CanvasLine } from '../CanvasStage'
 
 /** The board's lines: one SVG under the cards, each line pressed to choose it. */
 export function BoardLines({
@@ -27,29 +28,24 @@ export function BoardLines({
         const y2 = to.y + to.height / 2
         const isSelected = selected?.kind === 'line' && selected.id === line.id
         return (
-          <g
+          <CanvasLine
             key={line.id}
-            className="boardline"
-            data-selected={isSelected || undefined}
-            data-testid="board-line"
-            data-line-id={line.id}
-            onPointerDown={(event) =>
-              beginItemDrag(event, {
-                onMove: () => {},
-                onEnd: (moved) => {
-                  if (!moved) onSelect({ kind: 'line', id: line.id })
-                },
-              })
-            }
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            selected={isSelected}
+            testId="board-line"
+            data={{ 'data-line-id': line.id }}
+            beginItemDrag={beginItemDrag}
+            onPress={() => onSelect({ kind: 'line', id: line.id })}
           >
-            <line className="boardline__hit" x1={x1} y1={y1} x2={x2} y2={y2} />
-            <line className="boardline__stroke" x1={x1} y1={y1} x2={x2} y2={y2} />
             {line.label ? (
               <text className="boardline__label" x={(x1 + x2) / 2} y={(y1 + y2) / 2}>
                 {line.label}
               </text>
             ) : null}
-          </g>
+          </CanvasLine>
         )
       })}
     </svg>
