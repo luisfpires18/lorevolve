@@ -1,5 +1,6 @@
 import { ComicCollections } from '../ComicCollections'
 import { EmptyState } from '../EmptyState'
+import { RoleGate } from '../RoleGate'
 import { ProjectEntitiesView } from '../ProjectEntitiesView'
 import { ProjectSchema } from '../ProjectSchema'
 import { ProjectOutline } from '../ProjectOutline'
@@ -39,12 +40,15 @@ export function ProjectBody({
 
   return entryId || creating ? (
     <div>
-      <ProjectEntryPage
-        projectId={project.id}
-        base={entitiesPath}
-        typesHref={typesPath ?? `${entitiesPath}?manage=types`}
-        entityId={entryId}
-      />
+      {/* A new entry needs editContent, as `lore/new` does; one RoleGate for both keeps the page mounted after a create. */}
+      <RoleGate need={creating ? 'editContent' : undefined}>
+        <ProjectEntryPage
+          projectId={project.id}
+          base={entitiesPath}
+          typesHref={typesPath ?? `${entitiesPath}?manage=types`}
+          entityId={entryId}
+        />
+      </RoleGate>
     </div>
   ) : (
     <div>

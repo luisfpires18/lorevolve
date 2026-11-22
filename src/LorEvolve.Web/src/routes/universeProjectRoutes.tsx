@@ -1,5 +1,6 @@
 import { Route } from 'react-router-dom'
 import { CATEGORY_KINDS, CINEMA, COMIC, GAME_ENTITIES, GAMING } from '../universes/sections'
+import { RoleGate } from '../components/RoleGate'
 import { StoryRedirect } from '../components/StoryRedirect'
 import {
   GameEntitiesPage,
@@ -80,11 +81,21 @@ export function universeProjectRoutes() {
       />
       <Route
         path="game-entities/:projectId/new"
-        element={asSection('projects', <GameEntityPage isNew />)}
+        element={asSection(
+          'projects',
+          <RoleGate need="editContent">
+            <GameEntityPage isNew />
+          </RoleGate>,
+        )}
       />
       <Route
         path="game-entities/:projectId/:entityId"
-        element={asSection('projects', <GameEntityPage />)}
+        element={asSection(
+          'projects',
+          <RoleGate>
+            <GameEntityPage />
+          </RoleGate>,
+        )}
       />
       <Route
         path="projects/:projectId/*"
