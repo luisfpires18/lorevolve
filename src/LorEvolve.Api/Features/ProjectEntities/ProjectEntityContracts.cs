@@ -81,3 +81,6 @@ public sealed record ProjectEntitySummary(
     string? CanonEntityName,
     DateTime UpdatedAt,
     EntityImageRef? Image = null);
+
+/// <summary>One page of a project's entries and the total of every entry that matches the same filters (#557).</summary>
+public sealed record ProjectEntityPage(IReadOnlyList<ProjectEntitySummary> Items, int TotalCount);
