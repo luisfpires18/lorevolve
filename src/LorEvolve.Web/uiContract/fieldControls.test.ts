@@ -13,7 +13,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { classStrings, read, webRoot } from './support.ts'
+import { classStrings, elements, read, tsxFiles, webRoot } from './support.ts'
 
 const codeFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
   .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.d.ts'))
@@ -28,6 +28,11 @@ const writes = (source: string) =>
     value.replaceAll('\u0001', ' \u0001').split(/\s+/).includes('field__input'),
   ) || /["'`]field__input(?=[\s"'`$])/.test(source)
 
+// A `<select>` handed a Field slot's control (`{...control}`, `control.id`, `control[...]`). `elements()` reads the
+// whole tag, so an arrow in `onChange` does not end it.
+const slotSelect = (source: string) =>
+  elements(source, 'select').some(({ tag }) => /\{\.\.\.control\}|\bcontrol(\.id\b|\[)/.test(tag))
+
 test('the field control guard catches a hand-written control, template-built classes included', () => {
   assert.ok(writes('<input {...control} className="field__input" />'))
   assert.ok(writes('<select className="field__input field__input--select">{o}</select>'))
@@ -37,6 +42,15 @@ test('the field control guard catches a hand-written control, template-built cla
   assert.ok(!writes('<Field as="select" controlClassName="idea__universe">{o}</Field>'))
   assert.ok(!writes('<Field name={null} controlClassName="field__input--title" />'))
   assert.ok(!writes('<input className="field__inputs" />'))
+  assert.ok(slotSelect('<select {...control} value={v}>{o}</select>'))
+  assert.ok(slotSelect('<select id={control.id} onChange={(e) => f(e)}>{o}</select>'))
+  assert.ok(
+    slotSelect(
+      "<select id={s} onChange={(e) => f(e)} aria-invalid={control['aria-invalid']}>{o}</select>",
+    ),
+  )
+  assert.ok(!slotSelect('<Field as="select" id="x">{o}</Field>'))
+  assert.ok(!slotSelect('<select id={storyId} aria-describedby={describedBy}>{o}</select>'))
 })
 
 const STAYS: string[] = [
@@ -105,6 +119,38 @@ test('a plain control under a label is drawn by Field', () => {
   )
   assert.deepEqual(
     STAYS.filter((file) => !found.includes(file)),
+    [],
+    'stale allowlist entry, remove it',
+  )
+})
+
+// Kept beside STAYS, which is per file: TypeGroupsField stays there for its input row, so its select could come back
+// unseen.
+const SLOT_SELECTS: string[] = [
+  'src/components/ChronologyPointFields.tsx',
+  'src/components/FieldInputs.tsx',
+  'src/components/QuickCreateDialog.tsx',
+  'src/components/RelationshipPeriodsField.tsx',
+  'src/components/TypeDialogPlace.tsx',
+  'src/components/TypeFromTemplateDrawer.tsx',
+  'src/components/TypeGroupsField.tsx',
+  'src/components/ValidationTermSelect.tsx',
+  'src/components/canon/CanonControls.tsx',
+  'src/components/progression/EraStories.tsx',
+  'src/components/ruleValidation/NewTermForm.tsx',
+  'src/components/timeline/StoryLinks.tsx',
+  'src/components/worldLogic/TransitionDrawer.tsx',
+]
+
+test('a select given a Field slot\'s control is Field as="select"', () => {
+  const found = tsxFiles.filter((file) => slotSelect(read(file)))
+  assert.deepEqual(
+    found.filter((file) => !SLOT_SELECTS.includes(file)),
+    [],
+    'use <Field as="select">: Field draws the select, its id and its aria wiring',
+  )
+  assert.deepEqual(
+    SLOT_SELECTS.filter((file) => !found.includes(file)),
     [],
     'stale allowlist entry, remove it',
   )

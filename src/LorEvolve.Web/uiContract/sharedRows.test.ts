@@ -2,7 +2,8 @@
 //
 // Keeps the small shared rows on their parts (#456): a fact is Fact in a FactList, a foot bar is ActionBar, a panel's
 // head is PanelHead, a group rule is SectionTitle's `rule` tone, a removable chip is Token in a TokenList, a blocked
-// note is BlockedCallout, a byline is VersionActor and a publish list of names is NameListBlock. Every string literal counts, class strings built in template literals
+// note is BlockedCallout, a byline is VersionActor, a publish list of names is NameListBlock and a drawer's named part is
+// DrawerSection. Every string literal counts, class strings built in template literals
 // included, so a class handed through a helper or a prop is caught too. Each list only shrinks: a stale entry fails.
 // Catalogue: docs/design/ui-components.md.
 
@@ -107,6 +108,20 @@ const RULES: Rule[] = [
     writes: (word) => word === 'publication__selectedlist',
     allowed: ['src/components/publishing/NameListBlock.tsx'],
   },
+  {
+    why: 'a drawer section is DrawerSection (components/Section)',
+    writes: (word) => word === 'drawer__group',
+    allowed: [
+      'src/components/TypeDialogBehaviour.tsx',
+      'src/components/TypeDialogIdentity.tsx',
+      'src/components/TypeDialogPlace.tsx',
+      'src/components/TypeFromTemplateDrawer.tsx',
+      'src/components/TypeGroupsField.tsx',
+      'src/components/lore/SectionFieldPlacer.tsx',
+      'src/components/lore/SectionListEditor.tsx',
+      'src/components/worldLogic/GuardBuilderDrawer.tsx',
+    ],
+  },
 ]
 
 const offends = (source: string, rule: Rule) => words(source).some(rule.writes)
@@ -162,6 +177,11 @@ test('the shared rows guard catches a hand copy, template-built classes included
   const names = rule('a publish list')
   assert.ok(offends('<ul className={`publication__selectedlist ${x}`}>', names))
   assert.ok(!offends('<span className="publication__selectedtype">', names))
+  const drawer = rule('a drawer section')
+  assert.ok(offends('<section className="drawer__group" aria-labelledby="x">', drawer))
+  assert.ok(offends('<div className={`drawer__group ${x}`}>', drawer))
+  assert.ok(!offends('<DrawerSection title={t} titleId="x">', drawer))
+  assert.ok(!offends('<div className="drawer__groups">', drawer))
   // A comment that names a class is not a copy of it.
   assert.ok(!offends('// was <div className="facts__row">\nconst a = 1', fact))
 })
