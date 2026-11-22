@@ -89,3 +89,28 @@ export function Section({
     </section>
   )
 }
+
+/**
+ * A drawer's named part: `section.drawer__group` named by its level 3 `rule-accent` heading. Not a `Section` prop, since
+ * a drawer part swaps every class and the level. An undefined `testId` writes no attribute.
+ */
+export function DrawerSection({
+  title,
+  titleId,
+  testId,
+  children,
+}: {
+  title: ReactNode
+  titleId: string
+  testId?: string
+  children?: ReactNode
+}) {
+  return (
+    <section className="drawer__group" aria-labelledby={titleId} data-testid={testId}>
+      <SectionTitle level={3} tone="rule-accent" id={titleId}>
+        {title}
+      </SectionTitle>
+      {children}
+    </section>
+  )
+}

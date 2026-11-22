@@ -5,7 +5,7 @@ import { useI18n } from '../i18n'
 import { useFormSave } from '../lib/useFormSave'
 import { createProjectTypeFromTemplate } from '../projectEntities/api'
 import type { TypeTemplate } from '../typeTemplates/types'
-import { SectionTitle } from './Section'
+import { DrawerSection } from './Section'
 
 /**
  * A game type made from one of the universe's templates (#283). The game gets its own copy: nothing links it back, so
@@ -58,34 +58,28 @@ export function TypeFromTemplateDrawer({
         submitTestId: 'save-type-from-template',
       }}
     >
-      <section className="drawer__group" aria-labelledby="type-from-template-source">
-        <SectionTitle level={3} tone="rule-accent" id="type-from-template-source">
-          {t('projects.schema.fromTemplate.source')}
-        </SectionTitle>
+      <DrawerSection
+        title={t('projects.schema.fromTemplate.source')}
+        titleId="type-from-template-source"
+      >
         <Field
+          as="select"
           label={t('projects.schema.fromTemplate.template')}
           id="type-from-template-select"
           hint={t('projects.schema.fromTemplate.copyHint')}
           error={fieldErrors.templateId}
+          value={templateId}
+          onChange={(event) => setTemplateId(event.target.value)}
+          data-testid="type-from-template-select"
         >
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={templateId}
-              onChange={(event) => setTemplateId(event.target.value)}
-              data-testid="type-from-template-select"
-            >
-              {templates.map((template) => (
-                <option key={template.id} value={template.id}>
-                  {t('projects.schema.fromTemplate.option', {
-                    name: template.name,
-                    count: String(template.fields.length),
-                  })}
-                </option>
-              ))}
-            </select>
-          )}
+          {templates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {t('projects.schema.fromTemplate.option', {
+                name: template.name,
+                count: String(template.fields.length),
+              })}
+            </option>
+          ))}
         </Field>
         <Field
           label={t('entityTypes.page.dialog.name')}
@@ -98,7 +92,7 @@ export function TypeFromTemplateDrawer({
           error={fieldErrors.name}
           data-testid="type-from-template-name"
         />
-      </section>
+      </DrawerSection>
     </Drawer>
   )
 }

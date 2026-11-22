@@ -5,7 +5,7 @@ import type { EntityTypeGroup } from '../lore/typeDefinitions'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
 import { QuietNote } from './QuietNote'
-import { SectionTitle } from './Section'
+import { DrawerSection } from './Section'
 import { Token } from './Token'
 
 /** One group a type is in, as the editor holds it: an existing group by id, or a new one by name, created on Save. */
@@ -98,10 +98,11 @@ export function TypeGroupsField({
   }
 
   return (
-    <section className="drawer__group" aria-labelledby={`${ids}-heading`} data-testid="type-groups">
-      <SectionTitle level={3} tone="rule-accent" id={`${ids}-heading`}>
-        {t('entityTypes.groupsField.heading')}
-      </SectionTitle>
+    <DrawerSection
+      title={t('entityTypes.groupsField.heading')}
+      titleId={`${ids}-heading`}
+      testId="type-groups"
+    >
       <p className="field__hint typegroups__lede">{t('entityTypes.groupsField.lede')}</p>
 
       <Field
@@ -143,34 +144,28 @@ export function TypeGroupsField({
 
             {showPicker && !creating ? (
               <Field
+                as="select"
                 label={
                   value.length === 0
                     ? t('entityTypes.groupsField.group')
                     : t('entityTypes.groupsField.anotherGroup')
                 }
                 id={`${ids}-add`}
+                value=""
+                onChange={(event) => choose(event.target.value)}
+                data-testid="type-group-add"
               >
-                {(control) => (
-                  <select
-                    {...control}
-                    className="field__input field__input--select"
-                    value=""
-                    onChange={(event) => choose(event.target.value)}
-                    data-testid="type-group-add"
-                  >
-                    <option value="">
-                      {value.length === 0
-                        ? t('entityTypes.groupsField.none')
-                        : t('entityTypes.groupsField.chooseGroup')}
-                    </option>
-                    {available.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                    <option value={NEW_GROUP}>{t('entityTypes.groupsField.newGroupOption')}</option>
-                  </select>
-                )}
+                <option value="">
+                  {value.length === 0
+                    ? t('entityTypes.groupsField.none')
+                    : t('entityTypes.groupsField.chooseGroup')}
+                </option>
+                {available.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+                <option value={NEW_GROUP}>{t('entityTypes.groupsField.newGroupOption')}</option>
               </Field>
             ) : null}
 
@@ -234,6 +229,6 @@ export function TypeGroupsField({
       <QuietNote spacing="hint" testId="type-groups-elsewhere">
         {t('entityTypes.groupsField.elsewhere')}
       </QuietNote>
-    </section>
+    </DrawerSection>
   )
 }
