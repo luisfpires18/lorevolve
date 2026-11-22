@@ -148,11 +148,7 @@ test('the guards catch a hand-written stage, line, zoom group and drag', () => {
 })
 
 test('the stage keys and the arrow step are panZoomKey and arrowMove', () => {
-  const keyFiles = [
-    'src/ideas/boardCanvasKeys.ts',
-    'src/maps/mapViewerActions.ts',
-    'src/worldLogic/machineCanvasActions.ts',
-  ]
+  const keyFiles = ['src/lib/canvasKeys.ts']
   only(
     sourceFiles.filter((file) => namesStep(read(file))),
     keyFiles,

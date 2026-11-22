@@ -1,9 +1,8 @@
 import type { KeyboardEvent } from 'react'
 import type { MapPin } from './types'
-import { usePanZoom, ZOOM_STEP, type StageSize, type View } from '../lib/usePanZoom'
+import { usePanZoom, type StageSize, type View } from '../lib/usePanZoom'
+import { panZoomKey } from '../lib/canvasKeys'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-
-export const PAN_STEP = 48
 
 export function mapViewerActions({
   canEdit,
@@ -59,46 +58,18 @@ export function mapViewerActions({
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget) return
-    const about = { x: size.width / 2, y: size.height / 2 }
-    switch (event.key) {
-      case 'ArrowLeft':
-        setView((current) => ({ ...current, x: current.x + PAN_STEP }))
-        break
-      case 'ArrowRight':
-        setView((current) => ({ ...current, x: current.x - PAN_STEP }))
-        break
-      case 'ArrowUp':
-        setView((current) => ({ ...current, y: current.y + PAN_STEP }))
-        break
-      case 'ArrowDown':
-        setView((current) => ({ ...current, y: current.y - PAN_STEP }))
-        break
-      case '+':
-      case '=':
-        zoomAbout(ZOOM_STEP, about.x, about.y)
-        break
-      case '-':
-      case '_':
-        zoomAbout(1 / ZOOM_STEP, about.x, about.y)
-        break
-      case '0':
-        setView(fit(size.width, size.height))
-        break
-      case 'Escape':
-        if (!selectedPinId) return
-        onSelectPin(null)
-        break
-      case 'Enter':
-        if (placing && onPlace) {
-          const rect = stage.current!.getBoundingClientRect()
-          const at = fractionAt(rect.left + about.x, rect.top + about.y)
-          onPlace(at.x, at.y)
-          break
-        }
-        return
-      default:
-        return
-    }
+    if (event.key === 'Escape') {
+      if (!selectedPinId) return
+      onSelectPin(null)
+    } else if (event.key === 'Enter') {
+      if (!placing || !onPlace) return
+      const rect = stage.current!.getBoundingClientRect()
+      const at = fractionAt(rect.left + size.width / 2, rect.top + size.height / 2)
+      onPlace(at.x, at.y)
+    } else if (
+      !panZoomKey(event.key, { size, setView, zoomAbout, fit: () => fit(size.width, size.height) })
+    )
+      return
     event.preventDefault()
   }
   return { pinDrag, onKeyDown }

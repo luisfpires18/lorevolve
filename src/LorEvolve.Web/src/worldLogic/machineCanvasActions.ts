@@ -1,13 +1,10 @@
 import type { Dispatch, KeyboardEvent, MutableRefObject, RefObject, SetStateAction } from 'react'
-import { fitView, ZOOM_STEP, type usePanZoom } from '../lib/usePanZoom'
+import { fitView, type usePanZoom } from '../lib/usePanZoom'
+import { arrowMove, panZoomKey } from '../lib/canvasKeys'
 import { itemDrag } from '../lib/canvasDrag'
 import type { Point } from './machine'
 import type { SystemMachineState } from './types'
 import type { MachineSelection } from '../components/SystemMachineCanvas'
-
-const PAN_STEP = 48
-const MOVE_STEP = 10
-const BIG_MOVE_STEP = 50
 
 /** The machine canvas's handlers: pressing a state, dragging a state or its handle, and the canvas's keys. */
 export function machineCanvasActions({
@@ -77,14 +74,7 @@ export function machineCanvasActions({
   }
 
   function onStateKeyDown(event: KeyboardEvent<HTMLButtonElement>, state: SystemMachineState) {
-    const step = event.shiftKey ? BIG_MOVE_STEP : MOVE_STEP
-    const moves: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
-    }
-    const move = moves[event.key]
+    const move = arrowMove(event)
     if (move) {
       event.preventDefault()
       event.stopPropagation()
@@ -107,35 +97,8 @@ export function machineCanvasActions({
       return
     }
     if (event.target !== event.currentTarget) return
-    const about = { x: size.width / 2, y: size.height / 2 }
-    switch (event.key) {
-      case 'ArrowLeft':
-        setView((current) => ({ ...current, x: current.x + PAN_STEP }))
-        break
-      case 'ArrowRight':
-        setView((current) => ({ ...current, x: current.x - PAN_STEP }))
-        break
-      case 'ArrowUp':
-        setView((current) => ({ ...current, y: current.y + PAN_STEP }))
-        break
-      case 'ArrowDown':
-        setView((current) => ({ ...current, y: current.y - PAN_STEP }))
-        break
-      case '+':
-      case '=':
-        zoomAbout(ZOOM_STEP, about.x, about.y)
-        break
-      case '-':
-      case '_':
-        zoomAbout(1 / ZOOM_STEP, about.x, about.y)
-        break
-      case '0':
-        setView(fitView(items, size))
-        break
-      default:
-        return
-    }
-    event.preventDefault()
+    if (panZoomKey(event.key, { size, setView, zoomAbout, fit: () => fitView(items, size) }))
+      event.preventDefault()
   }
 
   return { press, stateDrag, handleDrag, onStateKeyDown, onStageKeyDown }

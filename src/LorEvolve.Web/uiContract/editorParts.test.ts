@@ -162,7 +162,7 @@ test('the guards fail on a bad snippet', () => {
 test('only RecordNotices draws the recovered record preview', () => {
   onlyAllowed(
     tsxFiles.filter((file) => drawsPreview(read(file))),
-    [c('IdeaBoardEditor'), c('IdeaEditor')],
+    [c('ideas/RecordUnavailable')],
     'use RecordNotices',
   )
 })
@@ -170,7 +170,7 @@ test('only RecordNotices draws the recovered record preview', () => {
 test('the Idea and Board notices and save bar are not written with their words by hand', () => {
   onlyAllowed(
     tsxFiles.filter((file) => recordWordsByHand(read(file))),
-    [c('IdeaBoardEditor'), c('IdeaEditor')],
+    [],
     'use RecordNotices and RecordSaveBar',
   )
 })
@@ -178,7 +178,7 @@ test('the Idea and Board notices and save bar are not written with their words b
 test('a record editor finds its universe with chosenUniverseOf', () => {
   onlyAllowed(
     tsxFiles.filter((file) => universeByHand(read(file))),
-    [c('IdeaBoardEditor'), c('IdeaEditor')],
+    [],
     'use chosenUniverseOf',
   )
 })
@@ -186,7 +186,7 @@ test('a record editor finds its universe with chosenUniverseOf', () => {
 test('the record pages take their place from useRecordPlace', () => {
   onlyAllowed(
     sourceFiles.filter((file) => !file.startsWith('src/i18n/') && placeByHand(read(file))),
-    ['src/pages/IdeaBoardPage.tsx', 'src/pages/IdeaPage.tsx'],
+    ['src/ideas/useRecordPlace.tsx'],
     'use useRecordPlace',
   )
 })
@@ -194,7 +194,7 @@ test('the record pages take their place from useRecordPlace', () => {
 test('the Ideas and Boards lists are headed by IdeasHeader', () => {
   onlyAllowed(
     tsxFiles.filter((file) => tabsByHand(read(file))),
-    [c('ideas/IdeasHeader'), 'src/pages/IdeasPage.tsx'],
+    [c('ideas/IdeasHeader')],
     'use IdeasHeader',
   )
 })
