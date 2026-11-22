@@ -111,7 +111,8 @@ public static class TrashEndpoints
         // back into public view only then.
         var universeIsPublic = await PublicationRules.Public(db).AnyAsync(universe => universe.Id == universeId, cancellationToken);
 
-        rows.AddRange(await db.Entities.AsNoTracking()
+        // Past the lore-only filter, scoped by universe: a project's entries go to the same Trash as the lore's (#551).
+        rows.AddRange(await db.Entities.AsNoTracking().IgnoreQueryFilters()
             .Where(entity => entity.UniverseId == universeId && entity.DeletedAt != null)
             .Select(entity => new TrashItem(
                 TrashItemKind.Entry,
@@ -130,7 +131,12 @@ public static class TrashEndpoints
                 TrashRestoreBlock.None,
                 entity.Visibility != ContentVisibility.Public
                     ? TrashRestorePublication.None
-                    : universeIsPublic ? TrashRestorePublication.Visible : TrashRestorePublication.Hidden))
+                    : universeIsPublic ? TrashRestorePublication.Visible : TrashRestorePublication.Hidden,
+                null,
+                entity.ProjectId,
+                entity.ProjectId == null
+                    ? null
+                    : db.CreativeProjects.Where(project => project.Id == entity.ProjectId).Select(project => project.Name).FirstOrDefault()))
             .ToListAsync(cancellationToken));
 
         rows.AddRange(await db.Stories.AsNoTracking()
@@ -350,7 +356,7 @@ public static class TrashEndpoints
         bool keepPublication,
         CancellationToken cancellationToken)
     {
-        var entity = await db.Entities.FirstOrDefaultAsync(
+        var entity = await db.Entities.IgnoreQueryFilters().FirstOrDefaultAsync(
             candidate => candidate.Id == entityId
                 && candidate.UniverseId == universeId
                 && candidate.DeletedAt != null,
@@ -378,7 +384,8 @@ public static class TrashEndpoints
 
         await db.SaveChangesAsync(cancellationToken);
 
-        var detail = await EntityEndpoints.LoadDetailAsync(db, universeId, entityId, cancellationToken);
+        var detail = await EntityEndpoints.LoadDetailAsync(
+            db, universeId, entityId, cancellationToken, projectId: entity.ProjectId);
 
         return detail is null ? Results.NotFound() : Results.Ok(detail);
     }

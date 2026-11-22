@@ -85,7 +85,10 @@ public sealed record TrashItem(
     string? PlotArcTitle,
     TrashRestoreBlock BlockedBy,
     TrashRestorePublication Publication,
-    Guid? EntryId = null);
+    Guid? EntryId = null,
+    // A project's entry (a game's unit, say) sits in the same Trash as the lore; these say which project it came from.
+    Guid? ProjectId = null,
+    string? ProjectName = null);
 
 public sealed record TrashPage(
     IReadOnlyList<TrashItem> Items,

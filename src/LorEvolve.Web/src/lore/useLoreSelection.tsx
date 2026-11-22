@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { ApiError } from '../lib/api'
-import { bulkTrashEntities } from './api'
+import { useEntrySource } from './entrySource'
 import type { EntityPage } from './types'
 import { confirmAction } from '../lib/confirm'
 import { changed } from '../lib/queryParams'
@@ -12,16 +12,15 @@ export function useLoreSelection({
   location,
   pageSize,
   result,
-  universe,
   reread,
 }: {
   location: { search: string }
   pageSize: number
   result: EntityPage | null
-  universe: { id: string }
   reread: () => void
 }) {
   const { t, tn } = useI18n()
+  const entrySource = useEntrySource()
   // Selecting, to move entries to the Trash together. A mode the author turns on, so ordinary browsing carries no
   // checkboxes. What is selected belongs to the page on screen: another page, filter, type or size is another list, so
   // the selection is not carried into it - nothing is ever selected out of sight.
@@ -70,10 +69,7 @@ export function useLoreSelection({
         action: async () => {
           setIsTrashing(true)
           try {
-            await bulkTrashEntities(
-              universe.id,
-              selected.map((item) => item.id),
-            )
+            await entrySource.removeMany(selected.map((item) => item.id))
           } finally {
             setIsTrashing(false)
           }

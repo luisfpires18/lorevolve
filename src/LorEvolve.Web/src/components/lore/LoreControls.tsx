@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { X } from 'lucide-react'
+import { FieldKind } from '../../lore/fieldKinds'
 import { LoreFieldFilters } from '../LoreFieldFilters'
 import { useI18n } from '../../i18n'
 import type { CanonStatusValue, EntityPage } from '../../lore/types'
@@ -74,18 +75,16 @@ export function LoreControls({
         value={search}
         onChange={(value) => update({ q: value }, true)}
         trailing={
-          isLore ? (
-            <button
-              className="lore__exact"
-              type="button"
-              aria-pressed={exact}
-              title={t('lore.page.exactHelp')}
-              onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
-              data-testid="lore-exact"
-            >
-              {t('lore.page.exact')}
-            </button>
-          ) : undefined
+          <button
+            className="lore__exact"
+            type="button"
+            aria-pressed={exact}
+            title={t('lore.page.exactHelp')}
+            onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
+            data-testid="lore-exact"
+          >
+            {t('lore.page.exact')}
+          </button>
         }
         testId="lore-search"
       />
@@ -99,10 +98,20 @@ export function LoreControls({
         />
       ) : null}
 
-      {isLore && selectedType ? (
+      {selectedType ? (
         <LoreFieldFilters
           universeId={universe.id}
-          type={selectedType}
+          // A project's link fields point at its own entries, which the filter's picker (Lore's search) cannot offer.
+          type={
+            isLore
+              ? selectedType
+              : {
+                  ...selectedType,
+                  fields: selectedType.fields.filter(
+                    (field) => field.kind !== FieldKind.EntityReference,
+                  ),
+                }
+          }
           filters={fieldFilters}
           onChange={setFieldFilters}
         />

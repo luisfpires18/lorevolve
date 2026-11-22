@@ -106,6 +106,9 @@ export interface TrashItem {
   blockedBy: TrashBlockValue
   publication: TrashPublicationValue
   entryId?: string | null
+  /** Set for a project's entry: the project it belongs to, and its name. */
+  projectId?: string | null
+  projectName?: string | null
 }
 
 export interface TrashPage {

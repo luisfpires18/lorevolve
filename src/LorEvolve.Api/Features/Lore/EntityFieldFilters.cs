@@ -75,7 +75,8 @@ public static class EntityFieldFilters
         Guid universeId,
         Guid? entityTypeId,
         string[] raw,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? projectId = null)
     {
         var filters = new List<EntityFieldFilter>();
         if (raw.Length == 0)
@@ -94,11 +95,15 @@ public static class EntityFieldFilters
         }
 
         // The type's fields and those it inherits from every type above it (ADR 0007 amendment, 2026-11-12).
-        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, typeId, cancellationToken);
-        var fields = await db.EntityFieldDefinitions.AsNoTracking()
+        // A project's list (projectId set) filters by its own type's fields: the scope is named, past the lore-only filter.
+        var lineage = await EntityEndpoints.FieldLineageAsync(db, universeId, typeId, cancellationToken, projectId);
+        var fields = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
             // Active fields only: an archived one is out of Lore's filters as it is out of every form (Issue #39), so a filter
             // naming it is refused like any field this type does not have.
-            .Where(field => lineage.Contains(field.EntityTypeId) && field.EntityType!.UniverseId == universeId && field.ArchivedAt == null)
+            .Where(field => lineage.Contains(field.EntityTypeId)
+                && field.EntityType!.UniverseId == universeId
+                && field.EntityType!.ProjectId == projectId
+                && field.ArchivedAt == null)
             .Select(field => new
             {
                 field.Id,
@@ -196,8 +201,8 @@ public static class EntityFieldFilters
         if (references.Count > 0)
         {
             var wanted = references.Values.Select(reference => reference.EntityId).Distinct().ToList();
-            var known = await db.Entities.AsNoTracking()
-                .Where(entity => entity.UniverseId == universeId && wanted.Contains(entity.Id))
+            var known = await db.Entities.AsNoTracking().IgnoreQueryFilters()
+                .Where(entity => entity.UniverseId == universeId && entity.ProjectId == projectId && wanted.Contains(entity.Id))
                 .ToDictionaryAsync(entity => entity.Id, entity => entity.EntityTypeId, cancellationToken);
 
             // A field limited to a group compares only with an entry whose type is in it now, by the same rule a save uses.
@@ -215,7 +220,7 @@ public static class EntityFieldFilters
                     .Select(member => (member.EntityTypeGroupId, member.EntityTypeId))
                     .ToHashSet();
             var parentOf = references.Values.Any(reference => reference.Target is not null)
-                ? await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken)
+                ? await EntityTypeEndpoints.ParentsAsync(db, universeId, cancellationToken, projectId)
                 : [];
 
             foreach (var (index, (entityId, target, group)) in references)

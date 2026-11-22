@@ -1,3 +1,4 @@
+import { projectPath } from '../projects/sections'
 import { apiFetch } from '../lib/api'
 import {
   TrashKind,
@@ -97,7 +98,9 @@ export function restoredPath(universeId: string, item: TrashItem) {
 
   switch (item.kind) {
     case TrashKind.Entry:
-      return `${universe}/lore/${item.id}`
+      return item.projectId
+        ? `${projectPath(item.projectId, 'entities', universeId)}/${item.id}`
+        : `${universe}/lore/${item.id}`
     case TrashKind.Story:
       return story
     case TrashKind.Chapter:
