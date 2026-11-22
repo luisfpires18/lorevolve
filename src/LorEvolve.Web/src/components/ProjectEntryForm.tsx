@@ -35,6 +35,7 @@ export function ProjectEntryForm({
   onCancel,
   onDirtyChange,
   onSavingChange,
+  onImageChanged,
 }: {
   projectId: string
   universeId: string
@@ -50,6 +51,8 @@ export function ProjectEntryForm({
   onDirtyChange?: (dirty: boolean) => void
   /** Given (inside a drawer): told when a save starts and ends, so the drawer locks. */
   onSavingChange?: (saving: boolean) => void
+  /** A field's picture was added, replaced or removed on the stored entry: the page re-reads it. */
+  onImageChanged?: () => void
 }) {
   useI18n()
   const [busy, setBusy] = useState(false)
@@ -173,7 +176,7 @@ export function ProjectEntryForm({
                   const { [field.id]: _dropped, ...rest } = current
                   return held ? { ...rest, [field.id]: held } : rest
                 }),
-              onChanged: () => undefined,
+              onChanged: () => onImageChanged?.(),
               disabled: busy,
             }}
           />
