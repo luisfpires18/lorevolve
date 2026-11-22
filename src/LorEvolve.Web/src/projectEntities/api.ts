@@ -12,6 +12,9 @@ import type {
 /** A project's own schema and entries (#144). Reached through the project, which resolves to its universe's access. */
 const base = (projectId: string) => `/api/projects/${projectId}`
 
+/** The 409 code of a project entry save over a newer version. */
+export const PROJECT_ENTRY_CHANGED = 'project_entity_changed'
+
 export function listProjectTypes(projectId: string, signal?: AbortSignal) {
   return apiFetch<ProjectEntityType[]>(`${base(projectId)}/entity-types`, { signal })
 }

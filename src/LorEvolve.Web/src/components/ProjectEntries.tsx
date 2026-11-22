@@ -5,11 +5,7 @@ import { PageHeader } from './PageHeader'
 import { Section } from './Section'
 import { Field } from './Field'
 import { useLocation } from 'react-router-dom'
-import {
-  type ProjectEntitySummary,
-  type ProjectEntityType,
-  type ProjectField,
-} from '../projectEntities/types'
+import { type ProjectEntitySummary, type ProjectEntityType } from '../projectEntities/types'
 import { buildTypeTree } from '../lore/typeTree'
 import { EmptyState } from './EmptyState'
 import { t, tx, useI18n } from '../i18n'
@@ -17,7 +13,6 @@ import { useProjectEntriesState } from '../projectEntities/useProjectEntriesStat
 import { useProjectEntriesRead } from '../projectEntities/useProjectEntriesRead'
 import { ProjectEntriesFilters } from './projectEntities/ProjectEntriesFilters'
 import { ProjectEntryList } from './projectEntities/ProjectEntryList'
-import { ProjectEntryForm } from './ProjectEntryForm'
 import { ShowMore } from './ShowMore'
 import { NewButton } from './NewButton'
 import { FormMessage } from './FormMessage'
@@ -37,7 +32,7 @@ export function ProjectEntries({
   onChanged,
   crumb,
   entryHref,
-  startAdding = false,
+  newHref,
 }: {
   projectId: string
   /** The universe the project belongs to: an entry's pictures are stored under it. */
@@ -57,8 +52,8 @@ export function ProjectEntries({
   crumb?: CrumbItem
   /** Where an entry's card opens (#286); unset, a card is static as it was (#196). */
   entryHref?: (entry: ProjectEntitySummary) => string
-  /** Open the new entry form at once: the Entities screen's New entry chose this type (`&add=1`). */
-  startAdding?: boolean
+  /** Where New entry opens: the Lore entry page's create in this type (#551). */
+  newHref: string
 }) {
   useI18n()
   const { pathname } = useLocation()
@@ -89,7 +84,7 @@ export function ProjectEntries({
       actions={action}
     />
   )
-  const state = useProjectEntriesState({ startAdding, fixedTypeId })
+  const state = useProjectEntriesState({ fixedTypeId })
   const {
     sort,
     nested,
@@ -104,8 +99,6 @@ export function ProjectEntries({
     failed,
     busy,
     setBusy,
-    adding,
-    setAdding,
   } = state
   const { setFilter, clearFilters, loadMore, loadingMore, refresh, failing } =
     useProjectEntriesRead({
@@ -150,9 +143,6 @@ export function ProjectEntries({
   }
 
   const type = types.find((each) => each.id === typeId) ?? null
-  // A type's own fields and the ones it inherits are both filled in on an entry; they differ only in where they are
-  // defined, which is the Types screen's business and not this one's.
-  const fields: ProjectField[] = type ? [...type.fields, ...type.inheritedFields] : []
   // The types above this one, each a link to its own list, as Lore's path reads above a type's list.
   const ancestors = (type && buildTypeTree(types).byId.get(type.id)?.path.slice(0, -1)) || []
 
@@ -162,10 +152,9 @@ export function ProjectEntries({
         type ? <bdi>{type.name}</bdi> : t('projects.entries.title'),
         ancestors,
         <NewButton
-          aria-expanded={adding}
           aria-label={type ? t('lore.page.newTypeLabel', { name: type.name }) : undefined}
           data-testid="project-entry-add"
-          onClick={() => setAdding((open) => !open)}
+          to={newHref}
         >
           <span className="lore__createlabel">
             {type
@@ -194,27 +183,6 @@ export function ProjectEntries({
           ))}
         </Field>
       )}
-
-      {/*
-       * Asked for rather than always open. Its fields are the chosen type's, so it sits under the type above it and
-       * the author reads the type's name before the boxes that belong to it.
-       */}
-      {adding && typeId !== null ? (
-        // Keyed by type: another type's fields start the form over rather than keep values that are not its own.
-        <ProjectEntryForm
-          key={typeId}
-          projectId={projectId}
-          universeId={universeId}
-          entityTypeId={typeId}
-          fields={fields}
-          onSaved={(notice) => {
-            setAdding(false)
-            refresh(notice)
-          }}
-          onFailed={failing}
-          onCancel={() => setAdding(false)}
-        />
-      ) : null}
 
       <ProjectEntriesFilters
         sort={sort}
@@ -266,9 +234,3 @@ export function ProjectEntries({
     </Section>
   )
 }
-
-/**
- * The one entry form (#287): New on the list, and Edit on an entry's own screen. Edit starts from the stored entry and
- * saves it with its version, so a change made elsewhere in between is refused rather than overwritten. The type is
- * never changed here. A picture is not a value: on New it waits for the entry to exist, on Edit it is stored in place.
- */

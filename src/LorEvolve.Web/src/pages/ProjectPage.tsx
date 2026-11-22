@@ -129,6 +129,8 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
   const sections = projectSections(project.kind)
   // `entities/<entryId>` is one entry's own screen (#286) inside the project; no other view has a sub-address.
   const [head, entryId, ...beyond] = segment.split('/')
+  // `entities/new?type=` is a new entry, read before the entry's id (#551).
+  const creating = head === 'entities' && entryId === 'new'
   const section =
     beyond.length === 0 && (entryId === undefined || (head === 'entities' && entryId !== ''))
       ? sections.find((candidate) => candidate.segment === head)
@@ -191,7 +193,8 @@ function Project({ inUniverse, view }: { inUniverse: boolean; view?: string }) {
       <ProjectBody
         project={project}
         section={section}
-        entryId={entryId}
+        entryId={creating ? undefined : entryId}
+        creating={creating}
         entitiesPath={entitiesPath}
         typesPath={typesPath}
         access={access}

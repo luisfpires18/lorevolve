@@ -79,7 +79,6 @@ const HAND_READS = new Set([
   'src/components/MomentPick.tsx',
   'src/components/NameLinker.tsx',
   'src/components/ProjectEntitiesView.tsx',
-  'src/components/ProjectEntityFields.tsx',
   'src/components/PublicAuthorSection.tsx',
   'src/components/PublicNameForm.tsx',
   'src/components/RelationshipTypeManager.tsx',
@@ -183,7 +182,7 @@ const entryScreen = (file: string) =>
   )
 
 const entryApi = (source: string) =>
-  /\b(getEntity|listEntities|createEntity|updateEntity|deleteEntity|ENTRY_CHANGED)\b/.test(
+  /\b(getEntity|listEntities|createEntity|updateEntity|deleteEntity|ENTRY_CHANGED|getProjectEntity|createProjectEntity|saveProjectEntity|deleteProjectEntity|PROJECT_ENTRY_CHANGED)\b/.test(
     code(source),
   )
 
@@ -203,6 +202,7 @@ test('the entry source guard catches an entry call or a hand-built entry address
   assert.ok(entryApi('await getEntity(universe.id, id)'))
   assert.ok(entryApi('listEntities (\n  universeId,'))
   assert.ok(entryApi("import { ENTRY_CHANGED } from './api'"))
+  assert.ok(entryApi('getProjectEntity(projectId, id)'))
   assert.ok(!entryApi('getEntityArticle(universe.id, id)'))
   assert.ok(!entryApi('entrySource.get(id)'))
   assert.ok(!entryApi('// getEntity( lives in entrySource'))

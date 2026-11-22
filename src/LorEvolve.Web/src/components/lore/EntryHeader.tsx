@@ -29,6 +29,7 @@ export function EntryHeader({
   setPendingFieldImages,
   selectedType,
   changeCanon,
+  isLore,
 }: {
   access: UniverseCapabilities
   isNew: boolean
@@ -43,6 +44,8 @@ export function EntryHeader({
   setPendingFieldImages: Dispatch<SetStateAction<Record<string, PendingFieldImage>>>
   selectedType: EntityType | null
   changeCanon: (next: CanonStatusValue) => Promise<void>
+  /** A project entry (#551) has no Canon status and no aliases. */
+  isLore: boolean
 }) {
   const { t, tx } = useI18n()
   const entrySource = useEntrySource()
@@ -54,7 +57,7 @@ export function EntryHeader({
           items={[
             {
               to: entrySource.href.list(detail?.entityTypeId ?? draft.entityTypeId),
-              label: t('entity.page.head.lore'),
+              label: isLore ? t('entity.page.head.lore') : t('projects.entities.title'),
             },
           ]}
         />
@@ -91,7 +94,7 @@ export function EntryHeader({
       // How settled the entry is, changed in one press. A choice, not an action: the chosen step is raised paper with its
       // glyph and word, never a filled block louder than the name.
       status={
-        access.editContent || isNew || suggesting ? (
+        !isLore ? undefined : access.editContent || isNew || suggesting ? (
           <CanonStatusPicker
             label={t('entity.page.head.canonGroup')}
             disabled={isSaving}
@@ -134,7 +137,7 @@ export function EntryHeader({
         </p>
       ) : null}
 
-      {!isEditing && (detail?.aliases.length ?? 0) > 0 ? (
+      {isLore && !isEditing && (detail?.aliases.length ?? 0) > 0 ? (
         <QuietNote className="entry__aliases" size="ui" testId="entry-aliases">
           {tx('entity.page.head.alsoKnownAs', { names: <NameList names={detail!.aliases} /> })}
         </QuietNote>

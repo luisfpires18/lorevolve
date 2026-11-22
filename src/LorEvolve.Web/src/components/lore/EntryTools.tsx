@@ -20,6 +20,7 @@ export function EntryTools({
   moveToTrash,
   startEditing,
   startSuggesting,
+  isLore,
 }: {
   universe: { id: string }
   access: UniverseCapabilities
@@ -30,14 +31,18 @@ export function EntryTools({
   moveToTrash: () => Promise<void>
   startEditing: () => void
   startSuggesting: () => void
+  /** A project entry (#551): Edit and Delete only. */
+  isLore: boolean
 }) {
   const { t } = useI18n()
   const entrySource = useEntrySource()
+  // A project entry has no Trash: an editor deletes it for good.
+  const canRemove = isLore ? access.manageTrash : access.editContent
   return (
     <>
       {/* Whether the entry is public, said in a word, and the way to change it - before Edit, because it is
                   state the author should see on arrival, not a tool buried in the menu. */}
-      {access.publish ? (
+      {isLore && access.publish ? (
         <ContentPublication
           key={entityId}
           universeId={universe.id}
@@ -57,7 +62,7 @@ export function EntryTools({
         >
           {t('entity.page.tools.edit')}
         </Button>
-      ) : access.suggestChanges ? (
+      ) : isLore && access.suggestChanges ? (
         // A Reviewer's way into the same form, where an Editor's Edit stands. Its icon alone on a phone.
         <Button
           tone="secondary"
@@ -72,7 +77,7 @@ export function EntryTools({
       {/* Offered on an entry whose type the author enabled for Family Tree, and on any entry
                   already holding a family link - never decided by what the type is called (ADR 0040).
                   Its icon alone on a phone, still named, so the tools keep to one line. */}
-      {offersFamilyTree ? (
+      {isLore && offersFamilyTree ? (
         <Button
           tone="text"
           icon={Network}
@@ -85,27 +90,27 @@ export function EntryTools({
       ) : null}
       {/* The owner's private note on the entry (issue 23): a tool on the entry itself, offered to the owner alone,
                   its icon alone on a phone like Family tree - the views line has no room for a second trigger at 390px. */}
-      {access.privateNotes ? (
+      {isLore && access.privateNotes ? (
         <PrivateNotes
           universeId={universe.id}
           entityId={entityId!}
           entryName={detail?.name ?? ''}
         />
       ) : null}
-      {access.editContent || access.manageTrash ? (
+      {access.editContent || canRemove ? (
         <RowMenu
           label={t('entity.page.tools.moreActions', {
             name: detail?.name ?? t('entity.page.tools.moreActionsFallback'),
           })}
           triggerTestId="entity-actions"
           divided
-          onRemove={access.manageTrash ? () => void moveToTrash() : undefined}
+          onRemove={canRemove ? () => void moveToTrash() : undefined}
           busy={isSaving}
-          removeLabel={t('entity.page.tools.moveToTrash')}
+          removeLabel={isLore ? t('entity.page.tools.moveToTrash') : t('projects.entries.delete')}
           removeTestId="trash-entity"
         >
           {/* A new entry filled from this one, to change before it is created (Issue #27). */}
-          {access.editContent ? (
+          {isLore && access.editContent ? (
             <ActionMenuItem
               icon={Copy}
               to={`${entrySource.href.create()}?from=${entityId}`}

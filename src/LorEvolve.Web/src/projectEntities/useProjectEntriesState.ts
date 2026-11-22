@@ -3,13 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { ProjectEntityType, ProjectEntitySummary } from './types'
 
 /** The address's search, sort and nesting, and every state and ref of the entries panel. */
-export function useProjectEntriesState({
-  startAdding,
-  fixedTypeId,
-}: {
-  startAdding: boolean
-  fixedTypeId?: string
-}) {
+export function useProjectEntriesState({ fixedTypeId }: { fixedTypeId?: string }) {
   // Search, sort and nesting live in the address beside `type`, so a filtered list is linkable (#285).
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
@@ -28,7 +22,6 @@ export function useProjectEntriesState({
   const [busy, setBusy] = useState(false)
   // The main read's controller: loadMore and refresh share its signal so a filter change cancels them too.
   const readRef = useRef<AbortController | null>(null)
-  const [adding, setAdding] = useState(startAdding)
   return {
     params,
     setParams,
@@ -53,7 +46,5 @@ export function useProjectEntriesState({
     busy,
     setBusy,
     readRef,
-    adding,
-    setAdding,
   }
 }
