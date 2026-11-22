@@ -2,8 +2,9 @@
 //
 // Keeps the pan and zoom canvases on their shared parts (#456): the stage, its layer, zoom group and hint are
 // `CanvasStage`, a pressable line is `CanvasLine` (both in `components/CanvasStage.tsx`), and a card's drag is
-// `itemDrag` in `lib/canvasDrag.ts`. The lists below only shrink, and a stale entry fails. Catalogue:
-// docs/design/ui-components.md.
+// `itemDrag` in `lib/canvasDrag.ts`. The stage keys (arrows pan, plus and minus zoom, 0 fits) are `panZoomKey` and a
+// card's arrow step `arrowMove`, both in `lib/canvasKeys.ts`, for both canvases and the map viewer (B3b). The lists
+// below only shrink, and a stale entry fails. Catalogue: docs/design/ui-components.md.
 
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -111,6 +112,8 @@ const drawsStage = (source: string) => tokens(source).some((token) => STAGE.incl
 const drawsStroke = (source: string) => tokens(source).includes('boardline__stroke')
 const drawsBoardZoom = (source: string) => /look="board"/.test(source)
 const writesDrop = (source: string) => /dropAt\.current = \{/.test(stripComments(source))
+const namesStep = (source: string) => /\b(PAN_STEP|MOVE_STEP|BIG_MOVE_STEP)\b/.test(source)
+const zoomsByStep = (source: string) => /zoomAbout\((1 \/ )?ZOOM_STEP\b/.test(source)
 
 function only(found: string[], allowed: string[], say: string) {
   assert.deepEqual(
@@ -136,6 +139,26 @@ test('the guards catch a hand-written stage, line, zoom group and drag', () => {
   assert.ok(drawsBoardZoom('<ZoomControls look="board" zoomAbout={zoomAbout} />'))
   assert.ok(writesDrop('dropAt.current = { id: card.id, x, y }'))
   assert.ok(!writesDrop('dropAt.current = null'))
+  assert.ok(namesStep('const PAN_STEP = 48'))
+  assert.ok(namesStep('const step = event.shiftKey ? BIG_MOVE_STEP : MOVE_STEP'))
+  assert.ok(!namesStep('const PAN_STEPS = 2'))
+  assert.ok(zoomsByStep('zoomAbout(ZOOM_STEP, about.x, about.y)'))
+  assert.ok(zoomsByStep('zoomAbout(1 / ZOOM_STEP, about.x, about.y)'))
+  assert.ok(!zoomsByStep('zoomAbout(scale, x, y)'))
+})
+
+test('the stage keys and the arrow step are panZoomKey and arrowMove', () => {
+  const keyFiles = ['src/lib/canvasKeys.ts']
+  only(
+    sourceFiles.filter((file) => namesStep(read(file))),
+    keyFiles,
+    'use panZoomKey and arrowMove (lib/canvasKeys.ts)',
+  )
+  only(
+    sourceFiles.filter((file) => zoomsByStep(read(file))),
+    [c('ZoomControls'), ...keyFiles],
+    'use panZoomKey (lib/canvasKeys.ts); the zoom buttons are ZoomControls',
+  )
 })
 
 test('the stage, its lines, its zoom group and the card drag are the shared parts', () => {

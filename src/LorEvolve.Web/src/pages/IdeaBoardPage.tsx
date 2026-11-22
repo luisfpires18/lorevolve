@@ -1,9 +1,6 @@
-import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
-import type { RecordListNotice } from '../components/ideas/RecordListPage'
+import { useParams } from 'react-router-dom'
 import { IdeaBoardEditor } from '../components/IdeaBoardEditor'
-import { Quoted } from '../components/NameList'
-import { useI18n } from '../i18n'
-import type { WorkspaceContext } from './UniverseWorkspace'
+import { useRecordPlace } from '../ideas/useRecordPlace'
 
 /**
  * One idea board, new or saved, globally at `/app/ideas/boards/...` or inside a universe's workspace. A board started
@@ -16,34 +13,20 @@ export default function IdeaBoardPage({
   inUniverse?: boolean
   isNew?: boolean
 }) {
-  const { t, tx } = useI18n()
+  const { navigate, universe, listPath, place } = useRecordPlace(inUniverse, 'boards')
   const { boardId } = useParams<{ boardId: string }>()
-  const navigate = useNavigate()
-  const context = useOutletContext<WorkspaceContext | undefined>()
-  const universe = inUniverse && context ? context.universe : null
-  const listPath = universe ? `/app/universes/${universe.id}/ideas/boards` : '/app/ideas/boards'
 
   return (
     <IdeaBoardEditor
       key={isNew ? 'new' : boardId}
       boardId={isNew ? null : (boardId ?? null)}
-      defaultUniverseId={universe?.id ?? null}
-      contextUniverse={universe ? { id: universe.id, name: universe.name } : null}
-      listPath={listPath}
-      listLabel={
-        universe
-          ? tx('ideas.pages.boardsIn', { universe: <Quoted text={universe.name} /> })
-          : t('ideas.pages.allBoards')
-      }
+      {...place}
       // A created board opens where it now lives, replacing the new form in history.
       onCreated={(board) =>
         void navigate(
           universe && board.universe?.id === universe.id ? `${listPath}/${board.id}` : listPath,
           { replace: true },
         )
-      }
-      onDeleted={(board) =>
-        void navigate(listPath, { state: { deleted: board } satisfies RecordListNotice })
       }
     />
   )

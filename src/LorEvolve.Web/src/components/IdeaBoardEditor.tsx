@@ -4,16 +4,15 @@ import { Quoted } from './NameList'
 import { listBoardTargets } from '../ideas/api'
 import { BoardFields } from './ideas/BoardFields'
 import { BoardToolbar } from './ideas/BoardToolbar'
-import { RecordUnavailable } from './ideas/RecordUnavailable'
+import { RecordNotices, RecordSaveBar, RecordUnavailable } from './ideas/RecordUnavailable'
 import { BoardWork } from './ideas/BoardWork'
 import { boardCardActions } from '../ideas/boardCardActions'
 import type { IdeaBoardDetail } from '../ideas/boards'
+import { chosenUniverseOf } from '../ideas/recordKind'
 import { useBoardEditor } from '../ideas/useBoardEditor'
 import { useI18n } from '../i18n'
 import { Announce } from './Announce'
 import { EditorHead } from './DocumentHead'
-import { EditorNotices } from './EditorNotices'
-import { SaveBar } from './SaveAction'
 
 interface IdeaBoardEditorProps {
   /** The board being edited, or null for a new one. */
@@ -74,9 +73,7 @@ export function IdeaBoardEditor({
     )
   }
 
-  const chosenUniverse =
-    universes?.find((universe) => universe.id === draft.universeId) ??
-    (stored.universe && stored.universe.id === draft.universeId ? stored.universe : null)
+  const chosenUniverse = chosenUniverseOf(universes, draft.universeId, stored.universe)
   const cardsById = new Map(draft.cards.map((card) => [card.id, card]))
   // Ideas and entries already on the board, shown as placed rather than offered twice.
   const placed = new Set(
@@ -97,7 +94,6 @@ export function IdeaBoardEditor({
     cardsById,
   }
   const { addPicked } = cards
-  const { conflict } = base
 
   return (
     <article className="board" aria-labelledby={headingId} data-testid="board-editor">
@@ -118,52 +114,19 @@ export function IdeaBoardEditor({
         updatedAt={stored.updatedAt}
       />
 
-      <EditorNotices
+      <RecordNotices
+        words="ideas.board"
         testId="board"
         recoveryId={recoveryId}
-        recovery={
-          view.offer && view.copy
-            ? {
-                what: view.isNew ? t('ideas.board.recoveryNew') : t('ideas.board.recoveryThis'),
-                draft: view.offer,
-                savedUpdatedAt: stored.updatedAt,
-                preview: (
-                  <div
-                    className="recovery__prose idea__preview prose"
-                    role="region"
-                    aria-label={t('ideas.board.recoveredDraft')}
-                    tabIndex={0}
-                  >
-                    <p className="idea__previewtitle">
-                      {view.copy.title || t('ideas.board.untitled')}
-                    </p>
-                    <p>
-                      {t('ideas.board.countsStop', {
-                        cards: tn('ideas.board.cards', view.copy.cards.length),
-                        lines: tn('ideas.board.lines', view.copy.connections.length),
-                      })}
-                    </p>
-                  </div>
-                ),
-                onRecover: view.recoverDraft,
-                onDiscard: view.discardDraft,
-              }
-            : null
-        }
-        conflict={
-          conflict
-            ? {
-                text: t('ideas.board.conflict.text'),
-                onKeepMine: () => void view.save(conflict.updatedAt),
-                keepLabel: t('ideas.board.conflict.keepMine'),
-                onLoadSaved: () => void view.loadSavedVersion(),
-                loadLabel: t('ideas.board.conflict.loadSaved'),
-                busy: view.isSaving,
-              }
-            : null
-        }
-        failure={view.failure}
-        failureClassName="idea__failure"
+        editor={view}
+        preview={(copy) => (
+          <p>
+            {t('ideas.board.countsStop', {
+              cards: tn('ideas.board.cards', copy.cards.length),
+              lines: tn('ideas.board.lines', copy.connections.length),
+            })}
+          </p>
+        )}
       />
 
       <BoardFields {...view} />
@@ -172,28 +135,12 @@ export function IdeaBoardEditor({
 
       <BoardWork {...view} />
 
-      <SaveBar
-        record
-        keyShortcuts
-        warning={
-          view.failed && view.isDirty
-            ? { text: t('ideas.board.recoveryWarning'), testId: 'board-recovery-warning' }
-            : null
-        }
-        save={{
-          label: view.isNew ? t('ideas.board.create') : t('ideas.board.save'),
-          isDirty: view.isDirty,
-          isSaving: view.isSaving,
-          isBlocked: view.isHeld,
-          saves: view.saves,
-          restingStatus:
-            stored.updatedAt === null ? t('ideas.board.notSavedYet') : t('ideas.board.saved'),
-          statusId,
-          statusTestId: 'board-status',
-          testId: 'board-save',
-          type: 'button',
-          onSave: () => void view.save(stored.updatedAt),
-        }}
+      <RecordSaveBar
+        words="ideas.board"
+        testId="board"
+        statusId={statusId}
+        editor={view}
+        onSave={() => void view.save(stored.updatedAt)}
       />
 
       {picking ? (

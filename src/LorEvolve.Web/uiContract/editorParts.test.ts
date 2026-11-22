@@ -2,8 +2,10 @@
 //
 // Keeps the editor and record list parts shared (#456, stage 12): EditorHead (in DocumentHead.tsx) draws a record's head
 // with its menu, SaveBar (in SaveAction.tsx) every explicit-save bar, EditorNotices the recovered draft with the conflict, the Record* parts the
-// Ideas and Boards lists, and UNASSIGNED is said once. Each list below only shrinks, and a stale entry fails.
-// Catalogue: docs/design/ui-components.md.
+// Ideas and Boards lists, and UNASSIGNED is said once. The Idea and Board editors draw their notices and save bar
+// through RecordNotices and RecordSaveBar (in ideas/RecordUnavailable.tsx), find their universe with chosenUniverseOf,
+// their pages take their place from useRecordPlace, and both lists are headed by IdeasHeader (B3b). Each list below
+// only shrinks, and a stale entry fails. Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -26,6 +28,20 @@ const noticesByHand = (source: string) =>
 // `boxId` marks a field or sections stale choice: a drawer's own box, not an editor's notices.
 const conflictByHand = (source: string) => /<StaleChoice\b/.test(source) && !/\bboxId=/.test(source)
 const unassignedCount = (source: string) => source.match(/export const UNASSIGNED\b/g)?.length ?? 0
+const PREVIEW = ['idea__preview', 'idea__previewtitle']
+const drawsPreview = (source: string) =>
+  classStrings(source).some((value) =>
+    value
+      .replaceAll('\u0001', ' \u0001')
+      .split(/\s+/)
+      .some((token) => PREVIEW.includes(token)),
+  )
+const recordWordsByHand = (source: string) =>
+  /<(EditorNotices|SaveBar)\b/.test(source) && /ideas\.(editor|board)\./.test(source)
+const universeByHand = (source: string) => source.includes('universe.id === draft.universeId')
+const placeByHand = (source: string) => source.includes('ideas.pages.')
+const tabsByHand = (source: string) => /<IdeasTabs\b/.test(source)
+const c = (file: string) => `src/components/${file}.tsx`
 
 // Files that write the bar or warning class by hand, with the reason. SaveBar is the part.
 const HAND_BARS = new Map<string, string>([
@@ -85,11 +101,15 @@ const GONE = [
   'src/ideas/useBoardsActions.tsx',
 ]
 
-function onlyAllowed(found: string[], allowed: string[]) {
+function onlyAllowed(
+  found: string[],
+  allowed: string[],
+  say = 'use the shared part, see docs/design/ui-components.md',
+) {
   assert.deepEqual(
     found.filter((file) => !allowed.includes(file)),
     [],
-    'New offender: use the shared part, see docs/design/ui-components.md',
+    `New offender: ${say}`,
   )
   assert.deepEqual(
     allowed.filter((file) => !found.includes(file)),
@@ -114,6 +134,69 @@ test('the guards fail on a bad snippet', () => {
   assert.equal(conflictByHand('<FormMessage>{f}</FormMessage>\n<StaleChoice text={t} />'), true)
   assert.equal(conflictByHand('<EditorNotices conflict={c} />'), false)
   assert.equal(unassignedCount("export const UNASSIGNED = 'unassigned'"), 1)
+  assert.equal(drawsPreview('<div className="recovery__prose idea__preview prose">'), true)
+  assert.equal(drawsPreview('<p className={`idea__previewtitle ${look}`}>'), true)
+  assert.equal(drawsPreview('<div className="idea__previewer">'), false)
+  assert.equal(
+    recordWordsByHand("<SaveBar record save={{ label: t('ideas.board.save') }} />"),
+    true,
+  )
+  assert.equal(
+    recordWordsByHand('<EditorNotices testId="idea" />\nt(\'ideas.editor.conflict.text\')'),
+    true,
+  )
+  assert.equal(
+    recordWordsByHand("<SaveBar record />\nwords: 'ideas.editor' | 'ideas.board'"),
+    false,
+  )
+  assert.equal(recordWordsByHand("t('ideas.boardPicker.add')\n<SaveBar record />"), false)
+  assert.equal(
+    universeByHand('universes?.find((universe) => universe.id === draft.universeId)'),
+    true,
+  )
+  assert.equal(placeByHand("t('ideas.pages.allIdeas')"), true)
+  assert.equal(tabsByHand('<IdeasTabs basePath={basePath} current="boards" />'), true)
+  assert.equal(tabsByHand('<IdeasTabsList />'), false)
+})
+
+test('only RecordNotices draws the recovered record preview', () => {
+  onlyAllowed(
+    tsxFiles.filter((file) => drawsPreview(read(file))),
+    [c('ideas/RecordUnavailable')],
+    'use RecordNotices',
+  )
+})
+
+test('the Idea and Board notices and save bar are not written with their words by hand', () => {
+  onlyAllowed(
+    tsxFiles.filter((file) => recordWordsByHand(read(file))),
+    [],
+    'use RecordNotices and RecordSaveBar',
+  )
+})
+
+test('a record editor finds its universe with chosenUniverseOf', () => {
+  onlyAllowed(
+    tsxFiles.filter((file) => universeByHand(read(file))),
+    [],
+    'use chosenUniverseOf',
+  )
+})
+
+test('the record pages take their place from useRecordPlace', () => {
+  onlyAllowed(
+    sourceFiles.filter((file) => !file.startsWith('src/i18n/') && placeByHand(read(file))),
+    ['src/ideas/useRecordPlace.tsx'],
+    'use useRecordPlace',
+  )
+})
+
+test('the Ideas and Boards lists are headed by IdeasHeader', () => {
+  onlyAllowed(
+    tsxFiles.filter((file) => tabsByHand(read(file))),
+    [c('ideas/IdeasHeader')],
+    'use IdeasHeader',
+  )
 })
 
 test('only DocumentHead draws a document head with its actions menu', () => {

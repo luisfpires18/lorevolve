@@ -82,3 +82,15 @@ export function storedMomentOf(problem: unknown) {
   const updatedAt = (problem as { updatedAt?: unknown } | null)?.updatedAt
   return typeof updatedAt === 'string' ? updatedAt : null
 }
+
+/** The universe the draft is in: from the account's list, or the record's own while the list lacks it. */
+export function chosenUniverseOf<U extends { id: string; name: string }>(
+  universes: U[] | null,
+  universeId: string | null,
+  own: { id: string; name: string } | null,
+) {
+  return (
+    universes?.find((universe) => universe.id === universeId) ??
+    (own && own.id === universeId ? own : null)
+  )
+}
