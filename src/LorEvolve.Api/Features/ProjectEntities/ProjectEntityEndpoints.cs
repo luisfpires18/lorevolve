@@ -45,10 +45,10 @@ public static class ProjectEntityEndpoints
 
         group.MapGet("/", ListAsync).WithName("ListProjectEntities");
         group.MapPost("/", CreateAsync).WithName("CreateProjectEntity");
-        group.MapPost("/bulk-trash", BulkTrashAsync).WithName("BulkTrashProjectEntities");
+        group.MapPost("/bulk-trash", ProjectEntityTrash.BulkTrashAsync).WithName("BulkTrashProjectEntities");
         group.MapGet("/{entityId:guid}", GetAsync).WithName("GetProjectEntity");
         group.MapPut("/{entityId:guid}", UpdateAsync).WithName("UpdateProjectEntity");
-        group.MapDelete("/{entityId:guid}", DeleteAsync).WithName("DeleteProjectEntity");
+        group.MapDelete("/{entityId:guid}", ProjectEntityTrash.DeleteAsync).WithName("DeleteProjectEntity");
         group.MapGet("/{entityId:guid}/revisions", RevisionsAsync).WithName("ListProjectEntityRevisions");
         ProjectEntityImport.Map(group);
 
@@ -94,44 +94,14 @@ public static class ProjectEntityEndpoints
             return Problems.Field("q", $"Search can be at most {MaxSearchLength} characters.");
         }
 
-        // Field filters as Lore's list takes them, resolved against this project's own type: one that does not resolve is refused.
-        var (fieldFilters, fieldErrors) = await EntityFieldFilters.ResolveAsync(
-            db, project!.UniverseId, typeId, field ?? [], cancellationToken, projectId);
+        var (matching, refused) = await ProjectEntityListQuery.MatchingAsync(
+            db, project!.UniverseId, projectId, typeId, includeDescendants, q, exact, field, cancellationToken);
 
-        if (fieldErrors is not null)
+        if (refused is not null)
         {
-            return Results.ValidationProblem(fieldErrors);
+            return refused;
         }
 
-        // The project id stays in the base predicate, before any filter, so no search or type id reaches another game.
-        var matching = db.Entities.AsNoTracking().IgnoreQueryFilters()
-            .Where(entry => entry.ProjectId == projectId && entry.DeletedAt == null);
-
-        if (typeId is { } wanted && includeDescendants)
-        {
-            // The type and every type nested beneath it, from this project's own small type graph (as Lore's list does).
-            var parentOf = await db.EntityTypes.AsNoTracking().IgnoreQueryFilters()
-                .Where(type => type.UniverseId == project!.UniverseId && type.ProjectId == projectId)
-                .ToDictionaryAsync(type => type.Id, type => type.ParentId, cancellationToken);
-            var branch = EntityTypeHierarchy.Branch(parentOf, wanted).ToList();
-            matching = matching.Where(entry => branch.Contains(entry.EntityTypeId));
-        }
-        else if (typeId is { } exactType)
-        {
-            matching = matching.Where(entry => entry.EntityTypeId == exactType);
-        }
-
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var text = EntityFieldFilters.AsciiLower(q.Trim());
-
-            // Exact: only the entry called what was typed, whole and ignoring case (a project entry has no aliases).
-            matching = exact
-                ? matching.Where(entry => entry.Name.ToLower() == text)
-                : matching.Where(entry => entry.Name.ToLower().Contains(text));
-        }
-
-        matching = EntityFieldFilters.Apply(matching, fieldFilters);
 
         // The id breaks ties, so a page boundary never repeats or drops a row. By name is this list's own order, the
         // one the Entities view reads a type a page at a time in. `recent` asks for the newest first instead, for the
@@ -358,109 +328,6 @@ public static class ProjectEntityEndpoints
             db, project.UniverseId, entityId, cancellationToken, liveOnly: false, projectId);
 
         return Results.Ok(detail);
-    }
-
-    /// <summary>
-    /// Moves the entry to the Trash, the same way a lore entry goes: the row and everything pointing at it stay where
-    /// they are and a timestamp says when it was thrown away (ADR 0015), so nothing dependent is destroyed on the way
-    /// in and a restore has nothing to rebuild.
-    /// </summary>
-    /// <summary>
-    /// Moves many of the project's entries to the universe's Trash at once, all or nothing, each exactly as
-    /// <see cref="DeleteAsync"/> does one; they restore from there like a lore entry.
-    /// Checked whole first: an id that is not a live entry of this project refuses the request and confirms nothing.
-    /// </summary>
-    private static async Task<IResult> BulkTrashAsync(
-        Guid projectId,
-        [FromBody] BulkTrashRequest request,
-        ClaimsPrincipal principal,
-        LorEvolveDbContext db,
-        CancellationToken cancellationToken)
-    {
-        if (await TrashDeniedAsync(db, projectId, principal, cancellationToken) is { } denied)
-        {
-            return denied;
-        }
-
-        var ids = request.EntityIds;
-
-        if (ids is not { Count: > 0 } || ids.Count > EntityEndpoints.BulkTrashMaxEntries || ids.Distinct().Count() != ids.Count)
-        {
-            return Problems.Field(
-                "entityIds",
-                ids is not { Count: > 0 }
-                    ? "Choose at least one entry."
-                    : ids.Count > EntityEndpoints.BulkTrashMaxEntries
-                        ? $"Move up to {EntityEndpoints.BulkTrashMaxEntries} entries at a time. This has {ids.Count}."
-                        : "The same entry is listed more than once.");
-        }
-
-        var entries = await db.Entities.IgnoreQueryFilters()
-            .Where(entry => entry.ProjectId == projectId && entry.DeletedAt == null && ids.Contains(entry.Id))
-            .ToListAsync(cancellationToken);
-
-        if (entries.Count != ids.Count)
-        {
-            return Problems.Field("entityIds", "An entry is not in this project any more. It may already be in the Trash.");
-        }
-
-        var now = DateTime.UtcNow;
-
-        foreach (var entry in entries)
-        {
-            entry.DeletedAt = now;
-            entry.UpdatedAt = now;
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-
-        return Results.Ok(new { trashed = entries.Count });
-    }
-
-    /// <summary>The project's write access, then what a lore entry's move to the Trash asks: the universe's Manage Trash.</summary>
-    private static async Task<IResult?> TrashDeniedAsync(
-        LorEvolveDbContext db,
-        Guid projectId,
-        ClaimsPrincipal principal,
-        CancellationToken cancellationToken)
-    {
-        var (project, denied) = await WritableAsync(db, projectId, principal, cancellationToken);
-
-        return denied
-            ?? await UniverseAccess.DenyAsync(
-                db, project!.UniverseId, principal, UniverseCapability.ManageTrash, cancellationToken);
-    }
-
-    private static async Task<IResult> DeleteAsync(
-        Guid projectId,
-        Guid entityId,
-        ClaimsPrincipal principal,
-        LorEvolveDbContext db,
-        CancellationToken cancellationToken)
-    {
-        if (await TrashDeniedAsync(db, projectId, principal, cancellationToken) is { } denied)
-        {
-            return denied;
-        }
-
-        var entity = await db.Entities.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(
-                candidate => candidate.Id == entityId && candidate.ProjectId == projectId,
-                cancellationToken);
-
-        if (entity is null)
-        {
-            return Results.NotFound();
-        }
-
-        if (entity.DeletedAt is null)
-        {
-            entity.DeletedAt = DateTime.UtcNow;
-            entity.UpdatedAt = entity.DeletedAt.Value;
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        return Results.NoContent();
     }
 
     /// <summary>
