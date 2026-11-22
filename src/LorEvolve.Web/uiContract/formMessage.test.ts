@@ -8,7 +8,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { classStrings, read, webRoot } from './support.ts'
+import { classStrings, read, tsxFiles, webRoot } from './support.ts'
 
 // Files that may still write their own line. Empty since the auth pages moved onto FormMessage.
 const PUBLIC_PAGES: string[] = []
@@ -25,6 +25,15 @@ const handWritten = (source: string) =>
     value.replaceAll('\u0001', ' \u0001').split(/\s+/).includes('form__message'),
   )
 
+// An action's feedback pair drawn by hand: a ternary on `isError` (not an `isError?:` type) choosing the line.
+const pairsFeedback = (source: string) => /\bisError\s*\?\s*[(<]/.test(source)
+
+// Files that draw their own feedback pair.
+const FEEDBACK_PAIRS = [
+  'src/components/ReviewSuggestions.tsx',
+  'src/components/aiChanges/AiChangeNotices.tsx',
+]
+
 test('the form message guard catches a hand-written line, template-built classes included', () => {
   assert.ok(handWritten('<p className="form__message" role="alert">{m}</p>'))
   assert.ok(handWritten('<p className="form__message article__failure">{m}</p>'))
@@ -32,6 +41,13 @@ test('the form message guard catches a hand-written line, template-built classes
   assert.ok(handWritten("<p className={ok ? 'callout' : 'form__message'}>{m}</p>"))
   assert.ok(!handWritten('<FormMessage testId="x">{m}</FormMessage>'))
   assert.ok(!handWritten('<p className="form__messages">{m}</p>'))
+  assert.ok(
+    pairsFeedback(
+      'feedback.isError ? (<FormMessage ref={line}>x</FormMessage>) : (<Callout look="callout">x</Callout>)',
+    ),
+  )
+  assert.ok(!pairsFeedback('<FeedbackLine feedback={feedback} line={feedbackLine} testId="x" />'))
+  assert.ok(!pairsFeedback('type F = { isError?: boolean }'))
 })
 
 test('a form message is drawn by FormMessage', () => {
@@ -46,6 +62,20 @@ test('a form message is drawn by FormMessage', () => {
   )
   assert.deepEqual(
     allowed.filter((file) => !found.includes(file)),
+    [],
+    'stale allowlist entry: remove it',
+  )
+})
+
+test("an action's feedback line is FeedbackLine", () => {
+  const found = tsxFiles.filter((file) => pairsFeedback(read(file)))
+  assert.deepEqual(
+    found.filter((file) => !FEEDBACK_PAIRS.includes(file)),
+    [],
+    'use <FeedbackLine> from components/FormMessage',
+  )
+  assert.deepEqual(
+    FEEDBACK_PAIRS.filter((file) => !found.includes(file)),
     [],
     'stale allowlist entry: remove it',
   )

@@ -103,6 +103,11 @@ const setsMissingWithout404: Guard = (source) => {
       !/isNotFound|404|missing:/.test(lines.slice(Math.max(0, index - 4), index + 5).join('\n')),
   )
 }
+// A confirmation or an outcome line drawn by hand: a notice `Callout` whose body opens with `<p role="status"`.
+const drawsNoticeLine: Guard = (source) =>
+  elements(source, 'Callout').some(
+    ({ tag, body }) => noticeLook(tag) && /^\s*<p role="status"/.test(body),
+  )
 const usesMuted: Guard = (source) => /className="muted"/.test(source)
 // A bar drawn by hand: `progressbar` or `progressbar__fill` as a class token (template literals included), or its role.
 const drawsProgressBar: Guard = (source) =>
@@ -115,6 +120,16 @@ const drawsProgressBar: Guard = (source) =>
 
 // Files that draw a progress bar or a meter. ProgressBar is the part.
 const PROGRESS_BARS = new Set(['src/components/ProgressBar.tsx'])
+
+// Files that draw a confirmation or an outcome line themselves.
+const NOTICE_LINES = new Set([
+  'src/components/TypeFields.tsx',
+  'src/components/ideas/RecordListPage.tsx',
+  'src/components/lore/TypesNotices.tsx',
+  'src/components/trash/TrashNotices.tsx',
+  'src/pages/MapsPage.tsx',
+  'src/pages/WorldRulesPage.tsx',
+])
 
 function check(guard: Guard, files: string[], allowed: Set<string> | Map<string, string>) {
   const found = files.filter((file) => guard(read(file)))
@@ -157,6 +172,22 @@ test('each guard catches the hand-written form', () => {
   assert.ok(drawsProgressBar('<div className={`progressbar ${extra}`}>'))
   assert.ok(drawsProgressBar('<div className="usage__meter" role="meter">'))
   assert.ok(!drawsProgressBar('<ProgressBar meter testId="image-crop-progressbar" />'))
+  assert.ok(
+    drawsNoticeLine(
+      '<Callout look="notice" className="maps__notice" testId="x">\n  <p role="status">{m}</p>\n</Callout>',
+    ),
+  )
+  assert.ok(
+    drawsNoticeLine(
+      '<Callout look="notice" className="trash__outcome" focusOnShow={o}><p role="status" data-testid="trash-message">{m}</p></Callout>',
+    ),
+  )
+  assert.ok(
+    !drawsNoticeLine('<StatusNotice className="maps__notice" testId="x">{m}</StatusNotice>'),
+  )
+  assert.ok(!drawsNoticeLine('<OutcomeNotice outcome={o} className="x" messageTestId="y" />'))
+  assert.ok(!drawsNoticeLine('<Callout look="callout" as="p" role="status">{m}</Callout>'))
+  assert.ok(!drawsNoticeLine('<Callout look="notice"><p>{m}</p></Callout>'))
 })
 
 test('a failed read is LoadError; only action errors draw their own block', () => {
@@ -165,6 +196,10 @@ test('a failed read is LoadError; only action errors draw their own block', () =
 
 test('a loading line is LoadingNote, a create or delete notice is a Callout', () => {
   check(drawsStatusNotice, tsxFiles, STATUS_NOTICES)
+})
+
+test('a confirmation or an outcome line is StatusNotice or OutcomeNotice', () => {
+  check(drawsNoticeLine, tsxFiles, NOTICE_LINES)
 })
 
 test('a screen reader message is Announce', () => {
