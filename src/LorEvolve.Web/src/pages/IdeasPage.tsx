@@ -73,14 +73,8 @@ function IdeasList({ scope }: { scope: IdeasScope }) {
           basePath={basePath}
           universe={universe}
           seal
-          excerpt={
-            idea.excerpt ? (
-              <>
-                {idea.excerpt}
-                {idea.isExcerptShortened ? '…' : null}
-              </>
-            ) : null
-          }
+          excerpt={idea.excerpt}
+          excerptShortened={idea.isExcerptShortened}
           count={
             idea.referenceCount > 0 ? (
               <span>

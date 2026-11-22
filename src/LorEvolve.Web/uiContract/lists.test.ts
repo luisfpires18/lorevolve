@@ -129,53 +129,23 @@ test('the pages of a list are Pager', () => {
 })
 
 test('a page tail is PagedList, a world rule row is WorldRuleRow, an ellipsis is excerptShortened', () => {
-  // B4 moves these into the shared parts; each list shrinks to the part alone.
   check(
     handPagedTail,
     tsxFiles,
-    new Map([
-      ...OWN_TAIL,
-      ...[
-        'src/components/canon/CanonResults.tsx',
-        'src/components/ideas/RecordListPage.tsx',
-        'src/components/worldLogic/WorldLogicIntegrity.tsx',
-        'src/components/worldLogic/WorldLogicRules.tsx',
-        'src/components/worldLogic/WorldLogicSystems.tsx',
-        'src/components/worldRules/WorldRulesList.tsx',
-        'src/pages/UniverseTrash.tsx',
-      ].map((file) => [file, 'moves into PagedList in #456 B4'] as const),
-    ]),
+    new Map([...OWN_TAIL, ['src/components/Pager.tsx', 'the shared part']]),
     'use PagedList',
   )
   check(
     handPageEmpty,
     tsxFiles,
-    new Set([
-      'src/components/worldLogic/WorldLogicIntegrity.tsx',
-      'src/components/worldLogic/WorldLogicRules.tsx',
-      'src/components/worldLogic/WorldLogicSystems.tsx',
-      'src/components/worldRules/WorldRulesList.tsx',
-    ]),
+    new Set(['src/components/Pager.tsx']),
     'use PagedList pageEmptyTestId',
   )
-  check(
-    handEllipsis,
-    tsxFiles,
-    new Set([
-      'src/components/worldLogic/SystemRow.tsx',
-      'src/components/worldLogic/WorldLogicRules.tsx',
-      'src/components/worldRules/WorldRulesList.tsx',
-      'src/pages/IdeasPage.tsx',
-    ]),
-    'use LinkRow excerptShortened',
-  )
+  check(handEllipsis, tsxFiles, new Set(), 'use LinkRow excerptShortened')
   check(
     handRuleRow,
     tsxFiles,
-    new Set([
-      'src/components/worldLogic/WorldLogicRules.tsx',
-      'src/components/worldRules/WorldRulesList.tsx',
-    ]),
+    new Set(['src/components/worldRules/WorldRulesList.tsx']),
     'use WorldRuleRow',
   )
 })
