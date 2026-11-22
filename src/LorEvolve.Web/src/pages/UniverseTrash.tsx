@@ -7,7 +7,7 @@ import type { WorkspaceContext } from './UniverseWorkspace'
 import { EraseConfirm } from '../components/trash/EraseConfirm'
 import { TrashHeader } from '../components/trash/TrashHeader'
 import { TrashNotices } from '../components/trash/TrashNotices'
-import { Pager } from '../components/Pager'
+import { PagedList } from '../components/Pager'
 import { TrashRow } from '../components/trash/TrashRow'
 import { TrashSelectBar } from '../components/trash/TrashSelectBar'
 import { trashActions } from '../trash/trashActions'
@@ -87,9 +87,10 @@ export default function UniverseTrash() {
 
       <TrashNotices {...trash} universe={universe} load={load} />
 
-      {result && result.items.length > 0 ? (
-        <ul className="trash__list" data-testid="trash-list">
-          {result.items.map((item) => (
+      {result ? (
+        <PagedList
+          result={result}
+          renderItem={(item) => (
             <TrashRow
               key={keyOf(item)}
               {...trash}
@@ -102,22 +103,16 @@ export default function UniverseTrash() {
               selectionLocked={selectionLocked}
               toggle={selectionActions.toggle}
             />
-          ))}
-        </ul>
-      ) : null}
-
-      {result && result.items.length === 0 ? (
-        <EmptyState
-          testId="trash-empty"
-          title={t('data.trash.empty.title')}
-          hint={t('data.trash.empty.hint')}
-        />
-      ) : null}
-
-      {result ? (
-        <Pager
-          page={result.page}
-          totalPages={result.totalPages}
+          )}
+          listClassName="trash__list"
+          listTestId="trash-list"
+          empty={
+            <EmptyState
+              testId="trash-empty"
+              title={t('data.trash.empty.title')}
+              hint={t('data.trash.empty.hint')}
+            />
+          }
           onPage={setPage}
           disabled={selectionLocked}
         />

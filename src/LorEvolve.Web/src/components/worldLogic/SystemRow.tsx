@@ -35,14 +35,8 @@ export function SystemRow({ universeId, system }: { universeId: string; system: 
       expanded={open}
       controls={panelId}
       onToggle={() => setOpen((current) => !current)}
-      excerpt={
-        system.excerpt ? (
-          <>
-            {system.excerpt}
-            {system.isExcerptShortened ? '…' : null}
-          </>
-        ) : null
-      }
+      excerpt={system.excerpt}
+      excerptShortened={system.isExcerptShortened}
       meta={
         <>
           <span className="rulerow__check" data-testid="world-logic-system-scope">

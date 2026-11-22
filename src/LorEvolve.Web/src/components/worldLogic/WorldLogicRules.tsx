@@ -4,13 +4,11 @@ import { t, useI18n } from '../../i18n'
 import type { useUniverseAccess } from '../../universes/access'
 import type { WorldLogicPage as Page, WorldLogicRuleRow } from '../../worldLogic/types'
 import type { worldLogicActions } from '../../worldLogic/worldLogicActions'
-import { Pager } from '../Pager'
-import { Button } from '../Button'
+import { PagedList } from '../Pager'
 import { NewButton } from '../NewButton'
 import { ReadGate } from '../ReadGate'
 import type { Load } from '../../lib/useAsyncRead'
-import { LinkRow } from '../LinkRow'
-import { DateText } from '../DateText'
+import { WorldRuleRow } from '../worldRules/WorldRulesList'
 
 /** The Rules tab: world rules and rule definitions in one list, with its empty states and its pager. */
 export function WorldLogicRules({
@@ -28,7 +26,7 @@ export function WorldLogicRules({
     base: string
     access: ReturnType<typeof useUniverseAccess>
   }) {
-  const { tx } = useI18n()
+  useI18n() // Re-renders on a language change; the words are read through the module's t.
 
   return (
     <TabPanel idPrefix="world-logic" id="rules" tab={tab}>
@@ -43,58 +41,32 @@ export function WorldLogicRules({
         }}
       >
         {(list) => (
-          <>
-            {list.items.length > 0 ? (
-              <ul className="rulelist" data-testid="world-logic-rule-list">
-                {list.items.map((rule) => (
-                  <LinkRow
-                    look="rule"
-                    key={`${rule.source}-${rule.id}`}
-                    to={rule.source === 'worldRule' ? `${base}/world-rules/${rule.id}` : undefined}
-                    title={rule.title}
-                    titleTestId="world-logic-rule-open"
-                    excerpt={
-                      rule.excerpt ? (
-                        <>
-                          {rule.excerpt}
-                          {rule.isExcerptShortened ? '…' : null}
-                        </>
-                      ) : null
-                    }
-                    testId="world-logic-rule-row"
-                    data-source={rule.source}
-                    data-title={rule.title}
-                    meta={
-                      <>
-                        <span className="rulerow__check" data-testid="world-logic-rule-kind">
-                          {rule.source === 'worldRule'
-                            ? t('canon.worldLogic.kinds.worldRule')
-                            : t('canon.worldLogic.kinds.definition')}
-                        </span>
-                        {rule.hasCheck ? (
-                          <span className="rulerow__check" data-testid="world-logic-rule-has-check">
-                            {t('canon.rules.checked')}
-                          </span>
-                        ) : null}
-                        {rule.hasCondition ? (
-                          <span
-                            className="rulerow__check"
-                            data-testid="world-logic-rule-has-condition"
-                          >
-                            {t('canon.worldLogic.hasCondition')}
-                          </span>
-                        ) : null}
-                        {tx('canon.rules.updated', {
-                          time: <DateText value={rule.updatedAt} />,
-                        })}
-                      </>
-                    }
-                  />
-                ))}
-              </ul>
-            ) : null}
-
-            {list.totalCount === 0 ? (
+          <PagedList
+            result={list}
+            renderItem={(rule) => (
+              <WorldRuleRow
+                key={`${rule.source}-${rule.id}`}
+                rule={rule}
+                to={rule.source === 'worldRule' ? `${base}/world-rules/${rule.id}` : undefined}
+                kind={
+                  rule.source === 'worldRule'
+                    ? t('canon.worldLogic.kinds.worldRule')
+                    : t('canon.worldLogic.kinds.definition')
+                }
+                ids={{
+                  row: 'world-logic-rule-row',
+                  open: 'world-logic-rule-open',
+                  hasCheck: 'world-logic-rule-has-check',
+                  hasCondition: 'world-logic-rule-has-condition',
+                  kind: 'world-logic-rule-kind',
+                }}
+                data-source={rule.source}
+                data-title={rule.title}
+              />
+            )}
+            listClassName="rulelist"
+            listTestId="world-logic-rule-list"
+            empty={
               <EmptyState
                 testId="world-logic-rules-empty"
                 title={t('canon.rules.empty.title')}
@@ -105,27 +77,11 @@ export function WorldLogicRules({
                   ) : undefined
                 }
               />
-            ) : null}
-
-            {list.items.length === 0 && list.totalCount > 0 ? (
-              <EmptyState
-                testId="world-logic-rules-page-empty"
-                title={t('canon.rules.pageEmpty.title')}
-                action={
-                  <Button tone="secondary" onClick={() => goTo('rulesPage', 1)}>
-                    {t('canon.rules.pageEmpty.first')}
-                  </Button>
-                }
-              />
-            ) : null}
-
-            <Pager
-              testId="world-logic-rules-pager"
-              page={list.page}
-              totalPages={list.totalPages}
-              onPage={(next) => goTo('rulesPage', next)}
-            />
-          </>
+            }
+            pageEmptyTestId="world-logic-rules-page-empty"
+            pagerTestId="world-logic-rules-pager"
+            onPage={(next) => goTo('rulesPage', next)}
+          />
         )}
       </ReadGate>
     </TabPanel>
