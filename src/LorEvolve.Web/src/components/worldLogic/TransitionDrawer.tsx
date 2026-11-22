@@ -5,9 +5,12 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import { confirmAction } from '../../lib/confirm'
 import type { MachineTransition } from '../../worldLogic/machine'
-import type { SystemMachineState, SystemRuleSummary } from '../../worldLogic/types'
+import {
+  MACHINE_TEXT_MAX_LENGTH,
+  type SystemMachineState,
+  type SystemRuleSummary,
+} from '../../worldLogic/types'
 import { m, gb, type Rules } from '../../worldLogic/machinePanelTypes'
-import { textInput } from '../../worldLogic/machineDrawerFields'
 import { FormActions } from '../FormActions'
 import { GuardBuilderDrawer } from './GuardBuilderDrawer'
 import { Button } from '../Button'
@@ -65,25 +68,11 @@ export function TransitionDrawer({
     if (confirmed) onDelete()
   }
 
-  const stateSelect =
-    (key: 'fromStateId' | 'toStateId', testId: string) =>
-    (control: { id: string; 'aria-describedby'?: string; 'aria-invalid'?: true }) => (
-      <select
-        id={control.id}
-        className="field__input field__input--select"
-        value={form[key]}
-        onChange={(event) => edit({ [key]: event.target.value })}
-        aria-invalid={control['aria-invalid']}
-        aria-describedby={control['aria-describedby']}
-        data-testid={testId}
-      >
-        {states.map((state) => (
-          <option key={state.id} value={state.id}>
-            {state.name}
-          </option>
-        ))}
-      </select>
-    )
+  const stateOptions = states.map((state) => (
+    <option key={state.id} value={state.id}>
+      {state.name}
+    </option>
+  ))
 
   return (
     <>
@@ -121,47 +110,55 @@ export function TransitionDrawer({
           deleteTestId: 'machine-transition-delete',
         }}
       >
-        <Field label={t(`${m}.fields.from`)} error={errors?.fromstateid}>
-          {stateSelect('fromStateId', 'machine-transition-from')}
-        </Field>
-        <Field label={t(`${m}.fields.to`)} error={errors?.tostateid}>
-          {stateSelect('toStateId', 'machine-transition-to')}
-        </Field>
-        <Field label={t(`${m}.fields.label`)} error={errors?.label}>
-          {textInput(
-            form.label,
-            (label) => edit({ label }),
-            t(`${m}.placeholders.label`),
-            'machine-transition-label',
-          )}
+        <Field
+          as="select"
+          label={t(`${m}.fields.from`)}
+          error={errors?.fromstateid}
+          value={form.fromStateId}
+          onChange={(event) => edit({ fromStateId: event.target.value })}
+          data-testid="machine-transition-from"
+        >
+          {stateOptions}
         </Field>
         <Field
+          as="select"
+          label={t(`${m}.fields.to`)}
+          error={errors?.tostateid}
+          value={form.toStateId}
+          onChange={(event) => edit({ toStateId: event.target.value })}
+          data-testid="machine-transition-to"
+        >
+          {stateOptions}
+        </Field>
+        <Field
+          name={null}
+          label={t(`${m}.fields.label`)}
+          error={errors?.label}
+          type="text"
+          dir="auto"
+          value={form.label}
+          maxLength={MACHINE_TEXT_MAX_LENGTH}
+          placeholder={t(`${m}.placeholders.label`)}
+          onChange={(event) => edit({ label: event.target.value })}
+          data-testid="machine-transition-label"
+        />
+        <Field
+          as="select"
           label={t(`${m}.fields.guard`)}
           hint={rules === 'failed' ? t(`${m}.rulesFailed`) : t(`${m}.fields.guardHint`)}
           error={errors?.guardruleid}
+          value={form.guardRuleId}
+          disabled={rules === 'failed'}
+          onChange={(event) => edit({ guardRuleId: event.target.value })}
+          data-testid="machine-transition-guard"
         >
-          {(control) => (
-            <select
-              id={control.id}
-              className="field__input field__input--select"
-              value={form.guardRuleId}
-              disabled={rules === 'failed'}
-              onChange={(event) => edit({ guardRuleId: event.target.value })}
-              aria-invalid={control['aria-invalid']}
-              aria-describedby={control['aria-describedby']}
-              data-testid="machine-transition-guard"
-            >
-              <option value="">{t(`${m}.noGuard`)}</option>
-              {ruleList.map((rule) => (
-                <option key={rule.id} value={rule.id}>
-                  {rule.title}
-                </option>
-              ))}
-              {unknownGuard ? (
-                <option value={form.guardRuleId}>{t(`${m}.unknownGuard`)}</option>
-              ) : null}
-            </select>
-          )}
+          <option value="">{t(`${m}.noGuard`)}</option>
+          {ruleList.map((rule) => (
+            <option key={rule.id} value={rule.id}>
+              {rule.title}
+            </option>
+          ))}
+          {unknownGuard ? <option value={form.guardRuleId}>{t(`${m}.unknownGuard`)}</option> : null}
         </Field>
         <FormActions inline>
           <NewButton

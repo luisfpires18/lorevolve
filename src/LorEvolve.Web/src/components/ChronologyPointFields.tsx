@@ -53,23 +53,21 @@ export function ChronologyPointFields({
       className={reckonsInEras ? 'momentform__point momentform__point--era' : 'momentform__point'}
     >
       {reckonsInEras ? (
-        <Field id={ids.eraId} label={eraLabel ?? t('time.point.era')} error={errors.eraId}>
-          {(control) => (
-            <select
-              {...control}
-              className="field__input field__input--select"
-              value={value.eraId}
-              onChange={(event) => onChange('eraId', event.target.value)}
-              data-testid={ids.eraId}
-            >
-              <option value="">{t('time.point.chooseEra')}</option>
-              {chronology.eras.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name}
-                </option>
-              ))}
-            </select>
-          )}
+        <Field
+          as="select"
+          id={ids.eraId}
+          label={eraLabel ?? t('time.point.era')}
+          error={errors.eraId}
+          value={value.eraId}
+          onChange={(event) => onChange('eraId', event.target.value)}
+          data-testid={ids.eraId}
+        >
+          <option value="">{t('time.point.chooseEra')}</option>
+          {chronology.eras.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.abbreviation ? `${option.name} (${option.abbreviation})` : option.name}
+            </option>
+          ))}
         </Field>
       ) : null}
 

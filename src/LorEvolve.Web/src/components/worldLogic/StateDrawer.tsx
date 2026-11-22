@@ -6,9 +6,9 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import { confirmAction } from '../../lib/confirm'
 import type { Point } from '../../worldLogic/machine'
-import type { SystemMachineState } from '../../worldLogic/types'
+import { MACHINE_TEXT_MAX_LENGTH, type SystemMachineState } from '../../worldLogic/types'
 import { m } from '../../worldLogic/machinePanelTypes'
-import { errorOf, textInput } from '../../worldLogic/machineDrawerFields'
+import { errorOf } from '../../worldLogic/machineDrawerFields'
 
 export function StateDrawer({
   state,
@@ -94,28 +94,33 @@ export function StateDrawer({
         deleteTestId: 'machine-state-delete',
       }}
     >
-      <Field label={t(`${m}.fields.name`)} error={errorOf(local, errors, 'name')}>
-        {textInput(
-          form.name,
-          (name) => edit({ name }),
-          t(`${m}.placeholders.name`),
-          'machine-state-name',
-          true,
-        )}
-      </Field>
       <Field
+        name={null}
+        label={t(`${m}.fields.name`)}
+        error={errorOf(local, errors, 'name')}
+        type="text"
+        dir="auto"
+        value={form.name}
+        maxLength={MACHINE_TEXT_MAX_LENGTH}
+        placeholder={t(`${m}.placeholders.name`)}
+        onChange={(event) => edit({ name: event.target.value })}
+        aria-required
+        data-testid="machine-state-name"
+      />
+      <Field
+        name={null}
         label={t(`${m}.fields.value`)}
         hint={t(`${m}.fields.valueHint`)}
         error={errorOf(local, errors, 'value')}
-      >
-        {textInput(
-          form.value,
-          (value) => edit({ value }),
-          t(`${m}.placeholders.value`),
-          'machine-state-value',
-          true,
-        )}
-      </Field>
+        type="text"
+        dir="auto"
+        value={form.value}
+        maxLength={MACHINE_TEXT_MAX_LENGTH}
+        placeholder={t(`${m}.placeholders.value`)}
+        onChange={(event) => edit({ value: event.target.value })}
+        aria-required
+        data-testid="machine-state-value"
+      />
       <Field
         name="machine-state-x"
         label={t(`${m}.fields.x`)}

@@ -73,8 +73,6 @@ const STAYS: string[] = [
   'src/components/MapPinForm.tsx',
   'src/components/PercentField.tsx',
   'src/components/PublicDetailsForm.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/RelationshipPeriodsField.tsx',
   'src/components/ScenePicks.tsx',
   'src/components/SearchField.tsx',
   'src/components/TypeGroupsField.tsx',
@@ -84,10 +82,8 @@ const STAYS: string[] = [
   'src/components/WorldRuleCheckSection.tsx',
   'src/components/aiChanges/EditChange.tsx',
   'src/components/aiChanges/MediaChange.tsx',
-  'src/components/canon/CanonControls.tsx',
   'src/components/chronology/CalendarMonthRow.tsx',
   'src/components/chronology/ChronologyEraRow.tsx',
-  'src/components/ideas/BoardCardInspector.tsx',
   'src/components/ideas/QuickCapture.tsx',
   'src/components/lore/EntryHeader.tsx',
   'src/components/lore/FieldFilterEditor.tsx',
@@ -108,11 +104,9 @@ const STAYS: string[] = [
   'src/components/worldLogic/Operand.tsx',
   'src/components/worldLogic/Related.tsx',
   'src/components/worldLogic/SystemDetails.tsx',
-  'src/components/worldLogic/TransitionDrawer.tsx',
   'src/components/worldLogic/TypedValue.tsx',
   'src/components/worldRules/WorldRuleForm.tsx',
   'src/worldLogic/guardBuilderKeys.ts',
-  'src/worldLogic/machineDrawerFields.tsx',
 ]
 
 test('a plain control under a label is drawn by Field', () => {
@@ -134,14 +128,9 @@ test('a plain control under a label is drawn by Field', () => {
 const SLOT_SELECTS: string[] = [
   'src/components/ChronologyPointFields.tsx',
   'src/components/FieldInputs.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/RelationshipPeriodsField.tsx',
   'src/components/ValidationTermSelect.tsx',
-  'src/components/canon/CanonControls.tsx',
   'src/components/progression/EraStories.tsx',
-  'src/components/ruleValidation/NewTermForm.tsx',
   'src/components/timeline/StoryLinks.tsx',
-  'src/components/worldLogic/TransitionDrawer.tsx',
 ]
 
 test('a select given a Field slot\'s control is Field as="select"', () => {
