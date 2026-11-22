@@ -2,8 +2,9 @@
 //
 // Keeps a numbered list's pages, a growing list's Show more, a search box and the wait for typing on their shared
 // parts (#411): Pager, ShowMore, SearchField and useDebouncedValue. Keeps a page's tail, a world rule's row and the
-// excerpt's ellipsis on PagedList, WorldRuleRow and LinkRow excerptShortened (#456). Each list below only shrinks, and
-// a stale entry fails. Catalogue: docs/design/ui-components.md.
+// excerpt's ellipsis on PagedList, WorldRuleRow and LinkRow excerptShortened (#456). Keeps a rule list, a machine
+// group and a grouped list on RuleList, MachineGroup and GroupedRows (#456). Each list below only shrinks, and a stale
+// entry fails. Catalogue: docs/design/ui-components.md.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -79,6 +80,10 @@ const handPageEmpty: Guard = (source) => /canon\.rules\.pageEmpty\./.test(source
 const handEllipsis: Guard = (source) => /isExcerptShortened\s*(\?|&&)/.test(source)
 // The has-check chip is WorldRuleRow's own.
 const handRuleRow: Guard = (source) => /canon\.rules\.checked/.test(source)
+// The leading space keeps PagedList's `listClassName="rulelist"` out: PagedList draws that ul itself.
+const handRuleList: Guard = (source) => /\sclassName="rulelist"/.test(source)
+const handMachineGroup: Guard = (source) => /machinepanel__group/.test(source)
+const handGroupedRows: Guard = (source) => /relations__group|relations__list/.test(source)
 
 function check(
   guard: Guard,
@@ -122,6 +127,16 @@ test('each guard catches the hand-written form', () => {
   assert.ok(!handEllipsis('<LinkRow excerptShortened={rule.isExcerptShortened} />'))
   assert.ok(handRuleRow("<span>{t('canon.rules.checked')}</span>"))
   assert.ok(!handRuleRow('<WorldRuleRow rule={rule} ids={ids} />'))
+  assert.ok(handRuleList('<ul className="rulelist">'))
+  assert.ok(!handRuleList('<PagedList listClassName="rulelist" />'))
+  assert.ok(!handRuleList('<RuleList testId="machine-state-rows">'))
+  assert.ok(handMachineGroup('<section className="machinepanel__group">'))
+  assert.ok(!handMachineGroup('<MachineGroup title={t(x)} add={button}>'))
+  assert.ok(handGroupedRows('<ul className="relations__list">'))
+  assert.ok(handGroupedRows('<li className="relations__group" key={label}>'))
+  assert.ok(
+    !handGroupedRows('<GroupedRows groups={groups} level={3} testId="relationship-list" />'),
+  )
 })
 
 test('the pages of a list are Pager', () => {
@@ -147,6 +162,40 @@ test('a page tail is PagedList, a world rule row is WorldRuleRow, an ellipsis is
     tsxFiles,
     new Set(['src/components/worldRules/WorldRulesList.tsx']),
     'use WorldRuleRow',
+  )
+})
+
+test('a rule list is RuleList, a machine group is MachineGroup, a grouped list is GroupedRows', () => {
+  check(
+    handRuleList,
+    tsxFiles,
+    new Set([
+      'src/components/worldLogic/MachineBinding.tsx',
+      'src/components/worldLogic/MachineStates.tsx',
+      'src/components/worldLogic/MachineTransitions.tsx',
+      'src/components/worldLogic/SystemRow.tsx',
+    ]),
+    'use RuleList',
+  )
+  check(
+    handMachineGroup,
+    tsxFiles,
+    new Set([
+      'src/components/SystemMachineTry.tsx',
+      'src/components/worldLogic/MachineBinding.tsx',
+      'src/components/worldLogic/MachineStates.tsx',
+      'src/components/worldLogic/MachineTransitions.tsx',
+    ]),
+    'use MachineGroup',
+  )
+  check(
+    handGroupedRows,
+    tsxFiles,
+    new Set([
+      'src/components/knowledge/RecordList.tsx',
+      'src/components/relationships/RelationsList.tsx',
+    ]),
+    'use GroupedRows',
   )
 })
 
