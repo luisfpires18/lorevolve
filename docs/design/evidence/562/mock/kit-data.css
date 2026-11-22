@@ -1,58 +1,156 @@
-/* Workspace redesign (#562): kit parts that hold data. */
-/* Table: fixed columns, one row per thing */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: var(--text-ui);
+/* Workspace redesign (#562): kit parts that hold data. No table: lists of things are cards, short lists are rows. */
+
+/* Card: one thing in a list. Picture, name, type, state. Selectable. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.table th {
-  padding: var(--s2) var(--s3);
-  border-bottom: 1px solid var(--line);
-  color: var(--text-muted);
-  font-size: var(--text-meta);
-  font-weight: 500;
-  text-align: left;
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--bg-raised);
+  transition:
+    border-color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
 }
 
-.table td {
-  height: var(--touch-h);
-  padding: var(--s1) var(--s3);
-  border-bottom: 1px solid var(--line);
+.card:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-hover);
+}
+
+.card:has(.card__pick:checked) {
+  border-color: var(--accent-text);
+  background: var(--bg-selected);
+}
+
+.card__picture {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--r-control);
+  background: var(--bg-selected);
+  object-fit: cover;
+}
+
+.card__body {
+  display: grid;
+  align-content: start;
+  gap: var(--s1);
+  min-width: 0;
+  padding-right: var(--s5);
+}
+
+.card__name {
   overflow: hidden;
+  font-size: var(--text-body);
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.table tbody tr:hover {
-  background: var(--bg-hover);
+/* The whole card opens the entry; the checkbox sits above the link. */
+.card__name::after {
+  position: absolute;
+  inset: 0;
+  content: '';
 }
 
-.table__name {
+.card__meta {
   display: flex;
   align-items: center;
-  gap: var(--s3);
-  min-width: 0;
+  gap: var(--s2);
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+}
+
+.card__summary {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--text-ui);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.card__pick,
+.check {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.card__pick {
+  position: absolute;
+  top: var(--s3);
+  right: var(--s3);
+  z-index: 1;
+}
+
+/* Selection bar: appears while anything is selected, and holds what can be done to the selection. */
+.selection {
+  position: sticky;
+  bottom: var(--s4);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  justify-self: center;
+  padding: var(--s2) var(--s2) var(--s2) var(--s4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-panel);
+  background: var(--bg-raised);
+  box-shadow: var(--shadow-raised);
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 
-.table__name span {
+/* Rows: a short list of links, each with one fact or one action at the end. */
+.rows {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+  font-size: var(--text-ui);
+}
+
+.rows li {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: var(--touch-h);
+  padding: 0 var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+
+.rows li:hover {
+  background: var(--bg-hover);
+}
+
+.rows__name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
+  font-weight: 500;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.table__muted {
-  color: var(--text-muted);
-}
-
-.thumb {
+.rows__meta {
   flex: none;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: var(--r-badge);
-  background: var(--bg-selected);
-  object-fit: cover;
+  color: var(--text-muted);
 }
 
 /* Drawer: a short task beside the page */

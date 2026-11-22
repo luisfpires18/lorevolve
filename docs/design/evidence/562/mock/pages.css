@@ -157,7 +157,7 @@
   .search kbd,
   .crumbs > :not(b),
   .btn--primary span,
-  .table .wide {
+  .wide {
     display: none;
   }
 
@@ -183,4 +183,22 @@
   * {
     transition: none !important;
   }
+}
+
+.filterbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(18rem, 100%);
+  color: var(--text-faint);
+}
+
+.filterbox svg {
+  position: absolute;
+  left: var(--s3);
+}
+
+.filterbox .input {
+  min-height: var(--control-h);
+  padding: 0 var(--s3) 0 var(--s6);
 }

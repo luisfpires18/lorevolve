@@ -84,28 +84,32 @@
             <button class="segmented__item wide" type="button" aria-pressed="false">Organization</button>
           </div>
           <button class="btn btn--quiet" type="button">More types<i data-lucide="chevron-down"></i></button>
+        </div>
+        <div class="toolbar">
+          <label class="filterbox">
+            <i data-lucide="search"></i>
+            <input class="input" type="search" placeholder="Insert a name to find" aria-label="Find in Lore" />
+          </label>
+          <div class="segmented" role="group" aria-label="Status">
+            <button class="segmented__item" type="button" aria-pressed="true">Any status</button>
+            <button class="segmented__item" type="button" aria-pressed="false">Idea</button>
+            <button class="segmented__item" type="button" aria-pressed="false">Draft</button>
+            <button class="segmented__item" type="button" aria-pressed="false">Canon</button>
+          </div>
+          <button class="btn" type="button"><i data-lucide="list-filter"></i>Add field filter</button>
           <div class="toolbar__end">
+            <label class="btn btn--quiet"><input class="check" type="checkbox" id="all" />Select all</label>
             <button class="btn" type="button"><i data-lucide="arrow-down-up"></i>Last changed</button>
-            <button class="btn btn--icon" type="button" aria-label="Show as cards"><i data-lucide="layout-grid"></i></button>
           </div>
         </div>
-        <table class="table">
-          <colgroup>
-            <col />
-            <col class="wide" style="width: 11rem" />
-            <col style="width: 6.5rem" />
-            <col class="wide" style="width: 8rem" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th class="wide">Type</th>
-              <th>Canon</th>
-              <th class="wide">Last changed</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+        <ul class="cards" id="rows"></ul>
+        <div class="selection" id="selection" hidden>
+          <span id="picked"></span>
+          <button class="btn" type="button">Set status</button>
+          <button class="btn" type="button">Change type</button>
+          <button class="btn" type="button">Move to Trash</button>
+          <button class="btn btn--quiet" type="button" id="clear">Clear</button>
+        </div>
         <div class="pager">
           <span>1 to 9 of 187</span>
           <span>
@@ -222,33 +226,17 @@
           </div>
           <div>
             <h2 class="block__title">Waiting for you</h2>
-            <table class="table">
-              <colgroup>
-                <col />
-                <col style="width: 7.5rem" />
-              </colgroup>
-              <tbody>
-                <tr>
-                  <td>2 changes proposed by AI</td>
-                  <td><a class="link" href="#lore">Review</a></td>
-                </tr>
-                <tr>
-                  <td>1 contradiction in Canon: two birth years for Corwin Thatchlow</td>
-                  <td><a class="link" href="#entry">Resolve</a></td>
-                </tr>
-              </tbody>
-            </table>
+            <ul class="rows">
+              <li><span class="rows__name">2 changes proposed by AI</span><a class="link" href="#lore">Review</a></li>
+              <li>
+                <span class="rows__name">1 contradiction in Canon: two birth years for Corwin Thatchlow</span>
+                <a class="link" href="#entry">Resolve</a>
+              </li>
+            </ul>
           </div>
           <div>
             <h2 class="block__title">Continue</h2>
-            <table class="table">
-              <colgroup>
-                <col />
-                <col class="wide" style="width: 9rem" />
-                <col class="wide" style="width: 8rem" />
-              </colgroup>
-              <tbody id="recent"></tbody>
-            </table>
+            <ul class="rows" id="recent"></ul>
           </div>
         </div>
         <aside aria-label="In this universe">
