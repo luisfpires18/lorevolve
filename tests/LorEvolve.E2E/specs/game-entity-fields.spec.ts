@@ -191,16 +191,45 @@ test.describe('Game entity fields', () => {
     const first = await made('Bram')
     const second = await made('Keep')
 
-    // Every API answer from 400 to 499, and every Lore entry call but the pictures' (#551).
+    // Every API answer from 400 to 499, and every Lore-only call but the pictures' (#551): any call under
+    // `/api/universes/{u}/entities/`, and any call under `/api/universes/{u}/` with a segment of a feature a project
+    // entry has none of. The segments, from the web's api files: article (lore/article.ts), revisions
+    // (lore/revisions.ts), progression and appearances (progression/api.ts), private-note (lore/privateNote.ts),
+    // relationships and relationship-types (relationships/api.ts), comments and comment-threads (comments/api.ts),
+    // suggestions (suggestions/api.ts), publication, publish and unpublish (publishing/api.ts), family-tree
+    // (familyTree/api.ts), maps and map-pins (maps/api.ts).
     const bad4xx: string[] = []
     const loreCalls: string[] = []
-    const lore = `/api/universes/${world.id}/entities/`
+    const universe = `/api/universes/${world.id}/`
+    const loreOnlySegments = new Set([
+      'article',
+      'revisions',
+      'progression',
+      'appearances',
+      'private-note',
+      'relationships',
+      'relationship-types',
+      'comments',
+      'comment-threads',
+      'suggestions',
+      'publication',
+      'publish',
+      'unpublish',
+      'family-tree',
+      'maps',
+      'map-pins',
+    ])
     page.on('response', (response) => {
       const { pathname } = new URL(response.url())
       const said = `${response.status()} ${response.request().method()} ${pathname}`
       if (pathname.startsWith('/api/') && response.status() >= 400 && response.status() < 500)
         bad4xx.push(said)
-      if (pathname.startsWith(lore) && !/\/(image|field-images)(\/|$)/.test(pathname))
+      if (!pathname.startsWith(universe) || /\/(image|field-images)(\/|$)/.test(pathname)) return
+      const segments = pathname.slice(universe.length).split('/')
+      if (
+        (segments[0] === 'entities' && segments.length > 1) ||
+        segments.some((segment) => loreOnlySegments.has(segment))
+      )
         loreCalls.push(said)
     })
 
@@ -243,12 +272,24 @@ test.describe('Game entity fields', () => {
       await expect(page.getByTestId('entry-name')).toHaveText(`${name} the Bold`)
       await expect(page.getByTestId('entry-fields')).toContainText('Stand firm')
 
-      // Create, in the type the address names.
+      // Create, in the type the address names. The recorder above is on before this load, so the create page's
+      // reads and the create request are covered; nothing Lore-only is drawn, the article note included.
       await page.goto(`${base}/new?type=${unit.typeId}`)
+      await expect(page.getByLabel('Motto')).toBeVisible()
+      for (const id of loreOnly) await expect(page.getByTestId(id)).toHaveCount(0)
+      await expect(page.locator('[data-testid^="canon-"]')).toHaveCount(0)
+      await expect(page.locator('[data-testid^="entry-publication"]')).toHaveCount(0)
+      await expect(page.getByLabel('Aliases', { exact: true })).toHaveCount(0)
+      await expect(page.getByLabel('Tags', { exact: true })).toHaveCount(0)
+      await expect(
+        page.getByText('The article is written on the entry once it exists.'),
+      ).toHaveCount(0)
       await page.getByLabel('Name', { exact: true }).fill(`New in ${name}`)
       await page.getByTestId('save-entity').click()
       await page.waitForURL(new RegExp(`${base}/[0-9a-f-]{36}$`))
       await expect(page.getByTestId('entry-name')).toHaveText(`New in ${name}`)
+      expect(bad4xx, base).toEqual([])
+      expect(loreCalls, base).toEqual([])
     }
 
     // Delete lands on the list's address.
