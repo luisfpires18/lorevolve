@@ -55,20 +55,17 @@ export function BoardCardInspector({
           : BOARD_CARD_KIND_LABELS[selectedCard.kind]}
       </h2>
       {selectedCard.kind === BoardCardKind.Note ? (
-        <Field id={`${inspectorId}-text`} label={t('ideas.board.inspector.note')}>
-          {(control) => (
-            <textarea
-              {...control}
-              className="field__input field__input--area"
-              rows={5}
-              value={selectedCard.text ?? ''}
-              maxLength={BOARD_NOTE_MAX_LENGTH}
-              readOnly={isHeld}
-              onChange={(event) => editCard(selectedCard.id, { text: event.target.value })}
-              data-testid="board-note-text"
-            />
-          )}
-        </Field>
+        <Field
+          as="textarea"
+          id={`${inspectorId}-text`}
+          label={t('ideas.board.inspector.note')}
+          rows={5}
+          value={selectedCard.text ?? ''}
+          maxLength={BOARD_NOTE_MAX_LENGTH}
+          readOnly={isHeld}
+          onChange={(event) => editCard(selectedCard.id, { text: event.target.value })}
+          data-testid="board-note-text"
+        />
       ) : (
         <div className="board__target">
           <p className="idearow__title">

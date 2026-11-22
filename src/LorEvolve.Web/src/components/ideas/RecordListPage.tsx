@@ -1,6 +1,6 @@
 import { useCallback, useId, type ReactNode } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { Callout } from '../Callout'
+import { useLocation, useSearchParams } from 'react-router-dom'
+import { OutcomeNotice, StatusNotice } from '../Callout'
 import { ReadGate } from '../ReadGate'
 import { Quoted } from '../NameList'
 import { PagedList } from '../Pager'
@@ -137,19 +137,15 @@ export function RecordListPage<
       {capture && !deleted ? capture(captured) : null}
 
       {notice?.created && !deleted ? (
-        <Callout look="notice" className="ideas__notice" testId={`${testId}-created-notice`}>
-          <p role="status">
-            {tx(`${w}.created`, { title: <Quoted text={notice.created.title} /> })}
-          </p>
-        </Callout>
+        <StatusNotice className="ideas__notice" testId={`${testId}-created-notice`}>
+          {tx(`${w}.created`, { title: <Quoted text={notice.created.title} /> })}
+        </StatusNotice>
       ) : null}
 
       {notice?.deleted && !deleted ? (
-        <Callout look="notice" className="ideas__notice" testId={`${testId}-deleted-notice`}>
-          <p role="status">
-            {tx(`${w}.deletedNotice`, { title: <Quoted text={notice.deleted.title} /> })}
-          </p>
-        </Callout>
+        <StatusNotice className="ideas__notice" testId={`${testId}-deleted-notice`}>
+          {tx(`${w}.deletedNotice`, { title: <Quoted text={notice.deleted.title} /> })}
+        </StatusNotice>
       ) : null}
 
       <RecordListControls
@@ -168,18 +164,12 @@ export function RecordListPage<
         deleted={deleted}
       />
 
-      {outcome ? (
-        <Callout look="notice" className="ideas__outcome" focusOnShow={outcome}>
-          <p role="status" data-testid={`${testId}-message`}>
-            {outcome.text}
-          </p>
-          {outcome.link ? (
-            <Link to={outcome.link.to} data-testid={restoredLinkTestId}>
-              {outcome.link.label}
-            </Link>
-          ) : null}
-        </Callout>
-      ) : null}
+      <OutcomeNotice
+        outcome={outcome}
+        className="ideas__outcome"
+        messageTestId={`${testId}-message`}
+        linkTestId={restoredLinkTestId}
+      />
 
       {/* The rows are drawn below, from the page kept while the next one is read. */}
       <ReadGate

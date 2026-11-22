@@ -4,7 +4,7 @@ import { t, useI18n } from '../../i18n'
 import { describeScene, type KnowledgeIssue, type KnowledgeRecord } from '../../knowledge/api'
 import type { Side } from '../../knowledge/recordDraft'
 import { GroupedRows } from '../relationships/RelationsList'
-import { QuietNote } from '../QuietNote'
+import { ReadingNote } from '../QuietNote'
 
 // ---------- The list ----------
 
@@ -49,11 +49,7 @@ export function RecordList({
   const { tx } = useI18n()
 
   if (records.length === 0) {
-    return (
-      <QuietNote size="body" className="relations__quiet" testId={`${testId}-empty`}>
-        {emptyText}
-      </QuietNote>
-    )
+    return <ReadingNote testId={`${testId}-empty`}>{emptyText}</ReadingNote>
   }
 
   const groups: { label: string; records: KnowledgeRecord[] }[] = []

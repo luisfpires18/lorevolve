@@ -2,8 +2,8 @@
 //
 // Keeps the small controls on their shared parts (#414): SegmentedControl and CanonStatusPicker for a
 // choice on the page, MoveItems for a move, ZoomControls for a canvas's zoom, DisclosureButton for
-// show and hide, Crumb for a back link, InlineConfirm for the one inline question and ViewChips for
-// Lore's group chips. Each list below only shrinks, and a stale entry fails. Catalogue:
+// show and hide, Crumb for a back link, InlineConfirm for the one inline question, ViewChips for
+// Lore's group chips and SwitchGroup for the account menu's theme and language (#456). Each list below only shrinks, and a stale entry fails. Catalogue:
 // docs/design/ui-components.md.
 
 import { register } from 'node:module'
@@ -62,6 +62,8 @@ const only = (...files: string[]) => new Map(files.map((file) => [c(file), 'the 
 
 const SEGMENTED = (token: string) =>
   token === 'segmented' || token.startsWith('segmented__') || token.startsWith('segmented--')
+const THEMESWITCH = (token: string) =>
+  token === 'themeswitch' || token.startsWith('themeswitch__') || token.startsWith('themeswitch--')
 const CANON = named(['canon', 'canon__step'])
 const ZOOM_CLASSES = named(['mapviewer__controls', 'boardcanvas__controls'])
 const CONFIRM = (token: string) =>
@@ -84,6 +86,9 @@ test('the control guards catch a hand-made control, template-built classes inclu
   assert.ok(hasToken('<div className={`segmented ${x}`}>', SEGMENTED))
   assert.ok(hasToken('<button className="segmented__option">', SEGMENTED))
   assert.ok(!hasToken('<div className="segmentedish">', SEGMENTED))
+  assert.ok(hasToken('<div className="themeswitch themeswitch--menu">', THEMESWITCH))
+  assert.ok(hasToken('<button className={`themeswitch__option ${x}`}>', THEMESWITCH))
+  assert.ok(!hasToken('<SwitchGroup label={label} inMenu value={v} onChange={set} />', THEMESWITCH))
   assert.ok(hasToken('<div className="canon">', CANON))
   assert.ok(!hasToken('<div className="canonpage">', CANON))
   assert.ok(hasToken('<div className={`${area}__confirm`}>', CONFIRM))
@@ -120,6 +125,10 @@ test('a choice on the page is SegmentedControl; canon steps are CanonStatusPicke
   )
 })
 
+test("the account menu's theme and language choice is SwitchGroup", () => {
+  check(withToken(THEMESWITCH), only('ThemeSwitch'), 'use SwitchGroup')
+})
+
 test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
   check(
     withText(/aria-pressed/),
@@ -143,7 +152,7 @@ test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
       ]),
       ...list('a strip of pictures', ['lore/EntryPicture']),
       ...list('the rich-text toolbar', ['LoreEditor']),
-      ...list('the account menu', ['ThemeSwitch', 'LanguageSwitch']),
+      ...list('the account menu', ['ThemeSwitch']),
       ...list('a drag handle', ['TypeReorderHandle']),
     ]),
     'use SegmentedControl, or ViewChips with button items',

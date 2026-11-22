@@ -8,7 +8,6 @@ import { draftsFrom, inputOf, type Mode } from '../chronology/monthDrafts'
 import { useCalendarEditorState } from '../chronology/useCalendarEditorState'
 import { calendarActions } from '../chronology/calendarActions'
 import { CalendarMonthRow } from './chronology/CalendarMonthRow'
-import { Button } from './Button'
 import { FormActions } from './FormActions'
 import { NewButton } from './NewButton'
 import { Announce } from './Announce'
@@ -142,7 +141,12 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
 
       {/* Simple dates with nothing to change have nothing to save, so no lone quiet button sits under the note. */}
       {dirty || mode === 'custom' ? (
-        <FormActions inline className="eras__actions">
+        <FormActions
+          inline
+          className="eras__actions"
+          onCancel={dirty ? discard : undefined}
+          cancelLabel={t('shell.actions.discard')}
+        >
           <SaveAction
             label={label}
             isDirty={dirty}
@@ -155,11 +159,6 @@ export function CalendarEditor({ universeId, chronology, onSaved }: CalendarEdit
             type="button"
             onSave={() => void save()}
           />
-          {dirty ? (
-            <Button tone="secondary" onClick={discard}>
-              {t('shell.actions.discard')}
-            </Button>
-          ) : null}
         </FormActions>
       ) : (
         <Announce testId="calendar-status" id={statusId}>

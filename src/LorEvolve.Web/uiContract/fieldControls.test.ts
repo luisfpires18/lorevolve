@@ -13,7 +13,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { classStrings, read, webRoot } from './support.ts'
+import { classStrings, elements, read, tsxFiles, webRoot } from './support.ts'
 
 const codeFiles = readdirSync(join(webRoot, 'src'), { recursive: true, encoding: 'utf8' })
   .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.d.ts'))
@@ -28,6 +28,11 @@ const writes = (source: string) =>
     value.replaceAll('\u0001', ' \u0001').split(/\s+/).includes('field__input'),
   ) || /["'`]field__input(?=[\s"'`$])/.test(source)
 
+// A `<select>` handed a Field slot's control (`{...control}`, `control.id`, `control[...]`). `elements()` reads the
+// whole tag, so an arrow in `onChange` does not end it.
+const slotSelect = (source: string) =>
+  elements(source, 'select').some(({ tag }) => /\{\.\.\.control\}|\bcontrol(\.id\b|\[)/.test(tag))
+
 test('the field control guard catches a hand-written control, template-built classes included', () => {
   assert.ok(writes('<input {...control} className="field__input" />'))
   assert.ok(writes('<select className="field__input field__input--select">{o}</select>'))
@@ -37,6 +42,42 @@ test('the field control guard catches a hand-written control, template-built cla
   assert.ok(!writes('<Field as="select" controlClassName="idea__universe">{o}</Field>'))
   assert.ok(!writes('<Field name={null} controlClassName="field__input--title" />'))
   assert.ok(!writes('<input className="field__inputs" />'))
+  assert.ok(writes('(control) => <input id={control.id} className="field__input" type="text" />'))
+  assert.ok(!writes('<Field name={null} type="text" dir="auto" maxLength={MAX} data-testid="x" />'))
+  assert.ok(!writes('<Field as="textarea" id={x} rows={5} readOnly={held} />'))
+  assert.ok(
+    writes(
+      '(control) => <input {...control} className="field__input" placeholder={p} autoComplete="off" value={v} />',
+    ),
+  )
+  assert.ok(
+    writes(
+      '(control) => <input {...control} className="field__input" type="number" aria-describedby={[control[\'aria-describedby\'], useId].filter(Boolean).join(\' \')} />',
+    ),
+  )
+  assert.ok(
+    !writes(
+      '<Field name={null} id={x} placeholder={p} autoComplete="off" value={v} data-testid="era-name" />',
+    ),
+  )
+  assert.ok(
+    !writes(
+      '<Field name={null} id={x} type="number" aria-describedby={useId} className="month__days" />',
+    ),
+  )
+  assert.ok(slotSelect('<select {...control} value={v}>{o}</select>'))
+  assert.ok(slotSelect('<select id={control.id} onChange={(e) => f(e)}>{o}</select>'))
+  assert.ok(
+    slotSelect(
+      "<select id={s} onChange={(e) => f(e)} aria-invalid={control['aria-invalid']}>{o}</select>",
+    ),
+  )
+  assert.ok(
+    slotSelect('(control: { id: string }) => (<select id={control.id} value={v}>{o}</select>)'),
+  )
+  assert.ok(!slotSelect('<Field as="select" id="x">{o}</Field>'))
+  assert.ok(!slotSelect('<Field as="select" id="canon-severity" after={note}>{o}</Field>'))
+  assert.ok(!slotSelect('<select id={storyId} aria-describedby={describedBy}>{o}</select>'))
 })
 
 const STAYS: string[] = [
@@ -52,12 +93,8 @@ const STAYS: string[] = [
   'src/components/MapPinForm.tsx',
   'src/components/PercentField.tsx',
   'src/components/PublicDetailsForm.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/RelationshipPeriodsField.tsx',
   'src/components/ScenePicks.tsx',
   'src/components/SearchField.tsx',
-  'src/components/TypeDialogPlace.tsx',
-  'src/components/TypeFromTemplateDrawer.tsx',
   'src/components/TypeGroupsField.tsx',
   'src/components/TypeGroupsPanel.tsx',
   'src/components/UniverseColourField.tsx',
@@ -65,10 +102,6 @@ const STAYS: string[] = [
   'src/components/WorldRuleCheckSection.tsx',
   'src/components/aiChanges/EditChange.tsx',
   'src/components/aiChanges/MediaChange.tsx',
-  'src/components/canon/CanonControls.tsx',
-  'src/components/chronology/CalendarMonthRow.tsx',
-  'src/components/chronology/ChronologyEraRow.tsx',
-  'src/components/ideas/BoardCardInspector.tsx',
   'src/components/ideas/QuickCapture.tsx',
   'src/components/lore/EntryHeader.tsx',
   'src/components/lore/FieldFilterEditor.tsx',
@@ -89,11 +122,9 @@ const STAYS: string[] = [
   'src/components/worldLogic/Operand.tsx',
   'src/components/worldLogic/Related.tsx',
   'src/components/worldLogic/SystemDetails.tsx',
-  'src/components/worldLogic/TransitionDrawer.tsx',
   'src/components/worldLogic/TypedValue.tsx',
   'src/components/worldRules/WorldRuleForm.tsx',
   'src/worldLogic/guardBuilderKeys.ts',
-  'src/worldLogic/machineDrawerFields.tsx',
 ]
 
 test('a plain control under a label is drawn by Field', () => {
@@ -105,6 +136,30 @@ test('a plain control under a label is drawn by Field', () => {
   )
   assert.deepEqual(
     STAYS.filter((file) => !found.includes(file)),
+    [],
+    'stale allowlist entry, remove it',
+  )
+})
+
+// Kept beside STAYS, which is per file: TypeGroupsField stays there for its input row, so its select could come back
+// unseen.
+const SLOT_SELECTS: string[] = [
+  'src/components/ChronologyPointFields.tsx',
+  'src/components/FieldInputs.tsx',
+  'src/components/ValidationTermSelect.tsx',
+  'src/components/progression/EraStories.tsx',
+  'src/components/timeline/StoryLinks.tsx',
+]
+
+test('a select given a Field slot\'s control is Field as="select"', () => {
+  const found = tsxFiles.filter((file) => slotSelect(read(file)))
+  assert.deepEqual(
+    found.filter((file) => !SLOT_SELECTS.includes(file)),
+    [],
+    'use <Field as="select">: Field draws the select, its id and its aria wiring',
+  )
+  assert.deepEqual(
+    SLOT_SELECTS.filter((file) => !found.includes(file)),
     [],
     'stale allowlist entry, remove it',
   )

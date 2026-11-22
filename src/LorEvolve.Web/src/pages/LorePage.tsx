@@ -18,6 +18,7 @@ import { LoreResults } from '../components/lore/LoreResults'
 import { LoreSelectBar } from '../components/lore/LoreSelectBar'
 import type { LoadState } from '../lore/loreAddress'
 import { pageParam } from '../lib/queryParams'
+import { useEntrySource } from '../lore/entrySource'
 
 /**
  * The Lore browser. Where the author is - which type, which status, what is typed in the filter, which of the type's own
@@ -51,6 +52,7 @@ import { pageParam } from '../lib/queryParams'
  */
 export default function LorePage() {
   const { universe, entryTypes: typesRead, groups: groupsRead, refreshTypes } = useWorkspaceTypes()
+  const entrySource = useEntrySource()
   const access = useUniverseAccess()
   const [params, setParams] = useSearchParams()
   const filtersId = useId()
@@ -82,7 +84,6 @@ export default function LorePage() {
   const entries = useLoreEntries({
     typesRead,
     groupsRead,
-    universe,
     setParams,
     typeParam,
     groupParam,
@@ -152,7 +153,7 @@ export default function LorePage() {
         (type) => selectedGroup.typeIds.includes(type.id) && filterableFields(type).length > 0,
       )
     : []
-  const createTo = selectedType ? `new?type=${selectedType.id}` : 'new'
+  const createTo = entrySource.href.create(selectedType?.id)
   const massCreateTo = selectedType ? `mass-create?type=${selectedType.id}` : 'mass-create'
 
   return (
@@ -201,7 +202,6 @@ export default function LorePage() {
       <LoreStatus
         {...entries}
         {...entrySelection}
-        universe={universe}
         massCreated={massCreated}
         refreshTypes={refreshTypes}
         view={view}
@@ -216,7 +216,7 @@ export default function LorePage() {
             onBrowse={(groupId) => update({ browse: groupId }, true)}
             typeHref={typeHref}
             groupHref={groupHref}
-            typesUrl={`/app/universes/${universe.id}/types`}
+            typesUrl={entrySource.href.types}
           />
         ) : null}
         {atCatalog && !typesFailed && (types === null || (types.length > 0 && groups === null)) ? (

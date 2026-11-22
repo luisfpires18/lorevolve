@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { getEntityArticle } from './article'
 import { isEmptyDocument } from './document'
-import { getEntity } from './api'
 import { CanonStatus } from './types'
+import { useEntrySource } from './entrySource'
 import { copiedDraft, draftFromDetail, type Draft } from './entryDraft'
 import type { EntityType } from './typeDefinitions'
 import type { useEntryState } from './useEntryState'
@@ -32,6 +32,7 @@ export function useEntryLoad({
   types: EntityType[]
   startingTypeId: string | null
 }) {
+  const entrySource = useEntrySource()
   const isNew = entityId === undefined
 
   /** An article save touched the entry: the rail's "last changed" says so without reading the entry again. */
@@ -43,7 +44,8 @@ export function useEntryLoad({
     if (isNew) return
 
     const controller = new AbortController()
-    getEntity(universe.id, entityId, controller.signal)
+    entrySource
+      .get(entityId, controller.signal)
       .then((loaded) => {
         setDetail(loaded)
         setDraft(draftFromDetail(loaded))
@@ -58,7 +60,7 @@ export function useEntryLoad({
     return () => {
       controller.abort()
     }
-  }, [universe.id, entityId, isNew, reads])
+  }, [entrySource, entityId, isNew, reads])
 
   // The entry being copied, and its article, read once. One that cannot be read - gone to the Trash since, say - leaves an
   // ordinary blank form and a line saying so.
@@ -67,7 +69,7 @@ export function useEntryLoad({
 
     const controller = new AbortController()
     Promise.all([
-      getEntity(universe.id, sourceId, controller.signal),
+      entrySource.get(sourceId, controller.signal),
       getEntityArticle(universe.id, sourceId, controller.signal),
     ])
       .then(([loaded, article]) => {
@@ -81,7 +83,7 @@ export function useEntryLoad({
     return () => {
       controller.abort()
     }
-  }, [universe.id, sourceId])
+  }, [entrySource, universe.id, sourceId])
 
   // A new entry's blank draft is derived from the first available type rather than
   // written back into state, so nothing has to re-render to produce it. A copy's is the source's, as copied.
@@ -113,13 +115,13 @@ export function useEntryLoad({
    */
   async function refreshDetail() {
     if (entityId === undefined) return
-    setDetail(await getEntity(universe.id, entityId))
+    setDetail(await entrySource.get(entityId))
   }
 
   async function reloadAfterRestore() {
     if (entityId === undefined) return
 
-    const loaded = await getEntity(universe.id, entityId)
+    const loaded = await entrySource.get(entityId)
     setDetail(loaded)
     setDraft(draftFromDetail(loaded))
     setHistoryKey((key) => key + 1)

@@ -3,6 +3,7 @@ import { useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { useRestoreBackupState } from '../../backups/useRestoreBackupState'
 import { FormActions } from '../FormActions'
+import { ProgressBar } from '../ProgressBar'
 
 /** The first stage: the file field, the upload and check progress, Check and Cancel. */
 export function RestoreChooseForm({
@@ -56,25 +57,20 @@ export function RestoreChooseForm({
 
       {stage.kind === 'checking' ? (
         <div className="restore__progress" data-testid="restore-checking">
-          <div
-            className="progressbar"
-            role="progressbar"
-            aria-label={
+          <ProgressBar
+            label={
               stage.percent === null
                 ? t('admin.restore.progress.checkingLabel')
                 : t('admin.restore.progress.uploadingLabel')
             }
-            aria-valuemin={stage.percent === null ? undefined : 0}
-            aria-valuemax={stage.percent === null ? undefined : 100}
-            aria-valuenow={stage.percent ?? undefined}
-            aria-valuetext={stage.percent === null ? undefined : `${stage.percent}%`}
-            data-state={stage.percent === null ? 'working' : 'sending'}
-          >
-            <span
-              className="progressbar__fill"
-              style={stage.percent === null ? undefined : { width: `${stage.percent}%` }}
-            />
-          </div>
+            value={
+              stage.percent === null
+                ? undefined
+                : { now: stage.percent, max: 100, text: `${stage.percent}%` }
+            }
+            state={stage.percent === null ? 'working' : 'sending'}
+            fill={stage.percent ?? undefined}
+          />
           <p className="restore__stage" role="status">
             {stage.percent === null
               ? t('admin.restore.progress.checking')

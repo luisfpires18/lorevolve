@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n'
 import type { SaveStage } from './ImageCropDialog'
 import { FormMessage } from './FormMessage'
+import { ProgressBar } from './ProgressBar'
 
 export function CropperProgress({
   stage,
@@ -22,22 +23,13 @@ export function CropperProgress({
           {/* Determinate while the browser can count the bytes, and indeterminate after -
                   with aria-valuenow left off rather than frozen at 100, which would claim the
                   save had finished. */}
-          <div
-            className="progressbar"
-            role="progressbar"
-            aria-label={percent === null ? shownWorking : t('account.crop.uploadingPhoto')}
-            aria-valuemin={percent === null ? undefined : 0}
-            aria-valuemax={percent === null ? undefined : 100}
-            aria-valuenow={percent ?? undefined}
-            aria-valuetext={percent === null ? undefined : `${percent}%`}
-            data-state={percent === null ? 'working' : 'sending'}
-            data-testid="image-crop-progressbar"
-          >
-            <span
-              className="progressbar__fill"
-              style={percent === null ? undefined : { width: `${percent}%` }}
-            />
-          </div>
+          <ProgressBar
+            label={percent === null ? shownWorking : t('account.crop.uploadingPhoto')}
+            value={percent === null ? undefined : { now: percent, max: 100, text: `${percent}%` }}
+            state={percent === null ? 'working' : 'sending'}
+            fill={percent ?? undefined}
+            testId="image-crop-progressbar"
+          />
 
           {/* The words are the status, not the animation: a bar that only moves says nothing
                   to a screen reader, and nothing at all with reduced motion. */}

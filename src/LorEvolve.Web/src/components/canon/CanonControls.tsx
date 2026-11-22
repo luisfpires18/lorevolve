@@ -51,35 +51,30 @@ export function CanonControls({
           }}
         />
 
-        <Field label={t('canon.page.severity')} id="canon-severity">
-          {(control) => (
-            <>
-              <select
-                id={control.id}
-                className="field__input field__input--select"
-                value={severity ?? ''}
-                onChange={(event) => {
-                  setSeverity(
-                    event.target.value === ''
-                      ? null
-                      : (Number(event.target.value) as CanonSeverityValue),
-                  )
-                  setPage(1)
-                }}
-                data-testid="canon-severity"
-              >
-                <option value="">{t('canon.page.anySeverity')}</option>
-                {SEVERITY_ORDER.map((option) => (
-                  <option key={option} value={option}>
-                    {SEVERITY_LABELS[option]}
-                  </option>
-                ))}
-              </select>
-              {severity !== null ? (
-                <QuietNote spacing="hint">{SEVERITY_HINTS[severity]}</QuietNote>
-              ) : null}
-            </>
-          )}
+        <Field
+          as="select"
+          label={t('canon.page.severity')}
+          id="canon-severity"
+          value={severity ?? ''}
+          onChange={(event) => {
+            setSeverity(
+              event.target.value === '' ? null : (Number(event.target.value) as CanonSeverityValue),
+            )
+            setPage(1)
+          }}
+          after={
+            severity !== null ? (
+              <QuietNote spacing="hint">{SEVERITY_HINTS[severity]}</QuietNote>
+            ) : null
+          }
+          data-testid="canon-severity"
+        >
+          <option value="">{t('canon.page.anySeverity')}</option>
+          {SEVERITY_ORDER.map((option) => (
+            <option key={option} value={option}>
+              {SEVERITY_LABELS[option]}
+            </option>
+          ))}
         </Field>
       </div>
     </div>

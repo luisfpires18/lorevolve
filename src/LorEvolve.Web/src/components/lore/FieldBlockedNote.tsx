@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Archive } from 'lucide-react'
 import { useI18n } from '../../i18n'
@@ -22,35 +23,53 @@ export function FieldBlockedNote({
   const { t } = useI18n()
   if (blocked?.fieldId !== field.id) return null
   return (
-    <Callout
-      look="callout"
-      tone="warning"
+    <BlockedCallout
       className="fieldlist__note"
-      role="alert"
       testId={`field-blocked-${field.name}`}
+      text={blocked.text}
     >
-      <p className="types__blockedtext">{blocked.text}</p>
-      <p className="types__blockedlinks">
-        {field.archivedAt === null ? (
-          <Button
-            tone="secondary"
-            size="sm"
-            icon={Archive}
-            onClick={() => void archive(field)}
-            data-testid={`archive-instead-${field.name}`}
-          >
-            {t('entityTypes.fields.archiveInstead')}
-          </Button>
-        ) : null}
-        {field.entryCount > field.trashedEntryCount ? (
-          <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
-            {t('entityTypes.fields.showEntries', { name: type.name })}
-          </Link>
-        ) : null}
-        {field.trashedEntryCount > 0 ? (
-          <Link to={`/app/universes/${universeId}/trash`}>{t('entityTypes.fields.openTrash')}</Link>
-        ) : null}
-      </p>
+      {field.archivedAt === null ? (
+        <Button
+          tone="secondary"
+          size="sm"
+          icon={Archive}
+          onClick={() => void archive(field)}
+          data-testid={`archive-instead-${field.name}`}
+        >
+          {t('entityTypes.fields.archiveInstead')}
+        </Button>
+      ) : null}
+      {field.entryCount > field.trashedEntryCount ? (
+        <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
+          {t('entityTypes.fields.showEntries', { name: type.name })}
+        </Link>
+      ) : null}
+      {field.trashedEntryCount > 0 ? (
+        <Link to={`/app/universes/${universeId}/trash`}>{t('entityTypes.fields.openTrash')}</Link>
+      ) : null}
+    </BlockedCallout>
+  )
+}
+
+/**
+ * A warning that a delete or a restore cannot go ahead as asked: why, in `text`, then the ways out as `children` (a
+ * button, links). `className` and `testId` are the caller's, so each box keeps its place and its name.
+ */
+export function BlockedCallout({
+  className,
+  testId,
+  text,
+  children,
+}: {
+  className: string
+  testId: string
+  text: string
+  children: ReactNode
+}) {
+  return (
+    <Callout look="callout" tone="warning" className={className} role="alert" testId={testId}>
+      <p className="types__blockedtext">{text}</p>
+      <p className="types__blockedlinks">{children}</p>
     </Callout>
   )
 }

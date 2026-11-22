@@ -11,7 +11,7 @@ import { FieldList, FieldsPanel } from './lore/FieldsPanel'
 import { InheritedFields } from './lore/InheritedFields'
 import { TypeFieldTools } from './lore/TypeFieldTools'
 import { ArchivedFields } from './lore/ArchivedFields'
-import { Callout } from './Callout'
+import { StatusNotice } from './Callout'
 import { FormMessage } from './FormMessage'
 import { QuietNote } from './QuietNote'
 
@@ -162,9 +162,9 @@ export function TypeFields({
         />
       ) : null}
 
-      <Callout look="notice" className="types__notice" testId={`fields-notice-${type.name}`}>
-        <p role="status">{notice}</p>
-      </Callout>
+      <StatusNotice className="types__notice" testId={`fields-notice-${type.name}`}>
+        {notice}
+      </StatusNotice>
 
       {archived.length > 0 ? (
         <ArchivedFields

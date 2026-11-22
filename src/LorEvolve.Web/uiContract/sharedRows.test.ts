@@ -1,8 +1,9 @@
 // Run with `node --test uiContract/sharedRows.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps the small shared rows on their parts (#456): a fact is Fact in a FactList, a foot bar is ActionBar, a panel's
-// head is PanelHead, a group rule is SectionTitle's `rule` tone, a removable chip is Token, a byline is VersionActor and
-// a publish list of names is NameListBlock. Every string literal counts, class strings built in template literals
+// head is PanelHead, a group rule is SectionTitle's `rule` tone, a removable chip is Token in a TokenList, a blocked
+// note is BlockedCallout, a byline is VersionActor, a publish list of names is NameListBlock and a drawer's named part is
+// DrawerSection. Every string literal counts, class strings built in template literals
 // included, so a class handed through a helper or a prop is caught too. Each list only shrinks: a stale entry fails.
 // Catalogue: docs/design/ui-components.md.
 
@@ -86,6 +87,18 @@ const RULES: Rule[] = [
     allowed: ['src/components/Token.tsx'],
   },
   {
+    why: 'a list of removable chips is TokenList (components/Token)',
+    writes: (word) => word === 'storylinks__list',
+    allowed: ['src/components/Token.tsx'],
+    tsxOnly: true,
+  },
+  {
+    why: 'a blocked note is BlockedCallout (lore/FieldBlockedNote)',
+    writes: (word) => word === 'types__blockedtext',
+    allowed: ['src/components/lore/FieldBlockedNote.tsx'],
+    tsxOnly: true,
+  },
+  {
     why: 'a byline is VersionActor with `at` or `lead` (components/VersionActor)',
     writes: (word) => word === 'reviewcomment__author',
     allowed: ['src/components/VersionActor.tsx'],
@@ -94,6 +107,11 @@ const RULES: Rule[] = [
     why: 'a publish list of names is NameListBlock (components/publishing/NameListBlock)',
     writes: (word) => word === 'publication__selectedlist',
     allowed: ['src/components/publishing/NameListBlock.tsx'],
+  },
+  {
+    why: 'a drawer section is DrawerSection (components/Section)',
+    writes: (word) => word === 'drawer__group',
+    allowed: ['src/components/Section.tsx', 'src/components/worldLogic/GuardBuilderDrawer.tsx'],
   },
 ]
 
@@ -136,12 +154,25 @@ test('the shared rows guard catches a hand copy, template-built classes included
   assert.ok(offends('<button className="token__remove">', token))
   assert.ok(offends('<span className={`token__note ${x}`}>', token))
   assert.ok(!offends('<Token removeLabel={label} onRemove={remove}>', token))
+  const tokenList = rule('a list of removable chips')
+  assert.ok(offends('<ul className="storylinks__list">', tokenList))
+  assert.ok(!offends('<TokenList>{tokens}</TokenList>', tokenList))
+  const blockedNote = rule('a blocked note')
+  assert.ok(offends('<p className="types__blockedtext">{text}</p>', blockedNote))
+  assert.ok(
+    !offends('<BlockedCallout className="types__blocked" testId={id} text={text}>', blockedNote),
+  )
   const byline = rule('a byline')
   assert.ok(offends('<span className="reviewcomment__author">', byline))
   assert.ok(!offends('<p className="reviewcomment__meta">', byline))
   const names = rule('a publish list')
   assert.ok(offends('<ul className={`publication__selectedlist ${x}`}>', names))
   assert.ok(!offends('<span className="publication__selectedtype">', names))
+  const drawer = rule('a drawer section')
+  assert.ok(offends('<section className="drawer__group" aria-labelledby="x">', drawer))
+  assert.ok(offends('<div className={`drawer__group ${x}`}>', drawer))
+  assert.ok(!offends('<DrawerSection title={t} titleId="x">', drawer))
+  assert.ok(!offends('<div className="drawer__groups">', drawer))
   // A comment that names a class is not a copy of it.
   assert.ok(!offends('// was <div className="facts__row">\nconst a = 1', fact))
 })

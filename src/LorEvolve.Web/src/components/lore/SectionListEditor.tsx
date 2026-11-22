@@ -7,7 +7,7 @@ import { Button } from '../Button'
 import { MoveItems } from '../MoveItems'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
-import { SectionTitle } from '../Section'
+import { DrawerSection } from '../Section'
 
 /**
  * An ordered list of rows to name, move and remove, and Add: the sections drawer's sections by default. `row` draws a
@@ -144,12 +144,9 @@ export function SectionListEditor<Item extends { key: string } = DraftSection>({
   }
 
   return (
-    <section className="drawer__group" aria-labelledby="sections-list">
-      <SectionTitle level={3} tone="rule-accent" id="sections-list">
-        {t('entityTypes.sections.heading')}
-      </SectionTitle>
+    <DrawerSection title={t('entityTypes.sections.heading')} titleId="sections-list">
       {list ?? <QuietNote spacing="block">{t('entityTypes.sections.empty')}</QuietNote>}
       {addButton}
-    </section>
+    </DrawerSection>
   )
 }

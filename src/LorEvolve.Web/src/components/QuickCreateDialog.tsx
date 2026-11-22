@@ -181,29 +181,23 @@ export function QuickCreateDialog({
           </QuietNote>
         ) : (
           <Field
+            as="select"
             label={t('lore.quickCreate.typeLabel')}
             id={typeId}
             error={fieldErrors.entitytypeid}
+            value={chosenTypeId}
+            onChange={(event) => {
+              setChosenTypeId(event.target.value)
+              setFieldErrors({})
+            }}
+            data-testid="quick-create-type-select"
           >
-            {(control) => (
-              <select
-                {...control}
-                className="field__input field__input--select"
-                value={chosenTypeId}
-                onChange={(event) => {
-                  setChosenTypeId(event.target.value)
-                  setFieldErrors({})
-                }}
-                data-testid="quick-create-type-select"
-              >
-                <option value="">{t('lore.quickCreate.chooseType')}</option>
-                {eligible.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <option value="">{t('lore.quickCreate.chooseType')}</option>
+            {eligible.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
           </Field>
         )}
 

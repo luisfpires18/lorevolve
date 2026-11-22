@@ -43,7 +43,8 @@ public sealed class LorEvolveMcpTools(LorEvolveDbContext db, McpCaller caller)
         + LorEvolveMcpProjectTools.Instructions
         + LorEvolveMcpProjectEntityTools.Instructions
         + LorEvolveMcpWorldLogicTools.Instructions
-        + LorEvolveMcpPrivateNoteTools.Instructions;
+        + LorEvolveMcpPrivateNoteTools.Instructions
+        + LorEvolveMcpIdeaTools.Instructions;
 
     /// <summary>A chunk of prose by default: about 2,000 tokens of English.</summary>
     public const int ManuscriptChunkDefault = 8_000;

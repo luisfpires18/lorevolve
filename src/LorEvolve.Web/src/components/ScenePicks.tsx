@@ -4,7 +4,7 @@ import { Field } from './Field'
 import type { EraScene } from '../progression/types'
 import { useUniverseStories } from '../stories/useUniverseStories'
 import { sceneChoices, useStoryScenes } from '../stories/useStoryScenes'
-import { Token } from './Token'
+import { Token, TokenList } from './Token'
 
 /**
  * Scenes chosen from any story of the universe: a story first, then one of its scenes in reading order. Each chosen scene is a
@@ -64,7 +64,7 @@ export function ScenePicks({
       error={error}
     >
       {value.length > 0 ? (
-        <ul className="storylinks__list">
+        <TokenList>
           {value.map((scene) => (
             <Token
               as="li"
@@ -81,7 +81,7 @@ export function ScenePicks({
               <bdi>{scene.title}</bdi>
             </Token>
           ))}
-        </ul>
+        </TokenList>
       ) : null}
 
       <div className="scenepicks">

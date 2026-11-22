@@ -3,7 +3,7 @@ import { Field } from '../Field'
 import { t, useI18n } from '../../i18n'
 import { useUniverseStories } from '../../stories/useUniverseStories'
 import type { TimelineStoryLink } from '../../timeline/types'
-import { Token } from '../Token'
+import { Token, TokenList } from '../Token'
 
 /**
  * The stories a moment matters to: each linked one as a token with Remove, and a choice of the universe's other live stories to
@@ -43,7 +43,7 @@ export function StoryLinks({
       {(control) => (
         <>
           {value.length > 0 ? (
-            <ul className="storylinks__list">
+            <TokenList>
               {value.map((story) => (
                 <Token
                   as="li"
@@ -57,7 +57,7 @@ export function StoryLinks({
                   <bdi>{story.title}</bdi>
                 </Token>
               ))}
-            </ul>
+            </TokenList>
           ) : null}
           <select
             {...control}

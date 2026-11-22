@@ -3,8 +3,8 @@ import { saveEntityArticle } from './article'
 import { emptyValue, valuedFields } from './document'
 import { setEntityImage, setFieldImage } from './images'
 import { ApiError } from '../lib/api'
-import { createEntity, updateEntity } from './api'
 import type { EntityDetail } from './types'
+import { useEntrySource } from './entrySource'
 import { suggestEntryChanges } from '../suggestions/api'
 import { useI18n } from '../i18n'
 import { draftFromDetail } from './entryDraft'
@@ -51,6 +51,7 @@ export function useEntrySave({
     navigate: NavigateFunction
   }) {
   const { t } = useI18n()
+  const entrySource = useEntrySource()
   const isNew = entityId === undefined
 
   const save = useCallback(async () => {
@@ -86,8 +87,8 @@ export function useEntrySave({
         }
 
         const saved = isNew
-          ? await createEntity(universe.id, input)
-          : await updateEntity(universe.id, entityId, input)
+          ? await entrySource.create(input)
+          : await entrySource.save(entityId, input, detail)
 
         // The entry exists now, so the picture that was waiting has somewhere to go. It is a
         // separate write and it is allowed to fail on its own: the lore is already stored, so a
@@ -158,7 +159,7 @@ export function useEntrySave({
         setHistoryKey((key) => key + 1)
 
         if (isNew) {
-          await navigate(`/app/universes/${universe.id}/lore/${saved.id}`, { replace: true })
+          await navigate(entrySource.href.entry(saved.id), { replace: true })
         }
       },
       {
@@ -189,6 +190,7 @@ export function useEntrySave({
     formSections,
     isNew,
     universe.id,
+    entrySource,
     entityId,
     navigate,
     pendingImage,
