@@ -126,8 +126,9 @@ test.describe('Game entity details', () => {
     await page.goto(`${base}/${alpha.ids['Bastion']}`)
     await page.getByTestId('entity-actions').click()
     await page.getByTestId('trash-entity').click()
-    await acceptConfirm(page, 'Bastion')
-    await expect(page).toHaveURL(base)
+    // Moved to the universe's Trash, as a lore entry is.
+    await acceptConfirm(page, 'Move this entry to the Trash?')
+    await expect(page).toHaveURL(`/app/universes/${world.id}/trash`)
     await page.goto(`${base}/${alpha.ids['Bastion']}`)
     await expect(page.getByTestId('entity-missing')).toBeVisible()
   })
