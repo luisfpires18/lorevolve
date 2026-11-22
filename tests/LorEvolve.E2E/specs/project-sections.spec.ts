@@ -96,7 +96,7 @@ test.describe('Project sections', () => {
     // offer, and the type editor is its own tab (#196).
     await page.getByTestId('projecttab-entities').click()
     await expect(page.getByTestId('project-schema-offer')).toBeVisible()
-    await expect(page.getByTestId('project-entries')).toHaveCount(0)
+    await expect(page.getByTestId('lore-controls')).toHaveCount(0)
     // The project's name is the screen's one h1; the panel heads under it are h2 (#412).
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
     await page.getByTestId('projecttab-types').click()
@@ -107,7 +107,7 @@ test.describe('Project sections', () => {
     await expect(page.getByTestId('project-schema')).toContainText(
       `Types of ${game.name}. They belong to this game only.`,
     )
-    await expect(page.getByTestId('project-entries')).toHaveCount(0)
+    await expect(page.getByTestId('lore-controls')).toHaveCount(0)
     await page.getByTestId('projecttab-systems').click()
     await expect(page.getByTestId('project-view-empty-systems')).toBeVisible()
     await expect(page.getByTestId('project-schema')).toHaveCount(0)
@@ -126,7 +126,7 @@ test.describe('Project sections', () => {
     expect(unit.ok()).toBe(true)
 
     await page.goto(base)
-    const cards = page.getByTestId('project-entity-type-cards')
+    const cards = page.getByTestId('lore-type-cards')
     await expect(cards.getByTestId('lore-type-card')).toHaveCount(1)
     // A marker on the window: a reload anywhere below would drop it.
     await page.evaluate(() => Object.assign(window, { noReload: true }))
@@ -142,9 +142,9 @@ test.describe('Project sections', () => {
 
     await expect(cards.getByTestId('lore-type-card')).toHaveCount(2)
     await cards.getByRole('link', { name: /Encounter/ }).click()
-    await expect(page.getByTestId('project-entries')).toBeVisible()
-    await expect(page.getByTestId('project-entries-needs-type')).toHaveCount(0)
-    await page.getByTestId('project-entry-add').click()
+    await expect(page.getByTestId('lore-controls')).toBeVisible()
+    await expect(page.getByTestId('entity-empty')).toBeVisible()
+    await page.getByTestId('new-entity').click()
     await page.getByLabel('Name', { exact: true }).fill('Ambush')
     await page.getByTestId('save-entity').click()
     await expect(page.getByTestId('entry-name')).toHaveText('Ambush')
