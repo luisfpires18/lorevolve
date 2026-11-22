@@ -1,6 +1,6 @@
 ﻿# STATE
 
-Current operational state only, as of 2026-11-13. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-22. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
@@ -18,7 +18,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 43468813582 on `master` `c8581c0`, succeeded (2026-11-13, release PR #121: a story opens on its first arc and first chapter; a scene lists all its lore in the author's order, dragged by a grip or the arrow keys, and group priority no longer reorders it; beats fold; more interface language strings; no migration).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 44967668368 on `master` `088c0a3b`, succeeded (2026-11-22, release PR #537: 433 dev commits, large-file splits, idea board and canvas stage, MCP private notes and entry pictures; no EF migration file in the release). Before: run 43468813582 on `c8581c0` (2026-11-13, PR #121).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -39,7 +39,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-14 `dev` is ahead of `master` by the language work merged since PR #121 (latest: #161, #162). `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-22 `master` has three commits `dev` lacks (`01f11530`, `7194b972`, `db0d0648`), kept by PR #537; the next release brings them back into `dev` or they need a sync. `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
@@ -119,10 +119,9 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
 - **Real-client MCP**: Claude or ChatGPT staging schema, progression and pictures over MCP, connecting by the friendly
   `/mcp/u/{name}` URL, and ChatGPT image rendering or its fallback link. Never tried in a real client
   (`docs/testing/mcp-images-checklist.md`). A client's own tool-result cap can cut a large catalog.
-- **World Logic and project schema over MCP** (PR #235, PR #237), on DEV only. `propose_changes` now takes `system`,
+- **World Logic and project schema over MCP** (PR #235, PR #237), on PROD since 2026-11-22 (PR #537). `propose_changes` now takes `system`,
   `system_rule`, `project_type` and `project_field` (create and update, never remove); an entry names a new type or
-  field by `typeRef` / `fieldRef`, so one proposal can hold a game's GameEntity type, its fields and its units. Owner:
-  ask for the `dev` to `master` release when ready; ChatGPT's connector must be refreshed to see new tools (it showed a
+  field by `typeRef` / `fieldRef`, so one proposal can hold a game's GameEntity type, its fields and its units. ChatGPT's connector must be refreshed to see new tools (it showed a
   stale list on PROD). Not yet tried in a real client. Per-tool status lives in `docs/testing/mcp-capability-matrix.md`
   "Tool status"; keep it current with every MCP change (a test fails when a tool has no row).
 - **Real-device PWA**: Lore entities in an installed iOS, Android and desktop app (`docs/testing/pwa-checklist.md`).
