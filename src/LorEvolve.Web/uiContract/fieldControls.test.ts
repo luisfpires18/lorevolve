@@ -42,6 +42,9 @@ test('the field control guard catches a hand-written control, template-built cla
   assert.ok(!writes('<Field as="select" controlClassName="idea__universe">{o}</Field>'))
   assert.ok(!writes('<Field name={null} controlClassName="field__input--title" />'))
   assert.ok(!writes('<input className="field__inputs" />'))
+  assert.ok(writes('(control) => <input id={control.id} className="field__input" type="text" />'))
+  assert.ok(!writes('<Field name={null} type="text" dir="auto" maxLength={MAX} data-testid="x" />'))
+  assert.ok(!writes('<Field as="textarea" id={x} rows={5} readOnly={held} />'))
   assert.ok(slotSelect('<select {...control} value={v}>{o}</select>'))
   assert.ok(slotSelect('<select id={control.id} onChange={(e) => f(e)}>{o}</select>'))
   assert.ok(
@@ -49,7 +52,11 @@ test('the field control guard catches a hand-written control, template-built cla
       "<select id={s} onChange={(e) => f(e)} aria-invalid={control['aria-invalid']}>{o}</select>",
     ),
   )
+  assert.ok(
+    slotSelect('(control: { id: string }) => (<select id={control.id} value={v}>{o}</select>)'),
+  )
   assert.ok(!slotSelect('<Field as="select" id="x">{o}</Field>'))
+  assert.ok(!slotSelect('<Field as="select" id="canon-severity" after={note}>{o}</Field>'))
   assert.ok(!slotSelect('<select id={storyId} aria-describedby={describedBy}>{o}</select>'))
 })
 
