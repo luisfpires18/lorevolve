@@ -20,6 +20,7 @@ const SKELETON_CARDS = 6
 
 /** What is said around the catalog: the Trash and mass create notices, a types failure, no types, loading and a failed read. */
 export function LoreStatus({
+  isLore,
   types,
   typesFailed,
   retry,
@@ -29,6 +30,7 @@ export function LoreStatus({
   view,
   children,
 }: {
+  isLore: boolean
   massCreated: number | null
   refreshTypes: ReturnType<typeof useWorkspaceTypes>['refreshTypes']
   view: LoadState
@@ -39,14 +41,14 @@ export function LoreStatus({
   const entrySource = useEntrySource()
   return (
     <>
-      {trashedNotice ? (
+      {isLore && trashedNotice ? (
         <p className="lore__created" role="status" data-testid="lore-trashed">
           <ActionIcon icon={Check} />
           {trashedNotice} <Link to={entrySource.href.afterRemove}>{t('lore.page.openTrash')}</Link>
         </p>
       ) : null}
 
-      {massCreated !== null ? (
+      {isLore && massCreated !== null ? (
         <p className="lore__created" role="status" data-testid="lore-mass-created">
           <ActionIcon icon={Check} />
           {tn('lore.page.created', massCreated, { n: massCreated })}
@@ -92,7 +94,7 @@ export function LoreStatus({
             ),
           }}
           error={{
-            message: t('lore.page.loadFailed'),
+            message: isLore ? t('lore.page.loadFailed') : t('projects.entries.failed'),
             onRetry: retry,
             retryLabel: t('lore.page.retryLore'),
             testId: 'lore-load-error',

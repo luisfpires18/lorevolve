@@ -1,6 +1,17 @@
 import type { Chronology } from '../chronology/types'
-import type { FieldDefinition } from '../lore/typeDefinitions'
-import { FieldKind, type FieldKindValue, type ProjectField, type ProjectTypeInput } from './types'
+import type { EntityDetail, EntityPage, EntitySummary } from '../lore/types'
+import type { EntityType, FieldDefinition } from '../lore/typeDefinitions'
+// The .ts extension lets `node --test` load this file on its own (fieldDefinition.test.ts).
+import {
+  FieldKind,
+  type FieldKindValue,
+  type ProjectEntityDetail,
+  type ProjectEntityPage,
+  type ProjectEntitySummary,
+  type ProjectEntityType,
+  type ProjectField,
+  type ProjectTypeInput,
+} from './types.ts'
 
 /** A project has no date periods: an empty chronology, so a number never offers an era. */
 export const NO_ERAS: Chronology = {
@@ -38,6 +49,65 @@ export function asFieldDefinition(field: ProjectField): FieldDefinition {
     version: 0,
     sectionId: null,
     imageShape: field.imageShape,
+  }
+}
+
+/**
+ * A project type as the Lore entry page reads a type (#551): its fields in Lore's order, inherited first, numbered from
+ * 0. No sections, archived fields, groups or Family Tree; every entry is listed and none is in the Trash.
+ */
+export function asEntryType(type: ProjectEntityType): EntityType {
+  return {
+    id: type.id,
+    name: type.name,
+    description: type.description,
+    icon: type.icon,
+    accentColor: type.accentColor,
+    displayOrder: type.displayOrder,
+    parentId: type.parentId,
+    entityCount: type.entryCount,
+    listedEntityCount: type.entryCount,
+    trashedEntityCount: 0,
+    fields: [...type.inheritedFields, ...type.fields].map((field, index) => ({
+      ...asFieldDefinition(field),
+      displayOrder: index,
+    })),
+    archivedFields: [],
+    fieldSections: [],
+    fieldLayoutVersion: 0,
+    familyTreeEligible: false,
+    familyTreeOffered: false,
+  }
+}
+
+/** A project entry as the Lore entry page reads an entry: none of Lore's own parts, and its Lore link kept (#551). */
+export function asEntryDetail(entry: ProjectEntityDetail): EntityDetail {
+  return {
+    ...entry,
+    // Draft, never shown or sent: a project entry has no Canon status.
+    canonStatus: 1,
+    isArchived: false,
+    aliases: [],
+    tags: [],
+    articleExcerpt: null,
+    hasFamilyConnections: false,
+    hasProgression: false,
+  }
+}
+
+/** A project entry as the Lore list reads a card: no Canon status, aliases, tags or excerpt; its Lore link kept (#551). */
+export function asEntrySummary(row: ProjectEntitySummary): EntitySummary {
+  return { ...row, canonStatus: 1, isArchived: false, aliases: [], tags: [], articleExcerpt: null }
+}
+
+/** The server's page as the Lore list reads one (#557). A page past the end has no items and the real totals. */
+export function asEntryPage(found: ProjectEntityPage, page: number, size: number): EntityPage {
+  return {
+    items: found.items.map(asEntrySummary),
+    page,
+    pageSize: size,
+    totalCount: found.totalCount,
+    totalPages: Math.ceil(found.totalCount / size),
   }
 }
 

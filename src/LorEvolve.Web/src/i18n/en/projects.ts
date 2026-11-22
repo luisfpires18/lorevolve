@@ -120,18 +120,7 @@ const projects = {
     entity: {
       loading: 'Reading this entity.',
       failed: 'This entity could not be read.',
-      notFound: 'This entity could not be found.',
       notFoundHint: 'It may have been deleted, or it is not part of this game.',
-      backToGame: 'Back to the game',
-      noImage: 'No image yet',
-      noDescription: 'No description yet.',
-      imageAlt: 'Picture of {name}',
-      fields: 'Fields',
-      edit: 'Edit',
-      editTitle: 'Edit this entity',
-      noValue: 'No value yet',
-      noFields: 'This type has no fields yet.',
-      fieldImageAlt: 'Picture for {name}',
     },
   },
   directory: {

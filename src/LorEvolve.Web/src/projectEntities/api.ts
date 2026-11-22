@@ -2,7 +2,7 @@ import { apiFetch } from '../lib/api'
 import type {
   ProjectEntityDetail,
   ProjectEntityInput,
-  ProjectEntitySummary,
+  ProjectEntityPage,
   ProjectEntityType,
   ProjectFieldInput,
   ProjectTemplate,
@@ -11,6 +11,9 @@ import type {
 
 /** A project's own schema and entries (#144). Reached through the project, which resolves to its universe's access. */
 const base = (projectId: string) => `/api/projects/${projectId}`
+
+/** The 409 code of a project entry save over a newer version. */
+export const PROJECT_ENTRY_CHANGED = 'project_entity_changed'
 
 export function listProjectTypes(projectId: string, signal?: AbortSignal) {
   return apiFetch<ProjectEntityType[]>(`${base(projectId)}/entity-types`, { signal })
@@ -67,12 +70,7 @@ export function deleteProjectField(projectId: string, typeId: string, fieldId: s
   })
 }
 
-/**
- * The entries of a project, or of one type; `page` reads a slice of them in the API's own order (#196).
- *
- * `page.recent` asks for the most recently updated first rather than by name, which is what the project's overview
- * draws (#195). Everything else reads the list in its own order.
- */
+/** One page of a project's entries, or of one type's, and the total that match (#196, #557). */
 export function listProjectEntities(
   projectId: string,
   typeId?: string,
@@ -80,7 +78,6 @@ export function listProjectEntities(
   page?: {
     skip: number
     take: number
-    recent?: boolean
     q?: string
     sort?: string
     includeDescendants?: boolean
@@ -91,13 +88,12 @@ export function listProjectEntities(
   if (page) {
     params.set('skip', String(page.skip))
     params.set('take', String(page.take))
-    if (page.recent) params.set('recent', 'true')
     if (page.q) params.set('q', page.q)
     if (page.sort) params.set('sort', page.sort)
     if (page.includeDescendants) params.set('includeDescendants', 'true')
   }
   const query = params.toString() ? `?${params.toString()}` : ''
-  return apiFetch<ProjectEntitySummary[]>(`${base(projectId)}/entities${query}`, { signal })
+  return apiFetch<ProjectEntityPage>(`${base(projectId)}/entities${query}`, { signal })
 }
 
 export function getProjectEntity(projectId: string, entityId: string, signal?: AbortSignal) {

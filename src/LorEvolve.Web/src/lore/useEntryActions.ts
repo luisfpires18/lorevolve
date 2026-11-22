@@ -24,11 +24,13 @@ export function useEntryActions({
   setDetail,
   setHistoryKey,
   navigate,
+  isLore,
 }: ReturnType<typeof useEntryState> &
   ReturnType<typeof useEntryLoad> & {
     entityId: string | undefined
     isEditing: boolean
     navigate: NavigateFunction
+    isLore: boolean
   }) {
   const { t } = useI18n()
   const entrySource = useEntrySource()
@@ -101,16 +103,27 @@ export function useEntryActions({
   /**
    * Moves the entry to the Trash. Nothing is destroyed, and the wording says so: the article,
    * the fields, the history and every connection stay stored, and Trash restores them whole.
+   * A project entry has no Trash (#551): it is deleted for good, and the wording says that instead.
    */
   async function moveToTrash() {
     if (isNew) return
     const trashed = await confirmAction({
-      title: t('entity.page.trash.title'),
-      message: t('entity.page.trash.message'),
-      confirmLabel: t('entity.page.trash.confirm'),
-      busyLabel: t('entity.page.trash.busy'),
+      ...(isLore
+        ? {
+            title: t('entity.page.trash.title'),
+            message: t('entity.page.trash.message'),
+            confirmLabel: t('entity.page.trash.confirm'),
+            busyLabel: t('entity.page.trash.busy'),
+            failure: t('entity.page.trash.failed'),
+          }
+        : {
+            title: t('projects.entries.trash.title', { name: detail?.name ?? '' }),
+            message: t('projects.entries.trash.message'),
+            confirmLabel: t('projects.entries.delete'),
+            busyLabel: t('projects.entries.deleting'),
+            failure: t('projects.entries.deleteFailed'),
+          }),
       variant: 'warning',
-      failure: t('entity.page.trash.failed'),
       action: () => entrySource.remove(entityId),
     })
     if (trashed) await navigate(entrySource.href.afterRemove, { replace: true })

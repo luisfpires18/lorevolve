@@ -17,7 +17,6 @@ const HAND_WRITTEN_ITEMS = new Map<string, string>([
 // Files whose menu items carry no icon, with the reason.
 const ITEMS_WITHOUT_ICON = new Map<string, string>([
   ['src/components/LoreFieldFilters.tsx', 'a list of field names to pick from'],
-  ['src/components/ProjectEntitiesView.tsx', 'a list of type names to pick from'],
 ])
 
 // Files with one menu that draws Edit and then Remove by hand, with the reason it is no RowMenu.

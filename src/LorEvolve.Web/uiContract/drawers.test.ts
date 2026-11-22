@@ -77,12 +77,15 @@ const hasToken = (source: string, test: (token: string) => boolean) => tokens(so
 const DESTROY =
   /(?<![.\w])(?:delete[A-Z]\w*|revokeInvitation|removeEntityImage|removeFieldImage|removeProfileImage|removePicture)\(/
 // An entry source's `remove` is the delete of whatever it draws (#551): the call through the source is what asks.
-const SOURCE_REMOVE = /\bentrySource\.remove\(/
+const SOURCE_REMOVE = /\b\w*[sS]ource\.remove\(/
 function unaskedDeletes(source: string) {
   const lines = source.split('\n')
+  // A file that builds an `EntrySource` only binds its delete; the call through the source is what asks.
+  const buildsSource = /\):\s*EntrySource\b/.test(source)
   return lines.flatMap((line, at) => {
     if (!DESTROY.test(line) && !SOURCE_REMOVE.test(line)) return []
     if (/^\s*(?:import|export)\b/.test(line) || /\bfunction\s+\w+\(/.test(line)) return []
+    if (buildsSource && /^\s*remove: \(\w+\) => delete\w*\(/.test(line)) return []
     if (/^\s*(?:delete[A-Z]\w*|remove\w*|revokeInvitation),?$/.test(line)) return []
     const above = lines.slice(Math.max(0, at - 20), at + 1).join('\n')
     // A field delete handed to `PlainFieldsPanel` as `remove`: the panel asks through `confirmDelete` first.
@@ -139,6 +142,11 @@ test('the drawer guards fail on a bad snippet and pass a good one', () => {
   assert.equal(unaskedDeletes(`<Other\n${handed}`).length, 1)
   assert.equal(unaskedDeletes('    remove: (id) => deleteEntity(universeId, id),').length, 1)
   assert.equal(unaskedDeletes('onClick={() => entrySource.remove(entityId)}').length, 1)
+  assert.equal(unaskedDeletes('onClick={() => source.remove(id)}').length, 1)
+  assert.equal(
+    unaskedDeletes('): EntrySource {\n    remove: (id) => deleteEntity(universeId, id),').length,
+    0,
+  )
   assert.equal(
     unaskedDeletes('await confirmAction({\n  action: () => entrySource.remove(entityId),\n})')
       .length,
@@ -262,7 +270,7 @@ test('an inline form guards through useDiscardGuard', () => {
 test('a list read with changes is useLoadedList', () => {
   onlyIn(
     filesMatching((source) => /\bfunction failing\(|\bfunction run\(work/.test(source)),
-    ['src/lib/useLoadedList.ts', 'src/projectEntities/useProjectEntriesRead.ts'],
+    ['src/lib/useLoadedList.ts'],
     'A failing or run helper',
   )
 })
@@ -280,8 +288,6 @@ test('every delete asks first', () => {
   // `trashActions.tsx` and `universeSettingsActions.ts` ask inline (#255); the three picture controls
   // only bind the call, which `lib/usePictureFraming.ts` asks before making.
   const ASKED_ELSEWHERE = [
-    // The Lore source only binds the delete; the call through it, `entrySource.remove(`, is checked above (#551).
-    'src/lore/entrySource.ts',
     'src/components/EntityImageField.tsx',
     'src/components/FieldImageInput.tsx',
     'src/components/UniverseArtworkField.tsx',

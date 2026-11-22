@@ -1,8 +1,7 @@
 import { ComicCollections } from '../ComicCollections'
 import { EmptyState } from '../EmptyState'
-import { ProjectEntitiesView } from '../ProjectEntitiesView'
+import { RoleGate } from '../RoleGate'
 import { ProjectSchema } from '../ProjectSchema'
-import { ProjectEntityDetailView } from '../ProjectEntityDetailView'
 import { ProjectOutline } from '../ProjectOutline'
 import { ProjectScript } from '../ProjectScript'
 import { ProjectSeasons } from '../ProjectSeasons'
@@ -11,12 +10,14 @@ import { ProjectKind, type ProjectDetail } from '../../projects/types'
 import { t, useI18n } from '../../i18n'
 import type { Dispatch, SetStateAction } from 'react'
 import type { useUniverseAccess } from '../../universes/access'
+import { ProjectLore } from '../../pages/ProjectLore'
 
-/** An entry's own screen, or the section's panels. */
+/** An entry's own screen (the Lore entry page, #551), a new entry's, or the section's panels; Entities is the Lore list. */
 export function ProjectBody({
   project,
   section,
   entryId,
+  creating,
   entitiesPath,
   typesPath,
   access,
@@ -26,6 +27,8 @@ export function ProjectBody({
   project: ProjectDetail
   section: ReturnType<typeof projectSections>[number]
   entryId: string | undefined
+  /** `entities/new?type=`: a new entry. */
+  creating: boolean
   entitiesPath: string
   typesPath: string | undefined
   access: ReturnType<typeof useUniverseAccess>
@@ -33,17 +36,19 @@ export function ProjectBody({
   setSchemaVersion: Dispatch<SetStateAction<number>>
 }) {
   useI18n()
+  const typesHref = typesPath ?? `${entitiesPath}?manage=types`
 
-  return entryId ? (
+  return entryId || creating ? (
     <div>
-      <ProjectEntityDetailView
-        key={entryId}
-        projectId={project.id}
-        universeId={project.universe.id}
-        entityId={entryId}
-        gameName={project.name}
-        gameHref={entitiesPath}
-      />
+      {/* A new entry needs editContent, as `lore/new` does; one RoleGate for both keeps the page mounted after a create. */}
+      <RoleGate need={creating ? 'editContent' : undefined}>
+        <ProjectLore
+          projectId={project.id}
+          base={entitiesPath}
+          typesHref={typesHref}
+          entityId={entryId}
+        />
+      </RoleGate>
     </div>
   ) : (
     <div>
@@ -56,12 +61,12 @@ export function ProjectBody({
        * moves between this project's views and between the Entities view's own screens.
        */}
       {section.segment === 'entities' ? (
-        <ProjectEntitiesView
+        <ProjectLore
+          list
           projectId={project.id}
-          universeId={project.universe.id}
+          base={entitiesPath}
+          typesHref={typesHref}
           reloadKey={schemaVersion}
-          entryHref={(entry) => `${entitiesPath}/${entry.id}`}
-          typesHref={typesPath}
           onChanged={() => setSchemaVersion((version) => version + 1)}
         />
       ) : section.segment === 'types' ? (

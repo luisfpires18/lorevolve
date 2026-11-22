@@ -15,8 +15,9 @@ import { SearchField } from '../SearchField'
 type Entries = ReturnType<typeof useLoreEntries>
 type Links = ReturnType<typeof useLoreLinks>
 
-/** What narrows the list: the search, the status, Clear filters and the field filters. */
+/** What narrows the list: the search, the status, Clear filters and the field filters. A project's: the name (#551). */
 export function LoreControls({
+  isLore,
   filtersOpen,
   selectedType,
   selectedGroup,
@@ -36,6 +37,7 @@ export function LoreControls({
   isFiltered,
   fieldTypes,
 }: {
+  isLore: boolean
   universe: ReturnType<typeof useWorkspaceTypes>['universe']
   filtersId: string
   canonStatus: CanonStatusValue | null
@@ -68,32 +70,36 @@ export function LoreControls({
         placeholder={
           chosenName ? t('lore.page.searchNamed', { name: chosenName }) : t('lore.page.search')
         }
-        title={t('lore.page.searchHelp')}
+        title={isLore ? t('lore.page.searchHelp') : t('projects.entries.searchPlaceholder')}
         value={search}
         onChange={(value) => update({ q: value }, true)}
         trailing={
-          <button
-            className="lore__exact"
-            type="button"
-            aria-pressed={exact}
-            title={t('lore.page.exactHelp')}
-            onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
-            data-testid="lore-exact"
-          >
-            {t('lore.page.exact')}
-          </button>
+          isLore ? (
+            <button
+              className="lore__exact"
+              type="button"
+              aria-pressed={exact}
+              title={t('lore.page.exactHelp')}
+              onClick={() => update({ exact: exact ? null : '1', page: null }, true)}
+              data-testid="lore-exact"
+            >
+              {t('lore.page.exact')}
+            </button>
+          ) : undefined
         }
         testId="lore-search"
       />
 
-      <CanonStatusPicker
-        label={t('lore.page.status')}
-        allLabel={t('lore.page.anyStatus')}
-        value={canonStatus}
-        onChange={(status) => update({ status: status === null ? null : String(status) }, true)}
-      />
+      {isLore ? (
+        <CanonStatusPicker
+          label={t('lore.page.status')}
+          allLabel={t('lore.page.anyStatus')}
+          value={canonStatus}
+          onChange={(status) => update({ status: status === null ? null : String(status) }, true)}
+        />
+      ) : null}
 
-      {selectedType ? (
+      {isLore && selectedType ? (
         <LoreFieldFilters
           universeId={universe.id}
           type={selectedType}

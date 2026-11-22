@@ -30,6 +30,7 @@ export function EntryNotices({
   draft,
   keepMine,
   takeLatest,
+  isLore,
 }: {
   universe: { id: string }
   chronology: Chronology
@@ -47,12 +48,14 @@ export function EntryNotices({
   draft: Draft
   keepMine: (latest: EntityDetail) => void
   takeLatest: (latest: EntityDetail) => void
+  /** A project entry (#551) has no Canon checks. */
+  isLore: boolean
 }) {
   const { t } = useI18n()
   const entrySource = useEntrySource()
   return (
     <>
-      {blocked ? (
+      {isLore && blocked ? (
         // A blocked creation names an entry that was rolled back, so its ids lead
         // nowhere. Only an edit of something already stored can be linked.
         <CanonBlockNotice universeId={universe.id} findings={blocked} linkSubjects={!isNew} />

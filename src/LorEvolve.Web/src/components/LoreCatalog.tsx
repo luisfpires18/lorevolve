@@ -30,7 +30,6 @@ export function LoreCatalog({
   typeHref,
   groupHref,
   typesUrl,
-  countBranch = true,
 }: {
   tree: TypeTree<CatalogType>
   groups: EntityTypeGroup[]
@@ -40,11 +39,6 @@ export function LoreCatalog({
   typeHref: (typeId: string) => To
   groupHref: (groupId: string) => To
   typesUrl: string
-  /**
-   * Whether a card counts its nested types' entries too. Lore's type list shows them, so it does; a project's type list
-   * shows only the type's own (#196), so a project's card counts only those and says what opening it will show.
-   */
-  countBranch?: boolean
 }) {
   const { t, tn, tx } = useI18n()
   const headingId = useId()
@@ -160,7 +154,7 @@ export function LoreCatalog({
               <li key={node.type.id} className={classes.length > 0 ? classes.join(' ') : undefined}>
                 <TypeCard
                   node={node}
-                  count={countBranch ? listedEntries(node, tree.byId) : node.type.listedEntityCount}
+                  count={listedEntries(node, tree.byId)}
                   href={typeHref(node.type.id)}
                 />
                 {/* Inside the card's lower corner, beside the link rather than in it: a button can't sit in a link. */}

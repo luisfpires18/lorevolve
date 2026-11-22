@@ -137,7 +137,6 @@ const SCROLLS_ELSEWHERE = [
   'src/components/ConnectedApps.tsx', // arriving at #connected-apps
   'src/components/ManuscriptWriter.tsx', // the editor's own transaction, not the DOM call
   'src/components/SceneForm.tsx', // a beat brought to the centre
-  'src/components/projectEntities/ProjectEntryList.tsx', // the opened entry centred
   'src/lib/useArrivalMark.ts', // an arrival mark
   'src/stories/useManuscriptState.ts', // an editor focus option
 ]

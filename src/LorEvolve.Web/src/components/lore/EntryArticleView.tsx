@@ -28,6 +28,7 @@ export function EntryArticleView({
   articleSaved,
   selectedType,
   factSections,
+  isLore,
 }: {
   universe: { id: string }
   chronology: Chronology
@@ -40,6 +41,8 @@ export function EntryArticleView({
   articleSaved: (updatedAt: string) => void
   selectedType: EntityType | null
   factSections: { ungrouped: FieldValue[]; groups: SectionGroup<FieldValue>[] }
+  /** A project entry (#551) has no article, tags or maps: its facts take the main column. */
+  isLore: boolean
 }) {
   const { t } = useI18n()
   const isNew = entityId === undefined
@@ -48,67 +51,74 @@ export function EntryArticleView({
       {renderFact(value, chronology)}
     </Fact>
   )
+  // The facts and the field pictures: beside the article on a Lore entry, in its place on a project entry.
+  const facts = (
+    <>
+      {(detail?.fields.length ?? 0) > 0 && factSections.groups.length === 0 ? (
+        <FactList testId="entry-fields">{detail!.fields.map(fact)}</FactList>
+      ) : null}
+
+      {factSections.groups.length > 0 ? (
+        <div className="stack stack--3" data-testid="entry-fields">
+          {factSections.ungrouped.length > 0 ? (
+            <FactList>{factSections.ungrouped.map(fact)}</FactList>
+          ) : null}
+          {factSections.groups.map(({ section, items }) => (
+            <FieldSectionFold
+              key={section.id}
+              section={section}
+              open={isSectionOpen(section)}
+              onToggle={(open) => setSectionOpen((current) => ({ ...current, [section.id]: open }))}
+            >
+              <FactList>{items.map(fact)}</FactList>
+            </FieldSectionFold>
+          ))}
+        </div>
+      ) : null}
+
+      {(detail?.fieldImages.length ?? 0) > 0 ? (
+        <div className="stack stack--2" data-testid="entry-field-images">
+          {detail!.fieldImages.map((picture) => {
+            const name = selectedType?.fields.find((one) => one.id === picture.fieldId)?.name ?? ''
+            return (
+              <figure
+                className="entry__fieldimage"
+                key={picture.fieldId}
+                data-testid={`entry-field-image-${picture.fieldId}`}
+              >
+                <figcaption className="sectiontitle sectiontitle--label">{name}</figcaption>
+                <img src={fieldImageUrl(universe.id, detail!.id, picture, 'crop')} alt={name} />
+              </figure>
+            )
+          })}
+        </div>
+      ) : null}
+    </>
+  )
   return (
     <>
       <div className="entry__main">
-        {isNew ? null : (
-          <EntityArticleSection
-            key={entityId}
-            universeId={universe.id}
-            entityId={entityId}
-            entityName={detail?.name ?? ''}
-            canEdit={!isEditing}
-            onEditingChange={setIsWritingArticle}
-            onSaved={articleSaved}
-          />
+        {isLore ? (
+          isNew ? null : (
+            <EntityArticleSection
+              key={entityId}
+              universeId={universe.id}
+              entityId={entityId}
+              entityName={detail?.name ?? ''}
+              canEdit={!isEditing}
+              onEditingChange={setIsWritingArticle}
+              onSaved={articleSaved}
+            />
+          )
+        ) : (
+          facts
         )}
       </div>
 
       <aside className="entry__rail" aria-label={t('entity.page.rail.label')}>
-        {(detail?.fields.length ?? 0) > 0 && factSections.groups.length === 0 ? (
-          <FactList testId="entry-fields">{detail!.fields.map(fact)}</FactList>
-        ) : null}
+        {isLore ? facts : null}
 
-        {factSections.groups.length > 0 ? (
-          <div className="stack stack--3" data-testid="entry-fields">
-            {factSections.ungrouped.length > 0 ? (
-              <FactList>{factSections.ungrouped.map(fact)}</FactList>
-            ) : null}
-            {factSections.groups.map(({ section, items }) => (
-              <FieldSectionFold
-                key={section.id}
-                section={section}
-                open={isSectionOpen(section)}
-                onToggle={(open) =>
-                  setSectionOpen((current) => ({ ...current, [section.id]: open }))
-                }
-              >
-                <FactList>{items.map(fact)}</FactList>
-              </FieldSectionFold>
-            ))}
-          </div>
-        ) : null}
-
-        {(detail?.fieldImages.length ?? 0) > 0 ? (
-          <div className="stack stack--2" data-testid="entry-field-images">
-            {detail!.fieldImages.map((picture) => {
-              const name =
-                selectedType?.fields.find((one) => one.id === picture.fieldId)?.name ?? ''
-              return (
-                <figure
-                  className="entry__fieldimage"
-                  key={picture.fieldId}
-                  data-testid={`entry-field-image-${picture.fieldId}`}
-                >
-                  <figcaption className="sectiontitle sectiontitle--label">{name}</figcaption>
-                  <img src={fieldImageUrl(universe.id, detail!.id, picture, 'crop')} alt={name} />
-                </figure>
-              )
-            })}
-          </div>
-        ) : null}
-
-        {(detail?.tags.length ?? 0) > 0 ? (
+        {isLore && (detail?.tags.length ?? 0) > 0 ? (
           <div className="stack stack--2">
             <SectionTitle level={2} tone="label">
               {t('entity.page.rail.tags')}
@@ -117,7 +127,7 @@ export function EntryArticleView({
           </div>
         ) : null}
 
-        {detail ? (
+        {isLore && detail ? (
           <LoreOnMaps key={detail.id} universeId={universe.id} entityId={detail.id} />
         ) : null}
 

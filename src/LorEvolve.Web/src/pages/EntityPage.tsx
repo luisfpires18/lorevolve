@@ -79,11 +79,13 @@ function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | 
   const startingTypeId = searchParams.get('type')
 
   const isNew = entityId === undefined
+  // A project entry (#551) draws none of Lore's own parts: no Canon status, article, views, notes, publication or Trash.
+  const isLore = entrySource.kind === 'lore'
 
   // A new entry made from an existing one (`lore/new?from=<id>`, Issue #27): the form opens filled from it, and the copy
   // panel says what came across and offers the rest. Nothing is stored until Create entry, and then only through the
   // ordinary create - so the copy has its own id, history and search entry, and nothing of the source's.
-  const sourceId = isNew ? searchParams.get('from') : null
+  const sourceId = isNew && isLore ? searchParams.get('from') : null
   // The universe's types, read with it. The page still works without them; a link field searches for itself.
   const typesRead = Array.isArray(typesFound)
   const types = typesRead ? typesFound : NO_TYPES
@@ -113,6 +115,7 @@ function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | 
     isEditing,
     suggesting,
     entryPath,
+    isLore,
   }
   const pictures = useEntryPicture(base)
   const load = useEntryLoad(base)
@@ -140,8 +143,8 @@ function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | 
     return (
       <EmptyState
         testId="entity-no-types"
-        title={t('entity.page.noTypes.title')}
-        hint={t('entity.page.noTypes.hint')}
+        title={isLore ? t('entity.page.noTypes.title') : t('projects.entries.needsType')}
+        hint={isLore ? t('entity.page.noTypes.hint') : t('projects.entries.needsTypeHint')}
         action={<Button to={entrySource.href.types}>{t('entity.page.noTypes.action')}</Button>}
       />
     )
@@ -173,18 +176,25 @@ function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | 
             testId="entity-missing"
             title={t('entity.page.missing.title')}
             hint={
-              <>
-                {access.manageTrash
-                  ? tx('entity.page.missing.withTrash', {
-                      link: (
-                        <Link to={entrySource.href.afterRemove}>
-                          {t('entity.page.missing.trashLink')}
-                        </Link>
-                      ),
-                    })
-                  : t('entity.page.missing.withoutTrash')}{' '}
-                <Link to={entrySource.href.list()}>{t('entity.page.missing.back')}</Link>
-              </>
+              isLore ? (
+                <>
+                  {access.manageTrash
+                    ? tx('entity.page.missing.withTrash', {
+                        link: (
+                          <Link to={entrySource.href.afterRemove}>
+                            {t('entity.page.missing.trashLink')}
+                          </Link>
+                        ),
+                      })
+                    : t('entity.page.missing.withoutTrash')}{' '}
+                  <Link to={entrySource.href.list()}>{t('entity.page.missing.back')}</Link>
+                </>
+              ) : (
+                <>
+                  {t('projects.gameEntities.entity.notFoundHint')}{' '}
+                  <Link to={entrySource.href.list()}>{t('projects.entities.title')}</Link>
+                </>
+              )
             }
           />
         }
@@ -211,7 +221,7 @@ function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | 
           phone's views line has room the tools line does not. */}
       {!isNew && !isEditing ? (
         <EntryBar
-          lenses={<EntryViewsNav {...entry} />}
+          lenses={isLore ? <EntryViewsNav {...entry} /> : null}
           tools={isWritingArticle ? null : <EntryTools {...entry} />}
         />
       ) : null}

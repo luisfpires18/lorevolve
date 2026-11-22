@@ -132,6 +132,8 @@ export interface EntitySummary {
   tags: string[]
   image: EntityImageRef | null
   updatedAt: string
+  /** A project entry's Lore entry, named on its card (#551). Never on a Lore entry. */
+  canonEntityName?: string | null
 
   /**
    * A few words of the article around what a search matched, cut by the API. Only on a search result whose article
@@ -151,6 +153,8 @@ export interface EntityDetail extends EntitySummary {
   version: number
   /** It has eras (Issue #30), read on their own route. */
   hasProgression: boolean
+  /** A project entry's Lore entry, which its save sends back (#551). */
+  canonEntityId?: string | null
 }
 
 export interface EntityPage {
