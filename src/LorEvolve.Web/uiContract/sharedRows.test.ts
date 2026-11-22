@@ -1,8 +1,8 @@
 // Run with `node --test uiContract/sharedRows.test.ts` (Node 22.18+ strips the types itself).
 //
 // Keeps the small shared rows on their parts (#456): a fact is Fact in a FactList, a foot bar is ActionBar, a panel's
-// head is PanelHead, a group rule is SectionTitle's `rule` tone, a removable chip is Token, a byline is VersionActor and
-// a publish list of names is NameListBlock. Every string literal counts, class strings built in template literals
+// head is PanelHead, a group rule is SectionTitle's `rule` tone, a removable chip is Token in a TokenList, a blocked
+// note is BlockedCallout, a byline is VersionActor and a publish list of names is NameListBlock. Every string literal counts, class strings built in template literals
 // included, so a class handed through a helper or a prop is caught too. Each list only shrinks: a stale entry fails.
 // Catalogue: docs/design/ui-components.md.
 
@@ -86,6 +86,18 @@ const RULES: Rule[] = [
     allowed: ['src/components/Token.tsx'],
   },
   {
+    why: 'a list of removable chips is TokenList (components/Token)',
+    writes: (word) => word === 'storylinks__list',
+    allowed: ['src/components/Token.tsx'],
+    tsxOnly: true,
+  },
+  {
+    why: 'a blocked note is BlockedCallout (lore/FieldBlockedNote)',
+    writes: (word) => word === 'types__blockedtext',
+    allowed: ['src/components/lore/FieldBlockedNote.tsx'],
+    tsxOnly: true,
+  },
+  {
     why: 'a byline is VersionActor with `at` or `lead` (components/VersionActor)',
     writes: (word) => word === 'reviewcomment__author',
     allowed: ['src/components/VersionActor.tsx'],
@@ -136,6 +148,14 @@ test('the shared rows guard catches a hand copy, template-built classes included
   assert.ok(offends('<button className="token__remove">', token))
   assert.ok(offends('<span className={`token__note ${x}`}>', token))
   assert.ok(!offends('<Token removeLabel={label} onRemove={remove}>', token))
+  const tokenList = rule('a list of removable chips')
+  assert.ok(offends('<ul className="storylinks__list">', tokenList))
+  assert.ok(!offends('<TokenList>{tokens}</TokenList>', tokenList))
+  const blockedNote = rule('a blocked note')
+  assert.ok(offends('<p className="types__blockedtext">{text}</p>', blockedNote))
+  assert.ok(
+    !offends('<BlockedCallout className="types__blocked" testId={id} text={text}>', blockedNote),
+  )
   const byline = rule('a byline')
   assert.ok(offends('<span className="reviewcomment__author">', byline))
   assert.ok(!offends('<p className="reviewcomment__meta">', byline))

@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { useI18n } from '../i18n'
 import { useTheme, type Theme } from '../lib/theme'
@@ -18,31 +18,70 @@ const OPTIONS: { value: Theme; icon: typeof Sun }[] = [
 export function ThemeSwitch({ inMenu = false }: { inMenu?: boolean }) {
   const { t } = useI18n()
   const [theme, setTheme] = useTheme()
+
+  return (
+    <SwitchGroup
+      label={t('account.theme.label')}
+      inMenu={inMenu}
+      value={theme}
+      onChange={setTheme}
+      options={OPTIONS.map(({ value, icon: Icon }) => ({
+        value,
+        label: t(value === 'light' ? 'account.theme.light' : 'account.theme.dark'),
+        icon: (className: string) => (
+          <Icon className={className} aria-hidden="true" focusable="false" strokeWidth={1.75} />
+        ),
+        testId: `theme-${value}`,
+      }))}
+    />
+  )
+}
+
+/**
+ * The account menu's switch, drawn by the theme and the language choice (`.themeswitch*`, not `SegmentedControl`'s
+ * `.segmented*`): a label, then one pressed button per option. `icon` gets the icon class, so each caller keeps its own
+ * icon props. Inside a menu the buttons keep it open. Catalogue: docs/design/ui-components.md.
+ */
+export function SwitchGroup<T extends string>({
+  label,
+  inMenu,
+  value: current,
+  onChange,
+  options,
+}: {
+  label: string
+  inMenu: boolean
+  value: T
+  onChange: (value: T) => void
+  options: readonly {
+    value: T
+    label: string
+    icon: (className: string) => ReactNode
+    testId: string
+    lang?: string
+  }[]
+}) {
   const labelId = useId()
 
   return (
     <div className={inMenu ? 'themeswitch themeswitch--menu' : 'themeswitch'}>
       <span className="themeswitch__label" id={labelId}>
-        {t('account.theme.label')}
+        {label}
       </span>
       <div className="themeswitch__track" role="group" aria-labelledby={labelId}>
-        {OPTIONS.map(({ value, icon: Icon }) => (
+        {options.map(({ value, label: shown, icon, testId, lang }) => (
           <button
             key={value}
             type="button"
             className="themeswitch__option"
-            aria-pressed={theme === value}
-            onClick={() => setTheme(value)}
+            lang={lang}
+            aria-pressed={current === value}
+            onClick={() => onChange(value)}
             data-keep-open={inMenu ? '' : undefined}
-            data-testid={`theme-${value}`}
+            data-testid={testId}
           >
-            <Icon
-              className="themeswitch__icon"
-              aria-hidden="true"
-              focusable="false"
-              strokeWidth={1.75}
-            />
-            {t(value === 'light' ? 'account.theme.light' : 'account.theme.dark')}
+            {icon('themeswitch__icon')}
+            {shown}
           </button>
         ))}
       </div>
