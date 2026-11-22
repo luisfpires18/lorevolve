@@ -32,6 +32,7 @@
   --warning: #8a5300;
   --success: #17754b;
 
+  --shadow-card: 0 1px 2px rgb(23 20 31 / 0.06), 0 4px 12px -6px rgb(23 20 31 / 0.12);
   --shadow-raised: 0 12px 32px -12px rgb(23 20 31 / 0.22), 0 2px 6px -2px rgb(23 20 31 / 0.1);
 
   /* Type: three UI sizes and two titles */
@@ -71,7 +72,7 @@
 
   --bg: #0a0a0b;
   --bg-subtle: #101012;
-  --bg-raised: #17171a;
+  --bg-raised: #151517;
   --bg-hover: #1b1b1f;
   --bg-selected: #2b1218;
   --backdrop: rgb(0 0 0 / 0.6);
@@ -93,5 +94,6 @@
   --warning: #e7b35a;
   --success: #5fcf9a;
 
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 16px -8px rgb(0 0 0 / 0.7);
   --shadow-raised: 0 16px 40px -12px rgb(0 0 0 / 0.8), 0 2px 6px -2px rgb(0 0 0 / 0.6);
 }

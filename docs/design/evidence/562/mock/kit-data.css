@@ -1,10 +1,11 @@
 /* Workspace redesign (#562): kit parts that hold data. No table: lists of things are cards, short lists are rows. */
 
-/* Card: one thing in a list. Picture, name, type, state. Selectable. */
+/* Card: today's entity card, kept. A large picture, the name in the reading serif, the type with its own icon and
+   colour, the status as a dot and a word, two lines of summary. It rests on a raised surface and lifts when pointed at. */
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-  gap: var(--s3);
+  grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+  gap: var(--s4);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -13,49 +14,67 @@
 .card {
   position: relative;
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
-  gap: var(--s3);
-  padding: var(--s3);
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--s4);
+  padding: var(--s4);
   border: 1px solid var(--line);
-  border-radius: var(--r-panel);
+  border-radius: 10px;
   background: var(--bg-raised);
+  box-shadow: var(--shadow-card);
   transition:
     border-color var(--fast) var(--ease),
-    background var(--fast) var(--ease);
+    box-shadow var(--slow) var(--ease),
+    transform var(--slow) var(--ease);
 }
 
 .card:hover {
   border-color: var(--line-strong);
-  background: var(--bg-hover);
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-2px);
 }
 
 .card:has(.card__pick:checked) {
   border-color: var(--accent-text);
   background: var(--bg-selected);
+  box-shadow: inset 0 0 0 1px var(--accent-text);
 }
 
 .card__picture {
-  width: 4.5rem;
-  height: 4.5rem;
+  display: grid;
+  place-items: center;
+  width: 6rem;
+  height: 6rem;
   border-radius: var(--r-control);
-  background: var(--bg-selected);
   object-fit: cover;
 }
 
+/* No picture yet: a tile in the type's colour with the type's icon. */
+.card__picture--blank {
+  background: color-mix(in srgb, var(--type) 16%, var(--bg-subtle));
+  color: var(--type);
+}
+
+.card__picture--blank svg.lucide {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
 .card__body {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: var(--s1);
   min-width: 0;
   padding-right: var(--s5);
 }
 
 .card__name {
+  display: -webkit-box;
   overflow: hidden;
-  font-size: var(--text-body);
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font: 500 1.1875rem / 1.25 var(--font-read);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 /* The whole card opens the entry; the checkbox sits above the link. */
@@ -67,17 +86,63 @@
 
 .card__meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--s2);
+  gap: var(--s1) var(--s3);
+  margin-top: var(--s1);
   color: var(--text-muted);
-  font-size: var(--text-meta);
+  font-size: var(--text-ui);
+}
+
+.card__type {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.card__type svg.lucide {
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--type);
+}
+
+/* Status: a dot and a word, never colour alone. Canon is full, Draft is half, Idea is hollow. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.status::before {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}
+
+.status--draft::before {
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+.status--idea::before {
+  background: transparent;
+}
+
+.status--conflict {
+  color: var(--warning);
 }
 
 .card__summary {
   display: -webkit-box;
   overflow: hidden;
+  margin-top: var(--s1);
   color: var(--text-muted);
   font-size: var(--text-ui);
+  line-height: 1.5;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -85,8 +150,8 @@
 
 .card__pick,
 .check {
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   margin: 0;
   accent-color: var(--accent);
 }

@@ -13,8 +13,7 @@
 }
 
 .page__title {
-  font-size: var(--text-title);
-  font-weight: 600;
+  font: 500 1.75rem / 1.2 var(--font-read);
   letter-spacing: -0.01em;
 }
 
@@ -60,10 +59,8 @@
 }
 
 .detail__title {
-  font-size: var(--text-document);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font: 500 2.25rem / 1.15 var(--font-read);
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
@@ -201,4 +198,8 @@
 .filterbox .input {
   min-height: var(--control-h);
   padding: 0 var(--s3) 0 var(--s6);
+}
+
+.selection[hidden] {
+  display: none;
 }

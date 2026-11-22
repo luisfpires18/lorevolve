@@ -22,22 +22,42 @@ const RECENT = [
   ['Harrowmere harbour map', 'Map, yesterday'],
   ['A lantern is never lit at slack tide', 'World rule, 3 days ago'],
 ]
-const STAMP = { Canon: 'stamp--ok', Conflict: 'stamp--warn', Draft: '' }
+const TYPE = {
+  Character: ['user-round', '#7c8cf0'],
+  Settlement: ['castle', '#d19a4a'],
+  Organization: ['users-round', '#b98ae6'],
+  Item: ['gem', '#e0b24f'],
+  Event: ['calendar-days', '#e2795e'],
+  Species: ['paw-print', '#5fbf8f'],
+}
+const BLANK = new Set(['Corwin Thatchlow', 'The winter of the late fleet'])
 
 const app = document.getElementById('app')
 const screen = document.getElementById('screen')
 const slots = { crumbs: document.getElementById('crumbs'), actions: document.getElementById('actions') }
 const params = new URLSearchParams(location.search)
 
-const card = ([name, type, canon, summary], index) => `<li class="card">
-  <img class="card__picture" alt="" src="https://picsum.photos/seed/${encodeURIComponent(name.slice(0, 12))}/144/144" />
+const picture = (name, icon) =>
+  BLANK.has(name)
+    ? `<span class="card__picture card__picture--blank"><i data-lucide="${icon}"></i></span>`
+    : `<img class="card__picture" alt="" src="https://picsum.photos/seed/${encodeURIComponent(name.slice(0, 12))}/192/192" />`
+
+const card = ([name, type, status, summary], index) => {
+  const [icon, colour] = TYPE[type]
+  const picked = index < Number(params.get('picked') ?? 0) ? 'checked' : ''
+  return `<li class="card" style="--type: ${colour}">
+  ${picture(name, icon)}
   <div class="card__body">
     <a class="card__name" href="#entry"><bdi>${name}</bdi></a>
-    <span class="card__meta">${type}<span class="stamp ${STAMP[canon]}">${canon}</span></span>
+    <span class="card__meta">
+      <span class="card__type"><i data-lucide="${icon}"></i>${type}</span>
+      <span class="status status--${status.toLowerCase()}">${status}</span>
+    </span>
     <span class="card__summary">${summary}</span>
   </div>
-  <input class="card__pick" type="checkbox" aria-label="Select ${name}" ${index < Number(params.get('picked') ?? 0) ? 'checked' : ''} />
+  <input class="card__pick" type="checkbox" aria-label="Select ${name}" ${picked} />
 </li>`
+}
 
 function selection() {
   const picks = [...document.querySelectorAll('.card__pick')]
