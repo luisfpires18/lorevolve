@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { GuardMark } from '../SystemMachineTry'
+import { GuardMark, MachineGroup } from '../SystemMachineTry'
 import { t } from '../../i18n'
 import type { MachineTransition } from '../../worldLogic/machine'
 import { MACHINE_MAX_TRANSITIONS } from '../../worldLogic/types'
@@ -12,9 +12,7 @@ type State = ReturnType<typeof useMachinePanelState>
 type Actions = ReturnType<typeof machinePanelActions>
 import type { GuardMarkValue } from '../../worldLogic/markText'
 import { NewButton } from '../NewButton'
-import { FormActions } from '../FormActions'
-import { SectionTitle } from '../Section'
-import { LinkRow } from '../LinkRow'
+import { LinkRow, RuleList } from '../LinkRow'
 
 /** The machine panel's transitions group: one row per transition with its guard, and Add transition. */
 export function MachineTransitions({
@@ -33,10 +31,21 @@ export function MachineTransitions({
     rowError: (item: string) => ReactNode
   }) {
   return (
-    <section className="machinepanel__group">
-      <SectionTitle tone="rule">{t(`${m}.transitions`)}</SectionTitle>
+    <MachineGroup
+      title={t(`${m}.transitions`)}
+      add={
+        <NewButton
+          tone="secondary"
+          disabled={draft.states.length < 2 || draft.transitions.length >= MACHINE_MAX_TRANSITIONS}
+          onClick={() => setOpen({ kind: 'transition', id: null })}
+          data-testid="machine-add-transition"
+        >
+          {t(`${m}.addTransition`)}
+        </NewButton>
+      }
+    >
       {draft.transitions.length > 0 ? (
-        <ul className="rulelist" data-testid="machine-transition-rows">
+        <RuleList testId="machine-transition-rows">
           {draft.transitions.map((transition) => {
             const name = transition.label.trim() || pairName(transition)
             return (
@@ -69,21 +78,11 @@ export function MachineTransitions({
               />
             )
           })}
-        </ul>
+        </RuleList>
       ) : null}
       {draft.states.length === 1 ? (
         <QuietNote spacing="hint">{t(`${m}.needTwoStates`)}</QuietNote>
       ) : null}
-      <FormActions inline>
-        <NewButton
-          tone="secondary"
-          disabled={draft.states.length < 2 || draft.transitions.length >= MACHINE_MAX_TRANSITIONS}
-          onClick={() => setOpen({ kind: 'transition', id: null })}
-          data-testid="machine-add-transition"
-        >
-          {t(`${m}.addTransition`)}
-        </NewButton>
-      </FormActions>
-    </section>
+    </MachineGroup>
   )
 }

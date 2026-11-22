@@ -166,35 +166,17 @@ test('a page tail is PagedList, a world rule row is WorldRuleRow, an ellipsis is
 })
 
 test('a rule list is RuleList, a machine group is MachineGroup, a grouped list is GroupedRows', () => {
-  check(
-    handRuleList,
-    tsxFiles,
-    new Set([
-      'src/components/worldLogic/MachineBinding.tsx',
-      'src/components/worldLogic/MachineStates.tsx',
-      'src/components/worldLogic/MachineTransitions.tsx',
-      'src/components/worldLogic/SystemRow.tsx',
-    ]),
-    'use RuleList',
-  )
+  check(handRuleList, tsxFiles, new Set(['src/components/LinkRow.tsx']), 'use RuleList')
   check(
     handMachineGroup,
     tsxFiles,
-    new Set([
-      'src/components/SystemMachineTry.tsx',
-      'src/components/worldLogic/MachineBinding.tsx',
-      'src/components/worldLogic/MachineStates.tsx',
-      'src/components/worldLogic/MachineTransitions.tsx',
-    ]),
+    new Set(['src/components/SystemMachineTry.tsx']),
     'use MachineGroup',
   )
   check(
     handGroupedRows,
     tsxFiles,
-    new Set([
-      'src/components/knowledge/RecordList.tsx',
-      'src/components/relationships/RelationsList.tsx',
-    ]),
+    new Set(['src/components/relationships/RelationsList.tsx']),
     'use GroupedRows',
   )
 })
