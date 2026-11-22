@@ -125,6 +125,7 @@ const LORE_ONLY = [
   '"lore-select"',
   '<LoreSelectBar',
   '"lore-trashed"',
+  '"lore-mass-created"',
 ]
 // Comments cut out, their line breaks kept, so "the 12 lines above" counts the file's own lines.
 const codeLines = (source: string) =>

@@ -48,7 +48,7 @@ export function LoreStatus({
         </p>
       ) : null}
 
-      {massCreated !== null ? (
+      {isLore && massCreated !== null ? (
         <p className="lore__created" role="status" data-testid="lore-mass-created">
           <ActionIcon icon={Check} />
           {tn('lore.page.created', massCreated, { n: massCreated })}
