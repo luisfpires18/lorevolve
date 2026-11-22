@@ -124,7 +124,6 @@ const PROJECT_COMPONENTS: string[] = [
   'src/components/StoryForm.tsx',
   'src/components/StoryPartForm.tsx',
   'src/components/StoryRedirect.tsx',
-  'src/components/projectEntities/EntryPictures.tsx',
   'src/components/projectEntities/EpisodeForm.tsx',
   'src/components/projectEntities/NodeEditor.tsx',
   'src/components/projectEntities/OutlineBranch.tsx',

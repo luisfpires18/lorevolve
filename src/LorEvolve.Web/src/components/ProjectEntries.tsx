@@ -6,7 +6,6 @@ import { Section } from './Section'
 import { Field } from './Field'
 import { useLocation } from 'react-router-dom'
 import {
-  FieldKind,
   type ProjectEntitySummary,
   type ProjectEntityType,
   type ProjectField,
@@ -154,9 +153,6 @@ export function ProjectEntries({
   // A type's own fields and the ones it inherits are both filled in on an entry; they differ only in where they are
   // defined, which is the Types screen's business and not this one's.
   const fields: ProjectField[] = type ? [...type.fields, ...type.inheritedFields] : []
-  const imageFieldIds = new Set(
-    fields.filter((one) => one.kind === FieldKind.Image).map((one) => one.id),
-  )
   // The types above this one, each a link to its own list, as Lore's path reads above a type's list.
   const ancestors = (type && buildTypeTree(types).byId.get(type.id)?.path.slice(0, -1)) || []
 
@@ -257,8 +253,6 @@ export function ProjectEntries({
           setBusy={setBusy}
           refresh={refresh}
           failing={failing}
-          fields={fields}
-          imageFieldIds={imageFieldIds}
         />
       )}
       <ShowMore
