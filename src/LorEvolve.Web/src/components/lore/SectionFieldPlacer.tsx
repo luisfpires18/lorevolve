@@ -2,7 +2,7 @@ import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
 import type { FieldDefinition } from '../../lore/typeDefinitions'
 import { MoveItems } from '../MoveItems'
-import { SectionTitle } from '../Section'
+import { DrawerSection } from '../Section'
 
 /** The sections drawer's fields, under the group each is in: its section and its place in that group. */
 export function SectionFieldPlacer({
@@ -22,10 +22,7 @@ export function SectionFieldPlacer({
 }) {
   const { t } = useI18n()
   return (
-    <section className="drawer__group" aria-labelledby="sections-fields">
-      <SectionTitle level={3} tone="rule-accent" id="sections-fields">
-        {t('entityTypes.sections.fields')}
-      </SectionTitle>
+    <DrawerSection title={t('entityTypes.sections.fields')} titleId="sections-fields">
       {groups.map((group) => (
         <div className="stack stack--2" key={group.key || 'none'}>
           <p className="sectionfields__label">
@@ -70,6 +67,6 @@ export function SectionFieldPlacer({
           </ol>
         </div>
       ))}
-    </section>
+    </DrawerSection>
   )
 }

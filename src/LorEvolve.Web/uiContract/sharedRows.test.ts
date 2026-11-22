@@ -111,16 +111,7 @@ const RULES: Rule[] = [
   {
     why: 'a drawer section is DrawerSection (components/Section)',
     writes: (word) => word === 'drawer__group',
-    allowed: [
-      'src/components/TypeDialogBehaviour.tsx',
-      'src/components/TypeDialogIdentity.tsx',
-      'src/components/TypeDialogPlace.tsx',
-      'src/components/TypeFromTemplateDrawer.tsx',
-      'src/components/TypeGroupsField.tsx',
-      'src/components/lore/SectionFieldPlacer.tsx',
-      'src/components/lore/SectionListEditor.tsx',
-      'src/components/worldLogic/GuardBuilderDrawer.tsx',
-    ],
+    allowed: ['src/components/Section.tsx', 'src/components/worldLogic/GuardBuilderDrawer.tsx'],
   },
 ]
 
