@@ -1288,7 +1288,6 @@ internal static partial class BackupValidation
         /// <summary>The universe's projects (version 39), so a project-scoped entry type can name one of them.</summary>
         private void RegisterProjects(IReadOnlyList<BackupCreativeProject> projects)
         {
-            var names = new HashSet<string>(StringComparer.Ordinal);
             foreach (var project in projects)
             {
                 if (project is null)
@@ -1314,10 +1313,8 @@ internal static partial class BackupValidation
                     _comicProjects.Add(project.Id);
                 }
 
-                if (Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true) && !names.Add(project.Name))
-                {
-                    Add(BackupIssueCodes.Duplicate, $"Two projects are both called {Quote(project.Name)}.");
-                }
+                // Two projects may share a name: nothing stops it on create or rename, and everything names a project by id.
+                Text(project.Name, ProjectLimits.NameMaxLength, $"{what}'s name", required: true);
 
                 Text(project.Subtype, ProjectLimits.SubtypeMaxLength, $"{what}'s subtype");
                 Text(project.Summary, ProjectLimits.SummaryMaxLength, $"{what}'s summary");
