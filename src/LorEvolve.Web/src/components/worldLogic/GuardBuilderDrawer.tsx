@@ -3,9 +3,8 @@ import { Field } from '../Field'
 import { GuardBuilder } from '../GuardBuilder'
 import { t } from '../../i18n'
 import { sameCondition } from '../../worldLogic/guardSummary'
-import type { SystemRuleSummary } from '../../worldLogic/types'
+import { MACHINE_TEXT_MAX_LENGTH, type SystemRuleSummary } from '../../worldLogic/types'
 import { m, gb } from '../../worldLogic/machinePanelTypes'
-import { textInput } from '../../worldLogic/machineDrawerFields'
 import { useGuardDrawerState } from '../../worldLogic/useGuardDrawerState'
 import { guardDrawerActions } from '../../worldLogic/guardDrawerActions'
 import { useGuardDrawerEffects } from '../../worldLogic/useGuardDrawerEffects'
@@ -110,9 +109,19 @@ export function GuardBuilderDrawer({
 
       {load === 'ready' ? (
         <>
-          <Field label={t(`${gb}.fields.title`)} error={titleError}>
-            {textInput(title, setTitle, t(`${gb}.placeholders.title`), 'guard-builder-title', true)}
-          </Field>
+          <Field
+            name={null}
+            label={t(`${gb}.fields.title`)}
+            error={titleError}
+            type="text"
+            dir="auto"
+            value={title}
+            maxLength={MACHINE_TEXT_MAX_LENGTH}
+            placeholder={t(`${gb}.placeholders.title`)}
+            onChange={(event) => setTitle(event.target.value)}
+            aria-required
+            data-testid="guard-builder-title"
+          />
           <div className="drawer__group">
             <SectionTitle level={3} tone="rule" id={conditionId}>
               {t(`${gb}.condition`)}

@@ -42,6 +42,9 @@ test('the field control guard catches a hand-written control, template-built cla
   assert.ok(!writes('<Field as="select" controlClassName="idea__universe">{o}</Field>'))
   assert.ok(!writes('<Field name={null} controlClassName="field__input--title" />'))
   assert.ok(!writes('<input className="field__inputs" />'))
+  assert.ok(writes('(control) => <input id={control.id} className="field__input" type="text" />'))
+  assert.ok(!writes('<Field name={null} type="text" dir="auto" maxLength={MAX} data-testid="x" />'))
+  assert.ok(!writes('<Field as="textarea" id={x} rows={5} readOnly={held} />'))
   assert.ok(slotSelect('<select {...control} value={v}>{o}</select>'))
   assert.ok(slotSelect('<select id={control.id} onChange={(e) => f(e)}>{o}</select>'))
   assert.ok(
@@ -49,7 +52,11 @@ test('the field control guard catches a hand-written control, template-built cla
       "<select id={s} onChange={(e) => f(e)} aria-invalid={control['aria-invalid']}>{o}</select>",
     ),
   )
+  assert.ok(
+    slotSelect('(control: { id: string }) => (<select id={control.id} value={v}>{o}</select>)'),
+  )
   assert.ok(!slotSelect('<Field as="select" id="x">{o}</Field>'))
+  assert.ok(!slotSelect('<Field as="select" id="canon-severity" after={note}>{o}</Field>'))
   assert.ok(!slotSelect('<select id={storyId} aria-describedby={describedBy}>{o}</select>'))
 })
 
@@ -66,8 +73,6 @@ const STAYS: string[] = [
   'src/components/MapPinForm.tsx',
   'src/components/PercentField.tsx',
   'src/components/PublicDetailsForm.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/RelationshipPeriodsField.tsx',
   'src/components/ScenePicks.tsx',
   'src/components/SearchField.tsx',
   'src/components/TypeGroupsField.tsx',
@@ -77,10 +82,8 @@ const STAYS: string[] = [
   'src/components/WorldRuleCheckSection.tsx',
   'src/components/aiChanges/EditChange.tsx',
   'src/components/aiChanges/MediaChange.tsx',
-  'src/components/canon/CanonControls.tsx',
   'src/components/chronology/CalendarMonthRow.tsx',
   'src/components/chronology/ChronologyEraRow.tsx',
-  'src/components/ideas/BoardCardInspector.tsx',
   'src/components/ideas/QuickCapture.tsx',
   'src/components/lore/EntryHeader.tsx',
   'src/components/lore/FieldFilterEditor.tsx',
@@ -101,11 +104,9 @@ const STAYS: string[] = [
   'src/components/worldLogic/Operand.tsx',
   'src/components/worldLogic/Related.tsx',
   'src/components/worldLogic/SystemDetails.tsx',
-  'src/components/worldLogic/TransitionDrawer.tsx',
   'src/components/worldLogic/TypedValue.tsx',
   'src/components/worldRules/WorldRuleForm.tsx',
   'src/worldLogic/guardBuilderKeys.ts',
-  'src/worldLogic/machineDrawerFields.tsx',
 ]
 
 test('a plain control under a label is drawn by Field', () => {
@@ -127,14 +128,9 @@ test('a plain control under a label is drawn by Field', () => {
 const SLOT_SELECTS: string[] = [
   'src/components/ChronologyPointFields.tsx',
   'src/components/FieldInputs.tsx',
-  'src/components/QuickCreateDialog.tsx',
-  'src/components/RelationshipPeriodsField.tsx',
   'src/components/ValidationTermSelect.tsx',
-  'src/components/canon/CanonControls.tsx',
   'src/components/progression/EraStories.tsx',
-  'src/components/ruleValidation/NewTermForm.tsx',
   'src/components/timeline/StoryLinks.tsx',
-  'src/components/worldLogic/TransitionDrawer.tsx',
 ]
 
 test('a select given a Field slot\'s control is Field as="select"', () => {

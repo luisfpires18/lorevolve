@@ -31,22 +31,19 @@ export function NewTermForm({
   }) {
   return (
     <div className="types__new terms__new">
-      <Field label={t('canon.terms.newKind')} id={`${headingId}-new-kind`}>
-        {(control) => (
-          <select
-            id={control.id}
-            className="field__input field__input--select"
-            value={newKind}
-            onChange={(event) => setNewKind(Number(event.target.value) as ValidationTermKindValue)}
-            data-testid="new-term-kind"
-          >
-            {TERM_KIND_ORDER.map((kind) => (
-              <option key={kind} value={kind}>
-                {TERM_KIND_LABELS[kind]}
-              </option>
-            ))}
-          </select>
-        )}
+      <Field
+        as="select"
+        label={t('canon.terms.newKind')}
+        id={`${headingId}-new-kind`}
+        value={newKind}
+        onChange={(event) => setNewKind(Number(event.target.value) as ValidationTermKindValue)}
+        data-testid="new-term-kind"
+      >
+        {TERM_KIND_ORDER.map((kind) => (
+          <option key={kind} value={kind}>
+            {TERM_KIND_LABELS[kind]}
+          </option>
+        ))}
       </Field>
       <Field
         label={t('canon.terms.newName')}

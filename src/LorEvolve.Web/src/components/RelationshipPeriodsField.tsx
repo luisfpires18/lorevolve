@@ -135,36 +135,30 @@ export function RelationshipPeriodsField({
                   <div {...group} className="stack stack--3">
                     {period.kind === 'era' ? (
                       <Field
+                        as="select"
                         label={t('relationships.periods.era')}
                         id={`${period.key}-era`}
                         error={eraError}
+                        value={period.entityEraId}
+                        onChange={(event) => {
+                          const chosen = options.find((era) => era.id === event.target.value)
+                          patch(index, {
+                            entityEraId: event.target.value,
+                            eraLabel: chosen?.label ?? null,
+                          })
+                        }}
+                        data-testid={`relation-period-${index}-era-select`}
                       >
-                        {(control) => (
-                          <select
-                            {...control}
-                            className="field__input field__input--select"
-                            value={period.entityEraId}
-                            onChange={(event) => {
-                              const chosen = options.find((era) => era.id === event.target.value)
-                              patch(index, {
-                                entityEraId: event.target.value,
-                                eraLabel: chosen?.label ?? null,
-                              })
-                            }}
-                            data-testid={`relation-period-${index}-era-select`}
-                          >
-                            <option value="">
-                              {erasReading
-                                ? t('relationships.periods.readingStages')
-                                : t('relationships.periods.chooseStage')}
-                            </option>
-                            {options.map((era) => (
-                              <option key={era.id} value={era.id}>
-                                {era.label}
-                              </option>
-                            ))}
-                          </select>
-                        )}
+                        <option value="">
+                          {erasReading
+                            ? t('relationships.periods.readingStages')
+                            : t('relationships.periods.chooseStage')}
+                        </option>
+                        {options.map((era) => (
+                          <option key={era.id} value={era.id}>
+                            {era.label}
+                          </option>
+                        ))}
                       </Field>
                     ) : (
                       <>

@@ -5,7 +5,7 @@ import { Field } from '../Field'
 import { t } from '../../i18n'
 import type { MachineDoc } from '../../worldLogic/machine'
 import { m } from '../../worldLogic/machinePanelTypes'
-import { textInput } from '../../worldLogic/machineDrawerFields'
+import { MACHINE_TEXT_MAX_LENGTH } from '../../worldLogic/types'
 import { QuietNote } from '../QuietNote'
 
 export function BindingDrawer({
@@ -44,22 +44,30 @@ export function BindingDrawer({
         cancelTestId: 'machine-binding-cancel',
       }}
     >
-      <Field label={t(`${m}.fields.subjectType`)} error={errors?.subjecttype}>
-        {textInput(
-          form.subjectType,
-          (subjectType) => edit({ subjectType }),
-          t(`${m}.placeholders.subjectType`),
-          'machine-binding-subject-type',
-        )}
-      </Field>
-      <Field label={t(`${m}.fields.attribute`)} error={errors?.attribute}>
-        {textInput(
-          form.attribute,
-          (attribute) => edit({ attribute }),
-          t(`${m}.placeholders.attribute`),
-          'machine-binding-attribute',
-        )}
-      </Field>
+      <Field
+        name={null}
+        label={t(`${m}.fields.subjectType`)}
+        error={errors?.subjecttype}
+        type="text"
+        dir="auto"
+        value={form.subjectType}
+        maxLength={MACHINE_TEXT_MAX_LENGTH}
+        placeholder={t(`${m}.placeholders.subjectType`)}
+        onChange={(event) => edit({ subjectType: event.target.value })}
+        data-testid="machine-binding-subject-type"
+      />
+      <Field
+        name={null}
+        label={t(`${m}.fields.attribute`)}
+        error={errors?.attribute}
+        type="text"
+        dir="auto"
+        value={form.attribute}
+        maxLength={MACHINE_TEXT_MAX_LENGTH}
+        placeholder={t(`${m}.placeholders.attribute`)}
+        onChange={(event) => edit({ attribute: event.target.value })}
+        data-testid="machine-binding-attribute"
+      />
     </Drawer>
   )
 }
