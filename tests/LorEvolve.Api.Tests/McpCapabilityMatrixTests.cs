@@ -186,6 +186,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
         LorEvolveMcpProposalTools.OptionsTool,
         LorEvolveMcpProposalTools.ProposeTool,
         LorEvolveMcpProposalTools.ReadTool,
+        LorEvolveMcpIdeaTools.GetTool,
     ];
 
     /// <summary>Resources a proposal may name that no universe route of its own answers for.</summary>
@@ -235,7 +236,7 @@ public sealed class McpCapabilityMatrixTests(LorEvolveApiFactory factory) : ICla
 
         Nothing("Tools the server offers that the matrix does not map", [.. offered.Except(mapped).Order(StringComparer.Ordinal)]);
         Nothing("Names the matrix maps that the server does not offer", [.. mapped.Except(offered).Order(StringComparer.Ordinal)]);
-        Assert.Equal(38, offered.Count);
+        Assert.Equal(39, offered.Count);
     }
 
     [Fact]

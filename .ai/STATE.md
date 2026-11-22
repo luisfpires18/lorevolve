@@ -127,6 +127,7 @@ Closed since the old entries were written: #33 security, #11 recovery, #56 MCP p
   ask for the `dev` to `master` release when ready; ChatGPT's connector must be refreshed to see new tools (it showed a
   stale list on PROD). Not yet tried in a real client. Per-tool status lives in `docs/testing/mcp-capability-matrix.md`
   "Tool status"; keep it current with every MCP change (a test fails when a tool has no row).
+- **`get_idea`** (MCP read tool): the owner, on a connection allowed to propose, opens one idea in full by the id `get_change_options` lists.
 - **Real-device PWA**: Lore entities in an installed iOS, Android and desktop app (`docs/testing/pwa-checklist.md`).
   Passed only in Chromium simulation; #58 was closed without that check.
 - **Maps on a device**: a real map, real touch, a connected app's phrasing over the geography tools
