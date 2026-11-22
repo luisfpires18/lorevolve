@@ -24,13 +24,11 @@ export function LoreStatus({
   typesFailed,
   retry,
   trashedNotice,
-  universe,
   massCreated,
   refreshTypes,
   view,
   children,
 }: {
-  universe: ReturnType<typeof useWorkspaceTypes>['universe']
   massCreated: number | null
   refreshTypes: ReturnType<typeof useWorkspaceTypes>['refreshTypes']
   view: LoadState
@@ -44,8 +42,7 @@ export function LoreStatus({
       {trashedNotice ? (
         <p className="lore__created" role="status" data-testid="lore-trashed">
           <ActionIcon icon={Check} />
-          {trashedNotice}{' '}
-          <Link to={`/app/universes/${universe.id}/trash`}>{t('lore.page.openTrash')}</Link>
+          {trashedNotice} <Link to={entrySource.href.afterRemove}>{t('lore.page.openTrash')}</Link>
         </p>
       ) : null}
 

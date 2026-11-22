@@ -177,7 +177,7 @@ function EntityScreen({ view, entityId }: { view: EntryView; entityId: string | 
                 {access.manageTrash
                   ? tx('entity.page.missing.withTrash', {
                       link: (
-                        <Link to={`/app/universes/${universe.id}/trash`}>
+                        <Link to={entrySource.href.afterRemove}>
                           {t('entity.page.missing.trashLink')}
                         </Link>
                       ),

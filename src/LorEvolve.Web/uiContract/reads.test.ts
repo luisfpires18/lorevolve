@@ -187,8 +187,9 @@ const entryApi = (source: string) =>
     code(source),
   )
 
-// A hand-built `/lore` or `/types` address of a universe.
-const entryAddress = (source: string) => /universes\/\$\{[^}]*\}\/(lore|types)\b/.test(code(source))
+// A hand-built `/lore`, `/types` or `/trash` address of a universe.
+const entryAddress = (source: string) =>
+  /universes\/\$\{[^}]*\}\/(lore|types|trash)\b/.test(code(source))
 
 // Lore-only files the source does not reach. Only shrinks.
 const ENTRY_SOURCE_EXCEPTIONS = new Set([
@@ -209,7 +210,8 @@ test('the entry source guard catches an entry call or a hand-built entry address
   assert.ok(entryAddress('`/app/universes/${universeId}/lore/${id}`'))
   assert.ok(entryAddress('`/app/universes/${universe.id}/types`'))
   assert.ok(!entryAddress("from '../../lore/api'"))
-  assert.ok(!entryAddress('`/app/universes/${universe.id}/trash`'))
+  assert.ok(entryAddress('`/app/universes/${universe.id}/trash`'))
+  assert.ok(!entryAddress('`/app/universes/${universe.id}/family-tree`'))
   assert.ok(!entryAddress('`${entryPath}/relations`'))
   assert.ok(!entryAddress('entrySource.href.list(typeId)'))
   assert.ok(entryScreen('src/lore/useEntrySave.ts'))

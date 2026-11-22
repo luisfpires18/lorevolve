@@ -202,7 +202,6 @@ export default function LorePage() {
       <LoreStatus
         {...entries}
         {...entrySelection}
-        universe={universe}
         massCreated={massCreated}
         refreshTypes={refreshTypes}
         view={view}
