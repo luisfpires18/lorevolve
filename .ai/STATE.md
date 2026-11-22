@@ -47,13 +47,13 @@ example and Literata. Still open there: the step 4 screenshot shows an empty sce
 deferred.
 
 ## In flight
-- #456 lane #493 (PR #503): the Ideas and Boards pickers are one `SearchPickDrawer`; `EditorHead` (in `DocumentHead.tsx`) and `SaveBar` (in `SaveAction.tsx`) by name, `EditorSaveBar.tsx` gone. `SYSTEMS.md` lines 436, 437, 609 still name the old files: owner to fix or assign.
-- #456 lane #495 (L6, branch `refactor/field-lists`): active, archived and inherited field rows draw one `lore/FieldListRow`. The other L6 targets were already folded by #456.
-- #456 lane #497 (L7, branch `refactor/world-logic-rows`): canvas cards draw one `CanvasCardButton`, `NumberInput` folded into `TypedValue`, finding and System rows' region is `DisclosurePanel`. The row toggle was already `LinkRow` + `useReadOnOpen` on dev.
-- #456 lane #511 (L8, branch `refactor/relationship-kinds`): relation kind names are one `KindFields`, the family meaning one `FamilySemanticSelect` (Family Tree dialog and Types), `RelationFormPeriods` folded into `RelationshipPeriodsField`. The panel heads were already `PanelHead` on dev.
-- #456 lane L9 (branch `refactor/shell-auth-collab`): one `BrandLink` for every brand home link, one `SessionPending` plate, `ConsentForm` out of `ConnectAuthorizePage`, `ConsentLayout` folded into `AuthLayout variant="card"`, auth pages on `FormMessage`, collaborator rows on `CollabRow` + `useRoleChange` and lists on `CollabSection` (the two confirms stay separate, #255). `WorkspaceBar` was already shared on dev.
-- #456 lane #499 (L11, PR #501): workspace pages on `MapCard`, `AiChangeRow`, `OverviewLede`/`OverviewContents`, `ChronologyReading`, `WorldRuleReading`, `WorldRulesList` and the `MissingState` preset; UniverseSettings on `TabPanel`, one MapForm branch, `workspace.missing.hint` (#485). Project meta, the game load, the shelf cover change and the shelf notices are helpers in `projects/`, since the `projectParts` guard refuses a new project component (owner rule 2026-11-20).
-- #456 merge candidates M5 and M6 (branches `refactor/callout-merge` PR #520, `refactor/use-draft-form`): W1 one `Callout` and `StaleChoice` for notice and stale boxes; W2 one `lib/useDraftForm` (draft read once, `edit`, `isDirty`) for the pin, map, story, chapter and arc, scene, era, form, moment, state, transition and binding forms. W3 (#523, branch `refactor/name-note-adoption`): the map and moment drawers' name and note pair on `NameNoteFields`, `MapFormName` gone; `IdeaFormFields` stays (own ids, count, read-only lock). W4 (#525): `EntityMultiPicker`, `BulkEraseConfirm` and `FieldStaleNotice` gone, their callers on `EntityPicker multiple`, `EraseConfirm` and `StaleChoice`. W5 (branch `refactor/readgate-states`): `ReadGate` draws an `elsewhere` node; RecordUnavailable and ConnectedApps read through it.
+Checked 2026-11-22. Nothing from #456, #551 or #557 is in flight: all of it is merged and on PROD (release PR #559).
+
+- #456 stays open for one owner box: "Pages look and behave as before". Lanes A and B (PRs #529 to #549) and the earlier lanes are merged; the summaries and the deferred DEV checks are on #456. #551 and #557 are closed; their deferred DEV checks are on those Issues.
+- Open PRs, none from this work: #539 (a STATE note for release #537, now out of date), #74, #75, #76, #80 and five dependabot PRs.
+
+Merged trackers whose owner checks are still open:
+
 - #380 Web App Readable Structure tracker: done. Children #390 to #417 merged (PRs #404 to #444). Owner's DEV checklist is on #380. Close-out #403 (PR #448).
 - #363 World Systems State Machines tracker: all seven children merged on 2026-11-17 (#356 to #362, PRs #364, #366, #367, #368, #370, #381 and the close-out PR). A System can carry one state machine (ADR 0073, spec `docs/architecture/world-logic-state-machine-spec.md`): drawn on the Machine tab, guards built from blocks, illegal states found by the sweep, read and proposed over MCP. Backup format 59. Closing #363 is the owner's, after the checklist posted on it. Follow-ups are Issues linked from #363. Local focused runs on this machine need `--workers=2` and `xUnit.MaxParallelThreads=2`.
 - #300 M3 Types tracker: all children merged (#279 to #283, PRs #330 to #345). Backup format 55. CI and E2E brought green in PR #351. Owner checks: Lore Types unaffected; individual Game types available; universe templates can be managed; Game types copied from templates are independent; existing entity values intact.
@@ -81,16 +81,14 @@ migration `AddEntityFieldImages`, backup format 48. Owner check on DEV: upload a
 
 ## Committed, not on `dev`
 
-Checked 2026-10-29 with `git log origin/dev..<branch>`.
+Checked 2026-11-22 with `git log origin/dev..<branch>` and `git cherry`. Every merged branch, local and remote, was deleted that day.
 
-- `feat/ai-help-off-by-default` (local only, 1 commit `3f32588`, "New universes start with AI help off"): not on `dev`
-  or `demo`. Owner to decide: merge or drop.
-- `feat/alpha-demo-page` / `claude/magical-mirzakhani-3846ef` (1 commit, "alpha page features as expandable rows"): not
-  on `dev` or `demo`; the branch itself was merged earlier, this later commit was not. Probably superseded by
-  `feat/alpha-page-polish`; check before deleting.
-- `fix/alpha-contact-address`, `feat/demo-refresh`, `feat/demo-screenshots`: on `demo`, not on `dev`. Expected for
-  demo-only work.
-- Local `master` is a stale 2026-09-07 ref; `origin/master` is authoritative.
+- `feat/ai-help-off-by-default` (local only, 1 commit, "New universes start with AI help off"): not on `dev` or `demo`. Owner to decide: merge or drop.
+- `claude/reverent-joliot-d21db1` (local only, 24 commits not on `dev`, last "WIP counting", 2026-11-01). Owner to decide.
+- `claude/prod-indexing-dbc11e` (local only, 1 commit, "PROD search indexing on"); the same subject as open PR #75.
+- `pre-push-gate` (on origin, 1 commit, "Workflow: pre-push gate for LorEvolve", 2026-11-16), no PR.
+- Worktree `D:\Workspace\lv-console` on `feat/game-console-card` (the branch is merged): 5 files with uncommitted edits. Kept at the owner's word.
+- `demo` holds demo-only work, as expected.
 
 ## Open issues
 
