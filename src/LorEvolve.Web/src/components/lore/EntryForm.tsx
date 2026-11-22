@@ -169,7 +169,7 @@ export function EntryForm(props: EntryFormProps) {
         </section>
       ) : null}
 
-      {isNew ? (
+      {isNew && isLore ? (
         <QuietNote className="entryform__note" size="ui">
           {copyArticle && source?.article
             ? t('entity.page.form.noteCopied')

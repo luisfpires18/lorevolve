@@ -106,6 +106,7 @@ const LORE_ONLY = [
   'family-tree/',
   'duplicate-entity',
   'suggest-entity',
+  "'entity.page.form.noteArticle'",
 ]
 // Comments cut out, their line breaks kept, so "the 12 lines above" counts the file's own lines.
 const codeLines = (source: string) =>
