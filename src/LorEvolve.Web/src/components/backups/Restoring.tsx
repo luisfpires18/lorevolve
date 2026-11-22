@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../i18n'
+import { ProgressBar } from '../ProgressBar'
 
 /**
  * The restore itself happens on the server, which says nothing until it is done, so this is no percentage: a moving bar
@@ -22,14 +23,7 @@ export function Restoring() {
 
   return (
     <div className="restore__progress" data-testid="restore-restoring">
-      <div
-        className="progressbar"
-        role="progressbar"
-        aria-label={t('admin.restore.restoring.label')}
-        data-state="working"
-      >
-        <span className="progressbar__fill" />
-      </div>
+      <ProgressBar label={t('admin.restore.restoring.label')} state="working" />
       <p className="restore__stage">
         {tx('admin.restore.restoring.stage', {
           elapsed: <span aria-hidden="true">{elapsed}</span>,

@@ -114,13 +114,7 @@ const drawsProgressBar: Guard = (source) =>
   ) || /role="(progressbar|meter)"/.test(source)
 
 // Files that draw a progress bar or a meter. ProgressBar is the part.
-const PROGRESS_BARS = new Set([
-  'src/components/CropperProgress.tsx',
-  'src/components/UsageItem.tsx',
-  'src/components/aiChanges/AiChangeDecision.tsx',
-  'src/components/backups/RestoreChooseForm.tsx',
-  'src/components/backups/Restoring.tsx',
-])
+const PROGRESS_BARS = new Set(['src/components/ProgressBar.tsx'])
 
 function check(guard: Guard, files: string[], allowed: Set<string> | Map<string, string>) {
   const found = files.filter((file) => guard(read(file)))

@@ -3,7 +3,7 @@ import { t, useI18n } from '../../i18n'
 import { Field } from '../Field'
 import type { EraScene, EraStory } from '../../progression/types'
 import { useEraStoryChoices } from '../../progression/useEraStoryChoices'
-import { Token } from '../Token'
+import { Token, TokenList } from '../Token'
 
 /**
  * The stories an era covers, and scenes of those stories: each chosen one as a token with Remove, the universe's other live
@@ -50,7 +50,7 @@ export function EraStories({
         {(control) => (
           <>
             {stories.length > 0 ? (
-              <ul className="storylinks__list">
+              <TokenList>
                 {stories.map((story) => (
                   <Token
                     as="li"
@@ -68,7 +68,7 @@ export function EraStories({
                     <bdi>{story.title}</bdi>
                   </Token>
                 ))}
-              </ul>
+              </TokenList>
             ) : null}
             <select
               {...control}
@@ -116,7 +116,7 @@ export function EraStories({
           {(control) => (
             <>
               {scenes.length > 0 ? (
-                <ul className="storylinks__list">
+                <TokenList>
                   {scenes.map((scene) => (
                     <Token
                       as="li"
@@ -134,7 +134,7 @@ export function EraStories({
                       <bdi>{scene.title}</bdi>
                     </Token>
                   ))}
-                </ul>
+                </TokenList>
               ) : null}
               <select
                 {...control}

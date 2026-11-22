@@ -2,6 +2,7 @@ import type { Change, Proposal } from '../../aiChanges/types'
 import { useI18n } from '../../i18n'
 import type { useAiChangeState } from '../../aiChanges/useAiChangeState'
 import { Button } from '../Button'
+import { ProgressBar } from '../ProgressBar'
 
 /** The decision bar: what is chosen, Select all, Approve, Reject and Reject all, with the running approval's progress; or Withdraw. */
 export function AiChangeDecision({
@@ -95,28 +96,19 @@ export function AiChangeDecision({
       </div>
       {applied ? (
         <div className="aichange__progress" data-testid="ai-change-progress">
-          <div
-            className="progressbar"
-            role="progressbar"
-            aria-label={t('review.aiChange.progress.label')}
-            aria-valuemin={0}
-            aria-valuemax={applied.total}
-            aria-valuenow={applied.done}
-            aria-valuetext={t('review.aiChange.progress.done', {
-              done: applied.done,
-              total: applied.total,
-            })}
-            data-state={applied.done === 0 ? 'working' : 'sending'}
-          >
-            <span
-              className="progressbar__fill"
-              style={
-                applied.done === 0
-                  ? undefined
-                  : { width: `${(applied.done / applied.total) * 100}%` }
-              }
-            />
-          </div>
+          <ProgressBar
+            label={t('review.aiChange.progress.label')}
+            value={{
+              now: applied.done,
+              max: applied.total,
+              text: t('review.aiChange.progress.done', {
+                done: applied.done,
+                total: applied.total,
+              }),
+            }}
+            state={applied.done === 0 ? 'working' : 'sending'}
+            fill={applied.done === 0 ? undefined : (applied.done / applied.total) * 100}
+          />
           <p className="aichange__count">
             {applied.done === 0
               ? tn('review.aiChange.progress.checking', applied.total, { n: applied.total })

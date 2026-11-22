@@ -88,21 +88,13 @@ const RULES: Rule[] = [
   {
     why: 'a list of removable chips is TokenList (components/Token)',
     writes: (word) => word === 'storylinks__list',
-    allowed: [
-      'src/components/ScenePicks.tsx',
-      'src/components/progression/EraStories.tsx',
-      'src/components/timeline/StoryLinks.tsx',
-    ],
+    allowed: ['src/components/Token.tsx'],
     tsxOnly: true,
   },
   {
     why: 'a blocked note is BlockedCallout (lore/FieldBlockedNote)',
     writes: (word) => word === 'types__blockedtext',
-    allowed: [
-      'src/components/lore/ArchivedFields.tsx',
-      'src/components/lore/FieldBlockedNote.tsx',
-      'src/components/lore/LoreTypeRow.tsx',
-    ],
+    allowed: ['src/components/lore/FieldBlockedNote.tsx'],
     tsxOnly: true,
   },
   {

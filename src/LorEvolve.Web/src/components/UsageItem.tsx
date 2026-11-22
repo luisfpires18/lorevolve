@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import type { Load } from '../lib/useAsyncRead'
+import { ProgressBar } from './ProgressBar'
 import { ReadGate } from './ReadGate'
 
 /**
@@ -80,19 +81,15 @@ export function UsageMeter({
         </span>
       </p>
 
-      <div
-        className="progressbar usage__meter"
-        role="meter"
-        aria-labelledby={labelId}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={percent}
-        aria-valuetext={`${amount}, ${shown}`}
-        data-state={full ? 'full' : undefined}
-        data-testid={`${testId}-meter`}
-      >
-        <span className="progressbar__fill" style={{ width: `${tiny ? 1 : percent}%` }} />
-      </div>
+      <ProgressBar
+        meter
+        labelledBy={labelId}
+        className="usage__meter"
+        value={{ now: percent, max: 100, text: `${amount}, ${shown}` }}
+        state={full ? 'full' : undefined}
+        fill={tiny ? 1 : percent}
+        testId={`${testId}-meter`}
+      />
     </>
   )
 }

@@ -126,7 +126,7 @@ test('a choice on the page is SegmentedControl; canon steps are CanonStatusPicke
 })
 
 test("the account menu's theme and language choice is SwitchGroup", () => {
-  check(withToken(THEMESWITCH), only('ThemeSwitch', 'LanguageSwitch'), 'use SwitchGroup')
+  check(withToken(THEMESWITCH), only('ThemeSwitch'), 'use SwitchGroup')
 })
 
 test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
@@ -152,7 +152,7 @@ test('aria-pressed is a choice, a chip, or one of the listed toggles', () => {
       ]),
       ...list('a strip of pictures', ['lore/EntryPicture']),
       ...list('the rich-text toolbar', ['LoreEditor']),
-      ...list('the account menu', ['ThemeSwitch', 'LanguageSwitch']),
+      ...list('the account menu', ['ThemeSwitch']),
       ...list('a drag handle', ['TypeReorderHandle']),
     ]),
     'use SegmentedControl, or ViewChips with button items',

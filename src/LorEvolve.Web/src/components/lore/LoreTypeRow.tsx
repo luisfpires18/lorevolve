@@ -9,7 +9,7 @@ import { useI18n } from '../../i18n'
 import type { EntityType, EntityTypeGroup } from '../../lore/typeDefinitions'
 import { typePathLabel, type TypeNode, type TypeTree } from '../../lore/typeTree'
 import { formatCount } from '../../i18n/format'
-import { Callout } from '../Callout'
+import { BlockedCallout } from './FieldBlockedNote'
 
 /** One type in the Types list: its grip, icon, name, groups and count, its actions, description, why it cannot go, and its fields. */
 export function LoreTypeRow({
@@ -181,27 +181,22 @@ export function LoreTypeRow({
       {type.description ? <p className="types__description prose">{type.description}</p> : null}
 
       {blocked?.typeId === type.id ? (
-        <Callout
-          look="callout"
-          tone="warning"
+        <BlockedCallout
           className="types__blocked"
-          role="alert"
           testId={`type-blocked-${type.name}`}
+          text={blocked.text}
         >
-          <p className="types__blockedtext">{blocked.text}</p>
-          <p className="types__blockedlinks">
-            {type.entityCount > type.trashedEntityCount ? (
-              <Link to={`/app/universes/${universe.id}/lore?type=${type.id}`}>
-                {t('entityTypes.page.showEntries')}
-              </Link>
-            ) : null}
-            {type.trashedEntityCount > 0 ? (
-              <Link to={`/app/universes/${universe.id}/trash`}>
-                {t('entityTypes.page.openTrash')}
-              </Link>
-            ) : null}
-          </p>
-        </Callout>
+          {type.entityCount > type.trashedEntityCount ? (
+            <Link to={`/app/universes/${universe.id}/lore?type=${type.id}`}>
+              {t('entityTypes.page.showEntries')}
+            </Link>
+          ) : null}
+          {type.trashedEntityCount > 0 ? (
+            <Link to={`/app/universes/${universe.id}/trash`}>
+              {t('entityTypes.page.openTrash')}
+            </Link>
+          ) : null}
+        </BlockedCallout>
       ) : null}
 
       {openTypeId === type.id ? (

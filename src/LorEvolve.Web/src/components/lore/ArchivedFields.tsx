@@ -4,11 +4,10 @@ import { useI18n } from '../../i18n'
 import { FIELD_KIND_LABELS } from '../../lore/fieldKinds'
 import { entries } from '../../lore/fieldInUse'
 import type { EntityType, FieldDefinition } from '../../lore/typeDefinitions'
-import { FieldBlockedNote } from './FieldBlockedNote'
+import { BlockedCallout, FieldBlockedNote } from './FieldBlockedNote'
 import { FieldListRow } from './FieldListRow'
 import { Button } from '../Button'
 import { QuietNote } from '../QuietNote'
-import { Callout } from '../Callout'
 
 /** A type's archived fields, folded apart: each with Restore, Delete when it is empty, and the way back as optional. */
 export function ArchivedFields({
@@ -99,29 +98,24 @@ export function ArchivedFields({
             }
           >
             {restoreOffer?.fieldId === field.id ? (
-              <Callout
-                look="callout"
-                tone="warning"
+              <BlockedCallout
                 className="fieldlist__note"
-                role="alert"
                 testId={`restore-offer-${field.name}`}
+                text={restoreOffer.text}
               >
-                <p className="types__blockedtext">{restoreOffer.text}</p>
-                <p className="types__blockedlinks">
-                  <Button
-                    tone="secondary"
-                    size="sm"
-                    onClick={() => void restore(field, true)}
-                    disabled={busyFieldId === field.id}
-                    data-testid={`restore-optional-${field.name}`}
-                  >
-                    {t('entityTypes.fields.restoreOptional')}
-                  </Button>
-                  <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
-                    {t('entityTypes.fields.restoreShowEntries', { name: type.name })}
-                  </Link>
-                </p>
-              </Callout>
+                <Button
+                  tone="secondary"
+                  size="sm"
+                  onClick={() => void restore(field, true)}
+                  disabled={busyFieldId === field.id}
+                  data-testid={`restore-optional-${field.name}`}
+                >
+                  {t('entityTypes.fields.restoreOptional')}
+                </Button>
+                <Link to={`/app/universes/${universeId}/lore?type=${type.id}`}>
+                  {t('entityTypes.fields.restoreShowEntries', { name: type.name })}
+                </Link>
+              </BlockedCallout>
             ) : null}
             <FieldBlockedNote
               universeId={universeId}

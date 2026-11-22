@@ -45,3 +45,8 @@ export function Token({
     </Tag>
   )
 }
+
+/** The row of chosen things around `Token as="li"` children. The caller draws it only when something is chosen. */
+export function TokenList({ children }: { children: ReactNode }) {
+  return <ul className="storylinks__list">{children}</ul>
+}
