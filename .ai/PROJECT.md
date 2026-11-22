@@ -1,5 +1,8 @@
 # Project
 
+Roadmap: GitHub Milestones (https://github.com/luisfpires18/lorevolve/milestones); task Issues belong to them. Overview: [#35](https://github.com/luisfpires18/lorevolve/issues/35).
+Task prefix: `LOREX` (task Issue titles: `[LOREX-NNN] <outcome>`, numbered in order)
+
 Name: LorEvolve
 Repository: https://github.com/luisfpires18/lorevolve (public)
 Stack: ASP.NET Core modular monolith (`src/LorEvolve.Api`, EF Core) with a web frontend; Azure hosting; Cloudflare R2 for media.
