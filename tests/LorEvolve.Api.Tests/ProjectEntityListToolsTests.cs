@@ -87,6 +87,34 @@ public sealed class ProjectEntityListToolsTests(LorEvolveApiFactory factory) : I
         Assert.DoesNotContain(after.Items, item => item.Id == b.Id);
     }
 
+    [Fact]
+    public async Task Moving_a_game_entry_to_the_Trash_takes_Manage_Trash_as_a_lore_entry_does()
+    {
+        // An Editor holds Manage Trash; a Reviewer, a Viewer and an outsider do not.
+        var w = await CollaborationTestClient.NewSharedWorld(_factory, "projtrashroles");
+        var project = await ProjectEntityTests.NewProject(w.Owner, w.U, "Hollow Season");
+        var type = await ProjectEntityTests.NewType(w.Owner, project.Id, "Unit");
+        var kept = await ProjectEntityTests.NewEntry(w.Owner, project.Id, type.Id, "Kept");
+        var moved = await ProjectEntityTests.NewEntry(w.Owner, project.Id, type.Id, "Moved");
+        var single = await ProjectEntityTests.NewEntry(w.Owner, project.Id, type.Id, "Single");
+
+        foreach (var refused in new[] { w.Reviewer, w.Viewer, w.Outsider })
+        {
+            var bulk = await refused.PostAsJsonAsync(
+                $"/api/projects/{project.Id}/entities/bulk-trash", new BulkTrashRequest([kept.Id]));
+            Assert.False(bulk.IsSuccessStatusCode);
+            Assert.False((await refused.DeleteAsync($"/api/projects/{project.Id}/entities/{kept.Id}")).IsSuccessStatusCode);
+        }
+
+        var allowed = await w.Editor.PostAsJsonAsync(
+            $"/api/projects/{project.Id}/entities/bulk-trash", new BulkTrashRequest([moved.Id]));
+        Assert.Equal(HttpStatusCode.OK, allowed.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            (await w.Editor.DeleteAsync($"/api/projects/{project.Id}/entities/{single.Id}")).StatusCode);
+        Assert.Equal(["Kept"], (await Read(w.Owner, project.Id, "")).Items.Select(item => item.Name));
+    }
+
     private static async Task<ProjectEntityPage> Read(HttpClient client, Guid projectId, string query) =>
         (await client.GetFromJsonAsync<ProjectEntityPage>($"/api/projects/{projectId}/entities?{query}"))!;
 }
