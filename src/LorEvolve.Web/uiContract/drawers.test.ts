@@ -76,10 +76,14 @@ const hasToken = (source: string, test: (token: string) => boolean) => tokens(so
 // 9. A delete asks first: a call with a confirm in the 20 lines above it.
 const DESTROY =
   /(?<![.\w])(?:delete[A-Z]\w*|revokeInvitation|removeEntityImage|removeFieldImage|removeProfileImage|removePicture)\(/
+// An entry source's `remove` is the delete of whatever it draws (#551): the call through the source is what asks.
+const SOURCE_REMOVE = /\bentrySource\.remove\(/
 function unaskedDeletes(source: string) {
   const lines = source.split('\n')
   return lines.flatMap((line, at) => {
-    if (!DESTROY.test(line)) return []
+    if (!DESTROY.test(line) && !SOURCE_REMOVE.test(line)) return []
+    // The source's own `remove:` member only binds the call; `entrySource.remove(` above is the checked site.
+    if (/^\s*remove: \(\w+\) => delete[A-Z]\w*\(/.test(line)) return []
     if (/^\s*(?:import|export)\b/.test(line) || /\bfunction\s+\w+\(/.test(line)) return []
     if (/^\s*(?:delete[A-Z]\w*|remove\w*|revokeInvitation),?$/.test(line)) return []
     const above = lines.slice(Math.max(0, at - 20), at + 1).join('\n')
@@ -135,6 +139,13 @@ test('the drawer guards fail on a bad snippet and pass a good one', () => {
   const handed = '  remove={(fieldId) => deleteProjectField(id, fieldId)}'
   assert.equal(unaskedDeletes(`<PlainFieldsPanel\n${handed}`).length, 0)
   assert.equal(unaskedDeletes(`<Other\n${handed}`).length, 1)
+  assert.equal(unaskedDeletes('    remove: (id) => deleteEntity(universeId, id),').length, 0)
+  assert.equal(unaskedDeletes('onClick={() => entrySource.remove(entityId)}').length, 1)
+  assert.equal(
+    unaskedDeletes('await confirmAction({\n  action: () => entrySource.remove(entityId),\n})')
+      .length,
+    0,
+  )
   assert.equal(unaskedDeletes('export function deleteSeason(id: string) {').length, 0)
 })
 
