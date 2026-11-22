@@ -114,14 +114,18 @@ const codeLines = (source: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ''))
     .replace(/(^|\s)\/\/.*$/gm, '$1')
     .split('\n')
-/** The Lore-only markers on a code line with no `isLore` on it or the 12 lines above. */
+// A gate is `isLore` in a JSX condition that opens a branch (`{isLore ? (`, `isLore && <X`) or an early return
+// (`if (!isLore) return`). A line that only declares, destructures or reads it as a value (`isLore: boolean`,
+// `isLore,`, `isLore = true`, `const x = isLore ? a : b`, `label={isLore ? a : b}`) gates nothing.
+const GATE = /\bisLore\b.*(\?|&&)\s*(\(\s*$|<)|\bif\s*\(\s*!?isLore\b[^)]*\)\s*return\b/
+/** The Lore-only markers on a code line with no `isLore` gate on it or the 12 lines above. */
 function ungated(source: string) {
   const lines = codeLines(source)
   return LORE_ONLY.filter((marker) =>
     lines.some(
       (line, at) =>
         line.includes(marker) &&
-        !lines.slice(Math.max(0, at - 12), at + 1).some((one) => /\bisLore\b/.test(one)),
+        !lines.slice(Math.max(0, at - 12), at + 1).some((one) => GATE.test(one)),
     ),
   )
 }
@@ -131,6 +135,15 @@ test('the Lore-only gate fails on an ungated part and passes a gated one', () =>
   assert.deepEqual(ungated('<LoreOnMaps id={x} />'), ['<LoreOnMaps'])
   assert.deepEqual(ungated('{isLore && access.publish ? (\n<ContentPublication'), [])
   assert.deepEqual(ungated('{/* isLore */}\n<CanonBadge />'), ['<CanonBadge'])
+  assert.deepEqual(ungated('  isLore: boolean\n}) {\n  return <CanonBadge />'), ['<CanonBadge'])
+  assert.deepEqual(ungated('  isLore,\n  isLore = true,\n}) => <TagList />'), ['<TagList'])
+  assert.deepEqual(ungated('const x = isLore ? a : b\n<CanonBadge />'), ['<CanonBadge'])
+  assert.deepEqual(ungated("label={isLore ? t('a') : t('b')}\n<TagList />"), ['<TagList'])
+  assert.deepEqual(ungated('  isLore: boolean\n{isLore ? (\n  <CanonBadge />'), [])
+  assert.deepEqual(ungated('{isLore && (\n  <CanonBadge />'), [])
+  assert.deepEqual(ungated('{isLore && <CanonBadge />}'), [])
+  assert.deepEqual(ungated('{isNew && isLore ? (\n  <TagList />'), [])
+  assert.deepEqual(ungated('if (!isLore) return null\nreturn <PrivateNotes />'), [])
 })
 
 test('the entry page draws its Lore-only parts only for a Lore entry', () => {
