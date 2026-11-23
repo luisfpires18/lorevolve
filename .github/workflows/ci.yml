@@ -161,7 +161,7 @@ jobs:
         run: npm run build
 
   # The suite is split across eight runners with Playwright's own sharding: each shard is a
-  # complementary sixth of the whole suite (fullyParallel, so Playwright partitions by test, and
+  # complementary eighth of the whole suite (fullyParallel, so Playwright partitions by test, and
   # no spec list is kept here). Each runner has its own API, Vite server and fresh database, so
   # sharding adds no concurrency against any one SQLite file: two browsers per database, as before.
   # fail-fast is off so a failing shard does not cancel the others and hide their evidence; any
