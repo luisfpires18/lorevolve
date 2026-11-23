@@ -29,6 +29,15 @@
   padding-inline: max(var(--gutter), calc((100% - var(--canvas-max)) / 2));
 }
 
+/* The Feedback pill floats at the window's foot corner: the last line gets room under it, so the pill never covers the
+   version at the end of a page. A page with a bar stuck across its foot lifts the pill above that bar instead
+   (018-controls.css), and its footer is not changed here. */
+body:not(:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions))
+  .workspace__column
+  .sitefooter {
+  padding-bottom: calc(var(--space-4) + var(--control-touch) + var(--space-3));
+}
+
 .sitefooter__top {
   display: flex;
   flex-wrap: wrap;

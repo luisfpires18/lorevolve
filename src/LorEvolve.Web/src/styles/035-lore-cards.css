@@ -110,12 +110,14 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   font-family: var(--display);
-  font-size: 1.1875rem;
+  font-size: var(--text-item);
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
-.entitycard__aliases {
+.entitycard__aliases,
+.typecard__path,
+.typecard__meta {
   overflow: hidden;
   font-size: var(--text-sm);
   color: var(--muted);

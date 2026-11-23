@@ -75,6 +75,17 @@
     margin-right: 0.4rem;
   }
 
+  /* An archived universe's bar has the chip to carry as well: the name keeps the first line, the section and the chip
+     share the second, so the name is not squeezed to nothing. */
+  .rail__where--archived {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  .rail__where--archived .rail__section::before {
+    display: none;
+  }
+
   .rail__archived {
     flex: none;
     border: 1px solid var(--plate-muted);
@@ -202,17 +213,12 @@
     padding-bottom: var(--space-3);
   }
 
-  /* The upkeep row spans the sheet under a rule, its three links side by side. */
+  /* The upkeep group spans the sheet under a rule, its links in one column like every other group: five labels do not
+     fit side by side in a 20rem sheet. */
   .sidebar__group--upkeep {
     margin-top: 0;
     padding-top: var(--space-3);
     padding-bottom: 0;
-  }
-
-  .sidebar__group--upkeep .sidebar__links {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-1);
   }
 
   .sidebar__link {
@@ -247,7 +253,7 @@
 
   .unisearch__option {
     grid-template-columns: minmax(0, 1fr);
-    padding: 0.65rem 0.9rem 0.7rem 0.75rem;
+    padding: 0.65rem 0.9rem 0.7rem var(--space-3);
   }
 
   .unisearch__kind {

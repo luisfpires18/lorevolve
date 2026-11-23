@@ -4,6 +4,7 @@ import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import type { DraftSection } from '../../lore/sectionLayout'
 import { Button } from '../Button'
+import { CheckField } from '../CheckField'
 import { MoveItems } from '../MoveItems'
 import { NewButton } from '../NewButton'
 import { QuietNote } from '../QuietNote'
@@ -82,15 +83,13 @@ export function SectionListEditor<Item extends { key: string } = DraftSection>({
           error={errors?.[section.key]}
           data-testid={`section-name-${index}`}
         />
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={section.startsCollapsed}
-            onChange={(event) => patch?.(section.key, { startsCollapsed: event.target.checked })}
-            data-testid={`section-collapsed-${index}`}
-          />
-          <span>{t('entityTypes.sections.startsCollapsed')}</span>
-        </label>
+        <CheckField
+          className="field--flow"
+          label={<span>{t('entityTypes.sections.startsCollapsed')}</span>}
+          checked={section.startsCollapsed}
+          onChange={(checked) => patch?.(section.key, { startsCollapsed: checked })}
+          testId={`section-collapsed-${index}`}
+        />
       </>
     )
   }

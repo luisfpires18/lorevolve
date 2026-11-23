@@ -160,19 +160,8 @@ html:has(.viewer[open]) {
 }
 
 /* The real input is replaced by its own label, which is the only way to style a file picker.
-   It stays in the accessibility tree and reachable from the keyboard rather than hidden with
-   display:none, which would take it out of both. */
-.imagefield__input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
+   The input carries `.visually-hidden` on the markup: it stays in the accessibility tree and
+   reachable from the keyboard rather than hidden with display:none, which would take it out of both. */
 .imagefield__pick {
   cursor: pointer;
 }

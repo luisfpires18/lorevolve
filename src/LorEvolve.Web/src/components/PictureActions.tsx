@@ -7,7 +7,7 @@ import { Button } from './Button'
 
 // Two looks for the same pick control: the entry and Image field one, and the avatar and cover one.
 const CLASSES = {
-  imagefield: { input: 'imagefield__input', pick: 'imagefield__pick' },
+  imagefield: { input: 'imagefield__input visually-hidden', pick: 'imagefield__pick' },
   avatar: { input: 'avatar__input', pick: 'avatar__pick' },
 }
 

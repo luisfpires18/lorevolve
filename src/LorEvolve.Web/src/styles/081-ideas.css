@@ -115,8 +115,10 @@ a.idearow__title:focus-visible {
   text-decoration: underline;
 }
 
-/* The start of the body, on two lines at most: line breaks fold into spaces here, and the whole text is on the idea. */
-.idearow__excerpt {
+/* LinkRow's excerpt, an idea's body or a rule's description, on two lines at most: line breaks fold into spaces here,
+   and the whole text is on the idea or the rule. */
+.idearow__excerpt,
+.rulerow__excerpt {
   margin: 0;
   max-width: 70ch;
   font-size: 0.9rem;
@@ -184,7 +186,9 @@ a.idearow__title:focus-visible {
   margin-top: 1rem;
 }
 
-.idea__form {
+/* The idea editor and the world rule editor are one editor, with one form. */
+.idea__form,
+.rule__form {
   display: flex;
   flex-direction: column;
   gap: 1.6rem;

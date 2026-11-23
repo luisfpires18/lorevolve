@@ -13,7 +13,7 @@
 .aichangeitem {
   display: grid;
   gap: 0.375rem;
-  padding: 0.875rem 1rem;
+  padding: 0.875rem var(--space-4);
   border: 1px solid var(--rule);
   border-radius: var(--radius-md);
   background: var(--raised);

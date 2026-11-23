@@ -85,7 +85,7 @@
 
 .profile__note {
   margin: 1.5rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   line-height: 1.6;
   color: var(--muted);
   text-align: left;

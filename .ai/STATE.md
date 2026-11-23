@@ -2,7 +2,7 @@
 
 - **Milestones moved (22 Nov 2026):** milestones now live on the GitHub Milestones page (https://github.com/luisfpires18/lorevolve/milestones); Issues are tasks only. The tracker Issue numbers below are closed, and each links to its Milestone. Start a run with "Run milestone M<n>."
 
-Current operational state only, as of 2026-11-22. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-23. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
@@ -20,7 +20,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45062757685 on `master` `72afdb6d`, succeeded (2026-11-22, release PR #559: a project's entries are listed, opened, created and edited on the Lore screens (#551), and a project list pages on the server (#557); no migration). Earlier the same day: PR #555 (`b71e1233`, MCP `get_idea`) and PR #537 (`088c0a3b`). Owner checks of #551 and #557 on DEV were still deferred when it went out.
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45086152070 on `master` `f7dbf8b1`, succeeded (2026-11-23, release PR #572: game entries import a lore entity's values, game lists get Lore's Select, Exact and field filters, and game entries go to the universe Trash (#561); no migration). Health started 00:15 UTC. Not yet tried by hand on DEV or PROD. Earlier: release PR #559 (`72afdb6d`, 2026-11-22).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -41,12 +41,16 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-22 `dev` and `master` hold the same tree (release PR #559). `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-23 `master` is release PR #572; `dev` is ahead with the UI Polish milestone work (Issues 563 and 564), not released. `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
 ## In flight
+- **UI Polish milestone** (https://github.com/luisfpires18/lorevolve/milestone/15, started 2026-11-22): keep the design as on PROD, fix what is out of place, standardise, reuse shared components; portal out of scope; no placeholders on inputs. #562 merged: findings in `docs/design/ui-polish-findings.md` (103 captures, defects by screen with file and fixing Issue). Next: #563 (values on the token scales), #564, #565 to #568, #569 (summary of changes). A redesign was tried first and rejected by the owner; PR #571 closed unmerged.
+  - #563 (PR #574): 21 values moved onto tokens, each backed by a role in `docs/design/LOREVOLVE_VISUAL_REFACTOR.md` §8; the other ~870 candidates left with reasons in `docs/design/evidence/563/left-values.md` (open to the screen Issues #565 to #568).
+  - #564 (PR #575): 7 identical rule blocks merged (LinkRow excerpt, idea and rule form, gallery, pin icon, pan and zoom layer, lore card meta, hidden file input on `.visually-hidden`) and 3 hand-written parts now `QuietNote` or `CheckField`; pixel diff 0 on the touched screens. The other inventory duplicates are left with reasons in the PR; the fieldset reset belongs in `Field group="fieldset"` (follow-up).
+  - #565 (PR #576): shell polish. Fixed: phone drawer Management in one column, archived universe name on its own line in the phone bar, account menu clear of the rail, room under the footer for the Feedback pill, entry and story tool buttons centred on the tabs at wide widths. Not a defect: the strip under the footer (a full-page capture artefact). Evidence in `docs/design/evidence/565/`.
 Checked 2026-11-22. Nothing from #456, #551 or #557 is in flight: all of it is merged and on PROD (release PR #559).
 
 - #456 stays open for one owner box: "Pages look and behave as before". Lanes A and B (PRs #529 to #549) and the earlier lanes are merged; the summaries and the deferred DEV checks are on #456. #551 and #557 are closed; their deferred DEV checks are on those Issues.

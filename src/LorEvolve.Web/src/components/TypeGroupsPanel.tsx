@@ -5,6 +5,7 @@ import type { EntityType, EntityTypeGroup } from '../lore/typeDefinitions'
 import { typeGroupActions } from '../lore/typeGroupActions'
 import { TypeGroupRow } from './lore/TypeGroupRow'
 import { NewButton } from './NewButton'
+import { QuietNote } from './QuietNote'
 
 /**
  * The universe's groups on their own tab of Types: their priority, first first, and who is in each. The priority orders a
@@ -98,9 +99,9 @@ export function TypeGroupsPanel({
         </Field>
       ) : null}
       {groups.length === 0 ? (
-        <p className="typegroups__empty" data-testid="type-groups-empty">
+        <QuietNote size="body" spacing="flush" testId="type-groups-empty">
           {t('entityTypes.groupsPanel.empty')}
-        </p>
+        </QuietNote>
       ) : null}
       <ol className="typegroups__list" data-testid="type-groups-list">
         {groups.map((group, index) => (
