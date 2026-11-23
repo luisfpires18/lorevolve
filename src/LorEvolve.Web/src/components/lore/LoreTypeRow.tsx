@@ -119,6 +119,7 @@ export function LoreTypeRow({
         ) : null
       }
       countTestId={`type-count-${type.name}`}
+      data-count="below"
       count={
         <>
           {tn('entityTypes.page.count', type.entityCount, { n: formatCount(type.entityCount) })}
