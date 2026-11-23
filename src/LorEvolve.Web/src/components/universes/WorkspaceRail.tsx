@@ -41,7 +41,10 @@ export function WorkspaceRail({
             the bar has to keep saying which universe and which section this is. The name carries its own
             direction rather than a <bdi>, because it is cut with an ellipsis: only the clipping element's
             direction puts the cut at the end of a name written right to left, not at its start. */}
-      <p className="rail__where" data-testid="workspace-where">
+      <p
+        className={universe.isArchived ? 'rail__where rail__where--archived' : 'rail__where'}
+        data-testid="workspace-where"
+      >
         <span className="rail__universe" dir="auto" title={universe.name}>
           {universe.name}
         </span>

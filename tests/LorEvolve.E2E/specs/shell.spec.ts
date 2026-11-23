@@ -228,20 +228,27 @@ test.describe('the shell', () => {
       const ideas = await at('workspace-ideas')
       expect(maps.y).toBeGreaterThan(lore.y)
       expect(ideas.y).toBeGreaterThan(maps.y)
-      // Management - Projects, AI Changes, Publish, Trash, Settings - fills a three-across foot grid, under
-      // everything else (#191, #271).
-      const projects = await at('workspace-projects')
-      const aiChanges = await at('workspace-ai-changes')
-      const publish = await at('workspace-publish')
-      const trash = await at('workspace-trash')
-      const settings = await at('workspace-settings')
-      expect(Math.abs(aiChanges.y - projects.y)).toBeLessThanOrEqual(1)
-      expect(Math.abs(publish.y - projects.y)).toBeLessThanOrEqual(1)
-      expect(projects.x).toBeLessThan(aiChanges.x)
-      expect(aiChanges.x).toBeLessThan(publish.x)
-      expect(trash.y).toBeGreaterThan(projects.y)
-      expect(settings.x).toBeGreaterThan(trash.x)
-      expect(projects.y).toBeGreaterThan(ideas.y)
+      // Management - Projects, AI Changes, Publish, Trash, Settings - is one column like every other group, under
+      // everything else: five labels do not fit side by side in the sheet, and "AI Changes" would wrap.
+      const management = ['projects', 'ai-changes', 'publish', 'trash', 'settings']
+      // Read in one go: the drawer slides in, so boxes read one after the other would sit at different offsets.
+      const [lore2, ...rows] = await page.evaluate(
+        (ids) =>
+          ids.map((id) => {
+            const { x, y, width, height } = document
+              .querySelector(`[data-testid="${id}"]`)!
+              .getBoundingClientRect()
+            return { x, y, width, height }
+          }),
+        ['workspace-lore', ...management.map((name) => `workspace-${name}`)],
+      )
+      expect(rows[0].y).toBeGreaterThan(ideas.y)
+      for (const [index, row] of rows.entries()) {
+        expect(row.x, management[index]).toBe(lore2.x)
+        expect(row.width, management[index]).toBe(lore2.width)
+        expect(row.height, management[index]).toBe(lore2.height)
+        if (index > 0) expect(row.y, management[index]).toBeGreaterThan(rows[index - 1].y)
+      }
       // The same labels as the wide sidebar.
       await expect(page.locator('.sidebar').getByRole('heading', { level: 2 })).toHaveText([
         'World building',
