@@ -2,7 +2,7 @@
 
 - **Milestones moved (22 Nov 2026):** milestones now live on the GitHub Milestones page (https://github.com/luisfpires18/lorevolve/milestones); Issues are tasks only. The tracker Issue numbers below are closed, and each links to its Milestone. Start a run with "Run milestone M<n>."
 
-Current operational state only, as of 2026-11-22. Trim instead of appending: when work merges, delete its line here;
+Current operational state only, as of 2026-11-23. Trim instead of appending: when work merges, delete its line here;
 git history and ADRs keep the detail. History before this trim: `docs/history/state-archive-2026-10.md`.
 
 ## Pointers
