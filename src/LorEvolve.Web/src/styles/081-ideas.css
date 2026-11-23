@@ -10,11 +10,18 @@
 }
 
 .ideas__notice {
-  margin: 1.5rem 0 0;
+  margin: var(--space-6) 0 0;
 }
 
 .ideas__controls {
-  margin-top: 2rem;
+  margin-top: var(--space-7);
+}
+
+/* The view toggle is as tall as the filter beside it, so the row reads as one line of controls. */
+@media (pointer: fine) {
+  .ideas__controls .segmented__option {
+    min-height: calc(var(--control-md) - 4px);
+  }
 }
 
 /* Inside a story the story's header is the page's; the view opens with one line of what it holds. */
@@ -32,7 +39,7 @@
 /* Capture: one line and its button, as wide as the filter below it, so the two share an edge. The status line keeps
    its height only while it has something to say. */
 .ideacapture {
-  margin-top: 2rem;
+  margin-top: var(--space-7);
   max-width: 30rem;
 }
 
@@ -64,7 +71,7 @@
 }
 
 .ideacapture + .ideas__controls {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 
 .ideas__show {
@@ -86,8 +93,8 @@
 .idearow {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem 1.25rem;
-  padding: 1rem 0;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-4) 0;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -96,7 +103,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: var(--space-1);
 }
 
 .idearow__title {
@@ -121,7 +128,7 @@ a.idearow__title:focus-visible {
 .rulerow__excerpt {
   margin: 0;
   max-width: 70ch;
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
   color: var(--muted);
   overflow-wrap: anywhere;
   display: -webkit-box;
@@ -136,8 +143,8 @@ a.idearow__title:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.25rem 0.9rem;
-  font-size: 0.78rem;
+  gap: var(--space-1) 0.9rem;
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 
@@ -147,7 +154,7 @@ a.idearow__title:focus-visible {
   gap: 0.4rem;
   min-width: 0;
   max-width: 100%;
-  padding: 0 0.45rem;
+  padding: 0 var(--space-2);
   border: 1px solid var(--rule);
   color: var(--ink);
   overflow-wrap: anywhere;
@@ -183,7 +190,7 @@ a.idearow__title:focus-visible {
 }
 
 .idea__failure {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
 }
 
 /* The idea editor and the world rule editor are one editor, with one form. */
@@ -191,13 +198,13 @@ a.idearow__title:focus-visible {
 .rule__form {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
-  margin-top: 1.25rem;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
 }
 
 .idea__body {
   min-height: 12rem;
-  font-size: 1rem;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 
@@ -207,7 +214,7 @@ a.idearow__title:focus-visible {
 }
 
 .idea__count {
-  margin: 0.45rem 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .idea__references {
@@ -219,14 +226,14 @@ a.idearow__title:focus-visible {
 
 .idea__subheading {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-ui);
   font-weight: 400;
   color: var(--muted);
 }
 
 .idea__noreferences {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
 }
 
 .idearefs {
@@ -240,7 +247,7 @@ a.idearow__title:focus-visible {
 .idearef {
   display: flex;
   align-items: center;
-  gap: 0.5rem 0.8rem;
+  gap: var(--space-2) var(--space-3);
   padding: 0.6rem 0;
   border-bottom: 1px solid var(--rule);
 }
@@ -248,12 +255,12 @@ a.idearow__title:focus-visible {
 /* A document's head, an idea's, a board's or a rule's: the way back, the title with its ⋯ on one line (what can be done
    to the document beside its name, and never beside Save), and the lede. */
 .dochead {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-5);
 }
 
 /* The way back is a `Crumb`, kept at the size the document heads always had. */
 .dochead__back {
-  font-size: 0.875rem;
+  font-size: var(--text-ui);
 }
 
 .dochead__row {
@@ -270,7 +277,7 @@ a.idearow__title:focus-visible {
 .dochead__title {
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0.5rem 0 0;
+  margin: var(--space-2) 0 0;
   font-family: var(--display);
   font-weight: 400;
   font-size: clamp(1.6rem, 2.6vw, 2.1rem);
@@ -280,5 +287,5 @@ a.idearow__title:focus-visible {
 
 .dochead__lede {
   margin: 0.4rem 0 0;
-  font-size: 0.875rem;
+  font-size: var(--text-ui);
 }

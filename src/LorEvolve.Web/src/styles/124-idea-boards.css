@@ -130,7 +130,7 @@
 }
 
 .boardline__label {
-  font-size: 13px;
+  font-size: var(--text-sm);
   fill: var(--ink);
   stroke: var(--paper);
   stroke-width: 4px;
@@ -206,7 +206,7 @@
 
 .boardcard__name {
   font-family: var(--display);
-  font-size: 1.05rem;
+  font-size: var(--text-body);
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -222,7 +222,7 @@
 
 .boardcard__excerpt {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
 }
 
 .boardcard__empty {
@@ -232,6 +232,6 @@
 
 .boardcard__gone {
   margin-top: auto;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--danger);
 }

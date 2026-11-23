@@ -73,7 +73,7 @@
   place-items: center;
   flex: none;
   width: 2rem;
-  height: 2rem;
+  height: var(--control-sm);
   margin-inline-start: calc(-1 * var(--space-2));
   padding: 0;
   border: 0;
@@ -234,6 +234,11 @@
   }
 
   .types__actions {
+    flex-basis: 100%;
+  }
+
+  /* The Types page: the entry count always has the line under the name. Group chips push it there on some rows only. */
+  .types__list[data-count='below'] .types__count {
     flex-basis: 100%;
   }
 }

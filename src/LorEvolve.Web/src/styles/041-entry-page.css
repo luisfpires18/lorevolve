@@ -153,12 +153,12 @@
 /* Relations and History are the page when they are open, so the rule each one draws above itself -
    which separated it from the article when all three were stacked - would only double the bar's. */
 .entry__view {
-  margin-top: 0.5rem;
+  margin-top: var(--space-2);
 }
 
 .entry__view > .relations,
 .entry__view > .history {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
   padding-top: 0;
   border-top: 0;
 }
@@ -227,7 +227,7 @@
   height: 1rem;
   align-self: center;
   color: var(--muted);
-  transition: transform 120ms ease-out;
+  transition: transform var(--duration-1) ease-out;
 }
 
 .fieldsection[open] > .fieldsection__summary .fieldsection__chevron {

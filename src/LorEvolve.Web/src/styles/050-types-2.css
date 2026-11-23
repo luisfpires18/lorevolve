@@ -21,12 +21,19 @@
   height: 1.0625rem;
 }
 
+/* A list where some row's Fields button carries a count: a button with none keeps an empty slot as wide as a badge, so every
+   Fields button is one width and Edit and Add child keep their column. A list with no count anywhere is left as it was. */
+.types__list:has(.types__fieldcount) .types__fieldsbutton:not(:has(.types__fieldcount))::after {
+  content: '';
+  min-width: 1.25rem;
+}
+
 .types__fieldcount {
   display: inline-grid;
   place-items: center;
   min-width: 1.25rem;
   height: 1.25rem;
-  padding: 0 0.3rem;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-full);
   background: var(--paper);
   font-size: var(--text-xs);

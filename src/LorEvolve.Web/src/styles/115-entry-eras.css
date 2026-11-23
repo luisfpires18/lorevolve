@@ -11,7 +11,7 @@
   flex-direction: column;
   gap: var(--space-5);
   max-width: 52rem;
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 
 .erapanel__head {
@@ -34,8 +34,8 @@
 .eranav__link {
   display: inline-flex;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.25rem var(--space-3);
+  min-height: var(--control-sm);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--rule);
   border-radius: var(--radius-full);
   color: var(--muted);

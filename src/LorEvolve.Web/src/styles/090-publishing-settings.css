@@ -92,7 +92,7 @@
 
 .publication__missing {
   margin: 0;
-  padding-left: 1.1rem;
+  padding-left: var(--space-4);
 }
 
 .publication__confirm {
@@ -176,7 +176,7 @@
 
 .usage__name {
   margin: 0 0 var(--space-2);
-  font-size: 0.925rem;
+  font-size: var(--text-ui);
   font-weight: 600;
 }
 
@@ -186,7 +186,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   margin: 0 0 var(--space-2);
-  font-size: 0.925rem;
+  font-size: var(--text-ui);
   font-variant-numeric: tabular-nums;
 }
 
@@ -201,7 +201,7 @@
 .usage__full,
 .usage__status {
   margin: var(--space-3) 0 0;
-  font-size: 0.875rem;
+  font-size: var(--text-ui);
   font-variant-numeric: tabular-nums;
 }
 

@@ -42,17 +42,17 @@ repository; each fixing PR commits the before and after of what it fixes.
 
 | Where | Screens | Screen size | What is wrong | File | Confidence | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| Comic arcs | `comic-arcs` | 390 | Content is wider than the screen: the header avatar and the footer version text are cut off at the right. | `components/ComicCollections.tsx`, `components/PageHeader.tsx` | high | #566 |
-| Types | `universe-types` | 1440 | A Fields count badge widens that button by about 15px, so Edit and "Add child" sit about 14px left of the other rows on Character and Vessel. | `components/TypeRowActions.tsx`, `styles/049-types.css` | high | #566 |
-| Types | `universe-types` | 390 | The entry count is under the name on some rows and top right on others. | `components/TypeRowActions.tsx`, `styles/049-types.css` | medium | #566 |
-| Type fields drawer | `drawer-type-fields` | 390 | The entry count sits in three different places across rows. | `components/TypeFields.tsx` | low | #566 |
-| Cinema sagas, Comic arcs | `cinema-sagas`, `comic-arcs` | 1440 | The first element under the tab strip sits only about 8px below it. | `components/CinemaSagas.tsx`, `ComicCollections.tsx` | medium | #566 |
-| Game entities and a project's entries | `game-entities`, `game-entities-project`, `project-game`, `project-game-entities` | 390 | "New entry" is right-aligned below the cards; other lists put their New button on the left under the subtitle. | `pages/ProjectLore.tsx` | medium | #566 |
-| Ideas, Idea boards | `ideas`, `idea-boards` | 1440 | The "Ideas / Recently deleted" toggle is about 3px shorter than the filter input beside it and bottom-aligned. | `pages/IdeasPage.tsx` | low | #566 |
-| Lore, one type | `lore-type-character`, `lore-type-vessel` | both | The toolbar mixes control heights. | `components/lore/LoreControls.tsx` | low | #566 |
-| Trash, selecting | `state-trash-select` | 390 | The selection bar wraps and its second row of buttons is not aligned with the first. | `components/SelectionBar.tsx` | low | #566 |
-| Trash | `universe-trash` | 1440 | "Delete permanently" is dim grey, low contrast. | `pages/UniverseTrash.tsx`, `components/trash/TrashRow.tsx` | low | #566 |
-| Project tabs (Writing project, Series) | `project-writing`, `project-series-structure`, `project-series-script` | 390 | The last tab pill is cut off at the edge. | `components/ProjectShell.tsx` | low | #566 |
+| Comic arcs | `comic-arcs` | 390 | Content is wider than the screen: the header avatar and the footer version text are cut off at the right. Not a defect: the page is 390px wide (scrollWidth 390, nothing past x 390, the avatar at 342 to 374); the cut version text is the fixed Feedback pill that a full-page capture lays over the footer, and in a 390x844 window scrolled to the end the pill (y 784 to 828) is clear of the version line (y 752 to 772) (#580). | `components/ComicCollections.tsx`, `components/PageHeader.tsx` | high | #566 |
+| Types | `universe-types` | 1440 | A Fields count badge widens that button by about 15px, so Edit and "Add child" sit about 14px left of the other rows on Character and Vessel. Fixed in #580: the badge widened the button by 28px, not 15; in a list where a Fields button has a count every Fields button takes the same width, so Edit and Add child share one column. | `components/TypeRowActions.tsx`, `styles/049-types.css` | high | #566 |
+| Types | `universe-types` | 390 | The entry count is under the name on some rows and top right on others. Fixed in #580: group chips pushed the count under the name on some rows only; on the Types page it is now under the name on every row. | `components/TypeRowActions.tsx`, `styles/049-types.css` | medium | #566 |
+| Type fields drawer | `drawer-type-fields` | 390 | The entry count sits in three different places across rows. Fixed in #580: the same list as the row above (the Types page with a type open); same fix. | `components/TypeFields.tsx` | low | #566 |
+| Cinema sagas, Comic arcs | `cinema-sagas`, `comic-arcs` | 1440 | The first element under the tab strip sits only about 8px below it. Fixed in #580: a shelf's second view starts 24px under the strip (it was flush with it), like the 24px above the strip. | `components/CinemaSagas.tsx`, `ComicCollections.tsx` | medium | #566 |
+| Game entities and a project's entries | `game-entities`, `game-entities-project`, `project-game`, `project-game-entities` | 390 | "New entry" is right-aligned below the cards; other lists put their New button on the left under the subtitle. Not a defect: on a phone `.lore__create` is the fixed floating New of Lore (`styles/039-lore-phone.css`, bottom 16px, right 20px of the window); only a full-page capture lays it under the cards (#580). | `pages/ProjectLore.tsx` | medium | #566 |
+| Ideas, Idea boards | `ideas`, `idea-boards` | 1440 | The "Ideas / Recently deleted" toggle is about 3px shorter than the filter input beside it and bottom-aligned. Fixed in #580: the toggle was 8.4px shorter (32 against 40.4); it is 40px and bottom-aligned with the filter. It stays on the filter row: it is a filter, unlike the page-level toggles of AI Changes and Canon. | `pages/IdeasPage.tsx` | low | #566 |
+| Lore, one type | `lore-type-character`, `lore-type-vessel` | both | The toolbar mixes control heights. Not a defect: Search 40.4, Sort 41, Select 40 share one top (295.5); the 28px chips sit inside the search field and the 32px Add filter is its own row (#580). | `components/lore/LoreControls.tsx` | low | #566 |
+| Trash, selecting | `state-trash-select` | 390 | The selection bar wraps and its second row of buttons is not aligned with the first. Not a defect: both rows start at x 36, are 40px tall and 8px apart; Clear selection is a text button whose label sits in its padding (#580). | `components/SelectionBar.tsx` | low | #566 |
+| Trash | `universe-trash` | 1440 | "Delete permanently" is dim grey, low contrast. Not a defect: contrast is 5.88:1 in light and dark, above AA 4.5:1; it opens a confirm, so the quiet text tone is by design (#580). | `pages/UniverseTrash.tsx`, `components/trash/TrashRow.tsx` | low | #566 |
+| Project tabs (Writing project, Series) | `project-writing`, `project-series-structure`, `project-series-script` | 390 | The last tab pill is cut off at the edge. Not a defect: the strip scrolls sideways by design (scrollWidth 506 against 350); scrolled to the end the last pill ends at x 370, the gutter (#580). | `components/ProjectShell.tsx` | low | #566 |
 
 ## Detail and form screens (#567)
 
@@ -90,10 +90,10 @@ repository; each fixing PR commits the before and after of what it fixes.
 
 - **Section headings:** Entities and Types use a large serif heading; "TYPES", "STRUCTURE" and "STORY ARCS" use small
   spaced capitals.
-- **Empty states:** three styles across Cinema sagas, Comic arcs and a game project's Systems.
+- **Empty states:** three styles across Cinema sagas, Comic arcs and a game project's Systems. Not a defect (#580): Sagas and Systems already share `EmptyState`; Arcs keeps a one-line note under each of its two sections, as Sagas' Unassigned does.
 - **Save:** a sticky save bar on script, idea, board and entry forms; an inline Save button on settings and publish.
 - **Segmented toggles:** left under the heading on AI Changes and Canon; right on the filter row, and shorter than the
-  input, on Ideas and Idea boards.
+  input, on Ideas and Idea boards. Height fixed in #580; the placement stays, as a filter on the filter row.
 - **Drawer heads:** private note, feedback and type edit have a line above the title and are about 90px tall; new
   moment, new map and new scene have the title only, about 70px.
 - **Form label spacing:** tighter on the System editor than on Profile and New entry.

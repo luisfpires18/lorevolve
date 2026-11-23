@@ -6,7 +6,7 @@
   align-items: center;
   gap: var(--space-1) var(--space-2);
   min-height: var(--control-md);
-  padding: 0.3rem 0.6rem;
+  padding: var(--space-1) 0.6rem;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   background: var(--raised);
@@ -27,11 +27,11 @@
 .token {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-1);
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius-xs);
   background: var(--accent-wash);
-  padding: 0.1rem 0.2rem 0.1rem 0.5rem;
+  padding: 0.1rem var(--space-1) 0.1rem var(--space-2);
   font-size: var(--text-sm);
 }
 
@@ -43,7 +43,7 @@
   color: var(--muted);
   cursor: pointer;
   line-height: 1;
-  padding: 0 0.25rem;
+  padding: 0 var(--space-1);
 }
 
 .token__remove:hover {

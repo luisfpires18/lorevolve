@@ -24,15 +24,15 @@
 }
 
 .integrity__run {
-  margin: 1.25rem 0 0;
-  font-size: 0.85rem;
+  margin: var(--space-5) 0 0;
+  font-size: var(--text-ui);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
 .integrity__ledger {
   list-style: none;
-  margin: 2rem 0 0;
+  margin: var(--space-7) 0 0;
   padding: 0;
 }
 
@@ -45,7 +45,7 @@
 }
 
 .finding:last-child {
-  padding-bottom: 0.5rem;
+  padding-bottom: var(--space-2);
 }
 
 .finding__margin {
@@ -58,14 +58,14 @@
 .finding__mark {
   position: absolute;
   left: 7.5rem;
-  top: 0.2rem;
+  top: var(--space-1);
   bottom: 2.5rem;
   width: 2px;
   background: var(--rule);
 }
 
 .finding:last-child .finding__mark {
-  bottom: 0.5rem;
+  bottom: var(--space-2);
 }
 
 .finding[data-severity='2'] .finding__mark {
@@ -120,7 +120,7 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.3rem 0.7rem;
+  gap: var(--space-1) var(--space-3);
   margin: 0;
 }
 
@@ -140,12 +140,12 @@
   font-family: var(--display);
   font-weight: 400;
   font-size: var(--text-item);
-  margin: 0.3rem 0 0.4rem;
+  margin: var(--space-1) 0 0.4rem;
   overflow-wrap: anywhere;
 }
 
 .finding__account {
-  margin: 0 0 0.7rem;
+  margin: 0 0 var(--space-3);
   max-width: 64ch;
   font-size: var(--text-body);
   overflow-wrap: anywhere;
@@ -155,8 +155,8 @@
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem var(--space-5);
-  margin: 0 0 0.7rem;
+  gap: var(--space-1) var(--space-5);
+  margin: 0 0 var(--space-3);
   padding: 0;
   font-size: var(--text-sm);
   overflow-wrap: anywhere;

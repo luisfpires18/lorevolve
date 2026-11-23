@@ -115,6 +115,35 @@ public sealed class ProjectFormatTests(LorEvolveApiFactory factory) : IClassFixt
         Assert.Equal("short-film", projects.Single(project => project.Name == "Short one").Format);
         Assert.Null(projects.Single(project => project.Name == "Long one").Format);
     }
+    /// <summary>The app lets two projects share a name, so its own export has to restore.</summary>
+    [Fact]
+    public async Task Two_projects_of_one_name_survive_a_backup_and_restore()
+    {
+        var client = await SignedIn(_factory, "fmtsamename");
+        var u = (await PublishingTestClient.CreateUniverse(client, "Same name world")).Id;
+        await Create(client, new ProjectRequest("Twin", ProjectKind.Series, ProjectLifecycle.Planning, null, null, u, null, "tv-show"));
+        await Create(client, new ProjectRequest("Twin", ProjectKind.Film, ProjectLifecycle.Planning, null, null, u, null, "feature-film"));
+        var archive = await RawArchive(client, u);
+        Assert.Equal(2, BackupOf(archive).Payload.CreativeProjects!.Count(project => project.Name == "Twin"));
+
+        await Validated(client, archive);
+        var restored = await RestoreArchive(client, archive, "Same name world restored");
+        var projects = (await client.GetFromJsonAsync<List<ProjectDetail>>($"/api/projects?universeId={restored.Id}"))!;
+        Assert.Equal(2, projects.Count);
+        Assert.All(projects, project => Assert.Equal("Twin", project.Name));
+        Assert.Equal("tv-show", projects.Single(project => project.Kind == ProjectKind.Series).Format);
+        Assert.Equal("feature-film", projects.Single(project => project.Kind == ProjectKind.Film).Format);
+
+        // The names a restore does need unique are still refused.
+        var twinType = Rewrite(archive, root =>
+        {
+            var types = root["payload"]!["entityTypes"]!.AsArray();
+            types[1]!["name"] = types[0]!["name"]!.GetValue<string>();
+        });
+        var refusal = await Refused(await Validate(client, twinType));
+        Assert.Contains(refusal.Issues, issue => issue.Message.Contains("entry types are both called", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task A_backup_whose_comic_carries_a_film_format_is_refused()
     {

@@ -19,7 +19,7 @@
 
 /* A quiet link tucked under a field, such as Forgot your password? under the sign-in password. */
 .form__aside {
-  margin: -1rem 0 0;
+  margin: calc(-1 * var(--space-4)) 0 0;
   font-size: var(--text-ui);
 }
 
@@ -73,7 +73,7 @@
 .field__input {
   width: 100%;
   min-height: var(--control-md);
-  padding: 0.45rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-sm);
   background: var(--raised);
@@ -114,7 +114,7 @@
 .field__input--area {
   resize: vertical;
   line-height: 1.6;
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem var(--space-3);
 }
 
 /* Three rows is a paragraph on a desktop and a keyhole on a phone, where the same text
@@ -128,7 +128,7 @@
 }
 
 .field__input--select {
-  padding-inline: 0.5rem;
+  padding-inline: var(--space-2);
 }
 
 /* A document's title as its field: the author's words in the display face at a heading's size, so an idea or a rule

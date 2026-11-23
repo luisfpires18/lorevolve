@@ -7,8 +7,8 @@
 
 /* Doubled with `.quietnote` because this sheet loads before 021, so the size wins. */
 .quietnote.restore__lead {
-  margin: -0.75rem 0 1.5rem;
-  font-size: 0.925rem;
+  margin: calc(-1 * var(--space-3)) 0 var(--space-6);
+  font-size: var(--text-ui);
 }
 
 /* A native file input, so the keyboard, a screen reader and dropping a file on it all work as the
@@ -16,7 +16,7 @@
 .restore__file {
   max-width: 100%;
   font: inherit;
-  font-size: 0.925rem;
+  font-size: var(--text-ui);
   color: var(--ink);
 }
 
@@ -33,7 +33,7 @@
 .restore__progress {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
   max-width: 28rem;
 }
 
@@ -46,7 +46,7 @@
 .restore__heading {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 1.1rem;
+  font-size: var(--text-item);
   margin: 0 0 0.9rem;
 }
 
@@ -63,10 +63,10 @@
 /* Long and unbroken text - a name in another script, a pasted path - wraps inside the panel. */
 .restore__issues {
   margin: 0;
-  padding-left: 1.2rem;
+  padding-left: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
   overflow-wrap: anywhere;
 }

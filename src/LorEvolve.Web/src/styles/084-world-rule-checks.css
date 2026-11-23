@@ -20,10 +20,10 @@
 
 .rule__legend {
   width: 100%;
-  margin-bottom: 0.25rem;
-  padding: 1rem 0 0;
+  margin-bottom: var(--space-1);
+  padding: var(--space-4) 0 0;
   border-top: 1px solid var(--rule);
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
 }
@@ -37,7 +37,7 @@
 .rule__checkfields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .rule__max,
@@ -53,7 +53,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -67,8 +67,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  margin-top: 0.5rem;
-  padding: 0.75rem;
+  margin-top: var(--space-2);
+  padding: var(--space-3);
   border: 1px solid var(--rule);
   background: var(--surface);
 }
@@ -110,22 +110,22 @@
 }
 
 .rulecheck__list {
-  margin: 0.5rem 0 0;
-  padding-left: 1.1rem;
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
 }
 
 .rulecheck__list li + li {
-  margin-top: 0.2rem;
+  margin-top: var(--space-1);
 }
 
 .rulecheck__note {
-  margin: 0.45rem 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
 }
 
 /* A moment's validation details: folded at the foot of the drawer, because most moments need none. */
 .moment__details {
-  padding-top: 0.75rem;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--rule);
 }
 
@@ -137,7 +137,7 @@
 }
 
 .moment__details[open] > summary {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .moment__detailscount {
@@ -153,7 +153,7 @@
 
 .moment__validation {
   margin: 0.4rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 
 .moment__validationlabel {
@@ -164,12 +164,12 @@
 
 /* The vocabulary on the Types screen. */
 .terms__group {
-  margin-top: 1.25rem;
+  margin-top: var(--space-5);
 }
 
 .terms__kind {
   margin: 0 0 0.35rem;
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
   font-weight: 600;
 }
 

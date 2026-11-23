@@ -188,7 +188,7 @@
 
 .entitycard__excerpt mark {
   padding: 0 0.1em;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--accent-wash);
   color: var(--ink);
 }

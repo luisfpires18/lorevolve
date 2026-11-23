@@ -132,7 +132,7 @@
 
 .masscreate__input {
   min-height: var(--control-sm);
-  padding-block: 0.2rem;
+  padding-block: var(--space-1);
   font-size: var(--text-ui);
 }
 
@@ -191,7 +191,7 @@
   .masscreate__number {
     grid-area: number;
     align-self: start;
-    padding-top: 0.7rem;
+    padding-top: var(--space-3);
   }
 
   .masscreate__cell--name {
