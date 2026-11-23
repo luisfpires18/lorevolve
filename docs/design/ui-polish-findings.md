@@ -7,7 +7,7 @@ out of scope.
 ## Method
 
 - The app from `dev` at `5af68857` (the same tree as PROD on 2026-11-22), run locally on a seeded world.
-- 102 screens captured at 1440 and 390, in light and dark: 410 screenshots. 86 are routes, 16 are open drawers, dialogs
+- 103 screens captured at 1440 and 390, in light and dark: 410 screenshots. 86 are routes, 16 are open drawers, dialogs
   and menus.
 - Four reviewers each read the 1440 dark and 390 light shot of about 26 screens. The 1440 shots were read at half size,
   so offsets under about 4px may be missed.
@@ -90,14 +90,115 @@ out of scope.
 - **Rule rows:** World Logic's first row differs from World rules.
 - **Entities and Types lists:** drawn in different frames on the game pages and the project pages.
 
-## No defect found
+## Every captured screen
 
-account-projects, account-project-new, account-ai-changes, connect-authorize, universe-home, maps, map, timeline,
-projects, writing, gaming, cinema, comic, project-game-systems, project-series-entities, project-film-entities,
-project-comic-entities, canon, universe-ai-changes, universe-publish, universe-settings, empty-universe-lore,
-empty-universe-timeline, admin-home, admin-users, admin-tracing, admin-feedback, drawer-account-menu, dialog-feedback,
-dialog-new-universe, drawer-entry-edit, drawer-entry-private-note, menu-entry-more-actions, dialog-entry-image,
-drawer-type-edit, drawer-idea-capture, drawer-story-new-scene, entry-character.
+103 screens. One row each; the detail is in the sections above.
+
+| Screen | Page component | Result |
+| --- | --- | --- |
+| `account-universes` | `src/LorEvolve.Web/src/pages/UniversesPage.tsx` | none found |
+| `account-profile` | `src/LorEvolve.Web/src/pages/ProfilePage.tsx` | Theme and Language groups barely separated; centred title (#568) |
+| `account-projects` | `src/LorEvolve.Web/src/pages/ProjectsPage.tsx` | none found |
+| `account-project-new` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx (NewProject)` | none found |
+| `account-ai-changes` | `src/LorEvolve.Web/src/pages/AiChangesPage.tsx` | none found |
+| `connect-authorize` | `src/LorEvolve.Web/src/pages/ConnectAuthorizePage.tsx` | none found |
+| `universe-home` | `src/LorEvolve.Web/src/pages/UniverseOverview.tsx (in UniverseWorkspace.tsx)` | none found |
+| `lore` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | none found |
+| `lore-type-character` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | Toolbar mixes control heights, low (#566) |
+| `lore-type-vessel` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | Toolbar mixes control heights, low (#566) |
+| `lore-new` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Heading breaks mid-word at 390; status toggle far from the form at 1440 (#567) |
+| `lore-new-character` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Heading breaks mid-word at 390 (#567) |
+| `lore-mass-create` | `src/LorEvolve.Web/src/pages/MassCreatePage.tsx` | none found |
+| `entry-character-progression` | `src/LorEvolve.Web/src/pages/EntityPage.tsx view=progression` | Header buttons about 4px above the tab labels, low (#565) |
+| `entry-character-history` | `src/LorEvolve.Web/src/pages/EntityPage.tsx view=history` | Header buttons about 4px above the tab labels, low (#565) |
+| `entry-location` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Header buttons about 4px above the tab labels, low (#565) |
+| `entry-vessel` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Header buttons about 4px above the tab labels, low (#565) |
+| `entry-longname` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Header buttons about 4px above the tab labels, low (#565) |
+| `maps` | `src/LorEvolve.Web/src/pages/MapsPage.tsx` | none found |
+| `map` | `src/LorEvolve.Web/src/pages/MapPage.tsx` | none found |
+| `timeline` | `src/LorEvolve.Web/src/pages/TimelinePage.tsx` | none found |
+| `timeline-configuration` | `src/LorEvolve.Web/src/pages/ChronologyPage.tsx` | Two "Add date period" buttons, low (#567) |
+| `world-logic` | `src/LorEvolve.Web/src/pages/WorldLogicPage.tsx` | First rule row offset about 6px, doubled divider (#568) |
+| `system-new` | `src/LorEvolve.Web/src/pages/SystemEditorPage.tsx` | Summary label about 5px under the Name input (#567) |
+| `system` | `src/LorEvolve.Web/src/pages/SystemEditorPage.tsx` | Summary label about 5px under the Name input (#567) |
+| `world-rules` | `src/LorEvolve.Web/src/pages/WorldRulesPage.tsx` | none found |
+| `world-rule-new` | `src/LorEvolve.Web/src/pages/WorldRulePage.tsx` | Save bar covers "Check against the timeline" at 390 (#567) |
+| `world-rule` | `src/LorEvolve.Web/src/pages/WorldRulePage.tsx` | Save bar covers "Check against the timeline" at 390 (#567) |
+| `projects` | `src/LorEvolve.Web/src/pages/ProjectsDirectory.tsx` | none found |
+| `writing` | `src/LorEvolve.Web/src/pages/StoriesPage.tsx` | none found |
+| `gaming` | `src/LorEvolve.Web/src/pages/CategoryShelfPage.tsx` | none found |
+| `cinema` | `src/LorEvolve.Web/src/pages/CategoryShelfPage.tsx` | none found |
+| `cinema-sagas` | `src/LorEvolve.Web/src/pages/CategoryShelfPage.tsx` | First element about 8px under the tab strip; strip below the footer at 390 (#566, #565) |
+| `comic` | `src/LorEvolve.Web/src/pages/CategoryShelfPage.tsx` | none found |
+| `comic-arcs` | `src/LorEvolve.Web/src/pages/CategoryShelfPage.tsx` | Wider than the screen at 390; first element about 8px under the tabs (#566) |
+| `game-entities` | `src/LorEvolve.Web/src/pages/ProjectsPage.tsx` | "New entry" right-aligned below the cards at 390 (#566) |
+| `game-entities-project` | `src/LorEvolve.Web/src/pages/GameEntitiesPage.tsx` | "New entry" right-aligned below the cards at 390 (#566) |
+| `game-entities-project-types` | `src/LorEvolve.Web/src/pages/GameEntitiesPage.tsx` | Strip below the footer at 390, low (#565) |
+| `game-entity-new` | `src/LorEvolve.Web/src/pages/GameEntityPage.tsx` | Save bar crosses the content, capture?, low (#567) |
+| `game-entity` | `src/LorEvolve.Web/src/pages/GameEntityPage.tsx` | none found |
+| `story-structure` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> StoryPage (scenes)` | "New scene" floats over the first scene row at 390 (#567) |
+| `story-manuscript` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> StoryPage (manuscript)` | Point of view avatar offset about 10px; strip below the footer at 390, low (#567, #565) |
+| `story-scene` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> StoryPage (manuscript)` | Point of view avatar offset about 10px; strip below the footer at 390, low (#567, #565) |
+| `story-redirect-legacy` | `src/LorEvolve.Web/src/components/StoryRedirect.tsx` | "New scene" floats over the first scene row at 390 (#567) |
+| `project-writing` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx` | Last tab pill cut off at 390, low (#566) |
+| `project-game` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx` | "New entry" right-aligned below the cards at 390 (#566) |
+| `project-game-entities` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | "New entry" right-aligned below the cards at 390 (#566) |
+| `project-game-types` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Strip below the footer at 390, low (#565) |
+| `project-game-systems` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | none found |
+| `project-game-entity-new` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Save bar crosses the content, capture?, low (#567) |
+| `project-series-structure` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Last tab pill cut off at 390, low (#566) |
+| `project-series-script` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Last tab pill cut off at 390; save bar crosses the content, low (#566, #567) |
+| `project-series-entities` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | none found |
+| `project-film-structure` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Row buttons wrap differently per level; two empty rules under the last row, low (#567) |
+| `project-film-script` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Save bar crosses the textarea, capture?, low (#567) |
+| `project-film-entities` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | none found |
+| `project-comic-structure` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Row buttons wrap differently per level, low (#567) |
+| `project-comic-script` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | Save bar crosses the textarea, capture?, low (#567) |
+| `project-comic-entities` | `src/LorEvolve.Web/src/pages/ProjectPage.tsx -> ProjectBody` | none found |
+| `ideas` | `src/LorEvolve.Web/src/pages/IdeasPage.tsx` | Toggle about 3px shorter than the filter input, low (#566) |
+| `ideas-deleted` | `src/LorEvolve.Web/src/components/ideas/RecordListPage.tsx` | Strip below the footer at 390, low (#565) |
+| `idea-new` | `src/LorEvolve.Web/src/pages/IdeaPage.tsx` | Spaces inside the quote marks of the back link; save bar over content (#567) |
+| `idea` | `src/LorEvolve.Web/src/pages/IdeaPage.tsx` | Spaces inside the quote marks of the back link; save bar over content (#567) |
+| `idea-boards` | `src/LorEvolve.Web/src/pages/IdeasPage.tsx boards` | Toggle about 3px shorter than the filter input; strip below the footer at 390, low (#566, #565) |
+| `idea-board-new` | `src/LorEvolve.Web/src/pages/IdeaBoardPage.tsx` | Spaces inside the quote marks of the back link (#567) |
+| `idea-board` | `src/LorEvolve.Web/src/pages/IdeaBoardPage.tsx` | Spaces inside the quote marks of the back link; board at a quarter size at 390 (#567) |
+| `canon` | `src/LorEvolve.Web/src/pages/CanonPage.tsx` | none found |
+| `universe-ai-changes` | `src/LorEvolve.Web/src/pages/AiChangesPage.tsx inUniverse` | none found |
+| `universe-types` | `src/LorEvolve.Web/src/pages/UniverseTypes.tsx` | Count badge shifts Edit and "Add child" about 14px; count placement differs at 390 (#566) |
+| `universe-trash` | `src/LorEvolve.Web/src/pages/UniverseTrash.tsx` | "Delete permanently" low contrast, low (#566) |
+| `universe-publish` | `src/LorEvolve.Web/src/pages/UniversePublish.tsx` | none found |
+| `universe-settings` | `src/LorEvolve.Web/src/pages/UniverseSettings.tsx` | none found |
+| `empty-universe-home` | `src/LorEvolve.Web/src/pages/UniverseOverview.tsx` | Management cards narrower than World building cards, low (#568) |
+| `empty-universe-lore` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | none found |
+| `empty-universe-timeline` | `src/LorEvolve.Web/src/pages/TimelinePage.tsx` | none found |
+| `archived-universe-home` | `src/LorEvolve.Web/src/pages/UniverseOverview.tsx` | Universe name cut to "T..." at 390; card widths differ (#565, #568) |
+| `public-explore` | `src/LorEvolve.Web/src/pages/ExplorePage.tsx` | Portal baseline only; out of scope |
+| `admin-home` | `src/LorEvolve.Web/src/pages/AdminWorkspace.tsx (MainScreen)` | none found |
+| `admin-users` | `src/LorEvolve.Web/src/pages/AdminWorkspace.tsx (UsersScreen)` | none found |
+| `admin-user` | `src/LorEvolve.Web/src/pages/AdminWorkspace.tsx (UserScreen)` | Account cards about 272px wide in a 528px column, low (#568) |
+| `admin-tracing` | `src/LorEvolve.Web/src/pages/AdminWorkspace.tsx (tracing screen)` | none found |
+| `admin-feedback` | `src/LorEvolve.Web/src/pages/AdminWorkspace.tsx (FeedbackScreen)` | none found |
+| `drawer-account-menu` | `src/LorEvolve.Web/src/components/AccountMenu.tsx` | none found |
+| `drawer-universe-account-menu` | `src/LorEvolve.Web/src/components/AccountMenu.tsx` | Popover overlaps the rail edge by about 4px, low (#565) |
+| `dialog-feedback` | `src/LorEvolve.Web/src/components/FeedbackButton.tsx` | none found |
+| `dialog-new-universe` | `src/LorEvolve.Web/src/pages/UniversesPage.tsx` | none found |
+| `drawer-entry-edit` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | none found |
+| `drawer-entry-private-note` | `src/LorEvolve.Web/src/components/lore/PrivateNoteDrawer.tsx` | none found |
+| `menu-entry-more-actions` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | none found |
+| `dialog-entry-image` | `src/LorEvolve.Web/src/components/ImageViewer.tsx` | none found |
+| `drawer-new-moment` | `src/LorEvolve.Web/src/components/TimelineEntryForm.tsx` | Month text clipped to "Insert a mont" (#567) |
+| `menu-timeline-moment-actions` | `src/LorEvolve.Web/src/pages/TimelinePage.tsx` | Year labels stacked tightly at the top, low (#568) |
+| `drawer-new-map` | `src/LorEvolve.Web/src/components/MapForm.tsx` | Native "Choose File" control beside styled inputs (#567) |
+| `drawer-type-fields` | `src/LorEvolve.Web/src/pages/UniverseTypes.tsx` | Entry count in three places across rows at 390, low (#566) |
+| `drawer-type-edit` | `src/LorEvolve.Web/src/components/TypeDialog.tsx` | none found |
+| `drawer-idea-capture` | `src/LorEvolve.Web/src/pages/IdeasPage.tsx` | none found |
+| `state-trash-select` | `src/LorEvolve.Web/src/pages/UniverseTrash.tsx` | Selection bar wraps unevenly at 390, low (#566) |
+| `drawer-story-new-scene` | `src/LorEvolve.Web/src/components/SceneForm.tsx` | none found |
+| `phone-sidebar-drawer` | `src/LorEvolve.Web/src/components/universes/WorkspaceRail.tsx` | Management items three in a row, "AI Changes" wraps, Trash and Settings not visible (#565) |
+| `entry-character` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | none found |
+| `entry-character-relations` | `src/LorEvolve.Web/src/pages/EntityPage.tsx view=relations` | Doubled gaps around the name in two sentences (#567) |
+| `family-tree` | `src/LorEvolve.Web/src/pages/FamilyTreePage.tsx` | About 175px between the search input and its button, low (#568) |
+| `family-tree-entry` | `src/LorEvolve.Web/src/pages/FamilyTreePage.tsx` | Adjacent help texts differ in size and line length, low (#567) |
 
 ## Placeholders on inputs (#567)
 
@@ -113,8 +214,8 @@ Owner rule, 2026-11-22: "Avoid placeholders on inputs". The label names the fiel
 ## Off-scale values and duplicated code (#563, #564)
 
 Measured by script over `src/LorEvolve.Web/src/styles/*.css` against the tokens in `001-foundation.css`. The full
-tables, with file and line, are in `docs/design/evidence/562/inventory.md`. Workspace counts; the portal is listed
-there separately and is out of scope.
+tables, with file and line, are in `docs/design/evidence/562/inventory.md`. Workspace only; the portal is out of
+scope and not listed.
 
 | Kind | Raw uses in the workspace | Note |
 | --- | --- | --- |

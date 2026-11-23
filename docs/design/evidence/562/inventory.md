@@ -2,7 +2,6 @@
 
 Read-only measurement. Nothing in `src` was changed. Scripts in this folder: `audit.py` (Part A and CSS repeats), `markup.py` (raw markup probes, writes `markup_hits.txt`), `build.py` (this file).
 
-Duplicate candidates: 16 workspace markup rows, 6 portal markup rows, 21 exact CSS groups (19 span 2+ files), 5 near CSS pairs, total 48 (a markup row can cover many sites).
 
 # Part A: off-scale values
 
@@ -243,170 +242,6 @@ Declarations scanned: 7075. Tokenised already: spacing 696, z-index 14, radius 1
 | 129-projects-3.css | 25 |
 | 029-chronology-date-periods.css | 21 |
 
-## Portal (styles 093 to 106)
-
-Declarations scanned: 983. Tokenised already: z-index 2, spacing 73, font-size 28, control-height 11, radius 9, duration 6.
-
-### Totals
-| Category | Raw uses | Distinct raw values | Of which swap changes nothing | Top files |
-|---|---|---|---|---|
-| font-size | 26 | 24 | 3 | 103-reading-pages.css (6), 102-universe-published.css (5), 104-story-published-content.css (3), 094-bar.css (2), 096-explore-head.css (2) |
-| spacing | 83 | 24 | 46 | 103-reading-pages.css (14), 102-universe-published.css (12), 104-story-published-content.css (11), 098-explore-worlds.css (9), 105-author.css (8) |
-| radius | 4 | 2 | 0 | 094-bar.css (1), 105-author.css (1), 102-universe-published.css (1), 103-reading-pages.css (1) |
-| colour | 87 | 28 | - | 093-public-portal.css (37), 098-explore-worlds.css (14), 101-universe-hero.css (9), 094-bar.css (6), 097-explore-discovery.css (4) |
-| control-height | 4 | 4 | 2 | 094-bar.css (1), 097-explore-discovery.css (1), 098-explore-worlds.css (1), 102-universe-published.css (1) |
-| duration | 1 | 1 | 0 | 099-explore-worlds-2.css (1) |
-| z-index | 5 | 4 | 0 | 098-explore-worlds.css (3), 101-universe-hero.css (2) |
-
-### font-size
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `1.5rem` | 2 | --text-section (22px) | +2.00px | 094-bar.css (1), 103-reading-pages.css (1) | 094-bar.css:18 |
-| `1.25rem` | 2 | --text-item (18px) | +2.00px | 104-story-published-content.css (1), 106-site-footer.css (1) | 104-story-published-content.css:100 |
-| `1.2rem` | 1 | --text-item (18px) | +1.20px | 094-bar.css (1) | 094-bar.css:278 |
-| `0.8125rem` | 1 | --text-sm (13px) | none | 095-bar-2.css (1) | 095-bar-2.css:18 |
-| `clamp(2rem, 1.3rem + 2.2vw, 3.25rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 096-explore-head.css (1) | 096-explore-head.css:19 |
-| `clamp(1rem, 0.95rem + 0.3vw, 1.125rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 096-explore-head.css (1) | 096-explore-head.css:29 |
-| `1.375rem` | 1 | --text-section (22px) | none | 098-explore-worlds.css (1) | 098-explore-worlds.css:175 |
-| `clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 100-public-reading.css (1) | 100-public-reading.css:35 |
-| `clamp(2.25rem, 1.3rem + 3vw, 4rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 101-universe-hero.css (1) | 101-universe-hero.css:81 |
-| `clamp(1rem, 0.95rem + 0.35vw, 1.1875rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 101-universe-hero.css (1) | 101-universe-hero.css:104 |
-| `clamp(1.5rem, 1.2rem + 1vw, 2rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 102-universe-published.css (1) | 102-universe-published.css:43 |
-| `2rem` | 1 | --text-section (22px) | +10.00px | 102-universe-published.css (1) | 102-universe-published.css:155 |
-| `1.1875rem` | 1 | --text-item (18px) | +1.00px | 102-universe-published.css (1) | 102-universe-published.css:189 |
-| `clamp(1.375rem, 1.2rem + 0.5vw, 1.625rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 102-universe-published.css (1) | 102-universe-published.css:222 |
-| `1rem` | 1 | --text-body (16px) | none | 102-universe-published.css (1) | 102-universe-published.css:227 |
-| `clamp(2rem, 1.2rem + 3vw, 3.5rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 103-reading-pages.css (1) | 103-reading-pages.css:82 |
-| `clamp(1.0625rem, 1rem + 0.4vw, 1.25rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 103-reading-pages.css (1) | 103-reading-pages.css:93 |
-| `clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 103-reading-pages.css (1) | 103-reading-pages.css:161 |
-| `clamp(2.25rem, 1.3rem + 3.4vw, 4rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 103-reading-pages.css (1) | 103-reading-pages.css:171 |
-| `clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 103-reading-pages.css (1) | 103-reading-pages.css:186 |
-| `clamp(1.375rem, 1.2rem + 0.8vw, 1.875rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 104-story-published-content.css (1) | 104-story-published-content.css:57 |
-| `clamp(1.125rem, 1.05rem + 0.3vw, 1.25rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 104-story-published-content.css (1) | 104-story-published-content.css:68 |
-| `clamp(2.25rem, 5vw, 3.25rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 105-author.css (1) | 105-author.css:44 |
-| `clamp(2rem, 1.3rem + 2.6vw, 3.25rem)` | 1 | n/a | not a plain length (clamp/calc/%/keyword): context-dependent | 105-author.css (1) | 105-author.css:56 |
-
-### spacing
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `1.5rem` | 16 | --space-6 (24px) | none | 103-reading-pages.css (5), 104-story-published-content.css (3), 096-explore-head.css (2), 102-universe-published.css (2) +3 more | 096-explore-head.css:6 |
-| `2rem` | 11 | --space-7 (32px) | none | 101-universe-hero.css (2), 103-reading-pages.css (2), 104-story-published-content.css (2), 105-author.css (2) +3 more | 096-explore-head.css:6 |
-| `2.5rem` | 9 | --space-7 (32px) | +8.00px | 103-reading-pages.css (2), 104-story-published-content.css (2), 105-author.css (2), 094-bar.css (1) +2 more | 094-bar.css:145 |
-| `0.375rem` | 5 | --space-1 (4px) | +2.00px | 103-reading-pages.css (2), 094-bar.css (1), 095-bar-2.css (1), 098-explore-worlds.css (1) | 094-bar.css:97 |
-| `1.125rem` | 5 | --space-4 (16px) | +2.00px | 102-universe-published.css (2), 094-bar.css (1), 098-explore-worlds.css (1), 099-explore-worlds-2.css (1) | 094-bar.css:99 |
-| `1rem` | 5 | --space-4 (16px) | none | 098-explore-worlds.css (2), 099-explore-worlds-2.css (1), 103-reading-pages.css (1), 105-author.css (1) | 098-explore-worlds.css:8 |
-| `4rem` | 4 | --space-9 (64px) | none | 096-explore-head.css (1), 101-universe-hero.css (1), 104-story-published-content.css (1), 105-author.css (1) | 096-explore-head.css:6 |
-| `3rem` | 4 | --space-8 (48px) | none | 100-public-reading.css (1), 102-universe-published.css (1), 103-reading-pages.css (1), 104-story-published-content.css (1) | 100-public-reading.css:27 |
-| `0.875rem` | 3 | --space-3 (12px) | +2.00px | 094-bar.css (2), 102-universe-published.css (1) | 094-bar.css:176 |
-| `0.625rem` | 3 | --space-2 (8px) | +2.00px | 098-explore-worlds.css (2), 102-universe-published.css (1) | 098-explore-worlds.css:162 |
-| `3.5rem` | 3 | --space-8 (48px) | +8.00px | 101-universe-hero.css (1), 103-reading-pages.css (1), 104-story-published-content.css (1) | 101-universe-hero.css:9 |
-| `0.25rem` | 2 | --space-1 (4px) | none | 094-bar.css (1), 102-universe-published.css (1) | 094-bar.css:183 |
-| `1.25rem` | 2 | --space-5 (20px) | none | 099-explore-worlds-2.css (1), 102-universe-published.css (1) | 099-explore-worlds-2.css:12 |
-| `0.6rem` | 1 | --space-2 (8px) | +1.60px | 094-bar.css (1) | 094-bar.css:24 |
-| `0.45rem` | 1 | --space-2 (8px) | -0.80px | 095-bar-2.css (1) | 095-bar-2.css:5 |
-| `0.5rem` | 1 | --space-2 (8px) | none | 095-bar-2.css (1) | 095-bar-2.css:27 |
-| `2.25rem` | 1 | --space-7 (32px) | +4.00px | 096-explore-head.css (1) | 096-explore-head.css:27 |
-| `0.125rem` | 1 | none (hairline nudge, below --space-1) | n/a | 097-explore-discovery.css (1) | 097-explore-discovery.css:136 |
-| `-2.75rem` | 1 | calc(-1 * var(--space-8)) (-48px) | -4.00px | 098-explore-worlds.css (1) | 098-explore-worlds.css:163 |
-| `0.1875rem` | 1 | --space-1 (4px) | -1.00px | 098-explore-worlds.css (1) | 098-explore-worlds.css:201 |
-| `7rem` | 1 | --space-9 (64px) | +48.00px | 100-public-reading.css (1) | 100-public-reading.css:27 |
-| `4.5rem` | 1 | --space-9 (64px) | +8.00px | 101-universe-hero.css (1) | 101-universe-hero.css:9 |
-| `0.75rem` | 1 | --space-3 (12px) | none | 102-universe-published.css (1) | 102-universe-published.css:86 |
-| `1.1em` | 1 | n/a | em is relative to font-size: no token | 104-story-published-content.css (1) | 104-story-published-content.css:80 |
-
-### radius
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `50%` | 2 | none (shape, not size) | n/a | 094-bar.css (1), 105-author.css (1) | 094-bar.css:71 |
-| `0.5rem` | 2 | --radius-sm (6px) | +2.00px | 102-universe-published.css (1), 103-reading-pages.css (1) | 102-universe-published.css:141 |
-
-### colour
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `rgb() ` | 51 | see tokens in 001 | n/a | 098-explore-worlds.css (14), 101-universe-hero.css (9), 094-bar.css (6), 097-explore-discovery.css (4) +8 more | 093-public-portal.css:116 |
-| `rgb() [token def]` | 10 | see tokens in 001 | n/a | 093-public-portal.css (10) | 093-public-portal.css:45 |
-| `#0e1115 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:17 |
-| `#ece6da [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:21 |
-| `#0b0d10 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:31 |
-| `#15181d [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:32 |
-| `#13161b [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:33 |
-| `#1d2025 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:34 |
-| `#f1ece3 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:35 |
-| `#aba59b [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:36 |
-| `#07080a [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:54 |
-| `#a3b3ec [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:59 |
-| `#eea197 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:60 |
-| `#e0b36b [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:61 |
-| `#767a81 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:64 |
-| `#111214 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:66 |
-| `#f3eee5 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:89 |
-| `#e9e2d5 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:90 |
-| `#faf7f1 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:91 |
-| `#fffdf9 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:92 |
-| `#1f1c18 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:93 |
-| `#5f574b [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:94 |
-| `#201f1d [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:102 |
-| `#2e4795 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:103 |
-| `#96271f [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:104 |
-| `#8a5b12 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:105 |
-| `#8c8170 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:106 |
-| `#fdfbf7 [token def]` | 1 | see tokens in 001 | n/a | 093-public-portal.css (1) | 093-public-portal.css:107 |
-
-### control-height
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `height:2rem` | 1 | --control-sm (32px) | none | 094-bar.css (1) | 094-bar.css:188 |
-| `min-height:2.25rem` | 1 | --control-sm (32px) | +4.00px | 097-explore-discovery.css (1) | 097-explore-discovery.css:36 |
-| `height:3rem` | 1 | --control-touch (44px) | +4.00px | 098-explore-worlds.css (1) | 098-explore-worlds.css:153 |
-| `height:2.5rem` | 1 | --control-md (40px) | none | 102-universe-published.css (1) | 102-universe-published.css:77 |
-
-### duration
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `1.6s` | 1 | --duration-3 (240ms) | +1360ms | 099-explore-worlds-2.css (1) | 099-explore-worlds-2.css:50 |
-
-### z-index
-| Raw value | Count | Nearest token | Swap changes render by | Files (count) | Example |
-|---|---|---|---|---|---|
-| `-1` | 2 | none (local stacking inside a component) | n/a | 098-explore-worlds.css (1), 101-universe-hero.css (1) | 098-explore-worlds.css:103 |
-| `1` | 1 | none (local stacking inside a component) | n/a | 098-explore-worlds.css (1) | 098-explore-worlds.css:78 |
-| `2` | 1 | none (local stacking inside a component) | n/a | 098-explore-worlds.css (1) | 098-explore-worlds.css:87 |
-| `-2` | 1 | none (local stacking inside a component) | n/a | 101-universe-hero.css (1) | 101-universe-hero.css:16 |
-
-### font-weight distribution
-| Value | Count |
-|---|---|
-| 600 | 16 |
-| 500 | 5 |
-
-### line-height distribution
-| Value | Count |
-|---|---|
-| 1.2 | 5 |
-| 1.05 | 3 |
-| 1.5 | 3 |
-| 1.6 | 3 |
-| 1.4 | 2 |
-| 1.8 | 2 |
-| 1.35 | 1 |
-| 1.15 | 1 |
-| 1.03 | 1 |
-| 1.55 | 1 |
-| 1.3 | 1 |
-| 1 | 1 |
-
-### Portal: files with the most off-scale values (all categories)
-| File | Raw uses |
-|---|---|
-| 093-public-portal.css | 37 |
-| 098-explore-worlds.css | 28 |
-| 103-reading-pages.css | 25 |
-| 102-universe-published.css | 23 |
-| 101-universe-hero.css | 19 |
-| 094-bar.css | 17 |
-| 104-story-published-content.css | 17 |
-| 105-author.css | 13 |
-
 # Part B: duplicated UI code
 
 ## Workspace markup that bypasses a shared component
@@ -430,18 +265,7 @@ Declarations scanned: 983. Tokenised already: z-index 2, spacing 73, font-size 2
 | M15 | CinemaSagas.tsx:110, ComicCollections.tsx:93, ProjectSchema.tsx:163, RelationshipTypeManager.tsx:106, TypeTemplates.tsx:111 and 8 more (13 `ul.types__list`, 21 grep hits) | The same `types__list` list shell repeated by class name | `TypeRow` / `LinkRow` / `ManageRow` inside one list component | low (class reuse, not copied markup) |
 | M16 | RestoreBackup.tsx:45, pages/UniversesPage.tsx:112 | `<h2 className="composer__title">` panel heads | `PageHeader size="panel"` | low |
 
-## Portal markup that bypasses a shared component (styles 093 to 106, `components/portal`, `Public*`)
-
-| # | Where | Hand-rolled | Should use | Sure |
-|---|---|---|---|---|
-| P1 | portal/World.tsx:198, portal/PublicAuthor.tsx:52, portal/World.tsx:184 | `pworld__empty` block used for empty and for failed read (with `role="alert"`) | `EmptyState` / `LoadError` / `PortalMissing` | medium |
-| P2 | portal/World.tsx:119 (`plore-grid`), :161 (`pstory-grid`), portal/WorldGrid.tsx:23 and :31 (`explore-grid`) | Own `ul` grids; only `LoreCatalog` and `ProjectsDirectory` use `CardGrid` among cards | `CardGrid` | medium |
-| P3 | PortalMissing.tsx:32, portal/PublicAuthor.tsx:54 | `<button className="portal__pill">` retry | `Button` / `LoadError` retry | medium |
-| P4 | PortalMissing.tsx:29, pages/ExplorePage.tsx:82 (`explore__error`) | Own `role="alert"` error blocks | `LoadError` / `Callout tone="error"` (portal read gate: `PublicReadGate`) | low-medium |
-| P5 | portal/PublicLore.tsx:29, portal/PublicStory.tsx:33 (`pread__title`) | Same reading-page head markup in two files | One shared reading head (no catalogued part) | low |
-| P6 | portal/PortalCard.tsx:46 (`plorecard` / `pstorycard`) | Two card classes switched by a ternary | Single `PortalCard` class with a modifier | low |
-
-## Repeated CSS (workspace and portal together; Area column says which)
+## Repeated CSS (workspace only)
 
 Exact: same ctx (media/supports) and identical set of >= 4 declarations (custom properties ignored) under two or more different selectors. Near: >= 6 declarations, Jaccard >= 0.8, different files.
 
@@ -453,8 +277,6 @@ Exact groups: 21 (19 span 2+ files). Near pairs: 5.
 |---|---|---|---|---|
 | 4 | 5 | workspace | 017-universe-colour.css:7 `.colourfield__row`, 037-lore-front-page.css:8 `.lorecatalog__browse`, 040-entry-lore-article.css:22 `.entry__kind`, 049-types.css:243 `.types__head`, 119-relations-when.css:24 `.relperiod__head` | `align-items:center; display:flex; flex-wrap:wrap ...` |
 | 4 | 5 | workspace | 018-controls.css:125 `.feedbackdialog fieldset`, 069-stories-3.css:1 `.scenechron`, 114-pending-ai-changes-2.css:3 `.consent__propose`, 116-entry-forms-and-abilities.css:51 `.scenepicks__group`, 122-maps-2.css:186 `.mappinform__position` | `border:0; margin:0; min-width:0 ...` |
-| 4 | 4 | mixed | 090-publishing-settings.css:150 `.artwork__card`, 098-explore-worlds.css:135 `.worldcard__image`, 102-universe-published.css:145 `.plorecard__thumb img`, 105-author.css:34 `.pauthor__avatar img.pauthor__photo` | `display:block; height:100%; object-fit:cover ...` |
-| 6 | 3 | mixed | 031-lore-browser.css:181 `.lore__activefilters`, 097-explore-discovery.css:22 `.explore-cats__list`, 115-entry-eras.css:25 `.eranav__list` | `display:flex; flex-wrap:wrap; gap:var(--space-2) ...` |
 | 4 | 4 | workspace | 035-lore-cards.css:99 `.entitycard__body`, 037-lore-front-page.css:109 `.lorecatalog__grid > li`, 038-lore-front-page-2.css:35 `.typecard__body`, 038-lore-front-page-2.css:55 `.typecard__details` | `display:flex; flex-direction:column; gap:var(--space-1) ...` |
 | 4 | 3 | workspace | 020-collaborators.css:126 `.collab__controls`, 050-types-2.css:66 `.typegroups__newrow`, 124-idea-boards.css:22 `.board__connecting` | `align-items:center; display:flex; flex-wrap:wrap ...` |
 | 4 | 3 | workspace | 034-lore-types-navigation.css:208 `.typemenu__current`, 035-lore-cards.css:144 `.entitycard__typename`, 037-lore-front-page.css:56 `.lorecatalog__group > bdi` | `min-width:0; overflow:hidden; text-overflow:ellipsis ...` |
@@ -464,7 +286,6 @@ Exact groups: 21 (19 span 2+ files). Near pairs: 5.
 | 5 | 2 | workspace | 050-types-2.css:140 `.typegroups__row`, 057-entity-picker.css:130 `.quickcreate__matches li` | `align-items:center; display:flex; flex-wrap:wrap ...` |
 | 5 | 2 | workspace | 121-maps.css:146 `.mapviewer__layer`, 124-idea-boards.css:106 `.boardcanvas__layer` | `left:0; position:absolute; top:0 ...` |
 | 4 | 3 | workspace | 121-maps.css:20 `.mapcard`, 125-idea-boards-2.css:155 `.guardblock`, 125-idea-boards-2.css:206 `.guardblock__children, .guardblock__slot, .guard` | `display:flex; flex-direction:column; gap:var(--space-2) ...` |
-| 4 | 2 | mixed | 031-lore-browser.css:12 `.lore__nav`, 097-explore-discovery.css:70 `.explore-select` | `align-items:center; display:flex; gap:var(--space-2) ...` |
 | 4 | 2 | workspace | 042-entry-form.css:55 `.entrycopy__options`, 051-type-icon-picker.css:7 `.iconpicker` | `border:0; margin:0; min-inline-size:0 ...` |
 | 4 | 2 | workspace | 044-thumbnail-cropper.css:45 `.cropper__title`, 130-shared-rows.css:132 `.panelhead__title` | `font-family:var(--display); font-size:var(--text-section); font-weight:400 ...` |
 | 4 | 2 | workspace | 079-trash.css:7 `.trash__list`, 082-ideas-2.css:64 `.ideapicker__results` | `border-top:1px solid var(--rule); list-style:none; margin:0 ...` |
@@ -497,5 +318,4 @@ Exact groups: 21 (19 span 2+ files). Near pairs: 5.
 - Rendered pixel effect: swap verdicts are arithmetic at 16px root, not screenshots. `em` values depend on the parent size.
 - CSS repeats need >= 4 identical declarations (exact) or >= 6 with Jaccard >= 0.8 (near). Three-line flex helpers and pairs of 4 to 5 declarations that differ by one value are not listed.
 - Markup: only `className`-based and role-based probes in non-test `.tsx`. Hand-rolled structure with no telling class (a div grid built from inline `style`) and duplicated TypeScript logic are not covered. Confidence is from reading 3 to 5 lines at each site, not the whole component.
-- The 129 files include `022-shared-surfaces` and `022-utilities` sharing a number, and no `071`/`126`. Portal is taken as filenames 093 to 106 only.
 - Spacing off-scale values are counted on padding, margin, gap, inset, top/right/bottom/left only (not width, flex-basis, translate). Colours inside `001-foundation.css` are skipped by design.
