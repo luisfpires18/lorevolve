@@ -54,6 +54,7 @@ export function SystemDetails({
       {failure ? <FormMessage testId="system-editor-error">{failure}</FormMessage> : null}
 
       <form
+        className="form"
         noValidate
         onSubmit={(event) => {
           event.preventDefault()
@@ -77,7 +78,6 @@ export function SystemDetails({
               dir="auto"
               value={name}
               maxLength={SYSTEM_NAME_MAX_LENGTH}
-              placeholder={t('canon.worldLogic.systems.editor.namePlaceholder')}
               onChange={(event) => setName(event.target.value)}
               aria-invalid={control['aria-invalid']}
               aria-describedby={control['aria-describedby']}
@@ -100,7 +100,6 @@ export function SystemDetails({
               dir="auto"
               value={summary}
               maxLength={SYSTEM_SUMMARY_MAX_LENGTH}
-              placeholder={t('canon.worldLogic.systems.editor.summaryPlaceholder')}
               onChange={(event) => setSummary(event.target.value)}
               aria-invalid={control['aria-invalid']}
               aria-describedby={control['aria-describedby']}

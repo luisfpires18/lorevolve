@@ -63,13 +63,6 @@ const canonWorldLogicMachine: Dictionary['canon']['worldLogic']['systems']['mach
     attribute: 'Atributo',
     bindingHint: 'O tipo de entrada que esta máquina abrange e o atributo que guarda o seu estado.',
   },
-  placeholders: {
-    name: 'Insira um nome',
-    value: 'Insira um valor',
-    label: 'Insira uma etiqueta',
-    subjectType: 'Insira um tipo de sujeito',
-    attribute: 'Insira um atributo',
-  },
   nameRequired: 'Insira um nome.',
   valueRequired: 'Insira um valor.',
   rulesFailed: 'Não foi possível ler as regras, por isso não é possível escolher uma guarda agora.',

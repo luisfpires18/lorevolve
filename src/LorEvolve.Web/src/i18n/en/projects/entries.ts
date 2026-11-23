@@ -9,7 +9,6 @@ const projectsEntries = {
     title: 'Copy a lore entity’s values onto this entry. The lore entity is not changed.',
     eyebrow: 'From the lore',
     search: 'Find a lore entity by name',
-    placeholder: 'Search the lore',
     looking: 'Looking…',
     searchFailed: 'The lore could not be searched.',
     emptyNamed: 'No lore entity has that name.',

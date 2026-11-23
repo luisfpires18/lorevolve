@@ -21,12 +21,14 @@ const CLASSES = {
  *
  * `variant` picks the look (`imagefield` by default, `avatar` for the Profile photo and covers),
  * `control` is a Field's input props, `canRemove` hides Remove for a picture that cannot go, and
- * `removeTone` keeps each place's own Remove look. Use with `usePictureFraming`.
+ * `removeTone` keeps each place's own Remove look, `accept` narrows the files offered (pictures by default), and `input`
+ * is optional for a place that never moves focus to the picker. Use with `usePictureFraming`.
  * Catalogue: `docs/design/ui-components.md`.
  */
 export function PictureActions({
   variant = 'imagefield',
   input,
+  accept = IMAGE_ACCEPT,
   control,
   inputId,
   hasPicture,
@@ -41,7 +43,8 @@ export function PictureActions({
   testIds,
 }: {
   variant?: keyof typeof CLASSES
-  input: RefObject<HTMLInputElement | null>
+  input?: RefObject<HTMLInputElement | null>
+  accept?: string
   control?: InputHTMLAttributes<HTMLInputElement>
   inputId: string
   hasPicture: boolean
@@ -66,7 +69,7 @@ export function PictureActions({
         {...control}
         className={classes.input}
         type="file"
-        accept={IMAGE_ACCEPT}
+        accept={accept}
         disabled={locked}
         onChange={(event) => onFile(event.target.files?.[0])}
         data-testid={testIds.input}

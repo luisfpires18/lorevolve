@@ -31,7 +31,6 @@ interface SearchPickDrawerProps<T, K extends string | number> {
     initial: K
     options: ComponentProps<typeof SegmentedControl<K>>['options']
   }
-  placeholder: (choice: K | undefined) => string
   /** Read when the settled words or the choice change: what it searches stays fixed while the drawer is open. */
   search: (words: string, choice: K | undefined, signal: AbortSignal) => Promise<T[]>
   option: (item: T) => PickOption
@@ -61,7 +60,6 @@ export function SearchPickDrawer<T, K extends string | number = never>({
   title,
   searchLabel,
   narrow,
-  placeholder,
   search,
   option,
   chosen,
@@ -111,7 +109,6 @@ export function SearchPickDrawer<T, K extends string | number = never>({
         label={searchLabel}
         inputRef={searchBox}
         value={query}
-        placeholder={placeholder(choice)}
         onChange={setQuery}
         clearOnEscape
         aria-controls={resultsId}

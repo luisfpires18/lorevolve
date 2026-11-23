@@ -6,7 +6,6 @@ const placesFamilyPage: Dictionary['places']['familyPage'] = {
   browse: 'Explorar famílias',
   shownFor: 'Família mostrada para',
   whose: 'De quem é a família?',
-  pickerPlaceholder: 'Pesquisar neste universo',
   noTypes:
     'Nenhum tipo de lore está ativado para a árvore genealógica. Podes ativar um tipo ao criá-lo, em {link}, ou ativar um grupo de tipos em Tipos na árvore genealógica, abaixo.',
   noTypesLink: 'Tipos → Tipos de lore',

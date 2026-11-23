@@ -49,7 +49,6 @@ export function CalendarMonthRow({
           label={t('time.calendar.name')}
           id={`${base}-name`}
           error={nameError}
-          placeholder={t('time.calendar.namePlaceholder')}
           autoComplete="off"
           value={month.name}
           onChange={(event) => update(index, { name: event.target.value })}
@@ -61,7 +60,6 @@ export function CalendarMonthRow({
           label={t('time.calendar.shortName')}
           id={`${base}-short`}
           error={shortError}
-          placeholder={t('time.calendar.optional')}
           autoComplete="off"
           value={month.abbreviation}
           onChange={(event) => update(index, { abbreviation: event.target.value })}

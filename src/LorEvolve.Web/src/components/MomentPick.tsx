@@ -79,7 +79,6 @@ export function MomentPick({
           <>
             <SearchField
               {...control}
-              placeholder={t('time.momentPick.search')}
               value={search}
               onChange={setSearch}
               testId={`${testId}-search`}

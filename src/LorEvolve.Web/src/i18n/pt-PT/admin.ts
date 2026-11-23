@@ -87,7 +87,6 @@ const admin: Dictionary['admin'] = {
     lede: 'Todas as contas do LorEvolve. O conteúdo dos universos nunca é mostrado aqui.',
     search: {
       label: 'Procurar uma conta',
-      placeholder: 'Nome de utilizador ou nome público',
     },
     gathering: 'A reunir as contas…',
     count: {

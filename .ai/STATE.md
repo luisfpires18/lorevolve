@@ -20,7 +20,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45158484566 on `master` `b1fcb745`, succeeded (2026-11-23, release PR #579: UI Polish so far: 21 CSS values on tokens (#574), 10 duplicated UI parts replaced by shared ones (#575), shell fixes (#576); no migration, no backend change). Health started 10:56 UTC. Earlier the same day: release PR #572 (`f7dbf8b1`).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45185618352 on `master` `05bc9dc1`, succeeded (2026-11-23, release PR #581: restore accepts a backup with two projects of one name (#570), remaining raw CSS values on tokens (#578), list screens polish (#580); no migration, one backend file). Deploy job ended 13:52 UTC. Earlier the same day: release PR #579 (`b1fcb745`).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -41,18 +41,13 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-23 `master` is release PR #579 (`dev` at `6a0647c5`); later UI Polish work on `dev` is not released. `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-23 `master` is release PR #581 (`dev` at `4a853854`); nothing merged on `dev` after that is released. `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
 
 ## In flight
-- **UI Polish milestone** (https://github.com/luisfpires18/lorevolve/milestone/15, started 2026-11-22): keep the design as on PROD, fix what is out of place, standardise, reuse shared components; portal out of scope; no placeholders on inputs. #562 merged: findings in `docs/design/ui-polish-findings.md` (103 captures, defects by screen with file and fixing Issue). Next: #563 (values on the token scales), #564, #565 to #568, #569 (summary of changes). A redesign was tried first and rejected by the owner; PR #571 closed unmerged.
-  - #563 (PR #574): 21 values moved onto tokens, each backed by a role in `docs/design/LOREVOLVE_VISUAL_REFACTOR.md` §8.
-  - #563 second pass (PR #578, owner accepted about 1px shifts): 440 more raw values on the nearest token in 75 workspace stylesheets; 524 left raw with reasons in `docs/design/evidence/563/left-values.md`; shifts measured per screen in `docs/design/evidence/563/shifts.md` (no new wrap or overflow; 13 swaps reverted on measurement; no local move over about 2px).
-  - #564 (PR #575): 7 identical rule blocks merged (LinkRow excerpt, idea and rule form, gallery, pin icon, pan and zoom layer, lore card meta, hidden file input on `.visually-hidden`) and 3 hand-written parts now `QuietNote` or `CheckField`; pixel diff 0 on the touched screens. The other inventory duplicates are left with reasons in the PR; the fieldset reset belongs in `Field group="fieldset"` (follow-up).
-  - #565 (PR #576): shell polish. Fixed: phone drawer Management in one column, archived universe name on its own line in the phone bar, account menu clear of the rail, room under the footer for the Feedback pill, entry and story tool buttons centred on the tabs at wide widths. Not a defect: the strip under the footer (a full-page capture artefact). Evidence in `docs/design/evidence/565/`.
-  - #566 (PR #580): list screens. Fixed: Types Fields buttons keep Edit in one column, the Types count sits under the name on every row, a shelf's Sagas and Story arcs view clears its tab strip, the Ideas view toggle is as tall as its filter. Not a defect, with proof in the findings document: Comic arcs width, phone New entry (fixed, as on Lore), Lore toolbar heights, Trash selection bar and Delete permanently contrast, project tab scroll, empty states.
+- **UI Polish milestone** (https://github.com/luisfpires18/lorevolve/milestone/15): tasks #562 to #568 merged (PRs #573 to #585; redesign PR #571 closed unmerged), #569 is this close-out. On PROD via release #581: #573, #574, #575, #576, #578, #580. Only on DEV: #582, #584, #585, #569's close-out. Owner checks and four decisions: `docs/design/ui-polish-summary.md`.
 Checked 2026-11-22. Nothing from #456, #551 or #557 is in flight: all of it is merged and on PROD (release PR #559).
 
 - #456 stays open for one owner box: "Pages look and behave as before". Lanes A and B (PRs #529 to #549) and the earlier lanes are merged; the summaries and the deferred DEV checks are on #456. #551 and #557 are closed; their deferred DEV checks are on those Issues.

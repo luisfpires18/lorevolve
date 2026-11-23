@@ -117,7 +117,6 @@ export function GuardBuilderDrawer({
             dir="auto"
             value={title}
             maxLength={MACHINE_TEXT_MAX_LENGTH}
-            placeholder={t(`${gb}.placeholders.title`)}
             onChange={(event) => setTitle(event.target.value)}
             aria-required
             data-testid="guard-builder-title"

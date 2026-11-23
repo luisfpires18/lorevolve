@@ -41,7 +41,6 @@ export function ImportLoreEntity({
           eyebrow={t('projects.entries.import.eyebrow')}
           title={t('projects.entries.import.action')}
           searchLabel={t('projects.entries.import.search')}
-          placeholder={() => t('projects.entries.import.placeholder')}
           search={(words, _choice, signal) => searchLore(universeId, words, signal)}
           option={(found) => ({
             key: found.id,

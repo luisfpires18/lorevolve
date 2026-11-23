@@ -173,7 +173,6 @@ export function StoryPartForm(props: StoryPartFormProps) {
         ref={title}
         type="text"
         dir="auto"
-        placeholder={t(`${ns}.titlePlaceholder`)}
         value={draft.title}
         onChange={(event) => edit({ title: event.target.value })}
         data-testid={`${id}-title-input`}

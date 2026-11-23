@@ -178,7 +178,6 @@ export function PrivateNoteDrawer({ universeId, entityId, entryName, onClose }: 
               dir="auto"
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder={t('entity.privateNote.placeholder')}
               spellCheck
               aria-describedby={describedBy}
               aria-keyshortcuts="Control+S Meta+S"

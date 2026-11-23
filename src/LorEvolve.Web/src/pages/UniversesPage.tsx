@@ -135,7 +135,6 @@ export default function UniversesPage() {
           className="controls__search"
           id="universe-search"
           label={t('universe.list.filter')}
-          placeholder={t('universe.list.filterPlaceholder')}
           value={search}
           onChange={setSearch}
         />

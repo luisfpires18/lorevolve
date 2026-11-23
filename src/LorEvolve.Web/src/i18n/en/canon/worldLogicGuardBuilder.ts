@@ -16,7 +16,6 @@ const canonWorldLogicGuardBuilder = {
     },
   },
   placeholders: {
-    title: 'Insert a title',
     value: 'Insert a value',
     number: 'Insert a number',
     attribute: 'Insert an attribute',

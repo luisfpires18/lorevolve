@@ -152,3 +152,18 @@ test('a list keeps its highlight in view with useKeepListInView', () => {
     'use useKeepListInView from components/entityPickerList.ts',
   )
 })
+
+// #567. The room under a workspace page's footer is the Feedback pill's own offset plus its height and a gap: on a phone
+// with a home indicator the pill sits on the safe-area inset, so the room must count it too.
+test("the footer's room for the Feedback pill counts the same safe-area inset as the pill", () => {
+  const offset = 'max(var(--space-4), env(safe-area-inset-bottom))'
+  const pill = braceBody(
+    read('src/styles/018-controls.css'),
+    read('src/styles/018-controls.css').indexOf('.feedbackbutton {'),
+  )
+  assert.ok(pill.includes(`bottom: calc(${offset} + var(--feedback-lift, 0px))`))
+  const footer = read('src/styles/106-site-footer.css').replace(/\s+/g, ' ')
+  assert.ok(
+    footer.includes(`padding-bottom: calc( ${offset} + var(--control-touch) + var(--space-3) );`),
+  )
+})

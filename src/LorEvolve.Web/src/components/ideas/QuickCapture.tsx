@@ -110,7 +110,6 @@ export function QuickCapture({ scope, onCaptured }: { scope: IdeasScope; onCaptu
               autoComplete="off"
               enterKeyHint="done"
               maxLength={IDEA_TITLE_MAX_LENGTH}
-              placeholder={t('ideas.capture.placeholder')}
               value={text}
               readOnly={saving}
               onChange={(event) => {

@@ -81,7 +81,6 @@ export function NodeEditor({
             value={draft.title}
             maxLength={200}
             readOnly={!canEdit}
-            placeholder={t('projects.structure.titlePlaceholder')}
             onChange={(event) => setDraft({ ...draft, title: event.target.value })}
             data-testid="project-node-title"
           />
@@ -91,7 +90,6 @@ export function NodeEditor({
             value={draft.summary}
             maxLength={2000}
             readOnly={!canEdit}
-            placeholder={t('projects.structure.summaryPlaceholder')}
             onChange={(event) => setDraft({ ...draft, summary: event.target.value })}
             data-testid="project-node-summary"
           />
@@ -105,7 +103,6 @@ export function NodeEditor({
             rows={12}
             readOnly={!canEdit}
             value={draft.body}
-            placeholder={t('projects.structure.bodyPlaceholder')}
             onChange={(event) => setDraft({ ...draft, body: event.target.value })}
             data-testid="project-node-body"
           />

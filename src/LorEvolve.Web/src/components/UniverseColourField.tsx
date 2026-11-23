@@ -55,7 +55,6 @@ export function UniverseColourField({
               spellCheck={false}
               autoComplete="off"
               maxLength={7}
-              placeholder={t('universe.form.colourNone')}
               value={colourText}
               aria-invalid={control['aria-invalid']}
               aria-describedby={`${colourId}-hint ${control['aria-describedby'] ?? ''}`.trim()}

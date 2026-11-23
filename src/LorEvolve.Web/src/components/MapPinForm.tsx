@@ -150,7 +150,6 @@ export function MapPinForm({ universeId, mapId, pin, at, onClose, onSaved }: Map
             title: current.title.trim() === '' && choice ? choice.name : current.title,
           }))
         }
-        placeholder={t('places.pinForm.lorePlaceholder')}
         error={fieldErrors.entityid}
       />
       <QuietNote spacing="hint">

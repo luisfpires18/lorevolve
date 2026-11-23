@@ -30,7 +30,6 @@ const placesCalibration = {
   down: 'Down',
   distance: 'Distance',
   unit: 'Unit',
-  unitPlaceholder: 'Insert a unit',
   saving: 'Saving…',
   save: 'Save',
 }

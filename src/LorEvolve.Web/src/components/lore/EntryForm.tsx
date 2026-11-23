@@ -127,14 +127,12 @@ export function EntryForm(props: EntryFormProps) {
           <TokenInput
             label={t('entity.page.form.aliases')}
             name="aliases"
-            placeholder={t('entity.page.form.aliasesPlaceholder')}
             values={draft.aliases}
             onChange={(aliases) => setDraft({ ...draft, aliases })}
           />
           <TokenInput
             label={t('entity.page.form.tags')}
             name="tags"
-            placeholder={t('entity.page.form.tagsPlaceholder')}
             values={draft.tags}
             onChange={(tags) => setDraft({ ...draft, tags })}
           />

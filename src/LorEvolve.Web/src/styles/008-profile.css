@@ -9,3 +9,8 @@
   margin: 0 auto;
   text-align: center;
 }
+
+/* Theme and Language are two choices: the gap the Appearance note keeps above the first. The menu keeps its compact pair. */
+.profile .themeswitch + .themeswitch {
+  margin-top: var(--space-4);
+}

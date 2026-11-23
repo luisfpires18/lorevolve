@@ -72,7 +72,6 @@ const entityTypes = {
   },
   input: {
     unavailable: 'Unavailable',
-    searchEntry: 'Search for an entry',
     datePeriodLabel: '{name}: date period',
     chooseDatePeriod: 'Choose a date period',
     noDatePeriod: 'No date period',
@@ -94,7 +93,6 @@ const entityTypes = {
     newGroupOption: 'New group…',
     addAnother: 'Add another group',
     newName: 'New group name',
-    namePlaceholder: 'Insert a group name',
     add: 'Add',
     createdHint: 'Created when you save this type, with this type in it.',
     elsewhere: 'Rename, reorder or delete groups on the Groups tab.',
@@ -138,7 +136,6 @@ const entityTypes = {
     intro:
       "A group gathers types that are the same kind of thing. Its place here is its priority: a scene's lore lists entries by the first group their type is in, top group first. Choose a type's groups in its editor.",
     newGroup: 'New group',
-    namePlaceholder: 'Insert a name',
     add: 'Add group',
     empty: 'No groups yet.',
     newNameFor: 'New name for {name}',

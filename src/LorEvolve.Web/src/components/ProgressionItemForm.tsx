@@ -105,9 +105,6 @@ export function ProgressionItemForm({
           name: isLook ? t('progression.item.label') : t('progression.item.name'),
           note: isLook ? t('progression.item.notes') : t('progression.item.whatItIs'),
         }}
-        placeholder={
-          isLook ? t('progression.item.labelPlaceholder') : t('progression.item.namePlaceholder')
-        }
         hint={
           kind === 'form'
             ? t('progression.item.hint.form')

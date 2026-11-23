@@ -35,7 +35,21 @@
   border-bottom: 1px solid var(--rule);
 }
 
+/* A list that mixes linked rows (inset by `.rowlink` for the focus ring) with text rows, such as a rule definition on
+   World Logic: every row takes the same inset, so the titles start on one edge. */
+.rulelist:has(> .rowlink) > .rulerow {
+  padding-inline: var(--space-3);
+}
+
+/* First in a tab panel, the tab row is the list's top rule, as it is for the account's facts. */
+.tabs__panel > .rulelist:first-child {
+  margin-top: 0;
+  border-top: 0;
+}
+
+/* A text title (`p`, a rule definition) sits where a link title does, as `.idearow__title` does. */
 .rulerow__title {
+  margin: 0;
   max-width: 100%;
   font-family: var(--display);
   font-size: clamp(1.05rem, 1.6vw, 1.25rem);

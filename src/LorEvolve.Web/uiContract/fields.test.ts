@@ -293,12 +293,5 @@ test('a placeholder never shows an example value', () => {
       ([key, value]) => /placeholder/i.test(key) && EXAMPLE.test(value),
     )
     assert.deepEqual(examples, [], `${language}: a placeholder says what to write, not an example`)
-    for (const key of [
-      'canon.terms.placeholderEventKind',
-      'canon.terms.placeholderMethod',
-      'entity.privateNote.placeholder',
-    ]) {
-      assert.match(text.get(key) ?? '', language === 'en' ? /^Insert / : /^Insira /, key)
-    }
   }
 })

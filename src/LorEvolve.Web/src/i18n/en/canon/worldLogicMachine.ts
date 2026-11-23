@@ -62,13 +62,6 @@ const canonWorldLogicMachine = {
     attribute: 'Attribute',
     bindingHint: 'The type of entry this machine covers, and the attribute that holds its state.',
   },
-  placeholders: {
-    name: 'Insert a name',
-    value: 'Insert a value',
-    label: 'Insert a label',
-    subjectType: 'Insert a subject type',
-    attribute: 'Insert an attribute',
-  },
   nameRequired: 'Insert a name.',
   valueRequired: 'Insert a value.',
   rulesFailed: 'The rules could not be read, so a guard cannot be chosen now.',

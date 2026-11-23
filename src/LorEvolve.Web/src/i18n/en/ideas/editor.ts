@@ -71,10 +71,8 @@ const ideasEditor = {
   },
   fields: {
     title: 'Title',
-    titlePlaceholder: 'Insert a title',
     body: 'Body',
     bodyHint: 'Optional. Plain text, kept exactly as you write it.',
-    bodyPlaceholder: 'Insert the idea',
     bodyTooLong: 'Too long to save: {used} of {max} characters.',
     bodyCount: '{used} of {max} characters.',
     universe: 'Universe',

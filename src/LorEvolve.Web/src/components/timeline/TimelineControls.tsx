@@ -43,7 +43,6 @@ export function TimelineControls({
         className="controls__search"
         id="chron-search"
         label={t('time.timeline.search')}
-        placeholder={t('time.timeline.searchPlaceholder')}
         value={typed}
         onChange={setTyped}
         testId="chron-search"
@@ -109,7 +108,6 @@ export function TimelineControls({
             setParticipant(choice)
             if (page !== 1) update({ page: null })
           }}
-          placeholder={t('time.timeline.takingPartPlaceholder')}
         />
       </div>
     </div>

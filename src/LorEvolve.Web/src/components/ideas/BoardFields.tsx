@@ -42,7 +42,6 @@ export function BoardFields({
         dir="auto"
         value={draft.title}
         maxLength={BOARD_TITLE_MAX_LENGTH}
-        placeholder={t('ideas.board.fields.titlePlaceholder')}
         readOnly={isHeld}
         onChange={(event) => edit({ title: event.target.value })}
         aria-required="true"

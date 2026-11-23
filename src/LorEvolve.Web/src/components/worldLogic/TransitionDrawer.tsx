@@ -138,7 +138,6 @@ export function TransitionDrawer({
           dir="auto"
           value={form.label}
           maxLength={MACHINE_TEXT_MAX_LENGTH}
-          placeholder={t(`${m}.placeholders.label`)}
           onChange={(event) => edit({ label: event.target.value })}
           data-testid="machine-transition-label"
         />
