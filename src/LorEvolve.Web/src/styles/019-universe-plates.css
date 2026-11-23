@@ -106,7 +106,7 @@
 
 .plate__name {
   font-family: var(--display);
-  font-size: 1.375rem;
+  font-size: var(--text-section);
   line-height: 1.2;
   letter-spacing: -0.005em;
 }

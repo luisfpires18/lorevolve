@@ -99,7 +99,7 @@
 .momentform__point {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: start;
 }
 
@@ -112,6 +112,6 @@
 .fieldera {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 0.75rem;
+  gap: var(--space-3);
   align-items: end;
 }

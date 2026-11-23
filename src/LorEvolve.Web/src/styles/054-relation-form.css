@@ -1,13 +1,13 @@
 /* ---------- Relation form ---------- */
 
 .relform {
-  margin: 1.25rem 0 0;
-  padding: 1.25rem;
+  margin: var(--space-5) 0 0;
+  padding: var(--space-5);
   border: 1px solid var(--rule-strong);
   background: var(--surface);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-5);
 }
 
 .relform__reads {
@@ -15,7 +15,7 @@
   padding-bottom: 0.9rem;
   border-bottom: 1px solid var(--rule);
   font-family: var(--display);
-  font-size: 1.15rem;
+  font-size: var(--text-item);
   line-height: 1.4;
 }
 
@@ -30,6 +30,6 @@
 .relform__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: 1.25rem;
+  gap: var(--space-5);
   align-items: start;
 }

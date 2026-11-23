@@ -8,7 +8,7 @@
 
 .relations {
   margin-top: 2.5rem;
-  padding-top: 1.5rem;
+  padding-top: var(--space-6);
   border-top: 1px solid var(--rule);
   max-width: 52rem;
 }

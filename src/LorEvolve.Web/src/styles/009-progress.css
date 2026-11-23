@@ -18,7 +18,7 @@
   display: block;
   height: 100%;
   background: var(--accent);
-  transition: width 120ms linear;
+  transition: width var(--duration-1) linear;
 }
 
 .progressbar[data-state='working'] .progressbar__fill {

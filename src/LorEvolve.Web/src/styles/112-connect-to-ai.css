@@ -33,7 +33,7 @@
 
 .connect__heading {
   margin: 0 0 var(--space-2);
-  font-size: 0.925rem;
+  font-size: var(--text-ui);
   font-weight: 600;
 }
 
@@ -41,7 +41,7 @@
 .connect__list,
 .consent__list {
   margin: 0;
-  padding-inline-start: 1.25rem;
+  padding-inline-start: var(--space-5);
   display: grid;
   gap: var(--space-1);
 }
@@ -136,7 +136,7 @@
 .consent__app,
 .consent__universe {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--text-item);
   font-weight: 600;
   overflow-wrap: anywhere;
 }

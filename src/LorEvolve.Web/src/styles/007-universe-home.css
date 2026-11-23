@@ -140,5 +140,5 @@
   margin: 0 auto;
   /* The same side gutter as a universe's screens (#57), so the account screens and the Admin workspace start where
      a universe's do at every width. */
-  padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) 4rem;
+  padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) var(--space-9);
 }

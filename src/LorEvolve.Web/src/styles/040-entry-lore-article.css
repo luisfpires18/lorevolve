@@ -98,7 +98,7 @@
 .entry__summary {
   margin: var(--space-3) 0 0;
   max-width: 58ch;
-  font-size: 1.0625rem;
+  font-size: var(--text-item);
   line-height: 1.6;
 }
 
@@ -112,7 +112,7 @@
   color: var(--ink);
   font: inherit;
   line-height: 1.6;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   resize: vertical;
 }
 

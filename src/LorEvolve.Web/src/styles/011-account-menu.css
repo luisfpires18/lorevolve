@@ -17,7 +17,7 @@
 }
 
 .accountmenu__name {
-  font-size: 0.925rem;
+  font-size: var(--text-ui);
   color: var(--muted);
   max-width: 12rem;
   overflow: hidden;
@@ -137,7 +137,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--display);
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   line-height: 1;
   color: var(--muted);
 }

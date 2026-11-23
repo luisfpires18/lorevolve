@@ -32,12 +32,12 @@
 }
 
 .lorecontext__action {
-  min-height: 2.75rem;
+  min-height: var(--control-touch);
 }
 
 .lorepreview__back {
   align-self: flex-start;
-  min-height: 2.75rem;
+  min-height: var(--control-touch);
 }
 
 .lorepreview__head {

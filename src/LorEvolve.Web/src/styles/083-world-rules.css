@@ -10,7 +10,7 @@
 }
 
 .rules__notice {
-  margin: 1.5rem 0 0;
+  margin: var(--space-6) 0 0;
 }
 
 .rules__notice p {
@@ -20,7 +20,7 @@
 
 .rulelist {
   list-style: none;
-  margin: 2rem 0 0;
+  margin: var(--space-7) 0 0;
   padding: 0;
   border-top: 1px solid var(--rule);
 }
@@ -29,9 +29,9 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.3rem;
+  gap: var(--space-1);
   min-width: 0;
-  padding: 1rem 0;
+  padding: var(--space-4) 0;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -67,7 +67,7 @@
 
 .rulerow__meta {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 
@@ -77,15 +77,15 @@
 }
 
 .rule__failure {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
 }
 
 .rule__description {
   min-height: 10rem;
-  font-size: 1rem;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 
 .rule__count {
-  margin: 0.45rem 0 0;
+  margin: var(--space-2) 0 0;
 }

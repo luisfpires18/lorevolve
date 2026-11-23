@@ -132,7 +132,7 @@
   gap: var(--space-4);
   margin: 0 0 var(--space-4);
   font-family: var(--display);
-  font-size: 0.9375rem;
+  font-size: var(--text-body);
   font-weight: 400;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -149,7 +149,7 @@
 
 /* In the accent, smaller: the label over something read or filled in place - an entry's article, its form's parts. */
 .sectionrule--accent {
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
   letter-spacing: 0.2em;
   color: var(--accent);
 }

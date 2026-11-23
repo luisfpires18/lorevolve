@@ -137,7 +137,7 @@
 
 .controls__filters {
   display: flex;
-  gap: 1.25rem;
+  gap: var(--space-5);
   flex-wrap: wrap;
 }
 
@@ -148,8 +148,8 @@
 .check {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: var(--space-2);
+  font-size: var(--text-ui);
   cursor: pointer;
 }
 
@@ -161,6 +161,6 @@
 
 /* An entry's tags, on its page and in its history (the Lore card no longer shows them). */
 .dossier__tags {
-  margin: 0.5rem 0 0;
+  margin: var(--space-2) 0 0;
   gap: 0.35rem;
 }

@@ -82,7 +82,7 @@
 .collab__mark::before {
   content: attr(data-initial);
   font-family: var(--display);
-  font-size: 1.0625rem;
+  font-size: var(--text-item);
   line-height: 1;
   color: var(--ink);
 }

@@ -21,9 +21,9 @@
 .contentpub__trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  min-height: 2rem;
-  padding: 0 0.55rem 0 0.65rem;
+  gap: var(--space-1);
+  min-height: var(--control-sm);
+  padding: 0 var(--space-2) 0 0.65rem;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-full);
   background: var(--paper);

@@ -121,7 +121,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.25rem 0.75rem;
+  gap: var(--space-1) var(--space-3);
 }
 
 .trash__outcome p {
@@ -201,7 +201,7 @@ h2.trash__confirmtitle {
 }
 
 .trash__bulkconsequences {
-  padding-left: 1.25rem;
+  padding-left: var(--space-5);
 }
 
 .trash__bulkconsequences li + li {

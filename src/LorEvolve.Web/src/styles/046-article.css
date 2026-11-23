@@ -5,9 +5,9 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: var(--space-2) var(--space-4);
   max-width: calc(62ch + 2.5rem);
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
 }
 
 .article__title {
@@ -67,9 +67,9 @@
 }
 
 .article__note {
-  margin: -0.25rem 0 1rem;
+  margin: calc(-1 * var(--space-1)) 0 var(--space-4);
   max-width: 52ch;
-  font-size: 0.85rem;
+  font-size: var(--text-ui);
 }
 
 /* Save stays in reach however far down a long article the author is: the bar holds to the bottom of the screen, over
@@ -82,16 +82,16 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem var(--space-4);
+  gap: var(--space-2) var(--space-4);
   max-width: calc(62ch + 2.5rem);
-  padding: 0.75rem 0;
+  padding: var(--space-3) 0;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   background: var(--raised);
 }
 
 .article__status {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--text-ui);
   color: var(--muted);
 }
 
@@ -106,7 +106,7 @@
 
 .article__failure {
   max-width: 62ch;
-  margin: 0 0 1rem;
+  margin: 0 0 var(--space-4);
 }
 
 /* Saved somewhere else while being edited (ADR 0043): the notice, then the latest version on request. Stacked at every
@@ -125,7 +125,7 @@
 .editconflict__text,
 .editconflict__hint {
   margin: 0.35rem 0 0;
-  font-size: 0.925rem;
+  font-size: var(--text-ui);
 }
 
 .editconflict__hint {
@@ -133,7 +133,7 @@
 }
 
 .editconflict__actions {
-  margin-top: 0.7rem;
+  margin-top: var(--space-3);
 }
 
 .editconflict__review {
@@ -143,14 +143,14 @@
 }
 
 .editconflict__heading {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-body);
 }
 
 .editconflict__latesttext {
   max-height: 18rem;
   overflow: auto;
-  padding: 0.6rem 0.8rem;
+  padding: 0.6rem var(--space-3);
   border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
   background: var(--paper);
@@ -166,8 +166,8 @@
 
 .changelist__row {
   display: grid;
-  gap: 0.2rem;
-  padding: 0.5rem var(--space-3);
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
   background: var(--paper);
@@ -181,7 +181,7 @@
 .changelist__value {
   display: grid;
   grid-template-columns: 5.5rem minmax(0, 1fr);
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin: 0;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -198,9 +198,9 @@
 }
 
 .article__history {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 
 .article__history .history__list {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }

@@ -19,8 +19,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem var(--space-4);
-  padding: 0.75rem 0;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) 0;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   background: var(--raised);
 }
@@ -28,7 +28,7 @@
 /* The recovery offer and a conflict keep a line's room under the scene's head. */
 .manuscript__recovery .recovery,
 .manuscript .editconflict {
-  margin: 1rem 0 0;
+  margin: var(--space-4) 0 0;
 }
 
 /* Held while a recovered draft waits for a choice: still readable, plainly not the thing to type into. */
@@ -47,8 +47,8 @@
   .manuscript__text {
     height: clamp(18rem, calc(100dvh - 9rem), 60rem);
     margin-top: var(--space-3);
-    padding: 0.9rem 1rem;
-    font-size: 1.0625rem;
+    padding: 0.9rem var(--space-4);
+    font-size: var(--text-item);
   }
 
   .manuscript__bar {
