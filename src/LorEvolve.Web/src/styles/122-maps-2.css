@@ -164,7 +164,8 @@
   }
 }
 
-.pinlist__icon {
+.pinlist__icon,
+.entrymaps__icon {
   flex: none;
   width: 1rem;
   height: 1rem;
@@ -231,14 +232,6 @@
   font-size: var(--text-sm);
   color: var(--ink);
   overflow-wrap: anywhere;
-}
-
-.entrymaps__icon {
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.15rem;
-  color: var(--muted);
 }
 
 .entrymaps__pin {

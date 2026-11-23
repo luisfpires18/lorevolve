@@ -143,7 +143,9 @@
   cursor: crosshair;
 }
 
-.mapviewer__layer {
+/* The pan and zoom layer of the map viewer and of CanvasStage (boards, System machines). */
+.mapviewer__layer,
+.boardcanvas__layer {
   position: absolute;
   top: 0;
   left: 0;
