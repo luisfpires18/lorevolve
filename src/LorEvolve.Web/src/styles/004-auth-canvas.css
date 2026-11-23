@@ -29,7 +29,7 @@
 .auth__pitch {
   margin: 0;
   color: var(--plate-muted);
-  font-size: var(--text-body);
+  font-size: 0.95rem;
   line-height: 1.7;
   max-width: 34ch;
 }
@@ -63,7 +63,7 @@
 .auth__footer {
   margin: var(--space-7) 0 0;
   color: var(--muted);
-  font-size: var(--text-ui);
+  font-size: 0.925rem;
 }
 
 .invite__role {

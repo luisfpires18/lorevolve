@@ -38,7 +38,7 @@
 
 .facts--ruled .facts__value {
   min-width: 0;
-  font-size: var(--text-ui);
+  font-size: 0.925rem;
   text-align: right;
 }
 

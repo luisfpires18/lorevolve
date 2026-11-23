@@ -16,7 +16,7 @@
 
 .picker__chosenname {
   font-family: var(--display);
-  font-size: var(--text-item);
+  font-size: 1.0625rem;
   overflow-wrap: anywhere;
 }
 

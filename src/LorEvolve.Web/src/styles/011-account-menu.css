@@ -17,7 +17,7 @@
 }
 
 .accountmenu__name {
-  font-size: var(--text-ui);
+  font-size: 0.925rem;
   color: var(--muted);
   max-width: 12rem;
   overflow: hidden;

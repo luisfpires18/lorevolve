@@ -131,7 +131,7 @@
 
 .moment__details > summary {
   cursor: pointer;
-  font-size: var(--text-ui);
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--ink);
 }
