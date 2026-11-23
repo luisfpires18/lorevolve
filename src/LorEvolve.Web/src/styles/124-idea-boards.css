@@ -206,7 +206,7 @@
 }
 
 .boardcard__kind {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);

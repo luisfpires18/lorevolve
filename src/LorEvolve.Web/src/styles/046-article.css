@@ -82,7 +82,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem 1rem;
+  gap: 0.5rem var(--space-4);
   max-width: calc(62ch + 2.5rem);
   padding: 0.75rem 0;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));

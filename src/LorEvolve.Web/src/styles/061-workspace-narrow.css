@@ -247,7 +247,7 @@
 
   .unisearch__option {
     grid-template-columns: minmax(0, 1fr);
-    padding: 0.65rem 0.9rem 0.7rem 0.75rem;
+    padding: 0.65rem 0.9rem 0.7rem var(--space-3);
   }
 
   .unisearch__kind {
