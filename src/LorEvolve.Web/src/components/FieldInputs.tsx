@@ -141,7 +141,6 @@ export function FieldInput({
         excludeId={excludeId}
         entityTypeId={definition.targetEntityTypeId}
         entityTypeGroupId={definition.targetGroupId}
-        placeholder={t('entityTypes.input.searchEntry')}
         quickCreate={quickCreate}
         error={error}
       />

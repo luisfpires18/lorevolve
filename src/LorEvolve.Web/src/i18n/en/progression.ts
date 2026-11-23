@@ -205,8 +205,6 @@ const progression = {
     conflictWhat: 'eras',
     label: 'Label',
     name: 'Name',
-    labelPlaceholder: 'Insert a label',
-    namePlaceholder: 'Insert a name',
     notes: 'Notes',
     whatItIs: 'What it is',
     hint: {

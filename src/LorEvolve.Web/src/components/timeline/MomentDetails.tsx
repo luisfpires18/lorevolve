@@ -109,7 +109,6 @@ export function MomentDetails({
           universeId={universeId}
           value={draft.participant}
           onChange={(participant) => edit({ participant })}
-          placeholder={t('time.momentForm.participantPlaceholder')}
           error={fieldErrors[DETAIL_ERROR_KEYS.participant]}
         />
       </div>

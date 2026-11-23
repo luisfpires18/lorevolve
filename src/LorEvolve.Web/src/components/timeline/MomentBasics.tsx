@@ -22,8 +22,6 @@ export function MomentBasics({
       <NameNoteFields
         idPrefix="moment"
         labels={{ name: t('time.momentForm.title'), note: t('time.momentForm.description') }}
-        placeholder={t('time.momentForm.titlePlaceholder')}
-        notePlaceholder={t('time.momentForm.descriptionPlaceholder')}
         rows={3}
         value={{ name: draft.title, note: draft.description }}
         onChange={(part, value) =>

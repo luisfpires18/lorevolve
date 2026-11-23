@@ -90,7 +90,6 @@ export function FamilyDiscovery({
             label={t('places.discovery.searchLabel')}
             id={searchId}
             className="discovery__search"
-            placeholder={t('places.discovery.searchPlaceholder')}
             value={text}
             onChange={setText}
             testId="family-search"
@@ -129,7 +128,6 @@ export function FamilyDiscovery({
             value={null}
             onChange={onChoose}
             familyTreeOnly
-            placeholder={t('places.discovery.pickerPlaceholder')}
           />
           {isEmpty ? null : (
             <QuietNote className="discovery__pickerhint">

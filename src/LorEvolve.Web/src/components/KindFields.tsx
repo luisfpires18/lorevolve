@@ -33,9 +33,7 @@ export function KindFields({
   idPrefix: string
   words: {
     name: string
-    namePlaceholder: string
     inverse: string
-    inversePlaceholder: string
     symmetric: string
   }
   bothWays: ReactNode
@@ -48,7 +46,6 @@ export function KindFields({
       <Field
         label={words.name}
         name={`${idPrefix}-name`}
-        placeholder={words.namePlaceholder}
         dir="auto"
         value={draft.name}
         onChange={(event) => edit({ name: event.target.value })}
@@ -64,7 +61,6 @@ export function KindFields({
         <Field
           label={words.inverse}
           name={`${idPrefix}-inverse`}
-          placeholder={words.inversePlaceholder}
           dir="auto"
           value={draft.inverseName}
           onChange={(event) => edit({ inverseName: event.target.value })}

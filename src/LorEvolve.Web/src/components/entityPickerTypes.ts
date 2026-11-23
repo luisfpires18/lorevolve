@@ -51,7 +51,6 @@ export type EntityPickerProps = PickerValue & {
   entityTypeId?: string | null
   /** Only entries whose type is in this semantic group: a link field limited to a group. */
   entityTypeGroupId?: string | null
-  placeholder?: string
   error?: string
   /** Offers Create "..." beside the matches (Issue #25). Left out, the picker only finds entries that exist. */
   quickCreate?: QuickCreateOptions | null

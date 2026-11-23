@@ -109,7 +109,6 @@ export function EraForm({
       <NameNoteFields
         idPrefix="era"
         labels={{ name: t('time.eraForm.name'), note: t('time.eraForm.happens') }}
-        placeholder={t('time.eraForm.namePlaceholder')}
         hint={t('time.eraForm.happensHint', { name: entityName })}
         value={{ name: draft.name, note: draft.description }}
         onChange={(part, value) => edit(part === 'name' ? { name: value } : { description: value })}

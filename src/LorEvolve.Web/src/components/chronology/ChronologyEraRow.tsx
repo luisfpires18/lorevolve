@@ -48,7 +48,6 @@ export function ChronologyEraRow({
             label={t('time.periods.name')}
             id={`${base}-name`}
             error={fieldErrors[`${prefix}.name`]}
-            placeholder={t('time.periods.namePlaceholder')}
             autoComplete="off"
             value={era.name}
             onChange={(event) => update(index, { name: event.target.value })}
@@ -62,7 +61,6 @@ export function ChronologyEraRow({
             id={`${base}-abbreviation`}
             hint={era.abbreviation.trim() ? undefined : t('time.periods.abbreviationHint')}
             error={fieldErrors[`${prefix}.abbreviation`]}
-            placeholder={t('time.periods.abbreviationPlaceholder')}
             autoComplete="off"
             value={era.abbreviation}
             onChange={(event) => update(index, { abbreviation: event.target.value })}

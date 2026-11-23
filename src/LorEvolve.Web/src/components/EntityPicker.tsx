@@ -24,7 +24,6 @@ export function EntityPicker({
   familyTreeOnly = false,
   entityTypeId = null,
   entityTypeGroupId = null,
-  placeholder: customPlaceholder,
   error,
   quickCreate: offered = null,
   ...pick
@@ -35,7 +34,6 @@ export function EntityPicker({
   // The several-entities picker keeps its own words and test ids (`participant-*`).
   const words = multiple ? 'entity.multiPicker' : 'entity.picker'
   const prefix = multiple ? 'participant' : 'picker'
-  const placeholder = customPlaceholder ?? t(`${words}.placeholder`)
   const inputId = useId()
   const listId = useId()
   const noteId = useId()
@@ -145,7 +143,6 @@ export function EntityPicker({
                   ? `${listId}-create`
                   : undefined
             }
-            placeholder={chosenMany.length === 0 ? placeholder : ''}
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)

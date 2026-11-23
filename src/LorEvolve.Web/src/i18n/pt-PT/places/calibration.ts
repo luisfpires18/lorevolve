@@ -32,7 +32,6 @@ const placesCalibration: Dictionary['places']['calibration'] = {
   down: 'Na vertical',
   distance: 'Distância',
   unit: 'Unidade',
-  unitPlaceholder: 'Insere uma unidade',
   saving: 'A guardar…',
   save: 'Guardar',
 }

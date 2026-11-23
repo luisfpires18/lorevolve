@@ -212,8 +212,6 @@ const progression: Dictionary['progression'] = {
     conflictWhat: 'conjunto de fases',
     label: 'Etiqueta',
     name: 'Nome',
-    labelPlaceholder: 'Insere uma etiqueta',
-    namePlaceholder: 'Insere um nome',
     notes: 'Notas',
     whatItIs: 'O que é',
     hint: {

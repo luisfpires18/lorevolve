@@ -68,10 +68,8 @@ const places: Dictionary['places'] = {
     eyebrow: 'Árvore genealógica',
     title: 'Novo tipo de relação familiar',
     name: 'Nome',
-    namePlaceholder: 'Insere um nome',
     bothWays: 'As duas entradas leem-se “{reads}”. Nada é redigido ao contrário.',
     inverse: 'Nome inverso',
-    inversePlaceholder: 'Insere um nome inverso',
     symmetric: 'Lê-se da mesma forma dos dois lados',
     meaning: 'Significado familiar',
     hintParent:
@@ -166,7 +164,6 @@ const places: Dictionary['places'] = {
     reviewNote:
       'Este marcador foi colocado numa imagem anterior. Verifica a posição e guarda para a confirmar.',
     lore: 'Entrada de lore',
-    lorePlaceholder: 'Pesquisa o lugar que este marcador assinala',
     loreHint: 'Opcional. O marcador abre esta entrada, e a entrada leva de volta a este marcador.',
     loreHintTrashed:
       'Opcional. O marcador abre esta entrada, e a entrada leva de volta a este marcador. A entrada que ele representava está na reciclagem; restaura-a para a ligar de novo.',

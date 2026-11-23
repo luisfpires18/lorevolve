@@ -89,7 +89,6 @@ export function CalibrationFields({
                 type="text"
                 dir="auto"
                 maxLength={MAP_UNIT_MAX_LENGTH}
-                placeholder={t('places.calibration.unitPlaceholder')}
                 value={unit}
                 onChange={(event) => setUnit(event.target.value)}
                 aria-invalid={errors.unit ? true : undefined}

@@ -168,7 +168,6 @@ const entityTypesPage = {
     inside: 'Inside {name}',
     identity: 'Identity',
     name: 'Name',
-    namePlaceholder: 'Insert a name',
     iconHint:
       'Optional, and only a picture: it marks the type on the Lore filter. Nothing is chosen for you from the name.',
     hierarchy: 'Hierarchy',

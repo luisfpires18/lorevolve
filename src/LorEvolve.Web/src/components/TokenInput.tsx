@@ -6,13 +6,12 @@ import { Token } from './Token'
 interface TokenInputProps {
   label: string
   name: string
-  placeholder: string
   values: string[]
   onChange: (values: string[]) => void
 }
 
 /** Comma or Enter commits a token. Used for aliases and tags. */
-export function TokenInput({ label, name, placeholder, values, onChange }: TokenInputProps) {
+export function TokenInput({ label, name, values, onChange }: TokenInputProps) {
   const { t } = useI18n()
   const [draft, setDraft] = useState('')
 
@@ -55,7 +54,6 @@ export function TokenInput({ label, name, placeholder, values, onChange }: Token
             {...control}
             name={name}
             className="tokens__input"
-            placeholder={values.length === 0 ? placeholder : ''}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}

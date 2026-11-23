@@ -48,7 +48,6 @@ export function RecordListControls({
         id={searchId}
         className="controls__search"
         label={t(`${w}.filter`)}
-        placeholder={t(`${w}.searchPlaceholder`)}
         value={typed}
         onChange={setTyped}
         testId={`${id}-search`}

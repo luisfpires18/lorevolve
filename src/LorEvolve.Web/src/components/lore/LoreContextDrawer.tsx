@@ -188,7 +188,6 @@ export function LoreContextDrawer({
               id={searchId}
               label={t('lore.context.searchLabel')}
               inputRef={search}
-              placeholder={t('lore.context.searchPlaceholder')}
               value={query}
               onChange={setQuery}
               onKeyDown={moveThrough}

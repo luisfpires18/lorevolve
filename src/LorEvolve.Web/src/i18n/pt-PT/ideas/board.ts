@@ -83,7 +83,6 @@ const ideasBoard: Dictionary['ideas']['board'] = {
   },
   fields: {
     title: 'Título',
-    titlePlaceholder: 'Insere um título',
     universe: 'Universo',
     noUniverse: 'Sem universo',
     archivedUniverse: '{name} (arquivado)',
@@ -113,7 +112,6 @@ const ideasBoard: Dictionary['ideas']['board'] = {
     line: 'Linha',
     between: 'Entre {from} e {to}.',
     label: 'Etiqueta',
-    labelPlaceholder: 'Opcional: porquê?',
     removeLine: 'Eliminar linha',
     hint: 'Escolhe um cartão para escrever nele, abrir aquilo para que aponta ou traçar uma linha a partir dele.',
   },

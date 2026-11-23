@@ -38,7 +38,6 @@ export function FamilyEntityBar({
           value={focal ? { id: focal.entityId, name: focal.name } : null}
           onChange={show}
           familyTreeOnly
-          placeholder={t('places.familyPage.pickerPlaceholder')}
         />
       </div>
     </>

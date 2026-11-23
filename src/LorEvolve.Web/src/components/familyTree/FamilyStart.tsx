@@ -51,7 +51,6 @@ export function FamilyStart({
             value={null}
             onChange={show}
             familyTreeOnly
-            placeholder={t('places.familyPage.pickerPlaceholder')}
           />
         </div>
       ) : null}

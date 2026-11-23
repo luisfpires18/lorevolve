@@ -73,7 +73,6 @@ const entityTypes: Dictionary['entityTypes'] = {
   },
   input: {
     unavailable: 'Indisponível',
-    searchEntry: 'Procurar uma entrada',
     datePeriodLabel: '{name}: período de datas',
     chooseDatePeriod: 'Escolher um período de datas',
     noDatePeriod: 'Sem período de datas',
@@ -95,7 +94,6 @@ const entityTypes: Dictionary['entityTypes'] = {
     newGroupOption: 'Novo grupo…',
     addAnother: 'Adicionar outro grupo',
     newName: 'Nome do novo grupo',
-    namePlaceholder: 'Insere um nome de grupo',
     add: 'Adicionar',
     createdHint: 'Criado quando guardares este tipo, com este tipo dentro.',
     elsewhere: 'Muda o nome, reordena ou elimina grupos no separador Grupos.',
@@ -139,7 +137,6 @@ const entityTypes: Dictionary['entityTypes'] = {
     intro:
       'Um grupo reúne tipos que são a mesma espécie de coisa. O seu lugar aqui é a sua prioridade: o lore de uma cena lista as entradas pelo primeiro grupo em que o seu tipo está, começando pelo grupo de cima. Escolhe os grupos de um tipo no seu editor.',
     newGroup: 'Novo grupo',
-    namePlaceholder: 'Insere um nome',
     add: 'Adicionar grupo',
     empty: 'Ainda não há grupos.',
     newNameFor: 'Novo nome para {name}',

@@ -13,7 +13,6 @@ const placesMapForm: Dictionary['places']['mapForm'] = {
   headingDetails: 'Detalhes do mapa',
   headingReplace: 'Substituir a imagem',
   name: 'Nome',
-  namePlaceholder: 'Insere um nome',
   description: 'Descrição',
   descriptionHint: 'O que este mapa mostra, numa ou duas linhas. Opcional.',
   imageNew: 'Imagem do mapa',

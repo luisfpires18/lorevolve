@@ -184,7 +184,6 @@ export function TypeDialog({
     >
       {/* The form in three parts, as an author thinks of a type: what it is, where it sits, what it does. */}
       <TypeDialogIdentity
-        type={type}
         nameHint={nameHint}
         iconHint={iconHint}
         name={name}

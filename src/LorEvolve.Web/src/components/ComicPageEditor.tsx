@@ -182,7 +182,6 @@ function PanelCard({
             rows={3}
             readOnly={!canEdit}
             value={draft.body}
-            placeholder={t('projects.structure.panel.visualPlaceholder')}
             onChange={(event) => setDraft({ ...draft, body: event.target.value })}
             data-testid={testId('visual')}
           />

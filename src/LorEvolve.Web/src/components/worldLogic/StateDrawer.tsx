@@ -102,7 +102,6 @@ export function StateDrawer({
         dir="auto"
         value={form.name}
         maxLength={MACHINE_TEXT_MAX_LENGTH}
-        placeholder={t(`${m}.placeholders.name`)}
         onChange={(event) => edit({ name: event.target.value })}
         aria-required
         data-testid="machine-state-name"
@@ -116,7 +115,6 @@ export function StateDrawer({
         dir="auto"
         value={form.value}
         maxLength={MACHINE_TEXT_MAX_LENGTH}
-        placeholder={t(`${m}.placeholders.value`)}
         onChange={(event) => edit({ value: event.target.value })}
         aria-required
         data-testid="machine-state-value"

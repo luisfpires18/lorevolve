@@ -84,7 +84,6 @@ export function TypeFromTemplateDrawer({
         <Field
           label={t('entityTypes.page.dialog.name')}
           name="type-from-template-name"
-          placeholder={t('entityTypes.page.dialog.namePlaceholder')}
           dir="auto"
           hint={t('projects.schema.fromTemplate.nameHint')}
           value={name}

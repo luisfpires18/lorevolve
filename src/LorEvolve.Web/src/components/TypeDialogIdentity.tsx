@@ -1,12 +1,10 @@
 import { Field } from './Field'
 import { TypeIconPicker } from './TypeIconPicker'
 import { useI18n } from '../i18n'
-import type { DialogType } from './TypeDialog'
 import { DrawerSection } from './Section'
 
 /** The type drawer's identity section: the type's name and its icon. */
 export function TypeDialogIdentity({
-  type,
   nameHint,
   iconHint,
   name,
@@ -15,7 +13,6 @@ export function TypeDialogIdentity({
   setIcon,
   fieldErrors,
 }: {
-  type: DialogType | null
   nameHint?: string
   iconHint?: string
   name: string
@@ -30,7 +27,6 @@ export function TypeDialogIdentity({
       <Field
         label={t('entityTypes.page.dialog.name')}
         name="type-name"
-        placeholder={type ? undefined : t('entityTypes.page.dialog.namePlaceholder')}
         dir="auto"
         hint={nameHint}
         value={name}

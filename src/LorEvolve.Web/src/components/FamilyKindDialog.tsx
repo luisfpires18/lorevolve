@@ -99,9 +99,7 @@ export function FamilyKindDialog({ universeId, onClose, onCreated }: Props) {
         fieldTestIds
         words={{
           name: t('places.kindDialog.name'),
-          namePlaceholder: t('places.kindDialog.namePlaceholder'),
           inverse: t('places.kindDialog.inverse'),
-          inversePlaceholder: t('places.kindDialog.inversePlaceholder'),
           symmetric: t('places.kindDialog.symmetric'),
         }}
         bothWays={tx('places.kindDialog.bothWays', { reads: <bdi>{reads}</bdi> })}

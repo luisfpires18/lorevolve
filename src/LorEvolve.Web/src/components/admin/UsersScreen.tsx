@@ -40,7 +40,6 @@ export function UsersScreen() {
           className="controls__search"
           id="admin-user-search"
           label={t('admin.users.search.label')}
-          placeholder={t('admin.users.search.placeholder')}
           value={search}
           onChange={setSearch}
           testId="admin-user-search"
