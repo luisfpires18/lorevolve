@@ -311,6 +311,10 @@ Not listed: custom property definitions (never touched), keywords, percentages a
 
 - `004-auth-canvas.css:66` `0.925rem` (font-size, `.auth__footer`)
 
+## font-size: on --text-item (18px) an article's third-level heading is the size of the article's own text (`.editor__surface` and `.article__body` are 1.125rem), so it no longer stands out; reverted in #567 (1)
+
+- `045-tiptap.css:96` `1.2rem` (font-size, `.editor__surface h3, .article__body h3`)
+
 ## radius: percentage: a shape (circle or ellipse), not a size (16)
 
 - `010-avatar.css:16` `50%` (border-radius, `.avatar__photo`)

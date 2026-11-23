@@ -13,6 +13,7 @@ export function SectionTitle({
   tone = 'section',
   size,
   className,
+  children,
   ...rest
 }: Omit<ComponentProps<'h2'>, 'children'> & {
   level?: Level
@@ -29,7 +30,12 @@ export function SectionTitle({
     size && `sectiontitle--${size}`,
     className,
   ]
-  return <Tag className={classes.filter(Boolean).join(' ')} {...rest} />
+  // A rule is a flex row: one span keeps a title built from several pieces (a name in a sentence) one item beside the line.
+  return (
+    <Tag className={classes.filter(Boolean).join(' ')} {...rest}>
+      {isRule ? <span>{children}</span> : children}
+    </Tag>
+  )
 }
 
 /**

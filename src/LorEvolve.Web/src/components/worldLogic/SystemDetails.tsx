@@ -54,6 +54,7 @@ export function SystemDetails({
       {failure ? <FormMessage testId="system-editor-error">{failure}</FormMessage> : null}
 
       <form
+        className="form"
         noValidate
         onSubmit={(event) => {
           event.preventDefault()

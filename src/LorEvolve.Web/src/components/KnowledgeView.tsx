@@ -99,7 +99,8 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
               onClick={() => setEditing({ side: 'knows', record: null })}
               data-testid="knowledge-add"
             >
-              {tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}
+              {/* One span: the button is a flex row, which would set the sentence's pieces a gap apart. */}
+              <span>{tx('ai.knowledge.add', { name: <bdi>{entityName}</bdi> })}</span>
             </NewButton>
           ) : null
         }
@@ -143,7 +144,7 @@ export function KnowledgeView({ universeId, entityId, entityName }: KnowledgeVie
                   onClick={() => setEditing({ side: 'about', record: null })}
                   data-testid="knowledge-add-about"
                 >
-                  {tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}
+                  <span>{tx('ai.knowledge.addAbout', { name: <bdi>{entityName}</bdi> })}</span>
                 </NewButton>
               ) : null
             }
