@@ -12,6 +12,12 @@
   max-width: none;
 }
 
+/* A settings note keeps its gap below only; one that follows a button (backups: the readable export under Download
+   backup) takes the same gap above. */
+.settings__body .button + .quietnote--block {
+  margin-top: var(--space-4);
+}
+
 /* Chronology is a worldbuilding section in the workspace's own frame, full width like World Rules; only its prose keeps
    a reading measure. */
 .chronology > .quietnote--block,
