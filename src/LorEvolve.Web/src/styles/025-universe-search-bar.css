@@ -120,7 +120,7 @@
   display: grid;
   grid-template-columns: 5.5rem minmax(0, 1fr);
   gap: 0 0.85rem;
-  padding: 0.6rem 1rem 0.65rem 0.8rem;
+  padding: 0.6rem 1rem 0.65rem var(--space-3);
   border-left: 3px solid transparent;
   cursor: pointer;
 }
@@ -167,7 +167,7 @@
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   line-height: 1.4;
   color: var(--muted);
   overflow-wrap: anywhere;

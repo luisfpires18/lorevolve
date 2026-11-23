@@ -48,6 +48,7 @@ deferred.
 
 ## In flight
 - **UI Polish milestone** (https://github.com/luisfpires18/lorevolve/milestone/15, started 2026-11-22): keep the design as on PROD, fix what is out of place, standardise, reuse shared components; portal out of scope; no placeholders on inputs. #562 merged: findings in `docs/design/ui-polish-findings.md` (103 captures, defects by screen with file and fixing Issue). Next: #563 (values on the token scales), #564, #565 to #568, #569 (summary of changes). A redesign was tried first and rejected by the owner; PR #571 closed unmerged.
+  - #563 (PR #574): 21 values moved onto tokens, each backed by a role in `docs/design/LOREVOLVE_VISUAL_REFACTOR.md` §8; the other ~870 candidates left with reasons in `docs/design/evidence/563/left-values.md` (open to the screen Issues #565 to #568).
 Checked 2026-11-22. Nothing from #456, #551 or #557 is in flight: all of it is merged and on PROD (release PR #559).
 
 - #456 stays open for one owner box: "Pages look and behave as before". Lanes A and B (PRs #529 to #549) and the earlier lanes are merged; the summaries and the deferred DEV checks are on #456. #551 and #557 are closed; their deferred DEV checks are on those Issues.

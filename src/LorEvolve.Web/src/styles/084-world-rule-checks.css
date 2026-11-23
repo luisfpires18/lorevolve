@@ -120,7 +120,7 @@
 
 .rulecheck__note {
   margin: 0.45rem 0 0;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 /* A moment's validation details: folded at the foot of the drawer, because most moments need none. */

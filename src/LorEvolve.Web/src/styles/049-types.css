@@ -251,6 +251,6 @@
   flex: 1 1 12rem;
   min-width: 0;
   font-family: var(--display);
-  font-size: 1.1875rem;
+  font-size: var(--text-item);
   overflow-wrap: anywhere;
 }

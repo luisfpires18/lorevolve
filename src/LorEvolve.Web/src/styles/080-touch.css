@@ -37,7 +37,7 @@
   }
 
   .picker__option {
-    min-height: 2.75rem;
+    min-height: var(--control-touch);
     align-items: center;
   }
 
@@ -48,7 +48,7 @@
   .accountmenu__trigger,
   .sidebar__link,
   .rail__toggle {
-    min-height: 2.75rem;
+    min-height: var(--control-touch);
     display: flex;
     align-items: center;
   }
