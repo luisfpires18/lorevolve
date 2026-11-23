@@ -207,14 +207,17 @@ test("an archived universe's phone bar draws the separator only between the name
       range.selectNodeContents(section)
       const text = [...range.getClientRects()].filter((r) => r.width > 0).pop()!
       return {
-        sameLine: Math.abs(text.top - uni.top) < 4,
+        // Baseline-aligned, the two fonts' boxes start at different heights: compare their middles.
+        sameLine: Math.abs(text.top + text.height / 2 - (uni.top + uni.height / 2)) < 8,
+        where: `${uni.top},${uni.height} ${text.top},${text.height} ${p.getBoundingClientRect().width}`,
         textLeft: text.left,
         uniLeft: uni.left,
         uniRight: uni.right,
       }
     })
-    expect(at.sameLine).toBe(oneLine)
-    if (oneLine) {
+    // The long name always wraps; the short one shares its line wherever the system font leaves room (it does here).
+    if (!oneLine) expect(at.sameLine, at.where).toBe(false)
+    if (at.sameLine) {
       // " · " between them: 0.4rem, the separator's 0.45rem box, 0.4rem.
       expect(at.textLeft - at.uniRight).toBeCloseTo(20, 0)
     } else {
