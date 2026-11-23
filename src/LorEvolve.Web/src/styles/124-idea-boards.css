@@ -103,14 +103,6 @@
   cursor: grabbing;
 }
 
-.boardcanvas__layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-  will-change: transform;
-}
-
 .boardcanvas__lines {
   position: absolute;
   top: 0;

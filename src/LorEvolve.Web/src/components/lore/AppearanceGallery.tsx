@@ -100,7 +100,7 @@ export function AppearanceGallery({
         <div className="gallery__add">
           <input
             id={inputId}
-            className="imagefield__input"
+            className="imagefield__input visually-hidden"
             type="file"
             accept={IMAGE_ACCEPT}
             multiple

@@ -2,6 +2,7 @@ import { useI18n } from '../i18n'
 import type { SaveStage } from './ImageCropDialog'
 import { FormMessage } from './FormMessage'
 import { ProgressBar } from './ProgressBar'
+import { QuietNote } from './QuietNote'
 
 export function CropperProgress({
   stage,
@@ -33,11 +34,16 @@ export function CropperProgress({
 
           {/* The words are the status, not the animation: a bar that only moves says nothing
                   to a screen reader, and nothing at all with reduced motion. */}
-          <p className="cropper__stagetext" role="status" data-testid="image-crop-stagetext">
+          <QuietNote
+            spacing="flush"
+            className="cropper__stagetext"
+            role="status"
+            testId="image-crop-stagetext"
+          >
             {percent === null
               ? t('account.crop.workingText', { label: shownWorking })
               : t('account.crop.uploadingText', { percent })}
-          </p>
+          </QuietNote>
         </div>
       )}
 

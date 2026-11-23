@@ -115,7 +115,9 @@
   overflow-wrap: anywhere;
 }
 
-.entitycard__aliases {
+.entitycard__aliases,
+.typecard__path,
+.typecard__meta {
   overflow: hidden;
   font-size: var(--text-sm);
   color: var(--muted);

@@ -4,7 +4,8 @@
    author's order, each a button that opens the original whole, its menu beside it. The gallery wraps on a
    phone. An era's page shows each look it has with its first picture. */
 
-.gallery {
+.gallery,
+.eralooks {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
@@ -48,15 +49,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-}
-
-.eralooks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .eralooks__item {

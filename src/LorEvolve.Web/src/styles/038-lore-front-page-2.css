@@ -59,15 +59,6 @@
   min-width: 0;
 }
 
-.typecard__path,
-.typecard__meta {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .typecard__meta {
   font-variant-numeric: tabular-nums;
 }

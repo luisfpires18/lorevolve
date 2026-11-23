@@ -139,9 +139,6 @@
 }
 
 .cropper__stagetext {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
