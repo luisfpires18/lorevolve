@@ -84,3 +84,40 @@ test('Ideas: the Ideas / Recently deleted toggle is as tall as the filter input 
   expect(Math.abs(toggle.height - filter.height)).toBeLessThan(1)
   expect(Math.abs(toggle.y + toggle.height - (filter.y + filter.height))).toBeLessThan(1)
 })
+
+test('a project Types list keeps its count beside the name on a phone, unmarked', async ({
+  page,
+}) => {
+  const universeId = await signUpWithWorld(page)
+  const created = await page.request.post('/api/projects', {
+    data: {
+      name: 'List game',
+      kind: 1,
+      lifecycle: 1,
+      subtype: null,
+      summary: null,
+      universeId,
+      expectedVersion: null,
+      format: null,
+    },
+  })
+  const project = (await created.json()) as { id: string }
+  expect((await page.request.post(`/api/projects/${project.id}/template`)).ok()).toBe(true)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto(`/app/universes/${universeId}/projects/${project.id}/types`)
+  const counts = page.locator('[data-testid^="project-type-count-"]')
+  await expect(counts.first()).toBeVisible()
+  await expect(page.locator('ul.types__list[data-count]')).toHaveCount(0)
+  const rows = page.locator('li.types__row').filter({ has: counts })
+  for (let at = 0; at < (await rows.count()); at++) {
+    const row = rows.nth(at)
+    const title = await box(row.locator('.types__name').first())
+    const where = await box(row.locator('[data-testid^="project-type-count-"]'))
+    expect(where.y).toBeLessThan(title.y + title.height)
+    expect(where.x).toBeGreaterThan(200)
+  }
+
+  await page.goto(`/app/universes/${universeId}/types`)
+  await expect(page.getByTestId('type-list')).toHaveAttribute('data-count', 'below')
+})
