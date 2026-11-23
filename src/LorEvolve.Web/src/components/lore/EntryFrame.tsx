@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { useI18n } from '../../i18n'
 import { DateText } from '../DateText'
 
@@ -10,12 +10,38 @@ import { DateText } from '../DateText'
  * where an entry has no views, so the tools keep to the right; no tools leaves the tools out.
  */
 export function EntryBar({ lenses, tools }: { lenses?: ReactNode; tools?: ReactNode }) {
+  const bar = useRef<HTMLDivElement>(null)
+  const wrapped = useToolsWrapped(bar)
   return (
-    <div className="entry__bar">
+    <div ref={bar} className="entry__bar" data-wrapped={wrapped ? 'true' : undefined}>
       <div className="entry__lenses">{lenses}</div>
       {tools ? <div className="entry__tools">{tools}</div> : null}
     </div>
   )
+}
+
+/** Whether the tools sit on a row of their own under the views. The bar's height changes when they wrap, so watching it
+ * is enough. */
+function useToolsWrapped(bar: RefObject<HTMLDivElement | null>) {
+  const [wrapped, setWrapped] = useState(false)
+  useLayoutEffect(() => {
+    const element = bar.current
+    if (!element) return
+    const measure = () => {
+      const lenses = element.querySelector('.entry__lenses')
+      const tools = element.querySelector('.entry__tools')
+      setWrapped(
+        !!lenses &&
+          !!tools &&
+          tools.getBoundingClientRect().top >= lenses.getBoundingClientRect().bottom,
+      )
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [bar])
+  return wrapped
 }
 
 /**

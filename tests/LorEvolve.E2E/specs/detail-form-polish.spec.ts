@@ -154,25 +154,36 @@ test('the More actions menu opens over the entry picture even where the bar is a
   expect(onTop).toBe('panel')
 })
 
-test('wrapped entry tools keep their room above the rule at every width, in the longest locale', async ({
+test('entry tools keep their room above the rule whenever they wrap, at any width', async ({
   page,
 }) => {
   const { universeId, character, u } = await world(page)
   const id = await entry(page, universeId, character)
   await page.addInitScript(() => localStorage.setItem('lorevolve-locale', 'pt-PT'))
-  for (let width = 1100; width <= 1440; width += 20) {
+  await page.setViewportSize({ width: 1100, height: 900 })
+  await page.goto(`${u}/lore/${id}`)
+  await expect(page.getByTestId('entity-actions')).toBeVisible()
+  // Wider labels, as a wider system font or a longer translation draws them: the tools then wrap on a bar past 52rem.
+  await page.addStyleTag({ content: '.entry__tools .button { letter-spacing: 0.6em; }' })
+  const seen = { wideWrapped: 0, wideOneRow: 0 }
+  for (let width = 1100; width <= 1920; width += 40) {
     await page.setViewportSize({ width, height: 900 })
-    if (width === 1100) await page.goto(`${u}/lore/${id}`)
-    const { wrapped, padding } = await page.locator('.entry__bar').evaluate((bar) => {
-      const tools = bar.querySelector('.entry__tools')!
-      const lenses = bar.querySelector('.entry__lenses')!
+    await page.waitForTimeout(100)
+    const bar = await page.locator('.entry__bar').evaluate((element) => {
+      const tools = element.querySelector('.entry__tools')!
+      const lenses = element.querySelector('.entry__lenses')!
       return {
-        wrapped: tools.getBoundingClientRect().top >= lenses.getBoundingClientRect().bottom - 1,
+        width: element.getBoundingClientRect().width,
+        wrapped: tools.getBoundingClientRect().top >= lenses.getBoundingClientRect().bottom,
         padding: getComputedStyle(tools).paddingBottom,
       }
     })
-    if (wrapped) expect(padding, `width ${width}`).toBe('8px')
+    if (bar.wrapped) expect(bar.padding, `width ${width}`).toBe('8px')
+    if (bar.width >= 832) seen[bar.wrapped ? 'wideWrapped' : 'wideOneRow']++
+    if (bar.width >= 832 && !bar.wrapped) expect(bar.padding, `width ${width}`).toBe('0px')
   }
+  expect(seen.wideWrapped).toBeGreaterThan(0)
+  expect(seen.wideOneRow).toBeGreaterThan(0)
 })
 
 test("an archived universe's phone bar draws the separator only between the name and the section on one line", async ({
@@ -181,7 +192,7 @@ test("an archived universe's phone bar draws the separator only between the name
   await signUp(page)
   await page.setViewportSize({ width: 390, height: 844 })
   for (const [name, oneLine] of [
-    ['Ashfall Reach', true],
+    ['Ash', true],
     ['The Cinder Ledger of the Long Coast', false],
   ] as const) {
     const id = await post(page, '/api/universes', { name, description: null, accentColor: null })
