@@ -78,27 +78,27 @@ repository; each fixing PR commits the before and after of what it fixes.
 
 | Where | Screens | Screen size | What is wrong | File | Confidence | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| World Logic | `world-logic` | both | The first rule row sits about 6px further left than the others, with a larger gap above and a doubled divider. | `pages/WorldLogicPage.tsx` | high | #568 |
-| Profile | `account-profile` | both | The Theme and Language groups are barely separated. The title is centred; other account pages align left. | `pages/ProfilePage.tsx` | medium | #568 |
-| Universe overview | `empty-universe-home`, `archived-universe-home` | 1440 | Management cards are four to a row and narrower than the World building cards, three to a row, so column edges differ. | `pages/UniverseOverview.tsx` | low | #568 |
-| Admin, one user | `admin-user` | 1440 | The account cards are about 272px wide in a 528px column. | `components/admin/UserDetail.tsx` | low | #568 |
-| Admin tracing, feedback | `admin-tracing`, `admin-feedback`, `admin-users` | 1440 | The intro text is capped at about 250px; on admin users it runs the full column. | `pages/AdminWorkspace.tsx`, `components/admin/FeedbackScreen.tsx` | low | #568 |
-| Family tree | `family-tree` | 1440 | A gap of about 175px between the search input and its "Find a character" button. | `components/familyTree/FamilyStart.tsx` | low | #568 |
-| Timeline, moment menu open | `menu-timeline-moment-actions` | 1440 | The year labels 164 and 201 are stacked tightly at the top of the scrolled view. | `components/timeline/TimelineStream.tsx` | low | #568 |
+| World Logic | `world-logic` | both | The first rule row sits about 6px further left than the others, with a larger gap above and a doubled divider. Fixed in #585: a rule definition's text title kept the paragraph margins (`.rulerow__title` now `margin: 0`), an unlinked row in a list with linked rows takes their 12px inset, and a rule list first in a tab panel drops its own top rule and margin (the tab row is its rule). | `pages/WorldLogicPage.tsx` | high | #568 |
+| Profile | `account-profile` | both | The Theme and Language groups are barely separated. The title is centred; other account pages align left. Fixed in #585: 0px between the two groups, now 16px (`.profile .themeswitch + .themeswitch`). The centred title is not a defect: "The account's Profile, outside any universe, keeps its own centred frame" (`LOREVOLVE_VISUAL_REFACTOR.md`). | `pages/ProfilePage.tsx` | medium | #568 |
+| Universe overview | `empty-universe-home`, `archived-universe-home` | 1440 | Management cards are four to a row and narrower than the World building cards, three to a row, so column edges differ. Not a defect: `026-overview.css` lays World building three across with Lore at double width and pairs the shorter groups two across from 1180px, so Management takes a 508px column with two 246px cards a row. | `pages/UniverseOverview.tsx` | low | #568 |
+| Admin, one user | `admin-user` | 1440 | The account cards are about 272px wide in a 528px column. Not a defect: measured, the facts card is 544px (`.admindetail { max-width: 34rem }`) in a 1056px column, a capped detail list as Profile's facts are. | `components/admin/UserDetail.tsx` | low | #568 |
+| Admin tracing, feedback | `admin-tracing`, `admin-feedback`, `admin-users` | 1440 | The intro text is capped at about 250px; on admin users it runs the full column. Not a defect: all three intros are the same `PageHeader` lede, max-width 501.3px from x 192; feedback's longer sentence wraps to two lines. | `pages/AdminWorkspace.tsx`, `components/admin/FeedbackScreen.tsx` | low | #568 |
+| Family tree | `family-tree` | 1440 | A gap of about 175px between the search input and its "Find a character" button. Not a defect: `.discovery__bar { justify-content: space-between }` with the search capped at 30rem puts the second way in at the row's end, as the Ideas toggle sits at the end of its filter row (353px at 1440, 33px at 1024; under the field at 390). | `components/familyTree/FamilyStart.tsx` | low | #568 |
+| Timeline, moment menu open | `menu-timeline-moment-actions` | 1440 | The year labels 164 and 201 are stacked tightly at the top of the scrolled view. Not a defect: `.chron__year` is sticky (a running head). Scrolled to 621px with the menu open, 164's label is at the end of its year (top 5.2) as 201's arrives (37.8). | `components/timeline/TimelineStream.tsx` | low | #568 |
 
 ## The same thing drawn differently (#564 where code is duplicated, otherwise the screen's Issue)
 
 - **Section headings:** Entities and Types use a large serif heading; "TYPES", "STRUCTURE" and "STORY ARCS" use small
-  spaced capitals.
+  spaced capitals. Not a defect (#585): two documented tones in `ui-components.md`, a project panel's head (`PageHeader size="panel"`) and `SectionTitle tone="label"`, "a small muted label over a list".
 - **Empty states:** three styles across Cinema sagas, Comic arcs and a game project's Systems. Not a defect (#580): Sagas and Systems already share `EmptyState`; Arcs keeps a one-line note under each of its two sections, as Sagas' Unassigned does.
-- **Save:** a sticky save bar on script, idea, board and entry forms; an inline Save button on settings and publish.
+- **Save:** a sticky save bar on script, idea, board and entry forms; an inline Save button on settings and publish. Not a defect (#585): `SaveBar` is "An explicit-save editor's bar" and `FormActions inline` "a form's own footer" (`ui-components.md`).
 - **Segmented toggles:** left under the heading on AI Changes and Canon; right on the filter row, and shorter than the
   input, on Ideas and Idea boards. Height fixed in #580; the placement stays, as a filter on the filter row.
 - **Drawer heads:** private note, feedback and type edit have a line above the title and are about 90px tall; new
-  moment, new map and new scene have the title only, about 70px.
+  moment, new map and new scene have the title only, about 70px. Not a defect (#585): the line is the optional `eyebrow` of `Drawer` and `SimpleFormDrawer`, which says what the drawer belongs to when the title is the owner's name.
 - **Form label spacing:** tighter on the System editor than on Profile and New entry.
 - **Add button on a phone:** floating on Lore, inline on other lists.
-- **Rule rows:** World Logic's first row differs from World rules.
+- **Rule rows:** World Logic's first row differs from World rules. Fixed in #585 (World Logic row above).
 - **Entities and Types lists:** drawn in different frames on the game pages and the project pages.
 
 ## Every captured screen
