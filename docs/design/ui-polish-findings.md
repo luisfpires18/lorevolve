@@ -16,6 +16,13 @@ out of scope.
   fixed button lands in the middle of a tall image.
 - Not done here: no fix, and no check in a live browser of the low rows.
 
+## Evidence
+
+The screenshots of the plainest defects are in `docs/design/evidence/562/`, named `before-<screen>-<width>-<theme>.png`:
+the phone sidebar drawer, Comic arcs at 390, Types at 1440, New entry at 390, the new moment and new map drawers, an
+idea page, World Logic, the System editor and Story structure at 390. The other screenshots stay outside the
+repository; each fixing PR commits the before and after of what it fixes.
+
 ## Shell (#565)
 
 | Where | Screen size | What is wrong | File | Confidence | Issue |
