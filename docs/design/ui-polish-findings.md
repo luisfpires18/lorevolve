@@ -18,62 +18,62 @@ out of scope.
 
 ## Shell (#565)
 
-| Where | Screen size | What is wrong | File | Confidence |
-| --- | --- | --- | --- | --- |
-| Phone sidebar drawer | 390 | The Management items sit three in a row and "AI Changes" wraps to two lines; every other group is one column. Trash and Settings are not visible below. | `components/universes/WorkspaceRail.tsx`, `styles/024-universe-workspace.css` | high |
-| Top bar, archived universe | 390 | The universe name is cut to "T..." beside the "Archived" chip. | top bar crumb | medium |
-| Footer on several pages (`cinema-sagas`, `comic-arcs`, `story-manuscript`, `story-scene`, `ideas-deleted`, `idea-boards`, game type pages) | 390 | A strip of a different shade, about 40px, shows below the footer. | shell or site footer | low |
-| Account menu | 1440 | The popover overlaps the rail's edge by about 4px. | `components/AccountMenu.tsx` | low |
-| Feedback button | both | It covers or touches footer links at the end of a page. capture? | `components/FeedbackButton.tsx` | low |
-| Entry header | 1440 | The Edit, Family tree and Private note buttons sit about 4px above the tab labels beside them. | entry header | low |
+| Where | Screen size | What is wrong | File | Confidence | Issue |
+| --- | --- | --- | --- | --- | --- |
+| Phone sidebar drawer | 390 | The Management items sit three in a row and "AI Changes" wraps to two lines; every other group is one column. Trash and Settings are not visible below. | `components/universes/WorkspaceRail.tsx`, `styles/024-universe-workspace.css` | high | #565 |
+| Top bar, archived universe | 390 | The universe name is cut to "T..." beside the "Archived" chip. | top bar crumb | medium | #565 |
+| Footer on several pages (`cinema-sagas`, `comic-arcs`, `story-manuscript`, `story-scene`, `ideas-deleted`, `idea-boards`, game type pages) | 390 | A strip of a different shade, about 40px, shows below the footer. | shell or site footer | low | #565 |
+| Account menu | 1440 | The popover overlaps the rail's edge by about 4px. | `components/AccountMenu.tsx` | low | #565 |
+| Feedback button | both | It covers or touches footer links at the end of a page. capture? | `components/FeedbackButton.tsx` | low | #565 |
+| Entry header | 1440 | The Edit, Family tree and Private note buttons sit about 4px above the tab labels beside them. | entry header | low | #565 |
 
 ## List screens (#566)
 
-| Where | Screen size | What is wrong | File | Confidence |
-| --- | --- | --- | --- | --- |
-| Comic arcs | 390 | Content is wider than the screen: the header avatar and the footer version text are cut off at the right. | `components/ComicCollections.tsx` or `PageHeader` | high |
-| Types | 1440 | A Fields count badge widens that button by about 15px, so Edit and "Add child" sit about 14px left of the other rows on Character and Vessel. | `components/TypeRowActions.tsx`, `styles/049-types.css` | high |
-| Types | 390 | The entry count is under the name on some rows and top right on others. | same | medium |
-| Type fields drawer | 390 | The entry count sits in three different places across rows. | type fields | low |
-| Cinema sagas, Comic arcs | 1440 | The first element under the tab strip sits only about 8px below it. | `components/CinemaSagas.tsx`, `ComicCollections.tsx` | medium |
-| Game entities and a project's entries | 390 | "New entry" is right-aligned below the cards; other lists put their New button on the left under the subtitle. | project entity list | medium |
-| Ideas, Idea boards | 1440 | The "Ideas / Recently deleted" toggle is about 3px shorter than the filter input beside it and bottom-aligned. | ideas toolbar | low |
-| Lore, one type | both | The toolbar mixes control heights. | Lore toolbar | low |
-| Trash, selecting | 390 | The selection bar wraps and its second row of buttons is not aligned with the first. | `components/SelectionBar.tsx` | low |
-| Trash | 1440 | "Delete permanently" is dim grey, low contrast. | `UniverseTrash` | low |
-| Project tabs (Writing project, Series) | 390 | The last tab pill is cut off at the edge. | project tabs | low |
+| Where | Screen size | What is wrong | File | Confidence | Issue |
+| --- | --- | --- | --- | --- | --- |
+| Comic arcs | 390 | Content is wider than the screen: the header avatar and the footer version text are cut off at the right. | `components/ComicCollections.tsx` or `PageHeader` | high | #566 |
+| Types | 1440 | A Fields count badge widens that button by about 15px, so Edit and "Add child" sit about 14px left of the other rows on Character and Vessel. | `components/TypeRowActions.tsx`, `styles/049-types.css` | high | #566 |
+| Types | 390 | The entry count is under the name on some rows and top right on others. | same | medium | #566 |
+| Type fields drawer | 390 | The entry count sits in three different places across rows. | type fields | low | #566 |
+| Cinema sagas, Comic arcs | 1440 | The first element under the tab strip sits only about 8px below it. | `components/CinemaSagas.tsx`, `ComicCollections.tsx` | medium | #566 |
+| Game entities and a project's entries | 390 | "New entry" is right-aligned below the cards; other lists put their New button on the left under the subtitle. | project entity list | medium | #566 |
+| Ideas, Idea boards | 1440 | The "Ideas / Recently deleted" toggle is about 3px shorter than the filter input beside it and bottom-aligned. | ideas toolbar | low | #566 |
+| Lore, one type | both | The toolbar mixes control heights. | Lore toolbar | low | #566 |
+| Trash, selecting | 390 | The selection bar wraps and its second row of buttons is not aligned with the first. | `components/SelectionBar.tsx` | low | #566 |
+| Trash | 1440 | "Delete permanently" is dim grey, low contrast. | `UniverseTrash` | low | #566 |
+| Project tabs (Writing project, Series) | 390 | The last tab pill is cut off at the edge. | project tabs | low | #566 |
 
 ## Detail and form screens (#567)
 
-| Where | Screen size | What is wrong | File | Confidence |
-| --- | --- | --- | --- | --- |
-| New entry | 390 | The heading "WHAT A CHARACTER RECORDS" breaks in the middle of a word, onto three lines. | `pages/EntityPage.tsx` | high |
-| New moment drawer | 1440 | The Month placeholder is clipped to "Insert a mont". | `components/TimelineEntryForm.tsx` | high |
-| New map drawer | both | The "Map image" field is the browser's own "Choose File" control beside styled inputs. | `components/MapFormPicture.tsx` (`mapform__file`) | high |
-| Idea and board pages | both | The back link has spaces inside the quote marks: `Ideas in " Name "`. The intro text writes the same name without them. | `ideas/useRecordPlace.tsx` (`Quoted`) | high |
-| Entry, relations | both | Doubled gaps around the name in "Add what  Name  knows" and "Add who knows about  Name". | `i18n/en/ai.ts` lines 58 and 65 | medium |
-| System editor | both | The "Summary" label sits about 5px under the Name input, so the two fields read as one. | `pages/SystemEditorPage.tsx` | medium |
-| Story structure | 390 | The "New scene" button floats over the first scene row and covers "Edit scene" and "Write". | story structure | medium |
-| World rule editor | 390 | The sticky save bar covers the "Check against the timeline" block. | world rule editor | medium |
-| Manuscript, scene | 1440 | The "Point of view" avatar is offset about 10px from the "Lore" avatars below it. | scene context | low |
-| New entry | 1440 | The Idea/Draft/Canon toggle sits about 155px away from the form column. | `pages/EntityPage.tsx` | low |
-| Timeline configuration | both | Two "Add date period" buttons. | chronology editor | low |
-| Film and comic structure | 390 | Row buttons wrap differently at each level; two thin empty rules sit under the last row. | project structure | low |
-| Script, idea, board, game entry forms | both | The save bar crosses the middle of the content. capture? | `components/ActionBar.tsx` | low |
-| Idea board | 390 | The board renders at about a quarter size, with unreadable text. | `IdeaBoardPage` | low |
-| Family tree entry | both | Adjacent help texts use different sizes and line lengths. | family tree | low |
+| Where | Screen size | What is wrong | File | Confidence | Issue |
+| --- | --- | --- | --- | --- | --- |
+| New entry | 390 | The heading "WHAT A CHARACTER RECORDS" breaks in the middle of a word, onto three lines. | `pages/EntityPage.tsx` | high | #567 |
+| New moment drawer | 1440 | The Month placeholder is clipped to "Insert a mont". | `components/TimelineEntryForm.tsx` | high | #567 |
+| New map drawer | both | The "Map image" field is the browser's own "Choose File" control beside styled inputs. | `components/MapFormPicture.tsx` (`mapform__file`) | high | #567 |
+| Idea and board pages | both | The back link has spaces inside the quote marks: `Ideas in " Name "`. The intro text writes the same name without them. | `ideas/useRecordPlace.tsx` (`Quoted`) | high | #567 |
+| Entry, relations | both | Doubled gaps around the name in "Add what  Name  knows" and "Add who knows about  Name". | `i18n/en/ai.ts` lines 58 and 65 | medium | #567 |
+| System editor | both | The "Summary" label sits about 5px under the Name input, so the two fields read as one. | `pages/SystemEditorPage.tsx` | medium | #567 |
+| Story structure | 390 | The "New scene" button floats over the first scene row and covers "Edit scene" and "Write". | story structure | medium | #567 |
+| World rule editor | 390 | The sticky save bar covers the "Check against the timeline" block. | world rule editor | medium | #567 |
+| Manuscript, scene | 1440 | The "Point of view" avatar is offset about 10px from the "Lore" avatars below it. | scene context | low | #567 |
+| New entry | 1440 | The Idea/Draft/Canon toggle sits about 155px away from the form column. | `pages/EntityPage.tsx` | low | #567 |
+| Timeline configuration | both | Two "Add date period" buttons. | chronology editor | low | #567 |
+| Film and comic structure | 390 | Row buttons wrap differently at each level; two thin empty rules sit under the last row. | project structure | low | #567 |
+| Script, idea, board, game entry forms | both | The save bar crosses the middle of the content. capture? | `components/ActionBar.tsx` | low | #567 |
+| Idea board | 390 | The board renders at about a quarter size, with unreadable text. | `IdeaBoardPage` | low | #567 |
+| Family tree entry | both | Adjacent help texts use different sizes and line lengths. | family tree | low | #567 |
 
 ## Remaining pages (#568)
 
-| Where | Screen size | What is wrong | File | Confidence |
-| --- | --- | --- | --- | --- |
-| World Logic | both | The first rule row sits about 6px further left than the others, with a larger gap above and a doubled divider. | `pages/WorldLogicPage.tsx` | high |
-| Profile | both | The Theme and Language groups are barely separated. The title is centred; other account pages align left. | `pages/ProfilePage.tsx` | medium |
-| Universe overview | 1440 | Management cards are four to a row and narrower than the World building cards, three to a row, so column edges differ. | `UniverseOverview` | low |
-| Admin, one user | 1440 | The account cards are about 272px wide in a 528px column. | admin user | low |
-| Admin tracing, feedback | 1440 | The intro text is capped at about 250px; on admin users it runs the full column. | admin pages | low |
-| Family tree | 1440 | A gap of about 175px between the search input and its "Find a character" button. | family tree | low |
-| Timeline, moment menu open | 1440 | The year labels 164 and 201 are stacked tightly at the top of the scrolled view. | timeline | low |
+| Where | Screen size | What is wrong | File | Confidence | Issue |
+| --- | --- | --- | --- | --- | --- |
+| World Logic | both | The first rule row sits about 6px further left than the others, with a larger gap above and a doubled divider. | `pages/WorldLogicPage.tsx` | high | #568 |
+| Profile | both | The Theme and Language groups are barely separated. The title is centred; other account pages align left. | `pages/ProfilePage.tsx` | medium | #568 |
+| Universe overview | 1440 | Management cards are four to a row and narrower than the World building cards, three to a row, so column edges differ. | `UniverseOverview` | low | #568 |
+| Admin, one user | 1440 | The account cards are about 272px wide in a 528px column. | admin user | low | #568 |
+| Admin tracing, feedback | 1440 | The intro text is capped at about 250px; on admin users it runs the full column. | admin pages | low | #568 |
+| Family tree | 1440 | A gap of about 175px between the search input and its "Find a character" button. | family tree | low | #568 |
+| Timeline, moment menu open | 1440 | The year labels 164 and 201 are stacked tightly at the top of the scrolled view. | timeline | low | #568 |
 
 ## The same thing drawn differently (#564 where code is duplicated, otherwise the screen's Issue)
 
