@@ -1,5 +1,9 @@
-# Deploys the DEV environment. Only from dev, only to the one DEV App Service, and only after
-# the same validation a pull request gets.
+# Deploys the DEV environment. Only from dev, only to the one DEV App Service. The change was
+# validated on its pull request; validation runs again here on the merged tree, beside the deploy,
+# and the deploy does not wait for it (owner, 2026-11-23: a DEV deploy took 16 minutes, 13 of them
+# waiting for a suite that had just passed). A red Validate on dev means two pull requests that
+# passed alone broke together: DEV already has that build, PROD will not get it, because
+# deploy-prod.yml still waits for validation.
 #
 # Nothing here is a credential. Sign-in is OIDC federated identity, so the four Azure values are
 # repository or environment variables - identifiers, not secrets - and there is nothing here to
@@ -33,9 +37,8 @@ jobs:
     name: Validate
     uses: ./.github/workflows/ci.yml
 
-  # The deployable is built while validation runs rather than after it, so the deployment itself
-  # is only sign-in, upload and the health check. Nothing leaves this job but an artifact: Deploy
-  # still needs validate, so an unvalidated build is never published.
+  # The deployable is built in its own job, so the deployment itself is only sign-in, upload and
+  # the health check. Nothing leaves this job but an artifact.
   package:
     name: Package
     if: github.ref == 'refs/heads/dev'
@@ -96,7 +99,7 @@ jobs:
 
   deploy:
     name: Deploy
-    needs: [validate, package]
+    needs: [package]
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
     timeout-minutes: 30

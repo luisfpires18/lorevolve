@@ -97,8 +97,8 @@ or the deploy goes on to the old app.
 
 | File | Runs on | Does |
 | --- | --- | --- |
-| [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflow | Backend Release build, tests in three shards by test class (`scripts/dotnet-test-shard.py`), pending-model check; web typecheck, lint, format, build; Playwright in six parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/LorEvolve.E2E/README.md`) |
-| [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Calls `ci.yml` and, alongside it, builds the client and publishes the API into an artifact (Package); once both pass, Deploy uploads that artifact and waits until `/api/health` answers from a process started after the upload (see How a deploy replaces the app) |
+| [`ci.yml`](../../.github/workflows/ci.yml) | Pull requests into `dev`; called by the deploy workflows | A Changes job that skips the backend shards when a pull request stays inside the web client (its `i18n` folder apart), the Playwright specs, `docs/design` or `.ai`; Backend Release build, tests in six shards by test class (`scripts/dotnet-test-shard.py`), pending-model check; web typecheck, lint, format, build; Playwright in eight parallel shards inside Playwright's container image, each with its own fresh database and report (`tests/LorEvolve.E2E/README.md`) |
+| [`deploy-dev.yml`](../../.github/workflows/deploy-dev.yml) | Push to `dev`, or manual | Builds the client and publishes the API into an artifact (Package); once that passes, Deploy uploads that artifact and waits until `/api/health` answers from a process started after the upload (see How a deploy replaces the app) |
 
 `dev` is the only branch that deploys, and the job is additionally guarded by
 `if: github.ref == 'refs/heads/dev'`.
