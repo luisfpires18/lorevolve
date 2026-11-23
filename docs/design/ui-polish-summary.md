@@ -65,7 +65,8 @@ Codex round counts (read from the PR comments) and the one spec run named at the
   `components/worldLogic/SystemDetails.tsx`. PR #582.
 - Entry article and its editor: a third-level heading had been set to the article's own size (18px) by #578; it is back
   to 19.2px. `styles/045-tiptap.css`. PR #582 (F1).
-- New moment drawer: the Month placeholder was clipped to "Insert a mont"; it went with the placeholders. PR #584.
+- New moment drawer: the Month placeholder was clipped to "Insert a mont"; it went with the placeholders.
+  `components/ChronologyPointFields.tsx`. PR #584.
 
 ### Remaining pages (#585)
 
