@@ -20,8 +20,11 @@ export function TypeListDnd({
   siblingsOf,
   onDragMove,
   reorder,
+  countBelow,
   ...row
 }: Omit<ComponentProps<typeof TypeRow>, 'node'> & {
+  /** The phone count sits on the line under every row's name (the universe Types page; see `049-types.css`). */
+  countBelow?: boolean
   sensors: ReturnType<typeof useSensors>
   dragId: string | null
   setDragId: (dragId: string | null) => void
@@ -78,6 +81,7 @@ export function TypeListDnd({
       <ul
         className="types__list"
         data-testid="type-list"
+        data-count={countBelow ? 'below' : undefined}
         data-reordering={carried ? 'true' : undefined}
       >
         {tree.ordered.map((node) => (

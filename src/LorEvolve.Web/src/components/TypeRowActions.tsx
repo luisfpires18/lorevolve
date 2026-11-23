@@ -169,6 +169,7 @@ export function TypeRowActions({
             expanded={fold.open}
             controls={fold.controls}
             aria-label={t('entityTypes.page.fieldsLabel', { name })}
+            className="types__fieldsbutton"
             onToggle={fold.onToggle}
             data-testid={fold.testId}
           >

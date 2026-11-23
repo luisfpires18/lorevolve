@@ -17,6 +17,13 @@
   margin-top: var(--space-7);
 }
 
+/* The view toggle is as tall as the filter beside it, so the row reads as one line of controls. */
+@media (pointer: fine) {
+  .ideas__controls .segmented__option {
+    min-height: calc(var(--control-md) - 4px);
+  }
+}
+
 /* Inside a story the story's header is the page's; the view opens with one line of what it holds. */
 .ideas--story .ideas__intro {
   margin-top: var(--space-5);

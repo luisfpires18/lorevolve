@@ -96,7 +96,11 @@ export default function CategoryShelfPage({
         />
       ) : null}
 
-      {views && showView ? <views.Body universeId={universe.id} /> : null}
+      {views && showView ? (
+        <div className="shelfview">
+          <views.Body universeId={universe.id} />
+        </div>
+      ) : null}
 
       {/* The cards sit below the notices, so the gate draws only the loading and failed lines here. */}
       {!showView ? (

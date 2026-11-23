@@ -198,6 +198,7 @@ export default function UniverseTypes() {
             siblingsOf={siblingsOf}
             onDragMove={onDragMove}
             reorder={reorder}
+            countBelow
             groups={groups}
             access={access}
             openTypeId={openTypeId}
