@@ -4,6 +4,8 @@ What is out of place or inconsistent in the workspace **as it is on PROD**, page
 The design and the behaviour stay; each row below is a defect to fix or two things to make match. The public portal is
 out of scope.
 
+What was done about each row, and what waits for the owner: [ui-polish-summary.md](ui-polish-summary.md).
+
 ## Method
 
 - The app from `dev` at `5af68857` (the same tree as PROD on 2026-11-22), run locally on a seeded world.
@@ -35,7 +37,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 | Top bar, archived universe | `archived-universe-home` | 390 | The universe name is cut to "T..." beside the "Archived" chip. Fixed in #576: the name keeps the first line, the section and the chip share the second. | `components/WorkspaceBar.tsx` | medium | #565 |
 | Footer on several pages (`cinema-sagas`, `comic-arcs`, `story-manuscript`, `story-scene`, `ideas-deleted`, `idea-boards`, game type pages) | `cinema-sagas`, `comic-arcs`, `game-entities-project-types`, `project-game-types`, `story-manuscript`, `story-scene`, `ideas-deleted`, `idea-boards` | 390 | A strip of a different shade, about 40px, shows below the footer. Not a defect: only Playwright's full-page capture shows it; the document, the workspace and the footer end at the same y, and a viewport capture at the full height has no strip (#576). | `components/SiteFooter.tsx`, `components/WorkspaceLayout.tsx` | low | #565 |
 | Account menu | `drawer-universe-account-menu` | 1440 | The popover overlaps the rail's edge by about 4px. Fixed in #576: the panel clears the rail by the same gap it left from the trigger. | `components/AccountMenu.tsx` | low | #565 |
-| Feedback button | `state-trash-select`, `menu-timeline-moment-actions`, `drawer-universe-account-menu`, `family-tree` | both | It covers or touches footer links at the end of a page. capture? Fixed in #576: it covered the version line, not links; the footer now has room under that line. | `components/FeedbackButton.tsx` | low | #565 |
+| Feedback button | `state-trash-select`, `menu-timeline-moment-actions`, `drawer-universe-account-menu`, `family-tree` | both | It covers or touches footer links at the end of a page. capture? Fixed in #576: it covered the version line, not links; the footer now has room under that line. Left: on pages with a stuck action bar (Mass create, New entry, New idea) the pill still covers the footer's Explore link at 1440, because a taller footer there broke `mass-create.spec.ts:321` (#576); it also covers a corner of an open More actions menu low in the window (#582). | `components/FeedbackButton.tsx` | low | #565 |
 | Entry header | `entry-character-progression`, `entry-character-history`, `entry-location`, `entry-vessel`, `entry-longname` | 1440 | The Edit, Family tree and Private note buttons sit about 4px above the tab labels beside them. Fixed in #576: the buttons are 8px, not 4px, above the tab labels; they centre on them in one row. The story page bar shares the part and aligns too. | `components/lore/EntryHeader.tsx`, `components/EntryHead.tsx` | low | #565 |
 
 ## List screens (#566)
@@ -59,7 +61,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 | Where | Screens | Screen size | What is wrong | File | Confidence | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
 | New entry | `lore-new`, `lore-new-character` | 390 | The label of the type's fields section, "WHAT A CHARACTER RECORDS" in spaced capitals beside a rule, is squeezed into three narrow columns, one per word group, and each wraps: "WHAT" over "A", "CHARACTE" over "R", "RECORD" over "S". Shown in `before-lore-new-390-light.png`, above the Age field. Fixed in #582: the sentence came as three pieces into a flex row; `SectionTitle` keeps a rule title in one span, so it wraps as one sentence beside the rule. | `pages/EntityPage.tsx` | high | #567 |
-| New moment drawer | `drawer-new-moment` | 1440 | The Month placeholder is clipped to "Insert a mont". Fixed in #584: the clipped text was the Month placeholder, which is removed; a typed month (1 to 12) fits. | `components/TimelineEntryForm.tsx` | high | #567 |
+| New moment drawer | `drawer-new-moment` | 1440 | The Month placeholder is clipped to "Insert a mont". Fixed in #584 (part 2 of #567, after #582 left it for that PR): the clipped text was the Month placeholder (`time.point.monthPlaceholder`), removed from `components/ChronologyPointFields.tsx`, the moment's date fields that `TimelineEntryForm` draws; a typed month (1 to 12) fits. | `components/TimelineEntryForm.tsx`, `components/ChronologyPointFields.tsx` | high | #567 (fixed by PR #584, the placeholder removal) |
 | New map drawer | `drawer-new-map` | both | The "Map image" field is the browser's own "Choose File" control beside styled inputs. Fixed in #582: the map form uses the shared picture picker (`PictureActions`), an "Add image" button over a hidden input. | `components/MapFormPicture.tsx` (`mapform__file`) | high | #567 |
 | Idea and board pages | `idea-new`, `idea`, `idea-board-new`, `idea-board` | both | The back link has spaces inside the quote marks: `Ideas in " Name "`. The intro text writes the same name without them. Fixed in #582: the label came as pieces into the back link's flex row, 4px apart; `Crumb` keeps each label in one span. | `ideas/useRecordPlace.tsx` (`Quoted`) | high | #567 |
 | Entry, relations | `entry-character-relations` | both | Doubled gaps around the name in "Add what  Name  knows" and "Add who knows about  Name". Fixed in #582: the same flex-row cause in the two buttons (`KnowledgeView`); the strings were right in both languages. | `i18n/en/ai.ts` lines 58 and 65 | medium | #567 |
@@ -78,7 +80,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 
 | Where | Screens | Screen size | What is wrong | File | Confidence | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| World Logic | `world-logic` | both | The first rule row sits about 6px further left than the others, with a larger gap above and a doubled divider. Fixed in #585: a rule definition's text title kept the paragraph margins (`.rulerow__title` now `margin: 0`), an unlinked row in a list with linked rows takes their 12px inset, and a rule list first in a tab panel drops its own top rule and margin (the tab row is its rule). | `pages/WorldLogicPage.tsx` | high | #568 |
+| World Logic | `world-logic` | both | The first rule row sits about 6px further left than the others, with a larger gap above and a doubled divider. Fixed in #585: a rule definition's text title kept the paragraph margins (`.rulerow__title` now `margin: 0`), an unlinked row in a list with linked rows takes their 12px inset, and a rule list first in a tab panel drops its own top rule and margin (the tab row is its rule). Left: a list with no linked rule (only definitions) keeps flush rows, as the inset applies only beside a linked row (#585). | `pages/WorldLogicPage.tsx` | high | #568 |
 | Profile | `account-profile` | both | The Theme and Language groups are barely separated. The title is centred; other account pages align left. Fixed in #585: 0px between the two groups, now 16px (`.profile .themeswitch + .themeswitch`). The centred title is not a defect: "The account's Profile, outside any universe, keeps its own centred frame" (`LOREVOLVE_VISUAL_REFACTOR.md`). | `pages/ProfilePage.tsx` | medium | #568 |
 | Universe overview | `empty-universe-home`, `archived-universe-home` | 1440 | Management cards are four to a row and narrower than the World building cards, three to a row, so column edges differ. Not a defect: `026-overview.css` lays World building three across with Lore at double width and pairs the shorter groups two across from 1180px, so Management takes a 508px column with two 246px cards a row. | `pages/UniverseOverview.tsx` | low | #568 |
 | Admin, one user | `admin-user` | 1440 | The account cards are about 272px wide in a 528px column. Not a defect: measured, the facts card is 544px (`.admindetail { max-width: 34rem }`) in a 1056px column, a capped detail list as Profile's facts are. | `components/admin/UserDetail.tsx` | low | #568 |
@@ -93,17 +95,17 @@ repository; each fixing PR commits the before and after of what it fixes.
 - **Empty states:** three styles across Cinema sagas, Comic arcs and a game project's Systems. Not a defect (#580): Sagas and Systems already share `EmptyState`; Arcs keeps a one-line note under each of its two sections, as Sagas' Unassigned does.
 - **Save:** a sticky save bar on script, idea, board and entry forms; an inline Save button on settings and publish. Not a defect (#585): `SaveBar` is "An explicit-save editor's bar" and `FormActions inline` "a form's own footer" (`ui-components.md`).
 - **Segmented toggles:** left under the heading on AI Changes and Canon; right on the filter row, and shorter than the
-  input, on Ideas and Idea boards. Height fixed in #580; the placement stays, as a filter on the filter row.
+  input, on Ideas and Idea boards. Height fixed in #580. Placement not a defect (#580): the Ideas toggle is a filter, so it stays on the filter row; the toggles of AI Changes and Canon switch the whole page.
 - **Drawer heads:** private note, feedback and type edit have a line above the title and are about 90px tall; new
   moment, new map and new scene have the title only, about 70px. Not a defect (#585): the line is the optional `eyebrow` of `Drawer` and `SimpleFormDrawer`, which says what the drawer belongs to when the title is the owner's name.
-- **Form label spacing:** tighter on the System editor than on Profile and New entry.
-- **Add button on a phone:** floating on Lore, inline on other lists.
+- **Form label spacing:** tighter on the System editor than on Profile and New entry. Fixed in #582: the System form takes the shared `.form` layout, 28px between fields.
+- **Add button on a phone:** floating on Lore, inline on other lists. Not a defect (#580, #582): the lists that looked inline (game entities, a project's entries, story structure) use the same fixed floating New of Lore (`.lore__create`, `039-lore-phone.css`); only a full-page capture lays it under the content.
 - **Rule rows:** World Logic's first row differs from World rules. Fixed in #585 (World Logic row above).
-- **Entities and Types lists:** drawn in different frames on the game pages and the project pages.
+- **Entities and Types lists:** drawn in different frames on the game pages and the project pages. Left: not reproduced; no Issue of the milestone took it up.
 
 ## Every captured screen
 
-103 captures. One row each; the detail is in the sections above.
+103 captures. One row each; the detail, and what became of each finding, is in the sections above.
 
 | Screen | Page component | Result |
 | --- | --- | --- |
@@ -242,8 +244,10 @@ scope and not listed.
 Most off-scale values: `128-projects-2.css` (46), `081-ideas.css` (34), `025-universe-search-bar.css` (30),
 `085-family-tree.css` (29).
 
+Fixed in #574 (21 values) and #578 (440 values); left: 524 raw uses, each with its reason in `docs/design/evidence/563/left-values.md`.
+
 Duplicated UI code: 16 places in workspace markup where a page draws what a shared component already provides, 21
-groups of identical CSS rule blocks and 5 near-identical pairs.
+groups of identical CSS rule blocks and 5 near-identical pairs. Fixed in #575: 10 replaced by shared parts (7 CSS merges, `QuietNote` twice, `CheckField` once); left: the rest, each with its reason in #575.
 
 Limits: swap effects are arithmetic at a 16px root, not measured on screen; CSS repeats under 4 declarations and
 duplicated TypeScript logic were not searched; each markup site was judged from 3 to 5 lines.

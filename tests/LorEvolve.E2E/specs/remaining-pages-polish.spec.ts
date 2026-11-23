@@ -49,8 +49,18 @@ for (const width of [1440, 390]) {
     // The tab row is the list's top rule: no second hairline under it.
     const list = page.getByTestId('world-logic-rule-list')
     await expect(list).toHaveCSS('border-top-width', '0px')
-    const tabs = await box(page.getByRole('tablist'))
-    expect(Math.round((await box(list)).y)).toBe(Math.round(tabs.y + tabs.height))
+    // Both edges read in one pass, so a late layout shift cannot fall between them.
+    await expect
+      .poll(() =>
+        list.evaluate((el) => {
+          const tabs = document.querySelector('[role="tablist"]')
+          return tabs
+            ? Math.round(el.getBoundingClientRect().top) -
+                Math.round(tabs.getBoundingClientRect().bottom)
+            : null
+        }),
+      )
+      .toBe(0)
 
     // An opened System's rule rows are text titles too: they sit where a link title does.
     await page.getByTestId('world-logic-tab-systems').click()
@@ -83,7 +93,15 @@ test('Profile keeps Theme and Language apart, and Settings Data its note under t
     .toBe(16)
 
   await page.goto(`${u}/settings?tab=data`)
-  const backup = await box(page.getByTestId('export-universe'))
-  const note = await box(page.getByText('A readable export is', { exact: false }))
-  expect(Math.round(note.y - (backup.y + backup.height))).toBe(16)
+  // The button and the note under it read in one pass, as the Profile groups above.
+  await expect
+    .poll(() =>
+      page.getByTestId('export-universe').evaluate((backup) => {
+        const note = backup.nextElementSibling
+        return note?.textContent?.includes('A readable export is')
+          ? Math.round(note.getBoundingClientRect().top - backup.getBoundingClientRect().bottom)
+          : null
+      }),
+    )
+    .toBe(16)
 })
