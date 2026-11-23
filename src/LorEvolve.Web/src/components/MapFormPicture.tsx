@@ -43,7 +43,8 @@ export function MapFormPicture({
             onReframe={() => {}}
             onRemove={() => {}}
             labels={{
-              add: t('entity.image.add'),
+              // Replacing, the button says so, as the picture field does once there is a picture.
+              add: mode === 'replace' ? t('entity.image.replace') : t('entity.image.add'),
               replace: t('entity.image.replace'),
               reframe: t('entity.image.editThumbnail'),
               remove: t('entity.image.remove'),

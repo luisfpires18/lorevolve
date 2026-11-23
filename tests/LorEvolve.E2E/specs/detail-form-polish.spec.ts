@@ -122,6 +122,52 @@ test('the map form picks its image with the shared picture button', async ({ bro
       buffer: png(64, 48, () => [90, 120, 150]),
     })
     await expect(page.getByTestId('map-file-chosen')).toContainText('coast.png')
+    if (!hasTouch) {
+      // Replacing the picture of a saved map, the button says Replace.
+      await page.getByTestId('map-name-input').fill('Coast')
+      await page.getByTestId('map-form-save').click()
+      await page.waitForURL(/\/maps\/[0-9a-f-]+$/)
+      await page.getByTestId('map-actions').click()
+      await page.getByTestId('map-replace-image').click()
+      await expect(page.getByTestId('map-form').locator('.imagefield__pick')).toHaveText('Replace')
+    }
+    await context.close()
+  }
+})
+
+test('the open More actions menu is over the sticky and fixed layers of the page', async ({
+  browser,
+}) => {
+  for (const [width, hasTouch] of [
+    [1440, false],
+    [390, true],
+  ] as const) {
+    const context = await browser.newContext({ hasTouch, viewport: { width, height: 900 } })
+    const page = await context.newPage()
+    const { universeId, character, u } = await world(page)
+    const id = await entry(page, universeId, character)
+    await page.goto(`${u}/lore/${id}`)
+    await page.getByTestId('entity-actions').click()
+    const panel = page.locator('.entry__bar .actionmenu__panel')
+    await expect(panel).toBeVisible()
+    // A layer at --z-sticky inside the page column (a save bar, the phone's New button) laid over the whole menu. The
+    // Feedback pill is left out: it sits outside the column, which is its own stacking context, as it did before.
+    await page.addStyleTag({ content: '.feedbackbutton { display: none; }' })
+    await page.locator('.workspace__column').evaluate((column) => {
+      const layer = document.createElement('div')
+      layer.style.cssText = 'position: fixed; inset: 0; z-index: var(--z-sticky)'
+      column.append(layer)
+    })
+    const covered = await panel.evaluate((p) =>
+      [...p.querySelectorAll('a, button')]
+        .map((item) => {
+          const r = item.getBoundingClientRect()
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+          return item.contains(top) ? null : item.textContent?.trim()
+        })
+        .filter(Boolean),
+    )
+    expect(covered, `width ${width}`).toEqual([])
     await context.close()
   }
 })
