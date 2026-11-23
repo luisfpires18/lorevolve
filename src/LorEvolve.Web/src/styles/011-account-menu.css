@@ -157,12 +157,13 @@
   border-color: var(--plate-ink);
 }
 
-/* Out of the rail sideways, aligned with its foot, so it never covers the rail it came from. */
+/* Out of the rail sideways, aligned with its foot, so it never covers the rail it came from: the trigger sits 0.75rem
+   in from the rail's edge, so that room counts before the gap. */
 .accountmenu--rail .accountmenu__panel {
   top: auto;
   right: auto;
   bottom: 0;
-  left: calc(100% + 0.5rem);
+  left: calc(100% + 1.25rem);
 }
 
 /* Doubled so it outranks the general panel's own width, which is declared further down. */
