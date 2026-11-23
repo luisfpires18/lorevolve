@@ -6,7 +6,7 @@
    world's own moments and the story's scenes interleaved. */
 
 .chron__controls {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
 }
 
 .chron__scope {
@@ -42,7 +42,7 @@
 .moment__links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 1rem;
+  gap: var(--space-1) var(--space-4);
   margin: 0;
   font-size: var(--text-sm);
 }

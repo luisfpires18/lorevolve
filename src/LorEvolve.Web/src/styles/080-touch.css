@@ -13,7 +13,7 @@
 
 @media (pointer: coarse) {
   .token {
-    padding: 0.2rem 0.15rem 0.2rem 0.5rem;
+    padding: var(--space-1) 0.15rem var(--space-1) var(--space-2);
   }
 
   /* The cross is small on purpose; the area around it does not have to be. */
@@ -26,7 +26,7 @@
 
   .editor__tool,
   .segmented__option {
-    min-height: 2.75rem;
+    min-height: var(--control-touch);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -42,7 +42,7 @@
   }
 
   .iconpicker__choice {
-    min-height: 2.75rem;
+    min-height: var(--control-touch);
   }
 
   .accountmenu__trigger,
@@ -61,14 +61,14 @@
 
   .rail__mark {
     min-width: 2.75rem;
-    min-height: 2.75rem;
+    min-height: var(--control-touch);
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }
 
   .tokens__input {
-    min-height: 2.5rem;
+    min-height: var(--control-md);
   }
 
   /* Stacked one under another in a list, these are the easiest links in the product to
@@ -78,8 +78,8 @@
   .relation__name,
   .finding__subjects a {
     display: inline-block;
-    padding-top: 0.45rem;
-    padding-bottom: 0.45rem;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
   }
 
   .sidebar__back {
@@ -96,7 +96,7 @@
   /* Cast members and relation ends sit in lists rather than in sentences, so they can
      take the room a finger needs without disturbing a line of prose. */
   .lorechip {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-2);
   }
 }

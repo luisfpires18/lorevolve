@@ -73,13 +73,13 @@
 .types__new {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: flex-start;
 }
 
 .types__new {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
   border-top: 1px solid var(--rule);
   max-width: 26rem;
 }

@@ -15,13 +15,13 @@
 }
 
 .chron__stream {
-  margin-top: 2rem;
+  margin-top: var(--space-7);
 }
 
 .chron__group {
   display: grid;
   grid-template-columns: 6.5rem minmax(0, 1fr);
-  column-gap: 2rem;
+  column-gap: var(--space-7);
 }
 
 /* The year follows the moments it covers while they scroll, the way a running head
@@ -30,7 +30,7 @@
   grid-column: 1;
   align-self: start;
   position: sticky;
-  top: 1.25rem;
+  top: var(--space-5);
   margin: 0;
   text-align: right;
   font-weight: 400;
@@ -53,7 +53,7 @@
 
 .chron__era {
   display: block;
-  margin-top: 0.2rem;
+  margin-top: var(--space-1);
   font-family: var(--ui);
   font-size: var(--text-sm);
   color: var(--muted);
@@ -70,13 +70,13 @@
 
 .chron__group--unplaced {
   margin-top: 2.5rem;
-  padding-top: 2rem;
+  padding-top: var(--space-7);
   border-top: 1px solid var(--rule);
 }
 
 .chron__aside {
-  margin: 0 0 1rem;
-  font-size: 0.85rem;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-ui);
   max-width: 52ch;
 }
 
@@ -93,7 +93,7 @@
 /* Only the very last moment stops short. Trimming the last one of every run would break
    the spine into a stack of separate rules between one year and the next. */
 .chron__group:last-child .moment:last-child {
-  padding-bottom: 0.5rem;
+  padding-bottom: var(--space-2);
 }
 
 .moment__mark {
@@ -132,13 +132,13 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.25rem 0.7rem;
+  gap: var(--space-1) var(--space-3);
   margin: 0;
 }
 
 .moment__when {
   font-family: var(--display);
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
@@ -159,7 +159,7 @@
 .moment__account {
   margin: 0 0 0.6rem;
   max-width: 62ch;
-  font-size: 0.95rem;
+  font-size: var(--text-body);
 }
 
 .moment__cast {

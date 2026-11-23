@@ -20,10 +20,10 @@
 
   .version__tools {
     justify-content: flex-start;
-    gap: 0.15rem 1.1rem;
+    gap: 0.15rem var(--space-4);
   }
 
   .version__snapshot {
-    padding: 1rem;
+    padding: var(--space-4);
   }
 }

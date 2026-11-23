@@ -1,7 +1,7 @@
 /* ---------- States ---------- */
 
 .notice {
-  margin: 2rem 0;
+  margin: var(--space-7) 0;
   color: var(--muted);
 }
 

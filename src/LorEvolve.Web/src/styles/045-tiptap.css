@@ -20,7 +20,7 @@
 .editor__bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: var(--space-1);
   padding: 0.4rem;
   border-bottom: 1px solid var(--rule);
 }
@@ -28,9 +28,9 @@
 .editor__tool {
   border: 0;
   background: transparent;
-  padding: 0.25rem 0.55rem;
+  padding: var(--space-1) var(--space-2);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   cursor: pointer;
 }
@@ -46,7 +46,7 @@
 
 .editor__surface {
   min-height: 18rem;
-  padding: 1.25rem;
+  padding: var(--space-5);
   outline: none;
 }
 
@@ -60,7 +60,7 @@
 .editor__surface,
 .article__body {
   font-family: var(--display);
-  font-size: 1.125rem;
+  font-size: var(--text-item);
   line-height: 1.72;
   /* 62 characters, and never past the 600px the entry's columns are built around: Literata's wider figures put 62ch
      at 620px. */
@@ -71,7 +71,7 @@
 
 .editor__surface > * + *,
 .article__body > * + * {
-  margin-top: 1rem;
+  margin-top: var(--space-4);
 }
 
 .editor__surface h1,
@@ -83,7 +83,7 @@
   font-family: var(--display);
   font-weight: 400;
   line-height: 1.25;
-  margin-top: 2rem;
+  margin-top: var(--space-7);
 }
 
 .editor__surface h2,
@@ -93,13 +93,13 @@
 
 .editor__surface h3,
 .article__body h3 {
-  font-size: 1.2rem;
+  font-size: var(--text-item);
 }
 
 .editor__surface blockquote,
 .article__body blockquote {
   margin-left: 0;
-  padding-left: 1.1rem;
+  padding-left: var(--space-4);
   border-left: 2px solid var(--entry-accent, var(--rule-strong));
   color: var(--muted);
   font-style: italic;
@@ -109,7 +109,7 @@
 .editor__surface ol,
 .article__body ul,
 .article__body ol {
-  padding-left: 1.4rem;
+  padding-left: var(--space-6);
 }
 
 .editor__surface li + li,

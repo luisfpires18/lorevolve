@@ -137,7 +137,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--display);
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   line-height: 1;
   color: var(--muted);
 }

@@ -55,7 +55,7 @@
    to two on a phone without either being reached for sideways (the row is `.actions`). */
 .avatar__actions {
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: var(--space-4);
 }
 
 .avatar__actions .button {
@@ -68,9 +68,9 @@
 }
 
 .avatar__hint {
-  margin: 0.75rem 0 0;
+  margin: var(--space-3) 0 0;
   max-width: 24rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -79,12 +79,12 @@
   font-family: var(--display);
   font-size: 1.5rem;
   line-height: 1.25;
-  margin: 1.5rem 0 0;
+  margin: var(--space-6) 0 0;
   overflow-wrap: anywhere;
 }
 
 .profile__note {
-  margin: 1.5rem 0 0;
+  margin: var(--space-6) 0 0;
   font-size: var(--text-sm);
   line-height: 1.6;
   color: var(--muted);

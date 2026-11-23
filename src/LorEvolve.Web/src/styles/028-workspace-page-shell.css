@@ -40,7 +40,7 @@
 
 .tabs__tab {
   flex: none;
-  min-height: 2.75rem;
+  min-height: var(--control-touch);
   margin-bottom: -1px;
   padding: 0 var(--space-4);
   border: 0;

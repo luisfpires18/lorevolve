@@ -21,8 +21,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 1.1rem 0;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
 }
 
 /* A small glyph on a comfortable target: 40px square, centred in the 56px rail. */
@@ -31,10 +31,10 @@
   align-items: center;
   justify-content: center;
   width: 2.5rem;
-  height: 2.5rem;
+  height: var(--control-md);
   border-radius: var(--radius-sm);
   font-family: var(--display);
-  font-size: 1.35rem;
+  font-size: var(--text-section);
   letter-spacing: 0.05em;
   color: var(--plate-ink);
   text-decoration: none;
@@ -140,7 +140,7 @@
   margin-top: var(--space-2);
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius-xs);
-  padding: 0.1rem 0.45rem;
+  padding: 0.1rem var(--space-2);
   font-size: var(--text-xs);
   color: var(--muted);
 }
@@ -228,8 +228,8 @@
 .sidebar__link[aria-current='page']::before {
   content: '';
   position: absolute;
-  top: 0.45rem;
-  bottom: 0.45rem;
+  top: var(--space-2);
+  bottom: var(--space-2);
   left: 0;
   width: 3px;
   border-radius: 0 var(--radius-xs) var(--radius-xs) 0;

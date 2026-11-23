@@ -5,8 +5,8 @@
 
 .family__setup {
   max-width: 62rem;
-  margin: 2rem 0 0;
-  padding-top: 1.25rem;
+  margin: var(--space-7) 0 0;
+  padding-top: var(--space-5);
   border-top: 1px solid var(--rule);
 }
 
@@ -45,7 +45,7 @@
 }
 
 .family__grouplist input {
-  margin-top: 0.2rem;
+  margin-top: var(--space-1);
 }
 
 .family__groupname {

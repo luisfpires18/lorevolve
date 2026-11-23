@@ -4,7 +4,7 @@
    picture at its displayed size, the pins at fractions of it, counter-scaled so they keep one size. */
 
 .maps__notice {
-  margin: 1.5rem 0 0;
+  margin: var(--space-6) 0 0;
 }
 
 .maps__notice p {
@@ -14,7 +14,7 @@
 
 /* The grid is `CardGrid min={16} gap={5}`; this keeps only its distance from the tabs. */
 .maps__list {
-  margin-top: 2rem;
+  margin-top: var(--space-7);
 }
 
 .mapcard {
@@ -76,7 +76,7 @@
 
 .mapcard__meta {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
 }
 
 /* One map. */

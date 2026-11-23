@@ -23,7 +23,7 @@
   width: 4.5rem;
   height: 1px;
   background: var(--plate-muted);
-  margin: 2rem 0 1.5rem;
+  margin: var(--space-7) 0 var(--space-6);
 }
 
 .auth__pitch {
@@ -56,12 +56,12 @@
 }
 
 .auth__intro {
-  margin: 0.5rem 0 2.75rem;
+  margin: var(--space-2) 0 2.75rem;
   color: var(--muted);
 }
 
 .auth__footer {
-  margin: 2rem 0 0;
+  margin: var(--space-7) 0 0;
   color: var(--muted);
   font-size: 0.925rem;
 }

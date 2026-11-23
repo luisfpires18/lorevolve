@@ -89,7 +89,7 @@
 .lorecatalog__groupcount {
   flex: none;
   min-width: 1.25rem;
-  padding: 0 0.3rem;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--ink) 7%, transparent);
   font-size: var(--text-xs);
