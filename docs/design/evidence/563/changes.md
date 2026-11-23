@@ -8,10 +8,8 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | every page (base) | `.brandmark--plate` margin `1.5rem`, written raw instead of its token | `1.5rem` to `var(--space-6)` | none | `001-foundation.css:273` |
 | sign in | `.auth__rule` margin `2rem`, written raw instead of its token | `2rem` to `var(--space-7)` | none | `004-auth-canvas.css:26` |
 | sign in | `.auth__rule` margin `1.5rem`, written raw instead of its token | `1.5rem` to `var(--space-6)` | none | `004-auth-canvas.css:26` |
-| sign in | `.auth__pitch` font-size `0.95rem`, off the scale | `0.95rem` to `var(--text-body)` | +0.8px | `004-auth-canvas.css:32` |
 | sign in | `.auth__intro` margin `0.5rem`, written raw instead of its token | `0.5rem` to `var(--space-2)` | none | `004-auth-canvas.css:59` |
 | sign in | `.auth__footer` margin `2rem`, written raw instead of its token | `2rem` to `var(--space-7)` | none | `004-auth-canvas.css:64` |
-| sign in | `.auth__footer` font-size `0.925rem`, off the scale | `0.925rem` to `var(--text-ui)` | -0.8px | `004-auth-canvas.css:66` |
 | forms (entry, rule, idea) | `.form__aside` margin `-1rem`, written raw instead of its token | `-1rem` to `calc(-1 * var(--space-4))` | none | `005-forms.css:22` |
 | forms (entry, rule, idea) | `.field__input` padding `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `005-forms.css:76` |
 | forms (entry, rule, idea) | `.field__input` padding `0.75rem`, written raw instead of its token | `0.75rem` to `var(--space-3)` | none | `005-forms.css:76` |
@@ -24,7 +22,6 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | account profile | `.avatar__hint` font-size `0.75rem`, written raw instead of its token | `0.75rem` to `var(--text-xs)` | none | `010-avatar.css:73` |
 | account profile | `.profile__name` margin `1.5rem`, written raw instead of its token | `1.5rem` to `var(--space-6)` | none | `010-avatar.css:82` |
 | account profile | `.profile__note` margin `1.5rem`, written raw instead of its token | `1.5rem` to `var(--space-6)` | none | `010-avatar.css:87` |
-| account menu | `.accountmenu__name` font-size `0.925rem`, off the scale | `0.925rem` to `var(--text-ui)` | -0.8px | `011-account-menu.css:20` |
 | account menu | `.accountmenu__avatar--blank` font-size `0.95rem`, off the scale | `0.95rem` to `var(--text-body)` | +0.8px | `011-account-menu.css:140` |
 | page headers | `.sectionrule` font-size `0.9375rem`, off the scale | `0.9375rem` to `var(--text-body)` | +1px | `013-page-header.css:135` |
 | page headers | `.sectionrule--accent` font-size `0.8125rem`, written raw instead of its token | `0.8125rem` to `var(--text-sm)` | none | `013-page-header.css:152` |
@@ -53,7 +50,6 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | universe workspace (rail, sidebar) | `.rail` padding `1.1rem`, off the scale | `1.1rem` to `var(--space-4)` | -1.6px | `024-universe-workspace.css:25` |
 | universe workspace (rail, sidebar) | `.rail__mark` height `2.5rem`, written raw instead of its token | `2.5rem` to `var(--control-md)` | none | `024-universe-workspace.css:34` |
 | universe workspace (rail, sidebar) | `.rail__mark` font-size `1.35rem`, off the scale | `1.35rem` to `var(--text-section)` | +0.4px | `024-universe-workspace.css:37` |
-| universe workspace (rail, sidebar) | `.sidebar__name` font-size `1.3rem`, off the scale | `1.3rem` to `var(--text-section)` | +1.2px | `024-universe-workspace.css:125` |
 | universe workspace (rail, sidebar) | `.sidebar__archived` padding `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `024-universe-workspace.css:143` |
 | universe workspace (rail, sidebar) | `.sidebar__link[aria-current='page']::bef` top `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `024-universe-workspace.css:231` |
 | universe workspace (rail, sidebar) | `.sidebar__link[aria-current='page']::bef` bottom `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `024-universe-workspace.css:232` |
@@ -203,7 +199,6 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | entry history on a phone | `.version__tools` gap `1.1rem`, off the scale | `1.1rem` to `var(--space-4)` | -1.6px | `056-history-narrow.css:23` |
 | entry history on a phone | `.version__snapshot` padding `1rem`, written raw instead of its token | `1rem` to `var(--space-4)` | none | `056-history-narrow.css:27` |
 | entity picker | `.picker__chosen` gap `0.75rem`, written raw instead of its token | `0.75rem` to `var(--space-3)` | none | `057-entity-picker.css:11` |
-| entity picker | `.picker__chosenname` font-size `1.0625rem`, off the scale | `1.0625rem` to `var(--text-item)` | +1px | `057-entity-picker.css:19` |
 | entity picker | `.picker__list` z-index `20`, written raw instead of its token | `20` to `var(--z-dropdown)` | none | `057-entity-picker.css:25` |
 | entity picker | `.picker__option` gap `0.75rem`, written raw instead of its token | `0.75rem` to `var(--space-3)` | none | `057-entity-picker.css:46` |
 | entity picker | `.picker__option` padding `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `057-entity-picker.css:47` |
@@ -365,7 +360,6 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | world rule checks | `.rulecheck__list li + li` margin-top `0.2rem`, off the scale | `0.2rem` to `var(--space-1)` | +0.8px | `084-world-rule-checks.css:118` |
 | world rule checks | `.rulecheck__note` margin `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `084-world-rule-checks.css:122` |
 | world rule checks | `.moment__details` padding-top `0.75rem`, written raw instead of its token | `0.75rem` to `var(--space-3)` | none | `084-world-rule-checks.css:128` |
-| world rule checks | `.moment__details > summary` font-size `0.9rem`, off the scale | `0.9rem` to `var(--text-ui)` | -0.4px | `084-world-rule-checks.css:134` |
 | world rule checks | `.moment__details[open] > summary` margin-bottom `0.75rem`, written raw instead of its token | `0.75rem` to `var(--space-3)` | none | `084-world-rule-checks.css:140` |
 | world rule checks | `.moment__validation` font-size `0.8rem`, off the scale | `0.8rem` to `var(--text-sm)` | +0.2px | `084-world-rule-checks.css:156` |
 | world rule checks | `.terms__group` margin-top `1.25rem`, written raw instead of its token | `1.25rem` to `var(--space-5)` | none | `084-world-rule-checks.css:167` |
@@ -446,7 +440,6 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | shared rows (facts, lists) | `.facts--ruled` margin `2rem`, written raw instead of its token | `2rem` to `var(--space-7)` | none | `130-shared-rows.css:20` |
 | shared rows (facts, lists) | `.facts--ruled .facts__row` gap `1rem`, written raw instead of its token | `1rem` to `var(--space-4)` | none | `130-shared-rows.css:28` |
 | shared rows (facts, lists) | `.facts--ruled .facts__key` font-size `0.8rem`, off the scale | `0.8rem` to `var(--text-sm)` | +0.2px | `130-shared-rows.css:36` |
-| shared rows (facts, lists) | `.facts--ruled .facts__value` font-size `0.925rem`, off the scale | `0.925rem` to `var(--text-ui)` | -0.8px | `130-shared-rows.css:41` |
 | shared rows (facts, lists) | `.facts--grid` gap `0.45rem`, off the scale | `0.45rem` to `var(--space-2)` | +0.8px | `130-shared-rows.css:49` |
 | shared rows (facts, lists) | `.facts--grid` gap `1.25rem`, written raw instead of its token | `1.25rem` to `var(--space-5)` | none | `130-shared-rows.css:49` |
 | shared rows (facts, lists) | `.facts--grid .facts__key` font-size `0.8rem`, off the scale | `0.8rem` to `var(--text-sm)` | +0.2px | `130-shared-rows.css:58` |

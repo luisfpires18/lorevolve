@@ -283,6 +283,34 @@ Not listed: custom property definitions (never touched), keywords, percentages a
 
 - `085-family-tree.css:114` `1.05rem` (font-size, `.familycard__names`)
 
+## font-size: measured: on --text-body the sign-in pitch is 5.4px taller and the brand mark above it, held at the plate's foot, moves 5.4px (Codex round 8: over about 2px); reverted (1)
+
+- `004-auth-canvas.css:32` `0.95rem` (font-size, `.auth__pitch`)
+
+## font-size: measured: on --text-item the chosen name is longer and the Change button after it moves 6px (family tree entry); reverted (1)
+
+- `057-entity-picker.css:19` `1.0625rem` (font-size, `.picker__chosenname`)
+
+## font-size: measured: on --text-section the universe name in the sidebar is 3px taller per line; reverted (1)
+
+- `024-universe-workspace.css:125` `1.3rem` (font-size, `.sidebar__name`)
+
+## font-size: measured: on --text-ui the account name in the top bar is 4.5px shorter and the right-aligned group beside it moves 4.5px; reverted (1)
+
+- `011-account-menu.css:20` `0.925rem` (font-size, `.accountmenu__name`)
+
+## font-size: measured: on --text-ui the right-aligned fact value (account profile) is shorter and its left edge moves 9.25px; reverted (1)
+
+- `130-shared-rows.css:41` `0.925rem` (font-size, `.facts--ruled .facts__value`)
+
+## font-size: measured: on --text-ui the words before the moment count are shorter and the count moves 3.5px (new moment drawer); reverted (1)
+
+- `084-world-rule-checks.css:134` `0.9rem` (font-size, `.moment__details > summary`)
+
+## font-size: measured: on --text-ui the words before the sign-in footer link shrink and the link moves 6px; reverted (1)
+
+- `004-auth-canvas.css:66` `0.925rem` (font-size, `.auth__footer`)
+
 ## radius: percentage: a shape (circle or ellipse), not a size (16)
 
 - `010-avatar.css:16` `50%` (border-radius, `.avatar__photo`)
