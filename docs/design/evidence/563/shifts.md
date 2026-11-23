@@ -39,7 +39,7 @@ Swaps reverted because the measurement showed more than the accepted change (13;
 
 ## Every capture
 
-Images: `before/<capture>.png` and `after/<capture>.png` in this folder, for every capture with differing pixels (95 of 97; `connect-authorize` at both sizes has none). `sheets/s00.jpg` to `s15.jpg` put all 95 pairs side by side, six to a sheet (before left, after right, the top of each page), to look at every pair at once.
+Images: `sheets/s00.jpg` to `s15.jpg` show the before and after of every capture with differing pixels (95 of 97; `connect-authorize` at both sizes has none), six pairs to a sheet, before left and after right, the top of each page. Full-size before and after PNGs of eight of them are in `before/` and `after/`: `universe-home-390-light` (largest drift), `account-profile-1440-dark`, `ideas-390-light`, `world-rules-1440-dark`, `entry-character-1440-dark`, `auth-login-1440-dark`, `family-tree-1440-dark`, `dialog-entry-image-1440-dark` (picture viewer colour). The full-size pair of every other capture was measured from the same files (kept in the working clone under `.ai/tmp/px563b/`, gitignored) and is not committed, to keep the evidence reviewable.
 
 | Capture | Differing pixels | Page height | Largest gap change to its anchor (local move) | Largest size change of a box without text | Largest text height change per line | Largest absolute shift (adds up down the page) | New wraps | New clips or overflows |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
