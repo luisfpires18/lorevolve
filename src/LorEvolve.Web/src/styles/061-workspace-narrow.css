@@ -76,14 +76,30 @@
   }
 
   /* An archived universe's bar has the chip to carry as well: the name keeps the first line, the section and the chip
-     share the second, so the name is not squeezed to nothing. */
+     share the second, so the name is not squeezed to nothing. The "·" shows only on the name's line: the bar moves left
+     by --sep (the "·" box and its margin) and is clipped back, so a section starting the second line loses its "·"; the
+     name and the chip get that width back, the section gives it up after itself. */
   .rail__where--archived {
     flex-wrap: wrap;
     row-gap: 0;
+    --sep: 0.85rem;
+    margin-left: calc(-1 * var(--sep));
+    clip-path: inset(-0.5rem 0 -0.5rem var(--sep));
+  }
+
+  .rail__where--archived > * {
+    margin-left: var(--sep);
+  }
+
+  .rail__where--archived .rail__section {
+    margin-left: 0;
+    margin-right: calc(-1 * var(--sep));
   }
 
   .rail__where--archived .rail__section::before {
-    display: none;
+    display: inline-block;
+    width: calc(var(--sep) - 0.4rem);
+    text-align: center;
   }
 
   .rail__archived {

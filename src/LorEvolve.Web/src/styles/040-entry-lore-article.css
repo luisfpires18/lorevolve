@@ -157,12 +157,16 @@
 }
 
 /* In one row with the tabs, the buttons stand on the same rule and centre on the tab labels. Wrapped onto a row of their
-   own they keep the room above the rule. */
+   own they keep the room above the rule. 56rem: the widest one row measured, pt-PT with every tool, needs 54.9rem.
+   The container can make the bar a stacking context; z-index 1 keeps its open More actions menu over the entry's
+   picture, and stays under every --z token (the sticky bars, the Feedback pill). */
 .entry__bar {
+  position: relative;
+  z-index: 1;
   container-type: inline-size;
 }
 
-@container (min-width: 52rem) {
+@container (min-width: 56rem) {
   .entry__bar .entry__tools {
     padding-bottom: 0;
   }

@@ -207,11 +207,7 @@
   width: 6.5rem;
 }
 
-/* The map form's file and the replacement's choice. */
-.mapform__file {
-  padding: var(--space-2) 0;
-}
-
+/* The replacement's choice. */
 .mapform__choice {
   display: flex;
   align-items: flex-start;

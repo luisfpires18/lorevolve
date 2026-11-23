@@ -35,7 +35,9 @@
 body:not(:has(.actionbar, .article__bar, .manuscript__bar, .consent__actions))
   .workspace__column
   .sitefooter {
-  padding-bottom: calc(var(--space-4) + var(--control-touch) + var(--space-3));
+  padding-bottom: calc(
+    max(var(--space-4), env(safe-area-inset-bottom)) + var(--control-touch) + var(--space-3)
+  );
 }
 
 .sitefooter__top {

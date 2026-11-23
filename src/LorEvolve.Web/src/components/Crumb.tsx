@@ -40,7 +40,8 @@ export function Crumb({
             {back && index === 0 ? (
               <ArrowLeft aria-hidden="true" focusable="false" strokeWidth={1.75} />
             ) : null}
-            {item.label}
+            {/* One span: a back link is a flex row, and a label built from pieces must stay one item beside the arrow. */}
+            <span>{item.label}</span>
           </Link>
         </Fragment>
       ))}

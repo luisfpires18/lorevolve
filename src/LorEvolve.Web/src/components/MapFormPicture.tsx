@@ -5,6 +5,7 @@ import { useI18n } from '../i18n'
 import type { RefObject } from 'react'
 import type { MapFormProps } from '../maps/mapDraft'
 import { QuietNote } from './QuietNote'
+import { PictureActions } from './PictureActions'
 
 export function MapFormPicture({
   mode,
@@ -30,14 +31,29 @@ export function MapFormPicture({
     >
       {(control) => (
         <>
-          <input
-            {...control}
-            className="field__input mapform__file"
-            ref={mode === 'replace' ? firstInput : undefined}
-            type="file"
+          {/* The shared picker: the input stays reachable but hidden, and a button label stands in for the browser's own. */}
+          <PictureActions
+            input={mode === 'replace' ? firstInput : undefined}
             accept={MAP_IMAGE_ACCEPT}
-            onChange={(event) => choose(event.target.files?.[0])}
-            data-testid="map-file-input"
+            control={control}
+            inputId={control.id}
+            hasPicture={false}
+            busy={false}
+            onFile={choose}
+            onReframe={() => {}}
+            onRemove={() => {}}
+            labels={{
+              add: t('entity.image.add'),
+              replace: t('entity.image.replace'),
+              reframe: t('entity.image.editThumbnail'),
+              remove: t('entity.image.remove'),
+              removing: t('entity.image.removing'),
+            }}
+            testIds={{
+              input: 'map-file-input',
+              reframe: 'map-file-reframe',
+              remove: 'map-file-remove',
+            }}
           />
           {file ? (
             <QuietNote spacing="hint" testId="map-file-chosen">
