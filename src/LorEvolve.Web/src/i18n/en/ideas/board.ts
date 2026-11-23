@@ -80,7 +80,6 @@ const ideasBoard = {
   },
   fields: {
     title: 'Title',
-    titlePlaceholder: 'Insert a title',
     universe: 'Universe',
     noUniverse: 'No universe',
     archivedUniverse: '{name} (archived)',
@@ -110,7 +109,6 @@ const ideasBoard = {
     line: 'Line',
     between: 'Between {from} and {to}.',
     label: 'Label',
-    labelPlaceholder: 'Optional: why?',
     removeLine: 'Delete line',
     hint: 'Choose a card to write on it, open what it points at, or draw a line from it.',
   },

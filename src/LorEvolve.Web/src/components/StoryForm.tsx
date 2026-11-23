@@ -186,7 +186,6 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         ref={title}
         type="text"
         dir="auto"
-        placeholder={t('stories.storyForm.titlePlaceholder')}
         value={draft.title}
         onChange={(event) => edit({ title: event.target.value })}
         data-testid="story-title-input"
@@ -199,7 +198,6 @@ export function StoryForm({ universeId, story, onClose, onSaved, onSuggested }: 
         hint={t('stories.storyForm.premiseHint')}
         error={fieldErrors.premise}
         rows={4}
-        placeholder={t('stories.storyForm.premisePlaceholder')}
         value={draft.premise}
         onChange={(event) => edit({ premise: event.target.value })}
         data-testid="story-premise-input"

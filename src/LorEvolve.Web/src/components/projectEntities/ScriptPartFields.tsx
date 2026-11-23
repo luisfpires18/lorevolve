@@ -34,7 +34,6 @@ export function ScriptField({
       maxLength={4000}
       readOnly={readOnly}
       value={value}
-      placeholder={t(`projects.structure.panel.${part}Placeholder`)}
       onChange={(event) => onChange(event.target.value)}
       data-testid={testId}
     />

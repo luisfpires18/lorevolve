@@ -93,9 +93,7 @@ const entityPage: Dictionary['entity']['page'] = {
   form: {
     namesAndTags: 'Outros nomes e etiquetas',
     aliases: 'Nomes alternativos',
-    aliasesPlaceholder: 'Outros nomes',
     tags: 'Etiquetas',
-    tagsPlaceholder: 'Adicionar etiqueta',
     records: 'O que o tipo {type} regista',
     noteCopied: 'O artigo copiado é adicionado à entrada quando ela existir.',
     noteArticle: 'O artigo é escrito na entrada quando ela existir.',

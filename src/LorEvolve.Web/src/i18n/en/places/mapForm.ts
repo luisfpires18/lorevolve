@@ -11,7 +11,6 @@ const placesMapForm = {
   headingDetails: 'Map details',
   headingReplace: 'Replace the picture',
   name: 'Name',
-  namePlaceholder: 'Insert a name',
   description: 'Description',
   descriptionHint: 'What this map shows, in a line or two. Optional.',
   imageNew: 'Map image',

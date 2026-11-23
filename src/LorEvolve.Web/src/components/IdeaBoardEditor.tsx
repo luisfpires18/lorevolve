@@ -158,11 +158,6 @@ export function IdeaBoardEditor({
             picking === 'idea' ? t('ideas.boardPicker.addIdea') : t('ideas.boardPicker.addEntry')
           }
           searchLabel={t('ideas.boardPicker.findByName')}
-          placeholder={() =>
-            picking === 'idea'
-              ? t('ideas.boardPicker.placeholderIdea')
-              : t('ideas.boardPicker.placeholderEntry')
-          }
           search={(words, _choice, signal) =>
             listBoardTargets(picking, draft.universeId, words, signal)
           }

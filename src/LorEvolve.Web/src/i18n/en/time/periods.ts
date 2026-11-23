@@ -55,9 +55,7 @@ const timePeriods = {
   earliestFirst: 'Earliest first',
   labelDefault: 'Label',
   name: 'Name',
-  namePlaceholder: 'Insert a name',
   shortLabel: 'Short label (optional)',
-  abbreviationPlaceholder: 'Insert an abbreviation',
   abbreviationHint: 'Without one, dates are written with the full name.',
   yearsCount: 'Years count',
   countDown: {

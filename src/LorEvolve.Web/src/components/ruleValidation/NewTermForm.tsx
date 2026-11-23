@@ -5,7 +5,6 @@ import {
   TERM_KIND_ORDER,
   TERM_KIND_WORDS,
   TERM_NAME_MAX_LENGTH,
-  ValidationTermKind,
   type ValidationTermKindValue,
 } from '../../ruleValidation/types'
 import type { useTermManagerState } from '../../ruleValidation/useTermManagerState'
@@ -58,11 +57,6 @@ export function NewTermForm({
             type="text"
             dir="auto"
             maxLength={TERM_NAME_MAX_LENGTH}
-            placeholder={
-              newKind === ValidationTermKind.EventKind
-                ? t('canon.terms.placeholderEventKind')
-                : t('canon.terms.placeholderMethod')
-            }
             value={newName}
             onChange={(event) => {
               setNewName(event.target.value)

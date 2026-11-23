@@ -100,7 +100,6 @@ export function FieldFilterEditor({
             onChange={setEntry}
             entityTypeId={field.targetEntityTypeId}
             entityTypeGroupId={field.targetGroupId}
-            placeholder={t('lore.filters.entryPlaceholder')}
           />
         ) : (
           <>

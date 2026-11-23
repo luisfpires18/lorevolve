@@ -6,7 +6,6 @@ const projectsPages = {
   close: 'Close pages',
   add: 'Add page',
   name: 'Page',
-  namePlaceholder: 'Insert a page number or name',
   delete: 'Delete page',
   deletePanelTitle: 'Delete panel {name}?',
   deleteTitle: 'Delete page {name}?',

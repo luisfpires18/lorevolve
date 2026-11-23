@@ -63,9 +63,7 @@ const timePeriods: Dictionary['time']['periods'] = {
   earliestFirst: 'Do primeiro ao último',
   labelDefault: 'Etiqueta',
   name: 'Nome',
-  namePlaceholder: 'Insere um nome',
   shortLabel: 'Etiqueta curta (opcional)',
-  abbreviationPlaceholder: 'Insere uma abreviatura',
   abbreviationHint: 'Sem ela, as datas são escritas com o nome completo.',
   yearsCount: 'Os anos contam-se',
   countDown: {

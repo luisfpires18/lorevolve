@@ -11,7 +11,6 @@ import { chosenUniverseOf } from '../ideas/recordKind'
 import {
   IDEA_REFERENCE_KIND_KEYS,
   IDEA_REFERENCE_KIND_LABELS,
-  IDEA_REFERENCE_KIND_PLACEHOLDERS,
   IDEA_REFERENCE_KINDS,
   IdeaReferenceKind,
   type IdeaDetail,
@@ -209,7 +208,6 @@ export function IdeaEditor({
               testId: `idea-picker-kind-${IDEA_REFERENCE_KIND_KEYS[kind]}`,
             })),
           }}
-          placeholder={(kind) => t(IDEA_REFERENCE_KIND_PLACEHOLDERS[kind!])}
           search={(words, kind, signal) => listReferenceTargets(pickIn, kind!, words, signal)}
           option={(target) => ({
             key: `${target.kind}:${target.id}`,

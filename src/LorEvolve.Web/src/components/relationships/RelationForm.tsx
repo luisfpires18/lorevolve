@@ -91,7 +91,6 @@ export function RelationForm({
         id="relation-notes"
         error={fieldErrors.notes}
         rows={2}
-        placeholder={t('relationships.section.notesPlaceholder')}
         value={draft.notes}
         onChange={(event) => edit({ notes: event.target.value })}
         data-testid="relation-notes"

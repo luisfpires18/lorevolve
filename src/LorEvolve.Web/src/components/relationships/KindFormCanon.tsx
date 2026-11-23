@@ -55,7 +55,6 @@ export function KindFormCanon({
           label={t('relationships.types.minGap')}
           name="reltype-min-gap"
           inputMode="numeric"
-          placeholder={t('relationships.types.gapNone')}
           value={draft.minGap}
           onChange={(event) => edit({ minGap: event.target.value })}
           error={fieldErrors[MIN_KEY]}
@@ -65,7 +64,6 @@ export function KindFormCanon({
           label={t('relationships.types.maxGap')}
           name="reltype-max-gap"
           inputMode="numeric"
-          placeholder={t('relationships.types.gapNone')}
           value={draft.maxGap}
           onChange={(event) => edit({ maxGap: event.target.value })}
           error={fieldErrors[MAX_KEY]}

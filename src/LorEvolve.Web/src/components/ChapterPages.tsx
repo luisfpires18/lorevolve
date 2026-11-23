@@ -112,7 +112,6 @@ export function ChapterPages({
           words={{
             save: t('projects.pages.add'),
             name: t('projects.pages.name'),
-            namePlaceholder: t('projects.pages.namePlaceholder'),
             leave: t('projects.pages.leave'),
             failed: t('projects.pages.failed'),
           }}

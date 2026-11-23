@@ -43,7 +43,6 @@ export function BoardLineInspector({
         type="text"
         value={selectedLine.label ?? ''}
         maxLength={BOARD_LABEL_MAX_LENGTH}
-        placeholder={t('ideas.board.inspector.labelPlaceholder')}
         readOnly={isHeld}
         onChange={(event) => editLine(selectedLine.id, event.target.value)}
         data-testid="board-line-label"

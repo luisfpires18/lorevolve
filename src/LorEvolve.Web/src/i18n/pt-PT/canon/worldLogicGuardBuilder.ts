@@ -19,7 +19,6 @@ const canonWorldLogicGuardBuilder: Dictionary['canon']['worldLogic']['systems'][
       },
     },
     placeholders: {
-      title: 'Insira um título',
       value: 'Insira um valor',
       number: 'Insira um número',
       attribute: 'Insira um atributo',

@@ -12,7 +12,6 @@ const projectsEntries: Dictionary['projects']['entries'] = {
       'Copia os valores de uma entidade do Lore para este registo. A entidade do Lore não é alterada.',
     eyebrow: 'Do Lore',
     search: 'Procurar uma entidade do Lore pelo nome',
-    placeholder: 'Pesquisar no Lore',
     looking: 'A procurar…',
     searchFailed: 'Não foi possível pesquisar o Lore.',
     emptyNamed: 'Nenhuma entidade do Lore tem esse nome.',

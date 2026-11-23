@@ -73,10 +73,8 @@ const ideasEditor: Dictionary['ideas']['editor'] = {
   },
   fields: {
     title: 'Título',
-    titlePlaceholder: 'Insere um título',
     body: 'Texto',
     bodyHint: 'Opcional. Texto simples, guardado exatamente como o escreves.',
-    bodyPlaceholder: 'Insere a ideia',
     bodyTooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
     bodyCount: '{used} de {max} caracteres.',
     universe: 'Universo',

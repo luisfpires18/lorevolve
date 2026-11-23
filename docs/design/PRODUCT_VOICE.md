@@ -28,7 +28,8 @@ Inside the app nobody narrates. Labels name things, and a sentence addressed to 
 9. Say the limits as they are: it is an alpha, the built-in assistant has a small shared allowance, AI is off until
    the author turns it on, and it never changes anything by itself.
 10. Every claim describes something that works today.
-11. Placeholders say what to insert ("Insert a name") and never show an example value.
+11. No placeholder on a field that has a label: the label names the field. A box with no visible label, such as a
+    search box, keeps its text, which says what to type. A hint says what to insert and never shows an example value.
 12. No em dashes or en dashes, and no spaced hyphen standing in for one.
 13. A line that already sounds like a person stays, even if it is a little unusual. Change copy because it breaks a
     rule here, never for novelty.

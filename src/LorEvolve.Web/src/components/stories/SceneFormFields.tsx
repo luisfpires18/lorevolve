@@ -58,7 +58,6 @@ export function SceneFormFields({
         ref={title}
         type="text"
         dir="auto"
-        placeholder={t('stories.sceneForm.titlePlaceholder')}
         value={draft.title}
         onChange={(event) => edit({ title: event.target.value })}
         data-testid="scene-title-input"
@@ -180,7 +179,6 @@ export function SceneFormFields({
           universeId={universeId}
           value={draft.pov}
           onChange={(pov) => edit({ pov })}
-          placeholder={t('stories.sceneForm.povPlaceholder')}
           error={fieldErrors.poventityid}
         />
       </div>

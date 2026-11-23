@@ -95,7 +95,6 @@ const entity = {
     latestLabel: 'Latest saved note',
     latestBlank: 'No text in the latest version.',
     field: 'Note',
-    placeholder: 'Insert a note',
     tooLong: 'Too long to save: {used} of {max} characters.',
     save: 'Save',
     nothingSaved: 'Nothing saved yet',
@@ -136,7 +135,6 @@ const entity = {
     },
   },
   picker: {
-    placeholder: 'Search this universe',
     change: 'Change',
     looking: 'Looking…',
     none: 'Nothing here by that name.',
@@ -146,7 +144,6 @@ const entity = {
     openFull: 'Open full entry',
   },
   multiPicker: {
-    placeholder: 'Search this universe',
     remove: 'Remove {name}',
     looking: 'Looking…',
     none: 'Nothing here by that name.',

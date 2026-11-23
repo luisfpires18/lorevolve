@@ -35,12 +35,6 @@ const ideas: Dictionary['ideas'] = {
     untitled: 'Sem título',
   },
   picker: {
-    placeholder: {
-      lore: 'Nome de uma entrada de lore',
-      story: 'Título de uma história',
-      scene: 'Título de uma cena',
-      arc: 'Título de um arco',
-    },
     inUniverse: 'Em {universe}',
     inThisUniverse: 'No universo desta ideia',
     title: 'Adicionar referência',
@@ -59,8 +53,6 @@ const ideas: Dictionary['ideas'] = {
     addIdea: 'Adicionar ideia',
     addEntry: 'Adicionar entrada de lore',
     findByName: 'Procurar por nome',
-    placeholderIdea: 'Palavras de uma ideia',
-    placeholderEntry: 'Nome de uma entrada de lore',
     looking: 'A procurar…',
     loadFailed: 'Não foi possível ler essa lista. Tenta novamente.',
     emptyNamedIdea:
@@ -86,7 +78,6 @@ const ideas: Dictionary['ideas'] = {
     deletedNotice:
       '{title} foi eliminado. Está em Eliminados recentemente, onde o podes restaurar.',
     filter: 'Filtrar quadros',
-    searchPlaceholder: 'Palavras num título',
     show: 'Mostrar',
     allBoards: 'Todos os quadros',
     noUniverse: 'Sem universo',
@@ -138,7 +129,6 @@ const ideas: Dictionary['ideas'] = {
     deletedNotice:
       '{title} foi eliminada. Está em Eliminadas recentemente, onde a podes restaurar.',
     filter: 'Filtrar ideias',
-    searchPlaceholder: 'Palavras num título ou texto',
     show: 'Mostrar',
     allIdeas: 'Todas as ideias',
     noUniverse: 'Sem universo',
@@ -173,7 +163,6 @@ const ideas: Dictionary['ideas'] = {
     captured: 'Registaste “{title}”.',
     failed: 'Não foi possível guardar a ideia. As tuas palavras continuam aqui. Tenta novamente.',
     label: 'Registar uma ideia',
-    placeholder: 'Uma linha basta…',
     capturing: 'A registar…',
     submit: 'Registar',
   },

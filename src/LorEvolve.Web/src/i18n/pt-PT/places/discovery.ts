@@ -2,7 +2,6 @@ import type { Dictionary } from '../../en'
 
 const placesDiscovery: Dictionary['places']['discovery'] = {
   searchLabel: 'Pesquisar famílias por membro',
-  searchPlaceholder: 'Qualquer nome da família',
   find: 'Encontrar uma personagem',
   noneTitle: 'Ainda não há famílias registadas.',
   noneHintEditor:
@@ -10,7 +9,6 @@ const placesDiscovery: Dictionary['places']['discovery'] = {
   noneHint:
     'Uma família aparece aqui quando duas pessoas estão ligadas por um tipo com significado familiar.',
   whose: 'De quem é a família?',
-  pickerPlaceholder: 'Pesquisar neste universo',
   pickerHint: 'Abre a árvore de qualquer pessoa, mesmo sem família registada.',
   heading: 'Famílias neste universo',
   noMatch: 'Nenhuma família tem um membro com esse nome.',

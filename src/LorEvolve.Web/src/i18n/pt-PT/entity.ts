@@ -96,7 +96,6 @@ const entity: Dictionary['entity'] = {
     latestLabel: 'Última nota guardada',
     latestBlank: 'Sem texto na versão mais recente.',
     field: 'Nota',
-    placeholder: 'Insira uma nota',
     tooLong: 'Demasiado longo para guardar: {used} de {max} caracteres.',
     save: 'Guardar',
     nothingSaved: 'Ainda nada guardado',
@@ -137,7 +136,6 @@ const entity: Dictionary['entity'] = {
     },
   },
   picker: {
-    placeholder: 'Pesquisar neste universo',
     change: 'Alterar',
     looking: 'A procurar…',
     none: 'Nada com esse nome.',
@@ -147,7 +145,6 @@ const entity: Dictionary['entity'] = {
     openFull: 'Abrir entrada completa',
   },
   multiPicker: {
-    placeholder: 'Pesquisar neste universo',
     remove: 'Remover {name}',
     looking: 'A procurar…',
     none: 'Nada com esse nome.',

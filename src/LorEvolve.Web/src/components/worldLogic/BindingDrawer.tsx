@@ -52,7 +52,6 @@ export function BindingDrawer({
         dir="auto"
         value={form.subjectType}
         maxLength={MACHINE_TEXT_MAX_LENGTH}
-        placeholder={t(`${m}.placeholders.subjectType`)}
         onChange={(event) => edit({ subjectType: event.target.value })}
         data-testid="machine-binding-subject-type"
       />
@@ -64,7 +63,6 @@ export function BindingDrawer({
         dir="auto"
         value={form.attribute}
         maxLength={MACHINE_TEXT_MAX_LENGTH}
-        placeholder={t(`${m}.placeholders.attribute`)}
         onChange={(event) => edit({ attribute: event.target.value })}
         data-testid="machine-binding-attribute"
       />

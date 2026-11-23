@@ -193,8 +193,6 @@ const canon = {
     deleteButton: 'Delete',
     newKind: 'Event kind or method',
     newName: 'Name',
-    placeholderEventKind: 'Insert an event kind',
-    placeholderMethod: 'Insert a method',
     add: 'Add {word}',
   },
 }

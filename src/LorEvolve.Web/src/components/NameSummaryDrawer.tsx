@@ -12,9 +12,7 @@ export interface NameSummaryText {
   /** Absent: the busy label `FormActions` gives. */
   saving?: string
   name: string
-  namePlaceholder?: string
   summary?: string
-  summaryPlaceholder?: string
   leave: string
   failed: string
 }
@@ -43,9 +41,7 @@ function textOf(words: NameSummaryWords): NameSummaryText {
     save: t(`${words}.save`),
     saving: t(words === 'projects.sagas' ? 'projects.sagas.saving' : 'projects.comics.saving'),
     name: t(`${words}.name`),
-    namePlaceholder: t(`${words}.namePlaceholder`),
     summary: t(`${words}.summary`),
-    summaryPlaceholder: t(`${words}.summaryPlaceholder`),
     leave: t(`${words}.leave`),
     failed: t(`${words}.failed`),
   }
@@ -94,7 +90,6 @@ export function NameSummaryDrawer({
         value={name}
         maxLength={200}
         required={!nameOptional}
-        placeholder={text.namePlaceholder}
         data-testid={partTestId('name')}
         onChange={(event) => setName(event.target.value)}
       />
@@ -105,7 +100,6 @@ export function NameSummaryDrawer({
           value={summary}
           maxLength={4000}
           rows={3}
-          placeholder={text.summaryPlaceholder}
           data-testid={partTestId('summary')}
           onChange={(event) => setSummary(event.target.value)}
         />

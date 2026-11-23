@@ -13,7 +13,6 @@ const storiesSceneForm = {
     'You’re suggesting changes. The scene stays as it is until the owner or an Editor accepts them.',
   conflictNoun: 'scene',
   titleLabel: 'Title',
-  titlePlaceholder: 'Insert a title',
   chapterLabel: 'Chapter',
   chapterHintMove: 'Choosing another chapter moves the scene there, last.',
   chapterHintNew: 'The scene goes last in it.',
@@ -22,7 +21,6 @@ const storiesSceneForm = {
   notesLabel: 'Notes',
   notesHint: 'Your own planning notes. Only shown here.',
   povLabel: 'Point of view',
-  povPlaceholder: 'Anyone or anything in this universe',
   whenLegend: 'When in the world',
   whenHint: 'Optional. Where this scene happens, not where it is told. It never moves the scene.',
   unreckoned:

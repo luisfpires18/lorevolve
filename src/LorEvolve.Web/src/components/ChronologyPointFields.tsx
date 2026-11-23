@@ -80,7 +80,6 @@ export function ChronologyPointFields({
             step="1"
             min={reckonsInEras ? 1 : undefined}
             inputMode="numeric"
-            placeholder={t('time.point.yearPlaceholder')}
             value={value.year}
             onChange={(event) => onChange('year', event.target.value)}
             data-testid={ids.year}
@@ -118,7 +117,6 @@ export function ChronologyPointFields({
               min={1}
               max={12}
               inputMode="numeric"
-              placeholder={t('time.point.monthPlaceholder')}
               value={value.month}
               onChange={(event) => onChange('month', event.target.value)}
               data-testid={ids.month}
@@ -137,7 +135,6 @@ export function ChronologyPointFields({
             min={1}
             max={custom ? month?.dayCount : 31}
             inputMode="numeric"
-            placeholder={t('time.point.dayPlaceholder')}
             disabled={custom && !month && value.day === ''}
             value={value.day}
             onChange={(event) => onChange('day', event.target.value)}

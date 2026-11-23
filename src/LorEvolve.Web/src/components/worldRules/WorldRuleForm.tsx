@@ -70,7 +70,6 @@ export function WorldRuleForm({
             dir="auto"
             value={draft.title}
             maxLength={WORLD_RULE_TITLE_MAX_LENGTH}
-            placeholder={t('canon.editor.titlePlaceholder')}
             onChange={(event) => edit({ title: event.target.value })}
             aria-invalid={control['aria-invalid']}
             aria-describedby={control['aria-describedby']}
@@ -90,7 +89,6 @@ export function WorldRuleForm({
         rows={8}
         dir="auto"
         value={draft.description}
-        placeholder={t('canon.editor.descriptionPlaceholder')}
         spellCheck
         onChange={(event) => edit({ description: event.target.value })}
         aria-invalid={isTooLong || fieldErrors.description ? true : undefined}

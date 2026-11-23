@@ -75,7 +75,6 @@ export function TypeGroupsPanel({
                 className="field__input"
                 dir="auto"
                 value={newName}
-                placeholder={t('entityTypes.groupsPanel.namePlaceholder')}
                 onChange={(event) => setNewName(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {

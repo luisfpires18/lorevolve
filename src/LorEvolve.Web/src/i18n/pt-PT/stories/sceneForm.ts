@@ -15,7 +15,6 @@ const storiesSceneForm: Dictionary['stories']['sceneForm'] = {
     'Estás a sugerir alterações. A cena fica como está até o proprietário ou um Editor as aceitar.',
   conflictNoun: 'cena',
   titleLabel: 'Título',
-  titlePlaceholder: 'Insere um título',
   chapterLabel: 'Capítulo',
   chapterHintMove: 'Escolher outro capítulo move a cena para lá, no fim.',
   chapterHintNew: 'A cena fica no fim dele.',
@@ -24,7 +23,6 @@ const storiesSceneForm: Dictionary['stories']['sceneForm'] = {
   notesLabel: 'Notas',
   notesHint: 'As tuas notas de planeamento. Só aparecem aqui.',
   povLabel: 'Ponto de vista',
-  povPlaceholder: 'Qualquer pessoa ou coisa deste universo',
   whenLegend: 'Quando no universo',
   whenHint: 'Opcional. Quando esta cena acontece, não em que ponto é contada. Nunca a desloca.',
   unreckoned:

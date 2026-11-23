@@ -172,7 +172,6 @@ const entityTypesPage: Dictionary['entityTypes']['page'] = {
     inside: 'Dentro de {name}',
     identity: 'Identidade',
     name: 'Nome',
-    namePlaceholder: 'Insere um nome',
     iconHint:
       'Opcional, e apenas uma imagem: marca o tipo no filtro do Lore. Nada é escolhido por ti a partir do nome.',
     hierarchy: 'Hierarquia',

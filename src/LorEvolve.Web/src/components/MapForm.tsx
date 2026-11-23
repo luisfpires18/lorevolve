@@ -76,7 +76,6 @@ export function MapForm(props: MapFormProps) {
         <NameNoteFields
           idPrefix="map"
           labels={{ name: t('places.mapForm.name'), note: t('places.mapForm.description') }}
-          placeholder={t('places.mapForm.namePlaceholder')}
           hint={t('places.mapForm.descriptionHint')}
           rows={3}
           nameMaxLength={MAP_NAME_MAX_LENGTH}

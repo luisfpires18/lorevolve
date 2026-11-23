@@ -67,10 +67,8 @@ const places = {
     eyebrow: 'Family Tree',
     title: 'New family relation kind',
     name: 'Name',
-    namePlaceholder: 'Insert a name',
     bothWays: 'Both entries read “{reads}”. Nothing is worded in reverse.',
     inverse: 'Inverse name',
-    inversePlaceholder: 'Insert an inverse name',
     symmetric: 'Reads the same from both sides',
     meaning: 'Family meaning',
     hintParent:
@@ -164,7 +162,6 @@ const places = {
     reviewNote:
       'This pin was placed on an earlier picture. Check its position and save to confirm it.',
     lore: 'Lore entry',
-    lorePlaceholder: 'Search for the place this pin marks',
     loreHint: 'Optional. The pin opens this entry, and the entry leads back to this pin.',
     loreHintTrashed:
       'Optional. The pin opens this entry, and the entry leads back to this pin. The entry it stood for is in the Trash; restore it to link it again.',

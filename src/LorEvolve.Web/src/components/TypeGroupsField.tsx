@@ -196,7 +196,6 @@ export function TypeGroupsField({
                       dir="auto"
                       value={newName}
                       autoFocus
-                      placeholder={t('entityTypes.groupsField.namePlaceholder')}
                       onChange={(event) => setNewName(event.target.value)}
                       onKeyDown={onNewKey}
                       data-testid="type-group-new-name"

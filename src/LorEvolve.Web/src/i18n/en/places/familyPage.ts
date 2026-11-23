@@ -4,7 +4,6 @@ const placesFamilyPage = {
   browse: 'Browse families',
   shownFor: 'Family shown for',
   whose: 'Whose family?',
-  pickerPlaceholder: 'Search this universe',
   noTypes:
     'No Lore Type is enabled for Family Tree yet. You can enable a type when you create it, under {link}, or turn on a group of types under Types in Family Tree, below.',
   noTypesLink: 'Types → Lore Types',

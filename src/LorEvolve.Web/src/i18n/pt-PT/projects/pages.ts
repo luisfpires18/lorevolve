@@ -8,7 +8,6 @@ const projectsPages: Dictionary['projects']['pages'] = {
   close: 'Fechar páginas',
   add: 'Adicionar página',
   name: 'Página',
-  namePlaceholder: 'Escreva um número ou um nome',
   delete: 'Eliminar página',
   deletePanelTitle: 'Eliminar a vinheta {name}?',
   deleteTitle: 'Eliminar a página {name}?',

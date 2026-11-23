@@ -91,9 +91,7 @@ const entityPage = {
   form: {
     namesAndTags: 'Other names and tags',
     aliases: 'Aliases',
-    aliasesPlaceholder: 'Other names',
     tags: 'Tags',
-    tagsPlaceholder: 'Add tag',
     records: 'What a {type} records',
     noteCopied: 'The copied article is added to the entry once it exists.',
     noteArticle: 'The article is written on the entry once it exists.',

@@ -59,7 +59,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 | Where | Screens | Screen size | What is wrong | File | Confidence | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
 | New entry | `lore-new`, `lore-new-character` | 390 | The label of the type's fields section, "WHAT A CHARACTER RECORDS" in spaced capitals beside a rule, is squeezed into three narrow columns, one per word group, and each wraps: "WHAT" over "A", "CHARACTE" over "R", "RECORD" over "S". Shown in `before-lore-new-390-light.png`, above the Age field. Fixed in #582: the sentence came as three pieces into a flex row; `SectionTitle` keeps a rule title in one span, so it wraps as one sentence beside the rule. | `pages/EntityPage.tsx` | high | #567 |
-| New moment drawer | `drawer-new-moment` | 1440 | The Month placeholder is clipped to "Insert a mont". Left for the second PR of #567: the clipped text is the Month placeholder, which that PR removes; a typed month (1 to 12) fits. | `components/TimelineEntryForm.tsx` | high | #567 |
+| New moment drawer | `drawer-new-moment` | 1440 | The Month placeholder is clipped to "Insert a mont". Fixed in #584: the clipped text was the Month placeholder, which is removed; a typed month (1 to 12) fits. | `components/TimelineEntryForm.tsx` | high | #567 |
 | New map drawer | `drawer-new-map` | both | The "Map image" field is the browser's own "Choose File" control beside styled inputs. Fixed in #582: the map form uses the shared picture picker (`PictureActions`), an "Add image" button over a hidden input. | `components/MapFormPicture.tsx` (`mapform__file`) | high | #567 |
 | Idea and board pages | `idea-new`, `idea`, `idea-board-new`, `idea-board` | both | The back link has spaces inside the quote marks: `Ideas in " Name "`. The intro text writes the same name without them. Fixed in #582: the label came as pieces into the back link's flex row, 4px apart; `Crumb` keeps each label in one span. | `ideas/useRecordPlace.tsx` (`Quoted`) | high | #567 |
 | Entry, relations | `entry-character-relations` | both | Doubled gaps around the name in "Add what  Name  knows" and "Add who knows about  Name". Fixed in #582: the same flex-row cause in the two buttons (`KnowledgeView`); the strings were right in both languages. | `i18n/en/ai.ts` lines 58 and 65 | medium | #567 |
@@ -214,6 +214,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 ## Placeholders on inputs (#567)
 
 Owner rule, 2026-11-22: "Avoid placeholders on inputs". The label names the field, so the placeholder goes.
+Fixed in #584 (part 2 of #567): 91 uses removed, 13 field uses kept (no visible label), listed in `uiContract/placeholders.test.ts`; evidence in `docs/design/evidence/567/placeholders/`.
 
 - 93 `placeholder=` uses in 66 workspace files (27 in `components/`, 8 in `components/worldLogic`, 6 in
   `components/lore`, 5 in `components/ideas`, 4 in `components/timeline`).

@@ -84,7 +84,6 @@ const admin = {
     lede: 'Every LorEvolve account. Universe content is never shown here.',
     search: {
       label: 'Find an account',
-      placeholder: 'Username or public name',
     },
     gathering: 'Gathering accounts…',
     count: {

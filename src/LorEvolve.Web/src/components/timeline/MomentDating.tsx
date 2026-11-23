@@ -133,7 +133,6 @@ export function MomentDating({
               {...control}
               className="field__input"
               type="text"
-              placeholder={t('time.momentForm.optional')}
               value={draft.eraLabel}
               onChange={(event) => edit({ eraLabel: event.target.value })}
               data-testid="moment-era"

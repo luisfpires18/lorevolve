@@ -8,9 +8,7 @@ import { Field } from './Field'
 export function NameNoteFields({
   idPrefix,
   labels,
-  placeholder,
   hint,
-  notePlaceholder,
   rows = 4,
   maxLength,
   nameMaxLength,
@@ -22,12 +20,8 @@ export function NameNoteFields({
 }: {
   idPrefix: string
   labels: { name: string; note: string }
-  /** The name box's placeholder. */
-  placeholder?: string
   /** The note box's hint. */
   hint?: string
-  /** The note box's placeholder. */
-  notePlaceholder?: string
   rows?: number
   /** The note box's limit. */
   maxLength?: number
@@ -49,7 +43,6 @@ export function NameNoteFields({
         ref={nameRef}
         dir="auto"
         maxLength={nameMaxLength}
-        placeholder={placeholder}
         value={value.name}
         onChange={(event) => onChange('name', event.target.value)}
         data-testid={testIds.name}
@@ -64,7 +57,6 @@ export function NameNoteFields({
         rows={rows}
         dir="auto"
         maxLength={maxLength}
-        placeholder={notePlaceholder}
         value={value.note}
         onChange={(event) => onChange('note', event.target.value)}
         data-testid={testIds.note}

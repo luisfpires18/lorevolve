@@ -52,7 +52,6 @@ export function IdeaFormFields({
         dir="auto"
         value={draft.title}
         maxLength={IDEA_TITLE_MAX_LENGTH}
-        placeholder={t('ideas.editor.fields.titlePlaceholder')}
         readOnly={isHeld}
         onChange={(event) => edit({ title: event.target.value })}
         aria-required="true"
@@ -68,7 +67,6 @@ export function IdeaFormFields({
         controlClassName="idea__body"
         rows={10}
         value={draft.body}
-        placeholder={t('ideas.editor.fields.bodyPlaceholder')}
         readOnly={isHeld}
         spellCheck
         onChange={(event) => edit({ body: event.target.value })}

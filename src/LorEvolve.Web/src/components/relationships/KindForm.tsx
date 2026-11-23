@@ -34,9 +34,7 @@ export function KindForm({
         idPrefix="reltype"
         words={{
           name: t('relationships.types.readsAs'),
-          namePlaceholder: t('relationships.types.readsAsPlaceholder'),
           inverse: t('relationships.types.readsAsOther'),
-          inversePlaceholder: t('relationships.types.readsAsOtherPlaceholder'),
           symmetric: t('relationships.types.symmetric'),
         }}
         bothWays={t('relationships.types.bothRead', {
@@ -48,7 +46,6 @@ export function KindForm({
       <Field
         label={t('relationships.types.description')}
         name="reltype-description"
-        placeholder={t('relationships.types.optional')}
         value={draft.description}
         onChange={(event) => edit({ description: event.target.value })}
         error={fieldErrors.description}

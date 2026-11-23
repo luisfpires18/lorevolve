@@ -36,14 +36,6 @@ export const IDEA_REFERENCE_KIND_LABELS: Record<IdeaReferenceKindValue, string> 
 }
 
 /** A kind's stable key: what a test id is built from, never the translated word. */
-/** What to type, per kind, in the words the rest of LorEvolve uses for it. Message keys, read in render. */
-export const IDEA_REFERENCE_KIND_PLACEHOLDERS = {
-  [IdeaReferenceKind.Entity]: 'ideas.picker.placeholder.lore',
-  [IdeaReferenceKind.Story]: 'ideas.picker.placeholder.story',
-  [IdeaReferenceKind.Scene]: 'ideas.picker.placeholder.scene',
-  [IdeaReferenceKind.PlotArc]: 'ideas.picker.placeholder.arc',
-} as const satisfies Record<IdeaReferenceKindValue, string>
-
 export const IDEA_REFERENCE_KIND_KEYS: Record<IdeaReferenceKindValue, string> = {
   [IdeaReferenceKind.Entity]: 'lore',
   [IdeaReferenceKind.Story]: 'story',
