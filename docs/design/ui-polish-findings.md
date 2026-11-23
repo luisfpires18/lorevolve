@@ -221,7 +221,7 @@ Owner rule, 2026-11-22: "Avoid placeholders on inputs". The label names the fiel
 ## Off-scale values and duplicated code (#563, #564)
 
 Measured by script over `src/LorEvolve.Web/src/styles/*.css` against the tokens in `001-foundation.css`. The full
-tables, with file and line, are in `docs/design/evidence/562/inventory.md`. Workspace only; the portal is out of
+tables, with file and line, are in `docs/design/evidence/562/inventory-values.md` and `inventory-duplicates.md`. Workspace only; the portal is out of
 scope and not listed.
 
 | Kind | Raw uses in the workspace | Note |
