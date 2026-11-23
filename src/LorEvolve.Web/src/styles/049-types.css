@@ -238,7 +238,7 @@
   }
 
   /* The Types page: the entry count always has the line under the name. Group chips push it there on some rows only. */
-  .types__row[data-count='below'] .types__count {
+  .types__list[data-count='below'] .types__count {
     flex-basis: 100%;
   }
 }
