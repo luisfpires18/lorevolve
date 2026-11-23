@@ -72,6 +72,12 @@ test('Cinema Sagas clears its tab strip by the gap the strip has above it', asyn
   const strip = await box(page.getByTestId('cinema-views'))
   const first = await box(page.getByTestId('saga-new'))
   expect(first.y - (strip.y + strip.height)).toBeGreaterThanOrEqual(20)
+
+  await page.goto(`/app/universes/${universeId}/comic`)
+  await page.getByTestId('comic-view-collections').click()
+  const comicStrip = await box(page.getByTestId('comic-views'))
+  const heading = await box(page.getByTestId('comic-collections').locator('h2').first())
+  expect(heading.y - (comicStrip.y + comicStrip.height)).toBeGreaterThanOrEqual(20)
 })
 
 test('Ideas: the Ideas / Recently deleted toggle is as tall as the filter input beside it', async ({
@@ -120,4 +126,22 @@ test('a project Types list keeps its count beside the name on a phone, unmarked'
 
   await page.goto(`/app/universes/${universeId}/types`)
   await expect(page.getByTestId('type-list')).toHaveAttribute('data-count', 'below')
+})
+
+test('Ideas: on a touch screen the toggle options keep the 44px touch height', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+    locale: 'en-US',
+  })
+  const page = await context.newPage()
+  const universeId = await signUpWithWorld(page)
+  await page.goto(`/app/universes/${universeId}/ideas`)
+  for (const id of ['ideas-view-live', 'ideas-view-deleted']) {
+    expect((await box(page.getByTestId(id))).height).toBeGreaterThanOrEqual(44)
+  }
+  await context.close()
 })
