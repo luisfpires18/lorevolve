@@ -20,7 +20,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
 
 - **PROD** https://lorevolve.com, version `1.0.0-alpha`, invite-only alpha. App Service `prod-lorevolve` on B1 in
   `rg-lorevolve-prod`, SQLite on `/home`, media in R2 `lorevolve-media-prod`. Search indexing off
-  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45086152070 on `master` `f7dbf8b1`, succeeded (2026-11-23, release PR #572: game entries import a lore entity's values, game lists get Lore's Select, Exact and field filters, and game entries go to the universe Trash (#561); no migration). Health started 00:15 UTC. Not yet tried by hand on DEV or PROD. Earlier: release PR #559 (`72afdb6d`, 2026-11-22).
+  (`PublicSite__AllowIndexing` unset) until launch. Last deploy: run 45158484566 on `master` `b1fcb745`, succeeded (2026-11-23, release PR #579: UI Polish so far: 21 CSS values on tokens (#574), 10 duplicated UI parts replaced by shared ones (#575), shell fixes (#576); no migration, no backend change). Health started 10:56 UTC. Earlier the same day: release PR #572 (`f7dbf8b1`).
 - **DEV** https://dev-lorevolve.azurewebsites.net, F1 in `rg-lorevolve-dev`, media in R2 `lorevolve-media-dev`.
   Deploys automatically on every push to `dev` (`deploy-dev.yml`; shown version `0.1.N-dev`).
 - **Demo / alpha page** https://demo.lorevolve.com, deploys only from the `demo` branch, separate from `dev` and
@@ -41,7 +41,7 @@ git history and ADRs keep the detail. History before this trim: `docs/history/st
    only `master` may deploy to it. Never push, merge or deploy without the owner's explicit go-ahead.
 4. Deploy passes only when `/api/health`'s `startedUtc` is after the upload (up to 12 minutes), not on a bare 200.
 
-As of 2026-11-23 `master` is release PR #572; `dev` is ahead with the UI Polish milestone work (Issues 563 and 564), not released. `WEBSITE_RUN_FROM_PACKAGE=1` and
+As of 2026-11-23 `master` is release PR #579 (`dev` at `6a0647c5`); later UI Polish work on `dev` is not released. `WEBSITE_RUN_FROM_PACKAGE=1` and
 `SCM_MAX_ZIP_PACKAGE_COUNT=2` are set on DEV and PROD (2026-11-11), so a deploy no longer swaps files under the running app. The demo page (`demo` branch, live) has the plain hero, the four-step Frodo
 example and Literata. Still open there: the step 4 screenshot shows an empty scene, and an original showcase world is
 deferred.
