@@ -10,7 +10,10 @@ out of scope.
 - 103 captures: 102 screens taken at 1440 and 390 in light and dark (four screenshots each), plus the phone
   sidebar drawer, which exists only at 390 (two screenshots). 410 screenshots. 86 captures are routes, 17 are open
   drawers, dialogs, menus and states.
-- Four reviewers each read the 1440 dark and 390 light shot of about 26 screens. The 1440 shots were read at half size,
+- Four reviewers read all 103 captures between them, in the order of the table under "Every captured screen":
+  captures 1 to 26, 27 to 52, 53 to 78 and 79 to 103. Each read the 1440 dark and the 390 light shot of every capture
+  in its batch (for the phone sidebar drawer, the two 390 shots). None was left unreviewed. The 1440 light and 390
+  dark shots were opened only where a theme-specific problem was suspected. The 1440 shots were read at half size,
   so offsets under about 4px may be missed.
 - Confidence: **high** is plainly visible; **medium** is visible but could be intended; **low** needs a look in a real
   browser before anyone fixes it. Rows marked "capture?" may come from full-page screenshots, where a sticky bar or a
@@ -55,7 +58,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 
 | Where | Screens | Screen size | What is wrong | File | Confidence | Issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| New entry | `lore-new`, `lore-new-character` | 390 | The heading "WHAT A CHARACTER RECORDS" breaks in the middle of a word, onto three lines. | `pages/EntityPage.tsx` | high | #567 |
+| New entry | `lore-new`, `lore-new-character` | 390 | The label of the type's fields section, "WHAT A CHARACTER RECORDS" in spaced capitals beside a rule, wraps onto two lines and splits a word: "WHAT A CHARACTE" then "R RECORDS". Shown in `before-lore-new-390-light.png`, above the Age field. | `pages/EntityPage.tsx` | high | #567 |
 | New moment drawer | `drawer-new-moment` | 1440 | The Month placeholder is clipped to "Insert a mont". | `components/TimelineEntryForm.tsx` | high | #567 |
 | New map drawer | `drawer-new-map` | both | The "Map image" field is the browser's own "Choose File" control beside styled inputs. | `components/MapFormPicture.tsx` (`mapform__file`) | high | #567 |
 | Idea and board pages | `idea-new`, `idea`, `idea-board-new`, `idea-board` | both | The back link has spaces inside the quote marks: `Ideas in " Name "`. The intro text writes the same name without them. | `ideas/useRecordPlace.tsx` (`Quoted`) | high | #567 |
@@ -114,8 +117,8 @@ repository; each fixing PR commits the before and after of what it fixes.
 | `lore` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | none found |
 | `lore-type-character` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | Toolbar mixes control heights, low (#566) |
 | `lore-type-vessel` | `src/LorEvolve.Web/src/pages/LorePage.tsx` | Toolbar mixes control heights, low (#566) |
-| `lore-new` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Heading breaks mid-word at 390; status toggle far from the form at 1440 (#567) |
-| `lore-new-character` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Heading breaks mid-word at 390 (#567) |
+| `lore-new` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Fields section label splits a word at 390; status toggle far from the form at 1440 (#567) |
+| `lore-new-character` | `src/LorEvolve.Web/src/pages/EntityPage.tsx` | Fields section label splits a word at 390 (#567) |
 | `lore-mass-create` | `src/LorEvolve.Web/src/pages/MassCreatePage.tsx` | none found |
 | `entry-character-progression` | `src/LorEvolve.Web/src/pages/EntityPage.tsx view=progression` | Header buttons about 4px above the tab labels, low (#565) |
 | `entry-character-history` | `src/LorEvolve.Web/src/pages/EntityPage.tsx view=history` | Header buttons about 4px above the tab labels, low (#565) |
