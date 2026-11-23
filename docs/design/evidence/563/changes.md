@@ -398,7 +398,6 @@ Generated from `.ai/tmp/token_all.py`. Shift: the token minus the raw value at a
 | publishing settings | `.usage__name` font-size `0.925rem`, off the scale | `0.925rem` to `var(--text-ui)` | -0.8px | `090-publishing-settings.css:179` |
 | publishing settings | `.usage__amount` font-size `0.925rem`, off the scale | `0.925rem` to `var(--text-ui)` | -0.8px | `090-publishing-settings.css:189` |
 | publishing settings | `.usage__full, .usage__status` font-size `0.875rem`, written raw instead of its token | `0.875rem` to `var(--text-ui)` | none | `090-publishing-settings.css:204` |
-| publishing one item | `.contentpub__trigger` gap `0.3rem`, off the scale | `0.3rem` to `var(--space-1)` | -0.8px | `092-publishing-one-item.css:24` |
 | publishing one item | `.contentpub__trigger` min-height `2rem`, written raw instead of its token | `2rem` to `var(--control-sm)` | none | `092-publishing-one-item.css:25` |
 | publishing one item | `.contentpub__trigger` padding `0.55rem`, off the scale | `0.55rem` to `var(--space-2)` | -0.8px | `092-publishing-one-item.css:26` |
 | lore context | `.lorecontext__action` min-height `2.75rem`, written raw instead of its token | `2.75rem` to `var(--control-touch)` | none | `110-lore-context.css:35` |

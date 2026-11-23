@@ -12,15 +12,17 @@ Owner decision on #563 (2026-11-23): "Yes, standardise all", so a shift of about
 
 ## Result
 
+On the final stylesheets of this PR:
+
 - New wraps, clips and overflows: none. Page width: unchanged on all 97 captures (no horizontal overflow).
-- Gap to its anchor (local move): largest 2.39px (a text button in the story structure's chapter actions, and the publication line in the manuscript bar). No element moves more than about 2px locally.
+- Gap to its anchor (local move): largest 1.97px (the date in a world rule row's meta line, after the words before it). No element moves 2px or more locally.
 - Box without text: largest 1.62px (`.field__input--title` on World rules and Systems, the title input).
 - Text, per line: largest 1.75px (the manuscript text on a phone).
 - Absolute, which adds up down a list: largest 27.5px, the last doorway of the universe home at 390 (each doorway 1.2px taller, `.doorway__name` `1.3125rem` to `--text-section`, 1px larger type); then the ideas list and the world rules list (rows about 1px taller each). The accepted plan reports this drift instead of reverting it, since each step is the accepted 1px.
 
-Swaps reverted because the measurement showed more than the accepted change (12; each is in `left-values.md` with the same reason):
+Swaps reverted because the measurement showed more than the accepted change (13; each is in `left-values.md` with the same reason). The third column is what the probe showed while the value was on the token, before the revert; with every value below back to its raw size, none of these changes remains:
 
-| Value | Where | What the probe showed |
+| Value | Where | What the probe showed on the token, before the revert |
 | --- | --- | --- |
 | `013-page-header.css:102` `0.9375rem`, page lede | every page with a lede | 15px is a tie; on `--text-body` the 62ch lede wrapped into one more line on a phone (lore, ideas, AI changes, writing, trash) and at 1440 on the family tree |
 | `085-family-tree.css:114` `1.05rem`, family card names | family tree | on `--text-body` a name split over two lines |
@@ -32,11 +34,12 @@ Swaps reverted because the measurement showed more than the accepted change (12;
 | `004-auth-canvas.css:32` `0.95rem`, sign-in pitch | sign in | on `--text-body` the pitch is 5.4px taller and the brand mark, held at the plate's foot, moves 5.4px |
 | `011-account-menu.css:20` `0.925rem`, account name in the top bar | account pages | on `--text-ui` the right-aligned group beside it moves 4.5px |
 | `084-world-rule-checks.css:134` `0.9rem`, moment details summary | new moment drawer | on `--text-ui` the count after the words moves 3.5px |
+| `092-publishing-one-item.css:24` `0.3rem`, publication menu trigger gap | story structure, manuscript | with the padding swap beside it the trigger was 2.4px narrower and the right-aligned buttons beside it moved 2.4px; the gap stays raw, the trigger is now 0.8px narrower |
 | `084-world-rule-checks.css:34` `0.5rem` and `:151` `1rem`, gaps | world rule | on the token each block is a copy of the `.stack` utility, which `cssTwins` refuses without a markup change; equal values, nothing differs on screen |
 
 ## Every capture
 
-Images: `before/<capture>.png` and `after/<capture>.png` in this folder, for every capture with differing pixels (95 of 97; `connect-authorize` at both sizes has none).
+Images: `before/<capture>.png` and `after/<capture>.png` in this folder, for every capture with differing pixels (95 of 97; `connect-authorize` at both sizes has none). `sheets/s00.jpg` to `s15.jpg` put all 95 pairs side by side, six to a sheet (before left, after right, the top of each page), to look at every pair at once.
 
 | Capture | Differing pixels | Page height | Largest gap change to its anchor (local move) | Largest size change of a box without text | Largest text height change per line | Largest absolute shift (adds up down the page) | New wraps | New clips or overflows |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -105,12 +108,12 @@ Images: `before/<capture>.png` and `after/<capture>.png` in this folder, for eve
 | phone-sidebar-drawer-390-light | 10751 | 2774 to 2802 | 1.0px `span.rail__universe in p.rail__where` | 0 | 1.6px `p.overview__description.prose` | 27.5px `span.doorway__purpose` | none | none |
 | projects-1440-dark | 649 | 976 to 976 | 1.6px `a.rail__mark in nav.rail` | 0 | 0 | 1.6px `span.rail__seal` | none | none |
 | projects-390-light | 27499 | 1051 to 1051 | 1.0px `span.rail__universe in p.rail__where` | 0 | 0.5px `span.rail__section` | 0.8px `span.rail__section` | none | none |
-| story-manuscript-1440-dark | 2933 | 1578 to 1578 | 2.4px `div.manuscript__publication in div.manuscript__bar` | 0 | 0 | 2.4px `div.manuscript__publication` | none | none |
-| story-manuscript-390-light | 23069 | 1494 to 1495 | 2.4px `div.manuscript__publication in div.manuscript__bar` | 0 | 1.8px `p` | 6.9px `p` | none | none |
-| story-scene-1440-dark | 2933 | 1578 to 1578 | 2.4px `div.manuscript__publication in div.manuscript__bar` | 0 | 0 | 2.4px `div.manuscript__publication` | none | none |
-| story-scene-390-light | 23069 | 1494 to 1495 | 2.4px `div.manuscript__publication in div.manuscript__bar` | 0 | 1.8px `p` | 6.9px `p` | none | none |
-| story-structure-1440-dark | 5692 | 1300 to 1300 | 2.4px `button.button.button--text in span.actions.actions--tight.ty` | 0 | 0 | 2.4px `button.button.button--text` | none | none |
-| story-structure-390-light | 24498 | 1908 to 1910 | 2.4px `button.button.button--text in span.actions.actions--tight.ty` | 0 | 1.6px `a` | 2.4px `bdi` | none | none |
+| story-manuscript-1440-dark | 2833 | 1578 to 1578 | 1.6px `a.rail__mark in nav.rail` | 0 | 0 | 1.6px `span.rail__seal` | none | none |
+| story-manuscript-390-light | 22971 | 1494 to 1495 | 1.6px `div.manuscript__bar in section.manuscript__editor` | 0 | 1.8px `p` | 6.9px `p` | none | none |
+| story-scene-1440-dark | 2833 | 1578 to 1578 | 1.6px `a.rail__mark in nav.rail` | 0 | 0 | 1.6px `span.rail__seal` | none | none |
+| story-scene-390-light | 22971 | 1494 to 1495 | 1.6px `div.manuscript__bar in section.manuscript__editor` | 0 | 1.8px `p` | 6.9px `p` | none | none |
+| story-structure-1440-dark | 3963 | 1300 to 1300 | 1.6px `a.rail__mark in nav.rail` | 0 | 0 | 1.6px `span.rail__seal` | none | none |
+| story-structure-390-light | 23607 | 1908 to 1910 | 1.6px `button.button.lore__create below button.button.button--secon` | 0 | 1.6px `a` | 2.4px `bdi` | none | none |
 | system-1440-dark | 13228 | 968 to 968 | 1.6px `a.rail__mark in nav.rail` | 1.6px `input.field__input.field__input--title` | 0 | 1.6px `textarea.field__input.field__input--area` | none | none |
 | system-390-light | 18507 | 985 to 988 | 1.0px `span.rail__universe in p.rail__where` | 1.6px `input.field__input.field__input--title` | 1.6px `a` | 3.2px `div.field` | none | none |
 | timeline-1440-dark | 75235 | 1594 to 1604 | 1.6px `a.rail__mark in nav.rail` | 0.4px `input.field__input.searchfield__input` | 1.2px `p.moment__account.prose` | 8.8px `span.statusbadge` | none | none |

@@ -631,6 +631,10 @@ Not listed: custom property definitions (never touched), keywords, percentages a
 - `062-chronology.css:118` `-0.1875rem` (left, `.moment[data-kind='2'] .moment__mark`)
 - `062-chronology.css:119` `0.45rem` (top, `.moment[data-kind='2'] .moment__mark`)
 
+## spacing: measured: on --space-1, with the padding swap beside it, the publication menu trigger is 2.4px narrower and, right-aligned, the buttons next to it move 2.4px (story structure, manuscript); reverted so the move stays under 2px (1)
+
+- `092-publishing-one-item.css:24` `0.3rem` (gap, `.contentpub__trigger`)
+
 ## spacing: on the token the block would be a copy of the .stack .stack--2 utility, which the cssTwins test accepts only by moving the markup onto the utility (a markup change, outside this PR); equal to --space-2, so nothing differs on screen (1)
 
 - `084-world-rule-checks.css:34` `0.5rem` (gap, `.rule__choices`)
