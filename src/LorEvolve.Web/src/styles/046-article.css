@@ -167,7 +167,7 @@
 .changelist__row {
   display: grid;
   gap: 0.2rem;
-  padding: 0.5rem 0.7rem;
+  padding: 0.5rem var(--space-3);
   border: 1px solid var(--rule);
   border-radius: var(--radius-sm);
   background: var(--paper);

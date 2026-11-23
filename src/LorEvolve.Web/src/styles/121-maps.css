@@ -64,7 +64,7 @@
 .mapcard__description {
   margin: 0;
   max-width: 60ch;
-  font-size: 0.9rem;
+  font-size: var(--text-ui);
   color: var(--muted);
   overflow-wrap: anywhere;
   display: -webkit-box;
