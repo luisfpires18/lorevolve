@@ -44,7 +44,7 @@ repository; each fixing PR commits the before and after of what it fixes.
 | --- | --- | --- | --- | --- | --- | --- |
 | Comic arcs | `comic-arcs` | 390 | Content is wider than the screen: the header avatar and the footer version text are cut off at the right. | `components/ComicCollections.tsx`, `components/PageHeader.tsx` | high | #566 |
 | Types | `universe-types` | 1440 | A Fields count badge widens that button by about 15px, so Edit and "Add child" sit about 14px left of the other rows on Character and Vessel. | `components/TypeRowActions.tsx`, `styles/049-types.css` | high | #566 |
-| Types | `universe-types` | 390 | The entry count is under the name on some rows and top right on others. | same | medium | #566 |
+| Types | `universe-types` | 390 | The entry count is under the name on some rows and top right on others. | `components/TypeRowActions.tsx`, `styles/049-types.css` | medium | #566 |
 | Type fields drawer | `drawer-type-fields` | 390 | The entry count sits in three different places across rows. | `components/TypeFields.tsx` | low | #566 |
 | Cinema sagas, Comic arcs | `cinema-sagas`, `comic-arcs` | 1440 | The first element under the tab strip sits only about 8px below it. | `components/CinemaSagas.tsx`, `ComicCollections.tsx` | medium | #566 |
 | Game entities and a project's entries | `game-entities`, `game-entities-project`, `project-game`, `project-game-entities` | 390 | "New entry" is right-aligned below the cards; other lists put their New button on the left under the subtitle. | `pages/ProjectLore.tsx` | medium | #566 |
