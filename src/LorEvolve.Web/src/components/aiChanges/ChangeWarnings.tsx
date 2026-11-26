@@ -10,12 +10,15 @@ export function ChangeWarnings({
   pending,
   needs,
   neededBy,
+  testPrefix = 'ai-change',
 }: {
   change: Change
   pending: boolean
   /** Titles of the waiting changes this one needs, and of those that need it. */
   needs: string[]
   neededBy: string[]
+  /** The drawer names its own, so a card and its open drawer never share a test id. */
+  testPrefix?: string
 }) {
   const { t } = useI18n()
   const issueItems = change.issues.map((issue, index) => <li key={index}>{issue.message}</li>)
@@ -23,7 +26,7 @@ export function ChangeWarnings({
   return (
     <>
       {change.impact ? (
-        <ul className="aichangeitem__impact" data-testid="ai-change-impact">
+        <ul className="aichangeitem__impact" data-testid={`${testPrefix}-impact`}>
           {change.impact.notes.map((note) => (
             <li key={note}>{note}</li>
           ))}
@@ -31,7 +34,7 @@ export function ChangeWarnings({
       ) : null}
 
       {pending && needs.length > 0 ? (
-        <QuietNote className="aichangeitem__deps" wrap testId="ai-change-needs">
+        <QuietNote className="aichangeitem__deps" wrap testId={`${testPrefix}-needs`}>
           {t('review.aiChange.item.needs', { list: needs.join('; ') })}
         </QuietNote>
       ) : null}
@@ -48,7 +51,7 @@ export function ChangeWarnings({
             tone="warning"
             as="ul"
             className="aichangeitem__issues"
-            testId="ai-change-issues"
+            testId={`${testPrefix}-issues`}
           >
             {issueItems}
           </Callout>
@@ -57,7 +60,7 @@ export function ChangeWarnings({
             as="ul"
             role={null}
             className="aichangeitem__issues"
-            testId="ai-change-issues"
+            testId={`${testPrefix}-issues`}
           >
             {issueItems}
           </FormMessage>

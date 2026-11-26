@@ -58,7 +58,13 @@ export function ChangeDrawer({
 
       {change.prose ? <ProseChange change={change} /> : null}
 
-      <ChangeWarnings change={change} pending={pending} needs={needs} neededBy={neededBy} />
+      <ChangeWarnings
+        change={change}
+        pending={pending}
+        needs={needs}
+        neededBy={neededBy}
+        testPrefix="ai-change-detail"
+      />
 
       {link ? (
         <Button tone="text" size="sm" to={link} data-testid="ai-change-open-item">

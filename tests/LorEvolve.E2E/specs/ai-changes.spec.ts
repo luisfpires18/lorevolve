@@ -132,6 +132,10 @@ test.describe('Pending AI Changes', () => {
     await expect(page.getByTestId('ai-change-item')).toHaveCount(3)
     await expect(item(page, 'entry-1')).toContainText(`New Character: ${arin}`)
     await expect(item(page, 'link-1')).toContainText('Needs:')
+    await item(page, 'link-1').getByTestId('ai-change-details').click()
+    await expect(page.getByTestId('ai-change-detail-needs')).toBeVisible()
+    await expect(page.getByTestId('ai-change-needs')).toHaveCount(1)
+    await page.getByTestId('ai-change-detail-close').click()
     expect(await names(page, universeId, arin)).toEqual([])
 
     // Choosing the relationship chooses the two entries it needs.
