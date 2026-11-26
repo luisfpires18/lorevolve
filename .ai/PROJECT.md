@@ -1,6 +1,7 @@
 # Project
 
-Roadmap: GitHub Milestones (https://github.com/luisfpires18/lorevolve/milestones); task Issues belong to them. Overview: [#35](https://github.com/luisfpires18/lorevolve/issues/35).
+Roadmap: GitHub Milestones (tasks are Issues in them)
+Roadmap overview: [#35](https://github.com/luisfpires18/lorevolve/issues/35); milestones: https://github.com/luisfpires18/lorevolve/milestones
 Task prefix: `LOREX` (task Issue titles: `[LOREX-NNN] <outcome>`, numbered in order)
 
 Name: LorEvolve
@@ -26,6 +27,9 @@ Only these:
 - MCP servers in `.mcp.json` (`microsoft-learn`, `context7`, `openai-docs`, `chrome-devtools`) and Azure.
 
 `.claude/settings.json` (web preset merged in) turns off the game-engine plugins here.
+
+## Commands
+- Pre-push gate: `.ai/checks.sh` (run by `scripts/gate.py`)
 
 ## Tests for a task
 As `phase-workflow` "Validation", read this way here:
