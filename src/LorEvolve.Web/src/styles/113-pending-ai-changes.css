@@ -1,7 +1,10 @@
 /* ---------- Pending AI Changes (ADR 0047) ---------- */
 
-.aichanges__list,
 .aichange__list {
+  margin: 1rem 0;
+}
+
+.aichanges__list {
   display: grid;
   gap: var(--space-3);
   margin: var(--space-4) 0;
@@ -104,8 +107,28 @@
   font-variant-numeric: tabular-nums;
 }
 
-.aichangeitem > .button {
-  justify-self: start;
+.aichangeitem {
+  align-content: start;
+}
+.aichangeitem__body {
+  display: grid;
+  gap: 0.375rem;
+}
+.aichangeitem__body .aichangeitem__line {
+  grid-template-columns: minmax(4rem, 7rem) minmax(0, 1fr);
+}
+/* A card previews a value; the drawer shows all of it. */
+.aichangeitem__excerpt {
+  margin: 0;
+  font-family: var(--display);
+  overflow-wrap: anywhere;
+}
+.aichangeitem__excerpt,
+.aichangeitem__body .aichangeitem__line dd {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .aichangeitem__issues.callout {

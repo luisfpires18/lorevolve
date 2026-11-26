@@ -13,6 +13,7 @@ import { AiChangeHeader } from '../components/aiChanges/AiChangeHeader'
 import { AiChangeNotices } from '../components/aiChanges/AiChangeNotices'
 import { ChangeItem } from '../components/aiChanges/ChangeItem'
 import { ReadGate } from '../components/ReadGate'
+import { CardGrid } from '../components/CardGrid'
 
 /**
  * One proposal's review (ADR 0047). Every change an AI proposed, described by LorEvolve - what it creates, what it changes
@@ -114,7 +115,13 @@ export default function AiChangePage() {
         reject={reject}
       />
 
-      <ol className="aichange__list" id={listId} aria-label={t('review.aiChange.listLabel')}>
+      <CardGrid
+        min={17}
+        gap={3}
+        className="aichange__list"
+        id={listId}
+        aria-label={t('review.aiChange.listLabel')}
+      >
         {changes.map((change) => (
           <ChangeItem
             key={change.id}
@@ -135,7 +142,7 @@ export default function AiChangePage() {
             onUploaded={(next) => setLoad({ kind: 'ready', value: next })}
           />
         ))}
-      </ol>
+      </CardGrid>
     </section>
   )
 }

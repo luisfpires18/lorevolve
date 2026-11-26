@@ -168,6 +168,7 @@ test.describe('Pending AI Changes', () => {
     await expect(page.getByTestId('ai-change-outcome').first()).toContainText('Applied')
     expect(await names(page, universeId, arin)).toEqual([arin])
 
+    await item(page, 'entry-1').getByTestId('ai-change-details').click()
     await item(page, 'entry-1').getByTestId('ai-change-open-item').click()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(arin)
   })
@@ -208,6 +209,8 @@ test.describe('Pending AI Changes', () => {
     await propose(page, universeId, [named])
 
     const change = item(page, 'entry-1')
+    await change.getByTestId('ai-change-details').click()
+    await expect(page.getByRole('dialog')).toContainText(named)
     await change.getByTestId('ai-change-edit').click()
     const renamed = unique('Edith ')
     await change.getByTestId('ai-change-edit-name').fill(renamed)

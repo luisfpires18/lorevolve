@@ -205,6 +205,7 @@ internal static class AiChangeViews
                     WorldRuleValues rule => rule.Title,
                     IdeaValues idea => idea.Title,
                     FieldValues field => $"{field.Name} on {names.TypeRef(field.Type)}",
+                    ProjectEntryValues entry => $"{entry.Name} ({names.EntryType(entry)})",
                     _ => "this",
                 };
                 return (work.Resource switch
@@ -492,6 +493,30 @@ internal static class AiChangeViews
                 return (work.Action == AiChangeAction.Create
                     ? $"New {names.Type(lore.TypeId)}: {lore.Name}"
                     : $"Edit {old?.Name ?? lore.Name}", lines);
+            }
+
+            case (ProjectEntryValues entry, var before):
+            {
+                var old = before as ProjectEntryValues;
+                Line("Type", old is null ? null : names.EntryType(old), names.EntryType(entry));
+                Line("Name", old?.Name, entry.Name);
+                Line("Description", string.IsNullOrEmpty(old?.Summary) ? null : old.Summary, string.IsNullOrEmpty(entry.Summary) ? null : entry.Summary);
+                Line("Lore entry", old?.CanonEntryId is { } linked ? names.Entry(AiRef.To(linked)) : null,
+                    entry.CanonEntryId is { } link ? names.Entry(AiRef.To(link)) : null);
+                static string Key(ProjectFieldValue value) => value.FieldRef ?? value.FieldId.ToString();
+                foreach (var key in entry.Fields.Concat(old?.Fields ?? []).Select(Key).Distinct())
+                {
+                    var was = old?.Fields.FirstOrDefault(value => Key(value) == key);
+                    var now = entry.Fields.FirstOrDefault(value => Key(value) == key);
+                    Line(
+                        names.ProjectField((now ?? was)!),
+                        was is null ? null : names.ProjectValue(was),
+                        now is null ? null : names.ProjectValue(now));
+                }
+
+                return (work.Action == AiChangeAction.Create
+                    ? $"New {names.EntryType(entry)}: {entry.Name}"
+                    : $"Edit {old?.Name ?? entry.Name} ({names.EntryType(old ?? entry)})", lines);
             }
 
             case (RelationshipValues relationship, var before):
@@ -817,8 +842,14 @@ internal static class AiChangeViews
                     .Append(work.ResultId))
                 .OfType<Guid>()
                 .ToHashSet();
+            foreach (var entry in works.SelectMany(work => new[] { work.Proposed, work.Before }).OfType<ProjectEntryValues>())
+            {
+                ids.UnionWith(entry.Fields.Select(value => value.LinkedEntryId).Append(entry.CanonEntryId).OfType<Guid>());
+            }
 
-            var fields = await db.EntityFieldDefinitions.AsNoTracking()
+
+            // A project's fields hang off types the ordinary reads hide.
+            var fields = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
                 .Where(field => field.EntityType!.UniverseId == universeId)
                 .Select(field => new { field.Id, field.Name, field.Kind, field.DisplayOrder, Options = field.Options.Select(option => new { option.Id, option.Value }).ToList() })
                 .ToListAsync(cancellationToken);
@@ -875,6 +906,22 @@ internal static class AiChangeViews
 
         /// <summary>A project's type an existing id names, or one this proposal creates.</summary>
         public string ProjectType(AiRef reference) => Named(reference, _projectTypes, work => (work.Proposed as ProjectTypeValues)?.Name);
+
+        public string EntryType(ProjectEntryValues entry) =>
+            ProjectType(entry.TypeRef is { } key ? new AiRef(null, key) : AiRef.To(entry.TypeId));
+
+        public string ProjectField(ProjectFieldValue value) => value.FieldRef is { } key
+            ? Named(new AiRef(null, key), [], work => (work.Proposed as ProjectSchemaFieldValues)?.Name)
+            : Field(value.FieldId);
+
+        /// <summary>A project entry's field value in words; its choices are stored as their own text.</summary>
+        public string? ProjectValue(ProjectFieldValue value) =>
+            value.Text
+            ?? value.Number?.ToString(CultureInfo.InvariantCulture)
+            ?? (value.Boolean is { } flag ? YesNo(flag) : null)
+            ?? value.Date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            ?? (value.Choices is { Count: > 0 } chosen ? string.Join(", ", chosen) : null)
+            ?? (value.LinkedEntryId is { } linked ? Entry(AiRef.To(linked)) : null);
 
         public string ProjectParent(AiRef? reference) => reference is null ? "Nothing (top level)" : ProjectType(reference);
 

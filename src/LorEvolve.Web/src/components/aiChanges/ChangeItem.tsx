@@ -1,13 +1,20 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
+import { Eye } from 'lucide-react'
 import { ChangeStatus, type Change, type Proposal } from '../../aiChanges/types'
-import { itemPath } from '../../aiChanges/itemPath'
 import { useI18n } from '../../i18n'
 import { actionWords, isProse } from '../../aiChanges/changeTraits'
-import { ChangeDetails } from './ChangeDetails'
-import { EditChange } from './EditChange'
-import { Button } from '../Button'
+import { ChangeDrawer } from './ChangeDrawer'
+import { ChangeLines } from './ChangeLines'
+import { MediaChange } from './MediaChange'
+import { ChangeWarnings } from './ChangeWarnings'
+import { IconButton } from '../IconButton'
+import { QuietNote } from '../QuietNote'
 import { SectionTitle } from '../Section'
 
+/** How many lines a card shows before the details drawer has to be opened. */
+const PREVIEW_LINES = 3
+
+/** One change as a card: what it does to what, its first lines and anything stopping it; the eye opens it in full. */
 export function ChangeItem({
   universeId,
   proposal,
@@ -33,17 +40,18 @@ export function ChangeItem({
   onEdited: (next: Proposal) => void
   onUploaded: (next: Proposal) => void
 }) {
-  const { t, tx } = useI18n()
+  const { t, tn, tx } = useI18n()
+  const [open, setOpen] = useState(false)
   const titleId = useId()
   const detailsId = useId()
   const pending = change.status === ChangeStatus.Pending
-  const link = change.status === ChangeStatus.Committed ? itemPath(universeId, change) : null
   const named = (keys: string[]) => keys.map((key) => byKey.get(key)?.title ?? key)
   // Only what still waits: a change already applied or rejected is nothing to select or reject with this one.
   const waiting = (keys: string[]) =>
     keys.filter((key) => byKey.get(key)?.status === ChangeStatus.Pending)
   const needs = waiting(change.dependsOn)
   const neededBy = waiting(change.neededBy)
+  const action = isProse(change) ? t('review.aiChange.item.prose') : actionWords(change)
 
   return (
     <li
@@ -68,7 +76,7 @@ export function ChangeItem({
         ) : null}
         <div className="aichangeitem__heading">
           <span className="aichangeitem__action" data-action={change.action}>
-            {isProse(change) ? t('review.aiChange.item.prose') : actionWords(change)}
+            {action}
           </span>
           <SectionTitle id={titleId} dir="auto">
             {change.title}
@@ -92,46 +100,57 @@ export function ChangeItem({
                   : t('review.aiChange.item.rejected')}
           </span>
         ) : null}
+        <IconButton
+          icon={Eye}
+          size="sm"
+          label={t('review.aiChange.item.details', { title: change.title })}
+          onClick={() => setOpen(true)}
+          data-testid="ai-change-details"
+        />
       </div>
 
-      <ChangeDetails
-        detailsId={detailsId}
-        universeId={universeId}
-        proposal={proposal}
-        change={change}
-        pending={pending}
-        needs={needs}
-        neededBy={neededBy}
-        named={named}
-        onUploaded={onUploaded}
-      />
+      <div id={detailsId} className="aichangeitem__body">
+        <ChangeLines change={change} lines={change.lines.slice(0, PREVIEW_LINES)} />
+        {change.lines.length > PREVIEW_LINES ? (
+          <QuietNote size="xs">
+            {tn('review.aiChange.item.more', change.lines.length - PREVIEW_LINES, {
+              n: change.lines.length - PREVIEW_LINES,
+            })}
+          </QuietNote>
+        ) : null}
+        {change.prose ? (
+          <p className="aichangeitem__excerpt" dir="auto">
+            {change.prose.proposed}
+          </p>
+        ) : null}
+        {change.media ? (
+          <MediaChange
+            universeId={universeId}
+            proposal={proposal}
+            change={change}
+            onUploaded={onUploaded}
+          />
+        ) : null}
+        <ChangeWarnings
+          change={change}
+          pending={pending}
+          needs={named(needs)}
+          neededBy={named(neededBy)}
+        />
+      </div>
 
-      {link ? (
-        <Button tone="text" size="sm" to={link} data-testid="ai-change-open-item">
-          {t('review.aiChange.item.open')}
-        </Button>
-      ) : null}
-
-      {change.editable && !editing ? (
-        <Button
-          tone="text"
-          size="sm"
-          onClick={() => onEdit(true)}
-          aria-label={t('review.aiChange.item.editLabel', { title: change.title })}
-          data-testid="ai-change-edit"
-        >
-          {t('review.aiChange.item.edit')}
-        </Button>
-      ) : null}
-
-      {editing && change.editable ? (
-        <EditChange
+      {open ? (
+        <ChangeDrawer
           universeId={universeId}
           proposal={proposal}
           change={change}
-          values={change.editable}
-          onCancel={() => onEdit(false)}
-          onSaved={onEdited}
+          action={action}
+          needs={named(needs)}
+          neededBy={named(neededBy)}
+          editing={editing}
+          onEdit={onEdit}
+          onEdited={onEdited}
+          onClose={() => setOpen(false)}
         />
       ) : null}
     </li>
