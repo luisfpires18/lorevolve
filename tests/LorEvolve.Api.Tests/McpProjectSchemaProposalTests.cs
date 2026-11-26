@@ -20,7 +20,7 @@ namespace LorEvolve.Api.Tests;
 /// gets one, its fields and its entries in one proposal, and every piece is written through the project Types screen's
 /// own write path only once the person approves it.
 /// </summary>
-public sealed class McpProjectSchemaProposalTests(McpProjectSchemaFixture fixture) : IClassFixture<McpProjectSchemaFixture>
+public sealed partial class McpProjectSchemaProposalTests(McpProjectSchemaFixture fixture) : IClassFixture<McpProjectSchemaFixture>
 {
     private LorEvolveApiFactory Api => fixture.Api;
 

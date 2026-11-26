@@ -23,8 +23,8 @@ internal static partial class AiChangeViews
             var after = entry.Fields.FirstOrDefault(value => Key(value) == key);
             line(
                 names.ProjectField((after ?? before)!),
-                before is null ? null : names.ProjectValue(before),
-                after is null ? null : names.ProjectValue(after));
+                before is null ? null : Filled(names.ProjectValue(before)),
+                after is null ? null : Filled(names.ProjectValue(after)));
         }
 
         return action == AiChangeAction.Create
@@ -52,7 +52,7 @@ internal static partial class AiChangeViews
 
         public string ProjectField(ProjectFieldValue value) => value.FieldRef is { } key
             ? Named(new AiRef(null, key), _fields.ToDictionary(field => field.Key, field => field.Value.Name), work => (work.Proposed as ProjectSchemaFieldValues)?.Name)
-            : Field(value.FieldId);
+            : _fields.TryGetValue(value.FieldId, out var field) ? field.Name : "A deleted field";
 
         /// <summary>A project entry's field value in words; its choices are stored as their own text.</summary>
         public string? ProjectValue(ProjectFieldValue value) =>
