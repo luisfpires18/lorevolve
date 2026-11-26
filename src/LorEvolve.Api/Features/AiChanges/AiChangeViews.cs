@@ -14,7 +14,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 /// names resolved live, what a removal touches, and what is wrong with it now - never the AI's JSON. Every string that
 /// came from the AI stays plain text; the client draws it as text. Reads only.
 /// </summary>
-internal static class AiChangeViews
+internal static partial class AiChangeViews
 {
     /// <summary>
     /// The proposals a reader is shown: every one in a universe where they could approve, and their own elsewhere - only while
@@ -205,6 +205,7 @@ internal static class AiChangeViews
                     WorldRuleValues rule => rule.Title,
                     IdeaValues idea => idea.Title,
                     FieldValues field => $"{field.Name} on {names.TypeRef(field.Type)}",
+                    ProjectEntryValues entry => $"{entry.Name} ({names.EntryType(entry)})",
                     _ => "this",
                 };
                 return (work.Resource switch
@@ -493,6 +494,9 @@ internal static class AiChangeViews
                     ? $"New {names.Type(lore.TypeId)}: {lore.Name}"
                     : $"Edit {old?.Name ?? lore.Name}", lines);
             }
+
+            case (ProjectEntryValues entry, var before):
+                return (DescribeProjectEntry(work.Action, entry, before as ProjectEntryValues, names, Line), lines);
 
             case (RelationshipValues relationship, var before):
             {
@@ -787,7 +791,7 @@ internal static class AiChangeViews
             : string.Join("; ", beats.Select((beat, index) => $"{index + 1}. {beat.Title}{(beat.Note is { } note ? $" ({note})" : string.Empty)}"));
 
     /// <summary>The names a review shows, read once for a proposal and only from its universe.</summary>
-    private sealed class Names
+    private sealed partial class Names
     {
         private Dictionary<Guid, string> _types = [];
         private Dictionary<Guid, (string Name, EntityFieldKind Kind, int Order, Dictionary<Guid, string> Options)> _fields = [];
@@ -817,8 +821,9 @@ internal static class AiChangeViews
                     .Append(work.ResultId))
                 .OfType<Guid>()
                 .ToHashSet();
-
-            var fields = await db.EntityFieldDefinitions.AsNoTracking()
+            ids.UnionWith(ProjectEntryReferences(works));
+            // A project's fields hang off types the ordinary reads hide.
+            var fields = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
                 .Where(field => field.EntityType!.UniverseId == universeId)
                 .Select(field => new { field.Id, field.Name, field.Kind, field.DisplayOrder, Options = field.Options.Select(option => new { option.Id, option.Value }).ToList() })
                 .ToListAsync(cancellationToken);
@@ -872,11 +877,6 @@ internal static class AiChangeViews
         public string Appearance(Guid id) => _appearances.GetValueOrDefault(id) ?? "that isn't there any more";
 
         public string Parent(AiRef? reference) => reference is null ? "Nothing (top level)" : TypeRef(reference);
-
-        /// <summary>A project's type an existing id names, or one this proposal creates.</summary>
-        public string ProjectType(AiRef reference) => Named(reference, _projectTypes, work => (work.Proposed as ProjectTypeValues)?.Name);
-
-        public string ProjectParent(AiRef? reference) => reference is null ? "Nothing (top level)" : ProjectType(reference);
 
         /// <summary>What a link field accepts, in words; null for a field that is not a link.</summary>
         public string? Links(FieldValues field) => field.Kind != EntityFieldKind.EntityReference

@@ -20,7 +20,7 @@ namespace LorEvolve.Api.Tests;
 /// gets one, its fields and its entries in one proposal, and every piece is written through the project Types screen's
 /// own write path only once the person approves it.
 /// </summary>
-public sealed class McpProjectSchemaProposalTests(McpProjectSchemaFixture fixture) : IClassFixture<McpProjectSchemaFixture>
+public sealed partial class McpProjectSchemaProposalTests(McpProjectSchemaFixture fixture) : IClassFixture<McpProjectSchemaFixture>
 {
     private LorEvolveApiFactory Api => fixture.Api;
 
@@ -67,7 +67,28 @@ public sealed class McpProjectSchemaProposalTests(McpProjectSchemaFixture fixtur
         Assert.Equal(["ge"], proposal.Operations.Single(operation => operation.Key == "hp").DependsOn);
         Assert.Equal(["ge", "hp", "side"], proposal.Operations.Single(operation => operation.Key == "e1").DependsOn.Order());
 
+        // A project entry reads as what it is: its type, name and field values, not a bare "Change".
+        var golemChange = proposal.Operations.Single(operation => operation.Key == "e1");
+        Assert.Equal("New GameEntity (new): Brine golem", golemChange.Title);
+        Assert.Equal(
+            ["Type: GameEntity (new)", "Name: Brine golem", "Health (new): 30", "Faction (new): Salt"],
+            golemChange.Lines.Select(line => $"{line.Label}: {line.After}"));
+
         await AiChangeTestClient.ApproveAll(W.Owner, W.U, proposalId);
+
+        // Once applied, a field this proposal made is named as itself.
+        var applied = await AiChangeTestClient.Read(W.Owner, W.U, proposalId);
+        Assert.Contains(applied.Operations.Single(operation => operation.Key == "e1").Lines, line => line.Label == "Health");
+
+        // An edit of it names the entry and its type, and shows only what changes.
+        var entryId = applied.Operations.Single(operation => operation.Key == "e1").ResultId;
+        var edit = await Call(client, Proposal(
+            "Rename the golem",
+            new { id = "u1", action = "update", resource = "project_entry", targetId = entryId, projectEntry = new { name = "Salt golem" } }));
+        var renamed = (await AiChangeTestClient.Read(W.Owner, W.U, edit.GetProperty("proposalId").GetGuid())).Operations.Single();
+        Assert.Equal("Edit Brine golem (GameEntity)", renamed.Title);
+        var line = Assert.Single(renamed.Lines);
+        Assert.Equal(("Name", "Brine golem", "Salt golem"), (line.Label, line.Before, line.After));
 
         await WithDb(Api, async db =>
         {

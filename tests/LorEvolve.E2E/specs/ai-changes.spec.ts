@@ -132,6 +132,10 @@ test.describe('Pending AI Changes', () => {
     await expect(page.getByTestId('ai-change-item')).toHaveCount(3)
     await expect(item(page, 'entry-1')).toContainText(`New Character: ${arin}`)
     await expect(item(page, 'link-1')).toContainText('Needs:')
+    await item(page, 'link-1').getByTestId('ai-change-details').click()
+    await expect(page.getByTestId('ai-change-detail-needs')).toBeVisible()
+    await expect(page.getByTestId('ai-change-needs')).toHaveCount(1)
+    await page.getByTestId('ai-change-detail-close').click()
     expect(await names(page, universeId, arin)).toEqual([])
 
     // Choosing the relationship chooses the two entries it needs.
@@ -168,6 +172,7 @@ test.describe('Pending AI Changes', () => {
     await expect(page.getByTestId('ai-change-outcome').first()).toContainText('Applied')
     expect(await names(page, universeId, arin)).toEqual([arin])
 
+    await item(page, 'entry-1').getByTestId('ai-change-details').click()
     await item(page, 'entry-1').getByTestId('ai-change-open-item').click()
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(arin)
   })
@@ -208,6 +213,8 @@ test.describe('Pending AI Changes', () => {
     await propose(page, universeId, [named])
 
     const change = item(page, 'entry-1')
+    await change.getByTestId('ai-change-details').click()
+    await expect(page.getByRole('dialog')).toContainText(named)
     await change.getByTestId('ai-change-edit').click()
     const renamed = unique('Edith ')
     await change.getByTestId('ai-change-edit-name').fill(renamed)

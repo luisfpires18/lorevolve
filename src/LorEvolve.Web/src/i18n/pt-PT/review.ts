@@ -146,6 +146,8 @@ const review: Dictionary['review'] = {
       needs: 'Requer: {list}. Selecionar esta seleciona-as também.',
       neededBy: 'Necessária para: {list}. Rejeitar esta rejeita-as também.',
       open: 'Abrir',
+      details: 'Detalhes de {title}',
+      more: { one: 'Mais {n} linha', other: 'Mais {n} linhas' },
       editLabel: 'Editar {title} antes de aprovar',
       edit: 'Editar antes de aprovar',
     },
@@ -170,6 +172,7 @@ const review: Dictionary['review'] = {
       removedHidden: 'Retirado: ',
     },
     edit: {
+      leave: 'Sair sem guardar esta edição?',
       form: 'Editar {title}',
       failed: 'Não foi possível guardar a tua edição. Tenta novamente.',
       name: 'Nome',

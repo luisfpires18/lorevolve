@@ -144,6 +144,8 @@ const review = {
       needs: 'Needs: {list}. Selecting this selects them too.',
       neededBy: 'Needed by: {list}. Rejecting this rejects them too.',
       open: 'Open it',
+      details: 'Details of {title}',
+      more: { one: '{n} more line', other: '{n} more lines' },
       editLabel: 'Edit {title} before approving',
       edit: 'Edit before approving',
     },
@@ -168,6 +170,7 @@ const review = {
       removedHidden: 'Taken out: ',
     },
     edit: {
+      leave: 'Leave without saving this edit?',
       form: 'Edit {title}',
       failed: 'Your edit couldn’t be saved. Try again.',
       name: 'Name',

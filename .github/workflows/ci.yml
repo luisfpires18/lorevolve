@@ -1,5 +1,6 @@
-# Validation for LorEvolve. Runs on every pull request into dev, and is called by the DEV
-# deployment before it publishes anything, so nothing reaches Azure that has not passed here.
+# Validation for LorEvolve. Runs on every pull request into dev. The PROD deployment calls it and
+# waits for it before it publishes anything. The DEV deployment runs it beside the deploy, as a
+# signal on the merged tree, and does not wait: the pull request already passed it.
 #
 # A change made only of documentation or agent tooling is skipped: no Markdown file, nothing under
 # docs/ and nothing under .claude/ is an input to either build or to any test. A change that touches
@@ -33,18 +34,55 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
 
 jobs:
-  # The backend suite is CPU-bound, so it is split across three runners by test class
+  # Decides whether the backend suite has anything to say about this change. The backend shards are the
+  # slowest jobs, and a change that stays inside the web client, the Playwright specs, the design
+  # documents or the state file cannot alter a backend result. The list is an allow-list on purpose:
+  # one changed file outside it, and the backend runs. The client's i18n folder is outside it, because
+  # ApiErrorCodeContractTests reads src/LorEvolve.Web/src/i18n/en/apiErrors.ts. A deploy's validation and
+  # a manual run always run the backend.
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.decide.outputs.backend }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+      - name: Decide
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          backend=true
+          if [ "$EVENT" = "pull_request" ]; then
+            files=$(git diff --name-only "$BASE...$HEAD")
+            other=$(printf '%s\n' "$files" | grep -v -E '^(src/LorEvolve\.Web/|tests/LorEvolve\.E2E/specs/|docs/design/|\.ai/)' || true)
+            i18n=$(printf '%s\n' "$files" | grep -E '^src/LorEvolve\.Web/src/i18n/' || true)
+            if [ -n "$files" ] && [ -z "$other" ] && [ -z "$i18n" ]; then backend=false; fi
+            printf 'Changed files:\n%s\n' "$files"
+          fi
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "Backend suite runs: $backend"
+
+  # The backend suite is CPU-bound, so it is split across six runners by test class
   # (scripts/dotnet-test-shard.py): each class runs whole, with its own host and in-memory
   # database, in exactly one shard, and each shard proves from its own results that it ran exactly
   # the classes dealt to it. fail-fast is off so one failing shard does not hide another's.
   backend:
     name: Backend (shard ${{ matrix.shard }}/${{ strategy.job-total }})
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -122,8 +160,8 @@ jobs:
       - name: Build
         run: npm run build
 
-  # The suite is split across six runners with Playwright's own sharding: each shard is a
-  # complementary sixth of the whole suite (fullyParallel, so Playwright partitions by test, and
+  # The suite is split across eight runners with Playwright's own sharding: each shard is a
+  # complementary eighth of the whole suite (fullyParallel, so Playwright partitions by test, and
   # no spec list is kept here). Each runner has its own API, Vite server and fresh database, so
   # sharding adds no concurrency against any one SQLite file: two browsers per database, as before.
   # fail-fast is off so a failing shard does not cancel the others and hide their evidence; any
@@ -138,7 +176,7 @@ jobs:
     name: End to end (shard ${{ matrix.shard }}/${{ strategy.job-total }})
     runs-on: ubuntu-latest
     # The slowest shard of the last twenty runs took 11 minutes, retries included. A hung shard stops
-    # at about twice that, rather than holding six runners for 45 minutes each.
+    # at about twice that, rather than holding eight runners for 45 minutes each.
     timeout-minutes: 25
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble
@@ -151,7 +189,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

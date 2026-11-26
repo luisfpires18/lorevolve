@@ -9,6 +9,7 @@ import {
 import { Field } from '../Field'
 import { useI18n } from '../../i18n'
 import { ApiError } from '../../lib/api'
+import { payloadKey } from '../../lib/drawerGuard'
 import { CANON_LABELS, CanonStatus, type CanonStatusValue } from '../../lore/types'
 import { FormActions } from '../FormActions'
 import { FormMessage } from '../FormMessage'
@@ -19,6 +20,8 @@ export function EditChange({
   proposal,
   change,
   values,
+  onDirty,
+  onSaving,
   onCancel,
   onSaved,
 }: {
@@ -26,6 +29,10 @@ export function EditChange({
   proposal: Proposal
   change: Change
   values: ChangeEditable
+  /** Told whether the draft differs from what it opened with. */
+  onDirty: (dirty: boolean) => void
+  /** Told while a save is in flight. */
+  onSaving: (saving: boolean) => void
   onCancel: () => void
   onSaved: (next: Proposal) => void
 }) {
@@ -40,6 +47,14 @@ export function EditChange({
   useEffect(() => {
     form.current?.querySelector<HTMLElement>('input, textarea, select')?.focus()
   }, [])
+
+  useEffect(() => {
+    onDirty(payloadKey(draft) !== payloadKey(values))
+  }, [draft, values, onDirty])
+
+  useEffect(() => {
+    onSaving(saving)
+  }, [saving, onSaving])
 
   async function submit(event: FormEvent) {
     event.preventDefault()
