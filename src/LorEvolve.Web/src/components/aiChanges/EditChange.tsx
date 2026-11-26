@@ -21,6 +21,7 @@ export function EditChange({
   change,
   values,
   onDirty,
+  onSaving,
   onCancel,
   onSaved,
 }: {
@@ -30,6 +31,8 @@ export function EditChange({
   values: ChangeEditable
   /** Told whether the draft differs from what it opened with. */
   onDirty: (dirty: boolean) => void
+  /** Told while a save is in flight. */
+  onSaving: (saving: boolean) => void
   onCancel: () => void
   onSaved: (next: Proposal) => void
 }) {
@@ -48,6 +51,10 @@ export function EditChange({
   useEffect(() => {
     onDirty(payloadKey(draft) !== payloadKey(values))
   }, [draft, values, onDirty])
+
+  useEffect(() => {
+    onSaving(saving)
+  }, [saving, onSaving])
 
   async function submit(event: FormEvent) {
     event.preventDefault()

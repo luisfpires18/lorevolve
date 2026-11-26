@@ -35,6 +35,7 @@ export function ChangeDrawer({
 }) {
   const { t } = useI18n()
   const [dirty, setDirty] = useState(false)
+  const [saving, setSaving] = useState(false)
   const pending = change.status === ChangeStatus.Pending
   const link = change.status === ChangeStatus.Committed ? itemPath(universeId, change) : null
 
@@ -45,6 +46,7 @@ export function ChangeDrawer({
       eyebrow={action}
       title={<bdi>{change.title}</bdi>}
       isDirty={editing && dirty}
+      busy={saving}
       leaveMessage={t('review.aiChange.edit.leave')}
       closeTestId="ai-change-detail-close"
       onClose={() => {
@@ -86,6 +88,7 @@ export function ChangeDrawer({
           change={change}
           values={change.editable}
           onDirty={setDirty}
+          onSaving={setSaving}
           onCancel={() => onEdit(false)}
           onSaved={(next) => {
             onClose()

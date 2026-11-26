@@ -14,7 +14,7 @@ namespace LorEvolve.Api.Features.AiChanges;
 /// names resolved live, what a removal touches, and what is wrong with it now - never the AI's JSON. Every string that
 /// came from the AI stays plain text; the client draws it as text. Reads only.
 /// </summary>
-internal static class AiChangeViews
+internal static partial class AiChangeViews
 {
     /// <summary>
     /// The proposals a reader is shown: every one in a universe where they could approve, and their own elsewhere - only while
@@ -496,28 +496,7 @@ internal static class AiChangeViews
             }
 
             case (ProjectEntryValues entry, var before):
-            {
-                var old = before as ProjectEntryValues;
-                Line("Type", old is null ? null : names.EntryType(old), names.EntryType(entry));
-                Line("Name", old?.Name, entry.Name);
-                Line("Description", string.IsNullOrEmpty(old?.Summary) ? null : old.Summary, string.IsNullOrEmpty(entry.Summary) ? null : entry.Summary);
-                Line("Lore entry", old?.CanonEntryId is { } linked ? names.Entry(AiRef.To(linked)) : null,
-                    entry.CanonEntryId is { } link ? names.Entry(AiRef.To(link)) : null);
-                static string Key(ProjectFieldValue value) => value.FieldRef ?? value.FieldId.ToString();
-                foreach (var key in entry.Fields.Concat(old?.Fields ?? []).Select(Key).Distinct())
-                {
-                    var was = old?.Fields.FirstOrDefault(value => Key(value) == key);
-                    var now = entry.Fields.FirstOrDefault(value => Key(value) == key);
-                    Line(
-                        names.ProjectField((now ?? was)!),
-                        was is null ? null : names.ProjectValue(was),
-                        now is null ? null : names.ProjectValue(now));
-                }
-
-                return (work.Action == AiChangeAction.Create
-                    ? $"New {names.EntryType(entry)}: {entry.Name}"
-                    : $"Edit {old?.Name ?? entry.Name} ({names.EntryType(old ?? entry)})", lines);
-            }
+                return (DescribeProjectEntry(work.Action, entry, before as ProjectEntryValues, names, Line), lines);
 
             case (RelationshipValues relationship, var before):
             {
@@ -812,7 +791,7 @@ internal static class AiChangeViews
             : string.Join("; ", beats.Select((beat, index) => $"{index + 1}. {beat.Title}{(beat.Note is { } note ? $" ({note})" : string.Empty)}"));
 
     /// <summary>The names a review shows, read once for a proposal and only from its universe.</summary>
-    private sealed class Names
+    private sealed partial class Names
     {
         private Dictionary<Guid, string> _types = [];
         private Dictionary<Guid, (string Name, EntityFieldKind Kind, int Order, Dictionary<Guid, string> Options)> _fields = [];
@@ -842,12 +821,7 @@ internal static class AiChangeViews
                     .Append(work.ResultId))
                 .OfType<Guid>()
                 .ToHashSet();
-            foreach (var entry in works.SelectMany(work => new[] { work.Proposed, work.Before }).OfType<ProjectEntryValues>())
-            {
-                ids.UnionWith(entry.Fields.Select(value => value.LinkedEntryId).Append(entry.CanonEntryId).OfType<Guid>());
-            }
-
-
+            ids.UnionWith(ProjectEntryReferences(works));
             // A project's fields hang off types the ordinary reads hide.
             var fields = await db.EntityFieldDefinitions.AsNoTracking().IgnoreQueryFilters()
                 .Where(field => field.EntityType!.UniverseId == universeId)
@@ -903,27 +877,6 @@ internal static class AiChangeViews
         public string Appearance(Guid id) => _appearances.GetValueOrDefault(id) ?? "that isn't there any more";
 
         public string Parent(AiRef? reference) => reference is null ? "Nothing (top level)" : TypeRef(reference);
-
-        /// <summary>A project's type an existing id names, or one this proposal creates.</summary>
-        public string ProjectType(AiRef reference) => Named(reference, _projectTypes, work => (work.Proposed as ProjectTypeValues)?.Name);
-
-        public string EntryType(ProjectEntryValues entry) =>
-            ProjectType(entry.TypeRef is { } key ? new AiRef(null, key) : AiRef.To(entry.TypeId));
-
-        public string ProjectField(ProjectFieldValue value) => value.FieldRef is { } key
-            ? Named(new AiRef(null, key), [], work => (work.Proposed as ProjectSchemaFieldValues)?.Name)
-            : Field(value.FieldId);
-
-        /// <summary>A project entry's field value in words; its choices are stored as their own text.</summary>
-        public string? ProjectValue(ProjectFieldValue value) =>
-            value.Text
-            ?? value.Number?.ToString(CultureInfo.InvariantCulture)
-            ?? (value.Boolean is { } flag ? YesNo(flag) : null)
-            ?? value.Date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
-            ?? (value.Choices is { Count: > 0 } chosen ? string.Join(", ", chosen) : null)
-            ?? (value.LinkedEntryId is { } linked ? Entry(AiRef.To(linked)) : null);
-
-        public string ProjectParent(AiRef? reference) => reference is null ? "Nothing (top level)" : ProjectType(reference);
 
         /// <summary>What a link field accepts, in words; null for a field that is not a link.</summary>
         public string? Links(FieldValues field) => field.Kind != EntityFieldKind.EntityReference

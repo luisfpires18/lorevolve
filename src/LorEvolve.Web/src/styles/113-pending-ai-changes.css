@@ -114,18 +114,21 @@
   display: grid;
   gap: 0.375rem;
 }
-.aichangeitem__body .aichangeitem__line {
-  grid-template-columns: minmax(4rem, 7rem) minmax(0, 1fr);
-}
-/* A card previews a value; the drawer shows all of it. */
+/* A card previews a value; the drawer shows all of it. Each side is cut on its own, so a long old value never hides
+   the proposed one. */
 .aichangeitem__excerpt {
   margin: 0;
   font-family: var(--display);
   overflow-wrap: anywhere;
 }
-.aichangeitem__excerpt,
-.aichangeitem__body .aichangeitem__line dd {
+.aichangeitem__excerpt {
   display: -webkit-box;
+}
+.aichangeitem__excerpt,
+.aichangeitem__body dd > span:not(.aichangeitem__arrow) {
+  display: -webkit-inline-box;
+  max-width: 100%;
+  vertical-align: bottom;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;

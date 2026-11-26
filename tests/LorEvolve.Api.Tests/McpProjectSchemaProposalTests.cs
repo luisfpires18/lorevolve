@@ -76,10 +76,14 @@ public sealed class McpProjectSchemaProposalTests(McpProjectSchemaFixture fixtur
 
         await AiChangeTestClient.ApproveAll(W.Owner, W.U, proposalId);
 
+        // Once applied, a field this proposal made is named as itself.
+        var applied = await AiChangeTestClient.Read(W.Owner, W.U, proposalId);
+        Assert.Contains(applied.Operations.Single(operation => operation.Key == "e1").Lines, line => line.Label == "Health");
+
         // An edit of it names the entry and its type, and shows only what changes.
-        var entryId = (await AiChangeTestClient.Read(W.Owner, W.U, proposalId)).Operations.Single(operation => operation.Key == "e1").ResultId;
+        var entryId = applied.Operations.Single(operation => operation.Key == "e1").ResultId;
         var edit = await Call(client, Proposal(
-            "Rename the golem and give it less health",
+            "Rename the golem",
             new { id = "u1", action = "update", resource = "project_entry", targetId = entryId, projectEntry = new { name = "Salt golem" } }));
         var renamed = (await AiChangeTestClient.Read(W.Owner, W.U, edit.GetProperty("proposalId").GetGuid())).Operations.Single();
         Assert.Equal("Edit Brine golem (GameEntity)", renamed.Title);
