@@ -152,6 +152,8 @@ test.describe('AI changes to every authored resource', () => {
     await page.getByTestId('ai-change-approve').click()
     await expect(page.getByTestId('ai-change-feedback')).toHaveText('5 changes were applied.')
 
+    await item(page, 'article-1').getByTestId('ai-change-details').click()
+    await expect(page.getByRole('dialog')).toContainText(`${name}, as the app wrote it.`)
     await item(page, 'article-1').getByTestId('ai-change-open-item').click()
     await expect(page.getByTestId('article')).toContainText(`${name}, as the app wrote it.`)
 
